@@ -2309,25 +2309,45 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
 <p>If you wish to change the behaviour of Pydantic globally, you can create your own custom <code>BaseModel</code>
 with custom <code>model_config</code> since the config is inherited:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">PydanticBaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
-<span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">PydanticBaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">arbitrary_types_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">MyClass</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A random class&quot;&quot;&quot;</span>
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">Parent</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>  <span class="c1"># (1)!</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">MyClass</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: &#39;foo&#39;, &#39;y&#39;: &#39;bar&#39;}</span>
 </code></pre></div>
 <ol>
-<li>Since <code>BaseModel</code> is a subclass of <code>PydanticBaseModel</code>, it will inherit the <code>model_config</code> attribute.
-   This means that <code>Model</code> will have <code>arbitrary_types_allowed=True</code> by default.</li>
+<li>Since <code>Parent</code> is a subclass of <code>BaseModel</code>, it will inherit the <code>model_config</code> attribute.
+   This means that <code>Model</code> will have <code>extra='allow'</code> by default.</li>
 </ol>
+<p>If you add a <code>model_config</code> to the <code>Model</code> class, it will <em>merge</em> with the <code>model_config</code> from <code>Parent</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">Parent</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;FOO&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: &#39;foo&#39;, &#39;y&#39;: &#39;bar&#39;}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_config</span><span class="p">)</span>
+<span class="c1">#&gt; {&#39;extra&#39;: &#39;allow&#39;, &#39;str_to_lower&#39;: True}</span>
+</code></pre></div>
 <h2 id="alias-generator">Alias Generator<a class="headerlink" href="#alias-generator" title="Permanent link">&para;</a></h2>
 <p>If data source field names do not match your code style (e. g. CamelCase fields),
 you can automatically generate aliases using <code>alias_generator</code>:</p>
