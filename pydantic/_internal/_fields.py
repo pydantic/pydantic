@@ -200,6 +200,9 @@ def collect_dataclass_fields(
             continue
 
         if isinstance(dataclass_field.default, FieldInfo):
+            if dataclass_field.default.init_var:
+                # TODO: same note as above
+                continue
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field.default)
         else:
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
