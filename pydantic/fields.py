@@ -891,7 +891,7 @@ def computed_field(
     repr: bool = True,
     return_type: Any = None,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Decorate to include `property` and `cached_property` when serialising models.
+    """Decorate to include `property` and `cached_property` when serializing models.
 
     If applied to functions not yet decorated with `@property` or `@cached_property`, the function is
     automatically wrapped with `property`.
@@ -904,7 +904,7 @@ def computed_field(
         description: Description to used when including this computed field in JSON Schema, defaults to the functions
             docstring, currently unused waiting for #4697
         repr: whether to include this computed field in model repr
-        return_type: optional return for serialization logic to expect when serialising to JSON, if included
+        return_type: optional return for serialization logic to expect when serializing to JSON, if included
             this must be correct, otherwise a `TypeError` is raised.
             If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
             objects.

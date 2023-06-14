@@ -1110,7 +1110,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * **breaking change**: remove msgpack parsing #201
 * add `FilePath` and `DirectoryPath` types #10
 * model schema generation #190
-* JSON serialisation of models and schemas #133
+* JSON serialization of models and schemas #133
 
 ## v0.10.0 (2018-06-11)
 
