@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#self-referencing-models" class="md-skip">
+        <a href="#self-referencing-or-recursive-models" class="md-skip">
           Skip to content
         </a>
       
@@ -1150,8 +1150,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#self-referencing-models" class="md-nav__link">
-    Self-referencing Models
+  <a href="#self-referencing-or-recursive-models" class="md-nav__link">
+    Self-referencing (or "Recursive") Models
   </a>
   
 </li>
@@ -2035,8 +2035,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#self-referencing-models" class="md-nav__link">
-    Self-referencing Models
+  <a href="#self-referencing-or-recursive-models" class="md-nav__link">
+    Self-referencing (or "Recursive") Models
   </a>
   
 </li>
@@ -2062,10 +2062,6 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Postponed annotations</h1>
 
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Both postponed annotations via the future import and <code>ForwardRef</code> require Python 3.7+.</p>
-</div>
 <p>Postponed annotations (as described in <a href="https://www.python.org/dev/peps/pep-0563/">PEP563</a>)
 "just work".</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
@@ -2083,10 +2079,9 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;ok&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; a=[1, 2, 3] b=&#39;ok&#39;</span>
 </code></pre></div>
-<p>Internally, Pydantic  will call a method similar to <code>typing.get_type_hints</code> to resolve annotations.</p>
-<p>In cases where the referenced type is not yet defined, <code>ForwardRef</code> can be used (although referencing the
-type directly or by its string is a simpler solution in the case of
-<a href="#self-referencing-models">self-referencing models</a>).</p>
+<p>Internally, Pydantic will call a method similar to <code>typing.get_type_hints</code> to resolve annotations.</p>
+<p>Even without using <code>from __future__ import annotations</code>, in cases where the referenced type is not yet defined, a
+<code>ForwardRef</code> or string can be used:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ForwardRef</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -2104,8 +2099,8 @@ type directly or by its string is a simpler solution in the case of
 <span class="nb">print</span><span class="p">(</span><span class="n">Foo</span><span class="p">(</span><span class="n">b</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;321&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; a=123 b=Foo(a=321, b=None)</span>
 </code></pre></div>
-<h2 id="self-referencing-models">Self-referencing Models<a class="headerlink" href="#self-referencing-models" title="Permanent link">&para;</a></h2>
-<p>Data structures with self-referencing models are also supported. Self-referencing fields will be automatically
+<h2 id="self-referencing-or-recursive-models">Self-referencing (or "Recursive") Models<a class="headerlink" href="#self-referencing-or-recursive-models" title="Permanent link">&para;</a></h2>
+<p>Models with self-referencing fields are also supported. Self-referencing fields will be automatically
 resolved after model creation.</p>
 <p>Within the model, you can refer to the not-yet-constructed model using a string:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -2122,9 +2117,7 @@ resolved after model creation.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Foo</span><span class="p">(</span><span class="n">sibling</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;321&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; a=123 sibling=Foo(a=321, sibling=None)</span>
 </code></pre></div>
-<p>Since Python 3.7, you can also refer it by its type, provided you import <code>annotations</code> (see
-<a href="./">above</a> for support depending on Python
-and Pydantic versions).</p>
+<p>If you use <code>from __future__ import annotations</code>, you can also just refer to the model by its type name:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>

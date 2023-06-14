@@ -1186,6 +1186,19 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Environment variable names
   </a>
   
+    <nav class="md-nav" aria-label="Environment variable names">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#case-sensitivity" class="md-nav__link">
+    Case-sensitivity
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1200,14 +1213,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Dotenv (.env) support
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#secret-support" class="md-nav__link">
-    Secret Support
-  </a>
-  
-    <nav class="md-nav" aria-label="Secret Support">
+    <nav class="md-nav" aria-label="Dotenv (.env) support">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2120,6 +2126,19 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Environment variable names
   </a>
   
+    <nav class="md-nav" aria-label="Environment variable names">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#case-sensitivity" class="md-nav__link">
+    Case-sensitivity
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2134,14 +2153,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Dotenv (.env) support
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#secret-support" class="md-nav__link">
-    Secret Support
-  </a>
-  
-    <nav class="md-nav" aria-label="Secret Support">
+    <nav class="md-nav" aria-label="Dotenv (.env) support">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2234,14 +2246,13 @@ will still be used if the matching environment variable is not set.)</p>
     <span class="n">AliasChoices</span><span class="p">,</span>
     <span class="n">AmqpDsn</span><span class="p">,</span>
     <span class="n">BaseModel</span><span class="p">,</span>
-    <span class="n">ConfigDict</span><span class="p">,</span>
     <span class="n">Field</span><span class="p">,</span>
     <span class="n">ImportString</span><span class="p">,</span>
     <span class="n">PostgresDsn</span><span class="p">,</span>
     <span class="n">RedisDsn</span><span class="p">,</span>
 <span class="p">)</span>
 
-<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -2250,17 +2261,16 @@ will still be used if the matching environment variable is not set.)</p>
 
 
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="n">auth_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_auth_key&#39;</span><span class="p">)</span>
-    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_api_key&#39;</span><span class="p">)</span>
+    <span class="n">auth_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_auth_key&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 
     <span class="n">redis_dsn</span><span class="p">:</span> <span class="n">RedisDsn</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="s1">&#39;redis://user:pass@localhost:6379/1&#39;</span><span class="p">,</span>
-        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;service_redis_dsn&#39;</span><span class="p">,</span> <span class="s1">&#39;redis_url&#39;</span><span class="p">),</span>
+        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;service_redis_dsn&#39;</span><span class="p">,</span> <span class="s1">&#39;redis_url&#39;</span><span class="p">),</span>  <span class="c1"># (2)!</span>
     <span class="p">)</span>
     <span class="n">pg_dsn</span><span class="p">:</span> <span class="n">PostgresDsn</span> <span class="o">=</span> <span class="s1">&#39;postgres://user:pass@localhost:5432/foobar&#39;</span>
     <span class="n">amqp_dsn</span><span class="p">:</span> <span class="n">AmqpDsn</span> <span class="o">=</span> <span class="s1">&#39;amqp://user:pass@localhost:5672/&#39;</span>
 
-    <span class="n">special_function</span><span class="p">:</span> <span class="n">ImportString</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;math.cos&#39;</span>
+    <span class="n">special_function</span><span class="p">:</span> <span class="n">ImportString</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;math.cos&#39;</span>  <span class="c1"># (3)!</span>
 
     <span class="c1"># to override domains:</span>
     <span class="c1"># export my_prefix_domains=&#39;[&quot;foo.com&quot;, &quot;bar.com&quot;]&#39;</span>
@@ -2270,14 +2280,13 @@ will still be used if the matching environment variable is not set.)</p>
     <span class="c1"># export my_prefix_more_settings=&#39;{&quot;foo&quot;: &quot;x&quot;, &quot;apple&quot;: 1}&#39;</span>
     <span class="n">more_settings</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">()</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;my_prefix_&#39;</span><span class="p">)</span>  <span class="c1"># defaults to no prefix, i.e. &quot;&quot;</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;my_prefix_&#39;</span><span class="p">)</span>  <span class="c1"># (4)!</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">{</span>
 <span class="sd">    &#39;auth_key&#39;: &#39;xxx&#39;,</span>
-<span class="sd">    &#39;api_key&#39;: &#39;xxx&#39;,</span>
 <span class="sd">    &#39;redis_dsn&#39;: Url(&#39;redis://user:pass@localhost:6379/1&#39;),</span>
 <span class="sd">    &#39;pg_dsn&#39;: Url(&#39;postgres://user:pass@localhost:5432/foobar&#39;),</span>
 <span class="sd">    &#39;amqp_dsn&#39;: Url(&#39;amqp://user:pass@localhost:5672/&#39;),</span>
@@ -2287,63 +2296,119 @@ will still be used if the matching environment variable is not set.)</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+<ol>
+<li>
+<p>The environment variable name is overridden using <code>validation_alias</code>. In this case, the environment variable
+   <code>my_auth_key</code> will be read instead of <code>auth_key</code>.</p>
+<p>Check the <a href="/usage/fields/"><code>Field</code> documentation</a> for more information.</p>
+</li>
+<li>
+<p>The <code>AliasChoices</code> class allows to have multiple environment variable names for a single field.
+   The first environment variable that is found will be used.</p>
+<p>Check the <a href="/usage/fields/#aliaspath-and-aliaschoices"><code>AliasChoices</code></a> for more information.</p>
+</li>
+<li>
+<p>The <code>ImportString</code> class allows to import an object from a string.
+   In this case, the environment variable <code>special_function</code> will be read and the function <code>math.cos</code> will be imported.</p>
+</li>
+<li>
+<p>The <code>env_prefix</code> config setting allows to set a prefix for all environment variables.</p>
+<p>Check the <a href="#environment-variable-names">Environment variable names documentation</a> for more information.</p>
+</li>
+</ol>
 <h2 id="environment-variable-names">Environment variable names<a class="headerlink" href="#environment-variable-names" title="Permanent link">&para;</a></h2>
-<p>The following rules are used to determine which environment variable(s) are read for a given field:</p>
-<ul>
-<li>By default, the environment variable name is built by concatenating the prefix and field name.</li>
-<li>
-<p>For example, to override <code>special_function</code> above, you could use:</p>
-<div class="highlight"><pre><span></span><code>  export my_prefix_special_function=&#39;foo.bar&#39;
-</code></pre></div>
-</li>
-<li>
-<p>Note : The default prefix is an empty string.</p>
-</li>
-<li>
-<p>Custom environment variable names can be set like:</p>
-</li>
-<li><code>Field(validation_alias=...)</code> (see <code>api_key</code> and <code>redis_dsn</code> above)</li>
-<li>When specifying custom environment variable names, either a string, <code>AliasChoices</code>, <code>AliasPath</code> my be provided.</li>
-<li><code>env_prefix</code> is not considered.</li>
-<li>When specifying a <code>AliasChoices</code>, order matters: the first detected value is used.</li>
-<li>For example, for <code>redis_dsn</code> above, <code>service_redis_dsn</code> would take precedence over <code>redis_url</code>.</li>
-</ul>
-<p>Case-sensitivity can be turned on through the <code>model_config</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
-
-<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<p>By default, the environment variable name is the same as the field name.</p>
+<p>You can change the prefix for all environment variables by setting the <code>env_prefix</code> config setting:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;my_prefix_&#39;</span><span class="p">)</span>
+
+    <span class="n">auth_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;xxx&#39;</span>  <span class="c1"># will be read from `my_prefix_auth_key`</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The default <code>env_prefix</code> is <code>''</code> (empty string).</p>
+</div>
+<p>If you want to change the environment variable name for a single field, you can use an alias.</p>
+<p>There are two ways to do this:</p>
+<ul>
+<li>Using <code>Field(alias=...)</code> (see <code>api_key</code> above)</li>
+<li>Using <code>Field(validation_alias=...)</code> (see <code>auth_key</code> above)</li>
+</ul>
+<p>Check the <a href="/usage/fields#field-aliases"><code>Field</code> aliases documentation</a> for more information about aliases.</p>
+<h3 id="case-sensitivity">Case-sensitivity<a class="headerlink" href="#case-sensitivity" title="Permanent link">&para;</a></h3>
+<p>By default, environment variable names are case-insensitive.</p>
+<p>If you want to make environment variable names case-sensitive, you can set the <code>case_sensitive</code> config setting:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="n">redis_host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span>
 </code></pre></div>
 <p>When <code>case_sensitive</code> is <code>True</code>, the environment variable names must match field names (optionally with a prefix),
-so in this example
-<code>redis_host</code> could only be modified via <code>export redis_host</code>. If you want to name environment variables
+so in this example <code>redis_host</code> could only be modified via <code>export redis_host</code>. If you want to name environment variables
 all upper-case, you should name attribute all upper-case too. You can still name environment variables anything
 you like through <code>Field(validation_alias=...)</code>.</p>
-<p>In Pydantic <strong>v1</strong> <code>case_sensitive</code> is <code>False</code> by default and all variable names are converted to lower-case internally.
-If you want to define upper-case variable names on nested models like <code>SubModel</code> you have to
-set <code>case_sensitive=True</code> to disable this behaviour.</p>
+<p>In case of nested models, the <code>case_sensitive</code> setting will be applied to all nested models.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">RedisSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">redis</span><span class="p">:</span> <span class="n">RedisSettings</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;redis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;{&quot;host&quot;: &quot;localhost&quot;, &quot;port&quot;: 6379}&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;redis&#39;: {&#39;host&#39;: &#39;localhost&#39;, &#39;port&#39;: 6379}}</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;redis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;{&quot;HOST&quot;: &quot;localhost&quot;, &quot;port&quot;: 6379}&#39;</span>  <span class="c1"># (1)!</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Settings</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for RedisSettings</span>
+<span class="sd">    host</span>
+<span class="sd">      Field required [type=missing, input_value={&#39;HOST&#39;: &#39;localhost&#39;, &#39;port&#39;: 6379}, input_type=dict]</span>
+<span class="sd">        For further information visit https://errors.pydantic.dev/2/v/missing</span>
+<span class="sd">    HOST</span>
+<span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;localhost&#39;, input_type=str]</span>
+<span class="sd">        For further information visit https://errors.pydantic.dev/2/v/extra_forbidden</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>Note that the <code>host</code> field is not found because the environment variable name is <code>HOST</code> (all upper-case).</li>
+</ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>On Windows, Python's <code>os</code> module always treats environment variables as case-insensitive, so the
 <code>case_sensitive</code> config setting will have no effect - settings will always be updated ignoring case.</p>
 </div>
 <h2 id="parsing-environment-variable-values">Parsing environment variable values<a class="headerlink" href="#parsing-environment-variable-values" title="Permanent link">&para;</a></h2>
-<p>For most simple field types (such as <code>int</code>, <code>float</code>, <code>str</code>, etc.),
-the environment variable value is parsed the same way it would
-be if passed directly to the initialiser (as a string).</p>
-<p>Complex types like <code>list</code>, <code>set</code>, <code>dict</code>, and sub-models are populated from the environment
-by treating the environment variable's value as a JSON-encoded string.</p>
+<p>For most simple field types (such as <code>int</code>, <code>float</code>, <code>str</code>, etc.), the environment variable value is parsed
+the same way it would be if passed directly to the initialiser (as a string).</p>
+<p>Complex types like <code>list</code>, <code>set</code>, <code>dict</code>, and sub-models are populated from the environment by treating the
+environment variable's value as a JSON-encoded string.</p>
 <p>Another way to populate nested complex variables is to configure your model with the <code>env_nested_delimiter</code>
-config setting, then use an env variable with a name pointing to the nested module fields.
+config setting, then use an environment variable with a name pointing to the nested module fields.
 What it does is simply explodes your variable into nested models or dicts.
 So if you define a variable <code>FOO__BAR__BAZ=123</code> it will convert it into <code>FOO={'BAR': {'BAZ': 123}}</code>
 If you have multiple variables with the same structure they will be merged.</p>
-<p>With the following environment variables:
+<p>As an example, given the following environment variables:
 <div class="highlight"><pre><span></span><code><span class="c1"># your environment</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">V0</span><span class="o">=</span><span class="m">0</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">SUB_MODEL</span><span class="o">=</span><span class="s1">&#39;{&quot;v1&quot;: &quot;json-1&quot;, &quot;v2&quot;: &quot;json-2&quot;}&#39;</span>
@@ -2351,10 +2416,10 @@ If you have multiple variables with the same structure they will be merged.</p>
 <span class="nb">export</span><span class="w"> </span><span class="nv">SUB_MODEL__V3</span><span class="o">=</span><span class="m">3</span>
 <span class="nb">export</span><span class="w"> </span><span class="nv">SUB_MODEL__DEEP__V4</span><span class="o">=</span>v4
 </code></pre></div></p>
-<p>You could load a settings module thus:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<p>You could load them into the following settings model:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
-<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">DeepSubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -2369,7 +2434,7 @@ If you have multiple variables with the same structure they will be merged.</p>
 
 
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;__&#39;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_nested_delimiter</span><span class="o">=</span><span class="s1">&#39;__&#39;</span><span class="p">)</span>
 
     <span class="n">v0</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">sub_model</span><span class="p">:</span> <span class="n">SubModel</span>
@@ -2432,35 +2497,29 @@ validators on those models.</p>
 <span class="c1">#&gt; {&#39;numbers&#39;: [1, 2, 3]}</span>
 </code></pre></div>
 <h2 id="dotenv-env-support">Dotenv (.env) support<a class="headerlink" href="#dotenv-env-support" title="Permanent link">&para;</a></h2>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>dotenv file parsing requires <a href="https://pypi.org/project/python-dotenv/">python-dotenv</a> to be installed.
-This can be done with either <code>pip install python-dotenv</code> or <code>pip install pydantic[dotenv]</code>.</p>
-</div>
 <p>Dotenv files (generally named <code>.env</code>) are a common pattern that make it easy to use environment variables in a
 platform-independent manner.</p>
-<p>A dotenv file follows the same general principles of all environment variables,
-and looks something like:</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># ignore comment</span>
+<p>A dotenv file follows the same general principles of all environment variables, and it looks like this:</p>
+<div class="highlight"><span class="filename">.env</span><pre><span></span><code><span class="c1"># ignore comment</span>
 <span class="nv">ENVIRONMENT</span><span class="o">=</span><span class="s2">&quot;production&quot;</span>
 <span class="nv">REDIS_ADDRESS</span><span class="o">=</span>localhost:6379
 <span class="nv">MEANING_OF_LIFE</span><span class="o">=</span><span class="m">42</span>
 <span class="nv">MY_VAR</span><span class="o">=</span><span class="s1">&#39;Hello world&#39;</span>
 </code></pre></div>
 <p>Once you have your <code>.env</code> file filled with variables, <em>pydantic</em> supports loading it in two ways:</p>
-<p><strong>1.</strong> setting <code>env_file</code> (and <code>env_file_encoding</code> if you don't want the default encoding of your OS) on <code>model_config</code>
-in a <code>BaseSettings</code> class:</p>
+<ol>
+<li>Setting the <code>env_file</code> (and <code>env_file_encoding</code> if you don't want the default encoding of your OS) on <code>model_config</code>
+in the <code>BaseSettings</code> class:</li>
+</ol>
 <p>```py test="skip" lint="skip"
 class Settings(BaseSettings):
-    model_config = ConfigDict(env_file='.env', env_file_encoding = 'utf-8')</p>
-<div class="highlight"><pre><span></span><code>...
-</code></pre></div>
-<div class="highlight"><pre><span></span><code>**2.** instantiating a `BaseSettings` derived class with the `_env_file` keyword argument
+    model_config = SettingsConfigDict(env_file='.env', env_file_encoding = 'utf-8')
+<div class="highlight"><pre><span></span><code>2. Instantiating the `BaseSettings` derived class with the `_env_file` keyword argument
 (and the `_env_file_encoding` if needed):
 
 ```py test=&quot;skip&quot; lint=&quot;skip&quot;
 settings = Settings(_env_file=&#39;prod.env&#39;, _env_file_encoding=&#39;utf-8&#39;)
-</code></pre></div>
+</code></pre></div></p>
 <p>In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
 current working directory. From there, <em>pydantic</em> will handle everything for you by loading in your variables and
 validating them.</p>
@@ -2474,49 +2533,47 @@ won't check any parent directories for the <code>.env</code> file.</p>
 <p>Passing a file path via the <code>_env_file</code> keyword argument on instantiation (method 2) will override
 the value (if any) set on the <code>model_config</code> class. If the above snippets were used in conjunction, <code>prod.env</code> would be loaded
 while <code>.env</code> would be ignored.</p>
-<p>If you need to load multiple dotenv files, you can pass the file paths as a <code>list</code> or <code>tuple</code>.</p>
-<p>Later files in the list/tuple will take priority over earlier files.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
+<p>If you need to load multiple dotenv files, you can pass multiple file paths as a tuple or list. The files will be
+loaded in order, with each file overriding the previous one.</p>
+<p><code>``py test="skip" lint="skip"
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        #</code>.env.prod<code>takes priority over</code>.env`
+        env_file=('.env', '.env.prod')
+    )
+<div class="highlight"><pre><span></span><code>You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
+the `model_config` class) by passing `None` as the instantiation keyword argument, e.g. `settings = Settings(_env_file=None)`.
 
-<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+Because python-dotenv is used to parse the file, bash-like semantics such as `export` can be used which
+(depending on your OS and environment) may allow your dotenv file to also be used with `source`,
+see [python-dotenv&#39;s documentation](https://saurabh-kumar.com/python-dotenv/#usages) for more details.
 
+Pydantic settings consider `extra` config in case of dotenv file. It means if you set the `extra=forbid`
+on `model_config` and your dotenv file contains an entry for a field that is not defined in settings model,
+it will raise `ValidationError` in settings construction.
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
-        <span class="c1"># `.env.prod` takes priority over `.env`</span>
-        <span class="n">env_file</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="s1">&#39;.env.prod&#39;</span><span class="p">)</span>
-    <span class="p">)</span>
+## Secrets
 
-    <span class="o">...</span>
-</code></pre></div>
-<p>You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
-the <code>model_config</code> class) by passing <code>None</code> as the instantiation keyword argument, e.g. <code>settings = Settings(_env_file=None)</code>.</p>
-<p>Because python-dotenv is used to parse the file, bash-like semantics such as <code>export</code> can be used which
-(depending on your OS and environment) may allow your dotenv file to also be used with <code>source</code>,
-see <a href="https://saurabh-kumar.com/python-dotenv/#usages">python-dotenv's documentation</a> for more details.</p>
-<p>Pydantic settings consider <code>extra</code> config in case of dotenv file. It means if you set the <code>extra=forbid</code>
-on <code>model_config</code> and your dotenv file contains an entry for a field that is not defined in settings model,
-it will raise <code>ValidationError</code> in settings construction.</p>
-<h2 id="secret-support">Secret Support<a class="headerlink" href="#secret-support" title="Permanent link">&para;</a></h2>
-<p>Placing secret values in files is a common pattern to provide sensitive configuration to an application.</p>
-<p>A secret file follows the same principal as a dotenv file except it only contains a single value and the file name
-is used as the key. A secret file will look like the following:</p>
-<p><code>/var/run/database_password</code>:
-<div class="highlight"><pre><span></span><code>super_secret_database_password
+Placing secret values in files is a common pattern to provide sensitive configuration to an application.
+
+A secret file follows the same principal as a dotenv file except it only contains a single value and the file name
+is used as the key. A secret file will look like the following:
+
+``` title=&quot;/var/run/database_password&quot;
+super_secret_database_password
 </code></pre></div></p>
 <p>Once you have your secret files, <em>pydantic</em> supports loading it in two ways:</p>
-<p><strong>1.</strong> setting <code>secrets_dir</code> on <code>model_config</code> in a <code>BaseSettings</code> class to the directory where your secret files are stored:</p>
+<ol>
+<li>Setting the <code>secrets_dir</code> on <code>model_config</code> in a <code>BaseSettings</code> class to the directory where your secret files are stored.</li>
+</ol>
 <p>```py test="skip" lint="skip"
 class Settings(BaseSettings):
-    model_config = ConfigDict(secrets_dir='/var/run')</p>
-<div class="highlight"><pre><span></span><code>...
-database_password: str
+    model_config = SettingsConfigDict(secrets_dir='/var/run')</p>
+<div class="highlight"><pre><span></span><code>database_password: str
 </code></pre></div>
-<div class="highlight"><pre><span></span><code>**2.** instantiating a `BaseSettings` derived class with the `_secrets_dir` keyword argument:
-
-```py test=&quot;skip&quot; lint=&quot;skip&quot;
-settings = Settings(_secrets_dir=&#39;/var/run&#39;)
-</code></pre></div>
+<p><code>2. Instantiating the `BaseSettings` derived class with the `_secrets_dir` keyword argument:</code>py test="skip" lint="skip"
+settings = Settings(_secrets_dir='/var/run')
+```</p>
 <p>In either case, the value of the passed argument can be any valid directory, either absolute or relative to the
 current working directory. <strong>Note that a non existent directory will only generate a warning</strong>.
 From there, <em>pydantic</em> will handle everything for you by loading in your variables and validating them.</p>
@@ -2529,17 +2586,18 @@ the value (if any) set on the <code>model_config</code> class.</p>
 To use these secrets in a <em>pydantic</em> application the process is simple. More information regarding creating, managing
 and using secrets in Docker see the official
 <a href="https://docs.docker.com/engine/reference/commandline/secret/">Docker documentation</a>.</p>
-<p>First, define your Settings
-```py test="skip" lint="skip"
+<p>First, define your <code>Settings</code> class with a <code>SettingsConfigDict</code> that specifies the secrets directory.</p>
+<p>```py test="skip" lint="skip"
 class Settings(BaseSettings):
-    model_config = ConfigDict(secrets_dir='/run/secrets')</p>
+    model_config = SettingsConfigDict(secrets_dir='/run/secrets')</p>
 <div class="highlight"><pre><span></span><code>my_secret_data: str
 </code></pre></div>
-<p>```</p>
+<p>```
+</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>By default Docker uses <code>/run/secrets</code> as the target mount point. If you want to use a different location, change
-<code>Config.secrets_dir</code> accordingly.
+<p>By default <a href="https://docs.docker.com/engine/swarm/secrets/#how-docker-manages-secrets">Docker uses <code>/run/secrets</code></a>
+as the target mount point. If you want to use a different location, change <code>Config.secrets_dir</code> accordingly.
 </p>
 </div>
 <p>Then, create your secret via the Docker CLI
@@ -2599,10 +2657,13 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
 <span class="kn">from</span> <span class="nn">pydantic.fields</span> <span class="kn">import</span> <span class="n">FieldInfo</span>
 
-<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PydanticBaseSettingsSource</span>
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+    <span class="n">SettingsConfigDict</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">JsonConfigSettingsSource</span><span class="p">(</span><span class="n">PydanticBaseSettingsSource</span><span class="p">):</span>
@@ -2646,7 +2707,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 
 
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">env_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
 
     <span class="n">foobar</span><span class="p">:</span> <span class="nb">str</span>
 
