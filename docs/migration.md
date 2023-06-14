@@ -312,13 +312,13 @@ input whenever possible, even if the correct type is not the first choice for wh
 As a demonstration, consider the following example:
 
 ```python
-from __future__ import annotations
+from typing import Union
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    x: int | str
+    x: Union[int, str]
 
 
 print(Model(x='1'))
@@ -385,9 +385,7 @@ print(adapter.json_schema())
 Due to limitations of inferring generic types with common type checkers, to get proper typing in some scenarios, you
 may need to explicitly specify the generic parameter:
 
-```python
-from __future__ import annotations
-
+```python test="skip"
 from pydantic import TypeAdapter
 
 adapter: TypeAdapter[str | int] = TypeAdapter(str | int)
