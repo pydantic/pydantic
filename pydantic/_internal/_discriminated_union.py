@@ -23,9 +23,16 @@ def apply_discriminator(
         The new core schema.
 
     Raises:
-        TypeError
-        ValueError
-        PydanticUserError
+        TypeError:
+            * If `discriminator` is used with invalid union variant.
+            * If `discriminator` is used with `Union` type with one variant.
+            * If `discriminator` value mapped to multiple choices.
+        ValueError: If the definition for ref is missing.
+        PydanticUserError:
+            * If a model in union doesn't have a discriminator field.
+            * If discriminator field has a non-string alias.
+            * If discriminator fields have different aliases.
+            * If discriminator field not of type `Literal`.
     """
     return _ApplyInferredDiscriminator(discriminator, definitions or {}).apply(schema)
 
@@ -108,9 +115,16 @@ class _ApplyInferredDiscriminator:
             The new core schema.
 
         Raises:
-            TypeError
-            ValueError
-            PydanticUserError
+            TypeError:
+                * If `discriminator` is used with invalid union variant.
+                * If `discriminator` is used with `Union` type with one variant.
+                * If `discriminator` value mapped to multiple choices.
+            ValueError: If the definition for ref is missing.
+            PydanticUserError:
+                * If a model in union doesn't have a discriminator field.
+                * If discriminator field has a non-string alias.
+                * If discriminator fields have different aliases.
+                * If discriminator field not of type `Literal`.
         """
         old_definitions = collect_definitions(schema)
         self.definitions = {**old_definitions, **self.definitions}
