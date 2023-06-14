@@ -622,3 +622,13 @@ def test_config_wrapper_get_item():
     assert config_wrapper.title == 'test'
     with pytest.raises(AttributeError, match="Config has no attribute 'test'"):
         config_wrapper.test
+
+
+def test_config_inheritance_with_annotations():
+    class Parent(BaseModel):
+        model_config: ConfigDict = {'extra': 'allow'}
+
+    class Child(Parent):
+        model_config: ConfigDict = {'str_to_lower': True}
+
+    assert Child.model_config == {'extra': 'allow', 'str_to_lower': True}
