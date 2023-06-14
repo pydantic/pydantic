@@ -443,13 +443,6 @@ print(foo)
 
 ## Decimal Constraints
 
-<!--
-* `max_digits`: for `Decimal` values, this adds a validation to have a maximum number of digits within the decimal. It
-  does not include a zero before the decimal point or trailing decimal zeroes.
-* `decimal_places`: for `Decimal` values, this adds a validation to have at most a number of decimal places allowed. It
-  does not include trailing decimal zeroes.
- -->
-
 There are fields that can be used to constrain decimals:
 
 * `max_digits`: Maximum number of digits within the `Decimal`. It does not include a zero before the decimal point or
