@@ -3125,13 +3125,23 @@ contain information about all the errors and how they happened.</p>
 </div>
 </div>
 <h3 id="creating-models-without-validation">Creating models without validation<a class="headerlink" href="#creating-models-without-validation" title="Permanent link">&para;</a></h3>
-<p>Pydantic also provides the <code>model_construct()</code> method which allows models to be created <strong>without validation</strong> this
-can be useful when data has already been validated or comes from a trusted source and you want to create a model
-as efficiently as possible (<code>model_construct()</code> is generally around 30x faster than creating a model with full validation).</p>
+<p>Pydantic also provides the <code>model_construct()</code> method, which allows models to be created <strong>without validation</strong>. This
+can be useful in at least a few cases:</p>
+<ul>
+<li>when working with complex data that is already known to be valid (for performance reasons)</li>
+<li>when one or more of the validator functions are non-idempotent, or</li>
+<li>when one or more of the validator functions have side effects that you don't want to be triggered.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In Pydantic V2, the performance gap between <code>BaseModel.__init__</code> and <code>BaseModel.model_construct</code> has been narrowed
+considerably. For simple models, calling <code>BaseModel.__init__</code> may even be faster. If you are using <code>model_construct</code>
+for performance reasons, you may want to profile your use case before assuming that <code>model_construct</code> is faster.</p>
+</div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p><code>model_construct()</code> does not do any validation, meaning it can create models which are invalid. <strong>You should only
-ever use the <code>model_construct()</code> method with data which has already been validated, or you trust.</strong></p>
+ever use the <code>model_construct()</code> method with data which has already been validated, or that you definitely trust.</strong></p>
 </div>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3173,6 +3183,20 @@ which fields were originally set and which weren't. If it's omitted <code>model_
 of the data provided.</p>
 <p>For example, in the example above, if <code>_fields_set</code> was not provided,
 <code>new_user.model_fields_set</code> would be <code>{'id', 'age', 'name'}</code>.</p>
+<p>Note that for subclasses of <a href="#custom-root-types"><code>RootModel</code></a>, the root value can be passed to <code>model_construct</code>
+positionally, instead of using a keyword argument.</p>
+<p>Here are some additional notes on the behavior of <code>model_construct</code>:
+* When we say "no validation is performed" — this includes converting dicts to model instances. So if you have a field
+  with a <code>Model</code> type, you will need to convert the inner dict to a model yourself before passing it to
+  <code>model_construct</code>.
+  * In particular, the <code>model_construct</code> method does not support recursively constructing models from dicts.
+* If you do not pass keyword arguments for fields with defaults, the default values will still be used.
+* For models with <code>model_config['extra'] == 'allow'</code>, data not corresponding to fields will be correctly stored in
+  the <code>__pydantic_extra__</code> dict.
+* For models with private attributes, the <code>__pydantic_private__</code> dict will be initialized the same as it would be when
+  calling <code>__init__</code>.
+* When constructing an instance using <code>model_construct()</code>, no <code>__init__</code> method from the model or any of its parent
+  classes will be called, even when a custom <code>__init__</code> method is defined.</p>
 <h2 id="generic-models">Generic models<a class="headerlink" href="#generic-models" title="Permanent link">&para;</a></h2>
 <p>Pydantic supports the creation of generic models to make it easier to reuse a common model structure.</p>
 <p>In order to declare a generic model, you perform the following steps:</p>

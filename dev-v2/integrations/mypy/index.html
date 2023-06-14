@@ -2422,9 +2422,9 @@ should also work well with mypy.</p>
 </ul>
 <h3 id="generate-a-typed-signature-for-modelmodel_construct">Generate a typed signature for <code>Model.model_construct</code><a class="headerlink" href="#generate-a-typed-signature-for-modelmodel_construct" title="Permanent link">&para;</a></h3>
 <ul>
-<li>The <a href="../../usage/models/#creating-models-without-validation"><code>model_construct</code></a> method is a faster alternative to <code>__init__</code>
-  when input data is known to be valid and does not need to be parsed. But because this method performs no runtime
-  validation, static checking is important to detect errors.</li>
+<li>The <a href="../../usage/models/#creating-models-without-validation"><code>model_construct</code></a> method is an alternative to <code>__init__</code>
+  when input data is known to be valid and should not be parsed. Because this method performs no runtime validation,
+  static checking is important to detect errors.</li>
 </ul>
 <h3 id="respect-configallow_mutation">Respect <code>Config.allow_mutation</code><a class="headerlink" href="#respect-configallow_mutation" title="Permanent link">&para;</a></h3>
 <ul>
