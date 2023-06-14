@@ -408,7 +408,7 @@ def test_root_model_as_attr_with_validate_default():
     m = Model()
     assert m.rooted_value == RootModel[int](42)
     assert m.model_dump() == {'rooted_value': 42}
-    assert m.rooted_value.__pydantic_fields_set__ == set()
+    assert m.rooted_value.__pydantic_fields_set__ == {'root'}
 
 
 def test_root_model_in_root_model_default():
