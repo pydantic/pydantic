@@ -4621,3 +4621,15 @@ def test_json_schema_extras_on_ref() -> None:
         'examples': b'{"foo":{"name":"John","age":28}}',
         'title': 'ModelTitle',
     }
+
+
+def test_inclusion_of_defaults():
+    class Model(BaseModel):
+        x: int = 1
+        y: int = Field(default_factory=lambda: 2)
+
+    assert Model.model_json_schema() == {
+        'properties': {'x': {'default': 1, 'title': 'X', 'type': 'integer'}, 'y': {'title': 'Y', 'type': 'integer'}},
+        'title': 'Model',
+        'type': 'object',
+    }
