@@ -645,11 +645,11 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-pydantic-without-creating-a-basemodel" class="md-nav__link">
-    Using Pydantic without creating a BaseModel
+  <a href="#typeadapter" class="md-nav__link">
+    TypeAdapter
   </a>
   
-    <nav class="md-nav" aria-label="Using Pydantic without creating a BaseModel">
+    <nav class="md-nav" aria-label="TypeAdapter">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -665,8 +665,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-root-types" class="md-nav__link">
-    Custom root types
+  <a href="#rootmodel-and-custom-root-types" class="md-nav__link">
+    RootModel and custom root types
   </a>
   
 </li>
@@ -2342,11 +2342,11 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-pydantic-without-creating-a-basemodel" class="md-nav__link">
-    Using Pydantic without creating a BaseModel
+  <a href="#typeadapter" class="md-nav__link">
+    TypeAdapter
   </a>
   
-    <nav class="md-nav" aria-label="Using Pydantic without creating a BaseModel">
+    <nav class="md-nav" aria-label="TypeAdapter">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2362,8 +2362,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-root-types" class="md-nav__link">
-    Custom root types
+  <a href="#rootmodel-and-custom-root-types" class="md-nav__link">
+    RootModel and custom root types
   </a>
   
 </li>
@@ -3601,10 +3601,14 @@ extending a base model with extra fields.</p>
 <li>it must provide <code>__module__</code></li>
 </ul>
 </div>
-<h2 id="using-pydantic-without-creating-a-basemodel">Using Pydantic without creating a <code>BaseModel</code><a class="headerlink" href="#using-pydantic-without-creating-a-basemodel" title="Permanent link">&para;</a></h2>
+<h2 id="typeadapter"><code>TypeAdapter</code><a class="headerlink" href="#typeadapter" title="Permanent link">&para;</a></h2>
+<p><code>TypeAdapter</code> enables using Pydantic for type validation, serialization, and JSON schema without creating a <code>BaseModel</code></p>
 <p>You may have types that are not <code>BaseModel</code>s that you want to validate data against.
 Or you may want to validate a <code>List[SomeModel]</code>, or dump it to JSON.</p>
-<p>To do this Pydantic provides <code>TypeAdapter</code>. A <code>TypeAdapter</code> instance behaves nearly the same as a <code>BaseModel</code> instance, with the difference that <code>TypeAdapter</code> is not an actual type so you cannot use it in type annotations and such.</p>
+<p>To do this, Pydantic provides <code>TypeAdapter</code>.</p>
+<p>A <code>TypeAdapter</code> instance exposes some of the functionality from <code>BaseModel</code> instance methods
+for types that do not have such methods (such as dataclasses, primitive types, and more).</p>
+<p>Note that <code>TypeAdapter</code> is not an actual type, so you cannot use it in type annotations.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.7 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label><label for="__tabbed_9_3">Python 3.11 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3689,10 +3693,10 @@ Or you may want to validate a <code>List[SomeModel]</code>, or dump it to JSON.<
 </div>
 </div>
 </div>
-<p>For many use cases <code>TypeAdapter</code> can replace BaseModels with a <code>__root__</code> field in Pydantic V1.</p>
+<p>For some use cases, <code>TypeAdapter</code> can replace <code>BaseModel</code>s with a <code>__root__</code> field in Pydantic V1.</p>
 <h3 id="parsing-data-into-a-specified-type">Parsing data into a specified type<a class="headerlink" href="#parsing-data-into-a-specified-type" title="Permanent link">&para;</a></h3>
 <p><code>TypeAdapter</code> can be used to apply the parsing logic to populate pydantic models in a more ad-hoc way.
-This function behaves similarly to <code>BaseModel.model_validate</code>, but works with arbitrary pydantic-compatible types.</p>
+This function behaves similarly to <code>BaseModel.model_validate</code>, but works with arbitrary Pydantic-compatible types.</p>
 <p>This is especially useful when you want to parse results into a type that is not a direct subclass of <code>BaseModel</code>.
 For example:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.7 and above</label><label for="__tabbed_10_2">Python 3.9 and above</label></div>
@@ -3738,7 +3742,7 @@ For example:</p>
 </div>
 </div>
 <p><code>TypeAdapter</code> is capable of parsing data into any of the types pydantic can handle as fields of a <code>BaseModel</code>.</p>
-<h2 id="custom-root-types">Custom root types<a class="headerlink" href="#custom-root-types" title="Permanent link">&para;</a></h2>
+<h2 id="rootmodel-and-custom-root-types"><code>RootModel</code> and custom root types<a class="headerlink" href="#rootmodel-and-custom-root-types" title="Permanent link">&para;</a></h2>
 <p>Pydantic models can be defined with a custom root type by declaring the <code>RootModel</code>.</p>
 <p>The root type can be any type supported by pydantic, and is specified by the type hint of <code>RootModel</code>.
 The root value can be passed to the model <code>__init__</code> or <code>model_validate</code> as via the first and only argument.</p>

@@ -2226,7 +2226,7 @@ subclassing <code>pydantic.BaseModel</code> is the better choice.</p>
 <a href="https://github.com/pydantic/pydantic/issues/710">pydantic/pydantic#710</a>.</p>
 </div>
 <p>You can use all the standard <em>pydantic</em> field types. Note, however, that arguments passed to constructor will be copied in order to perform validation and, where necessary coercion.</p>
-<p>The schema can be accessed by <a href="../models/#using-pydantic-without-creating-a-basemodel">TypeAdapter</a>.
+<p>The schema can be accessed by <a href="../models/#typeadapter">TypeAdapter</a>.
 Also, fields that require a <code>default_factory</code> can be specified by either a <code>pydantic.Field</code> or a <code>dataclasses.field</code>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
@@ -2774,7 +2774,7 @@ with the help of <code>model_validator</code> decorator.</p>
 methods decorated with <code>model_validator</code>.</p>
 <h2 id="json-dumping">JSON dumping<a class="headerlink" href="#json-dumping" title="Permanent link">&para;</a></h2>
 <p><em>Pydantic</em> dataclasses do not feature a <code>.model_dump_json()</code> function. To dump them as JSON, you will need to
-make use of the <a href="../models/#custom-root-types">RootModel</a> as follows:</p>
+make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</a> as follows:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
