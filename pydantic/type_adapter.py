@@ -98,6 +98,11 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
 class TypeAdapter(Generic[T]):
     """A class representing the type adapter.
 
+    A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
+    for types that do not have such methods (such as dataclasses, primitive types, and more).
+
+    Note that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
+
     Attributes:
         core_schema: The core schema for the type.
         validator: The schema validator for the type.
@@ -183,8 +188,7 @@ class TypeAdapter(Generic[T]):
             context: Additional context to pass to the validator.
 
         Returns:
-            T: The validated object.
-
+            The validated object.
         """
         return self.validator.validate_python(__object, strict=strict, from_attributes=from_attributes, context=context)
 
@@ -199,13 +203,12 @@ class TypeAdapter(Generic[T]):
             context: Additional context to use during validation.
 
         Returns:
-            T: The validated object.
-
+            The validated object.
         """
         return self.validator.validate_json(__data, strict=strict, context=context)
 
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
-        """Get the default value for this model / type.
+        """Get the default value for the wrapped type.
 
         Args:
             strict: Whether to strictly check types.
@@ -230,7 +233,7 @@ class TypeAdapter(Generic[T]):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> Any:
-        """Dump a Python object to a serialized format.
+        """Dump an instance of the adapted type to a Python object.
 
         Args:
             __instance: The Python object to serialize.
@@ -274,7 +277,7 @@ class TypeAdapter(Generic[T]):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> bytes:
-        """Serialize the given instance to JSON.
+        """Serialize an instance of the adapted type to JSON.
 
         Args:
             __instance: The instance to be serialized.
@@ -312,7 +315,7 @@ class TypeAdapter(Generic[T]):
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
     ) -> dict[str, Any]:
-        """Generate a JSON schema for the model.
+        """Generate a JSON schema for the adapted type.
 
         Args:
             by_alias: Whether to use alias names for field names.
@@ -336,7 +339,7 @@ class TypeAdapter(Generic[T]):
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef], JsonSchemaValue]:
-        """Generate JSON schemas for multiple type adapters.
+        """Generate a JSON schema including definitions from multiple type adapters.
 
         Args:
             __inputs: Inputs to schema generation. The first two items will form the keys of the (first)

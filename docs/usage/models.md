@@ -787,12 +787,19 @@ except ValidationError as e:
     - the model must be defined globally
     - it must provide `__module__`
 
-## Using Pydantic without creating a `BaseModel`
+## `TypeAdapter`
+
+`TypeAdapter` enables using Pydantic for type validation, serialization, and JSON schema without creating a `BaseModel`
 
 You may have types that are not `BaseModel`s that you want to validate data against.
 Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
 
-To do this Pydantic provides `TypeAdapter`. A `TypeAdapter` instance behaves nearly the same as a `BaseModel` instance, with the difference that `TypeAdapter` is not an actual type so you cannot use it in type annotations and such.
+To do this, Pydantic provides `TypeAdapter`.
+
+A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
+for types that do not have such methods (such as dataclasses, primitive types, and more).
+
+Note that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
 
 ```py
 from typing import List
@@ -822,12 +829,12 @@ except ValidationError as e:
     """
 ```
 
-For many use cases `TypeAdapter` can replace BaseModels with a `__root__` field in Pydantic V1.
+For some use cases, `TypeAdapter` can replace `BaseModel`s with a `__root__` field in Pydantic V1.
 
 ### Parsing data into a specified type
 
 `TypeAdapter` can be used to apply the parsing logic to populate pydantic models in a more ad-hoc way.
-This function behaves similarly to `BaseModel.model_validate`, but works with arbitrary pydantic-compatible types.
+This function behaves similarly to `BaseModel.model_validate`, but works with arbitrary Pydantic-compatible types.
 
 This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
 For example:
@@ -854,7 +861,7 @@ print(items)
 
 `TypeAdapter` is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
 
-## Custom root types
+## `RootModel` and custom root types
 
 Pydantic models can be defined with a custom root type by declaring the `RootModel`.
 
