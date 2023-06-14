@@ -195,14 +195,13 @@ print(user)
 #> first_name='John' last_name='Doe'
 ```
 
-1. We are using `model_validate` to validate a dictionary using the field aliases.
-
-    You can see more details about [`model_validate`](/api/main/#pydantic.main.BaseModel.model_validate) in the API reference.
+We are using `model_validate` to validate a dictionary using the field aliases.
+You can see more details about [`model_validate`](/api/main/#pydantic.main.BaseModel.model_validate) in the API reference.
 
 In the `'first_name'` field, we are using the alias `'names'` and the index `0` to specify the path to the first name.
 In the `'last_name'` field, we are using the alias `'names'` and the index `1` to specify the path to the last name.
 
-The `AliasChoices` is used to specify a choice of aliases. For example:
+`AliasChoices` is used to specify a choice of aliases. For example:
 
 ```py lint="skip"
 from pydantic import BaseModel, Field, AliasChoices
