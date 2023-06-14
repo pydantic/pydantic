@@ -218,7 +218,7 @@ print(type(when()))
 #> <class 'datetime.datetime'>
 ```
 
-The [`alias`](fields.md#field-aliases) can be used with the decorator as normal.
+The [`alias`](/usage/fields/#field-aliases) can be used with the decorator as normal.
 
 ```py
 from typing_extensions import Annotated

@@ -180,7 +180,7 @@ print(voice.model_dump(by_alias=True))
 ```
 
 The same precedence applies to `validation_alias` and `serialization_alias`.
-See more about the different field aliases on [the dedicated section](/usage/fields.md#field-aliases).
+See more about the different field aliases on [the dedicated section](/usage/fields/#field-aliases).
 
 ## Extra Attributes
 
