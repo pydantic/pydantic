@@ -2174,18 +2174,18 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>str</code></td>          <td>
+          <td>
                 <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The converted string in camelCase.</p>
+              <p>The converted camelCase string.</p>
             </div>
           </td>
         </tr>
@@ -2211,7 +2211,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="sd">        snake: The string to convert.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        str: The converted string in camelCase.</span>
+<span class="sd">        The converted camelCase string.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">camel</span> <span class="o">=</span> <span class="n">to_pascal</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;(^_*[A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">camel</span><span class="p">)</span>
@@ -2269,18 +2269,18 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>str</code></td>          <td>
+          <td>
                 <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The converted string in PascalCase.</p>
+              <p>The PascalCase string.</p>
             </div>
           </td>
         </tr>
@@ -2306,7 +2306,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="sd">        snake: The string to convert.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        str: The converted string in PascalCase.</span>
+<span class="sd">        The PascalCase string.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">camel</span> <span class="o">=</span> <span class="n">snake</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;([0-9A-Za-z])_(?=[0-9A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">camel</span><span class="p">)</span>
@@ -2364,13 +2364,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>str</code></td>          <td>
+          <td>
                 <code>str</code>
           </td>
           <td>
@@ -2402,7 +2402,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="sd">        camel: The string to convert.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        str: The converted string in snake_case.</span>
+<span class="sd">        The converted string in snake_case.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-zA-Z])([0-9])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">camel</span><span class="p">)</span>
     <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-z0-9])([A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">snake</span><span class="p">)</span>

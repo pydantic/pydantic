@@ -2085,28 +2085,58 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <h1 id="bytes-and-bytesize">Bytes and ByteSize<a class="headerlink" href="#bytes-and-bytesize" title="Permanent link">&para;</a></h1>
 <dl>
 <dt><code>bytes</code></dt>
-<dd><code>bytes</code> are accepted as-is, <code>bytearray</code> is converted using <code>bytes(v)</code>, <code>str</code> are converted using <code>v.encode()</code>,
-  and <code>int</code>, <code>float</code>, and <code>Decimal</code> are coerced using <code>str(v).encode()</code></dd>
+<dd><code>bytes</code> are accepted as-is, <code>bytearray</code> is converted using <code>bytes(v)</code>, and <code>str</code> is converted using <code>v.encode()</code>.</dd>
 <dt><code>SecretBytes</code></dt>
-<dd>bytes where the value is kept partially secret; see <a href="../secrets/">Secrets</a></dd>
-<dt><code>conbytes</code></dt>
-<dd>type method for constraining bytes</dd>
+<dd>Like <code>bytes</code>, but where the value is kept partially secret; see <a href="../secrets/">Secrets</a>.</dd>
 <dt><code>ByteSize</code></dt>
-<dd>converts a bytes string with units to bytes</dd>
+<dd>Converts a string representing a number of bytes with units (such as <code>'1KB'</code> or <code>'11.5MiB'</code>) into an integer.</dd>
+<dt><code>conbytes</code></dt>
+<dd>A function which returns a type that can be used to add constraints to <code>bytes</code>.</dd>
 </dl>
 <h3 id="arguments-to-conbytes">Arguments to <code>conbytes</code><a class="headerlink" href="#arguments-to-conbytes" title="Permanent link">&para;</a></h3>
 <p>The following arguments are available when using the <code>conbytes</code> type function</p>
 <ul>
-<li><code>strip_whitespace: bool = False</code>: removes leading and trailing whitespace</li>
-<li><code>to_upper: bool = False</code>: turns all characters to uppercase</li>
-<li><code>to_lower: bool = False</code>: turns all characters to lowercase</li>
 <li><code>min_length: int = None</code>: minimum length of the byte string</li>
 <li><code>max_length: int = None</code>: maximum length of the byte string</li>
 <li><code>strict: bool = False</code>: controls type coercion</li>
 </ul>
+<p>However, for the sake of improved integration with type checkers, we now discourage the use of <code>conbytes</code> and other
+function calls used to return constrained types. Instead, you can use <code>pydantic.types.Strict</code> and <code>annotated_types.Len</code>
+as annotations to achieve these constraints:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Strict</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="c1"># Instead of `my_bytes: conbytes(strict=True, min_length=10, max_length=20)`, use:</span>
+    <span class="n">my_bytes</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Strict</span><span class="p">(),</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Strict</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="c1"># Instead of `my_bytes: conbytes(strict=True, min_length=10, max_length=20)`, use:</span>
+    <span class="n">my_bytes</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Strict</span><span class="p">(),</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="using-bytesize">Using ByteSize<a class="headerlink" href="#using-bytesize" title="Permanent link">&para;</a></h2>
-<p>You can use the <code>ByteSize</code> data type to convert byte string representation to
-raw bytes and print out human readable versions of the bytes as well.</p>
+<p>You can use the <code>ByteSize</code> data type to (case-insensitively) convert a string representation of a number of bytes into
+an integer, and also to print out human-readable strings representing a number of bytes.</p>
+<p>In conformance with <a href="https://en.wikipedia.org/wiki/ISO/IEC_80000">IEC 80000-13 Standard</a> we interpret <code>'1KB'</code> to mean 1000 bytes, and <code>'1KiB'</code> to mean 1024 bytes. In general, including a middle <code>'i'</code>
+will cause the unit to be interpreted as a power of 2, rather than a power of 10 (so, for example,
+<code>'1 MB'</code> is treated as <code>1_000_000</code> bytes, whereas <code>'1 MiB'</code> is treated as <code>1_048_576</code> bytes).</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>Note that <code>1b</code> will be parsed as "1 byte" and not "1 bit".</p>

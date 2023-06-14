@@ -2079,11 +2079,6 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   <h1>Unions</h1>
 
 <p>The <code>Union</code> type allows a model attribute to accept different types, e.g.:</p>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>You may get unexpected coercion with <code>Union</code>; see below.<br />
-Know that you can also make the check slower but stricter by using <a href="../../model_config/#smart-union">Smart Union</a></p>
-</div>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2151,75 +2146,11 @@ Know that you can also make the check slower but stricter by using <a href="../.
 </div>
 </div>
 </div>
-<p>However, as can be seen above, Pydantic will attempt to 'match' any of the types defined under <code>Union</code> and will use
-the first one that matches. In the above example the <code>id</code> of <code>user_03</code> was defined as a <code>uuid.UUID</code> class (which
-is defined under the attribute's <code>Union</code> annotation) but as the <code>uuid.UUID</code> can be marshalled into an <code>int</code> it
-chose to match against the <code>int</code> type and disregarded the other types.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><code>typing.Union</code> also ignores order when <a href="https://docs.python.org/3/library/typing.html#typing.Union">defined</a>,
-so <code>Union[int, float] == Union[float, int]</code> which can lead to unexpected behaviour
-when combined with matching based on the <code>Union</code> type order inside other type definitions, such as <code>List</code> and <code>Dict</code>
-types (because Python treats these definitions as singletons).
-For example, <code>Dict[str, Union[int, float]] == Dict[str, Union[float, int]]</code> with the order based on the first time it was defined.
-Please note that this can also be <a href="https://github.com/pydantic/pydantic/issues/2835">affected by third party libraries</a>
-and their internal type definitions and the import orders.</p>
-</div>
-<p>As such, it is recommended that, when defining <code>Union</code> annotations, the most specific type is included first and
-followed by less specific types.</p>
-<p>In the above example, the <code>UUID</code> class should precede the <code>int</code> and <code>str</code> classes to preclude the unexpected representation as such:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">UUID</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">user_03_uuid</span> <span class="o">=</span> <span class="n">UUID</span><span class="p">(</span><span class="s1">&#39;cf57432e-809e-4353-adbd-9d5c0d733868&#39;</span><span class="p">)</span>
-<span class="n">user_03</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">user_03_uuid</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_03</span><span class="p">)</span>
-<span class="c1">#&gt; id=UUID(&#39;cf57432e-809e-4353-adbd-9d5c0d733868&#39;) name=&#39;John Doe&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_03</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-<span class="c1">#&gt; cf57432e-809e-4353-adbd-9d5c0d733868</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_03_uuid</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
-<span class="c1">#&gt; 275603287559914445491632874575877060712</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="n">UUID</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">user_03_uuid</span> <span class="o">=</span> <span class="n">UUID</span><span class="p">(</span><span class="s1">&#39;cf57432e-809e-4353-adbd-9d5c0d733868&#39;</span><span class="p">)</span>
-<span class="n">user_03</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">user_03_uuid</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_03</span><span class="p">)</span>
-<span class="c1">#&gt; id=UUID(&#39;cf57432e-809e-4353-adbd-9d5c0d733868&#39;) name=&#39;John Doe&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_03</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-<span class="c1">#&gt; cf57432e-809e-4353-adbd-9d5c0d733868</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_03_uuid</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
-<span class="c1">#&gt; 275603287559914445491632874575877060712</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>The type <code>Optional[x]</code> is a shorthand for <code>Union[x, None]</code>.</p>
 <p><code>Optional[x]</code> can also be used to specify a required field that can take <code>None</code> as a value.</p>
-<p>See more details in <a href="../../models/#required-fields">Required Fields</a>.</p>
+<p>See more details in <a href="/api/usage/models.md#required-fields">Required Fields</a>.</p>
 </div>
 <h4 id="discriminated-unions-aka-tagged-unions">Discriminated Unions (a.k.a. Tagged Unions)<a class="headerlink" href="#discriminated-unions-aka-tagged-unions" title="Permanent link">&para;</a></h4>
 <p>When <code>Union</code> is used with multiple submodels, you sometimes know exactly which submodel needs to
@@ -2231,9 +2162,9 @@ For your <code>Union</code>, you can set the discriminator in its value: <code>F
 <ul>
 <li>validation is faster since it is only attempted against one model</li>
 <li>only one explicit error is raised in case of failure</li>
-<li>the generated JSON schema implements the <a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminatorObject">associated OpenAPI specification</a></li>
+<li>the generated JSON schema implements the <a href="https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#discriminator-object">associated OpenAPI specification</a></li>
 </ul>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
@@ -2317,7 +2248,7 @@ For your <code>Union</code>, you can set the discriminator in its value: <code>F
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Using the <a href="../schema/#typingannotated-fields">Annotated Fields syntax</a> can be handy to regroup
+<p>Using the <a href="/api/usage/schema/#typingannotated-fields">Annotated Fields syntax</a> can be handy to regroup
 the <code>Union</code> and <code>discriminator</code> information. See below for an example!</p>
 </div>
 <div class="admonition warning">
@@ -2328,8 +2259,8 @@ distinguish fields of <code>Union[T]</code> from <code>T</code>.</p>
 </div>
 <h4 id="nested-discriminated-unions">Nested Discriminated Unions<a class="headerlink" href="#nested-discriminated-unions" title="Permanent link">&para;</a></h4>
 <p>Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
-In this case you can always create "intermediate" models with <code>__root__</code> and add your discriminator.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+You can do it by creating nested <code>Annotated</code> types, e.g.:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.8 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
@@ -2350,11 +2281,6 @@ In this case you can always create "intermediate" models with <code>__root__</co
     <span class="n">color</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">]</span>
     <span class="n">white_name</span><span class="p">:</span> <span class="nb">str</span>
 
-
-<span class="c1"># Can also be written with a custom root type</span>
-<span class="c1">#</span>
-<span class="c1"># class Cat(BaseModel):</span>
-<span class="c1">#   __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator=&#39;color&#39;)]</span>
 
 <span class="n">Cat</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">BlackCat</span><span class="p">,</span> <span class="n">WhiteCat</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;color&#39;</span><span class="p">)]</span>
 
@@ -2414,11 +2340,6 @@ In this case you can always create "intermediate" models with <code>__root__</co
     <span class="n">color</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">]</span>
     <span class="n">white_name</span><span class="p">:</span> <span class="nb">str</span>
 
-
-<span class="c1"># Can also be written with a custom root type</span>
-<span class="c1">#</span>
-<span class="c1"># class Cat(BaseModel):</span>
-<span class="c1">#   __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator=&#39;color&#39;)]</span>
 
 <span class="n">Cat</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">BlackCat</span><span class="p">,</span> <span class="n">WhiteCat</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;color&#39;</span><span class="p">)]</span>
 

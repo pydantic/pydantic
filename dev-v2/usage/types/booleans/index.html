@@ -2017,24 +2017,18 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <dt><code>bool</code></dt>
 <dd>see below for details on how bools are validated and what values are permitted</dd>
 </dl>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The logic for parsing <code>bool</code> fields has changed as of version <strong>v1.0</strong>.</p>
-<p>Prior to <strong>v1.0</strong>, <code>bool</code> parsing never failed, leading to some unexpected results.
-The new logic is described below.</p>
-</div>
 <p>A standard <code>bool</code> field will raise a <code>ValidationError</code> if the value is not one of the following:</p>
 <ul>
 <li>A valid boolean (i.e. <code>True</code> or <code>False</code>),</li>
 <li>The integers <code>0</code> or <code>1</code>,</li>
 <li>a <code>str</code> which when converted to lower case is one of
   <code>'0', 'off', 'f', 'false', 'n', 'no', '1', 'on', 't', 'true', 'y', 'yes'</code></li>
-<li>a <code>bytes</code> which is valid (per the previous rule) when decoded to <code>str</code></li>
+<li>a <code>bytes</code> which is valid per the previous rule when decoded to <code>str</code></li>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If you want stricter boolean logic (e.g. a field which only permits <code>True</code> and <code>False</code>) you can
-use <a href="#strict-types"><code>StrictBool</code></a>.</p>
+use <a href="../standard_types/#strict-types"><code>StrictBool</code></a>.</p>
 </div>
 <p>Here is a script demonstrating some of these behaviors:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -2048,6 +2042,8 @@ use <a href="#strict-types"><code>StrictBool</code></a>.</p>
 <span class="c1">#&gt; bool_value=False</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">BooleanModel</span><span class="p">(</span><span class="n">bool_value</span><span class="o">=</span><span class="s1">&#39;False&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; bool_value=False</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">BooleanModel</span><span class="p">(</span><span class="n">bool_value</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="c1">#&gt; bool_value=True</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="n">BooleanModel</span><span class="p">(</span><span class="n">bool_value</span><span class="o">=</span><span class="p">[])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
