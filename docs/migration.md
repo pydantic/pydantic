@@ -182,12 +182,14 @@ Model(x=1)
 
 ### Input types are not preserved
 
-In Pydantic V1 we made an effort to preserve the input type.
+In Pydantic V1 we made great efforts to preserve the types of all field inputs for generic collections when they were proper subtypes of the field annotations.
 For example, given the annotation `Mapping[str, int]` if you passed in a `collection.Counter()` you'd get a `collection.Counter()` as the value.
-In Pydantic V2 we no longer promise we will preserve the input type (although we may in some cases).
+
+Supporting this behavior in V2 would have negative performance implications for the general case (we'd have to check types every time) and would add a lot of complexity to validation. Further, even in V1 this behavior was inconsistent and paritally broken: it did not work for most types (`str`, `UUID`, etc.) and even for generic collections it's impossible to re-build the original input correctly without a lot of special casing (consider `ChainMap`; rebuilding the input is necessary because we need to replace values after validation, e.g. if coercing strings to ints).
+
+In Pydantic V2 we no longer attempt to preserve the input type.
 Instead, we only promise that the output type will match the type annotations.
-In this case, we promise it will be a valid `Mapping`, so it could be a plain Python dict.
-If you want the output type to be a specific type, consider annotating it as such.
+Going back to the `Mapping` example, we promise the output will be a valid `Mapping`, in practice it will be a plain `dict`.
 
 ```python
 from collections import Counter
@@ -197,6 +199,30 @@ from pydantic import TypeAdapter
 
 print(type(TypeAdapter(Mapping[str, int]).validate_python(Counter())))
 #> <class 'dict'>
+```
+
+If you want the output type to be a specific type, consider annotating it as such or implementing a custom validator:
+
+```python
+from collections import Counter
+from typing import Any, Mapping, TypeVar
+
+from typing_extensions import Annotated
+
+from pydantic import TypeAdapter, ValidationInfo, ValidatorFunctionWrapHandler, WrapValidator
+
+
+def restore_input_type(value: Any, handler: ValidatorFunctionWrapHandler, _info: ValidationInfo) -> Any:
+    return type(value)(handler(value))
+
+
+T = TypeVar('T')
+PreserveType = Annotated[T, WrapValidator(restore_input_type)]
+
+
+ta = TypeAdapter(PreserveType[Mapping[str, int]])
+
+assert type(ta.validate_python(Counter())) is Counter
 ```
 
 ### Changes to Generic models
