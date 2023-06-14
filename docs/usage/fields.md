@@ -580,7 +580,7 @@ class User(BaseModel):
 
 user = User(name='John', age='42')
 print(user)
-#> name='John'
+#> name='John' age=42
 ```
 
 ## Customise JSON Schema
