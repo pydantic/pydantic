@@ -4389,7 +4389,11 @@ def test_root_model():
     class B(RootModel[A]):
         pass
 
-    assert B.model_json_schema() == {'title': 'B', 'type': 'integer'}
+    assert B.model_json_schema() == {
+        '$defs': {'A': {'description': 'A Model docstring', 'title': 'A', 'type': 'integer'}},
+        'allOf': [{'$ref': '#/$defs/A'}],
+        'title': 'B',
+    }
 
 
 def test_get_json_schema_is_passed_the_same_schema_handler_was_called_with() -> None:
