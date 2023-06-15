@@ -81,6 +81,8 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
         However, if your usage of `json_encoders` is not compatible with the new serialization decorators,
         please create a GitHub issue letting us know.
 * `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
+* `__fields__` in Pydantic V1 has moved to `model_fields` in Pydantic V2.
+* `__validators__` in Pydantic V1 has moved to `__pydantic_validator__` in Pydantic V2.
 
 ### Changes to `pydantic.generics.GenericModel`
 
