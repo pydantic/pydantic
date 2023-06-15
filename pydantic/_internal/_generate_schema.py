@@ -360,9 +360,10 @@ class GenerateSchema:
 
         schema = self._unpack_refs_defs(schema)
 
-        if 'ref' in schema:
-            self.defs.definitions[schema['ref']] = schema
-            return core_schema.definition_reference_schema(schema['ref'])
+        ref: str | None = schema.get('ref', None)
+        if ref:
+            self.defs.definitions[ref] = schema
+            return core_schema.definition_reference_schema(ref)
         return schema
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
