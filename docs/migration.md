@@ -192,13 +192,17 @@ Instead, we only promise that the output type will match the type annotations.
 Going back to the `Mapping` example, we promise the output will be a valid `Mapping`, in practice it will be a plain `dict`.
 
 ```python
-from collections import Counter
 from typing import Mapping
 
 from pydantic import TypeAdapter
 
+
+class MyDict(dict):
+    pass
+
+
 ta = TypeAdapter(Mapping[str, int])
-v = ta.validate_python(Counter())
+v = ta.validate_python(MyDict())
 print(type(v))
 #> <class 'dict'>
 ```
@@ -206,7 +210,6 @@ print(type(v))
 If you want the output type to be a specific type, consider annotating it as such or implementing a custom validator:
 
 ```python
-from collections import Counter
 from typing import Any, Mapping, TypeVar
 
 from typing_extensions import Annotated
@@ -231,7 +234,13 @@ PreserveType = Annotated[T, WrapValidator(restore_input_type)]
 
 ta = TypeAdapter(PreserveType[Mapping[str, int]])
 
-assert type(ta.validate_python(Counter())) is Counter
+
+class MyDict(dict):
+    pass
+
+
+v = ta.validate_python(MyDict())
+assert type(v) is MyDict
 ```
 
 ### Changes to Generic models
