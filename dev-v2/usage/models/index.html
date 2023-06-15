@@ -3183,7 +3183,7 @@ which fields were originally set and which weren't. If it's omitted <code>model_
 of the data provided.</p>
 <p>For example, in the example above, if <code>_fields_set</code> was not provided,
 <code>new_user.model_fields_set</code> would be <code>{'id', 'age', 'name'}</code>.</p>
-<p>Note that for subclasses of <a href="#custom-root-types"><code>RootModel</code></a>, the root value can be passed to <code>model_construct</code>
+<p>Note that for subclasses of <a href="#rootmodel-and-custom-root-types"><code>RootModel</code></a>, the root value can be passed to <code>model_construct</code>
 positionally, instead of using a keyword argument.</p>
 <p>Here are some additional notes on the behavior of <code>model_construct</code>:
 * When we say "no validation is performed" — this includes converting dicts to model instances. So if you have a field

@@ -2232,7 +2232,7 @@ serialized, and exported in a number of ways:</p>
 <p>This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The one exception to sub-models being converted to dictionaries is that <a href="../models/#custom-root-types"><code>RootModel</code></a>
+<p>The one exception to sub-models being converted to dictionaries is that <a href="../models/#rootmodel-and-custom-root-types"><code>RootModel</code></a>
 and its subclasses will have the <code>root</code> field value dumped directly, without a wrapping dictionary. This is also
 done recursively.</p>
 </div>
@@ -2471,7 +2471,7 @@ sub-models will not be converted to dictionaries.</p>
     <span class="c1">#&gt; foo: hello</span>
     <span class="c1">#&gt; bar: whatever=123</span>
 </code></pre></div>
-<p>Note also that <a href="../models/#custom-root-types"><code>RootModel</code></a> <em>does</em> get converted to a dictionary with the key <code>'root'</code>.</p>
+<p>Note also that <a href="../models/#rootmodel-and-custom-root-types"><code>RootModel</code></a> <em>does</em> get converted to a dictionary with the key <code>'root'</code>.</p>
 <h2 id="custom-serializers">Custom serializers<a class="headerlink" href="#custom-serializers" title="Permanent link">&para;</a></h2>
 <p>Serialization can be customised on a field using the <code>@field_serializer</code> decorator, and on a model using the
 <code>@model_serializer</code> decorator.</p>
