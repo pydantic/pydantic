@@ -406,8 +406,8 @@ def test_del_model_attr():
 
 
 @pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy' and platform.python_version_tuple() < ('3', '8'),
-    reason='In this single case `del` behaves weird on pypy 3.7',
+    platform.python_implementation() == 'PyPy',
+    reason='In this single case `del` behaves weird on pypy',
 )
 def test_del_model_attr_error():
     class Model(BaseModel):
