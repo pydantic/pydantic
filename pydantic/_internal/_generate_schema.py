@@ -333,6 +333,7 @@ class GenerateSchema:
                         extra_items_type = get_args(cls.__annotations__['__pydantic_extra__'])[1]
                         if extra_items_type is not Any:
                             extra_validator = self.generate_schema(extra_items_type)
+                            break
 
             if cls.__pydantic_root_model__:
                 root_field = self._common_field_schema('root', fields['root'], decorators)

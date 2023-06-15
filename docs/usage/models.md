@@ -34,7 +34,6 @@ In this example, `User` is a model with two fields:
 * `id`, which is an integer and is required
 * `name`, which is a string and is not required (it has a default value).
 
-
 ```py group="basic-model"
 user = User(id='123')
 ```
@@ -83,26 +82,26 @@ This model is mutable so field values can be changed.
 The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:
 
-- `model_computed_fields`: a dictionary of the computed fields of this model instance.
-- `model_construct()`: a class method for creating models without running validation. See
+* `model_computed_fields`: a dictionary of the computed fields of this model instance.
+* `model_construct()`: a class method for creating models without running validation. See
     [Creating models without validation](#creating-models-without-validation).
-- `model_copy()`: returns a copy (by default, shallow copy) of the model. See
+* `model_copy()`: returns a copy (by default, shallow copy) of the model. See
     [Exporting models](exporting_models.md#modelcopy).
-- `model_dump()`: returns a dictionary of the model's fields and values. See
+* `model_dump()`: returns a dictionary of the model's fields and values. See
     [Exporting models](exporting_models.md#modeldump).
-- `model_dump_json()`: returns a JSON string representation of `model_dump()`. See
+* `model_dump_json()`: returns a JSON string representation of `model_dump()`. See
     [Exporting models](exporting_models.md#modeldumpjson).
-- `model_extra`: get extra fields set during validation.
-- `model_fields_set`: set of fields which were set when the model instance was initialised.
-- `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
-- `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
+* `model_extra`: get extra fields set during validation.
+* `model_fields_set`: set of fields which were set when the model instance was initialised.
+* `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
+* `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
     See [JSON Schema](json_schema.md).
-- `model_parameterized_name()`: compute the class name for parametrizations of generic classes.
-- `model_post_init()`: perform additional initialization after the model is initialised.
-- `model_rebuild()`: rebuild the model schema.
-- `model_validate()`: a utility for loading any object into a model with error handling if the object is not a
+* `model_parameterized_name()`: compute the class name for parametrizations of generic classes.
+* `model_post_init()`: perform additional initialization after the model is initialised.
+* `model_rebuild()`: rebuild the model schema.
+* `model_validate()`: a utility for loading any object into a model with error handling if the object is not a
     dictionary. See [Helper functions](#helper-functions).
-- `model_validate_json()`: a utility for validating the given JSON data against the Pydantic model. See
+* `model_validate_json()`: a utility for validating the given JSON data against the Pydantic model. See
     [Helper functions](#helper-functions).
 
 !!! note
@@ -463,6 +462,7 @@ Note that for subclasses of [`RootModel`](#rootmodel-and-custom-root-types), the
 positionally, instead of using a keyword argument.
 
 Here are some additional notes on the behavior of `model_construct`:
+
 * When we say "no validation is performed" — this includes converting dicts to model instances. So if you have a field
   with a `Model` type, you will need to convert the inner dict to a model yourself before passing it to
   `model_construct`.
@@ -474,7 +474,6 @@ Here are some additional notes on the behavior of `model_construct`:
   calling `__init__`.
 * When constructing an instance using `model_construct()`, no `__init__` method from the model or any of its parent
   classes will be called, even when a custom `__init__` method is defined.
-
 
 ## Generic models
 
@@ -1247,7 +1246,7 @@ To be included in the signature, a field's alias or name must be a valid Python 
 Pydantic prefers aliases over names, but may use field names if the alias is not a valid Python identifier.
 
 If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
-In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
+In addition, the `**data` argument will always be present in the signature if `Config.extra` is `'allow'`.
 
 ## Structural pattern matching
 
@@ -1312,3 +1311,92 @@ print('id(c1.arr) == id(c2.arr)  ', id(c1.arr) == id(c2.arr))
 
 !!! note
     There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting [`config.revalidate_instances='always'`](../api/config.md#pydantic.config.ConfigDict) in your model.
+
+## Extra fields
+
+By default Pydantic models won't error when you provide fields that don't belong to the model, it will discard them instead:
+
+```py
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    x: int
+
+
+m = Model(x=1, y='a')
+assert m.model_dump() == {'x': 1}
+```
+
+If you want to error instead you can set this via `model_config`:
+
+```py
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+class Model(BaseModel):
+    x: int
+
+    model_config = ConfigDict(extra='forbid')
+
+
+try:
+    Model(x=1, y='a')
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for Model
+    y
+      Extra inputs are not permitted [type=extra_forbidden, input_value='a', input_type=str]
+    """
+```
+
+To preserve this data instead you can set `extra='allow'`.
+The extra fields will then be stored in `BaseModel.__pydantic_extra__`.
+
+```py
+from pydantic import BaseModel, ConfigDict
+
+
+class Model(BaseModel):
+    x: int
+
+    model_config = ConfigDict(extra='allow')
+
+
+m = Model(x=1, y='a')
+assert m.__pydantic_extra__ == {'y': 'a'}
+```
+
+By default no validation will be applied to these extra items, but you can set a type for the values by overriding the type annotation for `__pydantic_extra__`:
+
+```py
+from typing import Dict
+
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+class Model(BaseModel):
+    __pydantic_extra__: Dict[str, int]
+
+    x: int
+
+    model_config = ConfigDict(extra='allow')
+
+
+try:
+    Model(x=1, y='a')
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for Model
+    y
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+    """
+
+m = Model(x=1, y='2')
+assert m.x == 1
+assert m.y == 2
+assert m.model_dump() == {'x': 1, 'y': 2}
+assert m.__pydantic_extra__ == {'y': 2}
+```
