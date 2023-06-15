@@ -5168,7 +5168,7 @@ of aliases' fields and all the other fields will be ignored at serialization tim
   
       <p>Indicates that attribute is only used internally and never mixed with regular fields.</p>
 <p>Private attributes are not checked by Pydantic, so it's up to you to maintain their accuracy.</p>
-<p>Private attributes are stored in the model <code>__slots__</code>.</p>
+<p>Private attributes are stored in <code>__private_attributes__</code> on the model.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5298,7 +5298,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
 <span class="sd">    Private attributes are not checked by Pydantic, so it&#39;s up to you to maintain their accuracy.</span>
 
-<span class="sd">    Private attributes are stored in the model `__slots__`.</span>
+<span class="sd">    Private attributes are stored in `__private_attributes__` on the model.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        default: The attribute&#39;s default value. Defaults to Undefined.</span>
