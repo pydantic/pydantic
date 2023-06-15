@@ -226,10 +226,10 @@ print(Model2.model_json_schema())
 You can also use `TypeAliasType` to create recursive types:
 
 ```py
-from typing import Annotated, Any
+from typing import Any
 
 from pydantic_core import PydanticCustomError
-from typing_extensions import TypeAliasType
+from typing_extensions import Annotated, TypeAliasType
 
 from pydantic import (
     TypeAdapter,
