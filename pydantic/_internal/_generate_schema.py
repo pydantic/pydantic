@@ -89,6 +89,15 @@ def check_validator_fields_against_field_name(
     info: FieldDecoratorInfo,
     field: str,
 ) -> bool:
+    """Check if field name is in validator fields.
+
+    Args:
+        info: The field info.
+        field: The field name to check.
+
+    Returns:
+        `True` if field name is in validator fields, `False` otherwise.
+    """
     if isinstance(info, (ValidatorDecoratorInfo, FieldValidatorDecoratorInfo)):
         if '*' in info.fields:
             return True
@@ -99,6 +108,17 @@ def check_validator_fields_against_field_name(
 
 
 def check_decorator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields: Iterable[str]) -> None:
+    """Check if the defined fields in decorators exist in `fields` param.
+
+    It ignores the check for a decorator if the decorator has `*` as field or `check_fields=False`.
+
+    Args:
+        decorators: An iterable of decorators.
+        fields: An iterable of fields name.
+
+    Raises:
+        PydanticUserError: If one of the field names does not exist in `fields` param.
+    """
     fields = set(fields)
     for dec in decorators:
         if isinstance(dec.info, (ValidatorDecoratorInfo, FieldValidatorDecoratorInfo)) and '*' in dec.info.fields:
@@ -153,7 +173,16 @@ def apply_each_item_validators(
 def modify_model_json_schema(
     schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler, *, cls: Any
 ) -> JsonSchemaValue:
-    """Add title and description for model-like classes' JSON schema."""
+    """Add title and description for model-like classes' JSON schema.
+
+    Args:
+        schema_or_field: The schema data to generate a JSON schema from.
+        handler: The `GetCoreSchemaHandler` instance.
+        cls: The model-like class.
+
+    Returns:
+        JsonSchemaValue: The updated JSON schema.
+    """
     json_schema = handler(schema_or_field)
     original_schema = handler.resolve_ref_schema(json_schema)
     if 'title' not in original_schema:
@@ -165,6 +194,8 @@ def modify_model_json_schema(
 
 
 class GenerateSchema:
+    """Generate core schema for a Pydantic model, dataclass and types like `str`, `datatime`, ... ."""
+
     __slots__ = '_config_wrapper_stack', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions', 'defs'
 
     def __init__(
@@ -203,6 +234,30 @@ class GenerateSchema:
         from_dunder_get_core_schema: bool = True,
         from_prepare_args: bool = True,
     ) -> core_schema.CoreSchema:
+        """Generate core schema.
+
+        Args:
+            obj: The object to generate core schema for.
+            from_dunder_get_core_schema: Whether to generate schema from either the
+                `__get_pydantic_core_schema__` function or `__pydantic_core_schema__` property.
+            from_prepare_args: Whether to generate schema from either the
+                `__prepare_pydantic_annotations__` function or `__prepare_pydantic_annotations__` property.
+
+        Returns:
+            The generated core schema.
+
+        Raises:
+            PydanticUndefinedAnnotation:
+                If it is not possible to evaluate forward reference.
+            PydanticSchemaGenerationError:
+                If it is not possible to generate pydantic-core schema.
+            TypeError:
+                - If `alias_generator` returns a non-string value.
+                - If V1 style validator with `each_item=True` applied on a wrong field.
+            PydanticUserError:
+                - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
+                - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
+        """
         if isinstance(obj, type(Annotated[int, 123])):
             return self._annotated_schema(obj)
         return self._generate_schema_for_type(
@@ -304,11 +359,8 @@ class GenerateSchema:
             return core_schema.definition_reference_schema(model_ref)
 
     def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
-        """Try to generate schema from either the `__get_pydantic_core_schema__` function or
-        `__pydantic_core_schema__` property.
-
-        Note: `__get_pydantic_core_schema__` takes priority so it can
-        decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
+        """Try to generate schema from either the `__prepare_pydantic_annotations__` function or
+        `__prepare_pydantic_annotations__` property.
         """
         new_obj, new_annotations = self._prepare_annotations(obj, [])
         if new_obj is not obj or new_annotations:
@@ -1353,7 +1405,15 @@ def apply_validators(
     | Iterable[Decorator[ValidatorDecoratorInfo]]
     | Iterable[Decorator[FieldValidatorDecoratorInfo]],
 ) -> core_schema.CoreSchema:
-    """Apply validators to a schema."""
+    """Apply validators to a schema.
+
+    Args:
+        schema: The schema to apply validators on.
+        validators: An iterable of validators.
+
+    Returns:
+        The updated schema.
+    """
     for validator in validators:
         info_arg = inspect_validator(validator.func, validator.info.mode)
         if not info_arg:
@@ -1392,6 +1452,14 @@ def apply_model_validators(
     If mode == 'inner', only "before" validators are applied
     If mode == 'outer', validators other than "before" are applied
     If mode == 'all', all validators are applied
+
+    Args:
+        schema: The schema to apply validators on.
+        validators: An iterable of validators.
+        mode: The validator mode.
+
+    Returns:
+        The updated schema.
     """
     ref: str | None = schema.pop('ref', None)  # type: ignore
     for validator in validators:
@@ -1422,6 +1490,15 @@ def apply_model_validators(
 
 
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    """Wrap schema with default schema if default value or `default_factory` are available.
+
+    Args:
+        field_info: The field info object.
+        schema: The schema to apply default on.
+
+    Returns:
+        Updated schema by default value or `default_factory`.
+    """
     if field_info.default_factory:
         return core_schema.with_default_schema(
             schema, default_factory=field_info.default_factory, validate_default=field_info.validate_default
