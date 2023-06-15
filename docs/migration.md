@@ -197,7 +197,9 @@ from typing import Mapping
 
 from pydantic import TypeAdapter
 
-print(type(TypeAdapter(Mapping[str, int]).validate_python(Counter())))
+ta = TypeAdapter(Mapping[str, int])
+v = ta.validate_python(Counter())
+print(type(v))
 #> <class 'dict'>
 ```
 
