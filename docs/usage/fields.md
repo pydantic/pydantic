@@ -1,7 +1,7 @@
 
 The `Field` function is used to customize and add metadata to fields of models.
 
-TODO: Refactor the `Field customization` section from the `json_schema.md`.
+You can see the full API reference for `Field` [here](/api/fields/#pydantic.fields.Field).
 
 ## Default values
 
@@ -470,7 +470,7 @@ print(foo)
 
 There are fields that can be used to constrain dataclasses:
 
-* `init_var`: Whether the field should be included in the constructor of the dataclass.
+* `init_var`: Whether the field should be seen as an [init-only field] in the dataclass.
 * `kw_only`: Whether the field should be a keyword-only argument in the constructor of the dataclass.
 
 Here's an example:
@@ -491,16 +491,12 @@ class Model(BaseModel):
     foo: Foo
 
 
-model = Model(foo=Foo('bar', 'baz', qux='qux'))
-print(model)
-"""
-foo = Foo(
-    bar='bar', baz=FieldInfo(annotation=str, required=True, init_var=True), qux='qux'
-)
-"""
+model = Model(foo=Foo('bar', baz='baz', qux='qux'))
+print(model.model_dump())  # (1)!
+#> {'foo': {'bar': 'bar', 'qux': 'qux'}}
 ```
 
-TODO: What am I doing here?
+1. The `baz` field is not included in the `model_dump()` output, since it is an init-only field.
 
 ## Field Representation
 
@@ -528,7 +524,7 @@ print(user)
 The parameter `discriminator` can be used to control the field that will be used to discriminate between different
 models in a union.
 
-```py
+```py requires="3.8"
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field
@@ -571,10 +567,50 @@ class User(BaseModel):
     age: int = Field(strict=False)
 
 
-user = User(name='John', age='42')
+user = User(name='John', age='42')  # (2)!
 print(user)
 #> name='John' age=42
 ```
+
+1. This is the default value.
+2. The `age` field is not validated in the strict mode. Therefore, it can be assigned a string.
+
+## immutability
+
+The parameter `frozen` is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being
+assigned a new value after the model is created (immutability).
+
+See the [frozen dataclass documentation] for more details.
+
+```py
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+
+class User(BaseModel):
+    model_config = ConfigDict(validate_assignment=True)  # (1)!
+
+    name: str = Field(frozen=True)
+    age: int
+
+
+user = User(name='John', age=42)
+
+try:
+    user.name = 'Jane'  # (2)!
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for User
+    name
+      Field is frozen [type=frozen_field, input_value='Jane', input_type=str]
+    """
+```
+
+1. The `model_config` field is used to enable the validation of assignments.
+
+    See the [Validate Assignment] section for more details.
+
+2. Since `validate_assignment` is enabled, and the `name` field is frozen, the assignment is not allowed.
 
 ## Customise JSON Schema
 
@@ -632,7 +668,12 @@ print(User.model_json_schema())
 """
 ```
 
+TODO: Add `include`, `exclude`, `final`, `validate_default` and `alias_priority` parameters.
+
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
 [Discriminated Unions]: /usage/types/unions/#discriminated-unions-aka-tagged-unions
 [Helper Functions]: /usage/models/#helper-functions
 [Models]: /usage/models/
+[init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
+[frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
+[Validate Assignment]: /usage/models/#validate-assignment
