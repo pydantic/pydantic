@@ -221,6 +221,40 @@ print(Model2.model_json_schema())
 """
 ```
 
+These named type aliases can also be generic:
+
+```py
+from typing import Annotated, Generic, List, TypeVar
+
+from annotated_types import Gt
+from typing_extensions import TypeAliasType
+
+from pydantic import BaseModel, ValidationError
+
+T = TypeVar('T')  # or a bound=SupportGt
+
+PositiveList = TypeAliasType(
+    'PositiveList', List[Annotated[T, Gt(0)]], type_params=(T,)
+)
+
+
+class Model(BaseModel, Generic[T]):
+    x: PositiveList[T]
+
+
+assert Model[int].model_validate_json('{"x": [1]}').x == [1]
+
+try:
+    Model[int](x=[-1])
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for Model[int]
+    x.0
+      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]
+    """
+```
+
 #### Named recursive types
 
 You can also use `TypeAliasType` to create recursive types:
