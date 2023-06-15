@@ -14,7 +14,9 @@ from pydantic import (
     BaseModel,
     Field,
     FieldSerializationInfo,
+    SecretStr,
     SerializationInfo,
+    SerializeAsAny,
     SerializerFunctionWrapHandler,
     TypeAdapter,
     errors,
@@ -882,3 +884,23 @@ def test_type_adapter_dump_json():
     ta = TypeAdapter(Model)
 
     assert ta.dump_json(Model({'x': 1, 'y': 2.5})) == b'{"x":2,"y":7.5}'
+
+
+def test_serialize_as_any() -> None:
+    class User(BaseModel):
+        name: str
+
+    class UserLogin(User):
+        password: SecretStr
+
+    class OuterModel(BaseModel):
+        as_any: SerializeAsAny[User]
+        without: User
+
+    user = UserLogin(name='pydantic', password='password')
+
+    # insert_assert(json.loads(OuterModel(as_any=user, without=user).model_dump_json()))
+    assert json.loads(OuterModel(as_any=user, without=user).model_dump_json()) == {
+        'as_any': {'name': 'pydantic', 'password': '**********'},
+        'without': {'name': 'pydantic'},
+    }

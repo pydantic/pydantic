@@ -98,6 +98,7 @@ __all__ = (
     'SkipValidation',
     'InstanceOf',
     'WithJsonSchema',
+    'SerializeAsAny',
 )
 
 
@@ -1447,3 +1448,31 @@ class TransformSchema:
         self, source_type: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> CoreSchema:
         return self.transform(handler(source_type))
+
+
+if TYPE_CHECKING:
+    SerializeAsAny = Annotated[AnyType, ...]  # SerializeAsAny[list[str]] will be treated by type checkers as list[str]
+    """Force serialization to ignore whatever is defined in the schema and instead ask the object
+    itself how it should be serialized.
+    In particular, this means that model subclasses will include fields present in the subclass but not in the
+    original schema.
+    """
+else:
+
+    @_internal_dataclass.slots_dataclass
+    class SerializeAsAny:  # noqa: D101
+        def __class_getitem__(cls, item: Any) -> Any:
+            return Annotated[item, SerializeAsAny()]
+
+        def __get_pydantic_core_schema__(
+            self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            schema = handler(source_type)
+            schema_to_update = schema
+            while schema_to_update['type'] == 'definitions':
+                schema_to_update = schema_to_update.copy()
+                schema_to_update = schema_to_update['schema']
+            schema_to_update['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+                lambda x, h: h(x), schema=core_schema.any_schema()
+            )
+            return schema
