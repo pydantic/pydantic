@@ -224,10 +224,10 @@ print(Model2.model_json_schema())
 These named type aliases can also be generic:
 
 ```py
-from typing import Annotated, Generic, List, TypeVar
+from typing import Generic, List, TypeVar
 
 from annotated_types import Gt
-from typing_extensions import TypeAliasType
+from typing_extensions import Annotated, TypeAliasType
 
 from pydantic import BaseModel, ValidationError
 
