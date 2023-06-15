@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#classes-with-____get_pydantic_core_schema____" class="md-skip">
+        <a href="#composing-types-via-annotated" class="md-skip">
           Skip to content
         </a>
       
@@ -913,6 +913,53 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#composing-types-via-annotated" class="md-nav__link">
+    Composing types via Annotated
+  </a>
+  
+    <nav class="md-nav" aria-label="Composing types via Annotated">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-validation-and-serialization" class="md-nav__link">
+    Adding validation and serialization
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generics" class="md-nav__link">
+    Generics
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#named-type-aliases" class="md-nav__link">
+    Named type aliases
+  </a>
+  
+    <nav class="md-nav" aria-label="Named type aliases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#named-recursive-types" class="md-nav__link">
+    Named recursive types
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#classes-with-____get_pydantic_core_schema____" class="md-nav__link">
@@ -2044,6 +2091,53 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#composing-types-via-annotated" class="md-nav__link">
+    Composing types via Annotated
+  </a>
+  
+    <nav class="md-nav" aria-label="Composing types via Annotated">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#adding-validation-and-serialization" class="md-nav__link">
+    Adding validation and serialization
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#generics" class="md-nav__link">
+    Generics
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#named-type-aliases" class="md-nav__link">
+    Named type aliases
+  </a>
+  
+    <nav class="md-nav" aria-label="Named type aliases">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#named-recursive-types" class="md-nav__link">
+    Named recursive types
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#classes-with-____get_pydantic_core_schema____" class="md-nav__link">
     Classes with ____get_pydantic_core_schema____
   </a>
@@ -2079,8 +2173,621 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   <h1>Custom Data Types</h1>
 
 <p>You can also define your own custom data types. There are several ways to achieve it.</p>
-<h3 id="classes-with-____get_pydantic_core_schema____">Classes with <code>____get_pydantic_core_schema____</code><a class="headerlink" href="#classes-with-____get_pydantic_core_schema____" title="Permanent link">&para;</a></h3>
+<h3 id="composing-types-via-annotated">Composing types via <code>Annotated</code><a class="headerlink" href="#composing-types-via-annotated" title="Permanent link">&para;</a></h3>
+<p><a href="https://peps.python.org/pep-0593/">PEP 593</a> introduced <code>Annotated</code> as a way to attach runtime metadata to types without changing how type checkers interpret them.
+Pydantic takes advantage of this to allow you to create types that are identical to the original type as far as type checkers are concerned, but add validation, serialize differently, etc.
+For example, to create a type representing a positive int:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="c1"># or `from typing import Annotated` for Python 3.9+</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">PositiveInt</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="c1">#&gt; 1</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for constrained-int</span>
+<span class="sd">      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="c1"># or `from typing import Annotated` for Python 3.9+</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">PositiveInt</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="c1">#&gt; 1</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for constrained-int</span>
+<span class="sd">      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Note that you can also use constraints from [<code>annotated-types</code>] to make this Pydantic-agnostic:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Gt</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">PositiveInt</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="c1">#&gt; 1</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for constrained-int</span>
+<span class="sd">      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Gt</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">PositiveInt</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+<span class="c1">#&gt; 1</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for constrained-int</span>
+<span class="sd">      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h4 id="adding-validation-and-serialization">Adding validation and serialization<a class="headerlink" href="#adding-validation-and-serialization" title="Permanent link">&para;</a></h4>
+<p>You can add or override validation, serialization, and json schemas to an arbitrary type using the markers that Pydantic exports:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AfterValidator</span><span class="p">,</span> <span class="n">PlainSerializer</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
+
+
+<span class="k">class</span> <span class="nc">MyType</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+
+<span class="n">TrucatedFloat</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">float</span><span class="p">,</span>
+    <span class="n">AfterValidator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+    <span class="n">PlainSerializer</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s1">.1e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+    <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">},</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">),</span>
+<span class="p">]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">TrucatedFloat</span><span class="p">)</span>
+
+<span class="nb">input</span> <span class="o">=</span> <span class="mf">1.02345</span>
+<span class="k">assert</span> <span class="nb">input</span> <span class="o">!=</span> <span class="mf">1.0</span>
+
+<span class="k">assert</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="mf">1.0</span>
+
+<span class="k">assert</span> <span class="n">ta</span><span class="o">.</span><span class="n">dump_json</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;&quot;1.0e+00&quot;&#39;</span>
+
+<span class="k">assert</span> <span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;validation&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;number&#39;</span><span class="p">}</span>
+<span class="k">assert</span> <span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AfterValidator</span><span class="p">,</span> <span class="n">PlainSerializer</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
+
+
+<span class="k">class</span> <span class="nc">MyType</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+
+<span class="n">TrucatedFloat</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">float</span><span class="p">,</span>
+    <span class="n">AfterValidator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">round</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+    <span class="n">PlainSerializer</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s1">.1e</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="nb">str</span><span class="p">),</span>
+    <span class="n">WithJsonSchema</span><span class="p">({</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">},</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">),</span>
+<span class="p">]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">TrucatedFloat</span><span class="p">)</span>
+
+<span class="nb">input</span> <span class="o">=</span> <span class="mf">1.02345</span>
+<span class="k">assert</span> <span class="nb">input</span> <span class="o">!=</span> <span class="mf">1.0</span>
+
+<span class="k">assert</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="mf">1.0</span>
+
+<span class="k">assert</span> <span class="n">ta</span><span class="o">.</span><span class="n">dump_json</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;&quot;1.0e+00&quot;&#39;</span>
+
+<span class="k">assert</span> <span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;validation&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;number&#39;</span><span class="p">}</span>
+<span class="k">assert</span> <span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h4 id="generics">Generics<a class="headerlink" href="#generics" title="Permanent link">&para;</a></h4>
+<p>You can use type variables within <code>Annotated</code> to make re-usable modifications to types:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Gt</span><span class="p">,</span> <span class="n">Len</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic.type_adapter</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">SequenceType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;SequenceType&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span>
+
+
+<span class="n">ShortSequence</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">SequenceType</span><span class="p">,</span> <span class="n">Len</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">ShortSequence</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">v</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for list[int]</span>
+<span class="sd">      List should have at most 10 items after validation, not 11 [type=too_long, input_value=[1, 1, 1, 1, 1, 1, 1, 1, ... 1, 1, 1, 1, 1, 1, 1, 1], input_type=list]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>  <span class="c1"># or a bound=SupportGt</span>
+
+<span class="n">PositiveList</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]]</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">PositiveList</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">float</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for list[constrained-float]</span>
+<span class="sd">    0</span>
+<span class="sd">      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">TypeVar</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Gt</span><span class="p">,</span> <span class="n">Len</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic.type_adapter</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">SequenceType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;SequenceType&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span>
+
+
+<span class="n">ShortSequence</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">SequenceType</span><span class="p">,</span> <span class="n">Len</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)]</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">ShortSequence</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]])</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">v</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for list[int]</span>
+<span class="sd">      List should have at most 10 items after validation, not 11 [type=too_long, input_value=[1, 1, 1, 1, 1, 1, 1, 1, ... 1, 1, 1, 1, 1, 1, 1, 1], input_type=list]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>  <span class="c1"># or a bound=SupportGt</span>
+
+<span class="n">PositiveList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]]</span>
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">PositiveList</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="ow">is</span> <span class="nb">float</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for list[constrained-float]</span>
+<span class="sd">    0</span>
+<span class="sd">      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="named-type-aliases">Named type aliases<a class="headerlink" href="#named-type-aliases" title="Permanent link">&para;</a></h3>
+<p>The above examples make use of implicit type aliases.
+This means that they will not be able to have a <code>title</code> in JSON schemas and their schema will be copied between fields.
+You can use <a href="https://peps.python.org/pep-0695/">PEP 695</a>'s <code>TypeAliasType</code> via its <a href="https://github.com/python/typing_extensions">typing-extensions</a> backport to make named aliases, allowing you to define a new type without creating subclasses.
+This new type can be as simple as a name or have complex validation logic attached to it:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Gt</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypeAliasType</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>  <span class="c1"># or a `bound=SupportGt`</span>
+
+<span class="n">ImplicitAliasPositiveIntList</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]]</span>
+
+
+<span class="k">class</span> <span class="nc">Model1</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">ImplicitAliasPositiveIntList</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">ImplicitAliasPositiveIntList</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model1</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;x&#39;: {</span>
+<span class="sd">            &#39;items&#39;: {&#39;exclusiveMinimum&#39;: 0, &#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;title&#39;: &#39;X&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;y&#39;: {</span>
+<span class="sd">            &#39;items&#39;: {&#39;exclusiveMinimum&#39;: 0, &#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;title&#39;: &#39;Y&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;x&#39;, &#39;y&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;Model1&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">PositiveIntList</span> <span class="o">=</span> <span class="n">TypeAliasType</span><span class="p">(</span><span class="s1">&#39;PositiveIntList&#39;</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]])</span>
+
+
+<span class="k">class</span> <span class="nc">Model2</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">PositiveIntList</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">PositiveIntList</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model2</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;$defs&#39;: {</span>
+<span class="sd">        &#39;PositiveIntList&#39;: {</span>
+<span class="sd">            &#39;items&#39;: {&#39;exclusiveMinimum&#39;: 0, &#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">        }</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;x&#39;: {&#39;$ref&#39;: &#39;#/$defs/PositiveIntList&#39;},</span>
+<span class="sd">        &#39;y&#39;: {&#39;$ref&#39;: &#39;#/$defs/PositiveIntList&#39;},</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;x&#39;, &#39;y&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;Model2&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Gt</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypeAliasType</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>  <span class="c1"># or a `bound=SupportGt`</span>
+
+<span class="n">ImplicitAliasPositiveIntList</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]]</span>
+
+
+<span class="k">class</span> <span class="nc">Model1</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">ImplicitAliasPositiveIntList</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">ImplicitAliasPositiveIntList</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model1</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;x&#39;: {</span>
+<span class="sd">            &#39;items&#39;: {&#39;exclusiveMinimum&#39;: 0, &#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;title&#39;: &#39;X&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;y&#39;: {</span>
+<span class="sd">            &#39;items&#39;: {&#39;exclusiveMinimum&#39;: 0, &#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;title&#39;: &#39;Y&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;x&#39;, &#39;y&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;Model1&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">PositiveIntList</span> <span class="o">=</span> <span class="n">TypeAliasType</span><span class="p">(</span><span class="s1">&#39;PositiveIntList&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]])</span>
+
+
+<span class="k">class</span> <span class="nc">Model2</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">PositiveIntList</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">PositiveIntList</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model2</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;$defs&#39;: {</span>
+<span class="sd">        &#39;PositiveIntList&#39;: {</span>
+<span class="sd">            &#39;items&#39;: {&#39;exclusiveMinimum&#39;: 0, &#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">        }</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;x&#39;: {&#39;$ref&#39;: &#39;#/$defs/PositiveIntList&#39;},</span>
+<span class="sd">        &#39;y&#39;: {&#39;$ref&#39;: &#39;#/$defs/PositiveIntList&#39;},</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;x&#39;, &#39;y&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;Model2&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>These named type aliases can also be generic:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Gt</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypeAliasType</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>  <span class="c1"># or a bound=SupportGt</span>
+
+<span class="n">PositiveList</span> <span class="o">=</span> <span class="n">TypeAliasType</span><span class="p">(</span>
+    <span class="s1">&#39;PositiveList&#39;</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]],</span> <span class="n">type_params</span><span class="o">=</span><span class="p">(</span><span class="n">T</span><span class="p">,)</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">PositiveList</span><span class="p">[</span><span class="n">T</span><span class="p">]</span>
+
+
+<span class="k">assert</span> <span class="n">Model</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;x&quot;: [&quot;1&quot;]}&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">x</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model[int]</span>
+<span class="sd">    x.0</span>
+<span class="sd">      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Gt</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypeAliasType</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>  <span class="c1"># or a bound=SupportGt</span>
+
+<span class="n">PositiveList</span> <span class="o">=</span> <span class="n">TypeAliasType</span><span class="p">(</span>
+    <span class="s1">&#39;PositiveList&#39;</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]],</span> <span class="n">type_params</span><span class="o">=</span><span class="p">(</span><span class="n">T</span><span class="p">,)</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">PositiveList</span><span class="p">[</span><span class="n">T</span><span class="p">]</span>
+
+
+<span class="k">assert</span> <span class="n">Model</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;x&quot;: [&quot;1&quot;]}&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">x</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model[int]</span>
+<span class="sd">    x.0</span>
+<span class="sd">      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h4 id="named-recursive-types">Named recursive types<a class="headerlink" href="#named-recursive-types" title="Permanent link">&para;</a></h4>
+<p>You can also use <code>TypeAliasType</code> to create recursive types:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">PydanticCustomError</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypeAliasType</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TypeAdapter</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">ValidationInfo</span><span class="p">,</span>
+    <span class="n">ValidatorFunctionWrapHandler</span><span class="p">,</span>
+    <span class="n">WrapValidator</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">json_custom_error_validator</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">ValidatorFunctionWrapHandler</span><span class="p">,</span> <span class="n">_info</span><span class="p">:</span> <span class="n">ValidationInfo</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simplify the error message to avoid a gross error stemming</span>
+<span class="sd">    from exhaustive checking of all union options.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
+            <span class="s1">&#39;invalid_json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Input is not valid json&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="n">Json</span> <span class="o">=</span> <span class="n">TypeAliasType</span><span class="p">(</span>
+    <span class="s1">&#39;Json&#39;</span><span class="p">,</span>
+    <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">Union</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;Json&#39;</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="s1">&#39;Json&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">json_custom_error_validator</span><span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Json</span><span class="p">)</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}})</span>
+<span class="k">assert</span> <span class="n">v</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="nb">object</span><span class="p">()})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for function-wrap[json_custom_error_validator()]</span>
+<span class="sd">      Input is not valid json [type=invalid_json, input_value={&#39;x&#39;: &lt;object object at 0x0123456789ab&gt;}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">PydanticCustomError</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypeAliasType</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">TypeAdapter</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">ValidationInfo</span><span class="p">,</span>
+    <span class="n">ValidatorFunctionWrapHandler</span><span class="p">,</span>
+    <span class="n">WrapValidator</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">json_custom_error_validator</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">ValidatorFunctionWrapHandler</span><span class="p">,</span> <span class="n">_info</span><span class="p">:</span> <span class="n">ValidationInfo</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simplify the error message to avoid a gross error stemming</span>
+<span class="sd">    from exhaustive checking of all union options.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
+            <span class="s1">&#39;invalid_json&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;Input is not valid json&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="n">Json</span> <span class="o">=</span> <span class="n">TypeAliasType</span><span class="p">(</span>
+    <span class="s1">&#39;Json&#39;</span><span class="p">,</span>
+    <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;Json&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="s1">&#39;Json&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">json_custom_error_validator</span><span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+
+
+<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Json</span><span class="p">)</span>
+
+<span class="n">v</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}})</span>
+<span class="k">assert</span> <span class="n">v</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;z&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}}</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="nb">object</span><span class="p">()})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for function-wrap[json_custom_error_validator()]</span>
+<span class="sd">      Input is not valid json [type=invalid_json, input_value={&#39;x&#39;: &lt;object object at 0x0123456789ab&gt;}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h3 id="classes-with-____get_pydantic_core_schema____">Classes with <code>____get_pydantic_core_schema____</code><a class="headerlink" href="#classes-with-____get_pydantic_core_schema____" title="Permanent link">&para;</a></h3>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.7 and above</label><label for="__tabbed_8_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">re</span>
@@ -2319,7 +3026,7 @@ with <code>__get_validators__</code>.</p>
 <code>__get_validators__</code> you don't need to use <a href="../../model_config/#arbitrary-types-allowed"><code>arbitrary_types_allowed</code></a> for it to work.</p>
 <p>Because you can declare validators that receive the current <code>field</code>, you can extract
 the <code>sub_fields</code> (from the generic class type parameters) and validate data with them.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.7 and above</label><label for="__tabbed_9_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
