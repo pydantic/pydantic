@@ -242,7 +242,7 @@ class Model(BaseModel, Generic[T]):
     x: PositiveList[T]
 
 
-assert Model[int].model_validate_json('{"x": [1]}').x == [1]
+assert Model[int].model_validate_json('{"x": ["1"]}').x == [1]
 
 try:
     Model[int](x=[-1])
