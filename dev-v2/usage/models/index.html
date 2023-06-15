@@ -3764,7 +3764,7 @@ The root value can be passed to the model <code>__init__</code> or <code>model_v
 <span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">]))</span>
 <span class="c1">#&gt; root=[&#39;dog&#39;, &#39;cat&#39;]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;string&#39;}, &#39;type&#39;: &#39;array&#39;}</span>
+<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;string&#39;}, &#39;title&#39;: &#39;RootModel[List[str]]&#39;, &#39;type&#39;: &#39;array&#39;}</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">PetsByName</span><span class="p">({</span><span class="s1">&#39;Otis&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;Milo&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; root={&#39;Otis&#39;: &#39;dog&#39;, &#39;Milo&#39;: &#39;cat&#39;}</span>
@@ -3788,7 +3788,7 @@ The root value can be passed to the model <code>__init__</code> or <code>model_v
 <span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">]))</span>
 <span class="c1">#&gt; root=[&#39;dog&#39;, &#39;cat&#39;]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;string&#39;}, &#39;type&#39;: &#39;array&#39;}</span>
+<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;string&#39;}, &#39;title&#39;: &#39;RootModel[List[str]]&#39;, &#39;type&#39;: &#39;array&#39;}</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">PetsByName</span><span class="p">({</span><span class="s1">&#39;Otis&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;Milo&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; root={&#39;Otis&#39;: &#39;dog&#39;, &#39;Milo&#39;: &#39;cat&#39;}</span>
