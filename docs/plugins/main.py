@@ -260,7 +260,7 @@ def install_pydantic_extra_types(markdown: str, page: Page) -> str | None:
     recommendation_text = dedent(
         """
     !!! warning
-        To use this type, you need to install the
+        To use this type, you need to install the optional
         [pydantic-extra-types](https://pypi.org/project/pydantic-extra-types/) package:
 
         ```bash
