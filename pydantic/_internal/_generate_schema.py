@@ -321,6 +321,10 @@ class GenerateSchema:
         return None
 
     def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
+        """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
+        and return the inner schema.
+        """
+
         def get_ref(s: CoreSchema) -> str:
             return s['ref']  # type: ignore
 
