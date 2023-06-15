@@ -151,7 +151,7 @@ except ValidationError as exc:
 
 The above examples make use of implicit type aliases.
 This means that they will not be able to have a `title` in JSON schemas and their schema will be copied between fields.
-You can use [PEP 695]'s `TypeAliasType` via it's [typing-extensions] backport to make named aliases, allowing you to define a new type without creating subclasses.
+You can use [PEP 695]'s `TypeAliasType` via its [typing-extensions] backport to make named aliases, allowing you to define a new type without creating subclasses.
 This new type can be as simple as a name or have complex validation logic attached to it:
 
 ```py
