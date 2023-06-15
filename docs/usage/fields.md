@@ -575,7 +575,7 @@ print(user)
 1. This is the default value.
 2. The `age` field is not validated in the strict mode. Therefore, it can be assigned a string.
 
-## immutability
+## Immutability
 
 The parameter `frozen` is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).
