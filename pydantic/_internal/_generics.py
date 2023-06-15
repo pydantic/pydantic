@@ -126,8 +126,14 @@ def create_generic_submodel(
     only *creates* the new subclass; the schema/validators/serialization must be updated to
     reflect a concrete parametrization elsewhere.
 
-    :param model_name: name of the newly created model
-    :param origin: base class for the new model to inherit from
+    Args:
+        model_name: The name of the newly created model.
+        origin: The base class for the new model to inherit from.
+        args: A tuple of generic metadata arguments.
+        params: A tuple of generic metadata parameters.
+
+    Returns:
+        The created submodel.
     """
     namespace: dict[str, Any] = {'__module__': origin.__module__}
     bases = (origin,)
@@ -161,7 +167,14 @@ def create_generic_submodel(
 def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
     """Used inside a function to check whether it was called globally.
 
-    :returns Tuple[module_name, called_globally]
+    Args:
+        depth: The depth to get the frame.
+
+    Returns:
+        A tuple contains `module_nam` and `called_globally`.
+
+    Raises:
+        RuntimeError: If the function is not called inside a function.
     """
     try:
         previous_caller_frame = sys._getframe(depth)
@@ -242,14 +255,19 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVarType, Any] | Non
 def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     """Return type with all occurrences of `type_map` keys recursively replaced with their values.
 
-    :param type_: Any type, class or generic alias
-    :param type_map: Mapping from `TypeVar` instance to concrete types.
-    :return: New type representing the basic structure of `type_` with all
+    Args:
+        type_: The class or generic alias.
+        type_map: Mapping from `TypeVar` instance to concrete types.
+
+    Returns:
+        A new type representing the basic structure of `type_` with all
         `typevar_map` keys recursively replaced.
 
-    >>> replace_types(Tuple[str, Union[List[str], float]], {str: int})
-    Tuple[int, Union[List[int], float]]
-
+    Example:
+        ```python
+        replace_types(Tuple[str, Union[List[str], float]], {str: int})
+        #> Tuple[int, Union[List[int], float]]
+        ```
     """
     if not type_map:
         return type_
@@ -315,6 +333,15 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
 
 
 def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) -> None:
+    """Check the generic model parameters count is equal.
+
+    Args:
+        cls: The generic model.
+        parameters: A tuple of passed parameters to the generic model.
+
+    Raises:
+        TypeError: If the passed parameters count is not equal to generic model parameters count.
+    """
     actual = len(parameters)
     expected = len(cls.__pydantic_generic_metadata__['parameters'])
     if actual != expected:
