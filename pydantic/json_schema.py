@@ -404,8 +404,7 @@ class GenerateJsonSchema:
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
 
-        json_schema = current_handler(schema)
-        return json_schema
+        return current_handler(schema)
 
     # ### Schema generation methods
     def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
