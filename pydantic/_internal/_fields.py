@@ -25,7 +25,7 @@ def get_type_hints_infer_globalns(
     """Gets type hints for an object by inferring the global namespace.
 
     It uses the `typing.get_type_hints`, The only thing that we do here is fetching
-    global namespac from `obj.__module__` if it is not `None`.
+    global namespace from `obj.__module__` if it is not `None`.
 
     Args:
         obj: The object to get it's type hints.
