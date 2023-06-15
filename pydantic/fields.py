@@ -810,7 +810,7 @@ def PrivateAttr(
 
     Private attributes are not checked by Pydantic, so it's up to you to maintain their accuracy.
 
-    Private attributes are stored in the model `__slots__`.
+    Private attributes are stored in `__private_attributes__` on the model.
 
     Args:
         default: The attribute's default value. Defaults to Undefined.
