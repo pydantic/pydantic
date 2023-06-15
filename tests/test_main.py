@@ -2467,3 +2467,60 @@ def test_resolve_def_schema_from_core_schema() -> None:
         inner: Annotated[Inner, Marker()]
 
     assert Outer.model_validate({'inner': {'x': 1}}).inner.x == 2
+
+
+def test_super_getattr_extra():
+    class Model(BaseModel):
+        model_config = {'extra': 'allow'}
+
+        def __getattr__(self, item):
+            if item == 'test':
+                return 'success'
+            return super().__getattr__(item)
+
+    m = Model(x=1)
+    assert m.x == 1
+    with pytest.raises(AttributeError):
+        m.y
+    assert m.test == 'success'
+
+
+def test_super_getattr_private():
+    class Model(BaseModel):
+        _x: int = PrivateAttr()
+
+        def __getattr__(self, item):
+            if item == 'test':
+                return 'success'
+            else:
+                return super().__getattr__(item)
+
+    m = Model()
+    m._x = 1
+    assert m._x == 1
+    with pytest.raises(AttributeError):
+        m._y
+    assert m.test == 'success'
+
+
+def test_super_delattr_private():
+    test_calls = []
+
+    class Model(BaseModel):
+        _x: int = PrivateAttr()
+
+        def __delattr__(self, item):
+            if item == 'test':
+                test_calls.append('success')
+            else:
+                super().__delattr__(item)
+
+    m = Model()
+    m._x = 1
+    assert m._x == 1
+    delattr(m, '_x')
+    with pytest.raises(AttributeError):
+        m._x
+    assert test_calls == []
+    delattr(m, 'test')
+    assert test_calls == ['success']

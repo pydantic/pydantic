@@ -112,10 +112,9 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            if config_wrapper.extra == 'allow' or namespace['__private_attributes__']:
-                namespace['__getattr__'] = model_extra_private_getattr
-            if namespace['__private_attributes__']:
-                namespace['__delattr__'] = model_private_delattr
+            extra_base = _dunder_attr_base(bases, config_wrapper, namespace)
+            if extra_base is not None:
+                bases = bases + (extra_base,)
 
             if '__hash__' not in namespace and config_wrapper.frozen:
 
@@ -471,7 +470,28 @@ def generate_model_signature(
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
-def model_extra_private_getattr(self: BaseModel, item: str) -> Any:
+def _dunder_attr_base(
+    bases: tuple[type[Any], ...], config_wrapper: ConfigWrapper, namespace: dict[str, Any]
+) -> type[Any] | None:
+    """Returns a base class defining a custom __getattr__ and/or __delattr__ for models needing them for the sake
+    of interaction with private attributes and/or `model_config['extra'] == 'allow'`.
+    """
+    extra_base_namespace = {}
+    if config_wrapper.extra == 'allow' or namespace['__private_attributes__']:
+        if not any('__getattr__' in base.__dict__ for base in bases):
+            extra_base_namespace['__getattr__'] = _extra_private_getattr
+    if namespace['__private_attributes__']:
+        if not any('__delattr__' in base.__dict__ for base in bases):
+            extra_base_namespace['__delattr__'] = _extra_private_getattr
+        extra_base_namespace['__delattr__'] = _private_delattr
+
+    if extra_base_namespace:
+        return type('ModelAttrBase', (), extra_base_namespace)
+    else:
+        return None
+
+
+def _extra_private_getattr(self: BaseModel, item: str) -> Any:
     """This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
     allow (and store) extra and/or private attributes.
     """
@@ -494,7 +514,7 @@ def model_extra_private_getattr(self: BaseModel, item: str) -> Any:
         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
 
-def model_private_delattr(self: BaseModel, item: str) -> Any:
+def _private_delattr(self: BaseModel, item: str) -> Any:
     if item in self.__private_attributes__:
         attribute = self.__private_attributes__[item]
         if hasattr(attribute, '__delete__'):
@@ -507,6 +527,6 @@ def model_private_delattr(self: BaseModel, item: str) -> Any:
         except KeyError as exc:
             raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
     elif item in self.model_fields:
-        super(self.__class__, self).__delattr__(item)
+        object.__delattr__(self, item)
     else:
         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
