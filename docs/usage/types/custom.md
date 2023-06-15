@@ -226,7 +226,7 @@ print(Model2.model_json_schema())
 You can also use `TypeAliasType` to create recursive types:
 
 ```py
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from pydantic_core import PydanticCustomError
 from typing_extensions import Annotated, TypeAliasType
@@ -258,7 +258,7 @@ def json_custom_error_validator(
 Json = TypeAliasType(
     'Json',
     Annotated[
-        Dict[str, 'Json'] | List['Json'] | str | int | float | bool | None,
+        Union[Dict[str, 'Json'], List['Json'], str, int, float, bool, None],
         WrapValidator(json_custom_error_validator),
     ],
 )
