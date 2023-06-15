@@ -5,7 +5,7 @@ You can also define your own custom data types. There are several ways to achiev
 ### Composing types via `Annotated`
 
 [PEP 593] introduced `Annotated` as a way to attach runtime metadata to types without changing how type checkers interpret them.
-Pydantic takes advantage of this to allow you to create types that are identical to the original type as far as type checkers are concerned but add validation, serialize differently, etc.
+Pydantic takes advantage of this to allow you to create types that are identical to the original type as far as type checkers are concerned, but add validation, serialize differently, etc.
 For example, to create a type representing a positive int:
 
 ```py
