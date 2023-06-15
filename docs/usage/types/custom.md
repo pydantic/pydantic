@@ -31,7 +31,7 @@ except ValidationError as exc:
     """
 ```
 
-Note that you can also use constraints from [`annotated-types`] to make this Pydantic agnostic:
+Note that you can also use constraints from [`annotated-types`] to make this Pydantic-agnostic:
 
 ```py
 from annotated_types import Gt
