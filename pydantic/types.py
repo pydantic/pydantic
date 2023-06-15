@@ -1397,10 +1397,14 @@ class WithJsonSchema:
     """
 
     json_schema: JsonSchemaValue | None
+    mode: Literal['validation', 'serialization'] | None = None
 
     def __get_pydantic_json_schema__(
-        self, _core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
+        mode = self.mode or handler.mode
+        if mode != handler.mode:
+            return handler(core_schema)
         if self.json_schema is None:
             # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema
             raise PydanticOmit
