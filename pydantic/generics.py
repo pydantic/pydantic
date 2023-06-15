@@ -6,6 +6,7 @@ from typing import (
     Any,
     ClassVar,
     Dict,
+    ForwardRef,
     Generic,
     Iterator,
     List,
@@ -317,7 +318,12 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
 
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.
-    return type_map.get(type_, type_)
+    new_type = type_map.get(type_, type_)
+    # Convert string to ForwardRef
+    if isinstance(new_type, str):
+        return ForwardRef(new_type)
+    else:
+        return new_type
 
 
 def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...]) -> None:
