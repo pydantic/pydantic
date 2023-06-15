@@ -15,7 +15,7 @@ from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
 from operator import attrgetter
 from types import FunctionType, LambdaType, MethodType
-from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Iterator, Mapping, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Iterable, Iterator, Mapping, TypeVar, Union, cast
 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
@@ -320,6 +320,21 @@ class GenerateSchema:
 
             model_validators = decorators.model_validators.values()
 
+            extra_validator = None
+            if core_config.get('extra_fields_behavior') == 'allow':
+                for tp in (cls, *cls.__mro__):
+                    extras_annotation = cls.__annotations__.get('__pydantic_extra__', None)
+                    if extras_annotation is not None:
+                        tp = get_origin(extras_annotation)
+                        if tp not in (Dict, dict):
+                            raise PydanticSchemaGenerationError(
+                                'The type annotation for `__pydantic_extra__` must be `Dict[str, ...]`'
+                            )
+                        extra_items_type = get_args(cls.__annotations__['__pydantic_extra__'])[1]
+                        if extra_items_type is not Any:
+                            extra_validator = self.generate_schema(extra_items_type)
+                            break
+
             if cls.__pydantic_root_model__:
                 root_field = self._common_field_schema('root', fields['root'], decorators)
                 inner_schema = root_field['schema']
@@ -340,6 +355,7 @@ class GenerateSchema:
                     fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
                         {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
                         computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                        extra_validator=extra_validator,
                     )
                 finally:
                     self._config_wrapper_stack.pop()

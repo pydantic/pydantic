@@ -1000,10 +1000,11 @@ class GenerateJsonSchema:
             # referenced_schema['title'] = title
             schema_to_update.setdefault('title', title)
 
-        if extra == 'allow':
-            schema_to_update['additionalProperties'] = True
-        elif extra == 'forbid':
-            schema_to_update['additionalProperties'] = False
+        if 'additionalProperties' not in schema_to_update:
+            if extra == 'allow':
+                schema_to_update['additionalProperties'] = True
+            elif extra == 'forbid':
+                schema_to_update['additionalProperties'] = False
 
         if isinstance(json_schema_extra, (staticmethod, classmethod)):
             # In older versions of python, this is necessary to ensure staticmethod/classmethods are callable
@@ -1023,6 +1024,17 @@ class GenerateJsonSchema:
 
         return json_schema
 
+    def resolve_schema_to_update(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        """Resolve a JsonSchemaValue to the non-ref schema if it is a $ref schema"""
+        if '$ref' in json_schema:
+            schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
+            if schema_to_update is None:
+                raise RuntimeError(f'Cannot update undefined schema for $ref={json_schema["$ref"]}')
+            return self.resolve_schema_to_update(schema_to_update)
+        else:
+            schema_to_update = json_schema
+        return schema_to_update
+
     def model_fields_schema(self, schema: core_schema.ModelFieldsSchema) -> JsonSchemaValue:
         named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
             (name, self.field_is_required(field), field)
@@ -1031,7 +1043,12 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-        return self._named_required_fields_schema(named_required_fields)
+        json_schema = self._named_required_fields_schema(named_required_fields)
+        extra_validator = schema.get('extra_validator', None)
+        if extra_validator is not None:
+            schema_to_update = self.resolve_schema_to_update(json_schema)
+            schema_to_update['additionalProperties'] = self.generate_inner(extra_validator)
+        return json_schema
 
     def field_is_present(self, field: CoreSchemaField) -> bool:
         """Whether the field should be included in the generated JSON schema."""

@@ -2467,3 +2467,52 @@ def test_resolve_def_schema_from_core_schema() -> None:
         inner: Annotated[Inner, Marker()]
 
     assert Outer.model_validate({'inner': {'x': 1}}).inner.x == 2
+
+
+def test_extra_validator_scalar() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    class Child(Model):
+        __pydantic_extra__: Dict[str, int]
+
+    m = Child(a='1')
+    assert m.__pydantic_extra__ == {'a': 1}
+
+    # insert_assert(Child.model_json_schema())
+    assert Child.model_json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {},
+        'title': 'Child',
+        'type': 'object',
+    }
+
+
+def test_extra_validator_named() -> None:
+    class Foo(BaseModel):
+        x: int
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    class Child(Model):
+        __pydantic_extra__: Dict[str, Foo]
+
+    m = Child(a={'x': '1'})
+    assert m.__pydantic_extra__ == {'a': Foo(x=1)}
+
+    # insert_assert(Child.model_json_schema())
+    assert Child.model_json_schema() == {
+        '$defs': {
+            'Foo': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Foo',
+                'type': 'object',
+            }
+        },
+        'additionalProperties': {'$ref': '#/$defs/Foo'},
+        'properties': {},
+        'title': 'Child',
+        'type': 'object',
+    }
