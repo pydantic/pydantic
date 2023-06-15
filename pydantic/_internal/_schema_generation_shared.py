@@ -45,6 +45,11 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
                 f'Could not find a ref for {ref}.'
                 ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
             )
+        # Preserve the fact that definitions schemas should never have sibling keys:
+        if '$ref' in json_schema:
+            ref = json_schema['$ref']
+            json_schema.clear()
+            json_schema['allOf'] = [{'$ref': ref}]
         return json_schema
 
 
