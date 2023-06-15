@@ -1400,3 +1400,5 @@ assert m.y == 2
 assert m.model_dump() == {'x': 1, 'y': 2}
 assert m.__pydantic_extra__ == {'y': 2}
 ```
+
+The same configurations apply to `TypedDict` and `dataclass`' except the config is set via a `__pydantic_config__`.
