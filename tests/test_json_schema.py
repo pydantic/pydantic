@@ -4395,6 +4395,16 @@ def test_root_model():
         'title': 'B',
     }
 
+    class C(RootModel[A]):
+        """C Model docstring"""
+
+    assert C.model_json_schema() == {
+        '$defs': {'A': {'description': 'A Model docstring', 'title': 'A', 'type': 'integer'}},
+        'allOf': [{'$ref': '#/$defs/A'}],
+        'title': 'C',
+        'description': 'C Model docstring',
+    }
+
 
 def test_get_json_schema_is_passed_the_same_schema_handler_was_called_with() -> None:
     class CustomInt(int):
