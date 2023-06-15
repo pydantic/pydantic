@@ -459,7 +459,7 @@ of the data provided.
 For example, in the example above, if `_fields_set` was not provided,
 `new_user.model_fields_set` would be `{'id', 'age', 'name'}`.
 
-Note that for subclasses of [`RootModel`](#custom-root-types), the root value can be passed to `model_construct`
+Note that for subclasses of [`RootModel`](#rootmodel-and-custom-root-types), the root value can be passed to `model_construct`
 positionally, instead of using a keyword argument.
 
 Here are some additional notes on the behavior of `model_construct`:

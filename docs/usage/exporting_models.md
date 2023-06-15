@@ -6,7 +6,7 @@ serialized, and exported in a number of ways:
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
 !!! note
-    The one exception to sub-models being converted to dictionaries is that [`RootModel`](models.md#custom-root-types)
+    The one exception to sub-models being converted to dictionaries is that [`RootModel`](models.md#rootmodel-and-custom-root-types)
     and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
     done recursively.
 
@@ -142,7 +142,7 @@ for name, value in m:
     #> bar: whatever=123
 ```
 
-Note also that [`RootModel`](models.md#custom-root-types) _does_ get converted to a dictionary with the key `'root'`.
+Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) _does_ get converted to a dictionary with the key `'root'`.
 
 ## Custom serializers
 
