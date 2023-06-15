@@ -17,6 +17,7 @@ from ._internal import (
     _fields,
     _forward_ref,
     _generics,
+    _mock_validator,
     _model_construction,
     _repr,
     _typing_extra,
@@ -112,7 +113,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
         model_fields = {}
         __pydantic_decorators__ = _decorators.DecoratorInfos()
-        __pydantic_validator__ = _model_construction.MockValidator(
+        __pydantic_validator__ = _mock_validator.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
             code='base-model-instantiated',
         )
