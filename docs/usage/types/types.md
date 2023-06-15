@@ -32,4 +32,8 @@ The following sections describe the types supported by Pydantic.
 * [Base64 and other encodings](encoded.md) &mdash; types that allow serializing values into an encoded form, e.g. `base64`.
 * [Custom Data Types](custom.md) &mdash; create your own custom data types.
 * [Field Type Conversions](../conversion_table.md) &mdash; strict and lax conversion between different field types.
-* [Extra Types](extra_types/extra_types.md): Types that can be found in the [Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types).`
+* [Extra Types](extra_types/extra_types.md): Types that can be found in the optional [Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) package. These include:
+    * [Color Types](extra_types/color_types.md) &mdash; types that enable you to store RGB color values in your model.
+    * [Payment Card Numbers](extra_types/payment_cards.md) &mdash; types that enable you to store payment cards such as debit or credit cards.
+    * [Phone Numbers](extra_types/phone_numbers.md) &mdash; types that enable you to store phone numbers in your model.
+    * [Routing Numbers](extra_types/color_types.md) &mdash; types that enable you to store ABA routing transit numbers in your model.
