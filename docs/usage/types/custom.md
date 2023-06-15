@@ -58,7 +58,7 @@ except ValidationError as exc:
 
 #### Adding validation and serialization
 
-You can add or override validation, serialization and json schemas to an arbitrary type using the markers that Pydantic exports:
+You can add or override validation, serialization, and json schemas to an arbitrary type using the markers that Pydantic exports:
 
 ```py
 from typing_extensions import Annotated
