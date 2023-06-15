@@ -80,6 +80,7 @@ __all__ = [
     # pydantic_core errors
     'ValidationError',
     # errors
+    'PydanticErrorCodes',
     'PydanticUserError',
     'PydanticSchemaGenerationError',
     'PydanticImportError',

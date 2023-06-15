@@ -23,6 +23,7 @@ from pydantic.functional_serializers import (
     field_serializer,
 )
 from pydantic.json_schema import JsonSchemaValue
+from pydantic.type_adapter import TypeAdapter
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
 
 try:
@@ -77,12 +78,8 @@ class MyModel(BaseModel):
     ],
 )
 def test_json_serialization(ser_type, gen_value, json_output):
-    config_wrapper = ConfigWrapper({'arbitrary_types_allowed': False})
-    gen = GenerateSchema(config_wrapper, None)
-    schema = gen.generate_schema(ser_type)
-    schema = gen.collect_definitions(schema)
-    serializer = SchemaSerializer(schema)
-    assert serializer.to_json(gen_value()) == json_output
+    ta: TypeAdapter[Any] = TypeAdapter(ser_type)
+    assert ta.dump_json(gen_value()) == json_output
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')

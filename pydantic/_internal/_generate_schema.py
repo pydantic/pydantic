@@ -34,6 +34,7 @@ from ._core_metadata import (
 from ._core_utils import (
     CoreSchemaOrField,
     define_expected_missing_refs,
+    flatten_schema_defs,
     get_type_ref,
     is_list_like_schema_with_items_schema,
     remove_unnecessary_invalid_definitions,
@@ -324,6 +325,21 @@ class GenerateSchema:
             )
         return None
 
+    def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
+        """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
+        and return the inner schema.
+        """
+
+        def get_ref(s: CoreSchema) -> str:
+            return s['ref']  # type: ignore
+
+        schema = flatten_schema_defs(schema)
+
+        if schema['type'] == 'definitions':
+            self.defs.definitions.update({get_ref(s): s for s in schema['definitions']})
+            schema = schema['schema']
+        return schema
+
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """Try to generate schema from either the `__get_pydantic_core_schema__` function or
         `__pydantic_core_schema__` property.
@@ -344,14 +360,19 @@ class GenerateSchema:
         if get_schema is None:
             return None
 
+        schema: CoreSchema
         if len(inspect.signature(get_schema).parameters) == 1:
             # (source) -> CoreSchema
-            return get_schema(source)
+            schema = get_schema(source)
+        else:
+            schema = get_schema(source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode))
 
-        schema = get_schema(source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode))
-        if 'ref' in schema:
-            self.defs.definitions[schema['ref']] = schema
-            return core_schema.definition_reference_schema(schema['ref'])
+        schema = self._unpack_refs_defs(schema)
+
+        ref: str | None = schema.get('ref', None)
+        if ref:
+            self.defs.definitions[ref] = schema
+            return core_schema.definition_reference_schema(ref)
         return schema
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
@@ -432,13 +453,9 @@ class GenerateSchema:
         elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
             return self._callable_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
-            from ._std_types_schema import enum_prepare_pydantic_annotations
+            from ._std_types_schema import get_enum_core_schema
 
-            # TODO: consider moving `enum_prepare_pydantic_annotations` out of `_std_types_schema`
-            res = enum_prepare_pydantic_annotations(obj, (), getattr(obj, '__pydantic_config__', ConfigDict()))
-            assert res is not None
-            source_type, annotations = res
-            return self._apply_annotations(lambda x: x, source_type, annotations)
+            return get_enum_core_schema(obj)
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
@@ -1185,9 +1202,8 @@ class GenerateSchema:
             get_inner_schema = self._get_wrapped_inner_schema(get_inner_schema, annotation, pydantic_js_functions)
 
         schema = get_inner_schema(source_type)
-        metadata_schema = resolve_original_schema(schema, self.defs.definitions)
-        if metadata_schema:
-            metadata = CoreMetadataHandler(metadata_schema).metadata
+        if pydantic_js_functions:
+            metadata = CoreMetadataHandler(schema).metadata
             metadata.setdefault('pydantic_js_functions', []).extend(pydantic_js_functions)
         return schema
 

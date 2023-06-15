@@ -11,14 +11,15 @@ from typing import Any, Callable, Generic, Mapping
 from pydantic_core import SchemaSerializer, SchemaValidator
 from typing_extensions import dataclass_transform, deprecated
 
-from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
+from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
-from ._core_utils import flatten_schema_defs, inline_schema_defs
+from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
 from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
+from ._mock_validator import set_basemodel_mock_validator
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_types_namespace, is_classvar, parent_frame_namespace
 from ._utils import ClassAttribute, is_valid_identifier
@@ -374,26 +375,16 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        undefined_type_error_message = (
-            f'`{cls_name}` is not fully defined; you should define `{e.name}`, then call `{cls_name}.model_rebuild()` '
-            f'before the first `{cls_name}` instance is created.'
-        )
-
-        def attempt_rebuild() -> SchemaValidator | None:
-            if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=5):
-                return cls.__pydantic_validator__
-            else:
-                return None
-
-        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            undefined_type_error_message, code='class-not-fully-defined', attempt_rebuild=attempt_rebuild
-        )
+        set_basemodel_mock_validator(cls, cls_name, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
     schema = flatten_schema_defs(schema)
+    if collect_invalid_schemas(schema):
+        set_basemodel_mock_validator(cls, cls_name, 'all referenced types')
+        return False
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
@@ -478,35 +469,6 @@ def generate_model_signature(
         merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
 
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
-
-
-class MockValidator:
-    """Mocker for `pydantic_core.SchemaValidator` which just raises an error when one of its methods is accessed."""
-
-    __slots__ = '_error_message', '_code', '_attempt_rebuild'
-
-    def __init__(
-        self,
-        error_message: str,
-        *,
-        code: PydanticErrorCodes,
-        attempt_rebuild: Callable[[], SchemaValidator | None] | None = None,
-    ) -> None:
-        """Attempt rebuild."""
-        self._error_message = error_message
-        self._code: PydanticErrorCodes = code
-        self._attempt_rebuild = attempt_rebuild
-
-    def __getattr__(self, item: str) -> None:
-        __tracebackhide__ = True
-        if self._attempt_rebuild:
-            validator = self._attempt_rebuild()
-            if validator is not None:
-                return getattr(validator, item)
-
-        # raise an AttributeError if `item` doesn't exist
-        getattr(SchemaValidator, item)
-        raise PydanticUserError(self._error_message, code=self._code)
 
 
 def model_extra_private_getattr(self: BaseModel, item: str) -> Any:

@@ -2444,3 +2444,26 @@ def test_get_core_schema_return_new_ref() -> None:
     assert 'inner was here' in str(cs)
 
     assert OuterModel(inner=InnerModel()).x == 2
+
+
+def test_resolve_def_schema_from_core_schema() -> None:
+    class Inner(BaseModel):
+        x: int
+
+    class Marker:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            resolved = handler.resolve_ref_schema(schema)
+            assert resolved['type'] == 'model'
+            assert resolved['cls'] is Inner
+
+            def modify_inner(v: Inner) -> Inner:
+                v.x += 1
+                return v
+
+            return core_schema.no_info_after_validator_function(modify_inner, schema)
+
+    class Outer(BaseModel):
+        inner: Annotated[Inner, Marker()]
+
+    assert Outer.model_validate({'inner': {'x': 1}}).inner.x == 2

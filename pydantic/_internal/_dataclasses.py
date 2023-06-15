@@ -13,11 +13,11 @@ from typing_extensions import TypeGuard
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from . import _config, _decorators, _typing_extra
-from ._core_utils import flatten_schema_defs, inline_schema_defs
+from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
-from ._model_construction import MockValidator
+from ._mock_validator import set_dataclass_mock_validator
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 
 if typing.TYPE_CHECKING:
@@ -122,31 +122,18 @@ def complete_dataclass(
         else:
             schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
     except PydanticUndefinedAnnotation as e:
-        cls_name = cls.__name__
         if raise_errors:
             raise
-        undefined_type_error_message = (
-            f'`{cls_name}` is not fully defined; you should define `{e.name}`,'
-            f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`'
-            f' before the first `{cls_name}` instance is created.'
-        )
-
-        def attempt_rebuild() -> SchemaValidator | None:
-            from ..dataclasses import rebuild_dataclass
-
-            if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=5):
-                return cls.__pydantic_validator__  # type: ignore
-            else:
-                return None
-
-        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            undefined_type_error_message, code='class-not-fully-defined', attempt_rebuild=attempt_rebuild
-        )
+        set_dataclass_mock_validator(cls, cls.__name__, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
+    schema = flatten_schema_defs(schema)
+    if collect_invalid_schemas(schema):
+        set_dataclass_mock_validator(cls, cls.__name__, 'all referenced types')
+        return False
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
