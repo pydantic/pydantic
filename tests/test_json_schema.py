@@ -4701,13 +4701,37 @@ def test_resolve_def_schema_from_core_schema() -> None:
 
 
 def test_examples_annotation() -> None:
-    ListWithExamples = Annotated[List[int], Examples({'Fibonacci': [1, 1, 2, 3, 5]})]
+    ListWithExamples = Annotated[
+        List[float],
+        Examples({'Fibonacci': [1, 1, 2, 3, 5]}),
+    ]
 
     ta = TypeAdapter(ListWithExamples)
 
     # insert_assert(ta.json_schema())
     assert ta.json_schema() == {
         'examples': {'Fibonacci': [1, 1, 2, 3, 5]},
-        'items': {'type': 'integer'},
+        'items': {'type': 'number'},
+        'type': 'array',
+    }
+
+    ListWithMoreExamples = Annotated[
+        ListWithExamples,
+        Examples(
+            {
+                'Constants': [
+                    3.14,
+                    2.71,
+                ]
+            }
+        ),
+    ]
+
+    ta = TypeAdapter(ListWithMoreExamples)
+
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {
+        'examples': {'Constants': [3.14, 2.71], 'Fibonacci': [1, 1, 2, 3, 5]},
+        'items': {'type': 'number'},
         'type': 'array',
     }
