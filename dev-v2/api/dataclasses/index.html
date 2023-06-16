@@ -2177,7 +2177,7 @@ but with added validation.</p>
             <div class="doc-md-description">
               <p>Included for signature compatibility with <code>dataclasses.dataclass</code>, and is passed through to
 <code>dataclasses.dataclass</code> when appropriate. If specified, must be set to <code>False</code>, as pydantic inserts its
-own  <code>__init__</code> function. Defaults to <code>False</code>.</p>
+own  <code>__init__</code> function.</p>
             </div>
           </td>
           <td>
@@ -2191,7 +2191,7 @@ own  <code>__init__</code> function. Defaults to <code>False</code>.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines if a <code>__repr__</code> should be generated for the class. Defaults to <code>True</code>.</p>
+              <p>A boolean indicating whether or not to include the field in the <strong>repr</strong> output.</p>
             </div>
           </td>
           <td>
@@ -2205,7 +2205,7 @@ own  <code>__init__</code> function. Defaults to <code>False</code>.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines if a <code>__eq__</code> should be generated for the class. Defaults to <code>True</code>.</p>
+              <p>Determines if a <code>__eq__</code> should be generated for the class.</p>
             </div>
           </td>
           <td>
@@ -2219,8 +2219,7 @@ own  <code>__init__</code> function. Defaults to <code>False</code>.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines if comparison magic methods should be generated, such as<code>__lt__</code>, but
-not <code>__eq__</code>. Defaults to <code>False</code>.</p>
+              <p>Determines if comparison magic methods should be generated, such as<code>__lt__</code>, but not <code>__eq__</code>.</p>
             </div>
           </td>
           <td>
@@ -2249,7 +2248,7 @@ not <code>__eq__</code>. Defaults to <code>False</code>.</p>
           <td>
             <div class="doc-md-description">
               <p>Determines if the generated class should be a 'frozen' dataclass, which does not allow its
-attributes to be modified from its constructor. Defaults to <code>False</code>.</p>
+attributes to be modified from its constructor.</p>
             </div>
           </td>
           <td>
@@ -2263,7 +2262,7 @@ attributes to be modified from its constructor. Defaults to <code>False</code>.<
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A configuration for the dataclass generation. Defaults to <code>None</code>.</p>
+              <p>A configuration for the dataclass generation.</p>
             </div>
           </td>
           <td>
@@ -2307,7 +2306,7 @@ are validated on init.</p>
           <td>
             <div class="doc-md-description">
               <p>Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of
-new attributes after instantiation. Defaults to <code>False</code>.</p>
+new attributes after instantiation.</p>
             </div>
           </td>
           <td>
@@ -2478,8 +2477,7 @@ new attributes after instantiation. Defaults to <code>False</code>.</p>
 <span class="normal">207</span>
 <span class="normal">208</span>
 <span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">))</span>
+<span class="normal">210</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">dataclass</span><span class="p">(</span>
     <span class="n">_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -2503,20 +2501,19 @@ new attributes after instantiation. Defaults to <code>False</code>.</p>
 <span class="sd">        _cls: The target dataclass.</span>
 <span class="sd">        init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to</span>
 <span class="sd">            `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its</span>
-<span class="sd">            own  `__init__` function. Defaults to `False`.</span>
-<span class="sd">        repr: Determines if a `__repr__` should be generated for the class. Defaults to `True`.</span>
-<span class="sd">        eq: Determines if a `__eq__` should be generated for the class. Defaults to `True`.</span>
-<span class="sd">        order: Determines if comparison magic methods should be generated, such as` __lt__`, but</span>
-<span class="sd">            not `__eq__`. Defaults to `False`.</span>
+<span class="sd">            own  `__init__` function.</span>
+<span class="sd">        repr: A boolean indicating whether or not to include the field in the __repr__ output.</span>
+<span class="sd">        eq: Determines if a `__eq__` should be generated for the class.</span>
+<span class="sd">        order: Determines if comparison magic methods should be generated, such as` __lt__`, but not `__eq__`.</span>
 <span class="sd">        unsafe_hash: Determines if an unsafe hashing function should be included in the class.</span>
 <span class="sd">        frozen: Determines if the generated class should be a &#39;frozen&#39; dataclass, which does not allow its</span>
-<span class="sd">            attributes to be modified from its constructor. Defaults to `False`.</span>
-<span class="sd">        config: A configuration for the dataclass generation. Defaults to `None`.</span>
+<span class="sd">            attributes to be modified from its constructor.</span>
+<span class="sd">        config: A configuration for the dataclass generation.</span>
 <span class="sd">        validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all pydantic dataclasses</span>
 <span class="sd">            are validated on init.</span>
 <span class="sd">        kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.</span>
 <span class="sd">        slots: Determines if the generated class should be a &#39;slots&#39; dataclass, which does not allow the addition of</span>
-<span class="sd">            new attributes after instantiation. Defaults to `False`.</span>
+<span class="sd">            new attributes after instantiation.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A decorator that accepts a class as its argument and returns a Pydantic dataclass.</span>
@@ -2746,7 +2743,8 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">230</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">229</span>
+<span class="normal">230</span>
 <span class="normal">231</span>
 <span class="normal">232</span>
 <span class="normal">233</span>
@@ -2791,8 +2789,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">272</span>
 <span class="normal">273</span>
 <span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_dataclass</span><span class="p">(</span>
+<span class="normal">275</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_dataclass</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>

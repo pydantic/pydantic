@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#field-aliases" class="md-skip">
+        <a href="#default-values" class="md-skip">
           Skip to content
         </a>
       
@@ -1066,6 +1066,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#default-values" class="md-nav__link">
+    Default values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-aliases" class="md-nav__link">
     Field aliases
   </a>
@@ -1089,6 +1096,69 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#numeric-constraints" class="md-nav__link">
+    Numeric Constraints
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#string-constraints" class="md-nav__link">
+    String Constraints
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decimal-constraints" class="md-nav__link">
+    Decimal Constraints
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dataclass-constraints" class="md-nav__link">
+    Dataclass Constraints
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#field-representation" class="md-nav__link">
+    Field Representation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discriminator" class="md-nav__link">
+    Discriminator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#strict-mode" class="md-nav__link">
+    Strict Mode
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#immutability" class="md-nav__link">
+    Immutability
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#customizing-json-schema" class="md-nav__link">
+    Customizing JSON Schema
+  </a>
   
 </li>
       
@@ -2055,6 +2125,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#default-values" class="md-nav__link">
+    Default values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-aliases" class="md-nav__link">
     Field aliases
   </a>
@@ -2081,6 +2158,69 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#numeric-constraints" class="md-nav__link">
+    Numeric Constraints
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#string-constraints" class="md-nav__link">
+    String Constraints
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decimal-constraints" class="md-nav__link">
+    Decimal Constraints
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dataclass-constraints" class="md-nav__link">
+    Dataclass Constraints
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#field-representation" class="md-nav__link">
+    Field Representation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#discriminator" class="md-nav__link">
+    Discriminator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#strict-mode" class="md-nav__link">
+    Strict Mode
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#immutability" class="md-nav__link">
+    Immutability
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#customizing-json-schema" class="md-nav__link">
+    Customizing JSON Schema
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2102,8 +2242,38 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Fields</h1>
 
-<p>The <code>Field</code> class is used to define fields in models.</p>
-<p>TODO: Refactor the <code>Field customization</code> section from the <code>json_schema.md</code>.</p>
+<p>The <code>Field</code> function is used to customize and add metadata to fields of models.</p>
+<p>See the <a href="/api/fields/#pydantic.fields.Field"><code>Field</code></a> API reference for additional details.</p>
+<h2 id="default-values">Default values<a class="headerlink" href="#default-values" title="Permanent link">&para;</a></h2>
+<p>The <code>default</code> parameter is used to define a default value for a field.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39;</span>
+</code></pre></div>
+<p>You can also use <code>default_factory</code> to define a callable that will be called to generate a default value.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>The <code>default</code> and <code>default_factory</code> parameters are mutually exclusive.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you use <code>typing.Optional</code>, it doesn't mean that the field has a default value of <code>None</code>!</p>
+</div>
 <h2 id="field-aliases">Field aliases<a class="headerlink" href="#field-aliases" title="Permanent link">&para;</a></h2>
 <p>For validation and serialization, you can define an alias for a field.</p>
 <p>There are three ways to define an alias:</p>
@@ -2313,7 +2483,390 @@ In the <code>'last_name'</code> field, we are using the alias <code>'names'</cod
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
 <span class="c1">#&gt; first_name=&#39;John&#39; last_name=&#39;Doe&#39;</span>
 </code></pre></div>
-<p>TODO: Document usage of other <code>Field</code> keyword arguments</p>
+<h2 id="numeric-constraints">Numeric Constraints<a class="headerlink" href="#numeric-constraints" title="Permanent link">&para;</a></h2>
+<p>There are some keyword arguments that can be used to constrain numeric values:</p>
+<ul>
+<li><code>gt</code> - greater than</li>
+<li><code>lt</code> - less than</li>
+<li><code>ge</code> - greater than or equal to</li>
+<li><code>le</code> - less than or equal to</li>
+<li><code>multiple_of</code> - a multiple of the given number</li>
+<li><code>allow_inf_nan</code> - allow <code>'inf'</code>, <code>'-inf'</code>, <code>'nan'</code> values</li>
+</ul>
+<p>Here's an example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">positive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">non_negative</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">negative</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">lt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">non_positive</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">le</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">even</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">multiple_of</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">love_for_pydantic</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">allow_inf_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span>
+    <span class="n">positive</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">non_negative</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">negative</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">non_positive</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">even</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">love_for_pydantic</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=inf</span>
+</code></pre></div>
+<details class="info">
+<summary>JSON Schema</summary>
+<p>In the generated JSON schema:</p>
+<ul>
+<li><code>gt</code> and <code>lt</code> constraints will be translated to <code>exclusiveMinimum</code> and <code>exclusiveMaximum</code>.</li>
+<li><code>ge</code> and <code>le</code> constraints will be translated to <code>minimum</code> and <code>maximum</code>.</li>
+<li><code>multiple_of</code> constraint will be translated to <code>multipleOf</code>.</li>
+</ul>
+<p>The above snippet will generate the following JSON Schema:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;positive&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Positive&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;exclusiveMinimum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;non_negative&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Non Negative&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;minimum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;negative&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Negative&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;exclusiveMaximum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;non_positive&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Non Positive&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;maximum&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;even&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Even&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;integer&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;multipleOf&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;love_for_pydantic&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Love For Pydantic&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;positive&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;non_negative&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;negative&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;non_positive&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;even&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;love_for_pydantic&quot;</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>See the <a href="https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types">JSON Schema Draft 2020-12</a> for more details.</p>
+</details>
+<h2 id="string-constraints">String Constraints<a class="headerlink" href="#string-constraints" title="Permanent link">&para;</a></h2>
+<p>There are fields that can be used to constrain strings:</p>
+<ul>
+<li><code>min_length</code>: Minimum length of the string.</li>
+<li><code>max_length</code>: Maximum length of the string.</li>
+<li><code>pattern</code>: A regular expression that the string must match.</li>
+</ul>
+<p>Here's an example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">short</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">long</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">regex</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;^\d*$&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+
+<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">short</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="n">long</span><span class="o">=</span><span class="s1">&#39;foobarbaz&#39;</span><span class="p">,</span> <span class="n">regex</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; short=&#39;foo&#39; long=&#39;foobarbaz&#39; regex=&#39;123&#39;</span>
+</code></pre></div>
+<ol>
+<li>Only digits are allowed.</li>
+</ol>
+<details class="info">
+<summary>JSON Schema</summary>
+<p>In the generated JSON schema:</p>
+<ul>
+<li><code>min_length</code> constraint will be translated to <code>minLength</code>.</li>
+<li><code>max_length</code> constraint will be translated to <code>maxLength</code>.</li>
+<li><code>pattern</code> constraint will be translated to <code>pattern</code>.</li>
+</ul>
+<p>The above snippet will generate the following JSON Schema:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Foo&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;object&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;properties&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;short&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Short&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;minLength&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;long&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Long&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;maxLength&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;regex&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;title&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Regex&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;string&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;pattern&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^\\d*$&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;short&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;long&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;regex&quot;</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+</details>
+<h2 id="decimal-constraints">Decimal Constraints<a class="headerlink" href="#decimal-constraints" title="Permanent link">&para;</a></h2>
+<p>There are fields that can be used to constrain decimals:</p>
+<ul>
+<li><code>max_digits</code>: Maximum number of digits within the <code>Decimal</code>. It does not include a zero before the decimal point or
+  trailing decimal zeroes.</li>
+<li><code>decimal_places</code>: Maximum number of decimal places allowed. It does not include trailing decimal zeroes.</li>
+</ul>
+<p>Here's an example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">precise</span><span class="p">:</span> <span class="n">Decimal</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_digits</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">decimal_places</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+
+<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">precise</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;123.45&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
+<span class="c1">#&gt; precise=Decimal(&#39;123.45&#39;)</span>
+</code></pre></div>
+<h2 id="dataclass-constraints">Dataclass Constraints<a class="headerlink" href="#dataclass-constraints" title="Permanent link">&para;</a></h2>
+<p>There are fields that can be used to constrain dataclasses:</p>
+<ul>
+<li><code>init_var</code>: Whether the field should be seen as an <a href="https://docs.python.org/3/library/dataclasses.html#init-only-variables">init-only field</a> in the dataclass.</li>
+<li><code>kw_only</code>: Whether the field should be a keyword-only argument in the constructor of the dataclass.</li>
+</ul>
+<p>Here's an example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">baz</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">init_var</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">qux</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="n">Foo</span>
+
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="n">Foo</span><span class="p">(</span><span class="s1">&#39;bar&#39;</span><span class="p">,</span> <span class="n">baz</span><span class="o">=</span><span class="s1">&#39;baz&#39;</span><span class="p">,</span> <span class="n">qux</span><span class="o">=</span><span class="s1">&#39;qux&#39;</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&#39;foo&#39;: {&#39;bar&#39;: &#39;bar&#39;, &#39;qux&#39;: &#39;qux&#39;}}</span>
+</code></pre></div>
+<ol>
+<li>The <code>baz</code> field is not included in the <code>model_dump()</code> output, since it is an init-only field.</li>
+</ol>
+<h2 id="field-representation">Field Representation<a class="headerlink" href="#field-representation" title="Permanent link">&para;</a></h2>
+<p>The parameter <code>repr</code> can be used to control whether the field should be included in the string
+representation of the model.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="nb">repr</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="nb">repr</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John&#39;</span>
+</code></pre></div>
+<ol>
+<li>This is the default value.</li>
+</ol>
+<h2 id="discriminator">Discriminator<a class="headerlink" href="#discriminator" title="Permanent link">&para;</a></h2>
+<p>The parameter <code>discriminator</code> can be used to control the field that will be used to discriminate between different
+models in a union.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;pet&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}}))</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; pet=Cat(pet_type=&#39;cat&#39;, age=12)</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet</span><span class="p">:</span> <span class="n">Cat</span> <span class="o">|</span> <span class="n">Dog</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;pet&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}}))</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; pet=Cat(pet_type=&#39;cat&#39;, age=12)</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<ol>
+<li>See more about <a href="/usage/models/#helper-functions">Helper Functions</a> in the <a href="/usage/models/">Models</a> page.</li>
+</ol>
+<p>See the <a href="/usage/types/unions/#discriminated-unions-aka-tagged-unions">Discriminated Unions</a> for more details.</p>
+<h2 id="strict-mode">Strict Mode<a class="headerlink" href="#strict-mode" title="Permanent link">&para;</a></h2>
+<p>The parameter <code>strict</code> can be used to control whether the field should be validated in "strict mode".</p>
+<p>[TODO: Add a link to documentation about strict mode]</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John&#39; age=42</span>
+</code></pre></div>
+<ol>
+<li>This is the default value.</li>
+<li>The <code>age</code> field is not validated in the strict mode. Therefore, it can be assigned a string.</li>
+</ol>
+<h2 id="immutability">Immutability<a class="headerlink" href="#immutability" title="Permanent link">&para;</a></h2>
+<p>The parameter <code>frozen</code> is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being
+assigned a new value after the model is created (immutability).</p>
+<p>See the <a href="https://docs.python.org/3/library/dataclasses.html#frozen-instances">frozen dataclass documentation</a> for more details.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Jane&#39;</span>  <span class="c1"># (2)!</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">    name</span>
+<span class="sd">      Field is frozen [type=frozen_field, input_value=&#39;Jane&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>
+<p>The <code>model_config</code> field is used to enable the validation of assignments.</p>
+<p>See the <a href="/usage/models/#validate-assignment">Validate Assignment</a> section for more details.</p>
+</li>
+<li>
+<p>Since <code>validate_assignment</code> is enabled, and the <code>name</code> field is frozen, the assignment is not allowed.</p>
+</li>
+</ol>
+<h2 id="customizing-json-schema">Customizing JSON Schema<a class="headerlink" href="#customizing-json-schema" title="Permanent link">&para;</a></h2>
+<p>There are fields that exclusively to customise the generated JSON Schema:</p>
+<ul>
+<li><code>title</code>: The title of the field.</li>
+<li><code>description</code>: The description of the field.</li>
+<li><code>examples</code>: The examples of the field.</li>
+<li><code>json_schema_extra</code>: Extra JSON Schema properties to be added to the field.</li>
+</ul>
+<p>Here's an example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Age of the user&#39;</span><span class="p">)</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;marcelo@mail.com&#39;</span><span class="p">])</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Username&#39;</span><span class="p">)</span>
+    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="n">json_schema_extra</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Password&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;description&#39;</span><span class="p">:</span> <span class="s1">&#39;Password of the user&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;examples&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;123456&#39;</span><span class="p">],</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;age&#39;: {&#39;description&#39;: &#39;Age of the user&#39;, &#39;title&#39;: &#39;Age&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">        &#39;email&#39;: {</span>
+<span class="sd">            &#39;examples&#39;: [&#39;marcelo@mail.com&#39;],</span>
+<span class="sd">            &#39;format&#39;: &#39;email&#39;,</span>
+<span class="sd">            &#39;title&#39;: &#39;Email&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;string&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;name&#39;: {&#39;title&#39;: &#39;Username&#39;, &#39;type&#39;: &#39;string&#39;},</span>
+<span class="sd">        &#39;password&#39;: {</span>
+<span class="sd">            &#39;description&#39;: &#39;Password of the user&#39;,</span>
+<span class="sd">            &#39;examples&#39;: [&#39;123456&#39;],</span>
+<span class="sd">            &#39;format&#39;: &#39;password&#39;,</span>
+<span class="sd">            &#39;title&#39;: &#39;Password&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;string&#39;,</span>
+<span class="sd">            &#39;writeOnly&#39;: True,</span>
+<span class="sd">        },</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;age&#39;, &#39;email&#39;, &#39;name&#39;, &#39;password&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;User&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>TODO: Add <code>include</code>, <code>exclude</code>, <code>final</code>, <code>validate_default</code> and <code>alias_priority</code> parameters.</p>
 
 
 
