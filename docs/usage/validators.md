@@ -1,4 +1,4 @@
-Custom validation and complex relationships between objects can be achieved using the `validator` decorator.
+Custom validation and complex relationships between objects can be achieved using the `@field_validator` decorator.
 
 ```py
 from pydantic_core.core_schema import FieldValidationInfo

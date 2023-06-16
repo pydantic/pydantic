@@ -107,6 +107,9 @@ Models possess the following methods and attributes:
 !!! note
     See [`BaseModel`][pydantic.main.BaseModel] for the class definition including a full list of methods and attributes.
 
+!!! tip
+    See [Changes to `pydantic.BaseModel`](../migration.md#changes-to-pydanticbasemodel) in the [Migration Guide](../migration.md) for details on changes from Pydantic V1.
+
 ## Recursive models
 
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
