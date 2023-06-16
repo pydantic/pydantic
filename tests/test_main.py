@@ -2552,6 +2552,28 @@ def test_super_getattr_private():
     assert m.test == 'success'
 
 
+def test_super_delattr_extra():
+    test_calls = []
+
+    class Model(BaseModel):
+        model_config = {'extra': 'allow'}
+
+        def __delattr__(self, item):
+            if item == 'test':
+                test_calls.append('success')
+            else:
+                super().__delattr__(item)
+
+    m = Model(x=1)
+    assert m.x == 1
+    del m.x
+    with pytest.raises(AttributeError):
+        m._x
+    assert test_calls == []
+    del m.test
+    assert test_calls == ['success']
+
+
 def test_super_delattr_private():
     test_calls = []
 
@@ -2567,9 +2589,9 @@ def test_super_delattr_private():
     m = Model()
     m._x = 1
     assert m._x == 1
-    delattr(m, '_x')
+    del m._x
     with pytest.raises(AttributeError):
         m._x
     assert test_calls == []
-    delattr(m, 'test')
+    del m.test
     assert test_calls == ['success']

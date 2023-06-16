@@ -529,7 +529,7 @@ class ModelAttrBase:
                 return self.__pydantic_private__[item]  # type: ignore
             except KeyError as exc:
                 raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-        if self.__pydantic_extra__ is not None:
+        elif self.__pydantic_extra__ is not None:
             try:
                 return self.__pydantic_extra__[item]
             except KeyError as exc:
@@ -551,5 +551,10 @@ class ModelAttrBase:
                 raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
         elif item in self.model_fields:
             object.__delattr__(self, item)
+        elif self.__pydantic_extra__ is not None:
+            try:
+                del self.__pydantic_extra__[item]
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
         else:
             raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
