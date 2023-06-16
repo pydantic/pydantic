@@ -31,17 +31,17 @@ Various method names have been changed; all non-deprecated `BaseModel` methods n
 format `model_.*` or `__.*pydantic.*__`. Where possible, we have retained the deprecated methods with their old names
 to help ease migration, but calling them will emit `DeprecationWarning`s.
 
-| Pydantic V2  | Pydantic V1 |
-| ------------ | ----------- |
-| `model_dump()` | `dict()` |
-| `model_dump_json()` | `json()` |
-| `model_copy()` | `copy()` |
-| `model_json_schema()` | `json_schema()` |
-| `model_construct()` | `construct()` |
-| `model_validate()` | `parse_obj()` |
-| `__pydantic_validator__` | `__validators__` |
-| `model_fields` | `__fields__` |
-| `__pydantic_private__` | `__private_attributes__` |
+| Pydantic V1 | Pydantic V2  |
+| ----------- | ------------ |
+| `__fields__` | `model_fields` |
+| `__private_attributes__` | `__pydantic_private__` |
+| `__validators__` | `__pydantic_validator__` |
+| `construct()` | `model_construct()` |
+| `copy()` | `model_copy()` |
+| `dict()` | `model_dump()` |
+| `json_schema()` | `model_json_schema()` |
+| `json()` | `model_dump_json()` |
+| `parse_obj()` | `model_validate()` |
 
 * Some of the built-in data-loading functionality has been slated for removal. In particular,
     `parse_raw` and `parse_file` are now deprecated. In Pydantic V2, `model_validate_json` works like `parse_raw`. Otherwise, you should load the data and then pass it to `model_validate`.
