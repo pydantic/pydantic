@@ -1,6 +1,4 @@
-"""
-Private logic for creating models.
-"""
+"""Private logic for creating models."""
 from __future__ import annotations as _annotations
 
 import typing
@@ -13,14 +11,15 @@ from typing import Any, Callable, Generic, Mapping
 from pydantic_core import SchemaSerializer, SchemaValidator
 from typing_extensions import dataclass_transform, deprecated
 
-from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
+from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
-from ._core_utils import flatten_schema_defs, inline_schema_defs
+from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
 from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
+from ._mock_validator import set_basemodel_mock_validator
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_types_namespace, is_classvar, parent_frame_namespace
 from ._utils import ClassAttribute, is_valid_identifier
@@ -43,12 +42,8 @@ object_setattr = object.__setattr__
 
 
 class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
-    """
-    A dictionary subclass that intercepts attribute setting on model classes and warns about overriding of decorators.
-
-    Args:
-        k (str): The key to be set.
-        v (object): The value to set with the key.
+    """A dictionary subclass that intercepts attribute setting on model classes and
+    warns about overriding of decorators.
     """
 
     def __setitem__(self, k: str, v: object) -> None:
@@ -73,15 +68,15 @@ class ModelMetaclass(ABCMeta):
         """Metaclass for creating Pydantic models.
 
         Args:
-            cls_name (str): the name of the class to be created
-            bases (tuple[type[Any], ...]]): the base classes of the class to be created
-            namespace (dict[str, Any]): the attribute dictionary of the class to be created
-            __pydantic_generic_metadata__ (PydanticGenericMetadata | None): metadata for generic models
-            __pydantic_reset_parent_namespace__ (bool): reset parent namespace
-            **kwargs (Any): catch-all for any other keyword arguments
+            cls_name: The name of the class to be created.
+            bases: The base classes of the class to be created.
+            namespace: The attribute dictionary of the class to be created.
+            __pydantic_generic_metadata__: Metadata for generic models.
+            __pydantic_reset_parent_namespace__: Reset parent namespace.
+            **kwargs: Catch-all for any other keyword arguments.
 
         Returns:
-            type: the new class created by the metaclass
+            The new class created by the metaclass.
         """
         # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we rely on the fact
         # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine whether the `__new__`
@@ -100,8 +95,8 @@ class ModelMetaclass(ABCMeta):
                     original_model_post_init = namespace['model_post_init']
 
                     def wrapped_model_post_init(self: BaseModel, __context: Any) -> None:
-                        """
-                        We need to both initialize private attributes and call the user-defined model_post_init method
+                        """We need to both initialize private attributes and call the user-defined model_post_init
+                        method.
                         """
                         init_private_attributes(self, __context)
                         original_model_post_init(self, __context)
@@ -190,9 +185,7 @@ class ModelMetaclass(ABCMeta):
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
     def __getattr__(self, item: str) -> Any:
-        """
-        This is necessary to keep attribute access working for class attribute access
-        """
+        """This is necessary to keep attribute access working for class attribute access."""
         private_attributes = self.__dict__.get('__private_attributes__')
         if private_attributes and item in private_attributes:
             return private_attributes[item]
@@ -203,8 +196,7 @@ class ModelMetaclass(ABCMeta):
         return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
-        """
-        Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
+        """Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
 
         See #3829 and python/cpython#92810
         """
@@ -233,10 +225,13 @@ class ModelMetaclass(ABCMeta):
 
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:
-    """
-    This function is meant to behave like a BaseModel method to initialise private attributes.
+    """This function is meant to behave like a BaseModel method to initialise private attributes.
 
     It takes context as an argument since that's what pydantic-core passes when calling it.
+
+    Args:
+        self: The BaseModel instance.
+        __context: The context.
     """
     pydantic_private = {}
     for name, private_attr in self.__private_attributes__.items():
@@ -252,10 +247,25 @@ def inspect_namespace(  # noqa C901
     base_class_vars: set[str],
     base_class_fields: set[str],
 ) -> dict[str, ModelPrivateAttr]:
-    """
-    iterate over the namespace and:
+    """Iterate over the namespace and:
     * gather private attributes
-    * check for items which look like fields but are not (e.g. have no annotation) and warn
+    * check for items which look like fields but are not (e.g. have no annotation) and warn.
+
+    Args:
+        namespace: The attribute dictionary of the class to be created.
+        ignored_types: A tuple of ignore types.
+        base_class_vars: A set of base class class variables.
+        base_class_fields: A set of base class fields.
+
+    Returns:
+        A dict contains private attributes info.
+
+    Raises:
+        TypeError: If there is a `__root__` field in model.
+        NameError: If private attribute name is invalid.
+        PydanticUserError:
+            - If a field does not have a type annotation.
+            - If a field on base class was overridden by a non-annotated attribute.
     """
     all_ignored_types = ignored_types + IGNORED_TYPES
 
@@ -340,8 +350,13 @@ def single_underscore(name: str) -> bool:
 def set_model_fields(
     cls: type[BaseModel], bases: tuple[type[Any], ...], config_wrapper: ConfigWrapper, types_namespace: dict[str, Any]
 ) -> None:
-    """
-    Collect and set `cls.model_fields` and `cls.__class_vars__`.
+    """Collect and set `cls.model_fields` and `cls.__class_vars__`.
+
+    Args:
+        cls: BaseModel or dataclass.
+        bases: Parents of the class, generally `cls.__bases__`.
+        config_wrapper: The config wrapper instance.
+        types_namespace: Optional extra namespace to look for types in.
     """
     typevars_map = get_model_typevars_map(cls)
     fields, class_vars = collect_model_fields(cls, bases, config_wrapper, types_namespace, typevars_map=typevars_map)
@@ -358,13 +373,24 @@ def complete_model_class(
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
 ) -> bool:
-    """
-    Finish building a model class.
-
-    Returns `True` if the model is successfully completed, else `False`.
+    """Finish building a model class.
 
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
+
+    Args:
+        cls: BaseModel or dataclass.
+        cls_name: The model or dataclass name.
+        config_wrapper: The config wrapper instance.
+        raise_errors: Whether to raise errors.
+        types_namespace: Optional extra namespace to look for types in.
+
+    Returns:
+        `True` if the model is successfully completed, else `False`.
+
+    Raises:
+        PydanticUndefinedAnnotation: If `PydanticUndefinedAnnotation` occurs in`__get_pydantic_core_schema__`
+            and `raise_errors=True`.
     """
     typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
@@ -372,37 +398,31 @@ def complete_model_class(
         types_namespace,
         typevars_map,
     )
+
     handler = CallbackGetCoreSchemaHandler(
         partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-        gen_schema.generate_schema,
+        gen_schema,
+        ref_mode='unpack',
     )
+
     try:
         schema = cls.__get_pydantic_core_schema__(cls, handler)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        undefined_type_error_message = (
-            f'`{cls_name}` is not fully defined; you should define `{e.name}`, then call `{cls_name}.model_rebuild()` '
-            f'before the first `{cls_name}` instance is created.'
-        )
-
-        def attempt_rebuild() -> SchemaValidator | None:
-            if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=5):
-                return cls.__pydantic_validator__
-            else:
-                return None
-
-        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            undefined_type_error_message, code='class-not-fully-defined', attempt_rebuild=attempt_rebuild
-        )
+        set_basemodel_mock_validator(cls, cls_name, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(cls)
 
+    schema = gen_schema.collect_definitions(schema)
+    schema = flatten_schema_defs(schema)
+    if collect_invalid_schemas(schema):
+        set_basemodel_mock_validator(cls, cls_name, 'all referenced types')
+        return False
+
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-
-    schema = flatten_schema_defs(schema)
     simplified_core_schema = inline_schema_defs(schema)
     cls.__pydantic_validator__ = SchemaValidator(simplified_core_schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
@@ -418,8 +438,15 @@ def complete_model_class(
 def generate_model_signature(
     init: Callable[..., None], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper
 ) -> Signature:
-    """
-    Generate signature for model based on its fields
+    """Generate signature for model based on its fields.
+
+    Args:
+        init: The class init.
+        fields: The model fields.
+        config_wrapper: The config wrapper instance.
+
+    Returns:
+        The model signature.
     """
     from inspect import Parameter, Signature, signature
     from itertools import islice
@@ -488,43 +515,19 @@ def generate_model_signature(
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
-class MockValidator:
-    """
-    Mocker for `pydantic_core.SchemaValidator` which just raises an error when one of its methods is accessed.
-    """
-
-    __slots__ = '_error_message', '_code', '_attempt_rebuild'
-
-    def __init__(
-        self,
-        error_message: str,
-        *,
-        code: PydanticErrorCodes,
-        attempt_rebuild: Callable[[], SchemaValidator | None] | None = None,
-    ) -> None:
-        """
-        Attempt rebuild
-        """
-        self._error_message = error_message
-        self._code: PydanticErrorCodes = code
-        self._attempt_rebuild = attempt_rebuild
-
-    def __getattr__(self, item: str) -> None:
-        __tracebackhide__ = True
-        if self._attempt_rebuild:
-            validator = self._attempt_rebuild()
-            if validator is not None:
-                return getattr(validator, item)
-
-        # raise an AttributeError if `item` doesn't exist
-        getattr(SchemaValidator, item)
-        raise PydanticUserError(self._error_message, code=self._code)
-
-
 def model_extra_private_getattr(self: BaseModel, item: str) -> Any:
-    """
-    This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
-    allow (and store) extra and/or private attributes
+    """This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
+    allow (and store) extra and/or private attributes.
+
+    Args:
+        self: The BaseModel instance.
+        item: The extra private attribute name.
+
+    Returns:
+        The extra private attribute value.
+
+    Raises:
+        AttributeError: If the attribute does not exist in the model.
     """
     if item in self.__private_attributes__:
         attribute = self.__private_attributes__[item]
@@ -545,7 +548,17 @@ def model_extra_private_getattr(self: BaseModel, item: str) -> Any:
         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
 
-def model_private_delattr(self: BaseModel, item: str) -> Any:
+def model_private_delattr(self: BaseModel, item: str) -> None:
+    """This function is used to delete unrecognized attribute values from BaseModel subclasses which
+    allow (and store) extra and/or private attributes.
+
+    Args:
+        self: The BaseModel instance.
+        item: The extra private attribute name.
+
+    Raises:
+        AttributeError: If the attribute does not exist in the model.
+    """
     if item in self.__private_attributes__:
         attribute = self.__private_attributes__[item]
         if hasattr(attribute, '__delete__'):

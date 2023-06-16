@@ -1,6 +1,4 @@
-"""
-Logic for interacting with type annotations, mostly extensions, shims and hacks to wrap python's typing module.
-"""
+"""Logic for interacting with type annotations, mostly extensions, shims and hacks to wrap python's typing module."""
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -87,10 +85,9 @@ def literal_values(type_: type[Any]) -> tuple[Any, ...]:
 
 
 def all_literal_values(type_: type[Any]) -> list[Any]:
-    """
-    This method is used to retrieve all Literal values as
+    """This method is used to retrieve all Literal values as
     Literal can be used recursively (see https://www.python.org/dev/peps/pep-0586)
-    e.g. `Literal[Literal[Literal[1, 2, 3], "foo"], 5, None]`
+    e.g. `Literal[Literal[Literal[1, 2, 3], "foo"], 5, None]`.
     """
     if not is_literal_type(type_):
         return [type_]
@@ -107,9 +104,8 @@ def is_annotated(ann_type: Any) -> bool:
 
 
 def is_namedtuple(type_: type[Any]) -> bool:
-    """
-    Check if a given class is a named tuple.
-    It can be either a `typing.NamedTuple` or `collections.namedtuple`
+    """Check if a given class is a named tuple.
+    It can be either a `typing.NamedTuple` or `collections.namedtuple`.
     """
     from ._utils import lenient_issubclass
 
@@ -120,8 +116,7 @@ test_new_type = typing.NewType('test_new_type', str)
 
 
 def is_new_type(type_: type[Any]) -> bool:
-    """
-    Check whether type_ was created using typing.NewType.
+    """Check whether type_ was created using typing.NewType.
 
     Can't use isinstance because it fails <3.10.
     """
@@ -148,9 +143,7 @@ def is_classvar(ann_type: type[Any]) -> bool:
 
 
 def _check_finalvar(v: type[Any] | None) -> bool:
-    """
-    Check if a given type is a `typing.Final` type.
-    """
+    """Check if a given type is a `typing.Final` type."""
     if v is None:
         return False
 
@@ -162,8 +155,7 @@ def is_finalvar(ann_type: Any) -> bool:
 
 
 def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
-    """
-    We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
+    """We allow use of items in parent namespace to get around the issue with `get_type_hints` only looking in the
     global module namespace. See https://github.com/pydantic/pydantic/issues/2678#issuecomment-1008139014 -> Scope
     and suggestion at the end of the next comment by @gvanrossum.
 
@@ -207,8 +199,7 @@ def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | N
 
 
 def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
-    """
-    Collect annotations from a class, including those from parent classes.
+    """Collect annotations from a class, including those from parent classes.
 
     Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
     """
@@ -223,9 +214,7 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
 
 
 def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict[str, Any] | None) -> Any:
-    """
-    Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved.
-    """
+    """Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved."""
     if value is None:
         value = NoneType
     elif isinstance(value, str):
@@ -239,11 +228,9 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
 
 
 def get_function_type_hints(function: Callable[..., Any], *, include_keys: set[str] | None = None) -> dict[str, Any]:
-    """
-    Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
+    """Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
     copes with `partial`.
     """
-
     if isinstance(function, partial):
         annotations = function.func.__annotations__
     else:
@@ -272,21 +259,14 @@ if sys.version_info < (3, 9):
         *,
         is_class: bool = False,
     ) -> typing.ForwardRef:
-        """
-        Wrapper for ForwardRef that accounts for the `is_class` argument missing in older versions.
+        """Wrapper for ForwardRef that accounts for the `is_class` argument missing in older versions.
         The `module` argument is omitted as it breaks <3.9 and isn't used in the calls below.
 
         See https://github.com/python/cpython/pull/28560 for some background
 
         Implemented as EAFP with memory.
         """
-        global _make_forward_ref
-        try:
-            res = typing.ForwardRef(arg, is_argument, is_class=is_class)  # type: ignore
-            _make_forward_ref = typing.ForwardRef  # type: ignore
-            return res
-        except TypeError:
-            return typing.ForwardRef(arg, is_argument)
+        return typing.ForwardRef(arg, is_argument)
 
 else:
     _make_forward_ref = typing.ForwardRef
@@ -308,11 +288,10 @@ else:
         localns: dict[str, Any] | None = None,
         include_extras: bool = False,
     ) -> dict[str, Any]:  # pragma: no cover
-        """
-        Taken verbatim from python 3.10.8 unchanged, except:
+        """Taken verbatim from python 3.10.8 unchanged, except:
         * type annotations of the function definition above.
         * prefixing `typing.` where appropriate
-        * Use `_make_forward_ref` instead of `typing.ForwardRef` to handle the `is_class` argument
+        * Use `_make_forward_ref` instead of `typing.ForwardRef` to handle the `is_class` argument.
 
         https://github.com/python/cpython/blob/aaaf5174241496afca7ce4d4584570190ff972fe/Lib/typing.py#L1773-L1875
 
@@ -350,7 +329,6 @@ else:
         - If two dict arguments are passed, they specify globals and
           locals, respectively.
         """
-
         if getattr(obj, '__no_type_check__', None):
             return {}
         # Classes require a special treatment.

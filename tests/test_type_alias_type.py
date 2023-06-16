@@ -153,7 +153,6 @@ def test_type_alias_annotated() -> None:
     assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 1}
 
 
-@pytest.mark.xfail(reason='Not working yet, we cannot apply constraints to named/ref types')
 def test_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
     t = TypeAdapter(Tuple[ShortMyList[int], ShortMyList[int]])
@@ -231,7 +230,6 @@ def test_recursive_generic_type_alias() -> None:
     }
 
 
-@pytest.mark.xfail(reason='Not working yet, we cannot apply constraints to named/ref types')
 def test_recursive_generic_type_alias_annotated() -> None:
     t = TypeAdapter(ShortRecursiveGenericAlias[int])
 
@@ -249,6 +247,7 @@ def test_recursive_generic_type_alias_annotated() -> None:
         }
     ]
 
+    # insert_assert(t.json_schema())
     assert t.json_schema() == {
         'type': 'array',
         'items': {'anyOf': [{'$ref': '#/$defs/RecursiveGenericAlias'}, {'type': 'integer'}]},
@@ -262,7 +261,6 @@ def test_recursive_generic_type_alias_annotated() -> None:
     }
 
 
-@pytest.mark.xfail(reason='Not working yet, we cannot apply constraints to named/ref types')
 def test_recursive_generic_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
     t = TypeAdapter(Tuple[ShortRecursiveGenericAlias[int], ShortRecursiveGenericAlias[int]])
@@ -281,6 +279,7 @@ def test_recursive_generic_type_alias_annotated_defs() -> None:
         }
     ]
 
+    # insert_assert(t.json_schema())
     assert t.json_schema() == {
         'type': 'array',
         'minItems': 2,

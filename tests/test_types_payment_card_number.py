@@ -7,6 +7,11 @@ from pydantic_core import PydanticCustomError
 from pydantic import BaseModel, ValidationError
 from pydantic.types import PaymentCardBrand, PaymentCardNumber
 
+pytestmark = pytest.mark.filterwarnings(
+    'ignore:' 'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.*' ':DeprecationWarning'
+)
+
+
 VALID_AMEX = '370000000000002'
 VALID_MC = '5100000000000003'
 VALID_VISA_13 = '4050000000001'

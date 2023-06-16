@@ -1,27 +1,23 @@
-As well as accessing model attributes directly via their names (e.g. `model.foobar`), models can be converted
-and exported in a number of ways:
+Beyond accessing model attributes directly via their field names (e.g. `model.foobar`), models can be converted, dumped,
+serialized, and exported in a number of ways:
 
 ## `model.model_dump(...)`
 
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
-Arguments:
+!!! note
+    The one exception to sub-models being converted to dictionaries is that [`RootModel`](models.md#rootmodel-and-custom-root-types)
+    and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
+    done recursively.
 
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
-* `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
-* `exclude_unset`: whether fields which were not explicitly set when creating the model should
-  be excluded from the returned dictionary; default `False`.
-  Prior to **v1.0**, `exclude_unset` was known as `skip_defaults`; use of `skip_defaults` is now deprecated
-* `exclude_defaults`: whether fields which are equal to their default values (whether set or otherwise) should
-  be excluded from the returned dictionary; default `False`
-* `exclude_none`: whether fields which are equal to `None` should be excluded from the returned dictionary; default
-  `False`
+See the [API docs for `model_dump`](../api/main.md#pydantic.main.BaseModel.model_dump) for more information.
 
 Example:
 
 ```py
-from pydantic import BaseModel
+from typing import Any, List, Optional
+
+from pydantic import BaseModel, Field, Json
 
 
 class BarModel(BaseModel):
@@ -29,8 +25,8 @@ class BarModel(BaseModel):
 
 
 class FooBarModel(BaseModel):
-    banana: float
-    foo: str
+    banana: Optional[float] = 1.1
+    foo: str = Field(serialization_alias='foo_alias')
     bar: BarModel
 
 
@@ -43,13 +39,81 @@ print(m.model_dump(include={'foo', 'bar'}))
 #> {'foo': 'hello', 'bar': {'whatever': 123}}
 print(m.model_dump(exclude={'foo', 'bar'}))
 #> {'banana': 3.14}
+print(m.model_dump(by_alias=True))
+#> {'banana': 3.14, 'foo_alias': 'hello', 'bar': {'whatever': 123}}
+print(FooBarModel(foo='hello', bar={'whatever': 123}).model_dump(exclude_unset=True))
+#> {'foo': 'hello', 'bar': {'whatever': 123}}
+print(
+    FooBarModel(banana=1.1, foo='hello', bar={'whatever': 123}).model_dump(
+        exclude_defaults=True
+    )
+)
+#> {'foo': 'hello', 'bar': {'whatever': 123}}
+print(FooBarModel(foo='hello', bar={'whatever': 123}).model_dump(exclude_defaults=True))
+#> {'foo': 'hello', 'bar': {'whatever': 123}}
+print(
+    FooBarModel(banana=None, foo='hello', bar={'whatever': 123}).model_dump(
+        exclude_none=True
+    )
+)
+#> {'foo': 'hello', 'bar': {'whatever': 123}}
+
+
+class Model(BaseModel):
+    x: List[Json[Any]]
+
+
+print(Model(x=['{"a": 1}', '[1, 2]']).model_dump())
+#> {'x': [{'a': 1}, [1, 2]]}
+print(Model(x=['{"a": 1}', '[1, 2]']).model_dump(round_trip=True))
+#> {'x': ['{"a":1}', '[1,2]']}
+```
+
+## `model.model_dump_json(...)`
+
+The `.model_dump_json()` method serializes a model directly to a JSON-encoded string
+that is equivalent to the result produced by [`.model_dump()`](#modelmodeldump).
+
+See [arguments](../api/main.md#pydantic.main.BaseModel.model_dump_json) for more information.
+
+!!! note
+    Pydantic can serialize many commonly used types to JSON that would otherwise be incompatible with a simple
+    `json.dumps(foobar)` (e.g. `datetime`, `date` or `UUID`) .
+
+```py
+from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class BarModel(BaseModel):
+    whatever: int
+
+
+class FooBarModel(BaseModel):
+    foo: datetime
+    bar: BarModel
+
+
+m = FooBarModel(foo=datetime(2032, 6, 1, 12, 13, 14), bar={'whatever': 123})
+print(m.model_dump_json())
+#> {"foo":"2032-06-01T12:13:14","bar":{"whatever":123}}
+print(m.model_dump_json(indent=2))
+"""
+{
+  "foo": "2032-06-01T12:13:14",
+  "bar": {
+    "whatever": 123
+  }
+}
+"""
 ```
 
 ## `dict(model)` and iteration
 
-*pydantic* models can also be converted to dictionaries using `dict(model)`, and you can also
-iterate over a model's field using `for field_name, value in model:`. With this approach the raw field values are
-returned, so sub-models will not be converted to dictionaries.
+Pydantic models can also be converted to dictionaries using `dict(model)`, and you can also iterate over a model's
+fields using `for field_name, field_value in model:`. With this approach the raw field values are returned, so
+sub-models will not be converted to dictionaries.
 
 Example:
 
@@ -78,105 +142,25 @@ for name, value in m:
     #> bar: whatever=123
 ```
 
-## `model.copy(...)`
+Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) _does_ get converted to a dictionary with the key `'root'`.
 
-`copy()` allows models to be duplicated, which is particularly useful for immutable models.
+## Custom serializers
 
-Arguments:
+Serialization can be customised on a field using the `@field_serializer` decorator, and on a model using the
+`@model_serializer` decorator.
 
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
-* `update`: a dictionary of values to change when creating the copied model
-* `deep`: whether to make a deep copy of the new model; default `False`
-
-Example:
-
-```py
-from pydantic import BaseModel
-
-
-class BarModel(BaseModel):
-    whatever: int
-
-
-class FooBarModel(BaseModel):
-    banana: float
-    foo: str
-    bar: BarModel
-
-
-m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
-
-# TODO!
-# print(m.model_copy(include={'foo', 'bar'}))
-# print(m.model_copy(exclude={'foo', 'bar'}))
-print(m.model_copy(update={'banana': 0}))
-#> banana=0 foo='hello' bar=BarModel(whatever=123)
-print(id(m.bar) == id(m.model_copy().bar))
-#> True
-# normal copy gives the same object reference for bar
-print(id(m.bar) == id(m.model_copy(deep=True).bar))
-#> False
-# deep copy gives a new object reference for `bar`
-```
-
-## `model.model_dump_json(...)`
-
-The `.model_dump_json()` method will serialise a model to JSON. (For models with a [custom root type](models.md#custom-root-types),
-only the value for the `__root__` key is serialised)
-
-Arguments:
-
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
-* `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
-* `exclude_unset`: whether fields which were not set when creating the model and have their default values should
-  be excluded from the returned dictionary; default `False`.
-  Prior to **v1.0**, `exclude_unset` was known as `skip_defaults`; use of `skip_defaults` is now deprecated
-* `exclude_defaults`: whether fields which are equal to their default values (whether set or otherwise) should
-  be excluded from the returned dictionary; default `False`
-* `exclude_none`: whether fields which are equal to `None` should be excluded from the returned dictionary; default
-  `False`
-* `encoder`: a custom encoder function passed to the `default` argument of `json.dumps()`; defaults to a custom
-  encoder designed to take care of all common types
-* `**dumps_kwargs`: any other keyword arguments are passed to `json.dumps()`, e.g. `indent`.
-
-*pydantic* can serialise many commonly used types to JSON (e.g. `datetime`, `date` or `UUID`) which would normally
-fail with a simple `json.dumps(foobar)`.
-
-```py
-from datetime import datetime
-
-from pydantic import BaseModel
-
-
-class BarModel(BaseModel):
-    whatever: int
-
-
-class FooBarModel(BaseModel):
-    foo: datetime
-    bar: BarModel
-
-
-m = FooBarModel(foo=datetime(2032, 6, 1, 12, 13, 14), bar={'whatever': 123})
-print(m.model_dump_json())
-#> {"foo":"2032-06-01T12:13:14","bar":{"whatever":123}}
-```
-
-### `json_encoders`
-
-Serialisation can be customised on a model using the `json_encoders` config property; the keys should be types (or names of types for forward references), and
-the values should be functions which serialise that type (see the example below):
+Here is an example:
 
 ```py
 from datetime import datetime, timedelta, timezone
+from typing import Any, Dict
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, ConfigDict, field_serializer, model_serializer
 
 
 class WithCustomEncoders(BaseModel):
-    model_config = dict(ser_json_timedelta='iso8601')
+    model_config = ConfigDict(ser_json_timedelta='iso8601')
+
     dt: datetime
     diff: timedelta
 
@@ -190,64 +174,25 @@ m = WithCustomEncoders(
 )
 print(m.model_dump_json())
 #> {"dt":1969660800.0,"diff":"P4DT14400S"}
+
+
+class Model(BaseModel):
+    x: str
+
+    @model_serializer
+    def ser_model(self) -> Dict[str, Any]:
+        return {'x': f'serialized {self.x}'}
+
+
+print(Model(x='test value').model_dump_json())
+#> {"x":"serialized test value"}
 ```
 
-By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
-as an optional alternative which implements [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) time diff encoding.
+### Serializing subclasses
 
-### Serialising self-reference or other models
+### Subclasses of standard types
 
-By default, models are serialised as dictionaries.
-If you want to serialise them differently, you can add `models_as_dict=False` when calling `json()` method
-and add the classes of the model in `json_encoders`.
-In case of forward references, you can use a string with the class name instead of the class itself
-
-```py test="skip"
-# TODO we need to serializers for this example
-from typing import List, Optional
-
-from pydantic import BaseModel
-
-
-class Address(BaseModel):
-    city: str
-    country: str
-
-
-class User(BaseModel):
-    name: str
-    address: Address
-    friends: Optional[List['User']] = None
-
-    class Config:
-        json_encoders = {
-            Address: lambda a: f'{a.city} ({a.country})',
-            'User': lambda u: f'{u.name} in {u.address.city} '
-            f'({u.address.country[:2].upper()})',
-        }
-
-
-User.update_forward_refs()
-
-wolfgang = User(
-    name='Wolfgang',
-    address=Address(city='Berlin', country='Deutschland'),
-    friends=[
-        User(name='Pierre', address=Address(city='Paris', country='France')),
-        User(name='John', address=Address(city='London', country='UK')),
-    ],
-)
-print(wolfgang.model_dump_json(models_as_dict=False))
-```
-
-### Serialising subclasses
-
-!!! note
-    New in version **v1.5**.
-
-    Subclasses of common types were not automatically serialised to JSON before **v1.5**.
-
-Subclasses of common types are automatically encoded like their super-classes:
+Subclasses of standard types are automatically dumped like their super-classes:
 
 ```py
 from datetime import date, timedelta
@@ -288,9 +233,47 @@ print(m.model_dump_json())
 #> {"date":"2023-10-28"}
 ```
 
+## Subclass instances for fields of BaseModel, dataclasses, TypedDict
+
+When using fields whose annotations are themselves struct-like types (e.g., `BaseModel` subclasses, dataclasses, etc.),
+the default behavior is to serialize the attribute value as though it was an instance of the annotated type,
+even if it is a subclass. More specifically, only the fields from the _annotated_ type will be included in the
+dumped object:
+
+```py
+from pydantic import BaseModel
+
+
+class InnerModel(BaseModel):
+    x: int
+
+
+class SubInnerModel(InnerModel):
+    y: int
+
+
+class OuterModel(BaseModel):
+    inner: InnerModel
+
+
+m = OuterModel(inner=SubInnerModel(x=1, y=2))
+print(m)
+#> inner=SubInnerModel(x=1, y=2)
+print(m.model_dump())
+#> {'inner': {'x': 1}}
+```
+!!! warning "Migration Warning"
+    This behavior is different from how things worked in Pydantic V1, where we would always include
+    all (subclass) fields when recursively dumping models to dicts. The motivation behind this change in
+    behavior is that it helps ensure that you know precisely which fields could be included when serializing,
+    even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
+    when adding sensitive information like secrets as fields of subclasses.
+
+TODO: Add and document `SerializeAsAny` type.
+
 ## `pickle.dumps(model)`
 
-Using the same plumbing as `copy()`, *pydantic* models support efficient pickling and unpickling.
+Pydantic models support efficient pickling and unpickling.
 
 ```py test="skip"
 # TODO need to get pickling to work
@@ -306,15 +289,18 @@ class FooBarModel(BaseModel):
 
 m = FooBarModel(a='hello', b=123)
 print(m)
+#> a='hello' b=123
 data = pickle.dumps(m)
-print(data)
+print(data[:20])
+#> b'\x80\x04\x95\x95\x00\x00\x00\x00\x00\x00\x00\x8c\x08__main_'
 m2 = pickle.loads(data)
 print(m2)
+#> a='hello' b=123
 ```
 
 ## Advanced include and exclude
 
-The `dict`, `json`, and `copy` methods support `include` and `exclude` arguments which can either be
+The `model_dump` and `model_dump_json` methods support `include` and `exclude` arguments which can either be
 sets or dictionaries. This allows nested selection of which fields to export:
 
 ```py
@@ -352,11 +338,11 @@ print(t.model_dump(include={'id': True, 'user': {'id'}}))
 ```
 
 The `True` indicates that we want to exclude or include an entire key, just as if we included it in a set.
-Of course, the same can be done at any depth level.
+This can be done at any depth level.
 
-Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.  In this scenario,
-`dict` and related methods expect integer keys for element-wise inclusion or exclusion. To exclude a field from **every**
-member of a list or tuple, the dictionary key `'__all__'` can be used as follows:
+Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.
+In this scenario, `model_dump` and related methods expect integer keys for element-wise inclusion or exclusion.
+To exclude a field from **every** member of a list or tuple, the dictionary key `'__all__'` can be used, as shown here:
 
 ```py
 import datetime
@@ -449,11 +435,12 @@ print(user.model_dump(exclude={'hobbies': {'__all__': {'info'}}}))
 """
 ```
 
-The same holds for the `json` and `copy` methods.
+The same holds for the `model_dump_json` method.
 
-### Model and field level include and exclude
+### Model- and field-level include and exclude
 
-In addition to the explicit arguments `exclude` and `include` passed to `dict`, `json` and `copy` methods, we can also pass the `include`/`exclude` arguments directly to the `Field` constructor or the equivalent `field` entry in the models `Config` class:
+In addition to the explicit arguments `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
+we can also pass the `include`/`exclude` arguments directly to the `Field` constructor:
 
 ```py
 from pydantic import BaseModel, Field, SecretStr
@@ -479,15 +466,15 @@ t = Transaction(
 
 print(t.model_dump())
 #> {'id': '1234567890'}
-# TODO this is wrong! not all of "user" should be excluded
+# TODO: this is wrong! not all of "user" should be excluded
+# TODO: do we need to fix the type of the argument to Field? Or do we want to just remove that functionality?
 ```
 
-In the case where multiple strategies are used, `exclude`/`include` fields are merged according to the following rules:
+Explicitly setting `exclude`/`include` on `model_dump` and `model_dump_json` takes priority over the
+`exclude`/`include` from the field constructor (i.e. `Field(..., exclude=True)`):
 
-* First, model config level settings (via `"fields"` entry) are merged per field with the field constructor settings (i.e. `Field(..., exclude=True)`), with the field constructor taking priority.
-* The resulting settings are merged per class with the explicit settings on `dict`, `json`, `copy` calls with the explicit settings taking priority.
-
-Note that while merging settings, `exclude` entries are merged by computing the "union" of keys, while `include` entries are merged by computing the "intersection" of keys.
+Note that while merging settings, `exclude` entries are merged by computing the "union" of keys, while `include`
+entries are merged by computing the "intersection" of keys.
 
 The resulting merged exclude settings:
 
@@ -543,4 +530,38 @@ t = Transaction(
 
 print(t.model_dump(include={'id': True, 'user': {'id'}}))
 #> {'id': '1234567890', 'user': {'id': 42}}
+```
+
+## `model_copy(...)`
+
+`model_copy()` allows models to be duplicated (with optional updates), which is particularly useful when working with
+frozen models. See the [API docs for `model_copy`](../api/main.md#pydantic.main.BaseModel.model_copy) for more
+information.
+
+Example:
+
+```py
+from pydantic import BaseModel
+
+
+class BarModel(BaseModel):
+    whatever: int
+
+
+class FooBarModel(BaseModel):
+    banana: float
+    foo: str
+    bar: BarModel
+
+
+m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
+
+print(m.model_copy(update={'banana': 0}))
+#> banana=0 foo='hello' bar=BarModel(whatever=123)
+print(id(m.bar) == id(m.model_copy().bar))
+#> True
+# normal copy gives the same object reference for bar
+print(id(m.bar) == id(m.model_copy(deep=True).bar))
+#> False
+# deep copy gives a new object reference for `bar`
 ```

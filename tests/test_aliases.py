@@ -238,6 +238,55 @@ def test_low_priority_alias():
     assert [f.serialization_alias for f in Child.model_fields.values()] == ['w_ser_alias', 'X', 'Y', 'Z']
 
 
+@pytest.mark.parametrize(
+    'cls_params, field_params, validation_key, serialization_key',
+    [
+        pytest.param(
+            {},
+            {'alias': 'x1', 'validation_alias': 'x2'},
+            'x2',
+            'x1',
+            id='alias-validation_alias',
+        ),
+        pytest.param(
+            {'alias_generator': str.upper},
+            {'alias': 'x'},
+            'x',
+            'x',
+            id='alias_generator-alias',
+        ),
+        pytest.param(
+            {'alias_generator': str.upper},
+            {'alias': 'x1', 'validation_alias': 'x2'},
+            'x2',
+            'x1',
+            id='alias_generator-alias-validation_alias',
+        ),
+        pytest.param(
+            {'alias_generator': str.upper},
+            {'alias': 'x1', 'serialization_alias': 'x2'},
+            'x1',
+            'x2',
+            id='alias_generator-alias-serialization_alias',
+        ),
+        pytest.param(
+            {'alias_generator': str.upper},
+            {'alias': 'x1', 'validation_alias': 'x2', 'serialization_alias': 'x3'},
+            'x2',
+            'x3',
+            id='alias_generator-alias-validation_alias-serialization_alias',
+        ),
+    ],
+)
+def test_aliases_priority(cls_params, field_params, validation_key, serialization_key):
+    class Model(BaseModel, **cls_params):
+        x: int = Field(**field_params)
+
+    model = Model(**{validation_key: 1})
+    assert model.x == 1
+    assert model.model_dump(by_alias=True).get(serialization_key, None) is not None
+
+
 def test_empty_string_alias():
     class Model(BaseModel):
         empty_string_key: int = Field(alias='')

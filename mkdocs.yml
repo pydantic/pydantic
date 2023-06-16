@@ -23,6 +23,7 @@ theme:
       name: "Switch to light mode"
   features:
     - content.tabs.link
+    - content.code.annotate
     - announce.dismiss
     - navigation.tabs
   logo: 'logo-white.svg'
@@ -32,9 +33,8 @@ repo_name: pydantic/pydantic
 repo_url: https://github.com/pydantic/pydantic
 edit_uri: edit/main/docs/
 extra:
-  analytics:
-    provider: google
-    property: UA-62733018-4
+  version:
+    provider: mike
 
 extra_css:
 - 'extra/terminal.css'
@@ -56,7 +56,6 @@ nav:
     - Booleans: usage/types/booleans.md
     - ByteSize: usage/types/bytesize.md
     - Callables: usage/types/callables.md
-    - Color Types: usage/types/color_types.md
     - Datetimes: usage/types/datetime.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
     - Encoded Types: usage/types/encoded.md
@@ -65,7 +64,6 @@ nav:
     - JSON: usage/types/json.md
     - Lists and Tuples: usage/types/list_types.md
     - Number Types: usage/types/number_types.md
-    - Payment Card Numbers: usage/types/payment_cards.md
     - Secret Types: usage/types/secrets.md
     - Sequence, Iterable, & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
@@ -77,9 +75,16 @@ nav:
     - UUIDs: usage/types/uuids.md
     - Encoded: usage/types/encoded.md
     - Custom Data Types: usage/types/custom.md
+    - Extra Types:
+      - Extra Types Overview: usage/types/extra_types/extra_types.md
+      - Color Types: usage/types/extra_types/color_types.md
+      - Payment Card Numbers: usage/types/extra_types/payment_cards.md
+      - Phone Numbers: usage/types/extra_types/phone_numbers.md
+      - Routing Numbers: usage/types/extra_types/routing_numbers.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
-  - usage/schema.md
+  - usage/fields.md
+  - 'JSON Schema': usage/json_schema.md
   - usage/exporting_models.md
   - usage/computed_fields.md
   - usage/dataclasses.md
@@ -105,24 +110,35 @@ nav:
   - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
 - API Documentation:
-  - 'pydantic': api/main.md
-  - 'pydantic.alias_generators': api/alias_generators.md
-  - 'pydantic.color': api/color.md
-  - 'pydantic.config': api/config.md
-  - 'pydantic.dataclasses': api/dataclasses.md
-  - 'pydantic.errors': api/errors.md
-  - 'pydantic.fields': api/fields.md
-  - 'pydantic.functional_serializers': api/functional_serializers.md
-  - 'pydantic.functional_validators': api/functional_validators.md
-  - 'pydantic.json_schema': api/json_schema.md
-  - 'pydantic.mypy': api/mypy.md
-  - 'pydantic.networks': api/networks.md
-  - 'pydantic.type_adapter': api/type_adapter.md
-  - 'pydantic.types': api/types.md
-  - 'pydantic.validate_call': api/validate_call.md
-  - 'pydantic.version': api/version.md
-  - 'pydantic_core.__init__': api/pydantic_core_init.md
-  - 'pydantic_core.core_schema': api/pydantic_core_schema.md
+  - Pydantic:
+    - 'pydantic': api/main.md
+    - 'pydantic.alias_generators': api/alias_generators.md
+    - 'pydantic.color': api/color.md
+    - 'pydantic.config': api/config.md
+    - 'pydantic.dataclasses': api/dataclasses.md
+    - 'pydantic.errors': api/errors.md
+    - 'pydantic.fields': api/fields.md
+    - 'pydantic.functional_serializers': api/functional_serializers.md
+    - 'pydantic.functional_validators': api/functional_validators.md
+    - 'pydantic.json_schema': api/json_schema.md
+    - 'pydantic.mypy': api/mypy.md
+    - 'pydantic.networks': api/networks.md
+    - 'pydantic.root_model': api/root_model.md
+    - 'pydantic.type_adapter': api/type_adapter.md
+    - 'pydantic.types': api/types.md
+    - 'pydantic.validate_call': api/validate_call.md
+    - 'pydantic.version': api/version.md
+  - Pydantic Core:
+    - 'pydantic_core': api/pydantic_core_init.md
+    - 'pydantic_core.core_schema': api/pydantic_core_schema.md
+  - Pydantic Settings:
+    - 'pydantic_settings': api/pydantic_settings.md
+  - Pydantic Extra Types:
+    - 'pydantic_extra_types.color': api/pydantic_extra_types_color.md
+    - 'pydantic_extra_types.country': api/pydantic_extra_types_country.md
+    - 'pydantic_extra_types.payment': api/pydantic_extra_types_payment.md
+    - 'pydantic_extra_types.phone_numbers': api/pydantic_extra_types_phone_numbers.md
+    - 'pydantic_extra_types.routing_number': api/pydantic_extra_types_routing_number.md
 
 markdown_extensions:
 - tables
@@ -130,6 +146,8 @@ markdown_extensions:
     permalink: true
     title: Page contents
 - admonition
+- pymdownx.details
+- pymdownx.superfences
 - pymdownx.highlight
 - pymdownx.extra
 - pymdownx.emoji:
@@ -140,10 +158,6 @@ markdown_extensions:
 
 watch:
 - pydantic
-
-extra:
-  version:
-    provider: mike
 
 plugins:
 - mike:
@@ -162,6 +176,9 @@ plugins:
         options:
           separate_signature: true
           filters: ["!^_"]
+          docstring_options:
+            ignore_init_summary: true
+          merge_init_into_class: true
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'

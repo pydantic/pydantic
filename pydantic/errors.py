@@ -1,6 +1,4 @@
-"""
-Pydantic errors.
-"""
+"""Pydantic-specific errors."""
 from __future__ import annotations as _annotations
 
 import re
@@ -16,6 +14,7 @@ __all__ = (
     'PydanticImportError',
     'PydanticSchemaGenerationError',
     'PydanticInvalidForJsonSchema',
+    'PydanticErrorCodes',
 )
 
 # We use this URL to allow for future flexibility about how we host the docs, while allowing for Pydantic
@@ -24,6 +23,7 @@ __all__ = (
 DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{VERSION}/u/'
 PydanticErrorCodes = Literal[
     'class-not-fully-defined',
+    'custom-json-schema',
     'decorator-missing-field',
     'discriminator-no-field',
     'discriminator-alias-type',
@@ -33,7 +33,7 @@ PydanticErrorCodes = Literal[
     'model-field-overridden',
     'model-field-missing-annotation',
     'config-both',
-    'deprecated-kwargs',
+    'removed-kwargs',
     'invalid-for-json-schema',
     'json-schema-already-used',
     'base-model-instantiated',
@@ -59,12 +59,11 @@ PydanticErrorCodes = Literal[
 
 
 class PydanticErrorMixin:
-    """
-    A mixin class for common functionality shared by all Pydantic-specific errors.
+    """A mixin class for common functionality shared by all Pydantic-specific errors.
 
     Attributes:
-        message (str): A message describing the error.
-        code (PydanticErrorCodes | None): An optional error code from PydanticErrorCodes enum.
+        message: A message describing the error.
+        code: An optional error code from PydanticErrorCodes enum.
     """
 
     def __init__(self, message: str, *, code: PydanticErrorCodes | None) -> None:
@@ -79,17 +78,15 @@ class PydanticErrorMixin:
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
-    """
-    Error raised due to incorrect use of Pydantic.
-    """
+    """An error raised due to incorrect use of Pydantic."""
 
 
 class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     """A subclass of `NameError` raised when handling undefined annotations during `CoreSchema` generation.
 
     Attributes:
-        name (str): Name of the error.
-        message (str): Description of the error.
+        name: Name of the error.
+        message: Description of the error.
     """
 
     def __init__(self, name: str, message: str) -> None:
@@ -98,8 +95,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
 
     @classmethod
     def from_name_error(cls, name_error: NameError) -> Self:
-        """
-        Convert a `NameError` to a `PydanticUndefinedAnnotation` error.
+        """Convert a `NameError` to a `PydanticUndefinedAnnotation` error.
 
         Args:
             name_error: `NameError` to be converted.
@@ -115,11 +111,10 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
 
 
 class PydanticImportError(PydanticErrorMixin, ImportError):
-    """
-    Error raised when an import fails due to module changes between V1 and V2.
+    """An error raised when an import fails due to module changes between V1 and V2.
 
     Attributes:
-        message (str): Description of the error.
+        message: Description of the error.
     """
 
     def __init__(self, message: str) -> None:
@@ -127,11 +122,10 @@ class PydanticImportError(PydanticErrorMixin, ImportError):
 
 
 class PydanticSchemaGenerationError(PydanticUserError):
-    """
-    Error raised during failures to generate a `CoreSchema` for some type.
+    """An error raised during failures to generate a `CoreSchema` for some type.
 
     Attributes:
-        message (str): Description of the error.
+        message: Description of the error.
     """
 
     def __init__(self, message: str) -> None:
@@ -139,11 +133,10 @@ class PydanticSchemaGenerationError(PydanticUserError):
 
 
 class PydanticInvalidForJsonSchema(PydanticUserError):
-    """
-    Error raised during failures to generate a JSON schema for some `CoreSchema`.
+    """An error raised during failures to generate a JSON schema for some `CoreSchema`.
 
     Attributes:
-        message (str): Description of the error.
+        message: Description of the error.
     """
 
     def __init__(self, message: str) -> None:

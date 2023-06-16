@@ -7,7 +7,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Generator, Optional, Pattern
+from typing import Any, Generator, Optional, Pattern, Union
 from uuid import UUID
 
 import pytest
@@ -23,6 +23,7 @@ from pydantic.functional_serializers import (
     field_serializer,
 )
 from pydantic.json_schema import JsonSchemaValue
+from pydantic.type_adapter import TypeAdapter
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
 
 try:
@@ -77,11 +78,8 @@ class MyModel(BaseModel):
     ],
 )
 def test_json_serialization(ser_type, gen_value, json_output):
-    config_wrapper = ConfigWrapper({'arbitrary_types_allowed': False})
-    gen = GenerateSchema(config_wrapper, None)
-    schema = gen.generate_schema(ser_type)
-    serializer = SchemaSerializer(schema)
-    assert serializer.to_json(gen_value()) == json_output
+    ta: TypeAdapter[Any] = TypeAdapter(ser_type)
+    assert ta.dump_json(gen_value()) == json_output
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -134,7 +132,7 @@ def test_subclass_encoding():
             def val(v: datetime) -> SubDate:
                 return SubDate.fromtimestamp(v.timestamp())
 
-            return core_schema.no_info_after_validator_function(val, handler.generate_schema(datetime))
+            return core_schema.no_info_after_validator_function(val, handler(datetime))
 
     class Model(BaseModel):
         a: datetime
@@ -152,7 +150,7 @@ def test_subclass_custom_encoding():
             def val(v: datetime) -> SubDt:
                 return SubDt.fromtimestamp(v.timestamp())
 
-            return core_schema.no_info_after_validator_function(val, handler.generate_schema(datetime))
+            return core_schema.no_info_after_validator_function(val, handler(datetime))
 
     class SubDelta(timedelta):
         @classmethod
@@ -160,7 +158,7 @@ def test_subclass_custom_encoding():
             def val(v: timedelta) -> SubDelta:
                 return cls(seconds=v.total_seconds())
 
-            return core_schema.no_info_after_validator_function(val, handler.generate_schema(timedelta))
+            return core_schema.no_info_after_validator_function(val, handler(timedelta))
 
     class Model(BaseModel):
         a: SubDt
@@ -359,21 +357,29 @@ class Model(BaseModel):
     assert M(value=1, nested=M(value=2)).model_dump_json(exclude_none=True) == '{"value":1,"nested":{"value":2}}'
 
 
-def test_unresolvable_schema_lookup_error():
+def test_resolve_ref_schema_recursive_model():
     class Model(BaseModel):
-        mini_me: 'Model'
+        mini_me: Union['Model', None]
 
         @classmethod
         def __get_pydantic_json_schema__(
             cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
         ) -> JsonSchemaValue:
             json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
-            return handler.resolve_ref_schema(json_schema)
+            json_schema = handler.resolve_ref_schema(json_schema)
+            json_schema['examples'] = {'foo': {'mini_me': None}}
+            return json_schema
 
-    with pytest.raises(LookupError) as e:
-        Model.model_json_schema()
-
-    assert e.value.args[0] == (
-        'Could not find a ref for #/$defs/Model.'
-        ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
-    )
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'Model': {
+                'examples': {'foo': {'mini_me': None}},
+                'properties': {'mini_me': {'anyOf': [{'$ref': '#/$defs/Model'}, {'type': 'null'}]}},
+                'required': ['mini_me'],
+                'title': 'Model',
+                'type': 'object',
+            }
+        },
+        'allOf': [{'$ref': '#/$defs/Model'}],
+    }

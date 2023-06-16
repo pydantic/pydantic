@@ -1,13 +1,22 @@
 import sys
 import typing
 from collections import namedtuple
-from typing import Callable, NamedTuple
+from typing import Callable, ClassVar, ForwardRef, NamedTuple
 
 import pytest
 from typing_extensions import Literal, get_origin
 
 from pydantic import Field  # noqa: F401
-from pydantic._internal._typing_extra import is_literal_type, is_namedtuple, is_none_type, origin_is_union
+from pydantic._internal._typing_extra import (
+    NoneType,
+    get_function_type_hints,
+    is_classvar,
+    is_literal_type,
+    is_namedtuple,
+    is_none_type,
+    origin_is_union,
+    parent_frame_namespace,
+)
 
 try:
     from typing import TypedDict as typing_TypedDict
@@ -80,3 +89,35 @@ def test_is_literal_with_typing_literal():
 
     assert is_literal_type(Literal) is False
     assert is_literal_type(Literal['foo']) is True
+
+
+@pytest.mark.parametrize(
+    'ann_type,extepcted',
+    (
+        (None, False),
+        (ForwardRef('ClassVar[int]'), True),
+        (ClassVar[int], True),
+    ),
+)
+def test_is_classvar(ann_type, extepcted):
+    assert is_classvar(ann_type) is extepcted
+
+
+def test_parent_frame_namespace(mocker):
+    assert parent_frame_namespace() is not None
+
+    from dataclasses import dataclass
+
+    @dataclass
+    class MockedFrame:
+        f_back = None
+
+    mocker.patch('sys._getframe', return_value=MockedFrame())
+    assert parent_frame_namespace() is None
+
+
+def test_get_function_type_hints_none_type():
+    def f(x: int, y: None) -> int:
+        return x
+
+    assert get_function_type_hints(f) == {'return': int, 'x': int, 'y': NoneType}

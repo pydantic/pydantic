@@ -23,6 +23,46 @@ _inspect_validator = _decorators.inspect_validator
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class AfterValidator:
+    '''A metadata class that indicates that a validation should be applied **after** the inner validation logic.
+
+    Attributes:
+        func: The validator function.
+
+    Example:
+        ```py
+        from typing import Annotated
+
+        from pydantic import BaseModel, AfterValidator, ValidationError
+
+
+        MyInt = Annotated[int, AfterValidator(lambda v: v + 1)]
+
+        class Model(BaseModel):
+            a: MyInt
+
+        print(Model(a=1).a)
+        # > 2
+
+        try:
+            Model(a='a')
+        except ValidationError as e:
+            print(e.json(indent=2))
+        """
+        [
+            {
+                "type": "int_parsing",
+                "loc": [
+                    "a"
+                ],
+                "msg": "Input should be a valid integer, unable to parse string as an integer",
+                "input": "a",
+                "url": "https://errors.pydantic.dev/0.38.0/v/int_parsing"
+            }
+        ]
+        """
+        ```
+    '''
+
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -36,6 +76,34 @@ class AfterValidator:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class BeforeValidator:
+    """A metadata class that indicates that a validation should be applied **before** the inner validation logic.
+
+    Attributes:
+        func: The validator function.
+
+    Example:
+        ```py
+        from typing import Annotated
+
+        from pydantic import BaseModel, BeforeValidator
+
+
+        MyInt = Annotated[int, BeforeValidator(lambda v: v + 1)]
+
+        class Model(BaseModel):
+            a: MyInt
+
+        print(Model(a=1).a)
+        # > 2
+
+        try:
+            Model(a='a')
+        except TypeError as e:
+            print(e)
+            #> can only concatenate str (not "int") to str
+        ```
+    """
+
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -49,6 +117,28 @@ class BeforeValidator:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class PlainValidator:
+    """A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
+
+    Attributes:
+        func: The validator function.
+
+    Example:
+        ```py
+        from typing import Annotated
+
+        from pydantic import BaseModel, PlainValidator
+
+
+        MyInt = Annotated[int, PlainValidator(lambda v: int(v) + 1)]
+
+        class Model(BaseModel):
+            a: MyInt
+
+        print(Model(a='1').a)
+        # > 2
+        ```
+    """
+
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -61,6 +151,43 @@ class PlainValidator:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class WrapValidator:
+    """A metadata class that indicates that a validation should be applied **around** the inner validation logic.
+
+    Attributes:
+        func: The validator function.
+
+    ```py
+    from datetime import datetime
+    from typing import Annotated
+
+    from pydantic import BaseModel, ValidationError, WrapValidator
+
+
+    def validate_timestamp(v, handler):
+        if v == "now":
+            # we don't want to bother with further validation, just return the new value
+            return datetime.now()
+        try:
+            return handler(v)
+        except ValidationError:
+            # validation failed, in this case we want to return a default value
+            return datetime(2000, 1, 1)
+
+
+    MyTimestamp = Annotated[datetime, WrapValidator(validate_timestamp)]
+
+
+    class Model(BaseModel):
+        a: MyTimestamp
+
+
+    print(Model(a="now").a)
+    # > 2023-01-22 23:10:00.000000
+    print(Model(a="invalid").a)
+    # > 2000-01-01 00:00:00.000000
+    ```
+    """
+
     func: core_schema.GeneralWrapValidatorFunction | core_schema.FieldWrapValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -144,20 +271,23 @@ def field_validator(
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """
-    Decorate methods on the class indicating that they should be used to validate fields.
+    """Decorate methods on the class indicating that they should be used to validate fields.
 
     Args:
-        __field: The first field the field_validator should be called on; this is separate
+        __field: The first field the `field_validator` should be called on; this is separate
             from `fields` to ensure an error is raised if you don't pass at least one.
-        *fields: Additional field(s) the field_validator should be called on.
+        *fields: Additional field(s) the `field_validator` should be called on.
         mode: Specifies whether to validate the fields before or after validation.
-             Defaults to 'after'.
-        check_fields: If set to True, checks that the fields actually exist on the model.
-            Defaults to None.
+        check_fields: Whether to check that the fields actually exist on the model.
 
     Returns:
         A decorator that can be used to decorate a function to be used as a field_validator.
+
+    Raises:
+        PydanticUserError:
+            - If `@field_validator` is used bare (with no fields).
+            - If the args passed to `@field_validator` as fields are not strings.
+            - If `@field_validator` applied to instance methods.
     """
     if isinstance(__field, FunctionType):
         raise PydanticUserError(
@@ -301,8 +431,7 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """
-    Decorate model methods for validation purposes.
+    """Decorate model methods for validation purposes.
 
     Args:
         mode: A required string literal that specifies the validation mode.

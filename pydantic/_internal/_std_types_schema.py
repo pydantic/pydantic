@@ -1,5 +1,4 @@
-"""
-Logic for generating pydantic-core schemas for standard library types.
+"""Logic for generating pydantic-core schemas for standard library types.
 
 Import of this module is deferred since it contains imports of many standard library modules.
 """
@@ -55,14 +54,7 @@ class SchemaTransformer:
         return self.get_json_schema(schema, handler)
 
 
-def enum_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    if not (inspect.isclass(source_type) and issubclass(source_type, Enum)):
-        return None
-
-    enum_type = source_type
-
+def get_enum_core_schema(enum_type: type[Enum]) -> CoreSchema:
     cases: list[Any] = list(enum_type.__members__.values())
 
     if not cases:
@@ -71,14 +63,7 @@ def enum_prepare_pydantic_annotations(
         # use case for this is creating typevar bounds for generics that should be restricted to enums.
         # This is more consistent than it might seem at first, since you can only subclass enum.Enum
         # (or subclasses of enum.Enum) if all parent classes have no cases.
-        schema = core_schema.is_instance_schema(enum_type)
-        return enum_type, [
-            SchemaTransformer(
-                lambda _1, _2: schema,
-                lambda _1, handler: handler(schema),
-            ),
-            *annotations,
-        ]
+        return core_schema.is_instance_schema(enum_type)
 
     if len(cases) == 1:
         expected = repr(cases[0].value)
@@ -87,7 +72,7 @@ def enum_prepare_pydantic_annotations(
 
     def to_enum(__input_value: Any) -> Enum:
         try:
-            return enum_type(__input_value)
+            return enum_type(__input_value)  # type: ignore
         except ValueError:
             # The type: ignore on the next line is to ignore the requirement of LiteralString
             raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})  # type: ignore
@@ -100,7 +85,7 @@ def enum_prepare_pydantic_annotations(
     updates = {k: v for k, v in updates.items() if v is not None}
 
     def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        json_schema = handler(core_schema.literal_schema([x.value for x in cases]))
+        json_schema = handler(core_schema.literal_schema([x.value for x in cases], ref=enum_ref))
         original_schema = handler.resolve_ref_schema(json_schema)
         update_json_schema(original_schema, updates)
         return json_schema
@@ -135,16 +120,9 @@ def enum_prepare_pydantic_annotations(
         strict = core_schema.json_or_python_schema(
             json_schema=to_enum_validator, python_schema=core_schema.is_instance_schema(enum_type)
         )
-    outer_schema = core_schema.lax_or_strict_schema(
-        lax_schema=lax,
-        strict_schema=strict,
-        ref=enum_ref,
+    return core_schema.lax_or_strict_schema(
+        lax_schema=lax, strict_schema=strict, ref=enum_ref, metadata={'pydantic_js_functions': [get_json_schema]}
     )
-
-    return enum_type, [
-        SchemaTransformer(lambda _1, _2: outer_schema, lambda _, handler: get_json_schema(_, handler)),
-        *annotations,
-    ]
 
 
 @slots_dataclass
@@ -325,7 +303,7 @@ def decimal_prepare_pydantic_annotations(
 
 @slots_dataclass
 class InnerSchemaValidator:
-    """Use a fixed CoreSchema, avoiding interference from outward annotations"""
+    """Use a fixed CoreSchema, avoiding interference from outward annotations."""
 
     core_schema: CoreSchema
     js_schema: JsonSchemaValue | None = None
@@ -913,7 +891,6 @@ PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, lis
     uuid_prepare_pydantic_annotations,
     path_schema_prepare_pydantic_annotations,
     mapping_like_prepare_pydantic_annotations,
-    enum_prepare_pydantic_annotations,
     ip_prepare_pydantic_annotations,
     url_prepare_pydantic_annotations,
 )

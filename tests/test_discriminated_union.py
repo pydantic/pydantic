@@ -348,10 +348,8 @@ class FooStrEnum(str, Enum):
 
 
 ENUM_TEST_CASES = [
-    pytest.param(Enum, {'a': 1, 'b': 2}, marks=pytest.mark.xfail(reason='Plain Enum discriminator not yet supported')),
-    pytest.param(
-        Enum, {'a': 'v_a', 'b': 'v_b'}, marks=pytest.mark.xfail(reason='Plain Enum discriminator not yet supported')
-    ),
+    pytest.param(Enum, {'a': 1, 'b': 2}),
+    pytest.param(Enum, {'a': 'v_a', 'b': 'v_b'}),
     (FooIntEnum, {'a': 1, 'b': 2}),
     (IntEnum, {'a': 1, 'b': 2}),
     (FooStrEnum, {'a': 'v_a', 'b': 'v_b'}),
@@ -377,18 +375,20 @@ def test_discriminated_union_enum(base_class, choices):
         sub: Union[A, B] = Field(..., discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b}}).sub, B)
-    assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b.value}}).sub, B)
+    if isinstance(EnumValue.b, (int, str)):
+        assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b.value}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
         Top.model_validate({'sub': {'m': 3}})
 
-    expected_tags = f'{EnumValue.a.value!r}, {EnumValue.b.value!r}'
+    expected_tags = f'{EnumValue.a!r}, {EnumValue.b!r}'
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'discriminator': "'m'", 'expected_tags': expected_tags, 'tag': '3'},
-            'input': {'m': 3},
+            'type': 'union_tag_invalid',
             'loc': ('sub',),
             'msg': f"Input tag '3' found using 'm' does not match any of the expected tags: {expected_tags}",
-            'type': 'union_tag_invalid',
+            'input': {'m': 3},
+            'ctx': {'discriminator': "'m'", 'tag': '3', 'expected_tags': expected_tags},
         }
     ]
 
@@ -617,20 +617,27 @@ def test_nested_optional_unions() -> None:
 
     with pytest.raises(ValidationError) as exc_info:
         Pet.model_validate({'pet': {'pet_type': None}})
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'input': None, 'loc': ('pet',), 'msg': 'Input should be a valid string', 'type': 'string_type'}
+        {
+            'type': 'union_tag_invalid',
+            'loc': ('pet',),
+            'msg': "Input tag 'None' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",  # noqa: E501
+            'input': {'pet_type': None},
+            'ctx': {'discriminator': "'pet_type'", 'tag': 'None', 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'"},
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Pet.model_validate({'pet': {'pet_type': 'fox'}})
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'", 'tag': 'fox'},
-            'input': {'pet_type': 'fox'},
-            'loc': ('pet',),
-            'msg': "Input tag 'fox' found using 'pet_type' does not match any of the "
-            "expected tags: 'cat', 'dog', 'lizard', 'reptile'",
             'type': 'union_tag_invalid',
+            'loc': ('pet',),
+            'msg': "Input tag 'fox' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",  # noqa: E501
+            'input': {'pet_type': 'fox'},
+            'ctx': {'discriminator': "'pet_type'", 'tag': 'fox', 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'"},
         }
     ]
 
@@ -657,18 +664,18 @@ def test_nested_discriminated_union() -> None:
 
     with pytest.raises(ValidationError) as exc_info:
         Pet.model_validate({'pet': {'pet_type': 'reptile'}})
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
+            'type': 'union_tag_invalid',
+            'loc': ('pet',),
+            'msg': "Input tag 'reptile' found using 'pet_type' does not match any of the expected tags: 'cat', 'CAT', 'dog', 'DOG', 'lizard', 'LIZARD'",  # noqa: E501
+            'input': {'pet_type': 'reptile'},
             'ctx': {
                 'discriminator': "'pet_type'",
-                'expected_tags': "'cat', 'dog', 'lizard', 'CAT', 'DOG', 'LIZARD'",
                 'tag': 'reptile',
+                'expected_tags': "'cat', 'CAT', 'dog', 'DOG', 'lizard', 'LIZARD'",
             },
-            'input': {'pet_type': 'reptile'},
-            'loc': ('pet',),
-            'msg': "Input tag 'reptile' found using 'pet_type' does not match any of the "
-            "expected tags: 'cat', 'dog', 'lizard', 'CAT', 'DOG', 'LIZARD'",
-            'type': 'union_tag_invalid',
         }
     ]
 
@@ -711,14 +718,14 @@ def test_union_discriminator_literals() -> None:
     assert Model(**{'pet': {'typeOfPet': 'CAT'}}).pet.pet_type == 'CAT'
     with pytest.raises(ValidationError) as exc_info:
         Model(**{'pet': {'typeOfPet': 'Cat'}})
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'discriminator': "'pet_type' | 'typeOfPet'", 'expected_tags': "'cat', 'dog', 'CAT'", 'tag': 'Cat'},
-            'input': {'typeOfPet': 'Cat'},
-            'loc': ('pet',),
-            'msg': "Input tag 'Cat' found using 'pet_type' | 'typeOfPet' does not match "
-            "any of the expected tags: 'cat', 'dog', 'CAT'",
             'type': 'union_tag_invalid',
+            'loc': ('pet',),
+            'msg': "Input tag 'Cat' found using 'pet_type' | 'typeOfPet' does not match any of the expected tags: 'cat', 'CAT', 'dog'",  # noqa: E501
+            'input': {'typeOfPet': 'Cat'},
+            'ctx': {'discriminator': "'pet_type' | 'typeOfPet'", 'tag': 'Cat', 'expected_tags': "'cat', 'CAT', 'dog'"},
         }
     ]
 
@@ -848,19 +855,6 @@ def test_missing_discriminator_field() -> None:
         apply_discriminator(core_schema.union_schema([dog, cat]), 'kind')
 
 
-def test_invalid_discriminator_value() -> None:
-    cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema([None]))}
-    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema([1.5]))}
-    cat = core_schema.typed_dict_schema(cat_fields)
-    dog = core_schema.typed_dict_schema(dog_fields)
-
-    with pytest.raises(TypeError, match=re.escape('Unsupported value for discriminator field: None')):
-        apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
-
-    with pytest.raises(TypeError, match=re.escape('Unsupported value for discriminator field: 1.5')):
-        apply_discriminator(core_schema.union_schema([dog, cat]), 'kind')
-
-
 def test_wrap_function_schema() -> None:
     cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['cat']))}
     dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['dog']))}
@@ -940,43 +934,62 @@ def test_lax_or_strict_definitions() -> None:
         [core_schema.str_schema(ref='my-str-definition')],
     )
     discriminated_schema = apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
+    # insert_assert(discriminated_schema)
     assert discriminated_schema == {
-        'definitions': [{'ref': 'my-str-definition', 'type': 'str'}],
+        'type': 'definitions',
         'schema': {
+            'type': 'tagged-union',
             'choices': {
+                'cat': {
+                    'type': 'typed-dict',
+                    'fields': {
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}
+                    },
+                },
                 'DOG': {
+                    'type': 'lax-or-strict',
                     'lax_schema': {
-                        'fields': {
-                            'kind': {'schema': {'expected': ['DOG'], 'type': 'literal'}, 'type': 'typed-dict-field'}
-                        },
                         'type': 'typed-dict',
+                        'fields': {
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                        },
                     },
                     'strict_schema': {
-                        'definitions': [{'ref': 'my-int-definition', 'type': 'int'}],
-                        'schema': {
-                            'fields': {
-                                'kind': {'schema': {'expected': ['dog'], 'type': 'literal'}, 'type': 'typed-dict-field'}
-                            },
-                            'type': 'typed-dict',
-                        },
                         'type': 'definitions',
+                        'schema': {
+                            'type': 'typed-dict',
+                            'fields': {
+                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            },
+                        },
+                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
                     },
+                },
+                'dog': {
                     'type': 'lax-or-strict',
-                },
-                'cat': {
-                    'fields': {
-                        'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}, 'type': 'typed-dict-field'}
+                    'lax_schema': {
+                        'type': 'typed-dict',
+                        'fields': {
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                        },
                     },
-                    'type': 'typed-dict',
+                    'strict_schema': {
+                        'type': 'definitions',
+                        'schema': {
+                            'type': 'typed-dict',
+                            'fields': {
+                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            },
+                        },
+                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
+                    },
                 },
-                'dog': 'DOG',
             },
             'discriminator': 'kind',
-            'from_attributes': True,
             'strict': False,
-            'type': 'tagged-union',
+            'from_attributes': True,
         },
-        'type': 'definitions',
+        'definitions': [{'type': 'str', 'ref': 'my-str-definition'}],
     }
 
 
@@ -1014,54 +1027,87 @@ def test_wrapped_nullable_union() -> None:
         }
     ]
 
+    # insert_assert(discriminated_schema)
     assert discriminated_schema == {
+        'type': 'nullable',
         'schema': {
+            'type': 'tagged-union',
             'choices': {
                 'ant': {
-                    'fields': {
-                        'kind': {'schema': {'expected': ['ant'], 'type': 'literal'}, 'type': 'typed-dict-field'}
-                    },
                     'type': 'typed-dict',
+                    'fields': {
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['ant']}}
+                    },
                 },
                 'cat': {
+                    'type': 'function-wrap',
                     'function': {
-                        'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                         'type': 'general',
+                        'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                     },
                     'schema': {
+                        'type': 'nullable',
                         'schema': {
+                            'type': 'union',
                             'choices': [
                                 {
+                                    'type': 'typed-dict',
                                     'fields': {
                                         'kind': {
-                                            'schema': {'expected': ['cat'], 'type': 'literal'},
                                             'type': 'typed-dict-field',
+                                            'schema': {'type': 'literal', 'expected': ['cat']},
                                         }
                                     },
-                                    'type': 'typed-dict',
                                 },
                                 {
+                                    'type': 'typed-dict',
                                     'fields': {
                                         'kind': {
-                                            'schema': {'expected': ['dog'], 'type': 'literal'},
                                             'type': 'typed-dict-field',
+                                            'schema': {'type': 'literal', 'expected': ['dog']},
                                         }
                                     },
-                                    'type': 'typed-dict',
                                 },
                             ],
-                            'type': 'union',
                         },
-                        'type': 'nullable',
                     },
-                    'type': 'function-wrap',
                 },
-                'dog': 'cat',
+                'dog': {
+                    'type': 'function-wrap',
+                    'function': {
+                        'type': 'general',
+                        'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
+                    },
+                    'schema': {
+                        'type': 'nullable',
+                        'schema': {
+                            'type': 'union',
+                            'choices': [
+                                {
+                                    'type': 'typed-dict',
+                                    'fields': {
+                                        'kind': {
+                                            'type': 'typed-dict-field',
+                                            'schema': {'type': 'literal', 'expected': ['cat']},
+                                        }
+                                    },
+                                },
+                                {
+                                    'type': 'typed-dict',
+                                    'fields': {
+                                        'kind': {
+                                            'type': 'typed-dict-field',
+                                            'schema': {'type': 'literal', 'expected': ['dog']},
+                                        }
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                },
             },
             'discriminator': 'kind',
-            'from_attributes': True,
             'strict': False,
-            'type': 'tagged-union',
+            'from_attributes': True,
         },
-        'type': 'nullable',
     }

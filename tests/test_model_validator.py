@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from pprint import pprint
 from typing import Any, Dict, Union, cast
 
 import pytest
 
-from pydantic import BaseModel, ValidationInfo, model_validator
+from pydantic import BaseModel, ValidationInfo, ValidatorFunctionWrapHandler, model_validator
 
 
 def test_model_validator_wrap() -> None:
@@ -15,12 +14,22 @@ def test_model_validator_wrap() -> None:
 
         @model_validator(mode='wrap')
         @classmethod
-        def val_model(cls, values, handler, info) -> Model:
-            return handler(values)
+        def val_model(cls, values: dict[str, Any] | Model, handler: ValidatorFunctionWrapHandler) -> Model:
+            if isinstance(values, dict):
+                assert values == {'x': 1, 'y': 2}
+                model = handler({'x': 2, 'y': 3})
+            else:
+                assert values.x == 1
+                assert values.y == 2
+                model = handler(Model.model_construct(x=2, y=3))
+            assert model.x == 2
+            assert model.y == 3
+            model.x = 20
+            model.y = 30
+            return model
 
-    pprint(Model.__pydantic_core_schema__)
-    # Model(x=1, y=2).model_dump()
-    # assert Model.model_validate(Model(x=1, y=2)).model_dump() == {'x': 3, 'y': 4}
+    assert Model(x=1, y=2).model_dump() == {'x': 20, 'y': 30}
+    assert Model.model_validate(Model.model_construct(x=1, y=2)).model_dump() == {'x': 20, 'y': 30}
 
 
 @pytest.mark.parametrize('classmethod_decorator', [classmethod, lambda x: x])

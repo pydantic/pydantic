@@ -1,3 +1,5 @@
+import typing
+
 import pydantic_core
 from pydantic_core.core_schema import (
     FieldSerializationInfo,
@@ -23,7 +25,14 @@ from .deprecated.tools import *
 from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .functional_serializers import PlainSerializer, WrapSerializer, field_serializer, model_serializer
-from .functional_validators import field_validator, model_validator
+from .functional_validators import (
+    AfterValidator,
+    BeforeValidator,
+    PlainValidator,
+    WrapValidator,
+    field_validator,
+    model_validator,
+)
 from .main import *
 from .networks import *
 from .type_adapter import TypeAdapter
@@ -47,6 +56,10 @@ __all__ = [
     'ValidatorFunctionWrapHandler',
     'field_validator',
     'model_validator',
+    'AfterValidator',
+    'BeforeValidator',
+    'PlainValidator',
+    'WrapValidator',
     # deprecated V1 functional validators
     'root_validator',
     'validator',
@@ -54,6 +67,7 @@ __all__ = [
     'field_serializer',
     'model_serializer',
     'PlainSerializer',
+    'SerializeAsAny',
     'WrapSerializer',
     'FieldSerializationInfo',
     'SerializationInfo',
@@ -67,6 +81,7 @@ __all__ = [
     # pydantic_core errors
     'ValidationError',
     # errors
+    'PydanticErrorCodes',
     'PydanticUserError',
     'PydanticSchemaGenerationError',
     'PydanticImportError',
@@ -80,7 +95,6 @@ __all__ = [
     # main
     'BaseModel',
     'create_model',
-    'RootModel',
     # network
     'AnyUrl',
     'AnyHttpUrl',
@@ -101,6 +115,8 @@ __all__ = [
     'MySQLDsn',
     'MariaDBDsn',
     'validate_email',
+    # root_model
+    'RootModel',
     # tools
     'parse_obj_as',
     'schema_of',
@@ -135,7 +151,6 @@ __all__ = [
     'DirectoryPath',
     'NewPath',
     'Json',
-    'SecretField',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
@@ -170,5 +185,20 @@ __all__ = [
     'GetJsonSchemaHandler',
 ]
 
+# A mapping of {<member name>: <module name>} defining dynamic imports
+_dynamic_imports = {'RootModel': '.root_model'}
+if typing.TYPE_CHECKING:
+    from .root_model import RootModel
 
-__getattr__ = getattr_migration(__name__)
+_getattr_migration = getattr_migration(__name__)
+
+
+def __getattr__(attr_name: str) -> object:
+    dynamic_attr = _dynamic_imports.get(attr_name)
+    if dynamic_attr is None:
+        return _getattr_migration(attr_name)
+
+    from importlib import import_module
+
+    module = import_module(_dynamic_imports[attr_name], package=__package__)
+    return getattr(module, attr_name)

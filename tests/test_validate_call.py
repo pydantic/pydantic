@@ -552,6 +552,14 @@ def test_populate_by_name():
     assert foo(a=10, c=1) == 11
 
 
+def test_validate_return():
+    @validate_call(config=dict(validate_return=True))
+    def foo(a: int, b: int) -> int:
+        return a + b
+
+    assert foo(1, 2) == 3
+
+
 def test_validate_all():
     @validate_call(config=dict(validate_default=True))
     def foo(dt: datetime = Field(default_factory=lambda: 946684800)):

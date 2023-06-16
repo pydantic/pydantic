@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable, Iterable, TypeVar, Union, cast
+from typing import Any, Callable, Hashable, Iterable, TypeVar, Union, cast
 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypeAliasType, TypeGuard, get_args
@@ -67,8 +67,7 @@ def is_list_like_schema_with_items_schema(
 
 
 def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
-    """
-    Produces the ref to be used for this type by pydantic_core's core schemas.
+    """Produces the ref to be used for this type by pydantic_core's core schemas.
 
     This `args_override` argument was added for the purpose of creating valid recursive references
     when creating generic models without needing to create a concrete class.
@@ -99,41 +98,6 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     if arg_refs:
         type_ref = f'{type_ref}[{",".join(arg_refs)}]'
     return type_ref
-
-
-def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    """
-    This function walks a schema recursively, replacing all but the first occurrence of each ref with
-    a definition-ref schema referencing that ref.
-
-    This makes the fundamental assumption that any time two schemas have the same ref, occurrences
-    after the first can safely be replaced.
-
-    In most cases, schemas with the same ref should not actually be produced. However, when building recursive
-    models with multiple references to themselves at some level in the field hierarchy, it is difficult to avoid
-    getting multiple (identical) copies of the same schema with the same ref. This function removes the copied refs,
-    but is safe because the "duplicate" refs refer to the same schema.
-
-    There is one case where we purposely emit multiple (different) schemas with the same ref: when building
-    recursive generic models. In this case, as an implementation detail, recursive generic models will emit
-    a _non_-identical schema deeper in the tree with a re-used ref, with the intent that _that_ schema will
-    be replaced with a recursive reference once the specific generic parametrization to use can be determined.
-    """
-    refs: set[str] = set()
-
-    top_ref = schema.get('ref', None)  # type: ignore[assignment]
-
-    def _replace_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        ref: str | None = s.get('ref')  # type: ignore[assignment]
-        if ref:
-            if ref is top_ref:
-                return recurse(s, _replace_refs)
-            if ref in refs:
-                return {'type': 'definition-ref', 'schema_ref': ref}
-            refs.add(ref)
-        return recurse(s, _replace_refs)
-
-    return walk_core_schema(schema, _replace_refs)
 
 
 def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema.CoreSchema]:
@@ -250,8 +214,8 @@ class _WalkCoreSchema:
         return f(schema.copy(), self._walk)
 
     def _walk(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
-        ser_schema: core_schema.SerSchema | None = schema.get('serialization', None)  # type: ignore
         schema = self._schema_type_to_method[schema['type']](schema, f)
+        ser_schema: core_schema.SerSchema | None = schema.get('serialization', None)  # type: ignore
         if ser_schema:
             schema['serialization'] = self._handle_ser_schemas(ser_schema.copy(), f)
         return schema
@@ -342,7 +306,7 @@ class _WalkCoreSchema:
         return schema
 
     def handle_tagged_union_schema(self, schema: core_schema.TaggedUnionSchema, f: Walk) -> core_schema.CoreSchema:
-        new_choices: dict[str | int, str | int | core_schema.CoreSchema] = {}
+        new_choices: dict[Hashable, core_schema.CoreSchema] = {}
         for k, v in schema['choices'].items():
             new_choices[k] = v if isinstance(v, (str, int)) else self.walk(v, f)
         schema['choices'] = new_choices
@@ -366,6 +330,13 @@ class _WalkCoreSchema:
         if 'extra_validator' in schema:
             schema['extra_validator'] = self.walk(schema['extra_validator'], f)
         replaced_fields: dict[str, core_schema.ModelField] = {}
+        replaced_computed_fields: list[core_schema.ComputedField] = []
+        for computed_field in schema.get('computed_fields', None) or ():
+            replaced_field = computed_field.copy()
+            replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
+            replaced_computed_fields.append(replaced_field)
+        if replaced_computed_fields:
+            schema['computed_fields'] = replaced_computed_fields
         for k, v in schema['fields'].items():
             replaced_field = v.copy()
             replaced_field['schema'] = self.walk(v['schema'], f)
@@ -376,6 +347,13 @@ class _WalkCoreSchema:
     def handle_typed_dict_schema(self, schema: core_schema.TypedDictSchema, f: Walk) -> core_schema.CoreSchema:
         if 'extra_validator' in schema:
             schema['extra_validator'] = self.walk(schema['extra_validator'], f)
+        replaced_computed_fields: list[core_schema.ComputedField] = []
+        for computed_field in schema.get('computed_fields', None) or ():
+            replaced_field = computed_field.copy()
+            replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
+            replaced_computed_fields.append(replaced_field)
+        if replaced_computed_fields:
+            schema['computed_fields'] = replaced_computed_fields
         replaced_fields: dict[str, core_schema.TypedDictField] = {}
         for k, v in schema['fields'].items():
             replaced_field = v.copy()
@@ -386,6 +364,13 @@ class _WalkCoreSchema:
 
     def handle_dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema, f: Walk) -> core_schema.CoreSchema:
         replaced_fields: list[core_schema.DataclassField] = []
+        replaced_computed_fields: list[core_schema.ComputedField] = []
+        for computed_field in schema.get('computed_fields', None) or ():
+            replaced_field = computed_field.copy()
+            replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
+            replaced_computed_fields.append(replaced_field)
+        if replaced_computed_fields:
+            schema['computed_fields'] = replaced_computed_fields
         for field in schema['fields']:
             replaced_field = field.copy()
             replaced_field['schema'] = self.walk(field['schema'], f)
@@ -434,7 +419,8 @@ def walk_core_schema(schema: core_schema.CoreSchema, f: Walk) -> core_schema.Cor
 
 
 def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) -> core_schema.CoreSchema:  # noqa: C901
-    all_defs: dict[str, core_schema.CoreSchema] = {}
+    valid_defs: dict[str, core_schema.CoreSchema] = {}
+    invalid_defs: dict[str, core_schema.CoreSchema] = {}
 
     def make_result(schema: core_schema.CoreSchema, defs: Iterable[core_schema.CoreSchema]) -> core_schema.CoreSchema:
         definitions = list(defs)
@@ -450,25 +436,39 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
             for definition in s['definitions']:
                 ref = get_ref(definition)
                 assert ref is not None
-                all_defs[ref] = recurse(definition, collect_refs).copy()
+                def_schema = recurse(definition, collect_refs).copy()
+                if 'invalid' in def_schema.get('metadata', {}):
+                    invalid_defs[ref] = def_schema
+                else:
+                    valid_defs[ref] = def_schema
             return recurse(s['schema'], collect_refs)
         ref = get_ref(s)
         if ref is not None:
-            all_defs[ref] = s
+            if 'invalid' in s.get('metadata', {}):
+                invalid_defs[ref] = s
+            else:
+                valid_defs[ref] = s
         return recurse(s, collect_refs)
 
     schema = walk_core_schema(schema, collect_refs)
 
+    all_defs = {**invalid_defs, **valid_defs}
+
     def flatten_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if is_definitions_schema(s):
+            new: dict[str, Any] = dict(s)
             # iterate ourselves, we don't want to flatten the actual defs!
-            s['schema'] = recurse(s['schema'], flatten_refs)
-            for definition in s['definitions']:
+            definitions: list[CoreSchema] = new.pop('definitions')
+            schema = cast(CoreSchema, new.pop('schema'))
+            # remaining keys are optional like 'serialization'
+            schema = cast(CoreSchema, {**schema, **new})
+            s['schema'] = recurse(schema, flatten_refs)
+            for definition in definitions:
                 recurse(definition, flatten_refs)  # don't re-assign here!
-            return s
+            return schema
         s = recurse(s, flatten_refs)
         ref = get_ref(s)
-        if ref and ref in all_defs and ref:
+        if ref and ref in all_defs:
             all_defs[ref] = s
             return core_schema.definition_reference_schema(schema_ref=ref)
         return s
@@ -509,6 +509,10 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
                 new = all_defs.pop(ref)
                 ref_counts[ref] -= 1  # because we just replaced it!
                 new.pop('ref')  # type: ignore
+                # put all other keys that were on the def-ref schema into the inlined version
+                # in particular this is needed for `serialization`
+                if 'serialization' in s:
+                    new['serialization'] = s['serialization']
                 s = recurse(new, inline_refs)
                 return s
             else:
@@ -523,17 +527,15 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
 
 
 def flatten_schema_defs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    """
-    Simplify schema references by:
-      1. Grouping all definitions into a single top-level `definitions` schema, similar to a JSON schema's `#/$defs`.
+    """Simplify schema references by:
+    1. Grouping all definitions into a single top-level `definitions` schema, similar to a JSON schema's `#/$defs`.
     """
     return _simplify_schema_references(schema, inline=False)
 
 
 def inline_schema_defs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    """
-    Simplify schema references by:
-      1. Inlining any definitions that are only referenced in one place and are not involved in a cycle.
-      2. Removing any unused `ref` references from schemas.
+    """Simplify schema references by:
+    1. Inlining any definitions that are only referenced in one place and are not involved in a cycle.
+    2. Removing any unused `ref` references from schemas.
     """
     return _simplify_schema_references(schema, inline=True)

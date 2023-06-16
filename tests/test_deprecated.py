@@ -319,7 +319,7 @@ def test_extra_used_as_enum(
     attribute: str,
     value: str,
 ) -> None:
-    with pytest.raises(
+    with pytest.warns(
         DeprecationWarning,
         match=re.escape("`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)"),
     ):
@@ -454,6 +454,20 @@ def test_field_regex():
 
         class Model(BaseModel):
             x: str = Field('test', regex=r'^test$')
+
+
+def test_modify_schema_error():
+    with pytest.raises(
+        PydanticUserError,
+        match='The `__modify_schema__` method is not supported in Pydantic v2. '
+        'Use `__get_pydantic_json_schema__` instead.',
+    ):
+
+        class Model(BaseModel):
+            def __modify_schema__(self, field_schema: Dict[str, Any]) -> None:
+                pass
+
+        Model()
 
 
 def test_field_extra_arguments():
@@ -627,3 +641,20 @@ def test_deprecated_module(tmp_path: Path) -> None:
             pass
 
         validate_arguments()(test)
+
+
+def test_deprecated_color():
+    from pydantic.color import Color
+
+    with pytest.warns(DeprecationWarning, match='The `Color` class is deprecated, use `pydantic_extra_types` instead.'):
+        Color('red')
+
+
+def test_deprecated_payment():
+    from pydantic import PaymentCardNumber
+
+    with pytest.warns(
+        DeprecationWarning,
+        match='The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.',
+    ):
+        PaymentCardNumber('4242424242424242')

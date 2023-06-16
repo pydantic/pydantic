@@ -31,6 +31,20 @@ def test_init_var_does_not_work():
     assert e.value.args == ('InitVar is not supported in Python 3.7 as type information is lost',)
 
 
+def test_init_var_field():
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        bar: str
+        baz: str = Field(init_var=True)
+
+    class Model(BaseModel):
+        foo: Foo
+
+    model = Model(foo=Foo('bar', baz='baz'))
+    assert 'bar' in model.foo.__pydantic_fields__
+    assert 'baz' not in model.foo.__pydantic_fields__
+
+
 def test_root_model_arbitrary_field_name_error():
     with pytest.raises(
         NameError, match="Unexpected field with name 'a_field'; only 'root' is allowed as a field of a `RootModel`"

@@ -2,7 +2,9 @@ import json
 import platform
 import re
 import sys
+from collections import defaultdict
 from copy import deepcopy
+from dataclasses import dataclass
 from enum import Enum
 from typing import (
     Any,
@@ -21,7 +23,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic_core import CoreSchema
+from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal
 
 from pydantic import (
@@ -38,6 +40,7 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic.type_adapter import TypeAdapter
 
 
 def test_success():
@@ -2304,3 +2307,212 @@ def test_nested_types_ignored():
 
         class BadModel(BaseModel):
             x = NonNestedType
+
+
+def test_validate_python_from_attributes() -> None:
+    class Model(BaseModel):
+        x: int
+
+    class ModelFromAttributesTrue(Model):
+        model_config = ConfigDict(from_attributes=True)
+
+    class ModelFromAttributesFalse(Model):
+        model_config = ConfigDict(from_attributes=False)
+
+    @dataclass
+    class UnrelatedClass:
+        x: int = 1
+
+    input = UnrelatedClass(1)
+
+    for from_attributes in (False, None):
+        with pytest.raises(ValidationError) as exc_info:
+            Model.model_validate(UnrelatedClass(), from_attributes=from_attributes)
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+        ]
+
+    res = Model.model_validate(UnrelatedClass(), from_attributes=True)
+    assert res == Model(x=1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ModelFromAttributesTrue.model_validate(UnrelatedClass(), from_attributes=False)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+    ]
+
+    for from_attributes in (True, None):
+        res = ModelFromAttributesTrue.model_validate(UnrelatedClass(), from_attributes=from_attributes)
+        assert res == ModelFromAttributesTrue(x=1)
+
+    for from_attributes in (False, None):
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=from_attributes)
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+        ]
+
+    res = ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=True)
+    assert res == ModelFromAttributesFalse(x=1)
+
+
+def test_model_signature_annotated() -> None:
+    class Model(BaseModel):
+        x: Annotated[int, 123]
+
+    # we used to accidentally convert `__metadata__` to a list
+    # which caused things like `typing.get_args()` to fail
+    assert Model.__signature__.parameters['x'].annotation.__metadata__ == (123,)
+
+
+def test_get_core_schema_unpacks_refs_for_source_type() -> None:
+    # use a list to track since we end up calling `__get_pydantic_core_schema__` multiple times for models
+    # e.g. InnerModel.__get_pydantic_core_schema__ gets called:
+    # 1. When InnerModel is defined
+    # 2. When OuterModel is defined
+    # 3. When we use the TypeAdapter
+    received_schemas: dict[str, list[str]] = defaultdict(list)
+
+    @dataclass
+    class Marker:
+        name: str
+
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            received_schemas[self.name].append(schema['type'])
+            return schema
+
+    class InnerModel(BaseModel):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            received_schemas['InnerModel'].append(schema['type'])
+            schema['metadata'] = schema.get('metadata', {})
+            schema['metadata']['foo'] = 'inner was here!'
+            return deepcopy(schema)
+
+    class OuterModel(BaseModel):
+        inner: Annotated[InnerModel, Marker('Marker("inner")')]
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            received_schemas['OuterModel'].append(schema['type'])
+            return schema
+
+    ta = TypeAdapter(Annotated[OuterModel, Marker('Marker("outer")')])
+
+    # super hacky check but it works in all cases and avoids a complex and fragile iteration over CoreSchema
+    # the point here is to verify that `__get_pydantic_core_schema__`
+    assert 'inner was here' in str(ta.core_schema)
+
+    assert received_schemas == {
+        'InnerModel': ['model', 'model', 'model'],
+        'Marker("inner")': ['definition-ref', 'definition-ref'],
+        'OuterModel': ['model', 'model'],
+        'Marker("outer")': ['definition-ref'],
+    }
+
+
+def test_get_core_schema_return_new_ref() -> None:
+    class InnerModel(BaseModel):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            schema = deepcopy(schema)
+            schema['metadata'] = schema.get('metadata', {})
+            schema['metadata']['foo'] = 'inner was here!'
+            return deepcopy(schema)
+
+    class OuterModel(BaseModel):
+        inner: InnerModel
+        x: int = 1
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+
+            def set_x(m: 'OuterModel') -> 'OuterModel':
+                m.x += 1
+                return m
+
+            return core_schema.no_info_after_validator_function(set_x, schema, ref=schema.pop('ref'))
+
+    cs = OuterModel.__pydantic_core_schema__
+    # super hacky check but it works in all cases and avoids a complex and fragile iteration over CoreSchema
+    # the point here is to verify that `__get_pydantic_core_schema__`
+    assert 'inner was here' in str(cs)
+
+    assert OuterModel(inner=InnerModel()).x == 2
+
+
+def test_resolve_def_schema_from_core_schema() -> None:
+    class Inner(BaseModel):
+        x: int
+
+    class Marker:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            resolved = handler.resolve_ref_schema(schema)
+            assert resolved['type'] == 'model'
+            assert resolved['cls'] is Inner
+
+            def modify_inner(v: Inner) -> Inner:
+                v.x += 1
+                return v
+
+            return core_schema.no_info_after_validator_function(modify_inner, schema)
+
+    class Outer(BaseModel):
+        inner: Annotated[Inner, Marker()]
+
+    assert Outer.model_validate({'inner': {'x': 1}}).inner.x == 2
+
+
+def test_extra_validator_scalar() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    class Child(Model):
+        __pydantic_extra__: Dict[str, int]
+
+    m = Child(a='1')
+    assert m.__pydantic_extra__ == {'a': 1}
+
+    # insert_assert(Child.model_json_schema())
+    assert Child.model_json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {},
+        'title': 'Child',
+        'type': 'object',
+    }
+
+
+def test_extra_validator_named() -> None:
+    class Foo(BaseModel):
+        x: int
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    class Child(Model):
+        __pydantic_extra__: Dict[str, Foo]
+
+    m = Child(a={'x': '1'})
+    assert m.__pydantic_extra__ == {'a': Foo(x=1)}
+
+    # insert_assert(Child.model_json_schema())
+    assert Child.model_json_schema() == {
+        '$defs': {
+            'Foo': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Foo',
+                'type': 'object',
+            }
+        },
+        'additionalProperties': {'$ref': '#/$defs/Foo'},
+        'properties': {},
+        'title': 'Child',
+        'type': 'object',
+    }

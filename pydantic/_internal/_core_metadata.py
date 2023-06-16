@@ -4,20 +4,25 @@ import typing
 from typing import Any
 
 import typing_extensions
-from pydantic_core import CoreSchema
 
 if typing.TYPE_CHECKING:
-    from ..json_schema import JsonSchemaValue
     from ._schema_generation_shared import (
         CoreSchemaOrField as CoreSchemaOrField,
     )
     from ._schema_generation_shared import (
         GetJsonSchemaFunction,
-        GetJsonSchemaHandler,
     )
 
 
 class CoreMetadata(typing_extensions.TypedDict, total=False):
+    """A `TypedDict` for holding the metadata dict of the schema.
+
+    Attributes:
+        pydantic_js_functions: List of JSON schema functions.
+        pydantic_js_prefer_positional_arguments: Whether JSON schema generator will
+            prefer positional over keyword arguments for an 'arguments' schema.
+    """
+
     pydantic_js_functions: list[GetJsonSchemaFunction]
 
     # If `pydantic_js_prefer_positional_arguments` is True, the JSON schema generator will
@@ -25,14 +30,8 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     pydantic_js_prefer_positional_arguments: bool | None
 
 
-class UpdateCoreSchemaCallable(typing_extensions.Protocol):
-    def __call__(self, schema: CoreSchema, **kwargs: Any) -> None:
-        ...  # pragma: no cover
-
-
 class CoreMetadataHandler:
-    """
-    Because the metadata field in pydantic_core is of type `Any`, we can't assume much about its contents.
+    """Because the metadata field in pydantic_core is of type `Any`, we can't assume much about its contents.
 
     This class is used to interact with the metadata field on a CoreSchema object in a consistent
     way throughout pydantic.
@@ -51,8 +50,7 @@ class CoreMetadataHandler:
 
     @property
     def metadata(self) -> CoreMetadata:
-        """
-        Retrieves the metadata dict off the schema, initializing it to a dict if it is None
+        """Retrieves the metadata dict from the schema, initializing it to a dict if it is None
         and raises an error if it is not a dict.
         """
         metadata = self._schema.get('metadata')
@@ -62,16 +60,6 @@ class CoreMetadataHandler:
             raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
         return metadata  # type: ignore[return-value]
 
-    def get_json_schema(
-        self,
-        core_schema: CoreSchemaOrField,
-        handler: GetJsonSchemaHandler,
-    ) -> JsonSchemaValue:
-        js_function = self.metadata.get('pydantic_js_function')
-        if js_function is None:
-            return handler(core_schema)
-        return js_function(core_schema, handler)
-
 
 def build_metadata_dict(
     *,  # force keyword arguments to make it easier to modify this signature in a backwards-compatible way
@@ -79,8 +67,7 @@ def build_metadata_dict(
     js_prefer_positional_arguments: bool | None = None,
     initial_metadata: Any | None = None,
 ) -> Any:
-    """
-    Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent
+    """Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent
     with the CoreMetadataHandler class.
     """
     if initial_metadata is not None and not isinstance(initial_metadata, dict):

@@ -500,3 +500,12 @@ def test_model_copy(ModelTwo):
 
     m.a = 12
     assert m.a != m2.a
+
+
+def test_pydantic_extra():
+    class Model(BaseModel):
+        model_config = dict(extra='allow')
+        x: int
+
+    m = Model.model_construct(x=1, y=2)
+    assert m.__pydantic_extra__ == {'y': 2}

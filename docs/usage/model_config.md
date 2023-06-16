@@ -1,4 +1,7 @@
-Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
+Behaviour of _pydantic_ can be controlled via the `model_config` attribute on a `BaseModel`.
+
+!!! note
+    Before **v2.0**, the `Config` class was used. This is still supported, but deprecated.
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -6,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 class Model(BaseModel):
     model_config = ConfigDict(str_max_length=10)
+
     v: str
 
 
@@ -25,7 +29,7 @@ Also, you can specify config options as model class kwargs:
 from pydantic import BaseModel, ValidationError
 
 
-class Model(BaseModel, extra='forbid'):
+class Model(BaseModel, extra='forbid'):  # (1)!
     a: str
 
 
@@ -40,15 +44,17 @@ except ValidationError as e:
     """
 ```
 
-Similarly, if using the `@dataclass` decorator:
+1. See the [Extra Attributes](#extra-attributes) section for more details.
+
+Similarly, if using the `@dataclass` decorator from _pydantic_:
 ```py
 from datetime import datetime
 
-from pydantic import ValidationError
+from pydantic import ConfigDict, ValidationError
 from pydantic.dataclasses import dataclass
 
 
-@dataclass(config=dict(str_max_length=10, validate_assignment=True))
+@dataclass(config=ConfigDict(str_max_length=10, validate_assignment=True))  # (1)!
 class User:
     id: int
     name: str = 'John Doe'
@@ -67,126 +73,76 @@ except ValidationError as e:
     """
 ```
 
+
+1. If using the `dataclass` from the standard library, you should use `__pydantic_config__` instead.
+   See:
+
+    ```py
+    from dataclasses import dataclass
+    from datetime import datetime
+
+    from pydantic import ConfigDict
+
+
+    @dataclass
+    class User:
+        __pydantic_config__ = ConfigDict(strict=True)
+
+        id: int
+        name: str = 'John Doe'
+        signup_ts: datetime = None
+    ```
+
 ## Options
 
-**`title`**
-: the title for the generated JSON Schema
-
-**`str_strip_whitespace`**
-: whether to strip leading and trailing whitespace for str & byte types (default: `False`)
-
-**`str_to_upper`**
-: whether to make all characters uppercase for str & byte types (default: `False`)
-
-**`str_to_lower`**
-: whether to make all characters lowercase for str & byte types (default: `False`)
-
-**`str_min_length`**
-: the min length for str & byte types (default: `0`)
-
-**`str_max_length`**
-: the max length for str & byte types (default: `None`)
-
-**`validate_all`**
-: whether to validate field defaults (default: `False`)
-
-**`extra`**
-: whether to ignore, allow, or forbid extra attributes during model initialization. Accepts the string values of
-  `'ignore'`, `'allow'`, or `'forbid'`, or values of the `Extra` enum (default: `Extra.ignore`).
-  `'forbid'` will cause validation to fail if extra attributes are included, `'ignore'` will silently ignore any extra attributes,
-  and `'allow'` will assign the attributes to the model.
-
-**`allow_mutation`**
-: whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed (default: `True`)
-
-**`frozen`**
-
-!!! warning
-    This parameter is in beta
-
-: setting `frozen=True` does everything that `allow_mutation=False` does, and also generates a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the attributes are hashable. (default: `False`)
-
-
-**`use_enum_values`**
-: whether to populate models with the `value` property of enums, rather than the raw enum.
-  This may be useful if you want to serialise `model.model_dump()` later (default: `False`)
-
-**`fields`**
-: a `dict` containing schema information for each field; this is equivalent to
-  using [the `Field` class](schema.md), except when a field is already
-  defined through annotation or the Field class, in which case only
-  `alias`, `include`, `exclude`, `min_length`, `max_length`, `regex`, `gt`, `lt`, `gt`, `le`,
-  `multiple_of`, `max_digits`, `decimal_places`, `min_items`, `max_items`, `unique_items`
-  and `allow_mutation` can be set (for example you cannot set default of `default_factory`)
-   (default: `None`)
-
-**`validate_assignment`**
-: whether to perform validation on *assignment* to attributes (default: `False`)
-
-**`populate_by_name`**
-: whether an aliased field may be populated by its name as given by the model
-  attribute, as well as the alias (default: `False`)
-
-!!! note
-    The name of this configuration setting was changed in **v1.0** from
-    `allow_population_by_alias` to `populate_by_name`.
-
-**`error_msg_templates`**
-: a `dict` used to override the default error message templates.
-  Pass in a dictionary with keys matching the error messages you want to override (default: `{}`)
-
-**`arbitrary_types_allowed`**
-: whether to allow arbitrary user types for fields (they are validated simply by
-  checking if the value is an instance of the type). If `False`, `RuntimeError` will be
-  raised on model declaration (default: `False`). See an example in
-  [Field Types](types/types.md#arbitrary-types-allowed).
-
-**`from_attributes`**
-: whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances)
-
-**`getter_dict`**
-: a custom class (which should inherit from `GetterDict`) to use when decomposing arbitrary classes
-for validation, for use with `from_attributes`; see [Data binding](models.md#data-binding).
-
-**`alias_generator`**
-: a callable that takes a field name and returns an alias for it; see [the dedicated section](#alias-generator)
-
-**`ignored_types`**
-: a tuple of types that may occur as values of class attributes without annotations; this is typically used for
-custom descriptors (classes that behave like `property`). If an attribute is set on a class without an annotation
-and has a type that is not in this tuple (or otherwise recognized by pydantic), an error will be raised.
-
-**`allow_inf_nan`**
-: whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields, defaults to `True`,
-  set to `False` for compatibility with `JSON`,
-  see [#3994](https://github.com/pydantic/pydantic/pull/3994) for more details, added in **V1.10**
-
-**`protected_namespaces`**
-: a `tuple` of strings that prevent model to have field which conflict with them (default: `('model_', )`).
-see [the dedicated section](#protected-namespaces)
-
-**`hide_input_in_errors`**
-: whether to show input value and input type in `ValidationError` representation defaults to `False`.
-see [the dedicated section](#hide-input-in-errors)
+See the [`ConfigDict` API documentation](../api/config.md#pydantic.config.ConfigDict) for the full list of settings.
 
 ## Change behaviour globally
 
-If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
-with custom `Config` since the config is inherited
+If you wish to change the behaviour of Pydantic globally, you can create your own custom `BaseModel`
+with custom `model_config` since the config is inherited:
+
 ```py
-from pydantic import BaseModel as PydanticBaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class BaseModel(PydanticBaseModel):
-    model_config = dict(arbitrary_types_allowed=True)
+class Parent(BaseModel):
+    model_config = ConfigDict(extra='allow')
 
 
-class MyClass:
-    """A random class"""
+class Model(Parent):
+    x: str
 
 
-class Model(BaseModel):
-    x: MyClass
+m = Model(x='foo', y='bar')
+print(m.model_dump())
+#> {'x': 'foo', 'y': 'bar'}
+```
+
+1. Since `Parent` is a subclass of `BaseModel`, it will inherit the `model_config` attribute.
+   This means that `Model` will have `extra='allow'` by default.
+
+If you add a `model_config` to the `Model` class, it will _merge_ with the `model_config` from `Parent`:
+
+```py
+from pydantic import BaseModel, ConfigDict
+
+
+class Parent(BaseModel):
+    model_config = ConfigDict(extra='allow')
+
+
+class Model(Parent):
+    model_config = ConfigDict(str_to_lower=True)  # (1)!
+
+    x: str
+
+
+m = Model(x='FOO', y='bar')
+print(m.model_dump())
+#> {'x': 'foo', 'y': 'bar'}
+print(m.model_config)
+#> {'extra': 'allow', 'str_to_lower': True}
 ```
 
 ## Alias Generator
@@ -195,7 +151,7 @@ If data source field names do not match your code style (e. g. CamelCase fields)
 you can automatically generate aliases using `alias_generator`:
 
 ```py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 def to_camel(string: str) -> str:
@@ -203,7 +159,8 @@ def to_camel(string: str) -> str:
 
 
 class Voice(BaseModel):
-    model_config = dict(alias_generator=to_camel)
+    model_config = ConfigDict(alias_generator=to_camel)
+
     name: str
     language_code: str
 
@@ -221,147 +178,375 @@ instead use the `to_lower_camel` function.
 
 ## Alias Precedence
 
-!!! warning
-    Alias priority logic changed in **v1.4** to resolve buggy and unexpected behaviour in previous versions.
-    In some circumstances this may represent a **breaking change**,
-    see [#1178](https://github.com/pydantic/pydantic/issues/1178) and the precedence order below for details.
-
-In the case where a field's alias may be defined in multiple places,
-the selected value is determined as follows (in descending order of priority):
-
-1. Set via `Field(..., alias=<alias>)`, directly on the model
-2. Defined in `Config.fields`, directly on the model
-3. Set via `Field(..., alias=<alias>)`, on a parent model
-4. Defined in `Config.fields`, on a parent model
-5. Generated by `alias_generator`, regardless of whether it's on the model or a parent
-
-!!! note
-    This means an `alias_generator` defined on a child model **does not** take priority over an alias defined
-    on a field in a parent model.
-
-For example:
+If you specify an `alias` on the `Field`, it will take precedence over the generated alias:
 
 ```py
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class Voice(BaseModel):
-    name: str = Field(None, alias='ActorName')
-    language_code: str = None
-    mood: str = None
-
-
-def alias_generator(string: str) -> str:
-    # this is the same as `alias_generator = to_camel` above
+def to_camel(string: str) -> str:
     return ''.join(word.capitalize() for word in string.split('_'))
 
 
-class Character(Voice):
-    model_config = dict(alias_generator=alias_generator)
-    act: int = 1
+class Voice(BaseModel):
+    model_config = ConfigDict(alias_generator=to_camel)
+
+    name: str
+    language_code: str = Field(alias='lang')
 
 
-print(Character.model_json_schema(by_alias=True))
-"""
-{
-    'type': 'object',
-    'properties': {
-        'ActorName': {'type': 'string', 'default': None, 'title': 'Actorname'},
-        'LanguageCode': {'type': 'string', 'default': None, 'title': 'Languagecode'},
-        'Mood': {'type': 'string', 'default': None, 'title': 'Mood'},
-        'Act': {'type': 'integer', 'default': 1, 'title': 'Act'},
-    },
-    'title': 'Character',
-}
-"""
+voice = Voice(Name='Filiz', lang='tr-TR')
+print(voice.language_code)
+#> tr-TR
+print(voice.model_dump(by_alias=True))
+#> {'Name': 'Filiz', 'lang': 'tr-TR'}
 ```
 
-## Smart Union
+The same precedence applies to `validation_alias` and `serialization_alias`.
+See more about the different field aliases under [field aliases](fields.md#field-aliases).
 
-**TODO: Smart Union behaviour has roughly become the default, this needs to be moved to the stuff on unions**
+## Extra Attributes
 
-By default, as explained [here](types/types.md#unions), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
-So sometimes you may have unexpected coerced data.
+You can configure how pydantic handles the attributes that are not defined in the model:
+
+* `allow` - Allow any extra attributes.
+* `forbid` - Forbid any extra attributes.
+* `ignore` - Ignore any extra attributes.
+
+The default value is `'ignore'`.
 
 ```py
-from typing import Union
+from pydantic import BaseModel, ConfigDict
+
+
+class User(BaseModel):
+    model_config = ConfigDict(extra='ignore')  # (1)!
+
+    name: str
+
+
+user = User(name='John Doe', age=20)  # (2)!
+print(user)
+#> name='John Doe'
+```
+
+1. This is the the default behaviour.
+2. The `age` argument is ignored.
+
+Instead, with `extra='allow'`, the `age` argument is included:
+
+```py
+from pydantic import BaseModel, ConfigDict
+
+
+class User(BaseModel):
+    model_config = ConfigDict(extra='allow')
+
+    name: str
+
+
+user = User(name='John Doe', age=20)  # (1)!
+print(user)
+#> name='John Doe' age=20
+```
+
+1. The `age` argument is included.
+
+With `extra='forbid'`, an error is raised:
+
+```py
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+class User(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    name: str
+
+
+try:
+    User(name='John Doe', age=20)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for User
+    age
+      Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
+    """
+```
+
+## Populate by Name
+
+In case you set an alias, you can still populate the model by the original name.
+
+You need to set `populate_by_name=True` in the `model_config`:
+
+```py
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class User(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    name: str = Field(alias='full_name')  # (1)!
+    age: int
+
+
+user = User(full_name='John Doe', age=20)  # (2)!
+print(user)
+#> name='John Doe' age=20
+user = User(name='John Doe', age=20)  # (3)!
+print(user)
+#> name='John Doe' age=20
+```
+
+1. The field `'name'` has an alias `'full_name'`.
+2. The model is populated by the alias `'full_name'`.
+3. The model is populated by the field name `'name'`.
+
+## Validate Assignment
+
+The default behavior of Pydantic is to validate the data when the model is created.
+
+In case the user changes the data after the model is created, the model is _not_ revalidated.
+
+```py
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    name: str
+
+
+user = User(name='John Doe')  # (1)!
+print(user)
+#> name='John Doe'
+user.name = 123  # (1)!
+print(user)
+#> name=123
+```
+
+1. The validation happens only when the model is created.
+2. The validation does not happen when the data is changed.
+
+In case you want to revalidate the model when the data is changed, you can use `validate_assignment=True`:
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class User(BaseModel, validate_assignment=True):  # (1)!
+    name: str
+
+
+user = User(name='John Doe')  # (2)!
+print(user)
+#> name='John Doe'
+try:
+    user.name = 123  # (3)!
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for User
+    name
+      Input should be a valid string [type=string_type, input_value=123, input_type=int]
+    """
+```
+
+1. You can either use class keyword arguments, or `model_config` to set `validate_assignment=True`.
+2. The validation happens when the model is created.
+3. The validation _also_ happens when the data is changed.
+
+## Revalidate instances
+
+By default, model and dataclass instances are not revalidated during validation.
+
+```py upgrade="skip"
+from typing import List
 
 from pydantic import BaseModel
 
 
-class Foo(BaseModel):
-    pass
+class User(BaseModel, revalidate_instances='never'):  # (1)!
+    hobbies: List[str]
 
 
-class Bar(BaseModel):
-    pass
+class SubUser(User):
+    sins: List[str]
 
 
-class Model(BaseModel):
-    x: Union[str, int]
-    y: Union[Foo, Bar]
+class Transaction(BaseModel):
+    user: User
 
 
-print(Model(x=1, y=Bar()))
-#> x=1 y=Bar()
+my_user = User(hobbies=['reading'])
+t = Transaction(user=my_user)
+print(t)
+#> user=User(hobbies=['reading'])
+
+my_user.hobbies = [1]  # (2)!
+t = Transaction(user=my_user)  # (3)!
+print(t)
+#> user=User(hobbies=[1])
+
+my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+t = Transaction(user=my_sub_user)
+print(t)
+#> user=SubUser(hobbies=['scuba diving'], sins=['lying'])
 ```
 
-To prevent this, you can enable `Config.smart_union`. _Pydantic_ will then check all allowed types before even trying to coerce.
-Know that this is of course slower, especially if your `Union` is quite big.
+1. `revalidate_instances` is set to `'never'` by **default.
+2. The assignment is not validated, unless you set `validate_assignment` to `True` in the model's config.
+3. Since `revalidate_instances` is set to `never`, this is not revalidated.
 
-```py
-from typing import Union
+If you want to revalidate instances during validation, you can set `revalidate_instances` to `'always'`
+in the model's config.
+
+```py upgrade="skip"
+from typing import List
+
+from pydantic import BaseModel, ValidationError
+
+
+class User(BaseModel, revalidate_instances='always'):  # (1)!
+    hobbies: List[str]
+
+
+class SubUser(User):
+    sins: List[str]
+
+
+class Transaction(BaseModel):
+    user: User
+
+
+my_user = User(hobbies=['reading'])
+t = Transaction(user=my_user)
+print(t)
+#> user=User(hobbies=['reading'])
+
+my_user.hobbies = [1]
+try:
+    t = Transaction(user=my_user)  # (2)!
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Transaction
+    user.hobbies.0
+      Input should be a valid string [type=string_type, input_value=1, input_type=int]
+    """
+
+my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+t = Transaction(user=my_sub_user)
+print(t)  # (3)!
+#> user=User(hobbies=['scuba diving'])
+```
+
+1. `revalidate_instances` is set to `'always'`.
+2. The model is revalidated, since `revalidate_instances` is set to `'always'`.
+3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
+
+It's also possible to set `revalidate_instances` to `'subclass-instances'` to only revalidate instances
+of subclasses of the model.
+
+```py upgrade="skip"
+from typing import List
 
 from pydantic import BaseModel
 
 
-class Foo(BaseModel):
-    pass
+class User(BaseModel, revalidate_instances='subclass-instances'):  # (1)!
+    hobbies: List[str]
 
 
-class Bar(BaseModel):
-    pass
+class SubUser(User):
+    sins: List[str]
 
 
-class Model(BaseModel):
-    x: Union[str, int]
-    y: Union[Foo, Bar]
+class Transaction(BaseModel):
+    user: User
 
 
-print(Model(x=1, y=Bar()))
-#> x=1 y=Bar()
+my_user = User(hobbies=['reading'])
+t = Transaction(user=my_user)
+print(t)
+#> user=User(hobbies=['reading'])
+
+my_user.hobbies = [1]
+t = Transaction(user=my_user)  # (2)!
+print(t)
+#> user=User(hobbies=[1])
+
+my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+t = Transaction(user=my_sub_user)
+print(t)  # (3)!
+#> user=User(hobbies=['scuba diving'])
 ```
 
-!!! warning
-    Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
-    This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
+1. `revalidate_instances` is set to `'subclass-instances'`.
+2. This is not revalidated, since `my_user` is not a subclass of `User`.
+3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
+
+### Arbitrary Types Allowed
+
+You can allow arbitrary types using the `arbitrary_types_allowed` setting in the model's config:
 
 ```py
-from typing import List, Union
+from pydantic import BaseModel, ConfigDict, ValidationError
 
-from pydantic import BaseModel
+
+# This is not a pydantic model, it's an arbitrary class
+class Pet:
+    def __init__(self, name: str):
+        self.name = name
 
 
 class Model(BaseModel):
-    x: Union[List[str], List[int]]
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    pet: Pet
+    owner: str
 
 
-# Expected coercion
-print(Model(x=[1, '2']))
-#> x=[1, 2]
-
-# Unexpected coercion
-print(Model(x=[1, 2]))
-#> x=[1, 2]
+pet = Pet(name='Hedwig')
+# A simple check of instance type is used to validate the data
+model = Model(owner='Harry', pet=pet)
+print(model)
+#> pet=<__main__.Pet object at 0x0123456789ab> owner='Harry'
+print(model.pet)
+#> <__main__.Pet object at 0x0123456789ab>
+print(model.pet.name)
+#> Hedwig
+print(type(model.pet))
+#> <class '__main__.Pet'>
+try:
+    # If the value is not an instance of the type, it's invalid
+    Model(owner='Harry', pet='Hedwig')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    pet
+      Input should be an instance of Pet [type=is_instance_of, input_value='Hedwig', input_type=str]
+    """
+# Nothing in the instance of the arbitrary type is checked
+# Here name probably should have been a str, but it's not validated
+pet2 = Pet(name=42)
+model2 = Model(owner='Harry', pet=pet2)
+print(model2)
+#> pet=<__main__.Pet object at 0x0123456789ab> owner='Harry'
+print(model2.pet)
+#> <__main__.Pet object at 0x0123456789ab>
+print(model2.pet.name)
+#> 42
+print(type(model2.pet))
+#> <class '__main__.Pet'>
 ```
-
 
 ## Protected Namespaces
 
-_Pydantic_ prevents collisions between model attributes and `BaseModel`'s own methods by
+Pydantic prevents collisions between model attributes and `BaseModel`'s own methods by
 namespacing them with the prefix `model_`.
-This is customizable using the `protected_namespaces` option in the model's config so that
-you can allow overriding `model_` or add your own protected namespaces.
 
 ```py
 from pydantic import BaseModel
@@ -376,7 +561,7 @@ except NameError as e:
     #> Field "model_prefixed_field" has conflict with protected namespace "model_"
 ```
 
-You can change it or define multiple value for it:
+You can customize this behavior using the `protected_namespaces` setting:
 
 ```py
 from pydantic import BaseModel, ConfigDict
@@ -395,8 +580,8 @@ except NameError as e:
 ```
 
 ## Hide Input in Errors
-_Pydantic_ shows input value and input type when it raises `ValidationError` during the validation.
 
+_Pydantic_ shows the input value and type when it raises `ValidationError` during the validation.
 
 ```py
 from pydantic import BaseModel, ValidationError

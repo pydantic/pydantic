@@ -71,6 +71,53 @@ foo = Foo(a={'b': {'a': None}})
 
 In other cases, the error message should indicate how to rebuild the class with the appropriate type defined.
 
+## Custom JSON Schema {#custom-json-schema}
+
+The `__modify_schema__` method is no longer supported in V2. You should use the `__get_pydantic_json_schema__` method instead.
+
+The `__modify_schema__` used to receive a single argument representing the JSON schema. See the example below:
+
+```py title="Old way"
+from pydantic import BaseModel, PydanticUserError
+
+try:
+
+    class Model(BaseModel):
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.update(examples='examples')
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'custom-json-schema'
+```
+
+The new method `__get_pydantic_json_schema__` receives two arguments: the first is a dictionary denoted as `CoreSchema`,
+and the second a callable `handler` that receives a `CoreSchema` as parameter, and returns a JSON schema. See the example
+below:
+
+```py title="New way"
+from typing import Any, Dict
+
+from pydantic_core import CoreSchema
+
+from pydantic import BaseModel, GetJsonSchemaHandler
+
+
+class Model(BaseModel):
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> Dict[str, Any]:
+        json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
+        json_schema = handler.resolve_ref_schema(json_schema)
+        json_schema.update(examples='examples')
+        return json_schema
+
+
+print(Model.model_json_schema())
+#> {'examples': 'examples', 'properties': {}, 'title': 'Model', 'type': 'object'}
+```
+
 ## Decorator on missing field {#decorator-missing-field}
 
 This error is raised when you define a decorator with a field that is not valid.
@@ -323,9 +370,9 @@ from pydantic import BaseModel, ConfigDict, PydanticUserError
 try:
 
     class Model(BaseModel):
-        a: str
-
         model_config = ConfigDict(from_attributes=True)
+
+        a: str
 
         class Config:
             from_attributes = True
@@ -334,7 +381,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'config-both'
 ```
 
-## Keyword arguments deprecated {#deprecated-kwargs}
+## Keyword arguments removed {#removed-kwargs}
 
 This error is raised when the keyword arguments are not available in Pydantic V2.
 
@@ -349,7 +396,7 @@ try:
         x: str = Field(regex='test')
 
 except PydanticUserError as exc_info:
-    assert exc_info.code == 'deprecated-kwargs'
+    assert exc_info.code == 'removed-kwargs'
 ```
 
 ## JSON schema invalid type {#invalid-for-json-schema}
@@ -557,7 +604,7 @@ If you do, this root validator will no longer be called if validation fails for 
 
 Please see the [Migration Guide](../migration.md) for more details.
 
-## `model_validator` instance methods {#model-serializer-instance-method}
+## `model_serializer` instance methods {#model-serializer-instance-method}
 
 `@model_serializer` must be applied to instance methods.
 
@@ -776,7 +823,8 @@ except PydanticUserError as exc_info:
 
 ## `config` is unused with TypeAdapter {#type-adapter-config-unused}
 
-You will get this error if you try to pass `config` to `TypeAdapter` when the type is a type that has it's own config that cannot be overridden (currently this is only `BaseModel`, `TypedDict` and `dataclass`):
+You will get this error if you try to pass `config` to `TypeAdapter` when the type is a type that
+has it's own config that cannot be overridden (currently this is only `BaseModel`, `TypedDict` and `dataclass`):
 
 ```py
 from typing_extensions import TypedDict
@@ -790,13 +838,8 @@ class MyTypedDict(TypedDict):
 
 try:
     TypeAdapter(MyTypedDict, config=ConfigDict(strict=True))
-except PydanticUserError as e:
-    print(e)
-    """
-    Cannot use `config` when the type is a BaseModel, dataclass or TypedDict. These types can have their own config and setting the config via the `config` parameter to TypeAdapter will not override it, thus the `config` you passed to TypeAdapter becomes meaningless, which is probably not what you want.
-
-    For further information visit https://errors.pydantic.dev/2/u/type-adapter-config-unused
-    """
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'type-adapter-config-unused'
 ```
 
 Instead you'll need to subclass the type and override or set the config on it:

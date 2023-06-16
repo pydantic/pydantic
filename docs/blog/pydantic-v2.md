@@ -210,7 +210,7 @@ In future direct validation of JSON will also allow:
     While in theory other formats could be specifically supported, the overheads and development time are
     significant and I don't think there's another format that's
     used widely enough to be worth specific logic. Other formats can be parsed to python then validated, similarly
-    when serialising, data can be exported to a python object, then serialised,
+    when serializing, data can be exported to a python object, then serialized,
     see [below](#improvements-to-dumpingserializationexport).
 
 ### Validation without a Model :thumbsup:
@@ -336,14 +336,14 @@ converting a model to a dict.
 My plan is to move data export into pydantic-core, with that, one implementation can support all export modes without
 compromising (and hopefully significantly improving) performance.
 
-I see four different export/serialisation scenarios:
+I see four different export/serialization scenarios:
 
 1. Extracting the field values of a model with no conversion, effectively `model.__dict__` but with the current filtering
    logic provided by `.dict()`
 2. Extracting the field values of a model recursively (effectively what `.dict()` does now) - sub-models are converted to
    dicts, but other fields remain unchanged.
 3. Extracting data and converting at the same time (e.g. to JSON compliant types)
-4. Serialising data straight to JSON
+4. Serializing data straight to JSON
 
 I think all 4 modes can be supported in a single implementation, with a kind of "3.5" mode where a python function
 is used to convert the data as the user wishes.

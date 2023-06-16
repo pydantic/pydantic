@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 import pytest
+from pydantic_core import CoreSchema
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
 from pydantic import (
@@ -39,13 +40,25 @@ def parametrize_root_model():
     )
 
 
+def check_schema(schema: CoreSchema) -> None:
+    # we assume the shape of the core schema here, which is not a guarantee
+    # pydantic makes to it's users but is useful to check here to make sure
+    # we are doing the right thing internally
+    assert schema['type'] == 'definitions'
+    inner = schema['schema']
+    assert inner['type'] == 'definition-ref'
+    ref = inner['schema_ref']  # type: ignore
+    schema = next(s for s in schema['definitions'] if s['ref'] == ref)  # type: ignore
+    assert schema['type'] == 'model'
+    assert schema['root_model'] is True
+    assert schema['custom_init'] is False
+
+
 @parametrize_root_model()
 def test_root_model_specialized(root_type, root_value, dump_value):
     Model = RootModel[root_type]
 
-    assert Model.__pydantic_core_schema__['type'] == 'model'
-    assert Model.__pydantic_core_schema__['root_model'] is True
-    assert Model.__pydantic_core_schema__['custom_init'] is False
+    check_schema(Model.__pydantic_core_schema__)
 
     m = Model(root_value)
 
@@ -58,9 +71,7 @@ def test_root_model_inherited(root_type, root_value, dump_value):
     class Model(RootModel[root_type]):
         pass
 
-    assert Model.__pydantic_core_schema__['type'] == 'model'
-    assert Model.__pydantic_core_schema__['root_model'] is True
-    assert Model.__pydantic_core_schema__['custom_init'] is False
+    check_schema(Model.__pydantic_core_schema__)
 
     m = Model(root_value)
 
@@ -390,3 +401,20 @@ def test_nested_root_model_proper_default():
 
     m = Model()
     assert m.value.root == 42
+
+
+def test_root_model_json_schema_meta():
+    ParametrizedModel = RootModel[int]
+
+    class SubclassedModel(RootModel):
+        """Subclassed Model docstring"""
+
+        root: int
+
+    parametrized_json_schema = ParametrizedModel.model_json_schema()
+    subclassed_json_schema = SubclassedModel.model_json_schema()
+
+    assert parametrized_json_schema.get('title') == 'RootModel[int]'
+    assert parametrized_json_schema.get('description') is None
+    assert subclassed_json_schema.get('title') == 'SubclassedModel'
+    assert subclassed_json_schema.get('description') == 'Subclassed Model docstring'

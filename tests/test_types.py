@@ -8,6 +8,7 @@ import sys
 import typing
 import uuid
 from collections import OrderedDict, defaultdict, deque
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -102,7 +103,7 @@ from pydantic import (
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
 from pydantic.json_schema import JsonSchemaValue
-from pydantic.types import AllowInfNan, ImportString, InstanceOf, SecretField, SkipValidation, Strict, TransformSchema
+from pydantic.types import AllowInfNan, ImportString, InstanceOf, SkipValidation, Strict, TransformSchema
 
 try:
     import email_validator
@@ -3748,12 +3749,22 @@ def test_pattern(pattern_type, pattern_value, matching_value, non_matching_value
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
 
-    # assert Foobar.model_json_schema() == {
-    #     'type': 'object',
-    #     'title': 'Foobar',
-    #     'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
-    #     'required': ['pattern'],
-    # }
+    assert Foobar.model_json_schema() == {
+        'type': 'object',
+        'title': 'Foobar',
+        'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
+        'required': ['pattern'],
+    }
+
+
+def test_pattern_with_invalid_param():
+    with pytest.raises(
+        PydanticSchemaGenerationError,
+        match=re.escape('Unable to generate pydantic-core schema for typing.Pattern[int].'),
+    ):
+
+        class Foo(BaseModel):
+            pattern: Pattern[int]
 
 
 @pytest.mark.parametrize(
@@ -3850,10 +3861,6 @@ def test_secretstr():
     assert f.empty_password.get_secret_value() == ''
 
 
-def test_secretstr_is_secret_field():
-    assert issubclass(SecretStr, SecretField)
-
-
 def test_secretstr_equality():
     assert SecretStr('abc') == SecretStr('abc')
     assert SecretStr('123') != SecretStr('321')
@@ -3891,7 +3898,6 @@ def test_secretstr_idempotent():
         conbytes,
         SecretBytes,
         constr,
-        SecretField,
         StrictStr,
         SecretStr,
         ImportString,
@@ -4016,10 +4022,6 @@ def test_secretbytes():
     copied_with_changes = f.model_copy()
     copied_with_changes.password = SecretBytes(b'4321')
     assert f != copied_with_changes
-
-
-def test_secretbytes_is_secret_field():
-    assert issubclass(SecretBytes, SecretField)
 
 
 def test_secretbytes_equality():
@@ -4717,9 +4719,7 @@ def test_custom_generic_containers():
     class GenericList(List[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(
-                GenericList, handler.generate_schema(List[get_args(source_type)[0]])
-            )
+            return core_schema.no_info_after_validator_function(GenericList, handler(List[get_args(source_type)[0]]))
 
     class Model(BaseModel):
         field: GenericList[int]
@@ -5067,7 +5067,7 @@ def test_custom_default_dict() -> None:
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
             return core_schema.no_info_after_validator_function(
-                lambda x: cls(x.default_factory, x), handler.generate_schema(DefaultDict[keys_type, values_type])
+                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
             )
 
     ta = TypeAdapter(CustomDefaultDict[str, int])
@@ -5552,3 +5552,57 @@ def test_annotated_default_value_functional_validator() -> None:
 )
 def test_types_repr(pydantic_type, expected):
     assert repr(pydantic_type()) == expected
+
+
+def test_enum_custom_schema() -> None:
+    class MyEnum(str, Enum):
+        foo = 'FOO'
+        bar = 'BAR'
+        baz = 'BAZ'
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls,
+            source_type: Any,
+            handler: GetCoreSchemaHandler,
+        ) -> CoreSchema:
+            # check that we can still call handler
+            handler(source_type)
+
+            # return a custom unrelated schema so we can test that
+            # it gets used
+            schema = core_schema.union_schema(
+                [
+                    core_schema.str_schema(),
+                    core_schema.is_instance_schema(cls),
+                ]
+            )
+            return core_schema.no_info_after_validator_function(
+                function=lambda x: MyEnum(x.upper()) if isinstance(x, str) else x,
+                schema=schema,
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    lambda x: x.value, return_schema=core_schema.int_schema()
+                ),
+            )
+
+    ta = TypeAdapter(MyEnum)
+
+    assert ta.validate_python('foo') == MyEnum.foo
+
+
+def test_get_pydantic_core_schema_marker_unrelated_type() -> None:
+    """Test using handler.generate_schema() to generate a schema that ignores
+    the current context of annotations and such
+    """
+
+    @dataclass
+    class Marker:
+        num: int
+
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler.resolve_ref_schema(handler.generate_schema(source_type))
+            return core_schema.no_info_after_validator_function(lambda x: x * self.num, schema)
+
+    ta = TypeAdapter(Annotated[int, Marker(2), Marker(3)])
+
+    assert ta.validate_python('1') == 3

@@ -4,32 +4,27 @@ New tests for v2 of serialization logic.
 import json
 import re
 from functools import partial, partialmethod
-from typing import Any, Callable, Dict, Iterable, Optional, Pattern, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Pattern
 
 import pytest
-from pydantic_core import PydanticSerializationError, SchemaSerializer, core_schema, to_jsonable_python
+from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import (
     BaseModel,
     Field,
     FieldSerializationInfo,
-    GetCoreSchemaHandler,
-    SecretField,
     SecretStr,
     SerializationInfo,
+    SerializeAsAny,
     SerializerFunctionWrapHandler,
     TypeAdapter,
     errors,
     field_serializer,
     model_serializer,
 )
-from pydantic._internal import _known_annotated_metadata
-from pydantic._internal._config import ConfigWrapper
-from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.config import ConfigDict
 from pydantic.functional_serializers import PlainSerializer, WrapSerializer
-from pydantic.types import _SecretFieldValidator
 
 
 def test_serialize_extra_allow() -> None:
@@ -152,7 +147,7 @@ def test_serialize_decorator_always():
         x: Optional[int]
 
         @field_serializer('x')
-        def customise_x_serialisation(v, _info) -> str:
+        def customise_x_serialization(v, _info) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -161,7 +156,7 @@ def test_serialize_decorator_always():
     m = MyModel(x=None)
     # can't use v:, on None, hence error
     error_msg = (
-        'Error calling function `customise_x_serialisation`: '
+        'Error calling function `customise_x_serialization`: '
         'TypeError: unsupported format string passed to NoneType.__format__'
     )
     with pytest.raises(PydanticSerializationError, match=error_msg):
@@ -175,7 +170,7 @@ def test_serialize_decorator_json():
         x: int
 
         @field_serializer('x', when_used='json')
-        def customise_x_serialisation(v) -> str:
+        def customise_x_serialization(v) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 1234}
@@ -188,7 +183,7 @@ def test_serialize_decorator_unless_none():
         x: Optional[int]
 
         @field_serializer('x', when_used='unless-none')
-        def customise_x_serialisation(v):
+        def customise_x_serialization(v):
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -353,7 +348,7 @@ def test_serialize_decorator_self_info():
         x: Optional[int]
 
         @field_serializer('x')
-        def customise_x_serialisation(self, v, info) -> str:
+        def customise_x_serialization(self, v, info) -> str:
             return f'{info.mode}:{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 'python:1,234'}
@@ -365,7 +360,7 @@ def test_serialize_decorator_self_no_info():
         x: Optional[int]
 
         @field_serializer('x')
-        def customise_x_serialisation(self, v) -> str:
+        def customise_x_serialization(self, v) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -799,7 +794,7 @@ def test_serialize_any_model():
 def test_invalid_field():
     msg = (
         r'Decorators defined with incorrect fields:'
-        r' tests.test_serialize.test_invalid_field.<locals>.Model:\d+.customise_b_serialisation'
+        r' tests.test_serialize.test_invalid_field.<locals>.Model:\d+.customise_b_serialization'
         r" \(use check_fields=False if you're inheriting from the model and intended this\)"
     )
     with pytest.raises(errors.PydanticUserError, match=msg):
@@ -808,7 +803,7 @@ def test_invalid_field():
             a: str
 
             @field_serializer('b')
-            def customise_b_serialisation(v):
+            def customise_b_serialization(v):
                 return v
 
 
@@ -891,49 +886,21 @@ def test_type_adapter_dump_json():
     assert ta.dump_json(Model({'x': 1, 'y': 2.5})) == b'{"x":2,"y":7.5}'
 
 
-def test_custom_secret_type_python_serializer():
-    """
-    test for non json serializer in pydantic.types._SecretFieldValidator.serialize.
-    most of the code in this test are just a copy from original implementation.
-    """
+def test_serialize_as_any() -> None:
+    class User(BaseModel):
+        name: str
 
-    class MySecretFieldValidator(_SecretFieldValidator):
-        def __get_pydantic_core_schema__(
-            self, source: Type[Any], handler: GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
-            self.inner_schema = handler(str if self.field_type is SecretStr else bytes)
-            error_kind = 'string_type' if self.field_type is SecretStr else 'bytes_type'
-            return core_schema.general_after_validator_function(
-                self.validate,
-                core_schema.union_schema(
-                    [core_schema.is_instance_schema(self.field_type), self.inner_schema],
-                    strict=True,
-                    custom_error_type=error_kind,
-                ),
-                serialization=core_schema.plain_serializer_function_ser_schema(
-                    self.serialize,
-                    info_arg=True,
-                    return_schema=core_schema.str_schema(),
-                    when_used='always',  # change it to `always` to call `serialize` for python and json
-                ),
-            )
+    class UserLogin(User):
+        password: SecretStr
 
-    class MySecretStr(SecretField[str]):
-        @classmethod
-        def __prepare_pydantic_annotations__(
-            cls, source: Type[Any], annotations: Tuple[Any, ...], _config: ConfigDict
-        ) -> Tuple[Any, Iterable[Any]]:
-            metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-            _known_annotated_metadata.check_metadata(metadata, {'min_length', 'max_length'}, cls)
-            return (
-                source,
-                (
-                    MySecretFieldValidator(source, **metadata),
-                    *remaining_annotations,
-                ),
-            )
+    class OuterModel(BaseModel):
+        as_any: SerializeAsAny[User]
+        without: User
 
-    gen = GenerateSchema(ConfigWrapper({}), None)
-    schema = gen.generate_schema(MySecretStr)
-    serializer = SchemaSerializer(schema)
-    assert serializer.to_python('foo bar') == 'foo bar'
+    user = UserLogin(name='pydantic', password='password')
+
+    # insert_assert(json.loads(OuterModel(as_any=user, without=user).model_dump_json()))
+    assert json.loads(OuterModel(as_any=user, without=user).model_dump_json()) == {
+        'as_any': {'name': 'pydantic', 'password': '**********'},
+        'without': {'name': 'pydantic'},
+    }

@@ -17,6 +17,7 @@ from pydantic import (
     ConfigDict,
     Field,
     FieldValidationInfo,
+    PydanticUserError,
     ValidationError,
     ValidationInfo,
     ValidatorFunctionWrapHandler,
@@ -1010,6 +1011,21 @@ def test_validation_each_item():
                 return v + 1
 
     assert Model(foobar={1: 1}).foobar == {1: 2}
+
+
+def test_validation_each_item_invalid_type():
+    with pytest.raises(
+        TypeError, match=re.escape('@validator(..., each_item=True)` cannot be applied to fields with a schema of int')
+    ):
+        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+            class Model(BaseModel):
+                foobar: int
+
+                @validator('foobar', each_item=True)
+                @classmethod
+                def check_foobar(cls, v: Any):
+                    ...
 
 
 def test_validation_each_item_nullable():
@@ -2509,6 +2525,23 @@ def test_root_validator_allow_reuse_inheritance():
 
     assert Parent(x=1).model_dump() == {'x': 2}
     assert Child(x=1).model_dump() == {'x': 4}
+
+
+def test_bare_root_validator():
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            'If you use `@root_validator` with pre=False (the default) you MUST specify `skip_on_failure=True`.'
+            ' Note that `@root_validator` is deprecated and should be replaced with `@model_validator`.'
+        ),
+    ):
+        with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
+
+            class Model(BaseModel):
+                @root_validator
+                @classmethod
+                def validate_values(cls, values):
+                    return values
 
 
 def test_validator_with_underscore_name() -> None:

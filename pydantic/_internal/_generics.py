@@ -13,7 +13,7 @@ from weakref import WeakValueDictionary
 import typing_extensions
 
 from ._core_utils import get_type_ref
-from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
+from ._forward_ref import PydanticRecursiveRef
 from ._typing_extra import TypeVarType, typing_base
 from ._utils import all_identical, is_basemodel
 
@@ -43,8 +43,7 @@ if TYPE_CHECKING:
 else:
 
     class LimitedDict(dict):
-        """
-        Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
+        """Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
 
         Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
         """
@@ -81,8 +80,7 @@ if TYPE_CHECKING:
 else:
 
     class DeepChainMap(ChainMap):
-        """
-        Variant of ChainMap that allows direct updates to inner scopes
+        """Variant of ChainMap that allows direct updates to inner scopes.
 
         Taken from https://docs.python.org/3/library/collections.html#collections.ChainMap,
         with some light modifications for this use case.
@@ -122,15 +120,20 @@ class PydanticGenericMetadata(typing_extensions.TypedDict):
 def create_generic_submodel(
     model_name: str, origin: type[BaseModel], args: tuple[Any, ...], params: tuple[Any, ...]
 ) -> type[BaseModel]:
-    """
-    Dynamically create a submodel of a provided (generic) BaseModel.
+    """Dynamically create a submodel of a provided (generic) BaseModel.
 
     This is used when producing concrete parametrizations of generic models. This function
     only *creates* the new subclass; the schema/validators/serialization must be updated to
     reflect a concrete parametrization elsewhere.
 
-    :param model_name: name of the newly created model
-    :param origin: base class for the new model to inherit from
+    Args:
+        model_name: The name of the newly created model.
+        origin: The base class for the new model to inherit from.
+        args: A tuple of generic metadata arguments.
+        params: A tuple of generic metadata parameters.
+
+    Returns:
+        The created submodel.
     """
     namespace: dict[str, Any] = {'__module__': origin.__module__}
     bases = (origin,)
@@ -162,10 +165,16 @@ def create_generic_submodel(
 
 
 def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
-    """
-    Used inside a function to check whether it was called globally
+    """Used inside a function to check whether it was called globally.
 
-    :returns Tuple[module_name, called_globally]
+    Args:
+        depth: The depth to get the frame.
+
+    Returns:
+        A tuple contains `module_nam` and `called_globally`.
+
+    Raises:
+        RuntimeError: If the function is not called inside a function.
     """
     try:
         previous_caller_frame = sys._getframe(depth)
@@ -181,8 +190,7 @@ DictValues: type[Any] = {}.values().__class__
 
 
 def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
-    """
-    Recursively iterate through all subtypes and type args of `v` and yield any typevars that are found.
+    """Recursively iterate through all subtypes and type args of `v` and yield any typevars that are found.
 
     This is inspired as an alternative to directly accessing the `__parameters__` attribute of a GenericAlias,
     since __parameters__ of (nested) generic BaseModel subclasses won't show up in that list.
@@ -215,8 +223,7 @@ def get_origin(v: Any) -> Any:
 
 
 def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
-    """
-    Package a generic type's typevars and parametrization (if present) into a dictionary compatible with the
+    """Package a generic type's typevars and parametrization (if present) into a dictionary compatible with the
     `replace_types` function. Specifically, this works with standard typing generics and typing._GenericAlias.
     """
     origin = get_origin(cls)
@@ -231,8 +238,7 @@ def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
 
 
 def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVarType, Any] | None:
-    """
-    Package a generic BaseModel's typevars and concrete parametrization (if present) into a dictionary compatible
+    """Package a generic BaseModel's typevars and concrete parametrization (if present) into a dictionary compatible
     with the `replace_types` function.
 
     Since BaseModel.__class_getitem__ does not produce a typing._GenericAlias, and the BaseModel generic info is
@@ -249,14 +255,19 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVarType, Any] | Non
 def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     """Return type with all occurrences of `type_map` keys recursively replaced with their values.
 
-    :param type_: Any type, class or generic alias
-    :param type_map: Mapping from `TypeVar` instance to concrete types.
-    :return: New type representing the basic structure of `type_` with all
+    Args:
+        type_: The class or generic alias.
+        type_map: Mapping from `TypeVar` instance to concrete types.
+
+    Returns:
+        A new type representing the basic structure of `type_` with all
         `typevar_map` keys recursively replaced.
 
-    >>> replace_types(Tuple[str, Union[List[str], float]], {str: int})
-    Tuple[int, Union[List[int], float]]
-
+    Example:
+        ```python
+        replace_types(Tuple[str, Union[List[str], float]], {str: int})
+        #> Tuple[int, Union[List[int], float]]
+        ```
     """
     if not type_map:
         return type_
@@ -316,16 +327,21 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
             return type_
         return resolved_list
 
-    if isinstance(type_, PydanticForwardRef):
-        # queue the replacement as a deferred action
-        return type_.replace_types(type_map)
-
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.
     return type_map.get(type_, type_)
 
 
 def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) -> None:
+    """Check the generic model parameters count is equal.
+
+    Args:
+        cls: The generic model.
+        parameters: A tuple of passed parameters to the generic model.
+
+    Raises:
+        TypeError: If the passed parameters count is not equal to generic model parameters count.
+    """
     actual = len(parameters)
     expected = len(cls.__pydantic_generic_metadata__['parameters'])
     if actual != expected:
@@ -339,9 +355,8 @@ _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_rec
 @contextmanager
 def generic_recursion_self_type(
     origin: type[BaseModel], args: tuple[Any, ...]
-) -> Iterator[PydanticForwardRef | PydanticRecursiveRef | None]:
-    """
-    This contextmanager should be placed around the recursive calls used to build a generic type,
+) -> Iterator[PydanticRecursiveRef | None]:
+    """This contextmanager should be placed around the recursive calls used to build a generic type,
     and accept as arguments the generic origin type and the type arguments being passed to it.
 
     If the same origin and arguments are observed twice, it implies that a self-reference placeholder
@@ -377,8 +392,7 @@ def recursively_defined_type_refs() -> set[str]:
 
 
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
-    """
-    The use of a two-stage cache lookup approach was necessary to have the highest performance possible for
+    """The use of a two-stage cache lookup approach was necessary to have the highest performance possible for
     repeated calls to `__class_getitem__` on generic types (which may happen in tighter loops during runtime),
     while still ensuring that certain alternative parametrizations ultimately resolve to the same type.
 
@@ -400,9 +414,7 @@ def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) 
 def get_cached_generic_type_late(
     parent: type[BaseModel], typevar_values: Any, origin: type[BaseModel], args: tuple[Any, ...]
 ) -> type[BaseModel] | None:
-    """
-    See the docstring of `get_cached_generic_type_early` for more information about the two-stage cache lookup.
-    """
+    """See the docstring of `get_cached_generic_type_early` for more information about the two-stage cache lookup."""
     cached = _GENERIC_TYPES_CACHE.get(_late_cache_key(origin, args, typevar_values))
     if cached is not None:
         set_cached_generic_type(parent, typevar_values, cached, origin, args)
@@ -416,8 +428,7 @@ def set_cached_generic_type(
     origin: type[BaseModel] | None = None,
     args: tuple[Any, ...] | None = None,
 ) -> None:
-    """
-    See the docstring of `get_cached_generic_type_early` for more information about why items are cached with
+    """See the docstring of `get_cached_generic_type_early` for more information about why items are cached with
     two different keys.
     """
     _GENERIC_TYPES_CACHE[_early_cache_key(parent, typevar_values)] = type_
@@ -428,8 +439,7 @@ def set_cached_generic_type(
 
 
 def _union_orderings_key(typevar_values: Any) -> Any:
-    """
-    This is intended to help differentiate between Union types with the same arguments in different order.
+    """This is intended to help differentiate between Union types with the same arguments in different order.
 
     Thanks to caching internal to the `typing` module, it is not possible to distinguish between
     List[Union[int, float]] and List[Union[float, int]] (and similarly for other "parent" origins besides List)
@@ -453,8 +463,7 @@ def _union_orderings_key(typevar_values: Any) -> Any:
 
 
 def _early_cache_key(cls: type[BaseModel], typevar_values: Any) -> GenericTypesCacheKey:
-    """
-    This is intended for minimal computational overhead during lookups of cached types.
+    """This is intended for minimal computational overhead during lookups of cached types.
 
     Note that this is overly simplistic, and it's possible that two different cls/typevar_values
     inputs would ultimately result in the same type being created in BaseModel.__class_getitem__.
@@ -466,8 +475,7 @@ def _early_cache_key(cls: type[BaseModel], typevar_values: Any) -> GenericTypesC
 
 
 def _late_cache_key(origin: type[BaseModel], args: tuple[Any, ...], typevar_values: Any) -> GenericTypesCacheKey:
-    """
-    This is intended for use later in the process of creating a new type, when we have more information
+    """This is intended for use later in the process of creating a new type, when we have more information
     about the exact args that will be passed. If it turns out that a different set of inputs to
     __class_getitem__ resulted in the same inputs to the generic type creation process, we can still
     return the cached type, and update the cache with the _early_cache_key as well.
