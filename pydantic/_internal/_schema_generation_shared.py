@@ -36,6 +36,19 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         return self.handler(__core_schema)
 
     def resolve_ref_schema(self, maybe_ref_json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        """Resolves `$ref` in the json schema.
+
+        This returns the input json schema if there is no `$ref` in json schema.
+
+        Args:
+            maybe_ref_json_schema: The input json schema that may contains `$ref`.
+
+        Returns:
+            Resolved json schema.
+
+        Raises:
+            LookupError: If it can't find the definition for `$ref`.
+        """
         if '$ref' not in maybe_ref_json_schema:
             return maybe_ref_json_schema
         ref = maybe_ref_json_schema['$ref']
@@ -80,6 +93,17 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         return self._generate_schema.generate_schema(__source_type)
 
     def resolve_ref_schema(self, maybe_ref_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        """Resolves reference in the core schema.
+
+        Args:
+            maybe_ref_schema: The input core schema that may contains reference.
+
+        Returns:
+            Resolved core schema.
+
+        Raises:
+            LookupError: If it can't find the definition for reference.
+        """
         if maybe_ref_schema['type'] == 'definition-ref':
             ref = maybe_ref_schema['schema_ref']
             if ref not in self._generate_schema.defs.definitions:
