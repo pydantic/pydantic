@@ -26,14 +26,12 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, PydanticOmit, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, deprecated
 
 from ._internal import (
     _annotated_handlers,
-    _core_metadata,
     _fields,
-    _generics,
     _internal_dataclass,
     _known_annotated_metadata,
     _utils,
@@ -95,10 +93,6 @@ __all__ = (
     'Base64Encoder',
     'Base64Bytes',
     'Base64Str',
-    'SkipValidation',
-    'InstanceOf',
-    'WithJsonSchema',
-    'SerializeAsAny',
 )
 
 
@@ -1319,127 +1313,7 @@ Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
 Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 
 
-if TYPE_CHECKING:
-    # If we add configurable attributes to IsInstance, we'd probably need to stop hiding it from type checkers like this
-    InstanceOf = Annotated[AnyType, ...]  # `IsInstance[Sequence]` will be recognized by type checkers as `Sequence`
-
-else:
-
-    @_internal_dataclass.slots_dataclass
-    class InstanceOf:
-        '''Generic type for annotating a type that is an instance of a given class.
-
-        Example:
-            ```py
-            from pydantic import BaseModel, InstanceOf
-
-            class Foo:
-                ...
-
-            class Bar(BaseModel):
-                foo: InstanceOf[Foo]
-
-            Bar(foo=Foo())
-            try:
-                Bar(foo=42)
-            except ValidationError as e:
-                print(e)
-                """
-                [
-                │   {
-                │   │   'type': 'is_instance_of',
-                │   │   'loc': ('foo',),
-                │   │   'msg': 'Input should be an instance of Foo',
-                │   │   'input': 42,
-                │   │   'ctx': {'class': 'Foo'},
-                │   │   'url': 'https://errors.pydantic.dev/0.38.0/v/is_instance_of'
-                │   }
-                ]
-                """
-            ```
-        '''
-
-        @classmethod
-        def __class_getitem__(cls, item: AnyType) -> AnyType:
-            return Annotated[item, cls()]
-
-        @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
-            from pydantic import PydanticSchemaGenerationError
-
-            # use the generic _origin_ as the second argument to isinstance when appropriate
-            python_schema = core_schema.is_instance_schema(_generics.get_origin(source) or source)
-
-            try:
-                # Try to generate the "standard" schema, which will be used when loading from JSON
-                json_schema = handler(source)
-            except PydanticSchemaGenerationError:
-                # If that fails, just produce a schema that can validate from python
-                return python_schema
-            else:
-                return core_schema.json_or_python_schema(python_schema=python_schema, json_schema=json_schema)
-
-
 __getattr__ = getattr_migration(__name__)
-
-
-@_internal_dataclass.slots_dataclass
-class WithJsonSchema:
-    """Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
-
-    This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
-    such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
-    custom subclass of pydantic.json_schema.GenerateJsonSchema.
-
-    Note that any _modifications_ to the schema that would normally be made (such as setting the title for model fields)
-    will still be performed.
-    """
-
-    json_schema: JsonSchemaValue | None
-    mode: Literal['validation', 'serialization'] | None = None
-
-    def __get_pydantic_json_schema__(
-        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        mode = self.mode or handler.mode
-        if mode != handler.mode:
-            return handler(core_schema)
-        if self.json_schema is None:
-            # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema
-            raise PydanticOmit
-        else:
-            return self.json_schema
-
-
-if TYPE_CHECKING:
-    SkipValidation = Annotated[AnyType, ...]  # SkipValidation[list[str]] will be treated by type checkers as list[str]
-else:
-
-    @_internal_dataclass.slots_dataclass
-    class SkipValidation:
-        """If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be
-            skipped. You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
-
-        This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
-        and know that it is safe to skip validation for one or more of the fields.
-
-        Because this converts the validation schema to `any_schema`, subsequent annotation-applied transformations
-        may not have the expected effects. Therefore, when used, this annotation should generally be the final
-        annotation applied to a type.
-        """
-
-        def __class_getitem__(cls, item: Any) -> Any:
-            return Annotated[item, SkipValidation()]
-
-        @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
-            original_schema = handler(source)
-            metadata = _core_metadata.build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
-            return core_schema.any_schema(metadata=metadata, serialization=original_schema)
 
 
 @_internal_dataclass.slots_dataclass
@@ -1452,31 +1326,3 @@ class TransformSchema:
         self, source_type: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> CoreSchema:
         return self.transform(handler(source_type))
-
-
-if TYPE_CHECKING:
-    SerializeAsAny = Annotated[AnyType, ...]  # SerializeAsAny[list[str]] will be treated by type checkers as list[str]
-    """Force serialization to ignore whatever is defined in the schema and instead ask the object
-    itself how it should be serialized.
-    In particular, this means that model subclasses will include fields present in the subclass but not in the
-    original schema.
-    """
-else:
-
-    @_internal_dataclass.slots_dataclass
-    class SerializeAsAny:  # noqa: D101
-        def __class_getitem__(cls, item: Any) -> Any:
-            return Annotated[item, SerializeAsAny()]
-
-        def __get_pydantic_core_schema__(
-            self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
-            schema = handler(source_type)
-            schema_to_update = schema
-            while schema_to_update['type'] == 'definitions':
-                schema_to_update = schema_to_update.copy()
-                schema_to_update = schema_to_update['schema']
-            schema_to_update['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-                lambda x, h: h(x), schema=core_schema.any_schema()
-            )
-            return schema
