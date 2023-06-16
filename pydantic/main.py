@@ -68,12 +68,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
 
     Attributes:
+        model_fields: Fields in the model.
+        model_config: Configuration settings for the model.
         __pydantic_validator__: Validator for checking schema validity.
         __pydantic_core_schema__: Schema for representing the model's core.
         __pydantic_serializer__: Serializer for the schema.
         __pydantic_decorators__: Metadata for `@field_validator`, `@root_validator`,
             and `@serializer` decorators.
-        model_fields: Fields in the model.
         __signature__: Signature for instantiating the model.
         __private_attributes__: Private attributes of the model.
         __class_vars__: Class variables of the model.
@@ -84,7 +85,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_parent_namespace__: Parent namespace of the model.
         __pydantic_custom_init__: Custom init of the model.
         __pydantic_post_init__: Post init of the model.
-        model_config: Configuration settings for the model.
         __pydantic_complete__: Whether model building is completed.
         __pydantic_root_model__: Whether the model is a RootModel.
     """
