@@ -59,8 +59,8 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
         * Generic models with different origin types are never equal. We don't require *exact* type equality so that,
             for example, instances of `MyGenericModel[Any]` could be equal to instances of `MyGenericModel[int]`.
 * We have replaced the use of the `__root__` field to specify a "custom root model" with a new type called
-    [`RootModel`](usage/models.md#custom-root-types) which is intended to replace the functionality of using a field
-    called `__root__` in Pydantic V1.
+    [`RootModel`](usage/models.md#rootmodel-and-custom-root-types) which is intended to replace the functionality of
+    using a field called `__root__` in Pydantic V1.
 * We have significantly expanded Pydantic's capabilities related to customizing serialization. In particular, we have
     added the [`@field_serializer`](api/functional_serializers.md#pydantic.functional_serializers.field_serializer),
     [`@model_serializer`](api/functional_serializers.md#pydantic.functional_serializers.model_serializer), and
@@ -208,7 +208,7 @@ Model()
         you can no longer run with `skip_on_failure=False` (which is the default value of this keyword argument,
         so must be set explicitly to `True`).
 
-#### Changes to validator's allowed signatures
+#### Changes to `@validator`'s allowed signatures
 
 In Pydantic V1, functions wrapped by `@validator` could receive keyword arguments with metadata about what was
 being validated. Some of these arguments have been removed from `@field_validator` in Pydantic V2:
@@ -571,7 +571,9 @@ Pydantic V1 that have changed in Pydantic V2, you can use a custom `schema_gener
 
 ### `BaseSettings` has moved to `pydantic-settings`
 
-[`BaseSettings`](api/pydantic_settings.md#pydantic_settings.BaseSettings), the base object for Pydantic [settings management](usage/pydantic_settings.md), has been moved to a separate package, [`pydantic-settings`](https://github.com/pydantic/pydantic-settings), which is now a dependency of Pydantic.
+[`BaseSettings`](api/pydantic_settings.md#pydantic_settings.BaseSettings), the base object for Pydantic
+[settings management](usage/pydantic_settings.md), has been moved to a separate package,
+[`pydantic-settings`](https://github.com/pydantic/pydantic-settings).
 
 ## Moved in Pydantic V2
 
@@ -582,7 +584,9 @@ Pydantic V1 that have changed in Pydantic V2, you can use a custom `schema_gener
 | `pydantic.utils.to_camel` | `pydantic.alias_generators.to_pascal` |
 | `pydantic.utils.to_lower_camel` | `pydantic.alias_generators.to_camel` |
 
-In addition, the following special-use types have been moved to the [Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) project and may be installed as an separate option when needed.
+In addition, the following special-use types have been moved to the
+[Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) package,
+which may be installed separately if needed.
 
 * [Color Types](usage/types/extra_types/color_types.md)
 * [Payment Card Numbers](usage/types/extra_types/payment_cards.md)
