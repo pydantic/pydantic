@@ -462,8 +462,6 @@ In addition, the following special-use types have been moved to the [Pydantic Ex
 
 * [Color Types](usage/types/extra_types/color_types.md)
 * [Payment Card Numbers](usage/types/extra_types/payment_cards.md)
-* [Phone Numbers](usage/types/extra_types/phone_numbers.md)
-* [Routing Numbers](usage/types/extra_types/routing_numbers.md)
 
 ## Deprecated and moved in Pydantic V2
 
