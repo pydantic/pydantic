@@ -310,11 +310,7 @@ def test_private_descriptors(base, use_annotation):
         def _double_x(self):
             return self.x * 2
 
-    if use_annotation or base is ModelPrivateAttr:
-        assert set(A.__private_attributes__) == {'_some_func'}
-    else:
-        assert set(A.__private_attributes__) == set()
-
+    assert set(A.__private_attributes__) == {'_some_func'}
     assert set_name_calls == [(A, '_some_func')]
 
     a = A(x=2)

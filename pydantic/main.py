@@ -320,7 +320,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 f'"{name}" is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
                 f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
             )
-        elif name.startswith('_'):
+        elif not _fields.is_valid_field_name(name):
             if self.__pydantic_private__ is None or name not in self.__private_attributes__:
                 _object_setattr(self, name, value)
             else:
@@ -661,11 +661,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def __repr_args__(self) -> _repr.ReprArgs:
-        yield from (
-            (k, v)
-            for k, v in self.__dict__.items()
-            if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
-        )
+        for k, v in self.__dict__.items():
+            field = self.model_fields.get(k)
+            if field and field.repr:
+                yield k, v
         pydantic_extra = self.__pydantic_extra__
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
@@ -1175,7 +1174,7 @@ def create_model(
     annotations = {}
 
     for f_name, f_def in field_definitions.items():
-        if f_name.startswith('_'):
+        if not _fields.is_valid_field_name(f_name):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
             f_def = typing.cast('tuple[str, Any]', f_def)

@@ -24,9 +24,11 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import CoreConfig, CoreSchema, PydanticOmit, core_schema
+from pydantic_core import CoreConfig, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Literal, assert_never
+
+from pydantic._internal import _annotated_handlers, _internal_dataclass
 
 from ._internal import _core_metadata, _core_utils, _schema_generation_shared, _typing_extra
 from .config import JsonSchemaExtraCallable
@@ -1658,3 +1660,59 @@ def _sort_json_schema(value: JsonSchemaValue) -> JsonSchemaValue:
         return sorted_list  # type: ignore
     else:
         return value
+
+
+@_internal_dataclass.slots_dataclass
+class WithJsonSchema:
+    """Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
+    This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
+    such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
+    custom subclass of pydantic.json_schema.GenerateJsonSchema.
+    Note that any _modifications_ to the schema that would normally be made (such as setting the title for model fields)
+    will still be performed.
+
+    If `mode` is set this will only apply to that schema generation mode, allowing you
+    to set different json schemas for validation and serialization.
+    """
+
+    json_schema: JsonSchemaValue | None
+    mode: Literal['validation', 'serialization'] | None = None
+
+    def __get_pydantic_json_schema__(
+        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        mode = self.mode or handler.mode
+        if mode != handler.mode:
+            return handler(core_schema)
+        if self.json_schema is None:
+            # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema
+            raise PydanticOmit
+        else:
+            return self.json_schema
+
+
+@_internal_dataclass.slots_dataclass
+class Examples:
+    """Add examples to a JSON schema.
+
+    Examples should be a map of example names (strings)
+    to example values (any valid JSON).
+
+    If `mode` is set this will only apply to that schema generation mode,
+    allowing you to add different examples for validation and serialization.
+    """
+
+    examples: dict[str, Any]
+    mode: Literal['validation', 'serialization'] | None = None
+
+    def __get_pydantic_json_schema__(
+        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        mode = self.mode or handler.mode
+        json_schema = handler(core_schema)
+        if mode != handler.mode:
+            return json_schema
+        examples = json_schema.get('examples', {})
+        examples.update(to_jsonable_python(self.examples))
+        json_schema['examples'] = examples
+        return json_schema
