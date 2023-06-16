@@ -12,6 +12,29 @@ from ._core_utils import CoreSchemaField, collect_definitions
 def apply_discriminator(
     schema: core_schema.CoreSchema, discriminator: str, definitions: dict[str, core_schema.CoreSchema] | None = None
 ) -> core_schema.CoreSchema:
+    """Applies the discriminator and returns a new core schema.
+
+    Args:
+        schema: The input schema.
+        discriminator: The name of the field which will serve as the discriminator.
+        definitions: A mapping of schema ref to schema.
+
+    Returns:
+        The new core schema.
+
+    Raises:
+        TypeError:
+            - If `discriminator` is used with invalid union variant.
+            - If `discriminator` is used with `Union` type with one variant.
+            - If `discriminator` value mapped to multiple choices.
+        ValueError:
+            If the definition for ref is missing.
+        PydanticUserError:
+            - If a model in union doesn't have a discriminator field.
+            - If discriminator field has a non-string alias.
+            - If discriminator fields have different aliases.
+            - If discriminator field not of type `Literal`.
+    """
     return _ApplyInferredDiscriminator(discriminator, definitions or {}).apply(schema)
 
 
@@ -85,6 +108,25 @@ class _ApplyInferredDiscriminator:
     def apply(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         """Return a new CoreSchema based on `schema` that uses a tagged-union with the discriminator provided
         to this class.
+
+        Args:
+            schema: The input schema.
+
+        Returns:
+            The new core schema.
+
+        Raises:
+            TypeError:
+                - If `discriminator` is used with invalid union variant.
+                - If `discriminator` is used with `Union` type with one variant.
+                - If `discriminator` value mapped to multiple choices.
+            ValueError:
+                If the definition for ref is missing.
+            PydanticUserError:
+                - If a model in union doesn't have a discriminator field.
+                - If discriminator field has a non-string alias.
+                - If discriminator fields have different aliases.
+                - If discriminator field not of type `Literal`.
         """
         old_definitions = collect_definitions(schema)
         self.definitions = {**old_definitions, **self.definitions}

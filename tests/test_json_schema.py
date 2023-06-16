@@ -31,8 +31,9 @@ from uuid import UUID
 
 import pytest
 from pydantic_core import CoreSchema, core_schema, to_json
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, TypedDict
 
+import pydantic
 from pydantic import (
     BaseModel,
     Field,
@@ -1656,6 +1657,22 @@ def test_model_default():
     }
 
 
+def test_model_subclass_metadata():
+    class A(BaseModel):
+        """A Model docstring"""
+
+    class B(A):
+        pass
+
+    assert A.model_json_schema() == {
+        'title': 'A',
+        'description': 'A Model docstring',
+        'type': 'object',
+        'properties': {},
+    }
+    assert B.model_json_schema() == {'title': 'B', 'type': 'object', 'properties': {}}
+
+
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
@@ -2075,6 +2092,118 @@ def test_model_with_extra_forbidden():
         a: str
 
     assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': False,
+    }
+
+
+def test_model_with_extra_allow():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        a: str
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': True,
+    }
+
+
+def test_model_with_extra_ignore():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='ignore')
+        a: str
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_dataclass_with_extra_allow():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        __pydantic_config__ = ConfigDict(extra='allow')
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': True,
+    }
+
+
+def test_dataclass_with_extra_ignore():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        __pydantic_config__ = ConfigDict(extra='ignore')
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_dataclass_with_extra_forbid():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        __pydantic_config__ = ConfigDict(extra='ignore')
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_extra_allow():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(extra='allow')  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': True,
+    }
+
+
+def test_typeddict_with_extra_ignore():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(extra='ignore')  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_extra_forbid():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        __pydantic_config__ = ConfigDict(extra='forbid')
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
@@ -4253,14 +4382,28 @@ def test_arbitrary_type_json_schema(field_schema, model_schema, instance_of):
 
 def test_root_model():
     class A(RootModel[int]):
-        pass
+        """A Model docstring"""
 
-    assert A.model_json_schema() == {'type': 'integer'}
+    assert A.model_json_schema() == {'title': 'A', 'description': 'A Model docstring', 'type': 'integer'}
 
     class B(RootModel[A]):
         pass
 
-    assert B.model_json_schema() == {'type': 'integer'}
+    assert B.model_json_schema() == {
+        '$defs': {'A': {'description': 'A Model docstring', 'title': 'A', 'type': 'integer'}},
+        'allOf': [{'$ref': '#/$defs/A'}],
+        'title': 'B',
+    }
+
+    class C(RootModel[A]):
+        """C Model docstring"""
+
+    assert C.model_json_schema() == {
+        '$defs': {'A': {'description': 'A Model docstring', 'title': 'A', 'type': 'integer'}},
+        'allOf': [{'$ref': '#/$defs/A'}],
+        'title': 'C',
+        'description': 'C Model docstring',
+    }
 
 
 def test_get_json_schema_is_passed_the_same_schema_handler_was_called_with() -> None:
@@ -4507,4 +4650,50 @@ def test_json_schema_extras_on_ref() -> None:
         'allOf': [{'$ref': '#/$defs/Model'}],
         'examples': b'{"foo":{"name":"John","age":28}}',
         'title': 'ModelTitle',
+    }
+
+
+def test_inclusion_of_defaults():
+    class Model(BaseModel):
+        x: int = 1
+        y: int = Field(default_factory=lambda: 2)
+
+    assert Model.model_json_schema() == {
+        'properties': {'x': {'default': 1, 'title': 'X', 'type': 'integer'}, 'y': {'title': 'Y', 'type': 'integer'}},
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_resolve_def_schema_from_core_schema() -> None:
+    class Inner(BaseModel):
+        x: int
+
+    class Marker:
+        def __get_pydantic_json_schema__(
+            self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            field_schema = handler(core_schema)
+            field_schema['title'] = 'Foo'
+            original_schema = handler.resolve_ref_schema(field_schema)
+            original_schema['title'] = 'Bar'
+            return field_schema
+
+    class Outer(BaseModel):
+        inner: Annotated[Inner, Marker()]
+
+    # insert_assert(Outer.model_json_schema())
+    assert Outer.model_json_schema() == {
+        '$defs': {
+            'Inner': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Bar',
+                'type': 'object',
+            }
+        },
+        'properties': {'inner': {'allOf': [{'$ref': '#/$defs/Inner'}], 'title': 'Foo'}},
+        'required': ['inner'],
+        'title': 'Outer',
+        'type': 'object',
     }

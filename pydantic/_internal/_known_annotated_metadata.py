@@ -39,6 +39,22 @@ NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
 
 
 def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
+    """Expand the annotations.
+
+    Args:
+        annotations: An iterable of annotations.
+
+    Returns:
+        An iterable of expanded annotations.
+
+    Example:
+        ```python
+        from annotated_types import Ge, Len
+
+        print(list(expand_grouped_metadata([Ge(4), Len(5)])))
+        #> [Ge(ge=4), MinLen(min_length=5)]
+        ```
+    """
     from pydantic.fields import FieldInfo  # circular import
 
     for annotation in annotations:
@@ -66,6 +82,16 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     return a CoreSchema and return the unmodified schema if the annotation should be ignored.
 
     Assumes that GroupedMetadata has already been expanded via `expand_grouped_metadata`.
+
+    Args:
+        annotation: The annotation.
+        schema: The schema.
+
+    Returns:
+        An updated schema with annotation if it is an annotation we know about, `None` otherwise.
+
+    Raises:
+        PydanticCustomError: If `Predicate` fails.
     """
     schema = schema.copy()
     schema_update, _ = collect_known_metadata([annotation])
@@ -152,7 +178,16 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
 def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], list[Any]]:
     """Split `annotations` into known metadata and unknown annotations.
 
-    For example `[Gt(1), Len(42), Unknown()]` -> `({'gt': 1, 'min_length': 42}, [Unknown()])`.
+    Args:
+        annotations: An iterable of annotations.
+
+    Returns:
+        A tuple contains a dict of known metadata and a list of unknown annotations.
+
+    Example:
+        ```python
+        collect_known_metadata([Gt(1), Len(42), Unknown()])  # ({'gt': 1, 'min_length': 42}, [Unknown()])
+        ```
     """
     annotations = expand_grouped_metadata(annotations)
 
@@ -182,6 +217,14 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
 def check_metadata(metadata: dict[str, Any], allowed: Iterable[str], source_type: Any) -> None:
     """A small utility function to validate that the given metadata can be applied to the target.
     More than saving lines of code, this gives us a consistent error message for all of our internal implementations.
+
+    Args:
+        metadata: A dict of metadata.
+        allowed: An iterable of allowed metadata.
+        source_type: The source type.
+
+    Raises:
+        TypeError: If there is metadatas that can't be applied on source type.
     """
     unknown = metadata.keys() - set(allowed)
     if unknown:

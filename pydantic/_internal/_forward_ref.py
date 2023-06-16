@@ -1,24 +1,6 @@
 from __future__ import annotations as _annotations
 
 from dataclasses import dataclass
-from typing import Any, Union
-
-from typing_extensions import Literal, TypedDict
-
-from ._typing_extra import TypeVarType
-
-
-class DeferredClassGetitem(TypedDict):
-    kind: Literal['class_getitem']
-    item: Any
-
-
-class DeferredReplaceTypes(TypedDict):
-    kind: Literal['replace_types']
-    typevars_map: dict[TypeVarType, Any]
-
-
-DeferredAction = Union[DeferredClassGetitem, DeferredReplaceTypes]
 
 
 @dataclass

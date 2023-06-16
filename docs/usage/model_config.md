@@ -103,24 +103,47 @@ If you wish to change the behaviour of Pydantic globally, you can create your ow
 with custom `model_config` since the config is inherited:
 
 ```py
-from pydantic import BaseModel as PydanticBaseModel
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict
 
 
-class BaseModel(PydanticBaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+class Parent(BaseModel):
+    model_config = ConfigDict(extra='allow')
 
 
-class MyClass:
-    """A random class"""
+class Model(Parent):
+    x: str
 
 
-class Model(BaseModel):  # (1)!
-    x: MyClass
+m = Model(x='foo', y='bar')
+print(m.model_dump())
+#> {'x': 'foo', 'y': 'bar'}
 ```
 
-1. Since `BaseModel` is a subclass of `PydanticBaseModel`, it will inherit the `model_config` attribute.
-   This means that `Model` will have `arbitrary_types_allowed=True` by default.
+1. Since `Parent` is a subclass of `BaseModel`, it will inherit the `model_config` attribute.
+   This means that `Model` will have `extra='allow'` by default.
+
+If you add a `model_config` to the `Model` class, it will _merge_ with the `model_config` from `Parent`:
+
+```py
+from pydantic import BaseModel, ConfigDict
+
+
+class Parent(BaseModel):
+    model_config = ConfigDict(extra='allow')
+
+
+class Model(Parent):
+    model_config = ConfigDict(str_to_lower=True)  # (1)!
+
+    x: str
+
+
+m = Model(x='FOO', y='bar')
+print(m.model_dump())
+#> {'x': 'foo', 'y': 'bar'}
+print(m.model_config)
+#> {'extra': 'allow', 'str_to_lower': True}
+```
 
 ## Alias Generator
 
@@ -180,7 +203,7 @@ print(voice.model_dump(by_alias=True))
 ```
 
 The same precedence applies to `validation_alias` and `serialization_alias`.
-See more about the different field aliases on [the dedicated section](/usage/fields.md#field-aliases).
+See more about the different field aliases under [field aliases](fields.md#field-aliases).
 
 ## Extra Attributes
 

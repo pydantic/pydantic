@@ -24,7 +24,7 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import CoreSchema, PydanticOmit, core_schema
+from pydantic_core import CoreConfig, CoreSchema, PydanticOmit, core_schema
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Literal, assert_never
 
@@ -734,12 +734,17 @@ class GenerateJsonSchema:
     def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:
         json_schema = self.generate_inner(schema['schema'])
 
-        if 'default' in schema:
-            default = schema['default']
-        elif 'default_factory' in schema:
-            default = schema['default_factory']()
-        else:  # pragma: no cover
-            raise ValueError('`schema` has neither default nor default_factory')
+        if 'default' not in schema:
+            return json_schema
+        default = schema['default']
+        # Note: if you want to include the value returned by the default_factory,
+        # override this method and replace the code above with:
+        # if 'default' in schema:
+        #     default = schema['default']
+        # elif 'default_factory' in schema:
+        #     default = schema['default_factory']()
+        # else:
+        #     return json_schema
 
         try:
             encoded_default = self.encode_default(default)
@@ -889,7 +894,16 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-        return self._named_required_fields_schema(named_required_fields)
+        json_schema = self._named_required_fields_schema(named_required_fields)
+        config: CoreConfig | None = schema.get('config', None)
+
+        extra = (config or {}).get('extra_fields_behavior', 'ignore')
+        if extra == 'forbid':
+            json_schema['additionalProperties'] = False
+        elif extra == 'allow':
+            json_schema['additionalProperties'] = True
+
+        return json_schema
 
     @staticmethod
     def _name_required_computed_fields(
@@ -963,11 +977,9 @@ class GenerateJsonSchema:
         cls = cast('type[BaseModel]', schema['cls'])
         config = cls.model_config
         title = config.get('title')
-        forbid_additional_properties = config.get('extra') == 'forbid'
+
         json_schema_extra = config.get('json_schema_extra')
-        json_schema = self._update_class_schema(
-            json_schema, title, forbid_additional_properties, cls, json_schema_extra
-        )
+        json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
 
         return json_schema
 
@@ -975,7 +987,7 @@ class GenerateJsonSchema:
         self,
         json_schema: JsonSchemaValue,
         title: str | None,
-        forbid_additional_properties: bool,
+        extra: Literal['allow', 'ignore', 'forbid'] | None,
         cls: type[Any],
         json_schema_extra: dict[str, Any] | JsonSchemaExtraCallable | None,
     ) -> JsonSchemaValue:
@@ -988,8 +1000,11 @@ class GenerateJsonSchema:
             # referenced_schema['title'] = title
             schema_to_update.setdefault('title', title)
 
-        if forbid_additional_properties:
-            schema_to_update['additionalProperties'] = False
+        if 'additionalProperties' not in schema_to_update:
+            if extra == 'allow':
+                schema_to_update['additionalProperties'] = True
+            elif extra == 'forbid':
+                schema_to_update['additionalProperties'] = False
 
         if isinstance(json_schema_extra, (staticmethod, classmethod)):
             # In older versions of python, this is necessary to ensure staticmethod/classmethods are callable
@@ -1009,6 +1024,17 @@ class GenerateJsonSchema:
 
         return json_schema
 
+    def resolve_schema_to_update(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        """Resolve a JsonSchemaValue to the non-ref schema if it is a $ref schema"""
+        if '$ref' in json_schema:
+            schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
+            if schema_to_update is None:
+                raise RuntimeError(f'Cannot update undefined schema for $ref={json_schema["$ref"]}')
+            return self.resolve_schema_to_update(schema_to_update)
+        else:
+            schema_to_update = json_schema
+        return schema_to_update
+
     def model_fields_schema(self, schema: core_schema.ModelFieldsSchema) -> JsonSchemaValue:
         named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
             (name, self.field_is_required(field), field)
@@ -1017,7 +1043,12 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-        return self._named_required_fields_schema(named_required_fields)
+        json_schema = self._named_required_fields_schema(named_required_fields)
+        extra_validator = schema.get('extra_validator', None)
+        if extra_validator is not None:
+            schema_to_update = self.resolve_schema_to_update(json_schema)
+            schema_to_update['additionalProperties'] = self.generate_inner(extra_validator)
+        return json_schema
 
     def field_is_present(self, field: CoreSchemaField) -> bool:
         """Whether the field should be included in the generated JSON schema."""
@@ -1063,11 +1094,9 @@ class GenerateJsonSchema:
         config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
 
         title = config.get('title') or cls.__name__
-        forbid_additional_properties = config.get('extra') == 'forbid'
+
         json_schema_extra = config.get('json_schema_extra')
-        json_schema = self._update_class_schema(
-            json_schema, title, forbid_additional_properties, cls, json_schema_extra
-        )
+        json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
 
         # Dataclass-specific handling of description
         if is_dataclass(cls) and not hasattr(cls, '__pydantic_validator__'):

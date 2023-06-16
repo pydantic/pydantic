@@ -73,7 +73,7 @@ class ConfigDict(TypedDict, total=False):
                 The name of this configuration setting was changed in **v2.0** from
                 `allow_population_by_alias` to `populate_by_name`.
         use_enum_values: Whether to populate models with the `value` property of enums, rather than the raw enum.
-            This may be useful if you want to serialise `model.model_dump()` later. Defaults to `False`.
+            This may be useful if you want to serialize `model.model_dump()` later. Defaults to `False`.
         validate_assignment: Whether to perform validation on *assignment* to attributes. Defaults to `False`.
         arbitrary_types_allowed: Whether to allow arbitrary user types for fields (they are validated simply by
             checking if the value is an instance of the type). If `False`, `RuntimeError` will be raised on model

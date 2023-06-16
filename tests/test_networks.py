@@ -751,6 +751,8 @@ def test_json():
         ('аррӏе@example.com', 'аррӏе', 'аррӏе@example.com'),
         ('xn--80ak6aa92e@example.com', 'xn--80ak6aa92e', 'xn--80ak6aa92e@example.com'),
         ('葉士豪@臺網中心.tw', '葉士豪', '葉士豪@臺網中心.tw'),
+        ('"first.last" <first.last@example.com>', 'first.last', 'first.last@example.com'),
+        ("Shaquille O'Neal <shaq@example.com>", "Shaquille O'Neal", 'shaq@example.com'),
     ],
 )
 def test_address_valid(value, name, email):
@@ -785,6 +787,7 @@ def test_address_valid(value, name, email):
         ('foobar <foobar@example.com>>', None),
         ('foobar <<foobar<@example.com>', None),
         ('foobar <>', None),
+        ('first.last <first.last@example.com>', None),
     ],
 )
 def test_address_invalid(value, reason):

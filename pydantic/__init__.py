@@ -67,6 +67,7 @@ __all__ = [
     'field_serializer',
     'model_serializer',
     'PlainSerializer',
+    'SerializeAsAny',
     'WrapSerializer',
     'FieldSerializationInfo',
     'SerializationInfo',
@@ -80,6 +81,7 @@ __all__ = [
     # pydantic_core errors
     'ValidationError',
     # errors
+    'PydanticErrorCodes',
     'PydanticUserError',
     'PydanticSchemaGenerationError',
     'PydanticImportError',

@@ -28,7 +28,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic._internal._model_construction import MockValidator
+from pydantic._internal._mock_validator import MockValidator
 from pydantic.dataclasses import rebuild_dataclass
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
@@ -566,7 +566,6 @@ def test_schema():
             },
             'aliases': {
                 'additionalProperties': {'type': 'string'},
-                'default': {'John': 'Joey'},
                 'title': 'Aliases',
                 'type': 'object',
             },
