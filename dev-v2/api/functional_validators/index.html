@@ -1677,8 +1677,22 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.InstanceOf" class="md-nav__link">
+    InstanceOf
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.PlainValidator" class="md-nav__link">
     PlainValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.SkipValidation" class="md-nav__link">
+    SkipValidation
   </a>
   
 </li>
@@ -2100,8 +2114,22 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.InstanceOf" class="md-nav__link">
+    InstanceOf
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.PlainValidator" class="md-nav__link">
     PlainValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.SkipValidation" class="md-nav__link">
+    SkipValidation
   </a>
   
 </li>
@@ -2349,6 +2377,73 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
 
 
+<h2 id="pydantic.functional_validators.InstanceOf" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">InstanceOf</span>
+
+
+<a href="#pydantic.functional_validators.InstanceOf" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Generic type for annotating a type that is an instance of a given class.</p>
+
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">InstanceOf</span>
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+    <span class="o">...</span>
+
+<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="n">InstanceOf</span><span class="p">[</span><span class="n">Foo</span><span class="p">]</span>
+
+<span class="n">Bar</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="n">Foo</span><span class="p">())</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Bar</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">    │   {</span>
+<span class="sd">    │   │   &#39;type&#39;: &#39;is_instance_of&#39;,</span>
+<span class="sd">    │   │   &#39;loc&#39;: (&#39;foo&#39;,),</span>
+<span class="sd">    │   │   &#39;msg&#39;: &#39;Input should be an instance of Foo&#39;,</span>
+<span class="sd">    │   │   &#39;input&#39;: 42,</span>
+<span class="sd">    │   │   &#39;ctx&#39;: {&#39;class&#39;: &#39;Foo&#39;},</span>
+<span class="sd">    │   │   &#39;url&#39;: &#39;https://errors.pydantic.dev/0.38.0/v/is_instance_of&#39;</span>
+<span class="sd">    │   }</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</details>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="pydantic.functional_validators.PlainValidator" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">PlainValidator</span>
 
@@ -2401,6 +2496,50 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="c1"># &gt; 2</span>
 </code></pre></div>
 </details>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.SkipValidation" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">SkipValidation</span>
+
+
+<a href="#pydantic.functional_validators.SkipValidation" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>If this is applied as an annotation (e.g., via <code>x: Annotated[int, SkipValidation]</code>), validation will be
+    skipped. You can also use <code>SkipValidation[int]</code> as a shorthand for <code>Annotated[int, SkipValidation]</code>.</p>
+<p>This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
+and know that it is safe to skip validation for one or more of the fields.</p>
+<p>Because this converts the validation schema to <code>any_schema</code>, subsequent annotation-applied transformations
+may not have the expected effects. Therefore, when used, this annotation should generally be the final
+annotation applied to a type.</p>
+
 
 
   
@@ -2654,13 +2793,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">268</span>
-<span class="normal">269</span>
-<span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">274</span>
 <span class="normal">275</span>
 <span class="normal">276</span>
 <span class="normal">277</span>
@@ -2706,7 +2839,13 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 <span class="normal">317</span>
 <span class="normal">318</span>
 <span class="normal">319</span>
-<span class="normal">320</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_validator</span><span class="p">(</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_validator</span><span class="p">(</span>
     <span class="n">__field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">FieldValidatorModes</span> <span class="o">=</span> <span class="s1">&#39;after&#39;</span><span class="p">,</span>
@@ -2834,13 +2973,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">430</span>
-<span class="normal">431</span>
-<span class="normal">432</span>
-<span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span>
-<span class="normal">436</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">436</span>
 <span class="normal">437</span>
 <span class="normal">438</span>
 <span class="normal">439</span>
@@ -2854,7 +2987,13 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">447</span>
 <span class="normal">448</span>
 <span class="normal">449</span>
-<span class="normal">450</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
