@@ -1,7 +1,7 @@
 
 The `Field` function is used to customize and add metadata to fields of models.
 
-You can see the full API reference for `Field` [here](/api/fields/#pydantic.fields.Field).
+See the [`Field`](/api/fields/#pydantic.fields.Field) API reference for additional details.
 
 ## Default values
 
@@ -299,12 +299,12 @@ from pydantic import BaseModel, Field
 
 
 class Foo(BaseModel):
-    positive: int = Field(..., gt=0)
-    non_negative: int = Field(..., ge=0)
-    negative: int = Field(..., lt=0)
-    non_positive: int = Field(..., le=0)
-    even: int = Field(..., multiple_of=2)
-    love_for_pydantic: float = Field(..., allow_inf_nan=True)
+    positive: int = Field(gt=0)
+    non_negative: int = Field(ge=0)
+    negative: int = Field(lt=0)
+    non_positive: int = Field(le=0)
+    even: int = Field(multiple_of=2)
+    love_for_pydantic: float = Field(allow_inf_nan=True)
 
 
 foo = Foo(
