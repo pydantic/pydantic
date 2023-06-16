@@ -294,7 +294,7 @@ class OuterModel(BaseModel):
 
 user = UserLogin(name='pydantic', password='password')
 
-print(OuterModel(as_any=user, without=user).model_dump())
+print(OuterModel(as_any=user, as_user=user).model_dump())
 """
 {
     'as_any': {'name': 'pydantic', 'password': 'password'},
