@@ -236,8 +236,8 @@ if TYPE_CHECKING:
     SerializeAsAny = Annotated[AnyType, ...]  # SerializeAsAny[list[str]] will be treated by type checkers as list[str]
     """Force serialization to ignore whatever is defined in the schema and instead ask the object
     itself how it should be serialized.
-    In particular, this means that model subclasses will include fields present in the subclass but not in the
-    original schema.
+    In particular, this means that when model subclasses are serialized, fields present in the subclass
+    but not in the original schema will be included.
     """
 else:
 
