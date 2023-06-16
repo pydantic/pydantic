@@ -420,9 +420,9 @@ jobs:
 
   send-tweet:
     name: Send tweet
-    needs: [check, publish_docs]
+    needs: [release]
     # `always()` is required to trigger this task even though test-fastapi is skipped
-    if: "always() && needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')"
+    if : "always() && needs.release.status == 'success'"
     runs-on: ubuntu-latest
 
     steps:
