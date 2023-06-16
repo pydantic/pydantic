@@ -48,8 +48,10 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
         An iterable of expanded annotations.
 
     Example:
-        ```python
+        ```py
         from annotated_types import Ge, Len
+
+        from pydantic._internal._known_annotated_metadata import expand_grouped_metadata
 
         print(list(expand_grouped_metadata([Ge(4), Len(5)])))
         #> [Ge(ge=4), MinLen(min_length=5)]
@@ -185,8 +187,13 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         A tuple contains a dict of known metadata and a list of unknown annotations.
 
     Example:
-        ```python
-        collect_known_metadata([Gt(1), Len(42), Unknown()])  # ({'gt': 1, 'min_length': 42}, [Unknown()])
+        ```py
+        from annotated_types import Gt, Len
+
+        from pydantic._internal._known_annotated_metadata import collect_known_metadata
+
+        print(collect_known_metadata([Gt(1), Len(42), ...]))
+        #> ({'gt': 1, 'min_length': 42}, [Ellipsis])
         ```
     """
     annotations = expand_grouped_metadata(annotations)

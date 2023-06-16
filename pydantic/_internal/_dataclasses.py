@@ -165,6 +165,11 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     - `_cls` is not a pydantic dataclass inheriting directly from a stdlib dataclass
     e.g.
     ```py
+    import dataclasses
+
+    import pydantic.dataclasses
+
+
     @dataclasses.dataclass
     class A:
         x: int

@@ -191,6 +191,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             provides a way to conveniently set model_config key/value pairs.
 
             ```py
+            from pydantic import BaseModel
+
+
             class MyModel(BaseModel, extra='allow'):
                 ...
             ```
