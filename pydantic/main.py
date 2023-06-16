@@ -84,7 +84,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_parent_namespace__: Parent namespace of the model.
         __pydantic_custom_init__: Custom init of the model.
         __pydantic_post_init__: Post init of the model.
-        model_config: Configurations of model.
+        model_config: Configuration settings for the model.
         __pydantic_complete__: Whether model building is completed.
         __pydantic_root_model__: Whether the model is a RootModel.
     """
