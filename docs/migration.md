@@ -16,15 +16,8 @@ To get started with the Pydantic V2 beta, install it from PyPI.
 We recommend using a virtual environment to isolate your testing environment:
 
 ```bash
-pip install --pre -U "pydantic>=2.0b1"
+pip install --pre -U "pydantic>=2.0b3"
 ```
-
-!!! warning "Beta release!"
-    Note that there are still some rough edges, and while trying out the Pydantic V2 beta releases you may experience errors.
-
-    We encourage you to try out the beta releases in a test environment and not in production.
-    While we do not currently intend to make changes to the API, it's still possible that we
-    will discover problems requiring breaking changes.
 
 If you do encounter any issues, please [create an issue in GitHub](https://github.com/pydantic/pydantic/issues) using
 the `bug V2` label. This will help us to actively monitor and track errors, and to continue to improve the library's
@@ -48,13 +41,11 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 | `model_validate()` | `parse_obj()` |
 | `__pydantic_validator__` | `__validators__` |
 | `model_fields` | `__fields__` |
-| `__signature__` | `__signature__` |
-| `__class_vars__` | `__class_vars__` |
 | `__pydantic_private__` | `__private_attributes__` |
 
 * Some of the built-in data-loading functionality has been slated for removal. In particular,
-    `parse_raw` and `parse_file` are now deprecated. In Prefect V2, `model_validate_json` works like `parse_raw`. Otherwise, you should load the data and then pass it to `model_validate`.
-* The `from_orm` method has been removed; you can now just use `model_validate` (equivalent to `parse_obj` from
+    `parse_raw` and `parse_file` are now deprecated. In Pydantic V2, `model_validate_json` works like `parse_raw`. Otherwise, you should load the data and then pass it to `model_validate`.
+* The `from_orm` method has been deprecated; you can now just use `model_validate` (equivalent to `parse_obj` from
   Pydantic V1) to achieve something similar, as long as you've set `from_attributes=True` in the model config.
 * The `__eq__` method has changed for models.
     * Models can only be equal to other `BaseModel` instances.
@@ -74,20 +65,19 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
     added the [`@field_serializer`](api/functional_serializers.md#pydantic.functional_serializers.field_serializer),
     [`@model_serializer`](api/functional_serializers.md#pydantic.functional_serializers.model_serializer), and
     [`@computed_field`](api/fields.md#pydantic.fields.computed_field) decorators, which each address various
-    shortcomings from Pydantic V1.
+    shortcomings from Pydantic V1. [TODO: complete serializers documentation and add link here.]
     * Due to performance overhead and implementation complexity, we have now removed support for specifying
         `json_encoders` in the model config. This functionality was originally added for the purpose of achieving custom
         serialization logic, and we think the new serialization decorators are a better choice in most common scenarios.
         However, if your usage of `json_encoders` is not compatible with the new serialization decorators,
-        please create a GitHub issue letting us know.
+        please create a GitHub issue letting us know. See [Custom data types](usage/types/custom.md) for further
+        details.
 * `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
-* `__fields__` in Pydantic V1 has moved to `model_fields` in Pydantic V2.
-* `__validators__` in Pydantic V1 has moved to `__pydantic_validator__` in Pydantic V2.
 
 ### Changes to `pydantic.generics.GenericModel`
 
 The `pydantic.generics.GenericModel` class is no longer necessary, and has been removed. Instead, you can now
-create generic BaseModel subclasses by just adding `Generic` as a parent class on a `BaseModel` subclass directly.
+create generic `BaseModel` subclasses by just adding `Generic` as a parent class on a `BaseModel` subclass directly.
 This looks like `class MyGenericModel(BaseModel, Generic[T]): ...`.
 
 While it may not raise an error, we strongly advise against using _parametrized_ generics in `isinstance` checks.
@@ -106,14 +96,14 @@ Find more information in the [Generic models](usage/models.md#generic-models) do
 `Field` no longer supports arbitrary keyword arguments to be added to the JSON schema. Instead, any extra
 data you want to add to the JSON schema should be passed as a dictionary to the `json_schema_extra` keyword argument.
 
-The following properties have been removed from `Field`:
+The following properties have been removed from or changed in `Field`:
 
 - `const`
-- `min_items`
-- `max_items`
+- `min_items` (use `min_length` instead)
+- `max_items` (use `max_length` instead)
 - `unique_items`
-- `allow_mutation`
-- `regex`
+- `allow_mutation` (use `frozen` instead)
+- `regex` (use `pattern` instead)
 
 * [TODO: Need to document all other backwards-incompatible changes to `pydantic.Field`]
 
@@ -164,6 +154,8 @@ The following properties have been removed from `Field`:
     * `min_anystr_length` → `str_min_length`
     * `orm_mode` → `from_attributes`
     * `validate_all` → `validate_default`
+
+See [Model Config](usage/model_config.md) for more details.
 
 ### Changes to validators
 
@@ -427,7 +419,7 @@ In Pydantic V2, we have tried to address many of the common requests:
 
 * The JSON schema for `Optional` fields now indicates that the value `null` is allowed.
 * The `Decimal` type is now exposed in JSON schema (and serialized) as a string.
-* The JSON schema no longer preserves named tuples as named tuples.
+* The JSON schema no longer preserves namedtuples as namedtuples.
 * The JSON schema we generate by default now targets draft 2020-12 (with some OpenAPI extensions).
 * When they differ, you can now specify if you want the JSON schema representing the inputs to validation,
     or the outputs from serialization.
@@ -464,6 +456,13 @@ Pydantic V1 that have changed in Pydantic V2, you can use a custom `schema_gener
 | `pydantic.error_wrappers.ValidationError` | `pydantic.ValidationError` |
 | `pydantic.utils.to_camel` | `pydantic.alias_generators.to_pascal` |
 | `pydantic.utils.to_lower_camel` | `pydantic.alias_generators.to_camel` |
+
+In addition, the following special-use types have been moved to the [Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) project and may be installed as an separate option when needed.
+
+* [Color Types](usage/types/extra_types/color_types.md)
+* [Payment Card Numbers](usage/types/extra_types/payment_cards.md)
+* [Phone Numbers](usage/types/extra_types/phone_numbers.md)
+* [Routing Numbers](usage/types/extra_types/routing_numbers.md)
 
 ## Deprecated and moved in Pydantic V2
 
