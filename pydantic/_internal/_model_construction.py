@@ -112,9 +112,8 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            extra_base = _dunder_attr_base(bases, config_wrapper, namespace)
-            if extra_base is not None:
-                bases = bases + (extra_base,)
+            if config_wrapper.extra == 'allow' or namespace['__private_attributes__']:
+                bases += (ModelAttrBase,)
 
             if '__hash__' not in namespace and config_wrapper.frozen:
 
@@ -470,63 +469,43 @@ def generate_model_signature(
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
-def _dunder_attr_base(
-    bases: tuple[type[Any], ...], config_wrapper: ConfigWrapper, namespace: dict[str, Any]
-) -> type[Any] | None:
-    """Returns a base class defining a custom __getattr__ and/or __delattr__ for models needing them for the sake
-    of interaction with private attributes and/or `model_config['extra'] == 'allow'`.
+class ModelAttrBase:
+    """This class is used as a mixin to define the __getattr__ and __delattr__ methods for models that need them
+    for the sake of interaction with private attributes and/or `model_config['extra'] == 'allow'`.
     """
-    extra_base_namespace = {}
-    if config_wrapper.extra == 'allow' or namespace['__private_attributes__']:
-        if not any('__getattr__' in base.__dict__ for base in bases):
-            extra_base_namespace['__getattr__'] = _extra_private_getattr
-    if namespace['__private_attributes__']:
-        if not any('__delattr__' in base.__dict__ for base in bases):
-            extra_base_namespace['__delattr__'] = _extra_private_getattr
-        extra_base_namespace['__delattr__'] = _private_delattr
 
-    if extra_base_namespace:
-        return type('ModelAttrBase', (), extra_base_namespace)
-    else:
-        return None
+    def __getattr__(self: BaseModel, item: str) -> Any:  # type: ignore  # `self: BaseModel` is okay since it's a mixin
+        if item in self.__private_attributes__:
+            attribute = self.__private_attributes__[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
 
+            try:
+                # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        if self.__pydantic_extra__ is not None:
+            try:
+                return self.__pydantic_extra__[item]
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
-def _extra_private_getattr(self: BaseModel, item: str) -> Any:
-    """This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
-    allow (and store) extra and/or private attributes.
-    """
-    if item in self.__private_attributes__:
-        attribute = self.__private_attributes__[item]
-        if hasattr(attribute, '__get__'):
-            return attribute.__get__(self, type(self))  # type: ignore
+    def __delattr__(self: BaseModel, item: str) -> Any:  # type: ignore  # `self: BaseModel` is okay since it's a mixin
+        if item in self.__private_attributes__:
+            attribute = self.__private_attributes__[item]
+            if hasattr(attribute, '__delete__'):
+                attribute.__delete__(self)  # type: ignore
+                return
 
-        try:
-            # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
-            return self.__pydantic_private__[item]  # type: ignore
-        except KeyError as exc:
-            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-    if self.__pydantic_extra__ is not None:
-        try:
-            return self.__pydantic_extra__[item]
-        except KeyError as exc:
-            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-    else:
-        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
-
-
-def _private_delattr(self: BaseModel, item: str) -> Any:
-    if item in self.__private_attributes__:
-        attribute = self.__private_attributes__[item]
-        if hasattr(attribute, '__delete__'):
-            attribute.__delete__(self)  # type: ignore
-            return
-
-        try:
-            # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
-            del self.__pydantic_private__[item]  # type: ignore
-        except KeyError as exc:
-            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-    elif item in self.model_fields:
-        object.__delattr__(self, item)
-    else:
-        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+            try:
+                # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
+                del self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        elif item in self.model_fields:
+            object.__delattr__(self, item)
+        else:
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
