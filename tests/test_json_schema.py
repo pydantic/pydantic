@@ -40,9 +40,11 @@ from pydantic import (
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     ImportString,
+    InstanceOf,
     PydanticUserError,
     RootModel,
     ValidationError,
+    WithJsonSchema,
     computed_field,
     field_validator,
 )
@@ -53,6 +55,7 @@ from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
+    Examples,
     GenerateJsonSchema,
     JsonSchemaValue,
     PydanticJsonSchemaWarning,
@@ -68,7 +71,6 @@ from pydantic.types import (
     UUID5,
     DirectoryPath,
     FilePath,
-    InstanceOf,
     Json,
     NegativeFloat,
     NegativeInt,
@@ -83,7 +85,6 @@ from pydantic.types import (
     SecretStr,
     StrictBool,
     StrictStr,
-    WithJsonSchema,
     conbytes,
     condate,
     condecimal,
@@ -4696,4 +4697,17 @@ def test_resolve_def_schema_from_core_schema() -> None:
         'required': ['inner'],
         'title': 'Outer',
         'type': 'object',
+    }
+
+
+def test_examples_annotation() -> None:
+    ListWithExamples = Annotated[List[int], Examples({'Fibonacci': [1, 1, 2, 3, 5]})]
+
+    ta = TypeAdapter(ListWithExamples)
+
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {
+        'examples': {'Fibonacci': [1, 1, 2, 3, 5]},
+        'items': {'type': 'integer'},
+        'type': 'array',
     }

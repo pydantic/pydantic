@@ -3,14 +3,20 @@ from __future__ import annotations as _annotations
 import sys
 from functools import partialmethod
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Annotated, Any, Callable, TypeVar, Union, overload
 
 from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, TypeAlias
 
 from . import GetCoreSchemaHandler as _GetCoreSchemaHandler
-from ._internal import _decorators, _internal_dataclass
+from ._internal import (
+    _annotated_handlers,
+    _core_metadata,
+    _decorators,
+    _generics,
+    _internal_dataclass,
+)
 from .errors import PydanticUserError
 
 if sys.version_info < (3, 11):
@@ -448,3 +454,98 @@ def model_validator(
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec
+
+
+AnyType = TypeVar('AnyType')
+
+
+if TYPE_CHECKING:
+    # If we add configurable attributes to IsInstance, we'd probably need to stop hiding it from type checkers like this
+    InstanceOf = Annotated[AnyType, ...]  # `IsInstance[Sequence]` will be recognized by type checkers as `Sequence`
+
+else:
+
+    @_internal_dataclass.slots_dataclass
+    class InstanceOf:
+        '''Generic type for annotating a type that is an instance of a given class.
+
+        Example:
+            ```py
+            from pydantic import BaseModel, InstanceOf
+
+            class Foo:
+                ...
+
+            class Bar(BaseModel):
+                foo: InstanceOf[Foo]
+
+            Bar(foo=Foo())
+            try:
+                Bar(foo=42)
+            except ValidationError as e:
+                print(e)
+                """
+                [
+                │   {
+                │   │   'type': 'is_instance_of',
+                │   │   'loc': ('foo',),
+                │   │   'msg': 'Input should be an instance of Foo',
+                │   │   'input': 42,
+                │   │   'ctx': {'class': 'Foo'},
+                │   │   'url': 'https://errors.pydantic.dev/0.38.0/v/is_instance_of'
+                │   }
+                ]
+                """
+            ```
+        '''
+
+        @classmethod
+        def __class_getitem__(cls, item: AnyType) -> AnyType:
+            return Annotated[item, cls()]
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            from pydantic import PydanticSchemaGenerationError
+
+            # use the generic _origin_ as the second argument to isinstance when appropriate
+            python_schema = core_schema.is_instance_schema(_generics.get_origin(source) or source)
+
+            try:
+                # Try to generate the "standard" schema, which will be used when loading from JSON
+                json_schema = handler(source)
+            except PydanticSchemaGenerationError:
+                # If that fails, just produce a schema that can validate from python
+                return python_schema
+            else:
+                return core_schema.json_or_python_schema(python_schema=python_schema, json_schema=json_schema)
+
+
+if TYPE_CHECKING:
+    SkipValidation = Annotated[AnyType, ...]  # SkipValidation[list[str]] will be treated by type checkers as list[str]
+else:
+
+    @_internal_dataclass.slots_dataclass
+    class SkipValidation:
+        """If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be
+            skipped. You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
+
+        This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
+        and know that it is safe to skip validation for one or more of the fields.
+
+        Because this converts the validation schema to `any_schema`, subsequent annotation-applied transformations
+        may not have the expected effects. Therefore, when used, this annotation should generally be the final
+        annotation applied to a type.
+        """
+
+        def __class_getitem__(cls, item: Any) -> Any:
+            return Annotated[item, SkipValidation()]
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            original_schema = handler(source)
+            metadata = _core_metadata.build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
+            return core_schema.any_schema(metadata=metadata, serialization=original_schema)
