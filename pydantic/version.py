@@ -1,7 +1,7 @@
 """The `version` module holds the version information for Pydantic."""
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.0b2'
+VERSION = '2.0b3'
 """The version of Pydantic."""
 
 
