@@ -313,7 +313,7 @@ except ValidationError as exc:
     """
 ```
 
-### Classes with `____get_pydantic_core_schema____`
+### Classes with `__get_pydantic_core_schema__`
 
 ```py
 import re

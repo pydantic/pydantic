@@ -112,7 +112,7 @@ The following properties have been removed from or changed in `Field`:
 - `allow_mutation` (use `frozen` instead)
 - `regex` (use `pattern` instead)
 
-* [TODO: Need to document all other backwards-incompatible changes to `pydantic.Field`]
+* [TODO: Need to document any other backwards-incompatible changes to `pydantic.Field`]
 
 
 ### Changes to dataclasses
@@ -524,10 +524,10 @@ We have also introduced ways to use `typing.Annotated` to add custom validation 
 
 The main changes are:
 
-* `__get_validators__` should be replaced with `__get_pydantic_core_schema__`
-    * [TODO: Add link to documentation of `__get_pydantic_core_schema__`]
-* `__modify_schema__` becomes `__get_pydantic_json_schema__`
-    * [TODO: Add link to documentation of `__get_pydantic_json_schema__`]
+* `__get_validators__` should be replaced with `__get_pydantic_core_schema__`.
+  See [Custom Data Types](usage/types/custom.md#classes-with-getpydanticcoreschema) for more information.
+* `__modify_schema__` becomes `__get_pydantic_json_schema__`.
+  See [JSON Schema Customization](usage/json_schema.md#schema-customization) for more information.
 
 Additionally, you can use `typing.Annotated` to modify or provide the `__get_pydantic_core_schema__` and
 `__get_pydantic_json_schema__` functions of a type by annotating it, rather than modifying the type itself.
