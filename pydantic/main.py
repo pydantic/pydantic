@@ -84,6 +84,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_parent_namespace__: Parent namespace of the model.
         __pydantic_custom_init__: Custom init of the model.
         __pydantic_post_init__: Post init of the model.
+        model_config: Configurations of model.
+        __pydantic_complete__: Whether model building is completed.
+        __pydantic_root_model__: Whether the model is a RootModel.
     """
 
     if typing.TYPE_CHECKING:
@@ -237,11 +240,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """Validate a pydantic model instance.
 
         Args:
-            cls: The model class to use.
             obj: The object to validate.
-            strict: Whether to raise an exception on invalid fields. Defaults to None.
-            from_attributes: Whether to extract data from object attributes. Defaults to None.
-            context: Additional context to pass to the validator. Defaults to None.
+            strict: Whether to raise an exception on invalid fields.
+            from_attributes: Whether to extract data from object attributes.
+            context: Additional context to pass to the validator.
 
         Raises:
             ValidationError: If the object could not be validated.
@@ -295,8 +297,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             json_data: The JSON data to validate.
-            strict: Whether to enforce types strictly (default: `None`).
-            context: Extra variables to pass to the validator (default: `None`).
+            strict: Whether to enforce types strictly.
+            context: Extra variables to pass to the validator.
 
         Returns:
             The validated Pydantic model.
@@ -391,7 +393,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             by_alias: Whether to use the field's alias in the dictionary key if defined.
             exclude_unset: Whether to exclude fields that are unset or None from the output.
             exclude_defaults: Whether to exclude fields that are set to their default value from the output.
-            exclude_none: Whether to exclude fields that have a value of None from the output.
+            exclude_none: Whether to exclude fields that have a value of `None` from the output.
             round_trip: Whether to enable serialization and deserialization round-trip support.
             warnings: Whether to log warnings when invalid fields are encountered.
 
@@ -430,12 +432,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
             include: Field(s) to include in the JSON output. Can take either a string or set of strings.
             exclude: Field(s) to exclude from the JSON output. Can take either a string or set of strings.
-            by_alias: Whether to serialize using field aliases. Defaults to False.
-            exclude_unset: Whether to exclude fields that have not been explicitly set. Defaults to False.
-            exclude_defaults: Whether to exclude fields that have the default value. Defaults to False.
-            exclude_none: Whether to exclude fields that have a value of None. Defaults to False.
-            round_trip: Whether to use serialization/deserialization between JSON and class instance. Defaults to False.
-            warnings: Whether to show any warnings that occurred during serialization. Defaults to True.
+            by_alias: Whether to serialize using field aliases.
+            exclude_unset: Whether to exclude fields that have not been explicitly set.
+            exclude_defaults: Whether to exclude fields that have the default value.
+            exclude_none: Whether to exclude fields that have a value of `None`.
+            round_trip: Whether to use serialization/deserialization between JSON and class instance.
+            warnings: Whether to show any warnings that occurred during serialization.
 
         Returns:
             A JSON string representation of the model.
@@ -462,7 +464,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
 
         Args:
-            cls: The `Model` class.
             _fields_set: The set of field names accepted for the Model instance.
             values: Trusted or pre-validated data dictionary.
 
@@ -518,12 +519,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         value of `schema_generator` to be your subclass.
 
         Args:
-            by_alias: Whether to use attribute aliases or not. Defaults to `True`.
-            ref_template: The reference template. Defaults to `DEFAULT_REF_TEMPLATE`.
-            schema_generator: The JSON schema generator. Defaults to `GenerateJsonSchema`.
+            by_alias: Whether to use attribute aliases or not.
+            ref_template: The reference template.
+            schema_generator: The JSON schema generator.
 
         Returns:
-            The JSON schema for the given `cls` model class.
+            The JSON schema for the given model class.
         """
         return model_json_schema(
             cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
