@@ -281,9 +281,9 @@ print(user)
 #> first_name='John' last_name='Doe'
 ```
 
-## Number Constraints
+## Numeric Constraints
 
-There are fields that can be used to constrain numbers:
+There are some keyword arguments that can be used to constrain numeric values:
 
 * `gt` - greater than
 * `lt` - less than
@@ -554,9 +554,9 @@ See the [Discriminated Unions] for more details.
 
 ## Strict Mode
 
-The parameter `strict` can be used to control whether the field should be included in the strict mode.
+The parameter `strict` can be used to control whether the field should be validated in "strict mode".
 
-TODO: Should we explain what is strict mode here or add a link?
+[TODO: Add a link to documentation about strict mode]
 
 ```py
 from pydantic import BaseModel, Field
@@ -612,7 +612,7 @@ except ValidationError as e:
 
 2. Since `validate_assignment` is enabled, and the `name` field is frozen, the assignment is not allowed.
 
-## Customise JSON Schema
+## Customizing JSON Schema
 
 There are fields that exclusively to customise the generated JSON Schema:
 
