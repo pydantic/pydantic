@@ -244,23 +244,25 @@ dumped object:
 from pydantic import BaseModel
 
 
-class InnerModel(BaseModel):
-    x: int
+class User(BaseModel):
+    name: str
 
 
-class SubInnerModel(InnerModel):
-    y: int
+class UserLogin(User):
+    password: str
 
 
 class OuterModel(BaseModel):
-    inner: InnerModel
+    user: User
 
 
-m = OuterModel(inner=SubInnerModel(x=1, y=2))
+user = UserLogin(name='pydantic', password='hunter2')
+
+m = OuterModel(user=user)
 print(m)
-#> inner=SubInnerModel(x=1, y=2)
-print(m.model_dump())
-#> {'inner': {'x': 1}}
+#> user=UserLogin(name='pydantic', password='hunter2')
+print(m.model_dump())  # note: the password field is not included
+#> {'user': {'name': 'pydantic'}}
 ```
 !!! warning "Migration Warning"
     This behavior is different from how things worked in Pydantic V1, where we would always include
@@ -269,7 +271,42 @@ print(m.model_dump())
     even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
     when adding sensitive information like secrets as fields of subclasses.
 
-TODO: Add and document `SerializeAsAny` type.
+#### Serializing with duck-typing
+
+If you want to preserve the old duck-typing serialization behavior, this can be done using `SerializeAsAny`:
+
+```py
+from pydantic import BaseModel, SerializeAsAny
+
+
+class User(BaseModel):
+    name: str
+
+
+class UserLogin(User):
+    password: str
+
+
+class OuterModel(BaseModel):
+    as_any: SerializeAsAny[User]
+    as_user: User
+
+
+user = UserLogin(name='pydantic', password='password')
+
+print(OuterModel(as_any=user, without=user).model_dump())
+"""
+{
+    'as_any': {'name': 'pydantic', 'password': 'password'},
+    'as_user': {'name': 'pydantic'},
+}
+"""
+```
+
+When a field is annotated as `SerializeAsAny[<SomeType>]`, the validation behavior will be the same as if it was
+annotated as `<SomeType>`, and type-checkers like mypy will treat the attribute as having the appropriate type as well.
+But when serializing, the field will be serialized as though the type hint for the field was `Any`, which is where the
+name comes from.
 
 ## `pickle.dumps(model)`
 
