@@ -314,27 +314,29 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         pass
 
-    def __getattr__(self, item: str) -> Any:
-        private_attributes = object.__getattribute__(self, '__private_attributes__')
-        if item in private_attributes:
-            attribute = private_attributes[item]
-            if hasattr(attribute, '__get__'):
-                return attribute.__get__(self, type(self))  # type: ignore
+    if not typing.TYPE_CHECKING:  # otherwise mypy will allow arbitrary attribute access
 
-            try:
-                # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
-                return self.__pydantic_private__[item]  # type: ignore
-            except KeyError as exc:
-                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-        else:
-            pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
-            if pydantic_extra is not None:
+        def __getattr__(self, item: str) -> Any:
+            private_attributes = object.__getattribute__(self, '__private_attributes__')
+            if item in private_attributes:
+                attribute = private_attributes[item]
+                if hasattr(attribute, '__get__'):
+                    return attribute.__get__(self, type(self))  # type: ignore
+
                 try:
-                    return pydantic_extra[item]
+                    # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                    return self.__pydantic_private__[item]  # type: ignore
                 except KeyError as exc:
                     raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
             else:
-                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+                if pydantic_extra is not None:
+                    try:
+                        return pydantic_extra[item]
+                    except KeyError as exc:
+                        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+                else:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__class_vars__:
@@ -380,7 +382,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 return
 
             try:
-                # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
                 del self.__pydantic_private__[item]  # type: ignore
             except KeyError as exc:
                 raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
