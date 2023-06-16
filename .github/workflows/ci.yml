@@ -422,7 +422,7 @@ jobs:
     name: Send tweet
     needs: [release]
     # `always()` is required to trigger this task even though test-fastapi is skipped
-    if : "always() && needs.release.status == 'success'"
+    if: "always() && needs.release.status == 'success'"
     runs-on: ubuntu-latest
 
     steps:
