@@ -78,6 +78,9 @@ class AfterValidator:
 class BeforeValidator:
     """A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
+    Attributes:
+        func: The validator function.
+
     Example:
         ```py
         from typing import Annotated
@@ -116,6 +119,9 @@ class BeforeValidator:
 class PlainValidator:
     """A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
+    Attributes:
+        func: The validator function.
+
     Example:
         ```py
         from typing import Annotated
@@ -146,6 +152,9 @@ class PlainValidator:
 @_internal_dataclass.slots_dataclass(frozen=True)
 class WrapValidator:
     """A metadata class that indicates that a validation should be applied **around** the inner validation logic.
+
+    Attributes:
+        func: The validator function.
 
     ```py
     from datetime import datetime
@@ -265,16 +274,20 @@ def field_validator(
     """Decorate methods on the class indicating that they should be used to validate fields.
 
     Args:
-        __field: The first field the field_validator should be called on; this is separate
+        __field: The first field the `field_validator` should be called on; this is separate
             from `fields` to ensure an error is raised if you don't pass at least one.
-        *fields: Additional field(s) the field_validator should be called on.
+        *fields: Additional field(s) the `field_validator` should be called on.
         mode: Specifies whether to validate the fields before or after validation.
-             Defaults to 'after'.
-        check_fields: If set to True, checks that the fields actually exist on the model.
-            Defaults to None.
+        check_fields: Whether to check that the fields actually exist on the model.
 
     Returns:
         A decorator that can be used to decorate a function to be used as a field_validator.
+
+    Raises:
+        PydanticUserError:
+            - If `@field_validator` is used bare (with no fields).
+            - If the args passed to `@field_validator` as fields are not strings.
+            - If `@field_validator` applied to instance methods.
     """
     if isinstance(__field, FunctionType):
         raise PydanticUserError(
