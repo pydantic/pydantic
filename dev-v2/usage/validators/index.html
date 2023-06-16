@@ -2158,7 +2158,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Validators</h1>
 
-<p>Custom validation and complex relationships between objects can be achieved using the <code>validator</code> decorator.</p>
+<p>Custom validation and complex relationships between objects can be achieved using the <code>@field_validator</code> decorator.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core.core_schema</span> <span class="kn">import</span> <span class="n">FieldValidationInfo</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>

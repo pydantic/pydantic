@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#install-pydantic-v2-alpha" class="md-skip">
+        <a href="#install-pydantic-v2-beta" class="md-skip">
           Skip to content
         </a>
       
@@ -487,85 +487,66 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#install-pydantic-v2-alpha" class="md-nav__link">
-    Install Pydantic V2 alpha
+  <a href="#install-pydantic-v2-beta" class="md-nav__link">
+    Install Pydantic V2 beta
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#migration-notes" class="md-nav__link">
-    Migration notes
+  <a href="#migration-guide" class="md-nav__link">
+    Migration guide
   </a>
   
-    <nav class="md-nav" aria-label="Migration notes">
+    <nav class="md-nav" aria-label="Migration guide">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changes-to-basemodel" class="md-nav__link">
-    Changes to BaseModel
+  <a href="#changes-to-pydanticbasemodel" class="md-nav__link">
+    Changes to pydantic.BaseModel
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#changes-to-pydantic-dataclasses" class="md-nav__link">
-    Changes to Pydantic Dataclasses
+  <a href="#changes-to-pydanticgenericsgenericmodel" class="md-nav__link">
+    Changes to pydantic.generics.GenericModel
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-pydanticfield" class="md-nav__link">
+    Changes to pydantic.Field
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-dataclasses" class="md-nav__link">
+    Changes to dataclasses
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#changes-to-config" class="md-nav__link">
-    Changes to Config
+    Changes to config
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#changes-to-validators" class="md-nav__link">
-    Changes to Validators
+    Changes to validators
   </a>
   
-    <nav class="md-nav" aria-label="Changes to Validators">
+    <nav class="md-nav" aria-label="Changes to validators">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#typeerror-no-longer-gets-converted-into-a-validationerror" class="md-nav__link">
-    TypeError no longer gets converted into a ValidationError
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#validate-without-calling-the-function" class="md-nav__link">
-    Validate without calling the function
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#each_item-is-deprecated" class="md-nav__link">
-    each_item is deprecated
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#root_validatorskip_on_failurefalse-is-no-longer-allowed" class="md-nav__link">
-    @root_validator(skip_on_failure=False) is no longer allowed
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#allow_reuse-is-deprecated" class="md-nav__link">
-    allow_reuse is deprecated
+  <a href="#validator-and-root_validator-are-deprecated" class="md-nav__link">
+    @validator and @root_validator are deprecated
   </a>
   
 </li>
@@ -578,16 +559,35 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
         
           <li class="md-nav__item">
-  <a href="#removed-validator-types" class="md-nav__link">
-    Removed validator types
+  <a href="#typeerror-is-no-longer-converted-to-validationerror-in-validators" class="md-nav__link">
+    TypeError is no longer converted to ValidationError in validators
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#changes-to-validation-of-specific-types" class="md-nav__link">
-    Changes to Validation of specific types
+  <a href="#validator-behavior-changes" class="md-nav__link">
+    Validator behavior changes
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-allow_reuse-keyword-argument-is-no-longer-necessary" class="md-nav__link">
+    The allow_reuse keyword argument is no longer necessary
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_arguments-has-been-renamed-to-validate_call" class="md-nav__link">
+    @validate_arguments has been renamed to @validate_call
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -599,22 +599,63 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
         
           <li class="md-nav__item">
-  <a href="#changes-to-generic-models" class="md-nav__link">
-    Changes to Generic models
+  <a href="#changes-to-handling-of-standard-types" class="md-nav__link">
+    Changes to Handling of Standard Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Changes to Handling of Standard Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dicts" class="md-nav__link">
+    Dicts
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#typeadapter" class="md-nav__link">
-    TypeAdapter
+  <a href="#unions" class="md-nav__link">
+    Unions
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#required-optional-and-nullable-fields" class="md-nav__link">
-    Required, Optional, and Nullable fields
+    Required, optional, and nullable fields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#introduction-of-typeadapter" class="md-nav__link">
+    Introduction of TypeAdapter
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#defining-custom-types" class="md-nav__link">
+    Defining custom types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-json-schema-generation" class="md-nav__link">
+    Changes to JSON schema generation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#basesettings-has-moved-to-pydantic-settings" class="md-nav__link">
+    BaseSettings has moved to pydantic-settings
   </a>
   
 </li>
@@ -625,8 +666,22 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
-  <a href="#other-changes" class="md-nav__link">
-    Other changes
+  <a href="#moved-in-pydantic-v2" class="md-nav__link">
+    Moved in Pydantic V2
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecated-and-moved-in-pydantic-v2" class="md-nav__link">
+    Deprecated and moved in Pydantic V2
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#removed-in-pydantic-v2" class="md-nav__link">
+    Removed in Pydantic V2
   </a>
   
 </li>
@@ -2173,85 +2228,66 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#install-pydantic-v2-alpha" class="md-nav__link">
-    Install Pydantic V2 alpha
+  <a href="#install-pydantic-v2-beta" class="md-nav__link">
+    Install Pydantic V2 beta
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#migration-notes" class="md-nav__link">
-    Migration notes
+  <a href="#migration-guide" class="md-nav__link">
+    Migration guide
   </a>
   
-    <nav class="md-nav" aria-label="Migration notes">
+    <nav class="md-nav" aria-label="Migration guide">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#changes-to-basemodel" class="md-nav__link">
-    Changes to BaseModel
+  <a href="#changes-to-pydanticbasemodel" class="md-nav__link">
+    Changes to pydantic.BaseModel
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#changes-to-pydantic-dataclasses" class="md-nav__link">
-    Changes to Pydantic Dataclasses
+  <a href="#changes-to-pydanticgenericsgenericmodel" class="md-nav__link">
+    Changes to pydantic.generics.GenericModel
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-pydanticfield" class="md-nav__link">
+    Changes to pydantic.Field
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-dataclasses" class="md-nav__link">
+    Changes to dataclasses
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#changes-to-config" class="md-nav__link">
-    Changes to Config
+    Changes to config
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#changes-to-validators" class="md-nav__link">
-    Changes to Validators
+    Changes to validators
   </a>
   
-    <nav class="md-nav" aria-label="Changes to Validators">
+    <nav class="md-nav" aria-label="Changes to validators">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#typeerror-no-longer-gets-converted-into-a-validationerror" class="md-nav__link">
-    TypeError no longer gets converted into a ValidationError
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#validate-without-calling-the-function" class="md-nav__link">
-    Validate without calling the function
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#each_item-is-deprecated" class="md-nav__link">
-    each_item is deprecated
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#root_validatorskip_on_failurefalse-is-no-longer-allowed" class="md-nav__link">
-    @root_validator(skip_on_failure=False) is no longer allowed
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#allow_reuse-is-deprecated" class="md-nav__link">
-    allow_reuse is deprecated
+  <a href="#validator-and-root_validator-are-deprecated" class="md-nav__link">
+    @validator and @root_validator are deprecated
   </a>
   
 </li>
@@ -2264,16 +2300,35 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
         
           <li class="md-nav__item">
-  <a href="#removed-validator-types" class="md-nav__link">
-    Removed validator types
+  <a href="#typeerror-is-no-longer-converted-to-validationerror-in-validators" class="md-nav__link">
+    TypeError is no longer converted to ValidationError in validators
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#changes-to-validation-of-specific-types" class="md-nav__link">
-    Changes to Validation of specific types
+  <a href="#validator-behavior-changes" class="md-nav__link">
+    Validator behavior changes
   </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-allow_reuse-keyword-argument-is-no-longer-necessary" class="md-nav__link">
+    The allow_reuse keyword argument is no longer necessary
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_arguments-has-been-renamed-to-validate_call" class="md-nav__link">
+    @validate_arguments has been renamed to @validate_call
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -2285,22 +2340,63 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
         
           <li class="md-nav__item">
-  <a href="#changes-to-generic-models" class="md-nav__link">
-    Changes to Generic models
+  <a href="#changes-to-handling-of-standard-types" class="md-nav__link">
+    Changes to Handling of Standard Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Changes to Handling of Standard Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dicts" class="md-nav__link">
+    Dicts
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#typeadapter" class="md-nav__link">
-    TypeAdapter
+  <a href="#unions" class="md-nav__link">
+    Unions
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#required-optional-and-nullable-fields" class="md-nav__link">
-    Required, Optional, and Nullable fields
+    Required, optional, and nullable fields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#introduction-of-typeadapter" class="md-nav__link">
+    Introduction of TypeAdapter
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#defining-custom-types" class="md-nav__link">
+    Defining custom types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-json-schema-generation" class="md-nav__link">
+    Changes to JSON schema generation
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#basesettings-has-moved-to-pydantic-settings" class="md-nav__link">
+    BaseSettings has moved to pydantic-settings
   </a>
   
 </li>
@@ -2311,8 +2407,22 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
-  <a href="#other-changes" class="md-nav__link">
-    Other changes
+  <a href="#moved-in-pydantic-v2" class="md-nav__link">
+    Moved in Pydantic V2
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deprecated-and-moved-in-pydantic-v2" class="md-nav__link">
+    Deprecated and moved in Pydantic V2
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#removed-in-pydantic-v2" class="md-nav__link">
+    Removed in Pydantic V2
   </a>
   
 </li>
@@ -2338,62 +2448,192 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Migration Guide</h1>
 
-<h2 id="install-pydantic-v2-alpha">Install Pydantic V2 alpha<a class="headerlink" href="#install-pydantic-v2-alpha" title="Permanent link">&para;</a></h2>
-<p>Your feedback will be a critical part of ensuring that we have made the right tradeoffs with the API changes in V2.</p>
-<p>To get started with the Pydantic V2 alpha, install it from PyPI.
+<p>The Pydantic V2 beta introduces a number of changes to the API, including some breaking changes.</p>
+<p>We believe Pydantic V2 is ready for your production applications. This page provides a guide highlighting the most
+important changes to help you migrate your code from Pydantic V1 to Pydantic V2.</p>
+<h2 id="install-pydantic-v2-beta">Install Pydantic V2 beta<a class="headerlink" href="#install-pydantic-v2-beta" title="Permanent link">&para;</a></h2>
+<p>Your feedback will be a critical part of ensuring that we have made the right tradeoffs with the API changes in
+Pydantic V2.</p>
+<p>To get started with the Pydantic V2 beta, install it from PyPI.
 We recommend using a virtual environment to isolate your testing environment:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--pre<span class="w"> </span>-U<span class="w"> </span><span class="s2">&quot;pydantic&gt;=2.0a1&quot;</span>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--pre<span class="w"> </span>-U<span class="w"> </span><span class="s2">&quot;pydantic&gt;=2.0b3&quot;</span>
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Alpha release!</p>
-<p>Note that there are still some rough edges and incomplete features, and while trying out the Pydantic V2 alpha releases you may experience errors.</p>
-<p>We encourage you to try out the alpha releases in a test environment and not in production.
-Some features are still in development, and we will continue to make changes to the API.</p>
-</div>
-<p>If you do encounter any issues, please <a href="https://github.com/pydantic/pydantic/issues">create an issue in GitHub</a> using the <code>bug V2</code> label.
-This will help us to actively monitor and track errors, and to continue to improve the library’s performance.</p>
-<h2 id="migration-notes">Migration notes<a class="headerlink" href="#migration-notes" title="Permanent link">&para;</a></h2>
-<p><strong>Please note:</strong> this is just the beginning of a migration guide. We'll work hard up to the final release to prepare
-a full migration guide, but for now the following pointers should be some help while experimenting with V2.</p>
-<h3 id="changes-to-basemodel">Changes to BaseModel<a class="headerlink" href="#changes-to-basemodel" title="Permanent link">&para;</a></h3>
+<p>If you do encounter any issues, please <a href="https://github.com/pydantic/pydantic/issues">create an issue in GitHub</a> using
+the <code>bug V2</code> label. This will help us to actively monitor and track errors, and to continue to improve the library's
+performance.</p>
+<h2 id="migration-guide">Migration guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h2>
+<h3 id="changes-to-pydanticbasemodel">Changes to <code>pydantic.BaseModel</code><a class="headerlink" href="#changes-to-pydanticbasemodel" title="Permanent link">&para;</a></h3>
+<p>Various method names have been changed; all non-deprecated <code>BaseModel</code> methods now have names matching either the
+format <code>model_.*</code> or <code>__.*pydantic.*__</code>. Where possible, we have retained the deprecated methods with their old names
+to help ease migration, but calling them will emit <code>DeprecationWarning</code>s.</p>
+<table>
+<thead>
+<tr>
+<th>Pydantic V1</th>
+<th>Pydantic V2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>__fields__</code></td>
+<td><code>model_fields</code></td>
+</tr>
+<tr>
+<td><code>__private_attributes__</code></td>
+<td><code>__pydantic_private__</code></td>
+</tr>
+<tr>
+<td><code>__validators__</code></td>
+<td><code>__pydantic_validator__</code></td>
+</tr>
+<tr>
+<td><code>construct()</code></td>
+<td><code>model_construct()</code></td>
+</tr>
+<tr>
+<td><code>copy()</code></td>
+<td><code>model_copy()</code></td>
+</tr>
+<tr>
+<td><code>dict()</code></td>
+<td><code>model_dump()</code></td>
+</tr>
+<tr>
+<td><code>json_schema()</code></td>
+<td><code>model_json_schema()</code></td>
+</tr>
+<tr>
+<td><code>json()</code></td>
+<td><code>model_dump_json()</code></td>
+</tr>
+<tr>
+<td><code>parse_obj()</code></td>
+<td><code>model_validate()</code></td>
+</tr>
+</tbody>
+</table>
 <ul>
-<li>Various method names have been changed; <code>BaseModel</code> methods all start with <code>model_</code> now.
-  Where possible, we have retained the old method names to help ease migration, but calling them will result in <code>DeprecationWarning</code>s.</li>
-<li>Some of the built-in data loading functionality has been slated for removal.
-    In particular, <code>parse_raw</code> and <code>parse_file</code> are now deprecated. You should load the data and then pass it to <code>model_validate</code>.</li>
-<li>The <code>from_orm</code> method has been removed; you can now just use <code>model_validate</code> (equivalent to <code>parse_obj</code> from Pydantic V1) to achieve something similar,
-  as long as you've set <code>from_attributes=True</code> in the model config.</li>
-<li>The <code>__eq__</code> method has changed for models; models are no longer considered equal to the dicts.</li>
-<li>Custom <code>__init__</code> overrides won't be called. This should be replaced with a <code>@root_validator</code>.</li>
-<li>Due to inconsistency with the rest of the library, we have removed the special behavior of models
-  using the <code>__root__</code> field, and have disallowed the use of an attribute with this name to prevent confusion.
-  However, you can achieve equivalent behavior with a "standard" field name through the use of <code>@root_validator</code>,
-  <code>@model_serializer</code>, and <code>__get_pydantic_json_schema__</code>. You can see an example of this
-  <a href="https://github.com/pydantic/pydantic/blob/2b9459f20d094a46fa3093b43c34444240f03646/tests/test_parse.py#L95-L113">here</a>.</li>
+<li>Some of the built-in data-loading functionality has been slated for removal. In particular,
+    <code>parse_raw</code> and <code>parse_file</code> are now deprecated. In Pydantic V2, <code>model_validate_json</code> works like <code>parse_raw</code>. Otherwise, you should load the data and then pass it to <code>model_validate</code>.</li>
+<li>The <code>from_orm</code> method has been deprecated; you can now just use <code>model_validate</code> (equivalent to <code>parse_obj</code> from
+  Pydantic V1) to achieve something similar, as long as you've set <code>from_attributes=True</code> in the model config.</li>
+<li>The <code>__eq__</code> method has changed for models.<ul>
+<li>Models can only be equal to other <code>BaseModel</code> instances.</li>
+<li>For two model instances to be equal, they must have the same:<ul>
+<li>Type (or, in the case of generic models, non-parametrized generic origin type)</li>
+<li>Field values</li>
+<li>Extra values (only relevant when <code>model_config['extra'] == 'allow'</code>)</li>
+<li>Private attribute values; models with different values of private attributes are no longer equal.</li>
+<li>Models are no longer equal to the dicts containing their data.</li>
+<li>Non-generic models of different types are never equal.</li>
+<li>Generic models with different origin types are never equal. We don't require <em>exact</em> type equality so that,
+    for example, instances of <code>MyGenericModel[Any]</code> could be equal to instances of <code>MyGenericModel[int]</code>.</li>
 </ul>
-<h3 id="changes-to-pydantic-dataclasses">Changes to Pydantic Dataclasses<a class="headerlink" href="#changes-to-pydantic-dataclasses" title="Permanent link">&para;</a></h3>
+</li>
+</ul>
+</li>
+<li>We have replaced the use of the <code>__root__</code> field to specify a "custom root model" with a new type called
+    <a href="../usage/models/#rootmodel-and-custom-root-types"><code>RootModel</code></a> which is intended to replace the functionality of
+    using a field called <code>__root__</code> in Pydantic V1.</li>
+<li>We have significantly expanded Pydantic's capabilities related to customizing serialization. In particular, we have
+    added the <a href="../api/functional_serializers/#pydantic.functional_serializers.field_serializer"><code>@field_serializer</code></a>,
+    <a href="../api/functional_serializers/#pydantic.functional_serializers.model_serializer"><code>@model_serializer</code></a>, and
+    <a href="../api/fields/#pydantic.fields.computed_field"><code>@computed_field</code></a> decorators, which each address various
+    shortcomings from Pydantic V1.<ul>
+<li>See <a href="../usage/exporting_models/#custom-serializers">Custom serializers</a> for the usage docs of these new decorators.</li>
+<li>Due to performance overhead and implementation complexity, we have now removed support for specifying
+    <code>json_encoders</code> in the model config. This functionality was originally added for the purpose of achieving custom
+    serialization logic, and we think the new serialization decorators are a better choice in most common scenarios.
+    However, if your usage of <code>json_encoders</code> is not compatible with the new serialization decorators,
+    please create a GitHub issue letting us know. See <a href="../usage/types/custom/">Custom data types</a> for further
+    details.</li>
+</ul>
+</li>
+<li>We have changed the behavior related to serializing subclasses of models when they occur as nested fields in a parent
+  model. In V1, we would always include all fields from the subclass instance. In V2, when we dump a model, we only
+  include the fields that are defined on the annotated type of the field. This helps prevent some accidental security
+  bugs. You can read more about this (including how to opt out of this behavior) in the
+  <a href="../usage/exporting_models/#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict">Subclass instances for fields of BaseModel, dataclasses, TypedDict</a>
+  section of the model exporting docs.</li>
+<li><code>GetterDict</code> has been removed as it was just an implementation detail of <code>orm_mode</code>, which has been removed.</li>
+</ul>
+<h3 id="changes-to-pydanticgenericsgenericmodel">Changes to <code>pydantic.generics.GenericModel</code><a class="headerlink" href="#changes-to-pydanticgenericsgenericmodel" title="Permanent link">&para;</a></h3>
+<p>The <code>pydantic.generics.GenericModel</code> class is no longer necessary, and has been removed. Instead, you can now
+create generic <code>BaseModel</code> subclasses by just adding <code>Generic</code> as a parent class on a <code>BaseModel</code> subclass directly.
+This looks like <code>class MyGenericModel(BaseModel, Generic[T]): ...</code>.</p>
+<p>While it may not raise an error, we strongly advise against using <em>parametrized</em> generics in <code>isinstance</code> checks.</p>
 <ul>
-<li>The <code>__post_init__</code> in Pydantic dataclasses will now be called after validation, rather than before.</li>
-<li>We no longer support <code>extra='allow'</code> for Pydantic dataclasses, where extra attributes passed to the initializer would be
-  stored as extra fields on the dataclass. <code>extra='ignore'</code> is still supported for the purposes of allowing extra fields while parsing data; they just aren't stored.</li>
-<li><code>__post_init_post_parse__</code> has been removed.</li>
-<li>Nested dataclasses no longer accept tuples as input, only dict.</li>
+<li>For example, you should not do <code>isinstance(my_model, MyGenericModel[int])</code>.
+    However, it is fine to do <code>isinstance(my_model, MyGenericModel)</code>. (Note that for standard generics, it would raise
+    an error to do a subclass check with a parameterized generic.)</li>
+<li>If you need to perform <code>isinstance</code> checks against parametrized generics, you can do this by subclassing the
+    parametrized generic class. This looks like <code>class MyIntModel(MyGenericModel[int]): ...</code> and
+    <code>isinstance(my_model, MyIntModel)</code>.</li>
 </ul>
-<h3 id="changes-to-config">Changes to Config<a class="headerlink" href="#changes-to-config" title="Permanent link">&para;</a></h3>
+<p>Find more information in the <a href="../usage/models/#generic-models">Generic models</a> documentation.</p>
+<h3 id="changes-to-pydanticfield">Changes to <code>pydantic.Field</code><a class="headerlink" href="#changes-to-pydanticfield" title="Permanent link">&para;</a></h3>
+<p><code>Field</code> no longer supports arbitrary keyword arguments to be added to the JSON schema. Instead, any extra
+data you want to add to the JSON schema should be passed as a dictionary to the <code>json_schema_extra</code> keyword argument.</p>
+<p>The following properties have been removed from or changed in <code>Field</code>:</p>
 <ul>
-<li>To specify config on a model, it is now deprecated to create a class called <code>Config</code> in the namespace of the parent <code>BaseModel</code> subclass.
-  Instead, you just need to set a class attribute called <code>model_config</code> to be a dict with the key/value pairs you want to be used as the config.</li>
+<li><code>const</code></li>
+<li><code>min_items</code> (use <code>min_length</code> instead)</li>
+<li><code>max_items</code> (use <code>max_length</code> instead)</li>
+<li><code>unique_items</code></li>
+<li><code>allow_mutation</code> (use <code>frozen</code> instead)</li>
+<li>
+<p><code>regex</code> (use <code>pattern</code> instead)</p>
+</li>
+<li>
+<p>[TODO: Need to document any other backwards-incompatible changes to <code>pydantic.Field</code>]</p>
+</li>
 </ul>
+<h3 id="changes-to-dataclasses">Changes to dataclasses<a class="headerlink" href="#changes-to-dataclasses" title="Permanent link">&para;</a></h3>
+<ul>
+<li>When used as fields, dataclasses (Pydantic or vanilla) no longer accept tuples as validation inputs; dicts should be
+  used instead.</li>
+<li>The <code>__post_init__</code> in Pydantic dataclasses will now be called <em>after</em> validation, rather than before.<ul>
+<li>As a result, the <code>__post_init_post_parse__</code> method would have become redundant, so has been removed.</li>
+</ul>
+</li>
+<li>We no longer support <code>extra='allow'</code> for Pydantic dataclasses, where extra fields passed to the initializer would be
+  stored as extra attributes on the dataclass. <code>extra='ignore'</code> is still supported for the purpose of ignoring
+  unexpected fields while parsing data, they just won't be stored on the instance.</li>
+<li>Pydantic dataclasses no longer have an attribute <code>__pydantic_model__</code>, and no longer use an underlying <code>BaseModel</code>
+  to perform validation or provide other functionality.<ul>
+<li>To perform validation, generate a JSON schema, or make use of
+  any other functionality that may have required <code>__pydantic_model__</code> in V1, you should now wrap the dataclass
+  with a <code>TypeAdapter</code> (discussed more below) and make use of its methods.</li>
+<li>[TODO: Add link to TypeAdapter documentation. You can find example usage in <code>tests/test_type_adapter.py</code>.]</li>
+</ul>
+</li>
+<li>In Pydantic V1, if you used a vanilla (i.e., non-Pydantic) dataclass as a field, the config of the parent type would
+  be used as though it was the config for the dataclass itself as well. In Pydantic V2, this is no longer the case.<ul>
+<li>[TODO: Need to specify how to override the config used for vanilla dataclass; possibly need to add functionality?]</li>
+</ul>
+</li>
+</ul>
+<h3 id="changes-to-config">Changes to config<a class="headerlink" href="#changes-to-config" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p>In Pydantic V2, to specify config on a model, you should set a class attribute called <code>model_config</code> to be a dict
+  with the key/value pairs you want to be used as the config. The Pydantic V1 behavior to create a class called <code>Config</code>
+  in the namespace of the parent <code>BaseModel</code> subclass is now deprecated.</p>
+</li>
+<li>
 <p>The following config settings have been removed:</p>
 <ul>
 <li><code>allow_mutation</code>.</li>
 <li><code>error_msg_templates</code>.</li>
-<li><code>fields</code> — this was the source of various bugs, so has been removed. You should be able to use <code>Annotated</code> on fields to modify them as desired.</li>
+<li><code>fields</code> — this was the source of various bugs, so has been removed.
+  You should be able to use <code>Annotated</code> on fields to modify them as desired.</li>
 <li><code>getter_dict</code> — <code>orm_mode</code> has been removed, and this implementation detail is no longer necessary.</li>
-<li><code>schema_extra</code> — you should now use the <code>json_schema_extra</code> keyword argument to <code>pydantic.Field</code>.</li>
 <li><code>smart_union</code>.</li>
-<li><code>underscore_attrs_are_private</code> — the Pydantic V2 behavior is now the same as if this was always set to <code>True</code> in Pydantic V1.</li>
+<li><code>underscore_attrs_are_private</code> — the Pydantic V2 behavior is now the same as if this was always set
+  to <code>True</code> in Pydantic V1.</li>
 </ul>
+</li>
+<li>
 <p>The following config settings have been renamed:</p>
 <ul>
 <li><code>allow_population_by_field_name</code> → <code>populate_by_name</code></li>
@@ -2404,60 +2644,67 @@ a full migration guide, but for now the following pointers should be some help w
 <li><code>max_anystr_length</code> → <code>str_max_length</code></li>
 <li><code>min_anystr_length</code> → <code>str_min_length</code></li>
 <li><code>orm_mode</code> → <code>from_attributes</code></li>
+<li><code>schema_extra</code> → <code>json_schema_extra</code></li>
 <li><code>validate_all</code> → <code>validate_default</code></li>
 </ul>
-<h3 id="changes-to-validators">Changes to Validators<a class="headerlink" href="#changes-to-validators" title="Permanent link">&para;</a></h3>
-<p>Pydantic V2 introduces many new features and improvements to validators.
-Most of these features are only available by using a new set of decorators:</p>
-<ul>
-<li><code>@field_validator</code>, which replaces <code>@validator</code></li>
-<li><code>@model_validator</code>, which replaces <code>@root_validator</code></li>
+</li>
 </ul>
-<p>The following sections list some general changes and some changes specific to individual decorators.</p>
-<h4 id="typeerror-no-longer-gets-converted-into-a-validationerror"><code>TypeError</code> no longer gets converted into a <code>ValidationError</code><a class="headerlink" href="#typeerror-no-longer-gets-converted-into-a-validationerror" title="Permanent link">&para;</a></h4>
-<p>Previously raising <code>TypeError</code> within a validator function wrapped that error into a <code>ValidationError</code> and, in the case of use facing errors like in FastAPI, would display those errors to users.
-This lead to a variety of bugs, for example calling a function with the wrong signature:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pytest</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>  <span class="c1"># or validator</span>
+<p>See <a href="../usage/model_config/">Model Config</a> for more details.</p>
+<h3 id="changes-to-validators">Changes to validators<a class="headerlink" href="#changes-to-validators" title="Permanent link">&para;</a></h3>
+<h4 id="validator-and-root_validator-are-deprecated"><code>@validator</code> and <code>@root_validator</code> are deprecated<a class="headerlink" href="#validator-and-root_validator-are-deprecated" title="Permanent link">&para;</a></h4>
+<ul>
+<li><code>@validator</code> has been deprecated, and should be replaced with <a href="../usage/validators/"><code>@field_validator</code></a>, which provides various new features
+    and improvements.<ul>
+<li>The new <code>@field_validator</code> decorator does not have the <code>each_item</code> keyword argument; validators you want to
+    apply to items within a generic container should be added by annotating the type argument. See
+    <a href="../usage/validators/#generic-validated-collections">validators in Annotated metadata</a> for details.
+    This looks like <code>List[Annotated[int, Field(ge=0)]]</code></li>
+<li>Even if you keep using the deprecated <code>@validator</code> decorator, you can no longer add the <code>field</code> or
+    <code>config</code> arguments to the signature of validator functions. If you need access to these, you'll need
+    to migrate to <code>@field_validator</code> — see the <a href="#changes-to-validators-allowed-signatures">next section</a>
+    for more details.</li>
+<li>If you use the <code>always=True</code> keyword argument to a validator function, note that standard validators
+    for the annotated type will <em>also</em> be applied even to defaults, not just the custom validators. For
+    example, despite the fact that the validator below will never error, the following code raises a <code>ValidationError</code>:</li>
+</ul>
+</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">validator</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="mi">1</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">val_x</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>  <span class="c1"># raises a TypeError</span>
+    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">always</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">validate_x</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">v</span>
 
 
-<span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">TypeError</span><span class="p">):</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">Model</span><span class="p">()</span>
 </code></pre></div>
-<p>This applies to all validators.</p>
-<h3 id="validate-without-calling-the-function">Validate without calling the function<a class="headerlink" href="#validate-without-calling-the-function" title="Permanent link">&para;</a></h3>
-<p>Previously, arguments validation was done by directly calling the decorated function with parameters.
-When validating them without <em>actually</em> calling the function, you could call the <code>validate</code> method bound to the
-decorated function.</p>
-<p>This functionality no longer exists.</p>
-<h3 id="each_item-is-deprecated"><code>each_item</code> is deprecated<a class="headerlink" href="#each_item-is-deprecated" title="Permanent link">&para;</a></h3>
-<p>For <code>@validator</code> the argument is still present and functions.
-For <code>@field_validator</code> it is not present at all.
-As you migrate from <code>@validator</code> to <code>@field_validator</code> you will have to replace <code>each_item=True</code> with <a href="../usage/validators/#generic-validated-collections">validators in Annotated metadata</a>.</p>
-<h3 id="root_validatorskip_on_failurefalse-is-no-longer-allowed"><code>@root_validator(skip_on_failure=False)</code> is no longer allowed<a class="headerlink" href="#root_validatorskip_on_failurefalse-is-no-longer-allowed" title="Permanent link">&para;</a></h3>
-<p>Since this was the default value in V1 you will need to explicitly pass <code>skip_on_failure=False</code> for <code>pre=False</code> (the default) validators.</p>
-<h3 id="allow_reuse-is-deprecated"><code>allow_reuse</code> is deprecated<a class="headerlink" href="#allow_reuse-is-deprecated" title="Permanent link">&para;</a></h3>
-<p>Previously Pydantic tracked re-used functions in decorators to help you avoid some common mistakes.
-We did this by comparing the function's fully qualified name (module name + function name).
-That system has been replaced with a system that tracks things at a per-class level, reducing false positives and bringing the behavior more in line with the errors that type checkers and linters give for overriding a method with another in a class definition.</p>
-<p>It is highly likely that if you were using <code>allow_reuse=True</code> you can simply delete the parameter and things will work as expected.</p>
-<p>For <code>@validator</code> this argument is still present but does nothing and emits a deprecation warning.
-It is not present on <code>@field_validator</code>.</p>
-<h3 id="changes-to-validators-allowed-signatures">Changes to <code>@validator</code>'s allowed signatures<a class="headerlink" href="#changes-to-validators-allowed-signatures" title="Permanent link">&para;</a></h3>
-<p>In V1 functions wrapped by <code>@validator</code> could receive keyword arguments with metadata about what was being validated.
-Some of these arguments have been removed:</p>
 <ul>
-<li><code>config</code>: Pydantic V2's config is now a dictionary instead of a class, which means this argument is no longer backwards compatible. If you need to access the configuration you should migrate to <code>@field_validator</code> and use <code>info.config</code>.</li>
-<li><code>field</code>: this argument used to be a <code>ModelField</code> object, which was a quasi-internal class that no longer exists in Pydantic V2. Most of this information can still be accessed by using the field name from <code>info.field_name</code> to index into <code>cls.model_fields</code></li>
+<li><code>@root_validator</code> has been deprecated, and should be replaced with
+    <a href="../api/functional_validators/#pydantic.functional_validators.model_validator"><code>@model_validator</code></a>, which also provides new features and improvements.<ul>
+<li>Under some circumstances (such as assignment when <code>model_config['validate_assignment'] is True</code>),
+    the <code>@model_validator</code> decorator will receive an instance of the model, not a dict of values. You may
+    need to be careful to handle this case.</li>
+<li>Even if you keep using the deprecated <code>@root_validator</code> decorator, due to refactors in validation logic,
+    you can no longer run with <code>skip_on_failure=False</code> (which is the default value of this keyword argument,
+    so must be set explicitly to <code>True</code>).</li>
+</ul>
+</li>
+</ul>
+<h4 id="changes-to-validators-allowed-signatures">Changes to <code>@validator</code>'s allowed signatures<a class="headerlink" href="#changes-to-validators-allowed-signatures" title="Permanent link">&para;</a></h4>
+<p>In Pydantic V1, functions wrapped by <code>@validator</code> could receive keyword arguments with metadata about what was
+being validated. Some of these arguments have been removed from <code>@field_validator</code> in Pydantic V2:</p>
+<ul>
+<li><code>config</code>: Pydantic V2's config is now a dictionary instead of a class, which means this argument is no longer
+    backwards compatible. If you need to access the configuration you should migrate to <code>@field_validator</code> and use
+    <code>info.config</code>.</li>
+<li><code>field</code>: this argument used to be a <code>ModelField</code> object, which was a quasi-internal class that no longer exists
+    in Pydantic V2. Most of this information can still be accessed by using the field name from <code>info.field_name</code>
+    to index into <code>cls.model_fields</code></li>
 </ul>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FieldValidationInfo</span><span class="p">,</span> <span class="n">field_validator</span>
 
@@ -2477,23 +2724,66 @@ Some of these arguments have been removed:</p>
 
 <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </code></pre></div>
-<h3 id="removed-validator-types">Removed validator types<a class="headerlink" href="#removed-validator-types" title="Permanent link">&para;</a></h3>
+<h4 id="typeerror-is-no-longer-converted-to-validationerror-in-validators"><code>TypeError</code> is no longer converted to <code>ValidationError</code> in validators<a class="headerlink" href="#typeerror-is-no-longer-converted-to-validationerror-in-validators" title="Permanent link">&para;</a></h4>
+<p>Previously, when raising a <code>TypeError</code> within a validator function, that error would be wrapped into a <code>ValidationError</code>
+and, in some cases (such as with FastAPI), these errors might be displayed to end users. This led to a variety of
+undesirable behavior &mdash; for example, calling a function with the wrong signature might produce a user-facing
+<code>ValidationError</code>.</p>
+<p>However, in Pydantic V2, when a <code>TypeError</code> is raised in a validator, it is no longer converted into a
+<code>ValidationError</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pytest</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>  <span class="c1"># or validator</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">val_x</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>  <span class="c1"># raises a TypeError</span>
+
+
+<span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">TypeError</span><span class="p">):</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p>This applies to all validation decorators.</p>
+<h4 id="validator-behavior-changes">Validator behavior changes<a class="headerlink" href="#validator-behavior-changes" title="Permanent link">&para;</a></h4>
+<p>Pydantic V2 includes some changes to type coercion. For example:</p>
 <ul>
-<li>The <code>stricturl</code> type has been removed.</li>
+<li>int, float, and decimal values are no longer coerced to strings.</li>
+<li>iterable of pairs is no longer coerced to a dict.</li>
 </ul>
-<h3 id="changes-to-validation-of-specific-types">Changes to Validation of specific types<a class="headerlink" href="#changes-to-validation-of-specific-types" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Integers outside the valid range of 64 bit integers will cause <code>ValidationError</code>s during parsing.
-  To work around this, use an <code>IsInstance</code> validator (more details to come).</li>
-<li>Subclasses of built-ins won't validate into their subclass types; you'll need to use an <code>IsInstance</code> validator to validate these types.</li>
-</ul>
+<p>See the <a href="../usage/conversion_table/">Conversion table</a> for details on Pydantic V2 type coercion defaults.</p>
+<h4 id="the-allow_reuse-keyword-argument-is-no-longer-necessary">The <code>allow_reuse</code> keyword argument is no longer necessary<a class="headerlink" href="#the-allow_reuse-keyword-argument-is-no-longer-necessary" title="Permanent link">&para;</a></h4>
+<p>Previously, Pydantic tracked "reused" functions in decorators as this was a common source of mistakes.
+We did this by comparing the function's fully qualified name (module name + function name), which could result in false
+positives. The <code>allow_reuse</code> keyword argument could be used to disable this when it was intentional.</p>
+<p>Our approach to detecting repeatedly defined functions has been overhauled to only error for redefinition within a
+single class, reducing false positives and bringing the behavior more in line with the errors that type checkers
+and linters would give for defining a method with the same name multiple times in a single class definition.</p>
+<p>In nearly all cases, if you were using <code>allow_reuse=True</code>, you should be able to simply delete that keyword argument and
+have things keep working as expected.</p>
+<h4 id="validate_arguments-has-been-renamed-to-validate_call"><code>@validate_arguments</code> has been renamed to <code>@validate_call</code><a class="headerlink" href="#validate_arguments-has-been-renamed-to-validate_call" title="Permanent link">&para;</a></h4>
+<p>In Pydantic V2, the <code>@validate_arguments</code> decorator has been renamed to <code>@validate_call</code>.</p>
+<p>In Pydantic V1, the decorated function had various attributes added, such as <code>raw_function</code>, and <code>validate</code>
+(which could be used to validate arguments without actually calling the decorated function). Due to limited use of
+these attributes, and performance-oriented changes in implementation, we have not preserved this functionality in
+<code>@validate_call</code>.</p>
 <h3 id="input-types-are-not-preserved">Input types are not preserved<a class="headerlink" href="#input-types-are-not-preserved" title="Permanent link">&para;</a></h3>
-<p>In Pydantic V1 we made great efforts to preserve the types of all field inputs for generic collections when they were proper subtypes of the field annotations.
-For example, given the annotation <code>Mapping[str, int]</code> if you passed in a <code>collection.Counter()</code> you'd get a <code>collection.Counter()</code> as the value.</p>
-<p>Supporting this behavior in V2 would have negative performance implications for the general case (we'd have to check types every time) and would add a lot of complexity to validation. Further, even in V1 this behavior was inconsistent and partially broken: it did not work for most types (<code>str</code>, <code>UUID</code>, etc.) and even for generic collections it's impossible to re-build the original input correctly without a lot of special casing (consider <code>ChainMap</code>; rebuilding the input is necessary because we need to replace values after validation, e.g. if coercing strings to ints).</p>
-<p>In Pydantic V2 we no longer attempt to preserve the input type.
-Instead, we only promise that the output type will match the type annotations.
-Going back to the <code>Mapping</code> example, we promise the output will be a valid <code>Mapping</code>, in practice it will be a plain <code>dict</code>.</p>
+<p>In Pydantic V1 we made great efforts to preserve the types of all field inputs for generic collections when they were
+proper subtypes of the field annotations. For example, given the annotation <code>Mapping[str, int]</code> if you passed in a
+<code>collection.Counter()</code> you'd get a <code>collection.Counter()</code> as the value.</p>
+<p>Supporting this behavior in V2 would have negative performance implications for the general case
+(we'd have to check types every time) and would add a lot of complexity to validation. Further, even in V1 this behavior
+was inconsistent and partially broken: it did not work for many types (<code>str</code>, <code>UUID</code>, etc.), and for generic
+collections it's impossible to re-build the original input correctly without a lot of special casing
+(consider <code>ChainMap</code>; rebuilding the input is necessary because we need to replace values after validation, e.g.
+if coercing strings to ints).</p>
+<p>In Pydantic V2 we no longer attempt to preserve the input type in all cases; instead, we only promise that the output
+type will match the type annotations.</p>
+<p>Going back to the <code>Mapping</code> example, we promise the output will be a valid <code>Mapping</code>, and in practice it will be a
+plain <code>dict</code>:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2604,42 +2894,90 @@ Going back to the <code>Mapping</code> example, we promise the output will be a 
 </div>
 </div>
 </div>
-<h3 id="changes-to-generic-models">Changes to Generic models<a class="headerlink" href="#changes-to-generic-models" title="Permanent link">&para;</a></h3>
-<ul>
-<li>While it does not raise an error at runtime yet, subclass checks for parametrized generics should no longer be used.
-  These will result in <code>TypeError</code>s and we can't promise they will work forever. However, it will be okay to do subclass checks against <em>non-parametrized</em> generic models</li>
-</ul>
-<h3 id="typeadapter">TypeAdapter<a class="headerlink" href="#typeadapter" title="Permanent link">&para;</a></h3>
-<p>Pydantic V1 didn't have good support for validation or serializing non-<code>BaseModel</code>.
-To work with them you had to create a "root" model or use the utility functions in <code>pydantic.tools</code> (<code>parse_obj_as</code> and <code>schema_of</code>).
-In Pydantic V2 this is <em>a lot</em> easier: the <code>TypeAdapter</code> class lets you build an object that behaves almost like a <code>BaseModel</code> class which you can use for a lot of the use cases of root models and as a complete replacement for <code>parse_obj_as</code> and <code>schema_of</code>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<p>While we don't promise to preserve input types everywhere, we <em>do</em> preserve them for subclasses of <code>BaseModel</code>,
+and for dataclasses:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pydantic.dataclasses</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">InnerModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">OuterModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">inner</span><span class="p">:</span> <span class="n">InnerModel</span>
+
+
+<span class="k">class</span> <span class="nc">SubInnerModel</span><span class="p">(</span><span class="n">InnerModel</span><span class="p">):</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">OuterModel</span><span class="p">(</span><span class="n">inner</span><span class="o">=</span><span class="n">SubInnerModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; inner=SubInnerModel(x=1, y=2)</span>
+
+
+<span class="nd">@pydantic</span><span class="o">.</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="nc">InnerDataclass</span><span class="p">:</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="nd">@pydantic</span><span class="o">.</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="nc">SubInnerDataclass</span><span class="p">(</span><span class="n">InnerDataclass</span><span class="p">):</span>
+    <span class="n">y</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="nd">@pydantic</span><span class="o">.</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
+<span class="k">class</span> <span class="nc">OuterDataclass</span><span class="p">:</span>
+    <span class="n">inner</span><span class="p">:</span> <span class="n">InnerDataclass</span>
+
+
+<span class="n">d</span> <span class="o">=</span> <span class="n">OuterDataclass</span><span class="p">(</span><span class="n">inner</span><span class="o">=</span><span class="n">SubInnerDataclass</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<span class="c1">#&gt; OuterDataclass(inner=SubInnerDataclass(x=1, y=2))</span>
+</code></pre></div>
+<h3 id="changes-to-handling-of-standard-types">Changes to Handling of Standard Types<a class="headerlink" href="#changes-to-handling-of-standard-types" title="Permanent link">&para;</a></h3>
+<h4 id="dicts">Dicts<a class="headerlink" href="#dicts" title="Permanent link">&para;</a></h4>
+<p>Iterables of pairs (which include empty iterables) no longer pass validation for fields of type <code>dict</code>.</p>
+<h4 id="unions">Unions<a class="headerlink" href="#unions" title="Permanent link">&para;</a></h4>
+<p>While union types will still attempt validation of each choice from left to right, they now preserve the type of the
+input whenever possible, even if the correct type is not the first choice for which the input would pass validation.
+As a demonstration, consider the following example:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
-<span class="n">validator</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
-<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">validator</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}, &#39;type&#39;: &#39;array&#39;}</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; x=&#39;1&#39;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
-<span class="n">validator</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
-<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">validator</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}, &#39;type&#39;: &#39;array&#39;}</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; x=&#39;1&#39;</span>
 </code></pre></div>
 </div>
 </div>
 </div>
-<p>Note that this API is provisional and may change before the final release of Pydantic V2.</p>
-<h3 id="required-optional-and-nullable-fields">Required, Optional, and Nullable fields<a class="headerlink" href="#required-optional-and-nullable-fields" title="Permanent link">&para;</a></h3>
-<p>Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields. In Pydantic V2 these concepts are more clearly defined.</p>
+<p>In Pydantic V1, the printed result would have been <code>x=1</code>, since the value would pass validation as an <code>int</code>.
+In Pydantic V2, we recognize that the value is an instance of one of the cases and short-circuit the standard union validation.</p>
+<h4 id="required-optional-and-nullable-fields">Required, optional, and nullable fields<a class="headerlink" href="#required-optional-and-nullable-fields" title="Permanent link">&para;</a></h4>
+<p>Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields. In Pydantic V2, these concepts are
+more clearly defined.</p>
 <p>Pydantic V2 will move to match <code>dataclasses</code>, thus you may explicitly specify a field as <code>required</code> or <code>optional</code> and whether the field accepts <code>None</code> or not.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
@@ -2691,9 +3029,423 @@ In Pydantic V2 this is <em>a lot</em> easier: the <code>TypeAdapter</code> class
 </div>
 </div>
 </div>
-<h2 id="other-changes">Other changes<a class="headerlink" href="#other-changes" title="Permanent link">&para;</a></h2>
+<h3 id="introduction-of-typeadapter">Introduction of <code>TypeAdapter</code><a class="headerlink" href="#introduction-of-typeadapter" title="Permanent link">&para;</a></h3>
+<p>Pydantic V1 had weak support for validating or serializing non-<code>BaseModel</code> types.</p>
+<p>To work with them, you had to either create a "root" model or use the utility functions in <code>pydantic.tools</code>
+(namely, <code>parse_obj_as</code> and <code>schema_of</code>).</p>
+<p>In Pydantic V2 this is <em>a lot</em> easier: the <code>TypeAdapter</code> class lets you create an object with methods for validating,
+serializing, and producing JSON schemas for arbitrary types. This serves as a complete replacement for <code>parse_obj_as</code>
+and <code>schema_of</code> (which are now deprecated), and also covers some of the use cases of "root" models
+(<code>RootModel</code>, discussed above, covers the others).</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adapter</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}, &#39;type&#39;: &#39;array&#39;}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adapter</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}, &#39;type&#39;: &#39;array&#39;}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Due to limitations of inferring generic types with common type checkers, to get proper typing in some scenarios, you
+may need to explicitly specify the generic parameter:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+
+<span class="n">adapter</span><span class="p">:</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span>
+<span class="o">...</span>
+</code></pre></div>
+<p>[TODO: Add link to TypeAdapter documentation. For now, you can find example usage in <code>tests/test_type_adapter.py</code>.]</p>
+<h3 id="defining-custom-types">Defining custom types<a class="headerlink" href="#defining-custom-types" title="Permanent link">&para;</a></h3>
+<p>We have completely overhauled the way custom types are defined in pydantic.</p>
+<p>We have exposed hooks for generating both <code>pydantic-core</code> and JSON schemas, allowing you to get all the performance
+benefits of Pydantic V2 even when using your own custom types.</p>
+<p>We have also introduced ways to use <code>typing.Annotated</code> to add custom validation to your own types.</p>
+<p>The main changes are:</p>
 <ul>
-<li><code>GetterDict</code> has been removed, as it was just an implementation detail for <code>orm_mode</code>, which has been removed.</li>
+<li><code>__get_validators__</code> should be replaced with <code>__get_pydantic_core_schema__</code>.
+  See <a href="../usage/types/custom/#classes-with-getpydanticcoreschema">Custom Data Types</a> for more information.</li>
+<li><code>__modify_schema__</code> becomes <code>__get_pydantic_json_schema__</code>.
+  See <a href="../usage/json_schema/#schema-customization">JSON Schema Customization</a> for more information.</li>
+</ul>
+<p>Additionally, you can use <code>typing.Annotated</code> to modify or provide the <code>__get_pydantic_core_schema__</code> and
+<code>__get_pydantic_json_schema__</code> functions of a type by annotating it, rather than modifying the type itself.
+This provides a powerful and flexible mechanism for integrating third-party types with Pydantic, and in some cases
+may help you remove hacks from Pydantic V1 introduced to work around the limitations for custom types.</p>
+<p>See <a href="../usage/types/custom/">Custom Data Types</a> for more information.</p>
+<h3 id="changes-to-json-schema-generation">Changes to JSON schema generation<a class="headerlink" href="#changes-to-json-schema-generation" title="Permanent link">&para;</a></h3>
+<p>We received many requests over the years to make changes to the JSON schemas that pydantic generates.</p>
+<p>In Pydantic V2, we have tried to address many of the common requests:</p>
+<ul>
+<li>The JSON schema for <code>Optional</code> fields now indicates that the value <code>null</code> is allowed.</li>
+<li>The <code>Decimal</code> type is now exposed in JSON schema (and serialized) as a string.</li>
+<li>The JSON schema no longer preserves namedtuples as namedtuples.</li>
+<li>The JSON schema we generate by default now targets draft 2020-12 (with some OpenAPI extensions).</li>
+<li>When they differ, you can now specify if you want the JSON schema representing the inputs to validation,
+    or the outputs from serialization.</li>
+</ul>
+<p>However, there have been many reasonable requests over the years for changes which we have not chosen to implement.</p>
+<p>In Pydantic V1, even if you were willing to implement changes yourself, it was very difficult because the JSON schema
+generation process involved various recursive function calls; to override one, you'd have to copy and modify the whole
+implementation.</p>
+<p>In Pydantic V2, one of our design goals was to make it easier to customize JSON schema generation. To this end, we have
+introduced the class <a href="../api/json_schema/#pydantic.json_schema.GenerateJsonSchema"><code>GenerateJsonSchema</code></a>,
+which implements the translation of a type's pydantic-core schema into
+a JSON schema. By design, this class breaks the JSON schema generation process into smaller methods that can be
+easily overridden in subclasses to modify the "global" approach to generating JSON schema.</p>
+<p>The various methods that can be used to produce JSON schema (such as <code>BaseModel.model_json_schema</code> or
+<code>TypeAdapter.json_schema</code>) accept a keyword argument <code>schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema</code>,
+and you can pass your custom subclass to these methods in order to use your own approach to generating JSON schema.</p>
+<p>Hopefully this means that if you disagree with any of the choices we've made, or if you are reliant on behaviors in
+Pydantic V1 that have changed in Pydantic V2, you can use a custom <code>schema_generator</code>, modifying the
+<code>GenerateJsonSchema</code> class as necessary for your application.</p>
+<h3 id="basesettings-has-moved-to-pydantic-settings"><code>BaseSettings</code> has moved to <code>pydantic-settings</code><a class="headerlink" href="#basesettings-has-moved-to-pydantic-settings" title="Permanent link">&para;</a></h3>
+<p><a href="../api/pydantic_settings/#pydantic_settings.BaseSettings"><code>BaseSettings</code></a>, the base object for Pydantic
+<a href="../usage/pydantic_settings/">settings management</a>, has been moved to a separate package,
+<a href="https://github.com/pydantic/pydantic-settings"><code>pydantic-settings</code></a>.</p>
+<h2 id="moved-in-pydantic-v2">Moved in Pydantic V2<a class="headerlink" href="#moved-in-pydantic-v2" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Pydantic V1</th>
+<th>Pydantic V2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pydantic.utils.version_info</code></td>
+<td><code>pydantic.version.version_info</code></td>
+</tr>
+<tr>
+<td><code>pydantic.error_wrappers.ValidationError</code></td>
+<td><code>pydantic.ValidationError</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.to_camel</code></td>
+<td><code>pydantic.alias_generators.to_pascal</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.to_lower_camel</code></td>
+<td><code>pydantic.alias_generators.to_camel</code></td>
+</tr>
+</tbody>
+</table>
+<p>In addition, the following special-use types have been moved to the
+<a href="https://github.com/pydantic/pydantic-extra-types">Pydantic Extra Types</a> package,
+which may be installed separately if needed.</p>
+<ul>
+<li><a href="../usage/types/extra_types/color_types/">Color Types</a></li>
+<li><a href="../usage/types/extra_types/payment_cards/">Payment Card Numbers</a></li>
+</ul>
+<h2 id="deprecated-and-moved-in-pydantic-v2">Deprecated and moved in Pydantic V2<a class="headerlink" href="#deprecated-and-moved-in-pydantic-v2" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Pydantic V1</th>
+<th>Pydantic V2</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pydantic.tools.schema_of</code></td>
+<td><code>pydantic.deprecated.tools.schema_of</code></td>
+</tr>
+<tr>
+<td><code>pydantic.tools.parse_obj_as</code></td>
+<td><code>pydantic.deprecated.tools.parse_obj_as</code></td>
+</tr>
+<tr>
+<td><code>pydantic.tools.schema_json_of</code></td>
+<td><code>pydantic.deprecated.tools.schema_json_of</code></td>
+</tr>
+<tr>
+<td><code>pydantic.json.pydantic_encoder</code></td>
+<td><code>pydantic.deprecated.json.pydantic_encoder</code></td>
+</tr>
+<tr>
+<td><code>pydantic.validate_arguments</code></td>
+<td><code>pydantic.deprecated.decorator.validate_arguments</code></td>
+</tr>
+<tr>
+<td><code>pydantic.json.custom_pydantic_encoder</code></td>
+<td><code>pydantic.deprecated.json.custom_pydantic_encoder</code></td>
+</tr>
+<tr>
+<td><code>pydantic.json.timedelta_isoformat</code></td>
+<td><code>pydantic.deprecated.json.timedelta_isoformat</code></td>
+</tr>
+<tr>
+<td><code>pydantic.decorator.validate_arguments</code></td>
+<td><code>pydantic.deprecated.decorator.validate_arguments</code></td>
+</tr>
+<tr>
+<td><code>pydantic.class_validators.validator</code></td>
+<td><code>pydantic.deprecated.class_validators.validator</code></td>
+</tr>
+<tr>
+<td><code>pydantic.class_validators.root_validator</code></td>
+<td><code>pydantic.deprecated.class_validators.root_validator</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.deep_update</code></td>
+<td><code>pydantic.v1.utils.deep_update</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.GetterDict</code></td>
+<td><code>pydantic.v1.utils.GetterDict</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.lenient_issubclass</code></td>
+<td><code>pydantic.v1.utils.lenient_issubclass</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.lenient_isinstance</code></td>
+<td><code>pydantic.v1.utils.lenient_isinstance</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.is_valid_field</code></td>
+<td><code>pydantic.v1.utils.is_valid_field</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.update_not_none</code></td>
+<td><code>pydantic.v1.utils.update_not_none</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.import_string</code></td>
+<td><code>pydantic.v1.utils.import_string</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.Representation</code></td>
+<td><code>pydantic.v1.utils.Representation</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.ROOT_KEY</code></td>
+<td><code>pydantic.v1.utils.ROOT_KEY</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.smart_deepcopy</code></td>
+<td><code>pydantic.v1.utils.smart_deepcopy</code></td>
+</tr>
+<tr>
+<td><code>pydantic.utils.sequence_like</code></td>
+<td><code>pydantic.v1.utils.sequence_like</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="removed-in-pydantic-v2">Removed in Pydantic V2<a class="headerlink" href="#removed-in-pydantic-v2" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>pydantic.BaseSettings</code></li>
+<li><code>pydantic.ConstrainedBytes</code></li>
+<li><code>pydantic.ConstrainedDate</code></li>
+<li><code>pydantic.ConstrainedDecimal</code></li>
+<li><code>pydantic.ConstrainedFloat</code></li>
+<li><code>pydantic.ConstrainedFrozenSet</code></li>
+<li><code>pydantic.ConstrainedInt</code></li>
+<li><code>pydantic.ConstrainedList</code></li>
+<li><code>pydantic.ConstrainedSet</code></li>
+<li><code>pydantic.ConstrainedStr</code></li>
+<li><code>pydantic.JsonWrapper</code></li>
+<li><code>pydantic.NoneBytes</code></li>
+<li><code>pydantic.NoneStr</code></li>
+<li><code>pydantic.NoneStrBytes</code></li>
+<li><code>pydantic.Protocol</code></li>
+<li><code>pydantic.PyObject</code></li>
+<li><code>pydantic.Required</code></li>
+<li><code>pydantic.StrBytes</code></li>
+<li><code>pydantic.compiled</code></li>
+<li><code>pydantic.config.get_config</code></li>
+<li><code>pydantic.config.inherit_config</code></li>
+<li><code>pydantic.config.prepare_config</code></li>
+<li><code>pydantic.create_model_from_namedtuple</code></li>
+<li><code>pydantic.create_model_from_typeddict</code></li>
+<li><code>pydantic.dataclasses.create_pydantic_model_from_dataclass</code></li>
+<li><code>pydantic.dataclasses.make_dataclass_validator</code></li>
+<li><code>pydantic.dataclasses.set_validation</code></li>
+<li><code>pydantic.datetime_parse.parse_date</code></li>
+<li><code>pydantic.datetime_parse.parse_time</code></li>
+<li><code>pydantic.datetime_parse.parse_datetime</code></li>
+<li><code>pydantic.datetime_parse.parse_duration</code></li>
+<li><code>pydantic.error_wrappers.ErrorWrapper</code></li>
+<li><code>pydantic.errors.AnyStrMaxLengthError</code></li>
+<li><code>pydantic.errors.AnyStrMinLengthError</code></li>
+<li><code>pydantic.errors.ArbitraryTypeError</code></li>
+<li><code>pydantic.errors.BoolError</code></li>
+<li><code>pydantic.errors.BytesError</code></li>
+<li><code>pydantic.errors.CallableError</code></li>
+<li><code>pydantic.errors.ClassError</code></li>
+<li><code>pydantic.errors.ColorError</code></li>
+<li><code>pydantic.errors.ConfigError</code></li>
+<li><code>pydantic.errors.DataclassTypeError</code></li>
+<li><code>pydantic.errors.DateError</code></li>
+<li><code>pydantic.errors.DateNotInTheFutureError</code></li>
+<li><code>pydantic.errors.DateNotInThePastError</code></li>
+<li><code>pydantic.errors.DateTimeError</code></li>
+<li><code>pydantic.errors.DecimalError</code></li>
+<li><code>pydantic.errors.DecimalIsNotFiniteError</code></li>
+<li><code>pydantic.errors.DecimalMaxDigitsError</code></li>
+<li><code>pydantic.errors.DecimalMaxPlacesError</code></li>
+<li><code>pydantic.errors.DecimalWholeDigitsError</code></li>
+<li><code>pydantic.errors.DictError</code></li>
+<li><code>pydantic.errors.DurationError</code></li>
+<li><code>pydantic.errors.EmailError</code></li>
+<li><code>pydantic.errors.EnumError</code></li>
+<li><code>pydantic.errors.EnumMemberError</code></li>
+<li><code>pydantic.errors.ExtraError</code></li>
+<li><code>pydantic.errors.FloatError</code></li>
+<li><code>pydantic.errors.FrozenSetError</code></li>
+<li><code>pydantic.errors.FrozenSetMaxLengthError</code></li>
+<li><code>pydantic.errors.FrozenSetMinLengthError</code></li>
+<li><code>pydantic.errors.HashableError</code></li>
+<li><code>pydantic.errors.IPv4AddressError</code></li>
+<li><code>pydantic.errors.IPv4InterfaceError</code></li>
+<li><code>pydantic.errors.IPv4NetworkError</code></li>
+<li><code>pydantic.errors.IPv6AddressError</code></li>
+<li><code>pydantic.errors.IPv6InterfaceError</code></li>
+<li><code>pydantic.errors.IPv6NetworkError</code></li>
+<li><code>pydantic.errors.IPvAnyAddressError</code></li>
+<li><code>pydantic.errors.IPvAnyInterfaceError</code></li>
+<li><code>pydantic.errors.IPvAnyNetworkError</code></li>
+<li><code>pydantic.errors.IntEnumError</code></li>
+<li><code>pydantic.errors.IntegerError</code></li>
+<li><code>pydantic.errors.InvalidByteSize</code></li>
+<li><code>pydantic.errors.InvalidByteSizeUnit</code></li>
+<li><code>pydantic.errors.InvalidDiscriminator</code></li>
+<li><code>pydantic.errors.InvalidLengthForBrand</code></li>
+<li><code>pydantic.errors.JsonError</code></li>
+<li><code>pydantic.errors.JsonTypeError</code></li>
+<li><code>pydantic.errors.ListError</code></li>
+<li><code>pydantic.errors.ListMaxLengthError</code></li>
+<li><code>pydantic.errors.ListMinLengthError</code></li>
+<li><code>pydantic.errors.ListUniqueItemsError</code></li>
+<li><code>pydantic.errors.LuhnValidationError</code></li>
+<li><code>pydantic.errors.MissingDiscriminator</code></li>
+<li><code>pydantic.errors.MissingError</code></li>
+<li><code>pydantic.errors.NoneIsAllowedError</code></li>
+<li><code>pydantic.errors.NoneIsNotAllowedError</code></li>
+<li><code>pydantic.errors.NotDigitError</code></li>
+<li><code>pydantic.errors.NotNoneError</code></li>
+<li><code>pydantic.errors.NumberNotGeError</code></li>
+<li><code>pydantic.errors.NumberNotGtError</code></li>
+<li><code>pydantic.errors.NumberNotLeError</code></li>
+<li><code>pydantic.errors.NumberNotLtError</code></li>
+<li><code>pydantic.errors.NumberNotMultipleError</code></li>
+<li><code>pydantic.errors.PathError</code></li>
+<li><code>pydantic.errors.PathNotADirectoryError</code></li>
+<li><code>pydantic.errors.PathNotAFileError</code></li>
+<li><code>pydantic.errors.PathNotExistsError</code></li>
+<li><code>pydantic.errors.PatternError</code></li>
+<li><code>pydantic.errors.PyObjectError</code></li>
+<li><code>pydantic.errors.PydanticTypeError</code></li>
+<li><code>pydantic.errors.PydanticValueError</code></li>
+<li><code>pydantic.errors.SequenceError</code></li>
+<li><code>pydantic.errors.SetError</code></li>
+<li><code>pydantic.errors.SetMaxLengthError</code></li>
+<li><code>pydantic.errors.SetMinLengthError</code></li>
+<li><code>pydantic.errors.StrError</code></li>
+<li><code>pydantic.errors.StrRegexError</code></li>
+<li><code>pydantic.errors.StrictBoolError</code></li>
+<li><code>pydantic.errors.SubclassError</code></li>
+<li><code>pydantic.errors.TimeError</code></li>
+<li><code>pydantic.errors.TupleError</code></li>
+<li><code>pydantic.errors.TupleLengthError</code></li>
+<li><code>pydantic.errors.UUIDError</code></li>
+<li><code>pydantic.errors.UUIDVersionError</code></li>
+<li><code>pydantic.errors.UrlError</code></li>
+<li><code>pydantic.errors.UrlExtraError</code></li>
+<li><code>pydantic.errors.UrlHostError</code></li>
+<li><code>pydantic.errors.UrlHostTldError</code></li>
+<li><code>pydantic.errors.UrlPortError</code></li>
+<li><code>pydantic.errors.UrlSchemeError</code></li>
+<li><code>pydantic.errors.UrlSchemePermittedError</code></li>
+<li><code>pydantic.errors.UrlUserInfoError</code></li>
+<li><code>pydantic.errors.WrongConstantError</code></li>
+<li><code>pydantic.main.validate_model</code></li>
+<li><code>pydantic.networks.stricturl</code></li>
+<li><code>pydantic.parse_file_as</code></li>
+<li><code>pydantic.parse_raw_as</code></li>
+<li><code>pydantic.stricturl</code></li>
+<li><code>pydantic.tools.parse_file_as</code></li>
+<li><code>pydantic.tools.parse_raw_as</code></li>
+<li><code>pydantic.types.ConstrainedBytes</code></li>
+<li><code>pydantic.types.ConstrainedDate</code></li>
+<li><code>pydantic.types.ConstrainedDecimal</code></li>
+<li><code>pydantic.types.ConstrainedFloat</code></li>
+<li><code>pydantic.types.ConstrainedFrozenSet</code></li>
+<li><code>pydantic.types.ConstrainedInt</code></li>
+<li><code>pydantic.types.ConstrainedList</code></li>
+<li><code>pydantic.types.ConstrainedSet</code></li>
+<li><code>pydantic.types.ConstrainedStr</code></li>
+<li><code>pydantic.types.JsonWrapper</code></li>
+<li><code>pydantic.types.NoneBytes</code></li>
+<li><code>pydantic.types.NoneStr</code></li>
+<li><code>pydantic.types.NoneStrBytes</code></li>
+<li><code>pydantic.types.PyObject</code></li>
+<li><code>pydantic.types.StrBytes</code></li>
+<li><code>pydantic.typing.evaluate_forwardref</code></li>
+<li><code>pydantic.typing.AbstractSetIntStr</code></li>
+<li><code>pydantic.typing.AnyCallable</code></li>
+<li><code>pydantic.typing.AnyClassMethod</code></li>
+<li><code>pydantic.typing.CallableGenerator</code></li>
+<li><code>pydantic.typing.DictAny</code></li>
+<li><code>pydantic.typing.DictIntStrAny</code></li>
+<li><code>pydantic.typing.DictStrAny</code></li>
+<li><code>pydantic.typing.IntStr</code></li>
+<li><code>pydantic.typing.ListStr</code></li>
+<li><code>pydantic.typing.MappingIntStrAny</code></li>
+<li><code>pydantic.typing.NoArgAnyCallable</code></li>
+<li><code>pydantic.typing.NoneType</code></li>
+<li><code>pydantic.typing.ReprArgs</code></li>
+<li><code>pydantic.typing.SetStr</code></li>
+<li><code>pydantic.typing.StrPath</code></li>
+<li><code>pydantic.typing.TupleGenerator</code></li>
+<li><code>pydantic.typing.WithArgsTypes</code></li>
+<li><code>pydantic.typing.all_literal_values</code></li>
+<li><code>pydantic.typing.display_as_type</code></li>
+<li><code>pydantic.typing.get_all_type_hints</code></li>
+<li><code>pydantic.typing.get_args</code></li>
+<li><code>pydantic.typing.get_origin</code></li>
+<li><code>pydantic.typing.get_sub_types</code></li>
+<li><code>pydantic.typing.is_callable_type</code></li>
+<li><code>pydantic.typing.is_classvar</code></li>
+<li><code>pydantic.typing.is_finalvar</code></li>
+<li><code>pydantic.typing.is_literal_type</code></li>
+<li><code>pydantic.typing.is_namedtuple</code></li>
+<li><code>pydantic.typing.is_new_type</code></li>
+<li><code>pydantic.typing.is_none_type</code></li>
+<li><code>pydantic.typing.is_typeddict</code></li>
+<li><code>pydantic.typing.is_typeddict_special</code></li>
+<li><code>pydantic.typing.is_union</code></li>
+<li><code>pydantic.typing.new_type_supertype</code></li>
+<li><code>pydantic.typing.resolve_annotations</code></li>
+<li><code>pydantic.typing.typing_base</code></li>
+<li><code>pydantic.typing.update_field_forward_refs</code></li>
+<li><code>pydantic.typing.update_model_forward_refs</code></li>
+<li><code>pydantic.utils.ClassAttribute</code></li>
+<li><code>pydantic.utils.DUNDER_ATTRIBUTES</code></li>
+<li><code>pydantic.utils.PyObjectStr</code></li>
+<li><code>pydantic.utils.ValueItems</code></li>
+<li><code>pydantic.utils.almost_equal_floats</code></li>
+<li><code>pydantic.utils.get_discriminator_alias_and_values</code></li>
+<li><code>pydantic.utils.get_model</code></li>
+<li><code>pydantic.utils.get_unique_discriminator_alias</code></li>
+<li><code>pydantic.utils.in_ipython</code></li>
+<li><code>pydantic.utils.is_valid_identifier</code></li>
+<li><code>pydantic.utils.path_type</code></li>
+<li><code>pydantic.utils.validate_field_name</code></li>
+<li><code>pydantic.validate_model</code></li>
 </ul>
 
 

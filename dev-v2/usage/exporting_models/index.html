@@ -1146,6 +1146,19 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Subclass instances for fields of BaseModel, dataclasses, TypedDict
   </a>
   
+    <nav class="md-nav" aria-label="Subclass instances for fields of BaseModel, dataclasses, TypedDict">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serializing-with-duck-typing" class="md-nav__link">
+    Serializing with duck-typing
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2169,6 +2182,19 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Subclass instances for fields of BaseModel, dataclasses, TypedDict
   </a>
   
+    <nav class="md-nav" aria-label="Subclass instances for fields of BaseModel, dataclasses, TypedDict">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serializing-with-duck-typing" class="md-nav__link">
+    Serializing with duck-typing
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2647,23 +2673,25 @@ dumped object:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">InnerModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="k">class</span> <span class="nc">SubInnerModel</span><span class="p">(</span><span class="n">InnerModel</span><span class="p">):</span>
-    <span class="n">y</span><span class="p">:</span> <span class="nb">int</span>
+<span class="k">class</span> <span class="nc">UserLogin</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
 
 
 <span class="k">class</span> <span class="nc">OuterModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">inner</span><span class="p">:</span> <span class="n">InnerModel</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">OuterModel</span><span class="p">(</span><span class="n">inner</span><span class="o">=</span><span class="n">SubInnerModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">UserLogin</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pydantic&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;hunter2&#39;</span><span class="p">)</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">OuterModel</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; inner=SubInnerModel(x=1, y=2)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;inner&#39;: {&#39;x&#39;: 1}}</span>
+<span class="c1">#&gt; user=UserLogin(name=&#39;pydantic&#39;, password=&#39;hunter2&#39;)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># note: the password field is not included</span>
+<span class="c1">#&gt; {&#39;user&#39;: {&#39;name&#39;: &#39;pydantic&#39;}}</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Migration Warning</p>
@@ -2673,7 +2701,38 @@ behavior is that it helps ensure that you know precisely which fields could be i
 even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
 when adding sensitive information like secrets as fields of subclasses.</p>
 </div>
-<p>TODO: Add and document <code>SerializeAsAny</code> type.</p>
+<h4 id="serializing-with-duck-typing">Serializing with duck-typing<a class="headerlink" href="#serializing-with-duck-typing" title="Permanent link">&para;</a></h4>
+<p>If you want to preserve the old duck-typing serialization behavior, this can be done using <code>SerializeAsAny</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializeAsAny</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">UserLogin</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">OuterModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">as_any</span><span class="p">:</span> <span class="n">SerializeAsAny</span><span class="p">[</span><span class="n">User</span><span class="p">]</span>
+    <span class="n">as_user</span><span class="p">:</span> <span class="n">User</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">UserLogin</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pydantic&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;password&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">OuterModel</span><span class="p">(</span><span class="n">as_any</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">as_user</span><span class="o">=</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;as_any&#39;: {&#39;name&#39;: &#39;pydantic&#39;, &#39;password&#39;: &#39;password&#39;},</span>
+<span class="sd">    &#39;as_user&#39;: {&#39;name&#39;: &#39;pydantic&#39;},</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>When a field is annotated as <code>SerializeAsAny[&lt;SomeType&gt;]</code>, the validation behavior will be the same as if it was
+annotated as <code>&lt;SomeType&gt;</code>, and type-checkers like mypy will treat the attribute as having the appropriate type as well.
+But when serializing, the field will be serialized as though the type hint for the field was <code>Any</code>, which is where the
+name comes from.</p>
 <h2 id="pickledumpsmodel"><code>pickle.dumps(model)</code><a class="headerlink" href="#pickledumpsmodel" title="Permanent link">&para;</a></h2>
 <p>Pydantic models support efficient pickling and unpickling.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># TODO need to get pickling to work</span>
