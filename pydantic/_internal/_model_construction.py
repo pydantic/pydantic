@@ -16,7 +16,7 @@ from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
-from ._fields import Undefined, collect_model_fields
+from ._fields import Undefined, collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_validator import set_basemodel_mock_validator
@@ -295,7 +295,7 @@ def inspect_namespace(  # noqa C901
                     f'Private attributes "{var_name}" must not have dunder names; '
                     'use a single underscore prefix instead.'
                 )
-            elif not single_underscore(var_name):
+            elif is_valid_field_name(var_name):
                 raise NameError(
                     f'Private attributes "{var_name}" must not be a valid field name; '
                     f'use sunder names, e.g. "_{var_name}"'
@@ -304,8 +304,8 @@ def inspect_namespace(  # noqa C901
             del namespace[var_name]
         elif var_name.startswith('__'):
             continue
-        elif var_name.startswith('_'):
-            if var_name in raw_annotations and not is_classvar(raw_annotations[var_name]):
+        elif is_valid_privateattr_name(var_name):
+            if var_name not in raw_annotations or not is_classvar(raw_annotations[var_name]):
                 private_attributes[var_name] = PrivateAttr(default=value)
                 del namespace[var_name]
         elif var_name in base_class_vars:
@@ -331,7 +331,7 @@ def inspect_namespace(  # noqa C901
 
     for ann_name, ann_type in raw_annotations.items():
         if (
-            single_underscore(ann_name)
+            is_valid_privateattr_name(ann_name)
             and ann_name not in private_attributes
             and ann_name not in ignored_names
             and not is_classvar(ann_type)
@@ -341,10 +341,6 @@ def inspect_namespace(  # noqa C901
             private_attributes[ann_name] = PrivateAttr()
 
     return private_attributes
-
-
-def single_underscore(name: str) -> bool:
-    return name.startswith('_') and not name.startswith('__')
 
 
 def set_model_fields(
