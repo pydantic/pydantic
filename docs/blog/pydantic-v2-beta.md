@@ -13,7 +13,7 @@
 
 ---
 
-Today we're thrilled to announce the beta release of Pydantic V2!
+The beta releases of Pydantic V2 represent our final steps toward a stable release!
 
 Working from the first Pydantic V2 alpha, we've spent the last two months making further improvements based us your feedback.
 
@@ -21,13 +21,13 @@ At this point, we believe that the API is stable enough for you to start using i
 
 ## Getting started with the Pydantic V2 beta
 
-Your feedback will be a critical part of ensuring that we have made the right tradeoffs with the API changes in V2.
+We believe Pydantic V2 is ready for your production applications. This page provides a guide highlighting the most
+important changes to help you migrate your code from Pydantic V1 to Pydantic V2.
 
-To get started with the Pydantic V2 beta release, install it from PyPI.
-We recommend using a virtual environment to isolate your testing environment:
+To get started with the Pydantic V2 beta, install it from PyPI.
 
 ```bash
-pip install --pre -U "pydantic>=2.0b1"
+pip install --pre -U "pydantic>=2.0b3"
 ```
 
 If you encounter any issues, please [create an issue in GitHub](https://github.com/pydantic/pydantic/issues)
@@ -38,67 +38,23 @@ Thank you for your support, and we look forward to your feedback.
 
 ---
 
-## Headlines
-
-### `RootModel`
-
 ## Migration notes
 
-### Overriding validators
+We've provided an [extensive Migration Guide](../migration-guide.md) to help you migrate your code from Pydantic V1 to Pydantic V2.
 
-### `@root_validator` signature changes
+In the Migration Guide you will find notes about critical changes including moved, deprecated, and removed features.
 
-### `@validate_arguments` raises `TypeError` if called with an invalid signature
+## Headlines
 
-### Subclass checks on generics no longer work
+Here's a quick summary of the most important changes in Pydantic V2.
 
-### Handling large integers
+* Significant improvements to `BaseModel` methods and attributes.
+* A new `RootModel` class.
+* Significant improvements to `Field` methods and attributes.
+* Changes to dataclasses
+* Moving model config from `Config` to `model_config`, with accompanying changes to config settings.
+* `@validator` and `@root_validator` are deprecated in favor of `@field_validator` and `@model_validator`, along with additional validation improvements.
+* Introduction of `TypeAdaptor` for validating or serializing non-`BaseModel` types.
+* Changes to JSON schema generation.
 
-Pydantic casts large integer values to an `i64` so values larger than `i64:MAX` may be lose precision. In addition, sub-type information is lost.
-
-If you must use integer values larger than `i64:MAX` and want to keep subtype information, you should use an
-`is-instance` validator and your own validator functions.
-
-### Subclasses of builtins
-
-### Support for `__root__`
-
-### Changes to `__concrete__` and `__parameters__` on generic models
-
-### `each_item` validators
-
-### `parse_file` and `parse_raw` no longer supported
-
-### `stricturl` removed
-
-### Model equals comparison no longer considers dicts equal
-
-### `always=True` and `validate_default` apply "standard" field validation
-
-### JSON schema no longer preserves named tuples
-
-### List, set, and frozenset fields no long accept plain dict or mapping as input
-
-### Coercing fields in a union
-
-In Pydantic V2, the `Union` type no longer coerces values to the first type in the union that can accept the value.
-
-```python
-from datetime import datetime
-from typing import Union
-
-from pydantic import BaseModel
-
-
-class DateModel(BaseModel):
-    just_date: date
-    date_or_str: Union[date, str]
-
-
-print(DateModel(just_date='2023-01-01', date_or_str='2023-01-01').dict())
-#> {'just_date': datetime.date(2023, 1, 1), 'date_or_str': '2023-01-01'}
-```
-
-Pydantic V1 would coercing a value to the first member of a union even when it exactly matches a latter member of the unions.
-
-See [#5991](https://github.com/pydantic/pydantic/issues/5991) for further details.
+And much more. See the [Migration Guide](../migration-guide.md) for more details.
