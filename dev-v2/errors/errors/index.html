@@ -2347,7 +2347,7 @@ contain information about all the errors and how they happened.</p>
 </div>
 </div>
 <h3 id="custom-errors">Custom Errors<a class="headerlink" href="#custom-errors" title="Permanent link">&para;</a></h3>
-<p>In your custom data types or validators you should use <code>ValueError</code>, <code>TypeError</code> or <code>AssertionError</code> to raise errors.</p>
+<p>In your custom data types or validators you should use <code>ValueError</code> or <code>AssertionError</code> to raise errors.</p>
 <p>See <a href="../../usage/validators/">validators</a> for more details on use of the <code>@validator</code> decorator.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
 

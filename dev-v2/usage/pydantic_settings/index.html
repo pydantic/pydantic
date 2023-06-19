@@ -2318,7 +2318,8 @@ will still be used if the matching environment variable is not set.)</p>
 </ol>
 <h2 id="environment-variable-names">Environment variable names<a class="headerlink" href="#environment-variable-names" title="Permanent link">&para;</a></h2>
 <p>By default, the environment variable name is the same as the field name.</p>
-<p>You can change the prefix for all environment variables by setting the <code>env_prefix</code> config setting:</p>
+<p>You can change the prefix for all environment variables by setting the <code>env_prefix</code> config setting,
+or via the <code>_env_prefix</code> keyword argument on instantiation:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
 
@@ -2353,6 +2354,7 @@ will still be used if the matching environment variable is not set.)</p>
 so in this example <code>redis_host</code> could only be modified via <code>export redis_host</code>. If you want to name environment variables
 all upper-case, you should name attribute all upper-case too. You can still name environment variables anything
 you like through <code>Field(validation_alias=...)</code>.</p>
+<p>Case-sensitivity can also be set via the <code>_case_sensitive</code> keyword argument on instantiation.</p>
 <p>In case of nested models, the <code>case_sensitive</code> setting will be applied to all nested models.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
 
@@ -2513,7 +2515,7 @@ in the <code>BaseSettings</code> class:</li>
 </ol>
 <p>```py test="skip" lint="skip"
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding = 'utf-8')
+    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
 <div class="highlight"><pre><span></span><code>2. Instantiating the `BaseSettings` derived class with the `_env_file` keyword argument
 (and the `_env_file_encoding` if needed):
 
