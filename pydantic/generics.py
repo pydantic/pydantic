@@ -20,7 +20,7 @@ from typing import (
 )
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Literal as ExtLiteral
 
 from .class_validators import gather_all_validators
 from .fields import DeferredType
@@ -267,7 +267,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     if origin_type is Annotated:
         annotated_type, *annotations = type_args
         return Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
-    if origin_type is typing.Literal:
+    if origin_type is typing.Literal or origin_type is ExtLiteral:
         return type_map.get(type_, type_)
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
