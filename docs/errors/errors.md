@@ -133,7 +133,7 @@ except ValidationError as e:
 
 ### Custom Errors
 
-In your custom data types or validators you should use `ValueError`, `TypeError` or `AssertionError` to raise errors.
+In your custom data types or validators you should use `ValueError` or `AssertionError` to raise errors.
 
 See [validators](../usage/validators.md) for more details on use of the `@validator` decorator.
 
