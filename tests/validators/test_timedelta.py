@@ -43,6 +43,11 @@ from ..conftest import Err, PyAndJson
         (float('inf'), Err('Input should be a valid timedelta, durations may not exceed 999,999,999 days')),
         (float('-inf'), Err('Input should be a valid timedelta, durations may not exceed 999,999,999 days')),
         (timedelta.max, timedelta.max),
+        ('02:03:04.05', timedelta(hours=2, seconds=184, microseconds=50_000)),
+        (
+            '02:03:04.05broken',
+            Err('Input should be a valid timedelta, unexpected extra characters at the end of the input'),
+        ),
     ],
     ids=repr,
 )
