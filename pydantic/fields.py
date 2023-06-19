@@ -639,7 +639,7 @@ def Field(  # C901
         frozen: Whether the field is frozen.
         final: Whether the field is final.
         validate_default: Run validation that isn't only checking existence of defaults. `True` by default.
-        repr: If `True` (the default), return a string representation of the field.
+        repr: A boolean indicating whether to include the field in the `__repr__` output.
         init_var: Whether the field should be included in the constructor of the dataclass.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
         strict: If `True` (the default is `None`), the field should be validated strictly.
@@ -810,7 +810,7 @@ def PrivateAttr(
 
     Private attributes are not checked by Pydantic, so it's up to you to maintain their accuracy.
 
-    Private attributes are stored in the model `__slots__`.
+    Private attributes are stored in `__private_attributes__` on the model.
 
     Args:
         default: The attribute's default value. Defaults to Undefined.

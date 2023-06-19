@@ -133,7 +133,7 @@ def collect_model_fields(  # noqa: C901
         if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, Undefined)):
             class_vars.add(ann_name)
             continue
-        if ann_name.startswith('_'):
+        if not is_valid_field_name(ann_name):
             continue
         if cls.__pydantic_root_model__ and ann_name != 'root':
             raise NameError(
@@ -254,3 +254,11 @@ def collect_dataclass_fields(
             field.apply_typevars_map(typevars_map, types_namespace)
 
     return fields
+
+
+def is_valid_field_name(name: str) -> bool:
+    return not name.startswith('_')
+
+
+def is_valid_privateattr_name(name: str) -> bool:
+    return name.startswith('_') and not name.startswith('__')

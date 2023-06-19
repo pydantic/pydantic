@@ -401,3 +401,20 @@ def test_nested_root_model_proper_default():
 
     m = Model()
     assert m.value.root == 42
+
+
+def test_root_model_json_schema_meta():
+    ParametrizedModel = RootModel[int]
+
+    class SubclassedModel(RootModel):
+        """Subclassed Model docstring"""
+
+        root: int
+
+    parametrized_json_schema = ParametrizedModel.model_json_schema()
+    subclassed_json_schema = SubclassedModel.model_json_schema()
+
+    assert parametrized_json_schema.get('title') == 'RootModel[int]'
+    assert parametrized_json_schema.get('description') is None
+    assert subclassed_json_schema.get('title') == 'SubclassedModel'
+    assert subclassed_json_schema.get('description') == 'Subclassed Model docstring'

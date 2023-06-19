@@ -68,6 +68,8 @@ from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 from mypy.version import __version__ as mypy_version
 
+from pydantic._internal import _fields
+
 try:
     from mypy.types import TypeVarDef  # type: ignore[attr-defined]
 except ImportError:  # pragma: no cover
@@ -440,7 +442,7 @@ class PydanticModelTransformer:
             return None
 
         lhs = stmt.lvalues[0]
-        if not isinstance(lhs, NameExpr) or lhs.name.startswith('_') or lhs.name == 'model_config':
+        if not isinstance(lhs, NameExpr) or not _fields.is_valid_field_name(lhs.name) or lhs.name == 'model_config':
             return None
 
         if not stmt.new_syntax:

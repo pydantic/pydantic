@@ -17,6 +17,7 @@ from ._internal import (
     _fields,
     _forward_ref,
     _generics,
+    _mock_validator,
     _model_construction,
     _repr,
     _typing_extra,
@@ -67,12 +68,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         `Model.__validators__` and `Model.__root_validators__` from Pydantic V1.
 
     Attributes:
+        model_fields: Fields in the model.
+        model_config: Configuration settings for the model.
         __pydantic_validator__: Validator for checking schema validity.
         __pydantic_core_schema__: Schema for representing the model's core.
         __pydantic_serializer__: Serializer for the schema.
         __pydantic_decorators__: Metadata for `@field_validator`, `@root_validator`,
             and `@serializer` decorators.
-        model_fields: Fields in the model.
         __signature__: Signature for instantiating the model.
         __private_attributes__: Private attributes of the model.
         __class_vars__: Class variables of the model.
@@ -83,6 +85,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_parent_namespace__: Parent namespace of the model.
         __pydantic_custom_init__: Custom init of the model.
         __pydantic_post_init__: Post init of the model.
+        __pydantic_complete__: Whether model building is completed.
+        __pydantic_root_model__: Whether the model is a RootModel.
     """
 
     if typing.TYPE_CHECKING:
@@ -112,7 +116,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
         model_fields = {}
         __pydantic_decorators__ = _decorators.DecoratorInfos()
-        __pydantic_validator__ = _model_construction.MockValidator(
+        __pydantic_validator__ = _mock_validator.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
             code='base-model-instantiated',
         )
@@ -236,11 +240,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """Validate a pydantic model instance.
 
         Args:
-            cls: The model class to use.
             obj: The object to validate.
-            strict: Whether to raise an exception on invalid fields. Defaults to None.
-            from_attributes: Whether to extract data from object attributes. Defaults to None.
-            context: Additional context to pass to the validator. Defaults to None.
+            strict: Whether to raise an exception on invalid fields.
+            from_attributes: Whether to extract data from object attributes.
+            context: Additional context to pass to the validator.
 
         Raises:
             ValidationError: If the object could not be validated.
@@ -294,8 +297,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             json_data: The JSON data to validate.
-            strict: Whether to enforce types strictly (default: `None`).
-            context: Extra variables to pass to the validator (default: `None`).
+            strict: Whether to enforce types strictly.
+            context: Extra variables to pass to the validator.
 
         Returns:
             The validated Pydantic model.
@@ -319,7 +322,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 f'"{name}" is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
                 f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
             )
-        elif name.startswith('_'):
+        elif not _fields.is_valid_field_name(name):
             if self.__pydantic_private__ is None or name not in self.__private_attributes__:
                 _object_setattr(self, name, value)
             else:
@@ -390,7 +393,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             by_alias: Whether to use the field's alias in the dictionary key if defined.
             exclude_unset: Whether to exclude fields that are unset or None from the output.
             exclude_defaults: Whether to exclude fields that are set to their default value from the output.
-            exclude_none: Whether to exclude fields that have a value of None from the output.
+            exclude_none: Whether to exclude fields that have a value of `None` from the output.
             round_trip: Whether to enable serialization and deserialization round-trip support.
             warnings: Whether to log warnings when invalid fields are encountered.
 
@@ -429,12 +432,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
             include: Field(s) to include in the JSON output. Can take either a string or set of strings.
             exclude: Field(s) to exclude from the JSON output. Can take either a string or set of strings.
-            by_alias: Whether to serialize using field aliases. Defaults to False.
-            exclude_unset: Whether to exclude fields that have not been explicitly set. Defaults to False.
-            exclude_defaults: Whether to exclude fields that have the default value. Defaults to False.
-            exclude_none: Whether to exclude fields that have a value of None. Defaults to False.
-            round_trip: Whether to use serialization/deserialization between JSON and class instance. Defaults to False.
-            warnings: Whether to show any warnings that occurred during serialization. Defaults to True.
+            by_alias: Whether to serialize using field aliases.
+            exclude_unset: Whether to exclude fields that have not been explicitly set.
+            exclude_defaults: Whether to exclude fields that have the default value.
+            exclude_none: Whether to exclude fields that have a value of `None`.
+            round_trip: Whether to use serialization/deserialization between JSON and class instance.
+            warnings: Whether to show any warnings that occurred during serialization.
 
         Returns:
             A JSON string representation of the model.
@@ -461,7 +464,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
 
         Args:
-            cls: The `Model` class.
             _fields_set: The set of field names accepted for the Model instance.
             values: Trusted or pre-validated data dictionary.
 
@@ -517,12 +519,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         value of `schema_generator` to be your subclass.
 
         Args:
-            by_alias: Whether to use attribute aliases or not. Defaults to `True`.
-            ref_template: The reference template. Defaults to `DEFAULT_REF_TEMPLATE`.
-            schema_generator: The JSON schema generator. Defaults to `GenerateJsonSchema`.
+            by_alias: Whether to use attribute aliases or not.
+            ref_template: The reference template.
+            schema_generator: The JSON schema generator.
 
         Returns:
-            The JSON schema for the given `cls` model class.
+            The JSON schema for the given model class.
         """
         return model_json_schema(
             cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
@@ -660,11 +662,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def __repr_args__(self) -> _repr.ReprArgs:
-        yield from (
-            (k, v)
-            for k, v in self.__dict__.items()
-            if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
-        )
+        for k, v in self.__dict__.items():
+            field = self.model_fields.get(k)
+            if field and field.repr:
+                yield k, v
         pydantic_extra = self.__pydantic_extra__
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
@@ -1174,7 +1175,7 @@ def create_model(
     annotations = {}
 
     for f_name, f_def in field_definitions.items():
-        if f_name.startswith('_'):
+        if not _fields.is_valid_field_name(f_name):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
             f_def = typing.cast('tuple[str, Any]', f_def)

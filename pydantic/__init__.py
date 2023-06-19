@@ -24,15 +24,18 @@ from .deprecated.config import BaseConfig  # type: ignore
 from .deprecated.tools import *
 from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
-from .functional_serializers import PlainSerializer, WrapSerializer, field_serializer, model_serializer
+from .functional_serializers import PlainSerializer, SerializeAsAny, WrapSerializer, field_serializer, model_serializer
 from .functional_validators import (
     AfterValidator,
     BeforeValidator,
+    InstanceOf,
     PlainValidator,
+    SkipValidation,
     WrapValidator,
     field_validator,
     model_validator,
 )
+from .json_schema import WithJsonSchema
 from .main import *
 from .networks import *
 from .type_adapter import TypeAdapter
@@ -67,6 +70,7 @@ __all__ = [
     'field_serializer',
     'model_serializer',
     'PlainSerializer',
+    'SerializeAsAny',
     'WrapSerializer',
     'FieldSerializationInfo',
     'SerializationInfo',
@@ -80,6 +84,7 @@ __all__ = [
     # pydantic_core errors
     'ValidationError',
     # errors
+    'PydanticErrorCodes',
     'PydanticUserError',
     'PydanticSchemaGenerationError',
     'PydanticImportError',
