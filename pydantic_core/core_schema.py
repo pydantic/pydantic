@@ -29,6 +29,32 @@ ExtraBehavior = Literal['allow', 'forbid', 'ignore']
 
 
 class CoreConfig(TypedDict, total=False):
+    """
+    Base class for schema configuration options.
+
+    Attributes:
+        title: The name of the configuration.
+        strict: Whether the configuration should strictly adhere to specified rules.
+        extra_fields_behavior: The behavior for handling extra fields.
+        typed_dict_total: Whether the TypedDict should be considered total. Default is `True`.
+        from_attributes: Whether to use attributes for models, dataclasses, and tagged union keys.
+        loc_by_alias: Whether to use the used alias (or first alias for "field required" errors) instead of
+            `field_names` to construct error `loc`s. Default is `True`.
+        revalidate_instances: Whether instances of models and dataclasses should re-validate. Default is 'never'.
+        validate_default: Whether to validate default values during validation. Default is `False`.
+        populate_by_name: Whether an aliased field may be populated by its name as given by the model attribute,
+            as well as the alias. (Replaces 'allow_population_by_field_name' in Pydantic v1.) Default is `False`.
+        str_max_length: The maximum length for string fields.
+        str_min_length: The minimum length for string fields.
+        str_strip_whitespace: Whether to strip whitespace from string fields.
+        str_to_lower: Whether to convert string fields to lowercase.
+        str_to_upper: Whether to convert string fields to uppercase.
+        allow_inf_nan: Whether to allow infinity and NaN values for float fields. Default is `True`.
+        ser_json_timedelta: The serialization option for `timedelta` values. Default is 'iso8601'.
+        ser_json_bytes: The serialization option for `bytes` values. Default is 'utf8'.
+        hide_input_in_errors: Whether to hide input data from `ValidationError` representation.
+    """
+
     title: str
     strict: bool
     # settings related to typed dicts, model fields, dataclass fields
@@ -208,6 +234,7 @@ SerializerFunction = Union[
 WhenUsed = Literal['always', 'unless-none', 'json', 'json-unless-none']
 """
 Values have the following meanings:
+
 * `'always'` means always use
 * `'unless-none'` means use unless the value is `None`
 * `'json'` means use when serializing to JSON
