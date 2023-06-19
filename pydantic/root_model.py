@@ -2,6 +2,8 @@ from __future__ import annotations as _annotations
 
 import typing
 
+from pydantic_core import PydanticUndefined
+
 from ._internal import _repr
 from .main import BaseModel
 
@@ -18,22 +20,20 @@ RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType]):
-    """A Pydantic `BaseModel` for the root object of the model.
+    """
+    A Pydantic `BaseModel` for the root object of the model.
 
     Attributes:
         root (RootModelRootType): The root object of the model.
     """
 
     __pydantic_root_model__ = True
-    # TODO: Make `__pydantic_fields_set__` logic consistent with `BaseModel`, i.e. it should be `set()` if default value
-    # was used
-    __pydantic_fields_set__ = {'root'}  # It's fine having a set here as it will never change
     __pydantic_private__ = None
     __pydantic_extra__ = None
 
     root: RootModelRootType
 
-    def __init__(__pydantic_self__, root: RootModelRootType) -> None:  # type: ignore
+    def __init__(__pydantic_self__, root: RootModelRootType = PydanticUndefined) -> None:  # type: ignore
         __tracebackhide__ = True
         __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
 
@@ -41,7 +41,8 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     @classmethod
     def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
-        """Create a new model using the provided root object and update fields set.
+        """
+        Create a new model using the provided root object and update fields set.
 
         Args:
             root: The root object of the model.

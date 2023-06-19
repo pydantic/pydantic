@@ -8,7 +8,7 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import SchemaSerializer, SchemaValidator
+from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -16,7 +16,7 @@ from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
-from ._fields import Undefined, collect_model_fields, is_valid_field_name, is_valid_privateattr_name
+from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_validator import set_basemodel_mock_validator
@@ -231,7 +231,7 @@ def init_private_attributes(self: BaseModel, __context: Any) -> None:
     pydantic_private = {}
     for name, private_attr in self.__private_attributes__.items():
         default = private_attr.get_default()
-        if default is not Undefined:
+        if default is not PydanticUndefined:
             pydantic_private[name] = default
     object_setattr(self, '__pydantic_private__', pydantic_private)
 
