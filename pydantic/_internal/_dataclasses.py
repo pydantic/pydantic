@@ -12,6 +12,7 @@ from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
+from ..warnings import PydanticDeprecationWarning
 from . import _config, _decorators, _typing_extra
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._fields import collect_dataclass_fields
@@ -82,7 +83,9 @@ def complete_dataclass(
     """
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
-            'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
+            PydanticDeprecationWarning(
+                'Support for `__post_init_post_parse__` has been dropped, the method will not be called', since=(2, 0)
+            )
         )
 
     if types_namespace is None:

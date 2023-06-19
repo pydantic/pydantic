@@ -9,6 +9,8 @@ from typing import Any, Callable
 
 from typing_extensions import deprecated
 
+from ..warnings import PydanticDeprecationWarning
+
 
 class Protocol(str, Enum):
     json = 'json'
@@ -25,7 +27,7 @@ def load_str_bytes(
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
-    warnings.warn('load_str_bytes is deprecated.', DeprecationWarning, stacklevel=2)
+    warnings.warn(PydanticDeprecationWarning('load_str_bytes is deprecated.', since=(2, 0)), stacklevel=2)
     if proto is None and content_type:
         if content_type.endswith(('json', 'javascript')):
             pass
@@ -59,7 +61,7 @@ def load_file(
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
-    warnings.warn('load_file is deprecated.', DeprecationWarning, stacklevel=2)
+    warnings.warn(PydanticDeprecationWarning('load_file is deprecated.', since=(2, 0)), stacklevel=2)
     path = Path(path)
     b = path.read_bytes()
     if content_type is None:

@@ -42,6 +42,7 @@ from .type_adapter import TypeAdapter
 from .types import *
 from .validate_call import validate_call
 from .version import VERSION
+from .warnings import *
 
 __version__ = VERSION
 
@@ -183,6 +184,8 @@ __all__ = [
     'TypeAdapter',
     # version
     'VERSION',
+    # warnings
+    'PydanticDeprecationWarning',
     # annotated handlers
     'GetCoreSchemaHandler',
     'GetJsonSchemaHandler',

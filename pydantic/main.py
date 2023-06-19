@@ -31,6 +31,7 @@ from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
+from .warnings import PydanticDeprecationWarning
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -821,14 +822,20 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @property
     @typing_extensions.deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.')
     def __fields__(self) -> dict[str, FieldInfo]:
-        warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
+        warnings.warn(
+            PydanticDeprecationWarning(
+                'The `__fields__` attribute is deprecated, use `model_fields` instead.', since=(2, 0)
+            )
+        )
         return self.model_fields
 
     @property
     @typing_extensions.deprecated('The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.')
     def __fields_set__(self) -> set[str]:
         warnings.warn(
-            'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.', DeprecationWarning
+            PydanticDeprecationWarning(
+                'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.', since=(2, 0)
+            )
         )
         return self.__pydantic_fields_set__
 
@@ -843,7 +850,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
     ) -> typing.Dict[str, Any]:  # noqa UP006
-        warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', DeprecationWarning)
+        warnings.warn(
+            PydanticDeprecationWarning('The `dict` method is deprecated; use `model_dump` instead.', since=(2, 0))
+        )
         return self.model_dump(
             include=include,
             exclude=exclude,
@@ -867,7 +876,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         models_as_dict: bool = PydanticUndefined,  # type: ignore[assignment]
         **dumps_kwargs: Any,
     ) -> str:
-        warnings.warn('The `json` method is deprecated; use `model_dump_json` instead.', DeprecationWarning)
+        warnings.warn(
+            PydanticDeprecationWarning('The `json` method is deprecated; use `model_dump_json` instead.', since=(2, 0))
+        )
         if encoder is not PydanticUndefined:
             raise TypeError('The `encoder` argument is no longer supported; use field serializers instead.')
         if models_as_dict is not PydanticUndefined:
@@ -886,7 +897,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     @typing_extensions.deprecated('The `parse_obj` method is deprecated; use `model_validate` instead.')
     def parse_obj(cls: type[Model], obj: Any) -> Model:  # noqa: D102
-        warnings.warn('The `parse_obj` method is deprecated; use `model_validate` instead.', DeprecationWarning)
+        warnings.warn(
+            PydanticDeprecationWarning(
+                'The `parse_obj` method is deprecated; use `model_validate` instead.', since=(2, 0)
+            )
+        )
         return cls.model_validate(obj)
 
     @classmethod
@@ -904,9 +919,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         allow_pickle: bool = False,
     ) -> Model:  # pragma: no cover
         warnings.warn(
-            'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
-            'otherwise load the data then use `model_validate` instead.',
-            DeprecationWarning,
+            PydanticDeprecationWarning(
+                'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
+                'otherwise load the data then use `model_validate` instead.',
+                since=(2, 0),
+            )
         )
         try:
             obj = _deprecated_parse.load_str_bytes(
@@ -954,9 +971,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
-            'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
-            'use `model_json_validate` otherwise `model_validate` instead.',
-            DeprecationWarning,
+            PydanticDeprecationWarning(
+                'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
+                'use `model_json_validate` otherwise `model_validate` instead.',
+                since=(2, 0),
+            ),
         )
         obj = _deprecated_parse.load_file(
             path,
@@ -974,9 +993,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     )
     def from_orm(cls: type[Model], obj: Any) -> Model:  # noqa: D102
         warnings.warn(
-            'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
-            'and use `model_validate` instead.',
-            DeprecationWarning,
+            PydanticDeprecationWarning(
+                'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
+                'and use `model_validate` instead.',
+                since=(2, 0),
+            )
         )
         if not cls.model_config.get('from_attributes', None):
             raise PydanticUserError(
@@ -987,7 +1008,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     @typing_extensions.deprecated('The `construct` method is deprecated; use `model_construct` instead.')
     def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: D102
-        warnings.warn('The `construct` method is deprecated; use `model_construct` instead.', DeprecationWarning)
+        warnings.warn(
+            PydanticDeprecationWarning(
+                'The `construct` method is deprecated; use `model_construct` instead.', since=(2, 0)
+            )
+        )
         return cls.model_construct(_fields_set=_fields_set, **values)
 
     @typing_extensions.deprecated('The copy method is deprecated; use `model_copy` instead.')
@@ -1022,9 +1047,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             A copy of the model with included, excluded and updated fields as specified.
         """
         warnings.warn(
-            'The `copy` method is deprecated; use `model_copy` instead. '
-            'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.',
-            DeprecationWarning,
+            PydanticDeprecationWarning(
+                'The `copy` method is deprecated; use `model_copy` instead. '
+                'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.',
+                since=(2, 0),
+            )
         )
 
         values = dict(
@@ -1066,7 +1093,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def schema(  # noqa: D102
         cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
     ) -> typing.Dict[str, Any]:  # noqa UP006
-        warnings.warn('The `schema` method is deprecated; use `model_json_schema` instead.', DeprecationWarning)
+        warnings.warn(
+            PydanticDeprecationWarning(
+                'The `schema` method is deprecated; use `model_json_schema` instead.', since=(2, 0)
+            )
+        )
         return cls.model_json_schema(by_alias=by_alias, ref_template=ref_template)
 
     @classmethod
@@ -1079,8 +1110,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         import json
 
         warnings.warn(
-            'The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.',
-            DeprecationWarning,
+            PydanticDeprecationWarning(
+                'The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.', since=(2, 0)
+            )
         )
         from .deprecated.json import pydantic_encoder
 
@@ -1093,14 +1125,20 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     @typing_extensions.deprecated('The `validate` method is deprecated; use `model_validate` instead.')
     def validate(cls: type[Model], value: Any) -> Model:  # noqa: D102
-        warnings.warn('The `validate` method is deprecated; use `model_validate` instead.', DeprecationWarning)
+        warnings.warn(
+            PydanticDeprecationWarning(
+                'The `validate` method is deprecated; use `model_validate` instead.', since=(2, 0)
+            )
+        )
         return cls.model_validate(value)
 
     @classmethod
     @typing_extensions.deprecated('The `update_forward_refs` method is deprecated; use `model_rebuild` instead.')
     def update_forward_refs(cls, **localns: Any) -> None:  # noqa: D102
         warnings.warn(
-            'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.', DeprecationWarning
+            PydanticDeprecationWarning(
+                'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.', since=(2, 0)
+            )
         )
         if localns:  # pragma: no cover
             raise TypeError('`localns` arguments are not longer accepted.')
@@ -1108,7 +1146,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @typing_extensions.deprecated('The private method `_iter` will be removed and should no longer be used.')
     def _iter(self, *args: Any, **kwargs: Any) -> Any:
-        warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
+        warnings.warn(
+            PydanticDeprecationWarning(
+                'The private method `_iter` will be removed and should no longer be used.', since=(2, 0)
+            )
+        )
         return _deprecated_copy_internals._iter(self, *args, **kwargs)  # type: ignore
 
     @typing_extensions.deprecated(
@@ -1116,8 +1158,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     )
     def _copy_and_set_values(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
-            'The private method  `_copy_and_set_values` will be removed and should no longer be used.',
-            DeprecationWarning,
+            PydanticDeprecationWarning(
+                'The private method  `_copy_and_set_values` will be removed and should no longer be used.', since=(2, 0)
+            )
         )
         return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)  # type: ignore
 
@@ -1125,14 +1168,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @typing_extensions.deprecated('The private method `_get_value` will be removed and should no longer be used.')
     def _get_value(cls, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
-            'The private method  `_get_value` will be removed and should no longer be used.', DeprecationWarning
+            PydanticDeprecationWarning(
+                'The private method  `_get_value` will be removed and should no longer be used.', since=(2, 0)
+            )
         )
         return _deprecated_copy_internals._get_value(cls, *args, **kwargs)  # type: ignore
 
     @typing_extensions.deprecated('The private method `_calculate_keys` will be removed and should no longer be used.')
     def _calculate_keys(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
-            'The private method `_calculate_keys` will be removed and should no longer be used.', DeprecationWarning
+            PydanticDeprecationWarning(
+                'The private method `_calculate_keys` will be removed and should no longer be used.', since=(2, 0)
+            )
         )
         return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)  # type: ignore
 

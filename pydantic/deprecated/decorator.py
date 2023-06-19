@@ -9,6 +9,7 @@ from ..alias_generators import to_pascal
 from ..errors import PydanticUserError
 from ..functional_validators import field_validator
 from ..main import BaseModel, create_model
+from ..warnings import PydanticDeprecationWarning
 
 __all__ = ('validate_arguments',)
 
@@ -34,7 +35,10 @@ def validate_arguments(func: 'AnyCallableT') -> 'AnyCallableT':
 def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'ConfigType' = None) -> Any:
     """Decorator to validate the arguments passed to a function."""
     warnings.warn(
-        'The `validate_arguments` method is deprecated; use `validate_call` instead.', DeprecationWarning, stacklevel=2
+        PydanticDeprecationWarning(
+            'The `validate_arguments` method is deprecated; use `validate_call` instead.', since=(2, 0)
+        ),
+        stacklevel=2,
     )
 
     def validate(_func: 'AnyCallable') -> 'AnyCallable':

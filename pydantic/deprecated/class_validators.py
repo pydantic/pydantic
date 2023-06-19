@@ -11,6 +11,7 @@ from typing_extensions import Literal, Protocol, TypeAlias
 
 from .._internal import _decorators, _decorators_v1
 from ..errors import PydanticUserError
+from ..warnings import PydanticDeprecationWarning
 
 _ALLOW_REUSE_WARNING_MESSAGE = '`allow_reuse` is deprecated and will be ignored; it should no longer be necessary'
 
@@ -105,7 +106,7 @@ def validator(
             function to be used as a validator.
     """
     if allow_reuse is True:  # pragma: no cover
-        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
+        warn(PydanticDeprecationWarning(_ALLOW_REUSE_WARNING_MESSAGE, since=(2, 0)))
     fields = tuple((__field, *fields))
     if isinstance(fields[0], FunctionType):
         raise PydanticUserError(
@@ -121,10 +122,12 @@ def validator(
         )
 
     warn(
-        'Pydantic V1 style `@validator` validators are deprecated.'
-        ' You should migrate to Pydantic V2 style `@field_validator` validators,'
-        ' see the migration guide for more details',
-        DeprecationWarning,
+        PydanticDeprecationWarning(
+            'Pydantic V1 style `@validator` validators are deprecated.'
+            ' You should migrate to Pydantic V2 style `@field_validator` validators,'
+            ' see the migration guide for more details',
+            since=(2, 0),
+        ),
         stacklevel=2,
     )
 
@@ -205,10 +208,12 @@ def root_validator(
         Any: A decorator that can be used to decorate a function to be used as a root_validator.
     """
     warn(
-        'Pydantic V1 style `@root_validator` validators are deprecated.'
-        ' You should migrate to Pydantic V2 style `@model_validator` validators,'
-        ' see the migration guide for more details',
-        DeprecationWarning,
+        PydanticDeprecationWarning(
+            'Pydantic V1 style `@root_validator` validators are deprecated.'
+            ' You should migrate to Pydantic V2 style `@model_validator` validators,'
+            ' see the migration guide for more details',
+            since=(2, 0),
+        ),
         stacklevel=2,
     )
 
@@ -217,7 +222,7 @@ def root_validator(
         return root_validator()(*__args)  # type: ignore
 
     if allow_reuse is True:  # pragma: no cover
-        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
+        warn(PydanticDeprecationWarning(_ALLOW_REUSE_WARNING_MESSAGE, since=(2, 0)))
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
         raise PydanticUserError(
