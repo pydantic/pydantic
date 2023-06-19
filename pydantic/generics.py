@@ -31,6 +31,8 @@ from .utils import all_identical, lenient_issubclass
 
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias
+if sys.version_info >= (3, 8):
+    from typing import Literal
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
@@ -267,7 +269,8 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
     if origin_type is Annotated:
         annotated_type, *annotations = type_args
         return Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
-    if origin_type is typing.Literal or origin_type is ExtLiteral:
+
+    if (origin_type is ExtLiteral) or (sys.version_info >= (3, 8) and origin_type is Literal):
         return type_map.get(type_, type_)
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
