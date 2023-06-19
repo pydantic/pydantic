@@ -15,6 +15,7 @@ from ._internal import (
     _annotated_handlers,
     _config,
     _decorators,
+    _fields,
     _forward_ref,
     _generics,
     _mock_validator,

@@ -16,7 +16,7 @@ from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
-from ._fields import Undefined, collect_model_fields, is_valid_field_name, is_valid_privateattr_name
+from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_validator import set_basemodel_mock_validator
