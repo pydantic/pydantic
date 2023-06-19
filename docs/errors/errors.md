@@ -220,7 +220,7 @@ We've provided documentation for default error codes in the following sections:
 
 ### Customize error messages
 
-You can customize error messages creating a custom error handler.
+You can customize error messages by creating a custom error handler.
 
 ```py
 from typing import Dict, List
