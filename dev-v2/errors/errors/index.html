@@ -1238,6 +1238,19 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Error messages
   </a>
   
+    <nav class="md-nav" aria-label="Error messages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#customize-error-messages" class="md-nav__link">
+    Customize error messages
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2053,6 +2066,19 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Error messages
   </a>
   
+    <nav class="md-nav" aria-label="Error messages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#customize-error-messages" class="md-nav__link">
+    Customize error messages
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -2423,6 +2449,127 @@ contain information about all the errors and how they happened.</p>
 <li><a href="../../usage/validation_errors/">Validation Errors</a></li>
 <li><a href="../../usage/errors/">Usage Errors</a></li>
 </ul>
+<h3 id="customize-error-messages">Customize error messages<a class="headerlink" href="#customize-error-messages" title="Permanent link">&para;</a></h3>
+<p>You can customize error messages by creating a custom error handler.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ErrorDetails</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">CUSTOM_MESSAGES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;int_parsing&#39;</span><span class="p">:</span> <span class="s1">&#39;This is not an integer! 🤦&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;url_scheme&#39;</span><span class="p">:</span> <span class="s1">&#39;Hey, use the right URL scheme! I wanted </span><span class="si">{expected_schemes}</span><span class="s1">.&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">convert_errors</span><span class="p">(</span>
+    <span class="n">e</span><span class="p">:</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">custom_messages</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorDetails</span><span class="p">]:</span>
+    <span class="n">new_errors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ErrorDetails</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">():</span>
+        <span class="n">custom_message</span> <span class="o">=</span> <span class="n">custom_messages</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">error</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">custom_message</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ctx&#39;</span><span class="p">)</span>
+            <span class="n">error</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">custom_message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">ctx</span><span class="p">)</span> <span class="k">if</span> <span class="n">ctx</span> <span class="k">else</span> <span class="n">custom_message</span>
+        <span class="n">new_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_errors</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">HttpUrl</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;ftp://example.com&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">convert_errors</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">CUSTOM_MESSAGES</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;int_parsing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;a&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;This is not an integer! 🤦&#39;,</span>
+<span class="sd">            &#39;input&#39;: &#39;wrong&#39;,</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/int_parsing&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;url_scheme&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;b&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &quot;Hey, use the right URL scheme! I wanted &#39;http&#39; or &#39;https&#39;.&quot;,</span>
+<span class="sd">            &#39;input&#39;: &#39;ftp://example.com&#39;,</span>
+<span class="sd">            &#39;ctx&#39;: {&#39;expected_schemes&#39;: &quot;&#39;http&#39; or &#39;https&#39;&quot;},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/url_scheme&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ErrorDetails</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">CUSTOM_MESSAGES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;int_parsing&#39;</span><span class="p">:</span> <span class="s1">&#39;This is not an integer! 🤦&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;url_scheme&#39;</span><span class="p">:</span> <span class="s1">&#39;Hey, use the right URL scheme! I wanted </span><span class="si">{expected_schemes}</span><span class="s1">.&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span> <span class="nf">convert_errors</span><span class="p">(</span>
+    <span class="n">e</span><span class="p">:</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">custom_messages</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ErrorDetails</span><span class="p">]:</span>
+    <span class="n">new_errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ErrorDetails</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">():</span>
+        <span class="n">custom_message</span> <span class="o">=</span> <span class="n">custom_messages</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">error</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">custom_message</span><span class="p">:</span>
+            <span class="n">ctx</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ctx&#39;</span><span class="p">)</span>
+            <span class="n">error</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">custom_message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">ctx</span><span class="p">)</span> <span class="k">if</span> <span class="n">ctx</span> <span class="k">else</span> <span class="n">custom_message</span>
+        <span class="n">new_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new_errors</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="n">HttpUrl</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;ftp://example.com&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="n">convert_errors</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">CUSTOM_MESSAGES</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;int_parsing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;a&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;This is not an integer! 🤦&#39;,</span>
+<span class="sd">            &#39;input&#39;: &#39;wrong&#39;,</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/int_parsing&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;url_scheme&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;b&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &quot;Hey, use the right URL scheme! I wanted &#39;http&#39; or &#39;https&#39;.&quot;,</span>
+<span class="sd">            &#39;input&#39;: &#39;ftp://example.com&#39;,</span>
+<span class="sd">            &#39;ctx&#39;: {&#39;expected_schemes&#39;: &quot;&#39;http&#39; or &#39;https&#39;&quot;},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/url_scheme&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>A common use case would be to translate error messages. For example, in the above example,
+we could translate the error messages replacing the <code>CUSTOM_MESSAGES</code> dictionary with a
+dictionary of translations.</p>
 
 
 
