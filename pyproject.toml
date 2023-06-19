@@ -177,7 +177,6 @@ convention = "google"
 'pydantic/deprecated/*' = ['D']
 'pydantic/functional_validators.py' = ['D']
 'pydantic/json_schema.py' = ['D']
-'pydantic/main.py' = ['D']
 'pydantic/mypy.py' = ['D']
 'pydantic/root_model.py' = ['D']
 
