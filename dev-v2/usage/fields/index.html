@@ -1128,6 +1128,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
+  <a href="#validate-default-values" class="md-nav__link">
+    Validate Default Values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-representation" class="md-nav__link">
     Field Representation
   </a>
@@ -1151,6 +1158,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
         <li class="md-nav__item">
   <a href="#immutability" class="md-nav__link">
     Immutability
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#include-and-exclude" class="md-nav__link">
+    Include and Exclude
   </a>
   
 </li>
@@ -2187,6 +2201,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
+  <a href="#validate-default-values" class="md-nav__link">
+    Validate Default Values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-representation" class="md-nav__link">
     Field Representation
   </a>
@@ -2210,6 +2231,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
         <li class="md-nav__item">
   <a href="#immutability" class="md-nav__link">
     Immutability
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#include-and-exclude" class="md-nav__link">
+    Include and Exclude
   </a>
   
 </li>
@@ -2683,6 +2711,26 @@ In the <code>'last_name'</code> field, we are using the alias <code>'names'</cod
 <ol>
 <li>The <code>baz</code> field is not included in the <code>model_dump()</code> output, since it is an init-only field.</li>
 </ol>
+<h2 id="validate-default-values">Validate Default Values<a class="headerlink" href="#validate-default-values" title="Permanent link">&para;</a></h2>
+<p>The parameter <code>validate_default</code> can be used to control whether the default value of the field should be validated.</p>
+<p>By default, the default value of the field is not validated.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;twelve&#39;</span><span class="p">,</span> <span class="n">validate_default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">    age</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;twelve&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
 <h2 id="field-representation">Field Representation<a class="headerlink" href="#field-representation" title="Permanent link">&para;</a></h2>
 <p>The parameter <code>repr</code> can be used to control whether the field should be included in the string
 representation of the model.</p>
@@ -2814,6 +2862,26 @@ assigned a new value after the model is created (immutability).</p>
 <p>Since <code>validate_assignment</code> is enabled, and the <code>name</code> field is frozen, the assignment is not allowed.</p>
 </li>
 </ol>
+<h2 id="include-and-exclude">Include and Exclude<a class="headerlink" href="#include-and-exclude" title="Permanent link">&para;</a></h2>
+<p>The parameters <code>include</code> and <code>exclude</code> can be used to control which fields should be included or excluded from the
+model when exporting the model.</p>
+<p>See the following example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&#39;name&#39;: &#39;John&#39;}</span>
+</code></pre></div>
+<ol>
+<li>The <code>age</code> field is not included in the <code>model_dump()</code> output, since it is excluded.</li>
+</ol>
+<p>See the <a href="/usage/exporting_models/#model-and-field-level-include-and-exclude">Exporting Models</a> section for more details.</p>
 <h2 id="customizing-json-schema">Customizing JSON Schema<a class="headerlink" href="#customizing-json-schema" title="Permanent link">&para;</a></h2>
 <p>There are fields that exclusively to customise the generated JSON Schema:</p>
 <ul>
@@ -2866,7 +2934,7 @@ assigned a new value after the model is created (immutability).</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<p>TODO: Add <code>include</code>, <code>exclude</code>, <code>final</code>, <code>validate_default</code> and <code>alias_priority</code> parameters.</p>
+<p>TODO: Add <code>final</code>, and <code>alias_priority</code> parameters.</p>
 
 
 
