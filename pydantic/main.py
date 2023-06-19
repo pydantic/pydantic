@@ -194,7 +194,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         def __init_subclass__(cls, **kwargs: Unpack[ConfigDict]):
             """This signature is included purely to help type-checkers check arguments to class declaration, which
-            provides a way to conveniently set model_config key/value pairs:
+            provides a way to conveniently set model_config key/value pairs.
 
             ```py
             class MyModel(BaseModel, extra='allow'):
@@ -522,6 +522,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             by_alias: Whether to use attribute aliases or not.
             ref_template: The reference template.
             schema_generator: The JSON schema generator.
+            mode: The mode in which to generate the schema.
 
         Returns:
             The JSON schema for the given model class.
@@ -790,7 +791,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_fields_set__
 
     @typing_extensions.deprecated('The `dict` method is deprecated; use `model_dump` instead.')
-    def dict(
+    def dict(  # noqa: D102
         self,
         *,
         include: IncEx = None,
@@ -811,7 +812,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         )
 
     @typing_extensions.deprecated('The `json` method is deprecated; use `model_dump_json` instead.')
-    def json(
+    def json(  # noqa: D102
         self,
         *,
         include: IncEx = None,
@@ -842,7 +843,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `parse_obj` method is deprecated; use `model_validate` instead.')
-    def parse_obj(cls: type[Model], obj: Any) -> Model:
+    def parse_obj(cls: type[Model], obj: Any) -> Model:  # noqa: D102
         warnings.warn('The `parse_obj` method is deprecated; use `model_validate` instead.', DeprecationWarning)
         return cls.model_validate(obj)
 
@@ -851,7 +852,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
         'otherwise load the data then use `model_validate` instead.'
     )
-    def parse_raw(
+    def parse_raw(  # noqa: D102
         cls: type[Model],
         b: str | bytes,
         *,
@@ -901,7 +902,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
         'use `model_json_validate` otherwise `model_validate` instead.'
     )
-    def parse_file(
+    def parse_file(  # noqa: D102
         cls: type[Model],
         path: str | Path,
         *,
@@ -929,7 +930,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     #     "The `from_orm` method is deprecated; set "
     #     "`model_config['from_attributes']=True` and use `model_validate` instead."
     # )
-    def from_orm(cls: type[Model], obj: Any) -> Model:
+    def from_orm(cls: type[Model], obj: Any) -> Model:  # noqa: D102
         warnings.warn(
             'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
             'and use `model_validate` instead.',
@@ -943,7 +944,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `construct` method is deprecated; use `model_construct` instead.')
-    def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
+    def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: D102
         warnings.warn('The `construct` method is deprecated; use `model_construct` instead.', DeprecationWarning)
         return cls.model_construct(_fields_set=_fields_set, **values)
 
@@ -1020,7 +1021,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `schema` method is deprecated; use `model_json_schema` instead.')
-    def schema(
+    def schema(  # noqa: D102
         cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
     ) -> typing.Dict[str, Any]:  # noqa UP006
         warnings.warn('The `schema` method is deprecated; use `model_json_schema` instead.', DeprecationWarning)
@@ -1030,7 +1031,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @typing_extensions.deprecated(
         'The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.'
     )
-    def schema_json(
+    def schema_json(  # noqa: D102
         cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
     ) -> str:  # pragma: no cover
         import json
@@ -1049,13 +1050,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `validate` method is deprecated; use `model_validate` instead.')
-    def validate(cls: type[Model], value: Any) -> Model:
+    def validate(cls: type[Model], value: Any) -> Model:  # noqa: D102
         warnings.warn('The `validate` method is deprecated; use `model_validate` instead.', DeprecationWarning)
         return cls.model_validate(value)
 
     @classmethod
     @typing_extensions.deprecated('The `update_forward_refs` method is deprecated; use `model_rebuild` instead.')
-    def update_forward_refs(cls, **localns: Any) -> None:
+    def update_forward_refs(cls, **localns: Any) -> None:  # noqa: D102
         warnings.warn(
             'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.', DeprecationWarning
         )
