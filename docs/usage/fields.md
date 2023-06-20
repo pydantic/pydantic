@@ -554,9 +554,10 @@ See the [Discriminated Unions] for more details.
 
 ## Strict Mode
 
-The parameter `strict` can be used to control whether the field should be validated in "strict mode".
+The `strict` parameter on a `Field` specifies whether the field should be validated in "strict mode".
+In strict mode, Pydantic throws an error during validation instead of coercing data on the field where `strict=True`.
 
-[TODO: Add a link to documentation about strict mode]
+See the [Strict Mode] documentation for more details.
 
 ```py
 from pydantic import BaseModel, Field
@@ -677,3 +678,4 @@ TODO: Add `include`, `exclude`, `final`, `validate_default` and `alias_priority`
 [init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Validate Assignment]: /usage/models/#validate-assignment
+[Strict Mode]: strict_mode.md

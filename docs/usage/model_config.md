@@ -487,6 +487,29 @@ print(t)  # (3)!
 2. This is not revalidated, since `my_user` is not a subclass of `User`.
 3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
 
+## Strict Mode
+
+By default, Pydantic attempts to coerce values to the correct type, when possible.
+
+There are situations in which you may want to disable this behavior, and instead raise an error if a value's type
+does not match the field's type annotation.
+
+To configure strict mode for all fields on a model, you can
+[set `model_config = ConfigDict(strict=True)`](../api/config.md#pydantic.config.ConfigDict) on the model.
+
+See [Strict Mode](strict_mode.md) for more details.
+
+```py
+from pydantic import BaseModel, ConfigDict
+
+
+class Model(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    name: str
+    age: int
+```
+
 ### Arbitrary Types Allowed
 
 You can allow arbitrary types using the `arbitrary_types_allowed` setting in the model's config:

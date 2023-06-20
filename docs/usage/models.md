@@ -1199,7 +1199,38 @@ This is a deliberate decision of Pydantic, and in general it's the most useful a
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, [strict type checking](types/standard_types.md#strict-types) is partially supported.
-[TODO: Discuss strict mode, but also retain the previous link to types/standard_types.md#strict-types]
+
+## Strict Mode
+
+By default, Pydantic attempts to coerce values to the correct type, when possible.
+
+There are situations in which you may want to disable this behavior, and instead raise an error if a value's type
+does not match the field's type annotation. This can be done in two ways:
+
+- For individual fields on a model, you can
+    [set `strict=True` on the field](../api/fields.md#pydantic.fields.Field).
+- For all fields on a model, you can
+    [set `model_config = ConfigDict(strict=True)`](../api/config.md#pydantic.config.ConfigDict) on the model.
+
+```py
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class FieldModel(BaseModel):
+    name: str = Field(strict=True)
+    age: int = Field(strict=False)
+
+
+class ConfigModel(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    name: str
+    age: int
+```
+
+See [Strict Mode](strict_mode.md) for more details.
+
+See [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
 
 ## Model signature
 
