@@ -4741,7 +4741,7 @@ def test_typeddict_field_required_missing() -> None:
     """https://github.com/pydantic/pydantic/issues/6192"""
 
     class CustomType:
-        def __init__(self, data: dict[str, int]) -> None:
+        def __init__(self, data: Dict[str, int]) -> None:
             self.data = data
 
         @classmethod
