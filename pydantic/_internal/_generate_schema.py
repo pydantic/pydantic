@@ -17,7 +17,7 @@ from operator import attrgetter
 from types import FunctionType, LambdaType, MethodType
 from typing import TYPE_CHECKING, Any, Callable, Dict, ForwardRef, Iterable, Iterator, Mapping, TypeVar, Union, cast
 
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..config import ConfigDict
@@ -53,11 +53,7 @@ from ._decorators import (
     inspect_model_serializer,
     inspect_validator,
 )
-from ._fields import (
-    Undefined,
-    collect_dataclass_fields,
-    get_type_hints_infer_globalns,
-)
+from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, recursively_defined_type_refs, replace_types
 from ._schema_generation_shared import (
@@ -1540,7 +1536,7 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
         return core_schema.with_default_schema(
             schema, default_factory=field_info.default_factory, validate_default=field_info.validate_default
         )
-    elif field_info.default is not Undefined:
+    elif field_info.default is not PydanticUndefined:
         return core_schema.with_default_schema(
             schema, default=field_info.default, validate_default=field_info.validate_default
         )

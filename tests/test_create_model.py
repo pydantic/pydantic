@@ -429,6 +429,10 @@ def test_del_model_attr_with_privat_attrs():
     assert not hasattr(m, 'some_field')
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='In this single case `del` behaves weird on pypy',
+)
 def test_del_model_attr_with_privat_attrs_error():
     class Model(BaseModel):
         _private_attr: int = PrivateAttr(default=1)

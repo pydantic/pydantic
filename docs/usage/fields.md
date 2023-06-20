@@ -498,6 +498,31 @@ print(model.model_dump())  # (1)!
 
 1. The `baz` field is not included in the `model_dump()` output, since it is an init-only field.
 
+## Validate Default Values
+
+The parameter `validate_default` can be used to control whether the default value of the field should be validated.
+
+By default, the default value of the field is not validated.
+
+```py
+from pydantic import BaseModel, Field, ValidationError
+
+
+class User(BaseModel):
+    age: int = Field(default='twelve', validate_default=True)
+
+
+try:
+    user = User()
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for User
+    age
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='twelve', input_type=str]
+    """
+```
+
 ## Field Representation
 
 The parameter `repr` can be used to control whether the field should be included in the string
@@ -617,6 +642,31 @@ except ValidationError as e:
 
 2. Since `validate_assignment` is enabled, and the `name` field is frozen, the assignment is not allowed.
 
+## Include and Exclude
+
+The parameters `include` and `exclude` can be used to control which fields should be included or excluded from the
+model when exporting the model.
+
+See the following example:
+
+```py
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    name: str
+    age: int = Field(exclude=True)
+
+
+user = User(name='John', age=42)
+print(user.model_dump())  # (1)!
+#> {'name': 'John'}
+```
+
+1. The `age` field is not included in the `model_dump()` output, since it is excluded.
+
+See the [Exporting Models] section for more details.
+
 ## Customizing JSON Schema
 
 There are fields that exclusively to customise the generated JSON Schema:
@@ -673,7 +723,7 @@ print(User.model_json_schema())
 """
 ```
 
-TODO: Add `include`, `exclude`, `final`, `validate_default` and `alias_priority` parameters.
+TODO: Add `final`, and `alias_priority` parameters.
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
 [Discriminated Unions]: /usage/types/unions/#discriminated-unions-aka-tagged-unions
@@ -683,3 +733,4 @@ TODO: Add `include`, `exclude`, `final`, `validate_default` and `alias_priority`
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Validate Assignment]: /usage/models/#validate-assignment
 [Strict Mode]: strict_mode.md
+[Exporting Models]: /usage/exporting_models/#model-and-field-level-include-and-exclude

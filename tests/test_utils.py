@@ -7,13 +7,12 @@ from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
 
 import pytest
 from dirty_equals import IsList
-from pydantic_core import PydanticCustomError, core_schema
+from pydantic_core import PydanticCustomError, PydanticUndefined, core_schema
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
 from pydantic._internal._core_utils import _WalkCoreSchema
-from pydantic._internal._fields import Undefined
 from pydantic._internal._typing_extra import all_literal_values, get_origin, is_new_type
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
@@ -357,12 +356,12 @@ def test_deep_update_is_not_mutating():
 
 
 def test_undefined_repr():
-    assert repr(Undefined) == 'PydanticUndefined'
+    assert repr(PydanticUndefined) == 'PydanticUndefined'
 
 
 def test_undefined_copy():
-    assert copy(Undefined) is Undefined
-    assert deepcopy(Undefined) is Undefined
+    assert copy(PydanticUndefined) is PydanticUndefined
+    assert deepcopy(PydanticUndefined) is PydanticUndefined
 
 
 def test_class_attribute():
@@ -465,8 +464,8 @@ def test_all_identical():
 
 
 def test_undefined_pickle():
-    undefined2 = pickle.loads(pickle.dumps(Undefined))
-    assert undefined2 is Undefined
+    undefined2 = pickle.loads(pickle.dumps(PydanticUndefined))
+    assert undefined2 is PydanticUndefined
 
 
 def test_on_lower_camel_zero_length():

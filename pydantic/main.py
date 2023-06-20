@@ -9,6 +9,7 @@ from typing import Any
 
 import pydantic_core
 import typing_extensions
+from pydantic_core import PydanticUndefined
 
 from ._internal import (
     _annotated_handlers,
@@ -29,13 +30,7 @@ from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
-from .json_schema import (
-    DEFAULT_REF_TEMPLATE,
-    GenerateJsonSchema,
-    JsonSchemaMode,
-    JsonSchemaValue,
-    model_json_schema,
-)
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -56,7 +51,6 @@ if typing.TYPE_CHECKING:
 __all__ = 'BaseModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
-_Undefined = _fields.Undefined
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
@@ -194,7 +188,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         def __init_subclass__(cls, **kwargs: Unpack[ConfigDict]):
             """This signature is included purely to help type-checkers check arguments to class declaration, which
-            provides a way to conveniently set model_config key/value pairs:
+            provides a way to conveniently set model_config key/value pairs.
 
             ```py
             class MyModel(BaseModel, extra='allow'):
@@ -316,6 +310,30 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         pass
 
+    if not typing.TYPE_CHECKING:  # otherwise mypy will allow arbitrary attribute access
+
+        def __getattr__(self, item: str) -> Any:
+            private_attributes = object.__getattribute__(self, '__private_attributes__')
+            if item in private_attributes:
+                attribute = private_attributes[item]
+                if hasattr(attribute, '__get__'):
+                    return attribute.__get__(self, type(self))  # type: ignore
+
+                try:
+                    # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                    return self.__pydantic_private__[item]  # type: ignore
+                except KeyError as exc:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+            else:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+                if pydantic_extra is not None:
+                    try:
+                        return pydantic_extra[item]
+                    except KeyError as exc:
+                        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+                else:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
     def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__class_vars__:
             raise AttributeError(
@@ -352,10 +370,32 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             self.__dict__[name] = value
             self.__pydantic_fields_set__.add(name)
 
+    def __delattr__(self, item: str) -> Any:
+        if item in self.__private_attributes__:
+            attribute = self.__private_attributes__[item]
+            if hasattr(attribute, '__delete__'):
+                attribute.__delete__(self)  # type: ignore
+                return
+
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                del self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        elif item in self.model_fields:
+            object.__delattr__(self, item)
+        elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
+            del self.__pydantic_extra__[item]
+        else:
+            try:
+                object.__delattr__(self, item)
+            except AttributeError:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
         if private:
-            private = {k: v for k, v in private.items() if v is not _Undefined}
+            private = {k: v for k, v in private.items() if v is not PydanticUndefined}
         return {
             '__dict__': self.__dict__,
             '__pydantic_extra__': self.__pydantic_extra__,
@@ -522,6 +562,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             by_alias: Whether to use attribute aliases or not.
             ref_template: The reference template.
             schema_generator: The JSON schema generator.
+            mode: The mode in which to generate the schema.
 
         Returns:
             The JSON schema for the given model class.
@@ -635,7 +676,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _object_setattr(m, '__pydantic_private__', None)
         else:
             _object_setattr(
-                m, '__pydantic_private__', {k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}
+                m,
+                '__pydantic_private__',
+                {k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined},
             )
 
         return m
@@ -656,7 +699,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _object_setattr(
                 m,
                 '__pydantic_private__',
-                deepcopy({k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}, memo=memo),
+                deepcopy({k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined}, memo=memo),
             )
 
         return m
@@ -790,7 +833,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_fields_set__
 
     @typing_extensions.deprecated('The `dict` method is deprecated; use `model_dump` instead.')
-    def dict(
+    def dict(  # noqa: D102
         self,
         *,
         include: IncEx = None,
@@ -811,7 +854,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         )
 
     @typing_extensions.deprecated('The `json` method is deprecated; use `model_dump_json` instead.')
-    def json(
+    def json(  # noqa: D102
         self,
         *,
         include: IncEx = None,
@@ -820,14 +863,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        encoder: typing.Callable[[Any], Any] | None = _Undefined,  # type: ignore[assignment]
-        models_as_dict: bool = _Undefined,  # type: ignore[assignment]
+        encoder: typing.Callable[[Any], Any] | None = PydanticUndefined,  # type: ignore[assignment]
+        models_as_dict: bool = PydanticUndefined,  # type: ignore[assignment]
         **dumps_kwargs: Any,
     ) -> str:
         warnings.warn('The `json` method is deprecated; use `model_dump_json` instead.', DeprecationWarning)
-        if encoder is not _Undefined:
+        if encoder is not PydanticUndefined:
             raise TypeError('The `encoder` argument is no longer supported; use field serializers instead.')
-        if models_as_dict is not _Undefined:
+        if models_as_dict is not PydanticUndefined:
             raise TypeError('The `models_as_dict` argument is no longer supported; use a model serializer instead.')
         if dumps_kwargs:
             raise TypeError('`dumps_kwargs` keyword arguments are no longer supported.')
@@ -842,7 +885,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `parse_obj` method is deprecated; use `model_validate` instead.')
-    def parse_obj(cls: type[Model], obj: Any) -> Model:
+    def parse_obj(cls: type[Model], obj: Any) -> Model:  # noqa: D102
         warnings.warn('The `parse_obj` method is deprecated; use `model_validate` instead.', DeprecationWarning)
         return cls.model_validate(obj)
 
@@ -851,7 +894,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
         'otherwise load the data then use `model_validate` instead.'
     )
-    def parse_raw(
+    def parse_raw(  # noqa: D102
         cls: type[Model],
         b: str | bytes,
         *,
@@ -901,7 +944,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
         'use `model_json_validate` otherwise `model_validate` instead.'
     )
-    def parse_file(
+    def parse_file(  # noqa: D102
         cls: type[Model],
         path: str | Path,
         *,
@@ -925,11 +968,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return cls.parse_obj(obj)
 
     @classmethod
-    # @typing_extensions.deprecated(
-    #     "The `from_orm` method is deprecated; set "
-    #     "`model_config['from_attributes']=True` and use `model_validate` instead."
-    # )
-    def from_orm(cls: type[Model], obj: Any) -> Model:
+    @typing_extensions.deprecated(
+        "The `from_orm` method is deprecated; set "
+        "`model_config['from_attributes']=True` and use `model_validate` instead."
+    )
+    def from_orm(cls: type[Model], obj: Any) -> Model:  # noqa: D102
         warnings.warn(
             'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
             'and use `model_validate` instead.',
@@ -943,7 +986,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `construct` method is deprecated; use `model_construct` instead.')
-    def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
+    def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: D102
         warnings.warn('The `construct` method is deprecated; use `model_construct` instead.', DeprecationWarning)
         return cls.model_construct(_fields_set=_fields_set, **values)
 
@@ -993,7 +1036,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if self.__pydantic_private__ is None:
             private = None
         else:
-            private = {k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}
+            private = {k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined}
 
         if self.__pydantic_extra__ is None:
             extra: dict[str, Any] | None = None
@@ -1020,7 +1063,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `schema` method is deprecated; use `model_json_schema` instead.')
-    def schema(
+    def schema(  # noqa: D102
         cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
     ) -> typing.Dict[str, Any]:  # noqa UP006
         warnings.warn('The `schema` method is deprecated; use `model_json_schema` instead.', DeprecationWarning)
@@ -1030,7 +1073,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @typing_extensions.deprecated(
         'The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.'
     )
-    def schema_json(
+    def schema_json(  # noqa: D102
         cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
     ) -> str:  # pragma: no cover
         import json
@@ -1049,13 +1092,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated('The `validate` method is deprecated; use `model_validate` instead.')
-    def validate(cls: type[Model], value: Any) -> Model:
+    def validate(cls: type[Model], value: Any) -> Model:  # noqa: D102
         warnings.warn('The `validate` method is deprecated; use `model_validate` instead.', DeprecationWarning)
         return cls.model_validate(value)
 
     @classmethod
     @typing_extensions.deprecated('The `update_forward_refs` method is deprecated; use `model_rebuild` instead.')
-    def update_forward_refs(cls, **localns: Any) -> None:
+    def update_forward_refs(cls, **localns: Any) -> None:  # noqa: D102
         warnings.warn(
             'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.', DeprecationWarning
         )

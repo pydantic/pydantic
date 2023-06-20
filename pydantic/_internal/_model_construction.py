@@ -8,7 +8,7 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import SchemaSerializer, SchemaValidator
+from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -16,7 +16,7 @@ from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
-from ._fields import Undefined, collect_model_fields, is_valid_field_name, is_valid_privateattr_name
+from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_validator import set_basemodel_mock_validator
@@ -107,11 +107,6 @@ class ModelMetaclass(ABCMeta):
 
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
-
-            if config_wrapper.extra == 'allow' or namespace['__private_attributes__']:
-                namespace['__getattr__'] = model_extra_private_getattr
-            if namespace['__private_attributes__']:
-                namespace['__delattr__'] = model_private_delattr
 
             if '__hash__' not in namespace and config_wrapper.frozen:
 
@@ -236,7 +231,7 @@ def init_private_attributes(self: BaseModel, __context: Any) -> None:
     pydantic_private = {}
     for name, private_attr in self.__private_attributes__.items():
         default = private_attr.get_default()
-        if default is not Undefined:
+        if default is not PydanticUndefined:
             pydantic_private[name] = default
     object_setattr(self, '__pydantic_private__', pydantic_private)
 
@@ -509,64 +504,3 @@ def generate_model_signature(
         merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
 
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
-
-
-def model_extra_private_getattr(self: BaseModel, item: str) -> Any:
-    """This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
-    allow (and store) extra and/or private attributes.
-
-    Args:
-        self: The BaseModel instance.
-        item: The extra private attribute name.
-
-    Returns:
-        The extra private attribute value.
-
-    Raises:
-        AttributeError: If the attribute does not exist in the model.
-    """
-    if item in self.__private_attributes__:
-        attribute = self.__private_attributes__[item]
-        if hasattr(attribute, '__get__'):
-            return attribute.__get__(self, type(self))  # type: ignore
-
-        try:
-            # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
-            return self.__pydantic_private__[item]  # type: ignore
-        except KeyError as exc:
-            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-    if self.__pydantic_extra__ is not None:
-        try:
-            return self.__pydantic_extra__[item]
-        except KeyError as exc:
-            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-    else:
-        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
-
-
-def model_private_delattr(self: BaseModel, item: str) -> None:
-    """This function is used to delete unrecognized attribute values from BaseModel subclasses which
-    allow (and store) extra and/or private attributes.
-
-    Args:
-        self: The BaseModel instance.
-        item: The extra private attribute name.
-
-    Raises:
-        AttributeError: If the attribute does not exist in the model.
-    """
-    if item in self.__private_attributes__:
-        attribute = self.__private_attributes__[item]
-        if hasattr(attribute, '__delete__'):
-            attribute.__delete__(self)  # type: ignore
-            return
-
-        try:
-            # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
-            del self.__pydantic_private__[item]  # type: ignore
-        except KeyError as exc:
-            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-    elif item in self.model_fields:
-        super(self.__class__, self).__delattr__(item)
-    else:
-        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
