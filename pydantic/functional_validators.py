@@ -361,9 +361,7 @@ class ModelWrapValidatorWithoutInfo(Protocol):
 
 
 class ModelWrapValidator(Protocol):
-    """A @model_validator decorated function signature.
-    This is used when `mode='wrap'`.
-    """
+    """A @model_validator decorated function signature. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
         self,
