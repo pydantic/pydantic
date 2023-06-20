@@ -277,7 +277,7 @@ impl PyMultiHostUrl {
     }
 
     pub fn __repr__(&self) -> String {
-        format!("Url('{}')", self.__str__())
+        format!("MultiHostUrl('{}')", self.__str__())
     }
 
     fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
