@@ -642,7 +642,8 @@ def Field(  # C901
         repr: A boolean indicating whether to include the field in the `__repr__` output.
         init_var: Whether the field should be included in the constructor of the dataclass.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
-        strict: If `True` (the default is `None`), the field should be validated strictly.
+        strict: If `True`, strict validation is applied to the field.
+            See [Strict Mode](../usage/strict_mode.md) for details.
         gt: Greater than. If set, value must be greater than this. Only applicable to numbers.
         ge: Greater than or equal. If set, value must be greater than or equal to this. Only applicable to numbers.
         lt: Less than. If set, value must be less than this. Only applicable to numbers.
