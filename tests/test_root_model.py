@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import pytest
 from pydantic_core import CoreSchema
@@ -464,3 +464,28 @@ def test_root_model_json_schema_meta():
     assert parametrized_json_schema.get('description') is None
     assert subclassed_json_schema.get('title') == 'SubclassedModel'
     assert subclassed_json_schema.get('description') == 'Subclassed Model docstring'
+
+
+@pytest.mark.parametrize('order', ['BR', 'RB'])
+def test_root_model_dump_with_base_model(order):
+    class BModel(BaseModel):
+        value: str
+
+    class RModel(RootModel):
+        root: int
+
+    if order == 'BR':
+
+        class Model(RootModel):
+            root: List[Union[BModel, RModel]]
+
+    elif order == 'RB':
+
+        class Model(RootModel):
+            root: List[Union[RModel, BModel]]
+
+    m = Model([1, 2, {'value': 'abc'}])
+
+    assert m.root == [RModel(1), RModel(2), BModel.model_construct(value='abc')]
+    assert m.model_dump() == [1, 2, {'value': 'abc'}]
+    assert m.model_dump_json() == '[1,2,{"value":"abc"}]'
