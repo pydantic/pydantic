@@ -1,4 +1,6 @@
-from __future__ import annotations as _annotations  # noqa: D100
+"""RootModel class and type definitions."""
+
+from __future__ import annotations as _annotations
 
 import typing
 
