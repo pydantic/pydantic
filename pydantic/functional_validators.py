@@ -418,9 +418,7 @@ class ModelAfterValidatorWithoutInfo(Protocol):
 
 
 class ModelAfterValidator(Protocol):
-    """A @model_validator decorated function signature.
-    This is used when `mode='after'`.
-    """
+    """A @model_validator decorated function signature. This is used when `mode='after'`."""
 
     @staticmethod
     def __call__(  # noqa: D102
