@@ -1684,6 +1684,55 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelAfterValidator" class="md-nav__link">
+    ModelAfterValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="md-nav__link">
+    ModelAfterValidatorWithoutInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelBeforeValidator" class="md-nav__link">
+    ModelBeforeValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelBeforeValidatorWithoutInfo" class="md-nav__link">
+    ModelBeforeValidatorWithoutInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelWrapValidator" class="md-nav__link">
+    ModelWrapValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelWrapValidatorHandler" class="md-nav__link">
+    ModelWrapValidatorHandler
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelWrapValidatorWithoutInfo" class="md-nav__link">
+    ModelWrapValidatorWithoutInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.PlainValidator" class="md-nav__link">
     PlainValidator
   </a>
@@ -2121,6 +2170,55 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelAfterValidator" class="md-nav__link">
+    ModelAfterValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="md-nav__link">
+    ModelAfterValidatorWithoutInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelBeforeValidator" class="md-nav__link">
+    ModelBeforeValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelBeforeValidatorWithoutInfo" class="md-nav__link">
+    ModelBeforeValidatorWithoutInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelWrapValidator" class="md-nav__link">
+    ModelWrapValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelWrapValidatorHandler" class="md-nav__link">
+    ModelWrapValidatorHandler
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelWrapValidatorWithoutInfo" class="md-nav__link">
+    ModelWrapValidatorWithoutInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.PlainValidator" class="md-nav__link">
     PlainValidator
   </a>
@@ -2181,6 +2279,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
 <a id="pydantic.functional_validators"></a>
   <div class="doc doc-contents first">
+  
+      <p>This module contains related classes and functions for validation.</p>
 
   
 
@@ -2418,6 +2518,289 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 </details>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.ModelAfterValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ModelAfterValidator</span>
+
+
+<a href="#pydantic.functional_validators.ModelAfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>A @model_validator decorated function signature. This is used when <code>mode='after'</code>.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ModelAfterValidatorWithoutInfo</span>
+
+
+<a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>A @model_validator decorated function signature. This is used when <code>mode='after'</code> and the function does not
+have info argument.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.ModelBeforeValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ModelBeforeValidator</span>
+
+
+<a href="#pydantic.functional_validators.ModelBeforeValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>A @model_validator decorated function signature. This is used when <code>mode='before'</code>.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.ModelBeforeValidatorWithoutInfo" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ModelBeforeValidatorWithoutInfo</span>
+
+
+<a href="#pydantic.functional_validators.ModelBeforeValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>A @model_validator decorated function signature.
+This is used when <code>mode='before'</code> and the function does not have info argument.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.ModelWrapValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ModelWrapValidator</span>
+
+
+<a href="#pydantic.functional_validators.ModelWrapValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>A @model_validator decorated function signature. This is used when <code>mode='wrap'</code>.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.ModelWrapValidatorHandler" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ModelWrapValidatorHandler</span>
+
+
+<a href="#pydantic.functional_validators.ModelWrapValidatorHandler" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">_core_schema</a>.<span title="pydantic_core.core_schema.ValidatorFunctionWrapHandler">ValidatorFunctionWrapHandler</span></code>, <code><span title="typing.Protocol">Protocol</span>[<span title="pydantic.functional_validators._ModelTypeCo">_ModelTypeCo</span>]</code></p>
+
+  
+      <p>@model_validator decorated function handler argument type. This is used when <code>mode='wrap'</code>.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.ModelWrapValidatorWithoutInfo" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ModelWrapValidatorWithoutInfo</span>
+
+
+<a href="#pydantic.functional_validators.ModelWrapValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+  
+      <p>A @model_validator decorated function signature.
+This is used when <code>mode='wrap'</code> and the function does not have info argument.</p>
+
 
 
   
@@ -2793,9 +3176,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">276</span>
 <span class="normal">277</span>
 <span class="normal">278</span>
 <span class="normal">279</span>
@@ -2845,7 +3226,9 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 <span class="normal">323</span>
 <span class="normal">324</span>
 <span class="normal">325</span>
-<span class="normal">326</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_validator</span><span class="p">(</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_validator</span><span class="p">(</span>
     <span class="n">__field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">FieldValidatorModes</span> <span class="o">=</span> <span class="s1">&#39;after&#39;</span><span class="p">,</span>
@@ -2973,27 +3356,27 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">436</span>
-<span class="normal">437</span>
-<span class="normal">438</span>
-<span class="normal">439</span>
-<span class="normal">440</span>
-<span class="normal">441</span>
-<span class="normal">442</span>
-<span class="normal">443</span>
-<span class="normal">444</span>
-<span class="normal">445</span>
-<span class="normal">446</span>
-<span class="normal">447</span>
-<span class="normal">448</span>
-<span class="normal">449</span>
-<span class="normal">450</span>
-<span class="normal">451</span>
-<span class="normal">452</span>
-<span class="normal">453</span>
-<span class="normal">454</span>
-<span class="normal">455</span>
-<span class="normal">456</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
