@@ -2109,6 +2109,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
 <a id="pydantic.root_model"></a>
   <div class="doc doc-contents first">
+  
+      <p>RootModel class and type definitions.</p>
 
   
 
@@ -2161,15 +2163,45 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
             </div>
           </td>
         </tr>
+        <tr>
+          <td><code>__pydantic_root_model__</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether the model is a RootModel.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>__pydantic_private__</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Private fields in the model.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>__pydantic_extra__</code></td>
+          <td>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Extra fields in the model.</p>
+            </div>
+          </td>
+        </tr>
     </tbody>
   </table>
 
 
           <details class="quote">
             <summary>Source code in <code>pydantic/root_model.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">RootModelRootType</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">RootModelRootType</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
     <span class="n">__tracebackhide__</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">__pydantic_self__</span><span class="o">.</span><span class="n">__pydantic_validator__</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">self_instance</span><span class="o">=</span><span class="n">__pydantic_self__</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -2295,12 +2327,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
       <details class="quote">
         <summary>Source code in <code>pydantic/root_model.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">47</span>
 <span class="normal">48</span>
 <span class="normal">49</span>
 <span class="normal">50</span>
@@ -2310,10 +2337,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_construct</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Model</span><span class="p">],</span> <span class="n">root</span><span class="p">:</span> <span class="n">RootModelRootType</span><span class="p">,</span> <span class="n">_fields_set</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Create a new model using the provided root object and update fields set.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a new model using the provided root object and update fields set.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        root: The root object of the model.</span>
