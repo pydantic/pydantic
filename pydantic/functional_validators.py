@@ -391,9 +391,7 @@ class ModelBeforeValidatorWithoutInfo(Protocol):
 
 
 class ModelBeforeValidator(Protocol):
-    """A @model_validator decorated function signature.
-    This is used when `mode='before'`.
-    """
+    """A @model_validator decorated function signature. This is used when `mode='before'`."""
 
     def __call__(  # noqa: D102
         self,
