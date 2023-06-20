@@ -576,6 +576,10 @@ print(user)
 1. This is the default value.
 2. The `age` field is not validated in the strict mode. Therefore, it can be assigned a string.
 
+See [Strict Mode](strict_mode.md) for more details.
+
+See [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
+
 ## Immutability
 
 The parameter `frozen` is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being

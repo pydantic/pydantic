@@ -497,7 +497,6 @@ does not match the field's type annotation.
 To configure strict mode for all fields on a model, you can
 [set `model_config = ConfigDict(strict=True)`](../api/config.md#pydantic.config.ConfigDict) on the model.
 
-See [Strict Mode](strict_mode.md) for more details.
 
 ```py
 from pydantic import BaseModel, ConfigDict
@@ -509,6 +508,10 @@ class Model(BaseModel):
     name: str
     age: int
 ```
+
+See [Strict Mode](strict_mode.md) for more details.
+
+See [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
 
 ### Arbitrary Types Allowed
 

@@ -45,6 +45,7 @@ except ValidationError as e:
 
 For all fields on a model, you can
 [set `model_config = ConfigDict(strict=True)`](../api/config.md#pydantic.config.ConfigDict) in the config for the model.
+When set, all fields on the model will be validated in strict mode.
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -67,3 +68,18 @@ except ValidationError as e:
       Input should be a valid integer [type=int_type, input_value='42', input_type=str]
     """
 ```
+
+!!! note
+    Note that, when using `strict=True` in config on a model, you can still override the strictness
+    of individual fields by setting `strict=False` on individual fields.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class User(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        name: str
+        age: int = Field(strict=False)
+    ```
