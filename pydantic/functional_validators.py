@@ -406,8 +406,8 @@ class ModelBeforeValidator(Protocol):
 
 
 class ModelAfterValidatorWithoutInfo(Protocol):
-    """A @model_validator decorated function signature.
-    This is used when `mode='after'` and the function does not have info argument.
+    """A @model_validator decorated function signature. This is used when `mode='after'` and the function does not
+    have info argument.
     """
 
     @staticmethod
