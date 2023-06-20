@@ -2195,7 +2195,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <td><code>str</code></td>
 <td>Lax</td>
 <td>Python &amp; JSON</td>
-<td>Allowed values: <code>'f'</code>, <code>'n'</code>, <code>'no'</code>, <code>'off'</code>, <code>'false'</code>, <code>'t'</code>, <code>'y'</code>, <code>'on'</code>, <code>'yes'</code>, <code>'true'</code>.</td>
+<td>Allowed values: <code>'f'</code>, <code>'n'</code>, <code>'no'</code>, <code>'off'</code>, <code>'false'</code>, <code>'False'</code>, <code>'t'</code>, <code>'y'</code>, <code>'on'</code>, <code>'yes'</code>, <code>'true'</code>, <code>'True'</code>.</td>
 </tr>
 <tr>
 <td><code>None</code></td>
@@ -2221,15 +2221,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <tr>
 <td><code>date</code></td>
 <td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td>Format: <code>YYYY-MM-DD</code>.</td>
-</tr>
-<tr>
-<td><code>date</code></td>
-<td><code>str</code></td>
 <td>Lax</td>
-<td>Python</td>
+<td>Python &amp; JSON</td>
 <td>Format: <code>YYYY-MM-DD</code>.</td>
 </tr>
 <tr>
@@ -2277,15 +2270,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <tr>
 <td><code>datetime</code></td>
 <td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td>Format: <code>YYYY-MM-DDTHH:MM:SS.f</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
-</tr>
-<tr>
-<td><code>datetime</code></td>
-<td><code>str</code></td>
 <td>Lax</td>
-<td>Python</td>
+<td>Python &amp; JSON</td>
 <td>Format: <code>YYYY-MM-DDTHH:MM:SS.f</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
 </tr>
 <tr>
@@ -2326,15 +2312,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <tr>
 <td><code>time</code></td>
 <td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td>Format: <code>HH:MM:SS.FFFFFF</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
-</tr>
-<tr>
-<td><code>time</code></td>
-<td><code>str</code></td>
 <td>Lax</td>
-<td>Python</td>
+<td>Python &amp; JSON</td>
 <td>Format: <code>HH:MM:SS.FFFFFF</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
 </tr>
 <tr>
@@ -2375,15 +2354,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <tr>
 <td><code>timedelta</code></td>
 <td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td>Format: <code>ISO8601</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
-</tr>
-<tr>
-<td><code>timedelta</code></td>
-<td><code>str</code></td>
 <td>Lax</td>
-<td>Python</td>
+<td>Python &amp; JSON</td>
 <td>Format: <code>ISO8601</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
 </tr>
 <tr>
@@ -2486,6 +2458,27 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </tr>
 <tr>
 <td><code>list</code></td>
+<td><code>set</code></td>
+<td>Lax</td>
+<td>Python</td>
+<td></td>
+</tr>
+<tr>
+<td><code>list</code></td>
+<td><code>frozenset</code></td>
+<td>Lax</td>
+<td>Python</td>
+<td></td>
+</tr>
+<tr>
+<td><code>list</code></td>
+<td><code>deque</code></td>
+<td>Lax</td>
+<td>Python</td>
+<td></td>
+</tr>
+<tr>
+<td><code>list</code></td>
 <td><code>dict_keys</code></td>
 <td>Lax</td>
 <td>Python</td>
@@ -2521,6 +2514,27 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </tr>
 <tr>
 <td><code>tuple</code></td>
+<td><code>set</code></td>
+<td>Lax</td>
+<td>Python</td>
+<td></td>
+</tr>
+<tr>
+<td><code>tuple</code></td>
+<td><code>frozenset</code></td>
+<td>Lax</td>
+<td>Python</td>
+<td></td>
+</tr>
+<tr>
+<td><code>tuple</code></td>
+<td><code>deque</code></td>
+<td>Lax</td>
+<td>Python</td>
+<td></td>
+</tr>
+<tr>
+<td><code>tuple</code></td>
 <td><code>dict_keys</code></td>
 <td>Lax</td>
 <td>Python</td>
@@ -2570,6 +2584,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </tr>
 <tr>
 <td><code>set</code></td>
+<td><code>deque</code></td>
+<td>Lax</td>
+<td>Python</td>
+<td></td>
+</tr>
+<tr>
+<td><code>set</code></td>
 <td><code>dict_keys</code></td>
 <td>Lax</td>
 <td>Python</td>
@@ -2613,6 +2634,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <tr>
 <td><code>frozenset</code></td>
 <td><code>set</code></td>
+<td>Lax</td>
+<td>Python</td>
+<td></td>
+</tr>
+<tr>
+<td><code>frozenset</code></td>
+<td><code>deque</code></td>
 <td>Lax</td>
 <td>Python</td>
 <td></td>
