@@ -488,7 +488,7 @@ def make_literal_validator(type_: Any) -> Callable[[Any], Any]:
     def literal_validator(v: Any) -> Any:
         try:
             return allowed_choices[v]
-        except KeyError:
+        except (KeyError, TypeError):
             raise errors.WrongConstantError(given=v, permitted=permitted_choices)
 
     return literal_validator

@@ -1189,6 +1189,24 @@ def test_literal_validator():
     ]
 
 
+def test_literal_validator_non_str_value():
+    class Model(BaseModel):
+        a: Literal['foo']
+
+    Model(a='foo')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a={'bar': 'foo'})
+    assert exc_info.value.errors() == [
+        {
+            'loc': ('a',),
+            'msg': "unexpected value; permitted: 'foo'",
+            'type': 'value_error.const',
+            'ctx': {'given': {'bar': 'foo'}, 'permitted': ('foo',)},
+        }
+    ]
+
+
 def test_literal_validator_str_enum():
     class Bar(str, Enum):
         FIZ = 'fiz'
