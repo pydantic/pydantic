@@ -1,4 +1,6 @@
-from __future__ import annotations as _annotations  # noqa: D100
+"""This module contains related classes and functions for validation."""
+
+from __future__ import annotations as _annotations
 
 import sys
 from functools import partialmethod
