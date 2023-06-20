@@ -1,4 +1,4 @@
-from __future__ import annotations as _annotations
+from __future__ import annotations as _annotations  # noqa: D100
 
 import sys
 from functools import partialmethod
@@ -331,12 +331,22 @@ _ModelTypeCo = TypeVar('_ModelTypeCo', covariant=True)
 
 
 class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Protocol[_ModelTypeCo]):
-    def __call__(self, input_value: Any, outer_location: str | int | None = None) -> _ModelTypeCo:  # pragma: no cover
+    """@model_validator decorated function handler argument type.
+    This is used when `mode='wrap'`.
+    """
+
+    def __call__(  # noqa: D102
+        self, input_value: Any, outer_location: str | int | None = None
+    ) -> _ModelTypeCo:  # pragma: no cover
         ...
 
 
 class ModelWrapValidatorWithoutInfo(Protocol):
-    def __call__(
+    """A @model_validator decorated function signature.
+    This is used when `mode='wrap'` and the function does not have info argument.
+    """
+
+    def __call__(  # noqa: D102
         self,
         cls: type[_ModelType],
         # this can be a dict, a model instance
@@ -349,7 +359,11 @@ class ModelWrapValidatorWithoutInfo(Protocol):
 
 
 class ModelWrapValidator(Protocol):
-    def __call__(
+    """A @model_validator decorated function signature.
+    This is used when `mode='wrap'`.
+    """
+
+    def __call__(  # noqa: D102
         self,
         cls: type[_ModelType],
         # this can be a dict, a model instance
@@ -363,7 +377,11 @@ class ModelWrapValidator(Protocol):
 
 
 class ModelBeforeValidatorWithoutInfo(Protocol):
-    def __call__(
+    """A @model_validator decorated function signature.
+    This is used when `mode='before'` and the function does not have info argument.
+    """
+
+    def __call__(  # noqa: D102
         self,
         cls: Any,
         # this can be a dict, a model instance
@@ -375,7 +393,11 @@ class ModelBeforeValidatorWithoutInfo(Protocol):
 
 
 class ModelBeforeValidator(Protocol):
-    def __call__(
+    """A @model_validator decorated function signature.
+    This is used when `mode='before'`.
+    """
+
+    def __call__(  # noqa: D102
         self,
         cls: Any,
         # this can be a dict, a model instance
@@ -388,16 +410,24 @@ class ModelBeforeValidator(Protocol):
 
 
 class ModelAfterValidatorWithoutInfo(Protocol):
+    """A @model_validator decorated function signature.
+    This is used when `mode='after'` and the function does not have info argument.
+    """
+
     @staticmethod
-    def __call__(
+    def __call__(  # noqa: D102
         self: _ModelType,  # type: ignore
     ) -> _ModelType:
         ...
 
 
 class ModelAfterValidator(Protocol):
+    """A @model_validator decorated function signature.
+    This is used when `mode='after'`.
+    """
+
     @staticmethod
-    def __call__(
+    def __call__(  # noqa: D102
         self: _ModelType,  # type: ignore
         __info: _core_schema.ValidationInfo,
     ) -> _ModelType:
