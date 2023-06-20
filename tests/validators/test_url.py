@@ -610,7 +610,7 @@ def test_multi_host_url_ok_single(py_and_json: PyAndJson):
     url: MultiHostUrl = v.validate_test('https://example.com/foo/bar?a=b')
     assert isinstance(url, MultiHostUrl)
     assert str(url) == 'https://example.com/foo/bar?a=b'
-    assert repr(url) == "Url('https://example.com/foo/bar?a=b')"
+    assert repr(url) == "MultiHostUrl('https://example.com/foo/bar?a=b')"
     assert url.scheme == 'https'
     assert url.path == '/foo/bar'
     assert url.query == 'a=b'
