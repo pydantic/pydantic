@@ -4735,3 +4735,42 @@ def test_examples_annotation() -> None:
         'items': {'type': 'number'},
         'type': 'array',
     }
+
+
+def test_typeddict_field_required_missing() -> None:
+    """https://github.com/pydantic/pydantic/issues/6192"""
+
+    class CustomType:
+        def __init__(self, data: dict[str, int]) -> None:
+            self.data = data
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            data_schema = core_schema.typed_dict_schema(
+                {
+                    'subunits': core_schema.typed_dict_field(
+                        core_schema.int_schema(),
+                    ),
+                }
+            )
+            return core_schema.no_info_after_validator_function(cls, data_schema)
+
+    class Model(BaseModel):
+        t: CustomType
+
+    m = Model(t={'subunits': 123})
+    assert type(m.t) is CustomType
+    assert m.t.data == {'subunits': 123}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(t={'subunits': 'abc'})
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('t', 'subunits'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'abc',
+        }
+    ]
