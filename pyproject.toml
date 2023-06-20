@@ -178,7 +178,6 @@ convention = "google"
 'pydantic/functional_validators.py' = ['D']
 'pydantic/json_schema.py' = ['D']
 'pydantic/mypy.py' = ['D']
-'pydantic/root_model.py' = ['D']
 
 [tool.coverage.run]
 source = ['pydantic']
