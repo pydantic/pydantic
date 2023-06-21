@@ -91,7 +91,7 @@ skip-magic-trailing-comma = true
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['samuelcolvin', 'adriangb', 'dmontagu']
+reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'davidhewitt']
 require_change_file = false
 
 [tool.pyright]
