@@ -18,7 +18,7 @@ from typing_extensions import Unpack
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
 from .errors import PydanticUserError
-from .warnings import PydanticDeprecationWarning
+from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
@@ -671,21 +671,13 @@ def Field(  # C901
 
     min_items = extra.pop('min_items', None)  # type: ignore
     if min_items is not None:
-        warn(
-            PydanticDeprecationWarning(
-                '`min_items` is deprecated and will be removed, use `min_length` instead', since=(2, 0)
-            )
-        )
+        warn('`min_items` is deprecated and will be removed, use `min_length` instead', PydanticDeprecatedSince20)
         if min_length is None:
             min_length = min_items  # type: ignore
 
     max_items = extra.pop('max_items', None)  # type: ignore
     if max_items is not None:
-        warn(
-            PydanticDeprecationWarning(
-                '`max_items` is deprecated and will be removed, use `max_length` instead', since=(2, 0)
-            )
-        )
+        warn('`max_items` is deprecated and will be removed, use `max_length` instead', PydanticDeprecatedSince20)
         if max_length is None:
             max_length = max_items  # type: ignore
 
@@ -701,11 +693,7 @@ def Field(  # C901
 
     allow_mutation = extra.pop('allow_mutation', None)  # type: ignore
     if allow_mutation is not None:
-        warn(
-            PydanticDeprecationWarning(
-                '`allow_mutation` is deprecated and will be removed. use `frozen` instead', since=(2, 0)
-            )
-        )
+        warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', PydanticDeprecatedSince20)
         if allow_mutation is False:
             frozen = True
 
@@ -715,10 +703,8 @@ def Field(  # C901
 
     if extra:
         warn(
-            PydanticDeprecationWarning(
-                'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
-                since=(2, 0),
-            )
+            'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
+            PydanticDeprecatedSince20,
         )
         if not json_schema_extra:
             json_schema_extra = extra  # type: ignore

@@ -1,7 +1,7 @@
 """Pydantic-specific warnings."""
 from __future__ import annotations as _annotations
 
-__all__ = ('PydanticDeprecationWarning',)
+__all__ = 'PydanticDeprecatedSince20', 'PydanticDeprecationWarning'
 
 
 class PydanticDeprecationWarning(DeprecationWarning):
@@ -36,3 +36,10 @@ class PydanticDeprecationWarning(DeprecationWarning):
         if self.since == (2, 0):
             message += ' See Pydantic V2 Migration Guide at https://errors.pydantic.dev/v2.0/migration/'
         return message
+
+
+class PydanticDeprecatedSince20(PydanticDeprecationWarning):
+    """A specific `PydanticDeprecationWarning` subclass defining functionality deprecated since Pydantic 2.0."""
+
+    def __init__(self, message: str, *args: object) -> None:
+        super().__init__(message, *args, since=(2, 0))

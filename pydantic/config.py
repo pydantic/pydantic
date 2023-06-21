@@ -8,7 +8,7 @@ from typing_extensions import Literal, Protocol, TypedDict
 
 from ._migration import getattr_migration
 from .deprecated.config import BaseConfig
-from .warnings import PydanticDeprecationWarning
+from .warnings import PydanticDeprecatedSince20
 
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 
@@ -30,10 +30,8 @@ class _Extra:
 
     def __getattribute__(self, __name: str) -> Any:
         warn(
-            PydanticDeprecationWarning(
-                '`pydantic.config.Extra` is deprecated, use literal values instead' " (e.g. `extra='allow'`)",
-                since=(2, 0),
-            ),
+            '`pydantic.config.Extra` is deprecated, use literal values instead' " (e.g. `extra='allow'`)",
+            PydanticDeprecatedSince20,
             stacklevel=2,
         )
         return super().__getattribute__(__name)

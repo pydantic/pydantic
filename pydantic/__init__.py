@@ -185,6 +185,7 @@ __all__ = [
     # version
     'VERSION',
     # warnings
+    'PydanticDeprecatedSince20',
     'PydanticDeprecationWarning',
     # annotated handlers
     'GetCoreSchemaHandler',

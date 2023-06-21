@@ -6,14 +6,14 @@ from typing import Any
 from typing_extensions import deprecated
 
 from .._internal import _config
-from ..warnings import PydanticDeprecationWarning
+from ..warnings import PydanticDeprecatedSince20
 
 __all__ = ('BaseConfig',)
 
 
 class _ConfigMetaclass(type):
     def __getattr__(self, item: str) -> Any:
-        warnings.warn(PydanticDeprecationWarning(_config.DEPRECATION_MESSAGE, since=(2, 0)))
+        warnings.warn(_config.DEPRECATION_MESSAGE, PydanticDeprecatedSince20)
 
         try:
             return _config.config_defaults[item]
@@ -30,7 +30,7 @@ class BaseConfig(metaclass=_ConfigMetaclass):
     """
 
     def __getattr__(self, item: str) -> Any:
-        warnings.warn(PydanticDeprecationWarning(_config.DEPRECATION_MESSAGE, since=(2, 0)))
+        warnings.warn(_config.DEPRECATION_MESSAGE, PydanticDeprecatedSince20)
         try:
             return super().__getattribute__(item)
         except AttributeError as exc:
@@ -41,5 +41,5 @@ class BaseConfig(metaclass=_ConfigMetaclass):
                 raise AttributeError(str(exc)) from exc
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        warnings.warn(PydanticDeprecationWarning(_config.DEPRECATION_MESSAGE, since=(2, 0)))
+        warnings.warn(_config.DEPRECATION_MESSAGE, PydanticDeprecatedSince20)
         return super().__init_subclass__(**kwargs)

@@ -13,7 +13,7 @@ from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
-from ..warnings import PydanticDeprecationWarning
+from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
@@ -217,9 +217,7 @@ class ModelMetaclass(ABCMeta):
     @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.')
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn(
-            PydanticDeprecationWarning(
-                'The `__fields__` attribute is deprecated, use `model_fields` instead.', since=(2, 0)
-            )
+            'The `__fields__` attribute is deprecated, use `model_fields` instead.', PydanticDeprecatedSince20
         )
         return self.model_fields
 

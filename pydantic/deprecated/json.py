@@ -15,7 +15,7 @@ from typing_extensions import deprecated
 from ..color import Color
 from ..networks import NameEmail
 from ..types import SecretBytes, SecretStr
-from ..warnings import PydanticDeprecationWarning
+from ..warnings import PydanticDeprecatedSince20
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
 
@@ -80,8 +80,7 @@ def pydantic_encoder(obj: Any) -> Any:
     from ..main import BaseModel
 
     warnings.warn(
-        PydanticDeprecationWarning('pydantic_encoder is deprecated, use BaseModel.model_dump instead.', since=(2, 0)),
-        stacklevel=2,
+        'pydantic_encoder is deprecated, use BaseModel.model_dump instead.', PydanticDeprecatedSince20, stacklevel=2
     )
     if isinstance(obj, BaseModel):
         return obj.model_dump()
@@ -104,9 +103,8 @@ def pydantic_encoder(obj: Any) -> Any:
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
     # Check the class type and its superclasses for a matching encoder
     warnings.warn(
-        PydanticDeprecationWarning(
-            'custom_pydantic_encoder is deprecated, use BaseModel.model_dump instead.', since=(2, 0)
-        ),
+        'custom_pydantic_encoder is deprecated, use BaseModel.model_dump instead.',
+        PydanticDeprecatedSince20,
         stacklevel=2,
     )
     for base in obj.__class__.__mro__[:-1]:
@@ -123,7 +121,7 @@ def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]]
 @deprecated('timedelta_isoformat is deprecated.')
 def timedelta_isoformat(td: datetime.timedelta) -> str:
     """ISO 8601 encoding for Python timedelta object."""
-    warnings.warn(PydanticDeprecationWarning('timedelta_isoformat is deprecated.', since=(2, 0)), stacklevel=2)
+    warnings.warn('timedelta_isoformat is deprecated.', PydanticDeprecatedSince20, stacklevel=2)
     minutes, seconds = divmod(td.seconds, 60)
     hours, minutes = divmod(minutes, 60)
     return f'{"-" if td.days < 0 else ""}P{abs(td.days)}DT{hours:d}H{minutes:d}M{seconds:d}.{td.microseconds:06d}S'

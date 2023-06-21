@@ -1,4 +1,4 @@
-from pydantic import PydanticDeprecationWarning
+from pydantic import PydanticDeprecatedSince20, PydanticDeprecationWarning
 
 
 def test_pydantic_deprecation_warning():
@@ -29,3 +29,12 @@ def test_pydantic_deprecation_warning_2_0_migration_guide_link():
         str(warning)
         == 'Warning message. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/v2.0/migration/'
     )
+
+
+def test_pydantic_deprecated_since_2_0_warning():
+    warning = PydanticDeprecatedSince20('Warning message')
+
+    assert isinstance(warning, PydanticDeprecationWarning)
+    assert warning.message == 'Warning message'
+    assert warning.since == (2, 0)
+    assert warning.expected_removal == (3, 0)

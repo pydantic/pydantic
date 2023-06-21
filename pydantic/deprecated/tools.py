@@ -8,7 +8,7 @@ from typing_extensions import deprecated
 
 from ..json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
 from ..type_adapter import TypeAdapter
-from ..warnings import PydanticDeprecationWarning
+from ..warnings import PydanticDeprecatedSince20
 
 __all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
 
@@ -21,16 +21,14 @@ T = TypeVar('T')
 @deprecated('parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.')
 def parse_obj_as(type_: type[T], obj: Any, type_name: NameFactory | None = None) -> T:
     warnings.warn(
-        PydanticDeprecationWarning(
-            'parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.', since=(2, 0)
-        ),
+        'parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.',
+        PydanticDeprecatedSince20,
         stacklevel=2,
     )
     if type_name is not None:  # pragma: no cover
         warnings.warn(
-            PydanticDeprecationWarning(
-                'The type_name parameter is deprecated. parse_obj_as no longer creates temporary models', since=(2, 0)
-            ),
+            'The type_name parameter is deprecated. parse_obj_as no longer creates temporary models',
+            PydanticDeprecatedSince20,
             stacklevel=2,
         )
     return TypeAdapter(type_).validate_python(obj)
@@ -47,9 +45,8 @@ def schema_of(
 ) -> dict[str, Any]:
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one."""
     warnings.warn(
-        PydanticDeprecationWarning(
-            'schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.', since=(2, 0)
-        ),
+        'schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.',
+        PydanticDeprecatedSince20,
         stacklevel=2,
     )
     res = TypeAdapter(type_).json_schema(
@@ -62,9 +59,8 @@ def schema_of(
             res['title'] = title
         else:
             warnings.warn(
-                PydanticDeprecationWarning(
-                    'Passing a callable for the `title` parameter is deprecated and no longer supported', since=(2, 0)
-                ),
+                'Passing a callable for the `title` parameter is deprecated and no longer supported',
+                PydanticDeprecatedSince20,
                 stacklevel=2,
             )
             res['title'] = title(type_)
@@ -83,9 +79,8 @@ def schema_json_of(
 ) -> str:
     """Generate a JSON schema (as JSON) for the passed model or dynamically generated one."""
     warnings.warn(
-        PydanticDeprecationWarning(
-            'schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.', since=(2, 0)
-        ),
+        'schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.',
+        PydanticDeprecatedSince20,
         stacklevel=2,
     )
     return json.dumps(
