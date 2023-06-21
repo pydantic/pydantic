@@ -60,6 +60,10 @@ lto = "fat"
 codegen-units = 1
 strip = true
 
+[profile.bench]
+debug = true
+strip = false
+
 [dev-dependencies]
 pyo3 = { version = "0.19.0", features = ["auto-initialize"] }
 
