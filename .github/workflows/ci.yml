@@ -361,6 +361,7 @@ jobs:
           architecture: ${{ matrix.python-architecture || 'x64' }}
 
       - run: pip install -U twine 'black>=22.3.0,<23' typing_extensions
+
       # generate self-schema now, so we don't have to do so inside docker in maturin build
       - run: python generate_self_schema.py
 
@@ -380,6 +381,7 @@ jobs:
           container: ${{ matrix.container }}
           args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 pypy3.7 pypy3.8 pypy3.9' }}
           rust-toolchain: stable
+          docker-options: -e CI
 
       - run: ${{ matrix.ls || 'ls -lh' }} dist/
 
