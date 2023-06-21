@@ -176,7 +176,6 @@ convention = "google"
 'tests/*' = ['D']
 'pydantic/deprecated/*' = ['D']
 'pydantic/json_schema.py' = ['D']
-'pydantic/mypy.py' = ['D']
 
 [tool.coverage.run]
 source = ['pydantic']
