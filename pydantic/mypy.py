@@ -1,4 +1,4 @@
-"""This module contains related classes and functions for mypy plugin."""
+"""This module includes classes and functions designed specifically for use with the mypy plugin."""
 
 from __future__ import annotations
 
