@@ -145,6 +145,10 @@ impl PyUrl {
     pub fn __deepcopy__(&self, py: Python, _memo: &PyDict) -> Py<PyAny> {
         self.clone().into_py(py)
     }
+
+    fn __getnewargs__(&self) -> (&str,) {
+        (self.__str__(),)
+    }
 }
 
 #[pyclass(name = "MultiHostUrl", module = "pydantic_core._pydantic_core", subclass)]
@@ -304,6 +308,10 @@ impl PyMultiHostUrl {
 
     pub fn __deepcopy__(&self, py: Python, _memo: &PyDict) -> Py<PyAny> {
         self.clone().into_py(py)
+    }
+
+    fn __getnewargs__(&self) -> (String,) {
+        (self.__str__(),)
     }
 }
 
