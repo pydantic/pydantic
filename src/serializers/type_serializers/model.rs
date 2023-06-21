@@ -6,15 +6,15 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{py_schema_error_type, ExtraBehavior};
-use crate::definitions::DefinitionsBuilder;
-use crate::tools::SchemaDict;
-
 use super::{
     infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer,
     CombinedSerializer, ComputedFields, Extra, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck, SerField,
     TypeSerializer,
 };
+use crate::build_tools::{py_schema_error_type, ExtraBehavior};
+use crate::definitions::DefinitionsBuilder;
+use crate::serializers::errors::PydanticSerializationUnexpectedValue;
+use crate::tools::SchemaDict;
 
 const ROOT_FIELD: &str = "root";
 
@@ -160,12 +160,15 @@ impl TypeSerializer for ModelSerializer {
     ) -> PyResult<PyObject> {
         let mut extra = Extra {
             model: Some(value),
+            field_name: None,
             ..*extra
         };
         if self.root_model {
             extra.field_name = Some(ROOT_FIELD);
             let py = value.py();
-            let root = value.getattr(intern!(py, ROOT_FIELD))?;
+            let root = value
+                .getattr(intern!(py, ROOT_FIELD))
+                .map_err(|_| PydanticSerializationUnexpectedValue::new_err(None))?;
             self.serializer.to_python(root, include, exclude, &extra)
         } else if self.allow_value(value, &extra)? {
             let inner_value = self.get_inner_value(value, &extra)?;
@@ -195,6 +198,7 @@ impl TypeSerializer for ModelSerializer {
     ) -> Result<S::Ok, S::Error> {
         let mut extra = Extra {
             model: Some(value),
+            field_name: None,
             ..*extra
         };
         if self.root_model {
