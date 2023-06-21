@@ -894,10 +894,12 @@ def computed_field(
     repr: bool = True,
     return_type: Any = None,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Decorate to include `property` and `cached_property` when serializing models.
+    """Decorator to include `property` and `cached_property` when serializing models.
 
     If applied to functions not yet decorated with `@property` or `@cached_property`, the function is
     automatically wrapped with `property`.
+
+    See [Computed Fields](../usage/computed_fields.md) for more details.
 
     Args:
         __f: the function to wrap.
