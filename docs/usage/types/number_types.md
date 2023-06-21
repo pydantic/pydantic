@@ -47,18 +47,18 @@ Those functions accept the following arguments:
 
 There are other arguments for each function, which you can see in the API Reference of each function:
 
-  * [`conint`](/api/types/#conint)
-  * [`confloat`](/api/types/#confloat)
-  * [`condecimal`](/api/types/#condecimal)
+  * [`conint`](/api/types/#pydantic.types.conint)
+  * [`confloat`](/api/types/#pydantic.types.confloat)
+  * [`condecimal`](/api/types/#pydantic.types.condecimal)
 
 ### Constrained Integers
 
 There are also types that can be used to constrain integers:
 
-* [`PositiveInt`]: Constrain an `int` to be positive.
-* [`NegativeInt`]: Constrain an `int` to be negative.
-* [`NonPositiveInt`]: Constrain an `int` to be non-positive.
-* [`NonNegativeInt`]: Constrain an `int` to be non-negative.
+* [`PositiveInt`](/api/types/#pydantic.types.PositiveInt): Constrain an `int` to be positive.
+* [`NegativeInt`](/api/types/#pydantic.types.NegativeInt): Constrain an `int` to be negative.
+* [`NonPositiveInt`](/api/types/#pydantic.types.NonPositiveInt): Constrain an `int` to be non-positive.
+* [`NonNegativeInt`](/api/types/#pydantic.types.NonNegativeInt): Constrain an `int` to be non-negative.
 
 ```py
 from pydantic import BaseModel, NegativeInt, NonNegativeInt, NonPositiveInt, PositiveInt
@@ -80,10 +80,10 @@ print(m)
 
 There are also types that can be used to constrain floats:
 
-* [`PositiveFloat`]: Constrain a `float` to be positive.
-* [`NegativeFloat`]: Constrain a `float` to be negative.
-* [`NonPositiveFloat`]: Constrain a `float` to be non-positive.
-* [`NonNegativeFloat`]: Constrain a `float` to be non-negative.
+* [`PositiveFloat`](/api/types/#pydantic.types.PositiveFloat): Constrain a `float` to be positive.
+* [`NegativeFloat`](/api/types/#pydantic.types.NegativeFloat): Constrain a `float` to be negative.
+* [`NonPositiveFloat`](/api/types/#pydantic.types.NonPositiveFloat): Constrain a `float` to be non-positive.
+* [`NonNegativeFloat`](/api/types/#pydantic.types.NonNegativeFloat): Constrain a `float` to be non-negative.
 
 ```py
 from pydantic import (
@@ -121,15 +121,3 @@ m = Model(finite=1.0)
 print(m)
 #> finite=1.0
 ```
-
-[`PositiveInt`]: /api/types/#pydantic.types.PositiveInt
-[`NegativeInt`]: /api/types/#pydantic.types.NegativeInt
-[`NonPositiveInt`]: /api/types/#pydantic.types.NonPositiveInt
-[`NonNegativeInt`]: /api/types/#pydantic.types.NonNegativeInt
-[`PositiveFloat`]: /api/types/#pydantic.types.PositiveFloat
-[`NegativeFloat`]: /api/types/#pydantic.types.NegativeFloat
-[`NonPositiveFloat`]: /api/types/#pydantic.types.NonPositiveFloat
-[`NonNegativeFloat`]: /api/types/#pydantic.types.NonNegativeFloat
-[`StrictBytes`]: /api/types/#pydantic.types.StrictBytes
-[`StrictInt`]: /api/types/#pydantic.types.StrictInt
-[`StrictFloat`]: /api/types/#pydantic.types.StrictFloat
