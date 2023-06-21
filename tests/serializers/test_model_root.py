@@ -1,6 +1,8 @@
 import json
 import platform
-from typing import Any
+from typing import Any, List, Union
+
+import pytest
 
 try:
     from functools import cached_property
@@ -20,8 +22,16 @@ else:
     pass
 
 
+class BaseModel:
+    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
 class RootModel:
-    __slots__ = 'root'
+    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
     root: str
 
     def __init__(self, data):
@@ -129,3 +139,43 @@ def test_function_wrap_field_serializer_to_json():
         )
     )
     assert json.loads(s.to_json(Model(1000))) == '1_000'
+
+
+@pytest.mark.parametrize('order', ['BR', 'RB'])
+def test_root_model_dump_with_base_model(order):
+    class BModel(BaseModel):
+        value: str
+
+    b_schema = core_schema.model_schema(
+        BModel, core_schema.model_fields_schema({'value': core_schema.model_field(core_schema.str_schema())})
+    )
+
+    class RModel(RootModel):
+        root: int
+
+    r_schema = core_schema.model_schema(RModel, core_schema.int_schema(), root_model=True)
+
+    if order == 'BR':
+
+        class Model(RootModel):
+            root: List[Union[BModel, RModel]]
+
+        choices = [b_schema, r_schema]
+
+    elif order == 'RB':
+
+        class Model(RootModel):
+            root: List[Union[RModel, BModel]]
+
+        choices = [r_schema, b_schema]
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model, core_schema.list_schema(core_schema.union_schema(choices=choices)), root_model=True
+        )
+    )
+
+    m = Model([RModel(1), RModel(2), BModel(value='abc')])
+
+    assert s.to_python(m) == [1, 2, {'value': 'abc'}]
+    assert s.to_json(m) == b'[1,2,{"value":"abc"}]'
