@@ -1,3 +1,16 @@
+---
+description: Support for number types.
+---
+
+Pydantic supports the following numeric types from the Python standard library:
+
+* `int`
+* `float`
+* `enum.IntEnum`
+* `decimal.Decimal`
+
+## Validation of numeric types
+
 `int`
 : Pydantic uses `int(v)` to coerce types to an `int`;
   see [this](../models.md#data-conversion) warning on loss of information during data conversion
@@ -15,123 +28,108 @@
 `decimal.Decimal`
 : Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`
 
-`NegativeFloat`
-: allows a float which is negative; uses standard `float` parsing then checks the value is less than 0;
-  see [Constrained Types](#constrained-types)
-
-`NegativeInt`
-: allows an int which is negative; uses standard `int` parsing then checks the value is less than 0;
-  see [Constrained Types](#constrained-types)
-
-`PositiveFloat`
-: allows a float which is positive; uses standard `float` parsing then checks the value is greater than 0;
-  see [Constrained Types](#constrained-types)
-
-`PositiveInt`
-: allows an int which is positive; uses standard `int` parsing then checks the value is greater than 0;
-  see [Constrained Types](#constrained-types)
-
-`condecimal`
-: type method for constraining Decimals;
-  see [Constrained Types](#constrained-types)
-
-`confloat`
-: type method for constraining floats;
-  see [Constrained Types](#constrained-types)
-
-`conint`
-: type method for constraining ints;
-  see [Constrained Types](#constrained-types)
-
 ## Constrained Types
 
-The value of numerous common types can be restricted using `con*` type functions:
+Pydantic provides functions that can be used to constrain numbers:
+
+* `conint`: Add constraints to an `int` type.
+* `confloat`: Add constraints to a `float` type.
+* `condecimal`: Add constraints to a `decimal.Decimal` type.
+
+Those functions accept the following arguments:
+
+* `gt` (greater than)
+* `ge` (greater than or equal to)
+* `lt` (less than)
+* `le` (less than or equal to)
+* `multiple_of` (multiple of)
+* `strict` (whether to allow coercion from compatible types)
+
+There are other arguments for each function, which you can see in the API Reference of each function:
+
+  * [`conint`](/api/types/#conint)
+  * [`confloat`](/api/types/#confloat)
+  * [`condecimal`](/api/types/#condecimal)
+
+### Constrained Integers
+
+There are also types that can be used to constrain integers:
+
+* [`PositiveInt`]: Constrain an `int` to be positive.
+* [`NegativeInt`]: Constrain an `int` to be negative.
+* [`NonPositiveInt`]: Constrain an `int` to be non-positive.
+* [`NonNegativeInt`]: Constrain an `int` to be non-negative.
 
 ```py
-from decimal import Decimal
-
-from pydantic import BaseModel, condecimal, confloat, conint
+from pydantic import BaseModel, NegativeInt, NonNegativeInt, NonPositiveInt, PositiveInt
 
 
 class Model(BaseModel):
-    big_int: conint(gt=1000, lt=1024)
-    mod_int: conint(multiple_of=5)
-    big_float: confloat(gt=1000, lt=1024)
-    unit_interval: confloat(ge=0, le=1)
-    mod_float: confloat(multiple_of=0.5)
-    decimal_positive: condecimal(gt=0)
-    decimal_negative: condecimal(lt=0)
-    decimal_max_digits_and_places: condecimal(max_digits=2, decimal_places=2)
-    mod_decimal: condecimal(multiple_of=Decimal('0.25'))
+    positive: PositiveInt
+    negative: NegativeInt
+    non_positive: NonPositiveInt
+    non_negative: NonNegativeInt
+
+
+m = Model(positive=1, negative=-1, non_positive=0, non_negative=0)
+print(m)
+#> positive=1 negative=-1 non_positive=0 non_negative=0
 ```
 
-Where `Field` refers to the [field function](../json_schema.md#field-customisation).
+### Constrained Floats
 
-### Arguments to `conint`
-The following arguments are available when using the `conint` type function
+There are also types that can be used to constrain floats:
 
-- `strict: bool = False`: controls type coercion
-- `gt: int = None`: enforces integer to be greater than the set value
-- `ge: int = None`: enforces integer to be greater than or equal to the set value
-- `lt: int = None`: enforces integer to be less than the set value
-- `le: int = None`: enforces integer to be less than or equal to the set value
-- `multiple_of: int = None`: enforces integer to be a multiple of the set value
-
-### Arguments to `confloat`
-The following arguments are available when using the `confloat` type function
-
-- `strict: bool = False`: controls type coercion
-- `gt: float = None`: enforces float to be greater than the set value
-- `ge: float = None`: enforces float to be greater than or equal to the set value
-- `lt: float = None`: enforces float to be less than the set value
-- `le: float = None`: enforces float to be less than or equal to the set value
-- `multiple_of: float = None`: enforces float to be a multiple of the set value
-- `allow_inf_nan: bool = True`: whether to allows infinity (`+inf` an `-inf`) and NaN values, defaults to `True`,
-  set to `False` for compatibility with `JSON`,
-  see [#3994](https://github.com/pydantic/pydantic/pull/3994) for more details, added in **V1.10**
-
-### Arguments to `condecimal`
-The following arguments are available when using the `condecimal` type function
-
-- `gt: Decimal = None`: enforces decimal to be greater than the set value
-- `ge: Decimal = None`: enforces decimal to be greater than or equal to the set value
-- `lt: Decimal = None`: enforces decimal to be less than the set value
-- `le: Decimal = None`: enforces decimal to be less than or equal to the set value
-- `max_digits: int = None`: maximum number of digits within the decimal. it does not include a zero before the decimal point or trailing decimal zeroes
-- `decimal_places: int = None`: max number of decimal places allowed. it does not include trailing decimal zeroes
-- `multiple_of: Decimal = None`: enforces decimal to be a multiple of the set value
-
-## Strict Types
-
-You can use the `StrictStr`, `StrictBytes`, `StrictInt`, `StrictFloat`, and `StrictBool` types
-to prevent coercion from compatible types.
-These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
-This behavior is also exposed via the `strict` field of the `ConstrainedStr`, `ConstrainedBytes`,
-`ConstrainedFloat` and `ConstrainedInt` classes and can be combined with a multitude of complex validation rules.
-
-The following caveats apply:
-
-- `StrictBytes` (and the `strict` option of `ConstrainedBytes`) will accept both `bytes`,
-   and `bytearray` types.
-- `StrictInt` (and the `strict` option of `ConstrainedInt`) will not accept `bool` types,
-    even though `bool` is a subclass of `int` in Python. Other subclasses will work.
-- `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.
+* [`PositiveFloat`]: Constrain a `float` to be positive.
+* [`NegativeFloat`]: Constrain a `float` to be negative.
+* [`NonPositiveFloat`]: Constrain a `float` to be non-positive.
+* [`NonNegativeFloat`]: Constrain a `float` to be non-negative.
 
 ```py
-from pydantic import BaseModel, StrictInt, ValidationError
+from pydantic import (
+    BaseModel,
+    NegativeFloat,
+    NonNegativeFloat,
+    NonPositiveFloat,
+    PositiveFloat,
+)
 
 
-class StrictIntModel(BaseModel):
-    strict_int: StrictInt
+class Model(BaseModel):
+    positive: PositiveFloat
+    negative: NegativeFloat
+    non_positive: NonPositiveFloat
+    non_negative: NonNegativeFloat
 
 
-try:
-    StrictIntModel(strict_int=3.14159)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for StrictIntModel
-    strict_int
-      Input should be a valid integer [type=int_type, input_value=3.14159, input_type=float]
-    """
+m = Model(positive=1.0, negative=-1.0, non_positive=0.0, non_negative=0.0)
+print(m)
+#> positive=1.0 negative=-1.0 non_positive=0.0 non_negative=0.0
 ```
+
+Besides the above, you can also have a `FiniteFloat` type that will only accept finite values (i.e. not `inf`, `-inf` or `nan`).
+
+```py
+from pydantic import BaseModel, FiniteFloat
+
+
+class Model(BaseModel):
+    finite: FiniteFloat
+
+
+m = Model(finite=1.0)
+print(m)
+#> finite=1.0
+```
+
+[`PositiveInt`]: /api/types/#pydantic.types.PositiveInt
+[`NegativeInt`]: /api/types/#pydantic.types.NegativeInt
+[`NonPositiveInt`]: /api/types/#pydantic.types.NonPositiveInt
+[`NonNegativeInt`]: /api/types/#pydantic.types.NonNegativeInt
+[`PositiveFloat`]: /api/types/#pydantic.types.PositiveFloat
+[`NegativeFloat`]: /api/types/#pydantic.types.NegativeFloat
+[`NonPositiveFloat`]: /api/types/#pydantic.types.NonPositiveFloat
+[`NonNegativeFloat`]: /api/types/#pydantic.types.NonNegativeFloat
+[`StrictBytes`]: /api/types/#pydantic.types.StrictBytes
+[`StrictInt`]: /api/types/#pydantic.types.StrictInt
+[`StrictFloat`]: /api/types/#pydantic.types.StrictFloat
