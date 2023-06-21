@@ -1656,11 +1656,14 @@ def _make_json_hashable(value: _Json) -> _HashableJson:
         return value
 
 
-def _sort_json_schema(value: JsonSchemaValue) -> JsonSchemaValue:
+def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
     if isinstance(value, dict):  # type: ignore
         sorted_dict: dict[str, JsonSchemaValue] = {}
-        for key in sorted(value.keys()):
-            sorted_dict[key] = _sort_json_schema(value[key])
+        keys = value.keys()
+        if parent_key != 'properties':
+            keys = sorted(keys)
+        for key in keys:
+            sorted_dict[key] = _sort_json_schema(value[key], parent_key=key)
         return sorted_dict  # type: ignore
     elif isinstance(value, list):  # type: ignore
         sorted_list: list[JsonSchemaValue] = []

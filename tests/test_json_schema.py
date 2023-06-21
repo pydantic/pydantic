@@ -4774,3 +4774,37 @@ def test_typeddict_field_required_missing() -> None:
             'input': 'abc',
         }
     ]
+
+
+def test_json_schema_keys_sorting() -> None:
+    """We sort all keys except those under a 'property' parent key"""
+
+    class Model(BaseModel):
+        b: int
+        a: str
+
+    class OuterModel(BaseModel):
+        inner: List[Model]
+
+    # verify the schema contents
+    # this is just to get a nicer error message / diff if it fails
+    expected = {
+        '$defs': {
+            'Model': {
+                'properties': {'b': {'title': 'B', 'type': 'integer'}, 'a': {'title': 'A', 'type': 'string'}},
+                'required': ['b', 'a'],
+                'title': 'Model',
+                'type': 'object',
+            }
+        },
+        'properties': {'inner': {'items': {'$ref': '#/$defs/Model'}, 'title': 'Inner', 'type': 'array'}},
+        'required': ['inner'],
+        'title': 'OuterModel',
+        'type': 'object',
+    }
+    actual = OuterModel.model_json_schema()
+    assert actual == expected
+
+    # verify order
+    # dumping to json just happens to be a simple way to verify the order
+    assert json.dumps(actual, indent=2) == json.dumps(expected, indent=2)
