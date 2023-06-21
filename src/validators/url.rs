@@ -278,6 +278,21 @@ fn parse_multihost_url<'url, 'input>(
     input: &'input impl Input<'input>,
     strict: bool,
 ) -> ValResult<'input, PyMultiHostUrl> {
+    macro_rules! parsing_err {
+        ($parse_error:expr) => {
+            Err(ValError::new(
+                ErrorType::UrlParsing {
+                    error: $parse_error.to_string(),
+                },
+                input,
+            ))
+        };
+    }
+
+    if url_str.is_empty() {
+        return parsing_err!(EMPTY_INPUT);
+    }
+
     let mut chars = PositionedPeekable::new(url_str);
     // consume whitespace, taken from `with_log`
     // https://github.com/servo/rust-url/blob/v2.3.1/url/src/parser.rs#L213-L226
@@ -295,28 +310,24 @@ fn parse_multihost_url<'url, 'input>(
         }
     }
 
-    macro_rules! parsing_err {
-        ($parse_error:expr) => {
-            Err(ValError::new(
-                ErrorType::UrlParsing {
-                    error: $parse_error.to_string(),
-                },
-                input,
-            ))
-        };
-    }
-
-    // consume the url schema, taken from `parse_scheme`
+    // consume the url schema, some logic from `parse_scheme`
     // https://github.com/servo/rust-url/blob/v2.3.1/url/src/parser.rs#L387-L411
     let schema_start = chars.position;
-    while let Some(c) = chars.next() {
-        match c {
-            'a'..='z' | 'A'..='Z' | '0'..='9' | '+' | '-' | '.' => (),
-            ':' => break,
-            _ => return parsing_err!(ParseError::RelativeUrlWithoutBase),
+    let schema_end = loop {
+        match chars.next() {
+            Some('a'..='z' | 'A'..='Z' | '0'..='9' | '+' | '-' | '.') => continue,
+            Some(':') => {
+                // require the schema to be non-empty
+                let schema_end = chars.position - ':'.len_utf8();
+                if schema_end > schema_start {
+                    break schema_end;
+                }
+            }
+            _ => {}
         }
-    }
-    let schema = url_str[schema_start..chars.position - 1].to_ascii_lowercase();
+        return parsing_err!(ParseError::RelativeUrlWithoutBase);
+    };
+    let schema = url_str[schema_start..schema_end].to_ascii_lowercase();
 
     // consume the double slash, or any number of slashes, including backslashes, taken from `parse_with_scheme`
     // https://github.com/servo/rust-url/blob/v2.3.1/url/src/parser.rs#L413-L456
@@ -340,8 +351,8 @@ fn parse_multihost_url<'url, 'input>(
             '\\' if schema_is_special(&schema) => break,
             '/' | '?' | '#' => break,
             ',' => {
-                // minus 1, not `chars.last_len` because we know that the last char was a `,` with length 1
-                let end = chars.position - 1;
+                // minus 1 because we know that the last char was a `,` with length 1
+                let end = chars.position - ','.len_utf8();
                 if start == end {
                     return parsing_err!(ParseError::EmptyHost);
                 }
@@ -385,6 +396,15 @@ fn parse_url<'url, 'input>(
     input: &'input impl Input<'input>,
     strict: bool,
 ) -> ValResult<'input, Url> {
+    if url_str.is_empty() {
+        return Err(ValError::new(
+            ErrorType::UrlParsing {
+                error: EMPTY_INPUT.into(),
+            },
+            input,
+        ));
+    }
+
     // if we're in strict mode, we collect consider a syntax violation as an error
     if strict {
         // we could build a vec of syntax violations and return them all, but that seems like overkill
@@ -479,7 +499,6 @@ fn get_allowed_schemas(schema: &PyDict, name: &'static str) -> PyResult<(Allowed
 struct PositionedPeekable<'a> {
     peekable: Peekable<Chars<'a>>,
     position: usize,
-    last_len: usize,
 }
 
 impl<'a> PositionedPeekable<'a> {
@@ -487,19 +506,13 @@ impl<'a> PositionedPeekable<'a> {
         Self {
             peekable: input.chars().peekable(),
             position: 0,
-            last_len: 0,
         }
     }
 
     fn next(&mut self) -> Option<char> {
         let c = self.peekable.next();
         if let Some(c) = c {
-            self.last_len = c.len_utf8();
-            self.position += self.last_len;
-        } else {
-            // needs to be zero here so if you do `position - last_len` after the last char, you get the
-            // correct position
-            self.last_len = 0;
+            self.position += c.len_utf8();
         }
         c
     }
@@ -508,3 +521,5 @@ impl<'a> PositionedPeekable<'a> {
         self.peekable.peek()
     }
 }
+
+const EMPTY_INPUT: &str = "input is empty";
