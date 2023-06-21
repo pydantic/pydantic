@@ -5375,9 +5375,10 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
   <div class="doc doc-contents ">
   
-      <p>Decorate to include <code>property</code> and <code>cached_property</code> when serializing models.</p>
+      <p>Decorator to include <code>property</code> and <code>cached_property</code> when serializing models.</p>
 <p>If applied to functions not yet decorated with <code>@property</code> or <code>@cached_property</code>, the function is
 automatically wrapped with <code>property</code>.</p>
+<p>See <a href="../../usage/computed_fields/">Computed Fields</a> for more details.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5573,7 +5574,9 @@ objects.</p>
 <span class="normal">939</span>
 <span class="normal">940</span>
 <span class="normal">941</span>
-<span class="normal">942</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">942</span>
+<span class="normal">943</span>
+<span class="normal">944</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5583,10 +5586,12 @@ objects.</p>
     <span class="nb">repr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[</span><span class="n">PropertyT</span><span class="p">],</span> <span class="n">PropertyT</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate to include `property` and `cached_property` when serializing models.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to include `property` and `cached_property` when serializing models.</span>
 
 <span class="sd">    If applied to functions not yet decorated with `@property` or `@cached_property`, the function is</span>
 <span class="sd">    automatically wrapped with `property`.</span>
+
+<span class="sd">    See [Computed Fields](../usage/computed_fields.md) for more details.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        __f: the function to wrap.</span>

@@ -80,11 +80,6 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
-        
-        <a href="#field-with-computed-value-based-on-other-fields" class="md-skip">
-          Skip to content
-        </a>
-      
     </div>
     <div data-md-component="announce">
       
@@ -1097,40 +1092,9 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Computed Fields
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         Computed Fields
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#field-with-computed-value-based-on-other-fields" class="md-nav__link">
-    Field with computed value based on other fields
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -2042,21 +2006,6 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#field-with-computed-value-based-on-other-fields" class="md-nav__link">
-    Field with computed value based on other fields
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -2076,8 +2025,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Computed Fields</h1>
 
-<h2 id="field-with-computed-value-based-on-other-fields">Field with computed value based on other fields<a class="headerlink" href="#field-with-computed-value-based-on-other-fields" title="Permanent link">&para;</a></h2>
-<p>Computed fields allow <code>property</code> and <code>cached_property</code> to be included when serializing models or dataclasses.</p>
+<p>Computed fields allow <code>property</code> and <code>cached_property</code> to be included when serializing models or dataclasses. This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">computed_field</span>
 
 
@@ -2101,10 +2049,11 @@ and confuse static type checkers, thus explicit use of <code>@property</code> is
 <div class="admonition warning">
 <p class="admonition-title">Mypy Warning</p>
 <p>Even with the <code>@property</code> or <code>@cached_property</code> applied to your function before <code>@computed_field</code>,
-mypy won't be happy because of <a href="https://github.com/python/mypy/issues/1362">this issue</a>,
-you'll need to add <code># type: ignore[misc]</code> to the <code>@computed_field</code> line.</p>
+mypy may throw a <code>Decorated property not supported</code> error.
+See <a href="https://github.com/python/mypy/issues/1362">mypy issue #1362</a>, for more information.
+To avoid this error message, add <code># type: ignore[misc]</code> to the <code>@computed_field</code> line.</p>
+<p><a href="https://github.com/microsoft/pyright">pyright</a> supports <code>@computed_field</code> without error.</p>
 </div>
-<p>In contract, <a href="https://github.com/microsoft/pyright">pyright</a> works nicely with <code>@computed_field</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">cached_property</span>
 

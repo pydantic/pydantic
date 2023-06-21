@@ -2345,7 +2345,8 @@ logic, and can modify the resulting value before returning it as the final outpu
 
   <div class="doc doc-contents ">
   
-      <p>Decorate methods on the class indicating that they should be used to serialize fields.</p>
+      <p>Decorator that enables custom field serialization.</p>
+<p>See <a href="../../usage/exporting_models/#custom-serializers">Custom serializers</a> for more information.</p>
 <p>Four signatures are supported:</p>
 <ul>
 <li><code>(self, value: Any, info: FieldSerializationInfo)</code></li>
@@ -2386,9 +2387,12 @@ logic, and can modify the resulting value before returning it as the final outpu
           </td>
           <td>
             <div class="doc-md-description">
-              <p><code>plain</code> means the function will be called instead of the default serialization logic,
-<code>wrap</code> means the function will be called with an argument to optionally call the
-default serialization logic.</p>
+              <p>The serialization mode.</p>
+<ul>
+<li><code>plain</code> means the function will be called instead of the default serialization logic,</li>
+<li><code>wrap</code> means the function will be called with an argument to optionally call the
+   default serialization logic.</li>
+</ul>
             </div>
           </td>
           <td>
@@ -2455,7 +2459,7 @@ default serialization logic.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A decorator that can be used to decorate a function to be used as a field serializer.</p>
+              <p>The decorator function.</p>
             </div>
           </td>
         </tr>
@@ -2505,14 +2509,20 @@ default serialization logic.</p>
 <span class="normal">174</span>
 <span class="normal">175</span>
 <span class="normal">176</span>
-<span class="normal">177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">when_used</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;always&#39;</span><span class="p">,</span>
     <span class="n">check_fields</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate methods on the class indicating that they should be used to serialize fields.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that enables custom field serialization.</span>
+
+<span class="sd">    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.</span>
 
 <span class="sd">    Four signatures are supported:</span>
 
@@ -2523,15 +2533,17 @@ default serialization logic.</p>
 
 <span class="sd">    Args:</span>
 <span class="sd">        fields: Which field(s) the method should be called on.</span>
-<span class="sd">        mode: `plain` means the function will be called instead of the default serialization logic,</span>
-<span class="sd">            `wrap` means the function will be called with an argument to optionally call the</span>
-<span class="sd">            default serialization logic.</span>
+<span class="sd">        mode: The serialization mode.</span>
+
+<span class="sd">            - `plain` means the function will be called instead of the default serialization logic,</span>
+<span class="sd">            - `wrap` means the function will be called with an argument to optionally call the</span>
+<span class="sd">               default serialization logic.</span>
 <span class="sd">        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.</span>
 <span class="sd">        when_used: Determines the serializer will be used for serialization.</span>
 <span class="sd">        check_fields: Whether to check that the fields actually exist on the model.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A decorator that can be used to decorate a function to be used as a field serializer.</span>
+<span class="sd">        The decorator function.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span>
@@ -2573,7 +2585,8 @@ default serialization logic.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Decorate a function which will be called to serialize the model.</p>
+      <p>Decorator that enables custom model serialization.</p>
+<p>See <a href="../../usage/exporting_models/#custom-serializers">Custom serializers</a> for more information.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -2607,9 +2620,12 @@ default serialization logic.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The serialization mode. <code>'plain'</code> means the function will be called
-instead of the default serialization logic, <code>'wrap'</code> means the function will be called with an argument
-to optionally call the default serialization logic.</p>
+              <p>The serialization mode.</p>
+<ul>
+<li><code>'plain'</code> means the function will be called instead of the default serialization logic</li>
+<li><code>'wrap'</code> means the function will be called with an argument to optionally call the default
+    serialization logic.</li>
+</ul>
             </div>
           </td>
           <td>
@@ -2623,8 +2639,7 @@ to optionally call the default serialization logic.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines when this serializer should be used. Accepts a string with values <code>'always'</code>,
-<code>'unless-none'</code>, <code>'json'</code>, <code>'json-unless-none'</code>. Defaults to <code>'always'</code>.</p>
+              <p>Determines when this serializer should be used.</p>
             </div>
           </td>
           <td>
@@ -2638,7 +2653,7 @@ to optionally call the default serialization logic.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The return type for the function, if omitted it will be inferred from the type annotation.</p>
+              <p>The return type for the function. If omitted it will be inferred from the type annotation.</p>
             </div>
           </td>
           <td>
@@ -2663,7 +2678,7 @@ to optionally call the default serialization logic.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A decorator that can be used to decorate a function to be used as a model serializer.</p>
+              <p>The decorator function.</p>
             </div>
           </td>
         </tr>
@@ -2672,11 +2687,7 @@ to optionally call the default serialization logic.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">202</span>
 <span class="normal">203</span>
 <span class="normal">204</span>
 <span class="normal">205</span>
@@ -2703,26 +2714,36 @@ to optionally call the default serialization logic.</p>
 <span class="normal">226</span>
 <span class="normal">227</span>
 <span class="normal">228</span>
-<span class="normal">229</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
     <span class="n">when_used</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;always&#39;</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate a function which will be called to serialize the model.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that enables custom model serialization.</span>
+
+<span class="sd">    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        __f: The function to be decorated.</span>
-<span class="sd">        mode: The serialization mode. `&#39;plain&#39;` means the function will be called</span>
-<span class="sd">            instead of the default serialization logic, `&#39;wrap&#39;` means the function will be called with an argument</span>
-<span class="sd">            to optionally call the default serialization logic.</span>
-<span class="sd">        when_used: Determines when this serializer should be used. Accepts a string with values `&#39;always&#39;`,</span>
-<span class="sd">            `&#39;unless-none&#39;`, `&#39;json&#39;`, `&#39;json-unless-none&#39;`. Defaults to `&#39;always&#39;`.</span>
-<span class="sd">        return_type: The return type for the function, if omitted it will be inferred from the type annotation.</span>
+<span class="sd">        mode: The serialization mode.</span>
+
+<span class="sd">            - `&#39;plain&#39;` means the function will be called instead of the default serialization logic</span>
+<span class="sd">            - `&#39;wrap&#39;` means the function will be called with an argument to optionally call the default</span>
+<span class="sd">                serialization logic.</span>
+<span class="sd">        when_used: Determines when this serializer should be used.</span>
+<span class="sd">        return_type: The return type for the function. If omitted it will be inferred from the type annotation.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A decorator that can be used to decorate a function to be used as a model serializer.</span>
+<span class="sd">        The decorator function.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>

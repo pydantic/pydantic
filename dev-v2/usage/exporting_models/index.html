@@ -1133,15 +1133,15 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Custom serializers
   </a>
   
-    <nav class="md-nav" aria-label="Custom serializers">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#serializing-subclasses" class="md-nav__link">
     Serializing subclasses
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="Serializing subclasses">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#subclasses-of-standard-types" class="md-nav__link">
@@ -1150,18 +1150,12 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
+          <li class="md-nav__item">
   <a href="#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict" class="md-nav__link">
     Subclass instances for fields of BaseModel, dataclasses, TypedDict
   </a>
   
-    <nav class="md-nav" aria-label="Subclass instances for fields of BaseModel, dataclasses, TypedDict">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#serializing-with-duck-typing" class="md-nav__link">
@@ -2169,15 +2163,15 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Custom serializers
   </a>
   
-    <nav class="md-nav" aria-label="Custom serializers">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#serializing-subclasses" class="md-nav__link">
     Serializing subclasses
   </a>
   
-</li>
+    <nav class="md-nav" aria-label="Serializing subclasses">
+      <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#subclasses-of-standard-types" class="md-nav__link">
@@ -2186,18 +2180,12 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
+          <li class="md-nav__item">
   <a href="#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict" class="md-nav__link">
     Subclass instances for fields of BaseModel, dataclasses, TypedDict
   </a>
   
-    <nav class="md-nav" aria-label="Subclass instances for fields of BaseModel, dataclasses, TypedDict">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#serializing-with-duck-typing" class="md-nav__link">
@@ -2513,8 +2501,9 @@ sub-models will not be converted to dictionaries.</p>
 </code></pre></div>
 <p>Note also that <a href="../models/#rootmodel-and-custom-root-types"><code>RootModel</code></a> <em>does</em> get converted to a dictionary with the key <code>'root'</code>.</p>
 <h2 id="custom-serializers">Custom serializers<a class="headerlink" href="#custom-serializers" title="Permanent link">&para;</a></h2>
-<p>Serialization can be customised on a field using the <code>@field_serializer</code> decorator, and on a model using the
-<code>@model_serializer</code> decorator.</p>
+<p>Serialization can be customised on a field using the
+<a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.field_serializer"><code>@field_serializer</code></a> decorator, and on a model using the
+<a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.model_serializer"><code>@model_serializer</code></a> decorator.</p>
 <p>Here is an example:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
@@ -2594,7 +2583,7 @@ sub-models will not be converted to dictionaries.</p>
 </div>
 </div>
 </div>
-<h3 id="serializing-subclasses">Serializing subclasses<a class="headerlink" href="#serializing-subclasses" title="Permanent link">&para;</a></h3>
+<h2 id="serializing-subclasses">Serializing subclasses<a class="headerlink" href="#serializing-subclasses" title="Permanent link">&para;</a></h2>
 <h3 id="subclasses-of-standard-types">Subclasses of standard types<a class="headerlink" href="#subclasses-of-standard-types" title="Permanent link">&para;</a></h3>
 <p>Subclasses of standard types are automatically dumped like their super-classes:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
@@ -2679,7 +2668,7 @@ sub-models will not be converted to dictionaries.</p>
 </div>
 </div>
 </div>
-<h2 id="subclass-instances-for-fields-of-basemodel-dataclasses-typeddict">Subclass instances for fields of BaseModel, dataclasses, TypedDict<a class="headerlink" href="#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict" title="Permanent link">&para;</a></h2>
+<h3 id="subclass-instances-for-fields-of-basemodel-dataclasses-typeddict">Subclass instances for fields of <code>BaseModel</code>, dataclasses, <code>TypedDict</code><a class="headerlink" href="#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict" title="Permanent link">&para;</a></h3>
 <p>When using fields whose annotations are themselves struct-like types (e.g., <code>BaseModel</code> subclasses, dataclasses, etc.),
 the default behavior is to serialize the attribute value as though it was an instance of the annotated type,
 even if it is a subclass. More specifically, only the fields from the <em>annotated</em> type will be included in the
@@ -2715,7 +2704,7 @@ behavior is that it helps ensure that you know precisely which fields could be i
 even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
 when adding sensitive information like secrets as fields of subclasses.</p>
 </div>
-<h4 id="serializing-with-duck-typing">Serializing with duck-typing<a class="headerlink" href="#serializing-with-duck-typing" title="Permanent link">&para;</a></h4>
+<h3 id="serializing-with-duck-typing">Serializing with duck-typing<a class="headerlink" href="#serializing-with-duck-typing" title="Permanent link">&para;</a></h3>
 <p>If you want to preserve the old duck-typing serialization behavior, this can be done using <code>SerializeAsAny</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializeAsAny</span>
 
