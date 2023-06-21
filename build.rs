@@ -6,9 +6,9 @@ use std::str::from_utf8;
 fn generate_self_schema() {
     println!("cargo:rerun-if-changed=pydantic_core/core_schema.py");
     println!("cargo:rerun-if-changed=generate_self_schema.py");
-    if Path::new("./src/self_schema.py").exists() && option_env!("DEBIAN_FRONTEND") == Some("noninteractive") {
-        // self_schema.py already exists and DEBIAN_FRONTEND indicates we're in a maturin build,
-        // skip running generate_self_schema.py
+    if Path::new("./src/self_schema.py").exists() && option_env!("CI") == Some("true") {
+        // self_schema.py already exists and CI indicates we're running on a github actions build,
+        // don't bother generating again
         return;
     }
 
