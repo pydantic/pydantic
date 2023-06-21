@@ -94,7 +94,8 @@ class ConfigDict(TypedDict, total=False):
             _pydantic_), an error will be raised. Defaults to `()`.
         allow_inf_nan: Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`.
         json_schema_extra: A dict or callable to provide extra JSON schema properties. Defaults to `None`.
-        strict: Whether to make the configuration strict. Defaults to `False`.
+        strict: If `True`, strict validation is applied to all fields on the model.
+            See [Strict Mode](../usage/models.md#strict-mode) for details.
         revalidate_instances: When and how to revalidate models and dataclasses during validation. Accepts the string
             values of `'never'`, `'always'` and `'subclass-instances'`. Defaults to `'never'`.
 
