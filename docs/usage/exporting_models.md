@@ -146,8 +146,9 @@ Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) _does_ g
 
 ## Custom serializers
 
-Serialization can be customised on a field using the `@field_serializer` decorator, and on a model using the
-`@model_serializer` decorator.
+Serialization can be customised on a field using the
+[`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator, and on a model using the
+[`@model_serializer`][pydantic.functional_serializers.model_serializer] decorator.
 
 Here is an example:
 
@@ -188,7 +189,7 @@ print(Model(x='test value').model_dump_json())
 #> {"x":"serialized test value"}
 ```
 
-### Serializing subclasses
+## Serializing subclasses
 
 ### Subclasses of standard types
 
@@ -233,7 +234,7 @@ print(m.model_dump_json())
 #> {"date":"2023-10-28"}
 ```
 
-## Subclass instances for fields of BaseModel, dataclasses, TypedDict
+### Subclass instances for fields of `BaseModel`, dataclasses, `TypedDict`
 
 When using fields whose annotations are themselves struct-like types (e.g., `BaseModel` subclasses, dataclasses, etc.),
 the default behavior is to serialize the attribute value as though it was an instance of the annotated type,
@@ -271,7 +272,7 @@ print(m.model_dump())  # note: the password field is not included
     even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
     when adding sensitive information like secrets as fields of subclasses.
 
-#### Serializing with duck-typing
+### Serializing with duck-typing
 
 If you want to preserve the old duck-typing serialization behavior, this can be done using `SerializeAsAny`:
 
