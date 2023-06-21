@@ -58,13 +58,15 @@ print(TypeAdapter(User).json_schema())
 """
 {
     'properties': {
+        'id': {'title': 'Id', 'type': 'integer'},
+        'name': {'default': 'John Doe', 'title': 'Name', 'type': 'string'},
+        'friends': {'items': {'type': 'integer'}, 'title': 'Friends', 'type': 'array'},
         'age': {
             'anyOf': [{'type': 'integer'}, {'type': 'null'}],
             'default': None,
             'description': 'do not lie!',
             'title': 'The age of the user',
         },
-        'friends': {'items': {'type': 'integer'}, 'title': 'Friends', 'type': 'array'},
         'height': {
             'anyOf': [
                 {'maximum': 300, 'minimum': 50, 'type': 'integer'},
@@ -73,8 +75,6 @@ print(TypeAdapter(User).json_schema())
             'default': None,
             'title': 'The height in cm',
         },
-        'id': {'title': 'Id', 'type': 'integer'},
-        'name': {'default': 'John Doe', 'title': 'Name', 'type': 'string'},
     },
     'required': ['id'],
     'title': 'User',
