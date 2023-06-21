@@ -420,9 +420,10 @@ jobs:
 
   send-tweet:
     name: Send tweet
-    runs-on: ubuntu-latest
     needs: [release]
-    if: ${{ needs.release.status == 'success' }}
+    # `always()` is required to trigger this task even though test-fastapi is skipped
+    if: "always() && needs.release.status == 'success'"
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/setup-python@v4
