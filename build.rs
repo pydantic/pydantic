@@ -11,10 +11,16 @@ fn generate_self_schema() {
         // skip running generate_self_schema.py
         return;
     }
-    let output = Command::new(env::var("PYTHON").unwrap_or_else(|_| "python3".to_owned()))
-        .arg("generate_self_schema.py")
-        .output()
-        .expect("failed to execute process");
+
+    let output = Command::new(
+        env::var("PYTHON")
+            .ok()
+            .or_else(|| pyo3_build_config::get().executable.clone())
+            .unwrap_or_else(|| "python3".to_owned()),
+    )
+    .arg("generate_self_schema.py")
+    .output()
+    .expect("failed to execute process");
 
     if !output.status.success() {
         let stdout = from_utf8(&output.stdout).unwrap();
