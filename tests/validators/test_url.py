@@ -103,6 +103,8 @@ def url_test_case_helper(
 @pytest.mark.parametrize(
     'url,expected',
     [
+        ('', Err('input is empty')),
+        (':,', Err('relative URL without a base')),
         (
             'http://example.com',
             {
@@ -649,6 +651,7 @@ def multi_host_url_validator_fixture():
 @pytest.mark.parametrize(
     'url,expected',
     [
+        ('', Err('input is empty')),
         (
             'http://example.com',
             {
