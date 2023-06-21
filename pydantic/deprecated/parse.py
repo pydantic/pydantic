@@ -5,11 +5,15 @@ import pickle
 import warnings
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from typing_extensions import deprecated
 
 from ..warnings import PydanticDeprecatedSince20
+
+if not TYPE_CHECKING:
+    # See PyCharm issues PY-21915 and PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 
 class Protocol(str, Enum):
@@ -27,7 +31,7 @@ def load_str_bytes(
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
-    warnings.warn('load_str_bytes is deprecated.', PydanticDeprecatedSince20, stacklevel=2)
+    warnings.warn('load_str_bytes is deprecated.', DeprecationWarning, stacklevel=2)
     if proto is None and content_type:
         if content_type.endswith(('json', 'javascript')):
             pass
@@ -61,7 +65,7 @@ def load_file(
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
-    warnings.warn('load_file is deprecated.', PydanticDeprecatedSince20, stacklevel=2)
+    warnings.warn('load_file is deprecated.', DeprecationWarning, stacklevel=2)
     path = Path(path)
     b = path.read_bytes()
     if content_type is None:

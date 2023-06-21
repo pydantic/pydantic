@@ -1,7 +1,7 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import Any, Callable, overload
+from typing import TYPE_CHECKING, Any, Callable, overload
 from warnings import warn
 
 from typing_extensions import Literal, Protocol, TypedDict
@@ -9,6 +9,10 @@ from typing_extensions import Literal, Protocol, TypedDict
 from ._migration import getattr_migration
 from .deprecated.config import BaseConfig
 from .warnings import PydanticDeprecatedSince20
+
+if not TYPE_CHECKING:
+    # See PyCharm issues PY-21915 and PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 
@@ -31,7 +35,7 @@ class _Extra:
     def __getattribute__(self, __name: str) -> Any:
         warn(
             '`pydantic.config.Extra` is deprecated, use literal values instead' " (e.g. `extra='allow'`)",
-            PydanticDeprecatedSince20,
+            DeprecationWarning,
             stacklevel=2,
         )
         return super().__getattribute__(__name)

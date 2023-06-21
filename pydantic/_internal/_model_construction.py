@@ -29,6 +29,9 @@ if typing.TYPE_CHECKING:
     from inspect import Signature
 
     from ..main import BaseModel
+else:
+    # See PyCharm issues PY-21915 and PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 
 IGNORED_TYPES: tuple[Any, ...] = (
@@ -216,9 +219,7 @@ class ModelMetaclass(ABCMeta):
     @property
     @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.')
     def __fields__(self) -> dict[str, FieldInfo]:
-        warnings.warn(
-            'The `__fields__` attribute is deprecated, use `model_fields` instead.', PydanticDeprecatedSince20
-        )
+        warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
         return self.model_fields
 
 

@@ -22,6 +22,9 @@ from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
+else:
+    # See PyCharm issues PY-21915 and PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 
 class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
@@ -671,13 +674,13 @@ def Field(  # C901
 
     min_items = extra.pop('min_items', None)  # type: ignore
     if min_items is not None:
-        warn('`min_items` is deprecated and will be removed, use `min_length` instead', PydanticDeprecatedSince20)
+        warn('`min_items` is deprecated and will be removed, use `min_length` instead', DeprecationWarning)
         if min_length is None:
             min_length = min_items  # type: ignore
 
     max_items = extra.pop('max_items', None)  # type: ignore
     if max_items is not None:
-        warn('`max_items` is deprecated and will be removed, use `max_length` instead', PydanticDeprecatedSince20)
+        warn('`max_items` is deprecated and will be removed, use `max_length` instead', DeprecationWarning)
         if max_length is None:
             max_length = max_items  # type: ignore
 
@@ -693,7 +696,7 @@ def Field(  # C901
 
     allow_mutation = extra.pop('allow_mutation', None)  # type: ignore
     if allow_mutation is not None:
-        warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', PydanticDeprecatedSince20)
+        warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
         if allow_mutation is False:
             frozen = True
 
@@ -704,7 +707,7 @@ def Field(  # C901
     if extra:
         warn(
             'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
-            PydanticDeprecatedSince20,
+            DeprecationWarning,
         )
         if not json_schema_extra:
             json_schema_extra = extra  # type: ignore

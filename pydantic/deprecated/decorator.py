@@ -11,6 +11,10 @@ from ..functional_validators import field_validator
 from ..main import BaseModel, create_model
 from ..warnings import PydanticDeprecatedSince20
 
+if not TYPE_CHECKING:
+    # See PyCharm issues PY-21915 and PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
+
 __all__ = ('validate_arguments',)
 
 if TYPE_CHECKING:
@@ -35,9 +39,7 @@ def validate_arguments(func: 'AnyCallableT') -> 'AnyCallableT':
 def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'ConfigType' = None) -> Any:
     """Decorator to validate the arguments passed to a function."""
     warnings.warn(
-        'The `validate_arguments` method is deprecated; use `validate_call` instead.',
-        PydanticDeprecatedSince20,
-        stacklevel=2,
+        'The `validate_arguments` method is deprecated; use `validate_call` instead.', DeprecationWarning, stacklevel=2
     )
 
     def validate(_func: 'AnyCallable') -> 'AnyCallable':

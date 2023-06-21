@@ -73,6 +73,9 @@ if TYPE_CHECKING:
         _V1RootValidatorClsMethod,
         _PartialClsOrStaticMethod,
     )
+else:
+    # See PyCharm issues PY-21915 and PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 
 def validator(
@@ -106,7 +109,7 @@ def validator(
             function to be used as a validator.
     """
     if allow_reuse is True:  # pragma: no cover
-        warn(_ALLOW_REUSE_WARNING_MESSAGE, PydanticDeprecatedSince20)
+        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
     fields = tuple((__field, *fields))
     if isinstance(fields[0], FunctionType):
         raise PydanticUserError(
@@ -125,7 +128,7 @@ def validator(
         'Pydantic V1 style `@validator` validators are deprecated.'
         ' You should migrate to Pydantic V2 style `@field_validator` validators,'
         ' see the migration guide for more details',
-        PydanticDeprecatedSince20,
+        DeprecationWarning,
         stacklevel=2,
     )
 
@@ -209,7 +212,7 @@ def root_validator(
         'Pydantic V1 style `@root_validator` validators are deprecated.'
         ' You should migrate to Pydantic V2 style `@model_validator` validators,'
         ' see the migration guide for more details',
-        PydanticDeprecatedSince20,
+        DeprecationWarning,
         stacklevel=2,
     )
 
@@ -218,7 +221,7 @@ def root_validator(
         return root_validator()(*__args)  # type: ignore
 
     if allow_reuse is True:  # pragma: no cover
-        warn(_ALLOW_REUSE_WARNING_MESSAGE, PydanticDeprecatedSince20)
+        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
         raise PydanticUserError(

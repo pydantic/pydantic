@@ -10,6 +10,10 @@ from ..config import ConfigDict, ExtraValues, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20
 
+if not TYPE_CHECKING:
+    # See PyCharm issues PY-21915 and PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
+
 DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
 
 
@@ -198,7 +202,7 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
         return ConfigDict()
 
     if not isinstance(config, dict):
-        warnings.warn(DEPRECATION_MESSAGE, PydanticDeprecatedSince20)
+        warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
         config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
     config_dict = cast(ConfigDict, config)

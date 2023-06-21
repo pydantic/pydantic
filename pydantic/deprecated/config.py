@@ -1,19 +1,23 @@
 from __future__ import annotations as _annotations
 
 import warnings
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import deprecated
 
 from .._internal import _config
 from ..warnings import PydanticDeprecatedSince20
 
+if not TYPE_CHECKING:
+    # See PyCharm issues PY-21915 and PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
+
 __all__ = ('BaseConfig',)
 
 
 class _ConfigMetaclass(type):
     def __getattr__(self, item: str) -> Any:
-        warnings.warn(_config.DEPRECATION_MESSAGE, PydanticDeprecatedSince20)
+        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
 
         try:
             return _config.config_defaults[item]
@@ -30,7 +34,7 @@ class BaseConfig(metaclass=_ConfigMetaclass):
     """
 
     def __getattr__(self, item: str) -> Any:
-        warnings.warn(_config.DEPRECATION_MESSAGE, PydanticDeprecatedSince20)
+        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
         try:
             return super().__getattribute__(item)
         except AttributeError as exc:
@@ -41,5 +45,5 @@ class BaseConfig(metaclass=_ConfigMetaclass):
                 raise AttributeError(str(exc)) from exc
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        warnings.warn(_config.DEPRECATION_MESSAGE, PydanticDeprecatedSince20)
+        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
         return super().__init_subclass__(**kwargs)
