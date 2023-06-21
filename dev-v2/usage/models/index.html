@@ -748,6 +748,33 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
+  <a href="#strict-mode" class="md-nav__link">
+    Strict Mode
+  </a>
+  
+    <nav class="md-nav" aria-label="Strict Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strict-mode-for-fields" class="md-nav__link">
+    Strict mode for fields
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strict-mode-for-models" class="md-nav__link">
+    Strict mode for models
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#model-signature" class="md-nav__link">
     Model signature
   </a>
@@ -1321,7 +1348,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../exporting_models/" class="md-nav__link">
-        Exporting models
+        Exporting Models
       </a>
     </li>
   
@@ -1335,7 +1362,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../computed_fields/" class="md-nav__link">
-        Computed fields
+        Computed Fields
       </a>
     </li>
   
@@ -1363,7 +1390,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../validation_decorator/" class="md-nav__link">
-        Validation decorator
+        Validation Decorator
       </a>
     </li>
   
@@ -1377,7 +1404,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../postponed_annotations/" class="md-nav__link">
-        Postponed annotations
+        Postponed Annotations
       </a>
     </li>
   
@@ -1391,7 +1418,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../conversion_table/" class="md-nav__link">
-        Conversion table
+        Conversion Table
       </a>
     </li>
   
@@ -2448,6 +2475,33 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   <a href="#data-conversion" class="md-nav__link">
     Data conversion
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#strict-mode" class="md-nav__link">
+    Strict Mode
+  </a>
+  
+    <nav class="md-nav" aria-label="Strict Mode">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strict-mode-for-fields" class="md-nav__link">
+    Strict mode for fields
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strict-mode-for-models" class="md-nav__link">
+    Strict mode for models
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -4154,8 +4208,84 @@ For example:</p>
 </code></pre></div>
 <p>This is a deliberate decision of Pydantic, and in general it's the most useful approach. See
 <a href="https://github.com/pydantic/pydantic/issues/578">here</a> for a longer discussion on the subject.</p>
-<p>Nevertheless, <a href="../types/standard_types/#strict-types">strict type checking</a> is partially supported.
-[TODO: Discuss strict mode, but also retain the previous link to types/standard_types.md#strict-types]</p>
+<p>Nevertheless, <a href="../types/standard_types/#strict-types">strict type checking</a> is partially supported.</p>
+<h2 id="strict-mode">Strict Mode<a class="headerlink" href="#strict-mode" title="Permanent link">&para;</a></h2>
+<p>There are some situations where you want Pydantic to throw an error instead of coercing data.
+For example, input to an <code>int</code> field could be <code>123</code> or the string <code>"123"</code>, which would be converted to <code>123</code>.
+While this is useful in many scenarios (think: UUIDs, URL parameters, environment variables, user input),
+there are some situations where it's not desirable.</p>
+<p>The <a href="../conversion_table/">Conversion Table</a> provides more details on how Pydantic converts data in both strict and
+lax modes.</p>
+<h3 id="strict-mode-for-fields">Strict mode for fields<a class="headerlink" href="#strict-mode-for-fields" title="Permanent link">&para;</a></h3>
+<p>For individual fields on a model, you can <a href="../../api/fields/#pydantic.fields.Field">set <code>strict=True</code> on the field</a>.
+Only the fields for which <code>strict=True</code> is set will be affected.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John&#39; age=42</span>
+
+
+<span class="k">class</span> <span class="nc">AnotherUser</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">anotheruser</span> <span class="o">=</span> <span class="n">AnotherUser</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for AnotherUser</span>
+<span class="sd">    age</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;42&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="strict-mode-for-models">Strict mode for models<a class="headerlink" href="#strict-mode-for-models" title="Permanent link">&para;</a></h3>
+<p>For all fields on a model, you can
+<a href="../../api/config/#pydantic.config.ConfigDict">set <code>model_config = ConfigDict(strict=True)</code></a> in the config for the model.
+When set, all fields on the model will be validated in strict mode.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">    age</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=&#39;42&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that, when using <code>strict=True</code> in config on a model, you can still override the strictness
+of individual fields by setting <code>strict=False</code> on individual fields.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<p>See <a href="../conversion_table/">Conversion Table</a> for more details on how Pydantic converts data in both strict and lax modes.</p>
 <h2 id="model-signature">Model signature<a class="headerlink" href="#model-signature" title="Permanent link">&para;</a></h2>
 <p>All Pydantic models will have their signature generated based on their fields:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">inspect</span>

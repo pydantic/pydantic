@@ -1061,7 +1061,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../../usage/exporting_models/" class="md-nav__link">
-        Exporting models
+        Exporting Models
       </a>
     </li>
   
@@ -1075,7 +1075,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../../usage/computed_fields/" class="md-nav__link">
-        Computed fields
+        Computed Fields
       </a>
     </li>
   
@@ -1103,7 +1103,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../../usage/validation_decorator/" class="md-nav__link">
-        Validation decorator
+        Validation Decorator
       </a>
     </li>
   
@@ -1117,7 +1117,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../../usage/postponed_annotations/" class="md-nav__link">
-        Postponed annotations
+        Postponed Annotations
       </a>
     </li>
   
@@ -1131,7 +1131,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../../usage/conversion_table/" class="md-nav__link">
-        Conversion table
+        Conversion Table
       </a>
     </li>
   
@@ -4177,11 +4177,11 @@ attribute if not provided.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/fields.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">763</span>
-<span class="normal">764</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">764</span>
 <span class="normal">765</span>
 <span class="normal">766</span>
-<span class="normal">767</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">767</span>
+<span class="normal">768</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="o">=</span> <span class="n">default</span>
@@ -4243,8 +4243,7 @@ attribute if not provided.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">788</span>
-<span class="normal">789</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">789</span>
 <span class="normal">790</span>
 <span class="normal">791</span>
 <span class="normal">792</span>
@@ -4253,7 +4252,8 @@ attribute if not provided.</p>
 <span class="normal">795</span>
 <span class="normal">796</span>
 <span class="normal">797</span>
-<span class="normal">798</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">798</span>
+<span class="normal">799</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Retrieve the default value of the object.</span>
 
 <span class="sd">    If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.</span>
@@ -4617,7 +4617,8 @@ of aliases' fields and all the other fields will be ignored at serialization tim
           </td>
           <td>
             <div class="doc-md-description">
-              <p>If <code>True</code> (the default is <code>None</code>), the field should be validated strictly.</p>
+              <p>If <code>True</code>, strict validation is applied to the field.
+See <a href="../../usage/models/#strict-mode">Strict Mode</a> for details.</p>
             </div>
           </td>
           <td>
@@ -4988,7 +4989,8 @@ of aliases' fields and all the other fields will be ignored at serialization tim
 <span class="normal">746</span>
 <span class="normal">747</span>
 <span class="normal">748</span>
-<span class="normal">749</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># C901</span>
+<span class="normal">749</span>
+<span class="normal">750</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># C901</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5050,7 +5052,8 @@ of aliases' fields and all the other fields will be ignored at serialization tim
 <span class="sd">        repr: A boolean indicating whether to include the field in the `__repr__` output.</span>
 <span class="sd">        init_var: Whether the field should be included in the constructor of the dataclass.</span>
 <span class="sd">        kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.</span>
-<span class="sd">        strict: If `True` (the default is `None`), the field should be validated strictly.</span>
+<span class="sd">        strict: If `True`, strict validation is applied to the field.</span>
+<span class="sd">            See [Strict Mode](../usage/models.md#strict-mode) for details.</span>
 <span class="sd">        gt: Greater than. If set, value must be greater than this. Only applicable to numbers.</span>
 <span class="sd">        ge: Greater than or equal. If set, value must be greater than or equal to this. Only applicable to numbers.</span>
 <span class="sd">        lt: Less than. If set, value must be less than this. Only applicable to numbers.</span>
@@ -5270,8 +5273,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">807</span>
-<span class="normal">808</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">808</span>
 <span class="normal">809</span>
 <span class="normal">810</span>
 <span class="normal">811</span>
@@ -5299,7 +5301,8 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 <span class="normal">833</span>
 <span class="normal">834</span>
 <span class="normal">835</span>
-<span class="normal">836</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
+<span class="normal">836</span>
+<span class="normal">837</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5502,8 +5505,7 @@ objects.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">887</span>
-<span class="normal">888</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">888</span>
 <span class="normal">889</span>
 <span class="normal">890</span>
 <span class="normal">891</span>
@@ -5556,7 +5558,8 @@ objects.</p>
 <span class="normal">938</span>
 <span class="normal">939</span>
 <span class="normal">940</span>
-<span class="normal">941</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">941</span>
+<span class="normal">942</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

@@ -1206,7 +1206,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../exporting_models/" class="md-nav__link">
-        Exporting models
+        Exporting Models
       </a>
     </li>
   
@@ -1220,7 +1220,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../computed_fields/" class="md-nav__link">
-        Computed fields
+        Computed Fields
       </a>
     </li>
   
@@ -1248,7 +1248,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../validation_decorator/" class="md-nav__link">
-        Validation decorator
+        Validation Decorator
       </a>
     </li>
   
@@ -1262,7 +1262,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../postponed_annotations/" class="md-nav__link">
-        Postponed annotations
+        Postponed Annotations
       </a>
     </li>
   
@@ -1276,7 +1276,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
     <li class="md-nav__item">
       <a href="../conversion_table/" class="md-nav__link">
-        Conversion table
+        Conversion Table
       </a>
     </li>
   
@@ -2809,8 +2809,8 @@ models in a union.</p>
 </ol>
 <p>See the <a href="/usage/types/unions/#discriminated-unions-aka-tagged-unions">Discriminated Unions</a> for more details.</p>
 <h2 id="strict-mode">Strict Mode<a class="headerlink" href="#strict-mode" title="Permanent link">&para;</a></h2>
-<p>The parameter <code>strict</code> can be used to control whether the field should be validated in "strict mode".</p>
-<p>[TODO: Add a link to documentation about strict mode]</p>
+<p>The <code>strict</code> parameter on a <code>Field</code> specifies whether the field should be validated in "strict mode".
+In strict mode, Pydantic throws an error during validation instead of coercing data on the field where <code>strict=True</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
@@ -2827,6 +2827,8 @@ models in a union.</p>
 <li>This is the default value.</li>
 <li>The <code>age</code> field is not validated in the strict mode. Therefore, it can be assigned a string.</li>
 </ol>
+<p>See <a href="../models/#strict-mode">Strict Mode</a> for more details.</p>
+<p>See <a href="../conversion_table/">Conversion Table</a> for more details on how Pydantic converts data in both strict and lax modes.</p>
 <h2 id="immutability">Immutability<a class="headerlink" href="#immutability" title="Permanent link">&para;</a></h2>
 <p>The parameter <code>frozen</code> is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).</p>
