@@ -357,7 +357,7 @@ class PydanticModelTransformer:
         self.set_frozen(fields, frozen=config.frozen is True)
         info.metadata[METADATA_KEY] = {
             'fields': {field.name: field.serialize() for field in fields},
-            'config': config.set_values_dict(),
+            'config': config.get_values_dict(),
         }
 
     def adjust_validator_signatures(self) -> None:
@@ -818,7 +818,7 @@ class ModelConfigData:
         self.populate_by_name = populate_by_name
         self.has_alias_generator = has_alias_generator
 
-    def set_values_dict(self) -> dict[str, Any]:
+    def get_values_dict(self) -> dict[str, Any]:
         """Returns a dict of Pydantic model config names to their values.
 
         It includes the config if config value is not `None`.
@@ -829,7 +829,7 @@ class ModelConfigData:
         """Update Pydantic model config values."""
         if config is None:
             return
-        for k, v in config.set_values_dict().items():
+        for k, v in config.get_values_dict().items():
             setattr(self, k, v)
 
     def setdefault(self, key: str, value: Any) -> None:
