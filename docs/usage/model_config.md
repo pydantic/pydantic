@@ -509,7 +509,7 @@ class Model(BaseModel):
     age: int
 ```
 
-See [Strict Mode](strict_mode.md) for more details.
+See [Strict Mode](models.md#strict-mode) for more details.
 
 See [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
 

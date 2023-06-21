@@ -582,8 +582,6 @@ See the [Discriminated Unions] for more details.
 The `strict` parameter on a `Field` specifies whether the field should be validated in "strict mode".
 In strict mode, Pydantic throws an error during validation instead of coercing data on the field where `strict=True`.
 
-See the [Strict Mode] documentation for more details.
-
 ```py
 from pydantic import BaseModel, Field
 
@@ -601,7 +599,7 @@ print(user)
 1. This is the default value.
 2. The `age` field is not validated in the strict mode. Therefore, it can be assigned a string.
 
-See [Strict Mode](strict_mode.md) for more details.
+See [Strict Mode](models.md#strict-mode) for more details.
 
 See [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
 
@@ -732,5 +730,4 @@ TODO: Add `final`, and `alias_priority` parameters.
 [init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Validate Assignment]: /usage/models/#validate-assignment
-[Strict Mode]: strict_mode.md
 [Exporting Models]: /usage/exporting_models/#model-and-field-level-include-and-exclude
