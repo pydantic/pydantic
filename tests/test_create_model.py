@@ -8,6 +8,7 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
+    PydanticDeprecatedSince20,
     PydanticUserError,
     ValidationError,
     create_model,
@@ -182,7 +183,7 @@ def test_inheritance_validators_always():
 
 
 def test_inheritance_validators_all():
-    with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@validator` validators are deprecated'):
+    with pytest.warns(PydanticDeprecatedSince20, match='Pydantic V1 style `@validator` validators are deprecated'):
 
         class BarModel(BaseModel):
             @validator('*')

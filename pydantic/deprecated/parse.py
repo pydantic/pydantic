@@ -12,7 +12,8 @@ from typing_extensions import deprecated
 from ..warnings import PydanticDeprecatedSince20
 
 if not TYPE_CHECKING:
-    # See PyCharm issues PY-21915 and PY-51428
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
 
@@ -21,7 +22,7 @@ class Protocol(str, Enum):
     pickle = 'pickle'
 
 
-@deprecated('load_str_bytes is deprecated.')
+@deprecated('load_str_bytes is deprecated.', category=PydanticDeprecatedSince20)
 def load_str_bytes(
     b: str | bytes,
     *,
@@ -55,7 +56,7 @@ def load_str_bytes(
         raise TypeError(f'Unknown protocol: {proto}')
 
 
-@deprecated('load_file is deprecated.')
+@deprecated('load_file is deprecated.', category=PydanticDeprecatedSince20)
 def load_file(
     path: str | Path,
     *,

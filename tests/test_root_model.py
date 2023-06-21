@@ -11,6 +11,7 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
+    PydanticDeprecatedSince20,
     PydanticUserError,
     RootModel,
     ValidationError,
@@ -175,7 +176,7 @@ def test_v1_compatibility_serializer():
     m = MyOuterModel.model_validate({'my_root': {'x': 1}})
 
     assert m.model_dump() == {'my_root': {'__root__': {'x': 1}}}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
         assert m.dict() == {'my_root': {'__root__': {'x': 1}}}
 
 

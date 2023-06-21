@@ -29,6 +29,7 @@ from typing_extensions import Annotated, get_args
 from pydantic import (
     BaseModel,
     ConfigDict,
+    PydanticDeprecatedSince20,
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
     TypeAdapter,
@@ -2153,7 +2154,7 @@ def test_iter_coverage():
         y: str = 'a'
 
     with pytest.warns(
-        DeprecationWarning, match='The private method `_iter` will be removed and should no longer be used.'
+        PydanticDeprecatedSince20, match='The private method `_iter` will be removed and should no longer be used.'
     ):
         assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
@@ -2317,7 +2318,7 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         def my_model_validator(cls, values, handler, info):
             raise NotImplementedError
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @root_validator(skip_on_failure=True)
             @classmethod
@@ -2325,7 +2326,7 @@ def test_abstractmethod_missing_for_all_decorators(bases):
             def my_root_validator(cls, values):
                 raise NotImplementedError
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @validator('side')
             @classmethod

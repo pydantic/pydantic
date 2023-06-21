@@ -41,6 +41,7 @@ from pydantic import (
     GetJsonSchemaHandler,
     ImportString,
     InstanceOf,
+    PydanticDeprecatedSince20,
     PydanticUserError,
     RootModel,
     ValidationError,
@@ -4111,7 +4112,7 @@ def test_model_with_schema_extra_callable_no_model_class():
 
 
 def test_model_with_schema_extra_callable_config_class():
-    with pytest.warns(DeprecationWarning, match='use ConfigDict instead'):
+    with pytest.warns(PydanticDeprecatedSince20, match='use ConfigDict instead'):
 
         class Model(BaseModel):
             name: str = None
@@ -4127,7 +4128,7 @@ def test_model_with_schema_extra_callable_config_class():
 
 
 def test_model_with_schema_extra_callable_no_model_class_config_class():
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
 
         class Model(BaseModel):
             name: str = None
@@ -4142,7 +4143,7 @@ def test_model_with_schema_extra_callable_no_model_class_config_class():
 
 
 def test_model_with_schema_extra_callable_classmethod():
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
 
         class Model(BaseModel):
             name: str = None
@@ -4160,7 +4161,7 @@ def test_model_with_schema_extra_callable_classmethod():
 
 
 def test_model_with_schema_extra_callable_instance_method():
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
 
         class Model(BaseModel):
             name: str = None

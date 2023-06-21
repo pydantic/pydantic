@@ -30,7 +30,8 @@ if typing.TYPE_CHECKING:
 
     from ..main import BaseModel
 else:
-    # See PyCharm issues PY-21915 and PY-51428
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
 
@@ -217,7 +218,9 @@ class ModelMetaclass(ABCMeta):
         return field_names, class_vars, private_attributes
 
     @property
-    @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.')
+    @deprecated(
+        'The `__fields__` attribute is deprecated, use `model_fields` instead.', category=PydanticDeprecatedSince20
+    )
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
         return self.model_fields

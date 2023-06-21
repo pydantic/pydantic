@@ -43,7 +43,8 @@ if typing.TYPE_CHECKING:
         __pydantic_complete__: typing.ClassVar[bool]
 
 else:
-    # See PyCharm issues PY-21915 and PY-51428
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
 

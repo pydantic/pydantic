@@ -2,7 +2,7 @@ from typing import Dict, List, Mapping, Union
 
 import pytest
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, PydanticDeprecatedSince20, ValidationError
 from pydantic.dataclasses import dataclass
 from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
 
@@ -56,7 +56,7 @@ def test_parsing_model_naming():
     assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
 
     with pytest.raises(ValidationError) as exc_info:
-        with pytest.warns(DeprecationWarning, match='The type_name parameter is deprecated'):
+        with pytest.warns(PydanticDeprecatedSince20, match='The type_name parameter is deprecated'):
             parse_obj_as(int, 'a', type_name='ParsingModel')
     assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
 

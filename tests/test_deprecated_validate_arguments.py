@@ -8,7 +8,7 @@ import pytest
 from dirty_equals import IsInstance
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, PydanticDeprecatedSince20, ValidationError
 from pydantic.deprecated.decorator import ValidatedFunction
 from pydantic.deprecated.decorator import validate_arguments as validate_arguments_deprecated
 from pydantic.errors import PydanticUserError
@@ -17,7 +17,9 @@ skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3
 
 
 def validate_arguments(*args, **kwargs):
-    with pytest.warns(DeprecationWarning, match='^The `validate_arguments` method is deprecated; use `validate_call`'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='^The `validate_arguments` method is deprecated; use `validate_call`'
+    ):
         return validate_arguments_deprecated(*args, **kwargs)
 
 
@@ -146,7 +148,7 @@ def test_field_can_provide_factory() -> None:
 
 @skip_pre_38
 def test_positional_only(create_module):
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
         module = create_module(
             # language=Python
             """

@@ -1,4 +1,5 @@
 from pydantic import PydanticDeprecatedSince20, PydanticDeprecationWarning
+from pydantic.version import VERSION
 
 
 def test_pydantic_deprecation_warning():
@@ -27,7 +28,7 @@ def test_pydantic_deprecation_warning_2_0_migration_guide_link():
 
     assert (
         str(warning)
-        == 'Warning message. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/v2.0/migration/'
+        == f'Warning message. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/{VERSION}/migration/'
     )
 
 

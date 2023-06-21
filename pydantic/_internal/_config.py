@@ -11,7 +11,8 @@ from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20
 
 if not TYPE_CHECKING:
-    # See PyCharm issues PY-21915 and PY-51428
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
 DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
