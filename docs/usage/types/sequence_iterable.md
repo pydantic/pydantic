@@ -3,71 +3,44 @@ description: Support for iterable types.
 ---
 
 `typing.Sequence`
-: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+: this is intended for use when the provided value should meet the requirements of the `Sequence` protocol, and it is
+  desirable to do eager validation of the values in the container. Note that when validation must be performed on the
+  values of the container, the type of the container may not be preserved since validation may end up replacing values.
+  We guarantee that the validated value will be a valid `typing.Sequence`, but it may have a different type than was
+  provided (generally, it will become a `list`).
 
 `typing.Iterable`
-: this is reserved for iterables that shouldn't be consumed. See [Infinite Generators](#infinite-generators) below for more detail on parsing and validation
+: this is intended for use when the provided value may be an iterable that shouldn't be consumed.
+  See [Infinite Generators](#infinite-generators) below for more detail on parsing and validation.
+  Similar to `typing.Sequence`, we guarantee that the validated result will be a valid `typing.Iterable`,
+  but it may have a different type than was provided. In particular, even if a non-generator type such as a `list`
+  is provided, the post-validation value of a field of type `typing.Iterable` will be a generator.
 
-Pydantic uses standard library `typing` types as defined in PEP 484 to define complex objects.
+Here is a simple example using `typing.Sequence`:
 
 ```py
-from typing import Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
+from typing import Sequence
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_list: list = None
-    list_of_ints: List[int] = None
-
-    simple_tuple: tuple = None
-    tuple_of_different_types: Tuple[int, float, str, bool] = None
-
-    simple_dict: dict = None
-    dict_str_float: Dict[str, float] = None
-
-    simple_set: set = None
-    set_bytes: Set[bytes] = None
-    frozen_set: FrozenSet[int] = None
-
-    str_or_bytes: Union[str, bytes] = None
-    none_or_str: Optional[str] = None
-
     sequence_of_ints: Sequence[int] = None
 
-    compound: Dict[Union[str, bytes], List[Set[int]]] = None
-
-    deque: Deque[int] = None
-
-
-print(Model(simple_list=['1', '2', '3']).simple_list)
-#> ['1', '2', '3']
-print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
-#> [1, 2, 3]
-
-print(Model(simple_dict={'a': 1, b'b': 2}).simple_dict)
-#> {'a': 1, b'b': 2}
-print(Model(dict_str_float={'a': 1, b'b': 2}).dict_str_float)
-#> {'a': 1.0, 'b': 2.0}
-
-print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
-#> (1, 2, 3, 4)
-print(Model(tuple_of_different_types=[4, 3, '2', 1]).tuple_of_different_types)
-#> (4, 3.0, '2', True)
 
 print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
 #> [1, 2, 3, 4]
 print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)
 #> (1, 2, 3, 4)
-
-print(Model(deque=[1, 2, 3]).deque)
-#> deque([1, 2, 3])
 ```
 
 ### Strings aren't Sequences
 
+While instances of `str` are technically valid instances of the `Sequence[str]` protocol from a type-checker's point of
+view, this is frequently not intended as is a common source of bugs.
 
-Pydantic doesn't treat strings, i.e. `str` and `bytes` subclasses, as sequences:
+As a result, Pydantic raises a `ValidationError` if you attempt to pass a `str` or `bytes` instance into a field of type
+`Sequence[str]` or `Sequence[bytes]`:
 
 ```py
 from typing import Optional, Sequence
@@ -113,12 +86,12 @@ except ValidationError as e:
 
 ## Infinite Generators
 
-If you have a generator you can use `Sequence` as described above. In that case, the
-generator will be consumed and stored on the model as a list and its values will be
-validated with the sub-type of `Sequence` (e.g. `int` in `Sequence[int]`).
+If you have a generator you want to validate, you can still use `Sequence` as described above.
+In that case, the generator will be consumed and stored on the model as a list and its values will be
+validated against the type parameter of the `Sequence` (e.g. `int` in `Sequence[int]`).
 
-But if you have a generator that you don't want to be consumed, e.g. an infinite
-generator or a remote data loader, you can define its type with `Iterable`:
+However, if you have a generator that you _don't_ want to be eagerly consumed (e.g. an infinite
+generator or a remote data loader), you can use a field of type `Iterable`:
 
 ```py
 from typing import Iterable
@@ -161,69 +134,41 @@ for i in m.infinite:
 ```
 
 !!! warning
-    `Iterable` fields only perform a simple check that the argument is iterable and
-    won't be consumed.
+    During initial validation, `Iterable` fields only perform a simple check that the provided argument is iterable.
+    To prevent it from being consumed, no validation of the yielded values is performed eagerly.
 
-    No validation of their values is performed as it cannot be done without consuming
-    the iterable.
 
-!!! tip
-    If you want to validate the values of an infinite generator you can create a
-    separate model and use it while consuming the generator, reporting the validation
-    errors as appropriate.
+Though the yielded values are not validated eagerly, they are still validated when yielded, and will raise a
+`ValidationError` at yield time when appropriate:
 
-    pydantic can't validate the values automatically for you because it would require
-    consuming the infinite generator.
-
-## Validating the first value
-
-You can create a [validator](../validators.md) to validate the first value in an infinite generator and still not consume it entirely.
-
-```py
+```python
 from typing import Iterable
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    infinite: Iterable[int]
-
-    @field_validator('infinite', mode='wrap')
-    def infinite_first_int(cls, iterable, handler):
-        first_value = next(iterable)
-        if isinstance(first_value, int):
-            yield first_value
-        else:
-            raise ValueError(f'first value must be an int, not {type(first_value)}')
-
-        yield from handler(iterable)
+    int_iterator: Iterable[int]
 
 
-def infinite_ints():
-    i = 0
-    while True:
-        yield i
-        i += 1
+def my_iterator():
+    yield 13
+    yield '27'
+    yield 'a'
 
 
-m = Model(infinite=infinite_ints())
-print(next(m.infinite))
-#> 0
-print(next(m.infinite))
-#> 1
-print(next(m.infinite))
-#> 2
-
-
-def infinite_strs():
-    while True:
-        yield from '123'
-
-
-m = Model(infinite=infinite_strs())
+m = Model(int_iterator=my_iterator())
+print(next(m.int_iterator))
+#> 13
+print(next(m.int_iterator))
+#> 27
 try:
-    next(m.infinite)
-except ValueError as e:
+    next(m.int_iterator)
+except ValidationError as e:
     print(e)
-    #> first value must be an int, not <class 'str'>
+    """
+    1 validation error for ValidatorIterator
+    2
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+    """
 ```
