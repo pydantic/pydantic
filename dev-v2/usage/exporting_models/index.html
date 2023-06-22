@@ -2501,10 +2501,16 @@ sub-models will not be converted to dictionaries.</p>
 </code></pre></div>
 <p>Note also that <a href="../models/#rootmodel-and-custom-root-types"><code>RootModel</code></a> <em>does</em> get converted to a dictionary with the key <code>'root'</code>.</p>
 <h2 id="custom-serializers">Custom serializers<a class="headerlink" href="#custom-serializers" title="Permanent link">&para;</a></h2>
+<p>Pydantic provides several <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers">functional serializers</a> to customise how a model is serialized to a dictionary or JSON.</p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.field_serializer"><code>@field_serializer</code></a></li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.model_serializer"><code>@model_serializer</code></a></li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.PlainSerializer"><code>PlainSerializer</code></a></li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.WrapSerializer"><code>WrapSerializer</code></a></li>
+</ul>
 <p>Serialization can be customised on a field using the
 <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.field_serializer"><code>@field_serializer</code></a> decorator, and on a model using the
 <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.model_serializer"><code>@model_serializer</code></a> decorator.</p>
-<p>Here is an example:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2583,10 +2589,127 @@ sub-models will not be converted to dictionaries.</p>
 </div>
 </div>
 </div>
+<p>In addition, <a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.PlainSerializer"><code>PlainSerializer</code></a> and
+<a class="autorefs autorefs-internal" href="../../api/functional_serializers/#pydantic.functional_serializers.WrapSerializer"><code>WrapSerializer</code></a> enable you to use a function to modify the output of serialization.</p>
+<p>Both serializers accept optional arguments including:</p>
+<ul>
+<li><code>return_type</code> specifies the return type for the function. If omitted it will be inferred from the type annotation.</li>
+<li><code>when_used</code> specifies when this serializer should be used. Accepts a string with values 'always',
+    'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'.</li>
+</ul>
+<p><code>PlainSerializer</code> uses a simple function to modify the output of serialization.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_serializers</span> <span class="kn">import</span> <span class="n">PlainSerializer</span>
+
+<span class="n">FancyInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">int</span><span class="p">,</span> <span class="n">PlainSerializer</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s1">,</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
+<span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">FancyInt</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: 1234}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;x&#39;: &#39;1,234&#39;}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_serializers</span> <span class="kn">import</span> <span class="n">PlainSerializer</span>
+
+<span class="n">FancyInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">int</span><span class="p">,</span> <span class="n">PlainSerializer</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s1">,</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)</span>
+<span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">FancyInt</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: 1234}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;x&#39;: &#39;1,234&#39;}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><code>WrapSerializer</code> receives the raw inputs along with a handler function that applies the standard serialization
+logic, and can modify the resulting value before returning it as the final output of serialization.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializerFunctionWrapHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_serializers</span> <span class="kn">import</span> <span class="n">WrapSerializer</span>
+
+
+<span class="k">def</span> <span class="nf">ser_wrap</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">nxt</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">nxt</span><span class="p">(</span><span class="n">v</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s1">,</span><span class="si">}</span><span class="s1">&#39;</span>
+
+
+<span class="n">FancyInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">WrapSerializer</span><span class="p">(</span><span class="n">ser_wrap</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)]</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">FancyInt</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: 1234}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;x&#39;: &#39;1,235&#39;}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializerFunctionWrapHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_serializers</span> <span class="kn">import</span> <span class="n">WrapSerializer</span>
+
+
+<span class="k">def</span> <span class="nf">ser_wrap</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">nxt</span><span class="p">:</span> <span class="n">SerializerFunctionWrapHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">nxt</span><span class="p">(</span><span class="n">v</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">:</span><span class="s1">,</span><span class="si">}</span><span class="s1">&#39;</span>
+
+
+<span class="n">FancyInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">WrapSerializer</span><span class="p">(</span><span class="n">ser_wrap</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">)]</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">FancyInt</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: 1234}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;x&#39;: &#39;1,235&#39;}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="serializing-subclasses">Serializing subclasses<a class="headerlink" href="#serializing-subclasses" title="Permanent link">&para;</a></h2>
 <h3 id="subclasses-of-standard-types">Subclasses of standard types<a class="headerlink" href="#subclasses-of-standard-types" title="Permanent link">&para;</a></h3>
 <p>Subclasses of standard types are automatically dumped like their super-classes:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
@@ -2799,7 +2922,7 @@ This can be done at any depth level.</p>
 <p>Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.
 In this scenario, <code>model_dump</code> and related methods expect integer keys for element-wise inclusion or exclusion.
 To exclude a field from <strong>every</strong> member of a list or tuple, the dictionary key <code>'__all__'</code> can be used, as shown here:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span>
