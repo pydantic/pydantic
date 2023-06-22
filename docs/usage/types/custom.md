@@ -315,6 +315,15 @@ except ValidationError as exc:
 
 ### Classes with `__get_pydantic_core_schema__`
 
+To do more extensive customization of how Pydantic handles custom classes, and in particular when you have access to the class or can subclass it, you can implement a special `__get_pydantic_core_schema__` to tell Pydantic how to generate the `pydantic-core` schema.
+While `pydantic` uses `pydantic-core` internally to handle validation and serialization, it is a new API for Pydantic V2, thus it is one of the areas most likely to be tweaked in the future and you should try to stick to the built in constructs like those provided by `annotated-types`, `pydantic.Field` or `BeforeValidator` and co.
+
+You can implement `__get_pydantic_core_schema__` both on a custom type and on metadata intended to be put in `Annotated`. In both cases the API is middleware-like and similar to that of `wrap` validators: you get a `source_type` (which isn't necessarily the same as the class, in particular for generics) and a `handler` that you can call with a type to either call the next metadata in `Annotated` or call into `pydantic`'s internal schema generation.
+
+The simplest no-op implementation calls the handler with the type you are given and then returns that as the result. You can also choose to modify the type before calling the handler, modify the core schema returned by the handler or not call the handler at all.
+
+Here is an example of an annotation intended to go into `Annotated` that enforces that a string is a valid postal code. The advantage of doing this via an annotation in `Annotated` instead of making a `PostalCode(str)` class is that any `str` can be passed into a model constructor and type checkers will not complain but Pydantic will still enforce validation.
+
 ```py
 import re
 from typing import Any
@@ -424,8 +433,7 @@ except ValidationError as e:
     """
 ```
 
-Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
-formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
+Similar validation could be achieved using [`Annotated[str, Field(pattern=...)]`](#constrained-types) except the value won't be formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
 
 See [schema](../json_schema.md) for more details on how the model's schema is generated.
 
@@ -438,13 +446,13 @@ See [schema](../json_schema.md) for more details on how the model's schema is ge
 You can use
 [Generic Classes](https://docs.python.org/3/library/typing.html#typing.Generic) as
 field types and perform custom validation based on the "type parameters" (or sub-types)
-with `__get_validators__`.
+with `__get_pydantic_core_schema__`.
 
 If the Generic class that you are using as a sub-type has a classmethod
-`__get_validators__` you don't need to use [`arbitrary_types_allowed`](../model_config.md#arbitrary-types-allowed) for it to work.
+`__get_pydantic_core_schema__` you don't need to use [`arbitrary_types_allowed`](../model_config.md#arbitrary-types-allowed) for it to work.
 
-Because you can declare validators that receive the current `field`, you can extract
-the `sub_fields` (from the generic class type parameters) and validate data with them.
+Because the `source_type` parameter is not the same as the `cls` parameter you can use `typing.get_args` (or `typing_extensions.get_args`) to extract the generic parameters.
+Then you can use the `handler` to generate a schema for them by calling `handler.generate_schema`. Note that we do not do something like `handler(get_args(source_type)[0])` because we want to generate an unrelated schema for that generic parameter, not one that is influenced by the current context of `Annotated` metadata and such. This is less important for custom types but crucial for annotated metadata that modifies schema building.
 
 ```py
 from dataclasses import dataclass
@@ -476,8 +484,10 @@ class TastingModel(Generic[AgedType, QualityType]):
             age_tp = quality_tp = Any
         else:
             age_tp, quality_tp = get_args(source_type)
-        aged_schema = handler(age_tp)
-        quality_schema = handler(quality_tp)
+        # both calling handler(...) and handler.generate_schema(...)
+        # would work, but prefer the latter for conceptual and consistency reasons
+        aged_schema = handler.generate_schema(age_tp)
+        quality_schema = handler.generate_schema(quality_tp)
 
         def val_aged(
             v: TastingModel[Any, Any], handler: core_schema.ValidatorFunctionWrapHandler
