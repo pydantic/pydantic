@@ -1,46 +1,47 @@
 `set`
 : allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a set;
-  see `typing.Set` below for sub-type constraints
+  when a generic parameter is provided, the appropriate validation is applied to all items of the set
+
+`typing.Set`
+: handled the same as `set` above
 
 `frozenset`
 : allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a frozen set;
-  see `typing.FrozenSet` below for sub-type constraints
-
-`deque`
-: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a deque;
-  see `typing.Deque` below for sub-type constraints
-
-`typing.Set`
-: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+  when a generic parameter is provided, the appropriate validation is applied to all items of the set
 
 `typing.FrozenSet`
-: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+: handled the same as `frozenset` above
 
-`typing.Deque`
-: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+```py
+from typing import FrozenSet, Optional, Set
 
-## Constrained Types
+from pydantic import BaseModel
 
-The value of numerous common types can be restricted using `con*` type functions:
 
-`conset`
-: type method for constraining sets;
-  see [Constrained Types](#constrained-types)
+class Model(BaseModel):
+    simple_set: Optional[set] = None
+    set_of_ints: Optional[Set[int]] = None
 
-`confrozenset`
-: type method for constraining frozen sets;
-  see [Constrained Types](#constrained-types)
+    simple_frozenset: Optional[frozenset] = None
+    frozenset_of_ints: Optional[FrozenSet[int]] = None
 
-### Arguments to `conset`
-The following arguments are available when using the `conset` type function
 
-- `item_type: Type[T]`: type of the set items
-- `min_items: int = None`: minimum number of items in the set
-- `max_items: int = None`: maximum number of items in the set
+print(Model(simple_set={'1', '2', '3'}).simple_set)
+#> {'1', '2', '3'}
+print(Model(simple_set=['1', '2', '3']).simple_set)
+#> {'1', '2', '3'}
+print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
+#> {1, 2, 3}
 
-### Arguments to `confrozenset`
-The following arguments are available when using the `confrozenset` type function
+m1 = Model(simple_frozenset=['1', '2', '3'])
+print(type(m1.simple_frozenset))
+#> <class 'frozenset'>
+print(sorted(m1.simple_frozenset))
+#> ['1', '2', '3']
 
-- `item_type: Type[T]`: type of the frozenset items
-- `min_items: int = None`: minimum number of items in the frozenset
-- `max_items: int = None`: maximum number of items in the frozenset
+m2 = Model(frozenset_of_ints=['1', '2', '3'])
+print(type(m2.frozenset_of_ints))
+#> <class 'frozenset'>
+print(sorted(m2.frozenset_of_ints))
+#> [1, 2, 3]
+```
