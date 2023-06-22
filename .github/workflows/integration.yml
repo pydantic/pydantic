@@ -1,0 +1,16 @@
+name: Pydantic Family Integration Tests
+
+on:
+  schedule:
+  - cron: '21 3 * * 1,2,3,4,5'
+  workflow_dispatch: {}
+
+jobs:
+  test-pydantic-settings:
+    name: test pydantic settings
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: test
+      run: make test-pydantic-settings
