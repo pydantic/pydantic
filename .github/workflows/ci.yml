@@ -151,7 +151,7 @@ jobs:
           python-version: '3.11'
 
       - run: pip install -r tests/requirements.txt
-      - run: 'pip install "maturin>=0.15,<0.16" typing_extensions'
+      - run: 'pip install "maturin>=1,<2" typing_extensions'
       - run: make build-dev
 
       - run: pip freeze
@@ -254,7 +254,7 @@ jobs:
           version: '3.1.32'
           actions-cache-folder: emsdk-cache
 
-      - run: pip install 'maturin>=0.15,<0.16' 'black>=22.3.0,<23' typing_extensions
+      - run: pip install 'maturin>=1,<2' 'black>=22.3.0,<23' typing_extensions
 
       - name: build wheels
         run: make build-wasm
