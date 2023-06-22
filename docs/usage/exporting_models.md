@@ -197,6 +197,12 @@ print(Model(x='test value').model_dump_json())
 In addition, [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer] and
 [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer] enable you to use a function to modify the output of serialization.
 
+Both serializers accept optional arguments including:
+
+- `return_type` specifies the return type for the function. If omitted it will be inferred from the type annotation.
+- `when_used` specifies when this serializer should be used. Accepts a string with values 'always',
+    'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'.
+
 `PlainSerializer` uses a simple function to modify the output of serialization.
 
 ```py

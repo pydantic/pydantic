@@ -17,9 +17,9 @@ class PlainSerializer:
 
     Attributes:
         func: The serializer function.
-        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
-        when_used: The serialization condition. Accepts a string with values `'always'`, `'unless-none'`, `'json'`,
-            and `'json-unless-none'`. Defaults to 'always'.
+        return_type: The return type for the function. If omitted it will be inferred from the type annotation.
+        when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
+            `'unless-none'`, `'json'`, and `'json-unless-none'`. Defaults to 'always'.
     """
 
     func: core_schema.SerializerFunction
@@ -56,8 +56,8 @@ class WrapSerializer:
     logic, and can modify the resulting value before returning it as the final output of serialization.
 
     Attributes:
-        func: The function to be wrapped.
-        return_type: The return type for the function, if omitted it will be inferred from the type annotation.
+        func: The serializer function to be wrapped.
+        return_type: The return type for the function. If omitted it will be inferred from the type annotation.
         when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
             `'unless-none'`, `'json'`, and `'json-unless-none'`. Defaults to 'always'.
     """
