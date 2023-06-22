@@ -298,15 +298,6 @@ jobs:
     - name: test
       run: make test
 
-  test-pydantic-settings:
-    name: test pydantic settings
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: test
-      run: make test-pydantic-settings
-
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
 
@@ -322,7 +313,6 @@ jobs:
       - test-memray
       - test-mypy
       - test-fastapi
-      - test-pydantic-settings
 
     runs-on: ubuntu-latest
 
