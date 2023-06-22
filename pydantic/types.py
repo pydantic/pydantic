@@ -98,7 +98,21 @@ __all__ = (
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata):
-    """A field metadata class to indicate that a field should be validated in strict mode."""
+    """A field metadata class to indicate that a field should be validated in strict mode.
+
+    Attributes:
+        strict: Whether to validate the field in strict mode.
+
+    Example:
+        ```python
+        from typing_extensions import Annotated
+
+        from pydantic.types import Strict
+
+
+        StrictBool = Annotated[bool, Strict()]
+        ```
+    """
 
     strict: bool = True
 
