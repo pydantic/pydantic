@@ -146,11 +146,16 @@ Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) _does_ g
 
 ## Custom serializers
 
+Pydantic provides several [functional serializers][pydantic.functional_serializers] to customise how a model is serialized to a dictionary or JSON.
+
+- [`@field_serializer`][pydantic.functional_serializers.field_serializer]
+- [`@model_serializer`][pydantic.functional_serializers.model_serializer]
+- [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer]
+- [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer]
+
 Serialization can be customised on a field using the
 [`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator, and on a model using the
 [`@model_serializer`][pydantic.functional_serializers.model_serializer] decorator.
-
-Here is an example:
 
 ```py
 from datetime import datetime, timedelta, timezone
@@ -187,6 +192,69 @@ class Model(BaseModel):
 
 print(Model(x='test value').model_dump_json())
 #> {"x":"serialized test value"}
+```
+
+In addition, [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer] and
+[`WrapSerializer`][pydantic.functional_serializers.WrapSerializer] enable you to use a function to modify the output of serialization.
+
+Both serializers accept optional arguments including:
+
+- `return_type` specifies the return type for the function. If omitted it will be inferred from the type annotation.
+- `when_used` specifies when this serializer should be used. Accepts a string with values 'always',
+    'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'.
+
+`PlainSerializer` uses a simple function to modify the output of serialization.
+
+```py
+from typing_extensions import Annotated
+
+from pydantic import BaseModel
+from pydantic.functional_serializers import PlainSerializer
+
+FancyInt = Annotated[
+    int, PlainSerializer(lambda x: f'{x:,}', return_type=str, when_used='json')
+]
+
+
+class MyModel(BaseModel):
+    x: FancyInt
+
+
+print(MyModel(x=1234).model_dump())
+#> {'x': 1234}
+
+print(MyModel(x=1234).model_dump(mode='json'))
+#> {'x': '1,234'}
+```
+
+`WrapSerializer` receives the raw inputs along with a handler function that applies the standard serialization
+logic, and can modify the resulting value before returning it as the final output of serialization.
+
+```py
+from typing import Any
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, SerializerFunctionWrapHandler
+from pydantic.functional_serializers import WrapSerializer
+
+
+def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler) -> str:
+    return f'{nxt(v + 1):,}'
+
+
+FancyInt = Annotated[int, WrapSerializer(ser_wrap, when_used='json')]
+
+
+class MyModel(BaseModel):
+    x: FancyInt
+
+
+print(MyModel(x=1234).model_dump())
+#> {'x': 1234}
+
+print(MyModel(x=1234).model_dump(mode='json'))
+#> {'x': '1,235'}
 ```
 
 ## Serializing subclasses
