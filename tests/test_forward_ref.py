@@ -957,3 +957,37 @@ def test_undefined_types_warning_raised_by_usage(create_module):
                 a: UndefinedType
 
             Foobar(a=1)
+
+
+def test_rebuild_recursive_schema():
+    from typing import ForwardRef, List
+
+    class Expressions_(BaseModel):
+        model_config = dict(undefined_types_warning=False)
+        items: List["types['Expression']"]
+
+    class Expression_(BaseModel):
+        model_config = dict(undefined_types_warning=False)
+        Or: ForwardRef("types['allOfExpressions']")
+        Not: ForwardRef("types['allOfExpression']")
+
+    class allOfExpression_(BaseModel):
+        model_config = dict(undefined_types_warning=False)
+        Not: ForwardRef("types['Expression']")
+
+    class allOfExpressions_(BaseModel):
+        model_config = dict(undefined_types_warning=False)
+        items: List["types['Expression']"]
+
+    types_namespace = {
+        'types': {
+            'Expression': Expression_,
+            'Expressions': Expressions_,
+            'allOfExpression': allOfExpression_,
+            'allOfExpressions': allOfExpressions_,
+        }
+    }
+
+    models = [allOfExpressions_, Expressions_]
+    for m in models:
+        m.model_rebuild(_types_namespace=types_namespace)

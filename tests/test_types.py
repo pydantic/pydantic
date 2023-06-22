@@ -63,6 +63,7 @@ from pydantic import (
     FutureDatetime,
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
+    InstanceOf,
     Json,
     NaiveDatetime,
     NameEmail,
@@ -80,6 +81,7 @@ from pydantic import (
     PydanticInvalidForJsonSchema,
     SecretBytes,
     SecretStr,
+    SkipValidation,
     StrictBool,
     StrictBytes,
     StrictFloat,
@@ -103,7 +105,7 @@ from pydantic import (
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
 from pydantic.json_schema import JsonSchemaValue
-from pydantic.types import AllowInfNan, ImportString, InstanceOf, SkipValidation, Strict, TransformSchema
+from pydantic.types import AllowInfNan, ImportString, Strict, TransformSchema
 
 try:
     import email_validator

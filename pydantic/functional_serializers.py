@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
 
 from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Annotated, Literal, TypeAlias
 
 from ._internal import _annotated_handlers, _decorators, _internal_dataclass
 
@@ -140,7 +140,9 @@ def field_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Decorate methods on the class indicating that they should be used to serialize fields.
+    """Decorator that enables custom field serialization.
+
+    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.
 
     Four signatures are supported:
 
@@ -151,15 +153,17 @@ def field_serializer(
 
     Args:
         fields: Which field(s) the method should be called on.
-        mode: `plain` means the function will be called instead of the default serialization logic,
-            `wrap` means the function will be called with an argument to optionally call the
-            default serialization logic.
+        mode: The serialization mode.
+
+            - `plain` means the function will be called instead of the default serialization logic,
+            - `wrap` means the function will be called with an argument to optionally call the
+               default serialization logic.
         return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
         when_used: Determines the serializer will be used for serialization.
         check_fields: Whether to check that the fields actually exist on the model.
 
     Returns:
-        A decorator that can be used to decorate a function to be used as a field serializer.
+        The decorator function.
     """
 
     def dec(
@@ -202,19 +206,22 @@ def model_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     return_type: Any = None,
 ) -> Callable[[Any], Any]:
-    """Decorate a function which will be called to serialize the model.
+    """Decorator that enables custom model serialization.
+
+    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.
 
     Args:
         __f: The function to be decorated.
-        mode: The serialization mode. `'plain'` means the function will be called
-            instead of the default serialization logic, `'wrap'` means the function will be called with an argument
-            to optionally call the default serialization logic.
-        when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
-            `'unless-none'`, `'json'`, `'json-unless-none'`. Defaults to `'always'`.
-        return_type: The return type for the function, if omitted it will be inferred from the type annotation.
+        mode: The serialization mode.
+
+            - `'plain'` means the function will be called instead of the default serialization logic
+            - `'wrap'` means the function will be called with an argument to optionally call the default
+                serialization logic.
+        when_used: Determines when this serializer should be used.
+        return_type: The return type for the function. If omitted it will be inferred from the type annotation.
 
     Returns:
-        A decorator that can be used to decorate a function to be used as a model serializer.
+        The decorator function.
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
@@ -227,3 +234,34 @@ def model_serializer(
         return dec
     else:
         return dec(__f)  # type: ignore
+
+
+AnyType = TypeVar('AnyType')
+
+
+if TYPE_CHECKING:
+    SerializeAsAny = Annotated[AnyType, ...]  # SerializeAsAny[list[str]] will be treated by type checkers as list[str]
+    """Force serialization to ignore whatever is defined in the schema and instead ask the object
+    itself how it should be serialized.
+    In particular, this means that when model subclasses are serialized, fields present in the subclass
+    but not in the original schema will be included.
+    """
+else:
+
+    @_internal_dataclass.slots_dataclass
+    class SerializeAsAny:  # noqa: D101
+        def __class_getitem__(cls, item: Any) -> Any:
+            return Annotated[item, SerializeAsAny()]
+
+        def __get_pydantic_core_schema__(
+            self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            schema = handler(source_type)
+            schema_to_update = schema
+            while schema_to_update['type'] == 'definitions':
+                schema_to_update = schema_to_update.copy()
+                schema_to_update = schema_to_update['schema']
+            schema_to_update['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+                lambda x, h: h(x), schema=core_schema.any_schema()
+            )
+            return schema

@@ -6,7 +6,7 @@ serialized, and exported in a number of ways:
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
 !!! note
-    The one exception to sub-models being converted to dictionaries is that [`RootModel`](models.md#custom-root-types)
+    The one exception to sub-models being converted to dictionaries is that [`RootModel`](models.md#rootmodel-and-custom-root-types)
     and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
     done recursively.
 
@@ -142,12 +142,13 @@ for name, value in m:
     #> bar: whatever=123
 ```
 
-Note also that [`RootModel`](models.md#custom-root-types) _does_ get converted to a dictionary with the key `'root'`.
+Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) _does_ get converted to a dictionary with the key `'root'`.
 
 ## Custom serializers
 
-Serialization can be customised on a field using the `@field_serializer` decorator, and on a model using the
-`@model_serializer` decorator.
+Serialization can be customised on a field using the
+[`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator, and on a model using the
+[`@model_serializer`][pydantic.functional_serializers.model_serializer] decorator.
 
 Here is an example:
 
@@ -188,7 +189,7 @@ print(Model(x='test value').model_dump_json())
 #> {"x":"serialized test value"}
 ```
 
-### Serializing subclasses
+## Serializing subclasses
 
 ### Subclasses of standard types
 
@@ -233,7 +234,7 @@ print(m.model_dump_json())
 #> {"date":"2023-10-28"}
 ```
 
-## Subclass instances for fields of BaseModel, dataclasses, TypedDict
+### Subclass instances for fields of `BaseModel`, dataclasses, `TypedDict`
 
 When using fields whose annotations are themselves struct-like types (e.g., `BaseModel` subclasses, dataclasses, etc.),
 the default behavior is to serialize the attribute value as though it was an instance of the annotated type,
@@ -244,23 +245,25 @@ dumped object:
 from pydantic import BaseModel
 
 
-class InnerModel(BaseModel):
-    x: int
+class User(BaseModel):
+    name: str
 
 
-class SubInnerModel(InnerModel):
-    y: int
+class UserLogin(User):
+    password: str
 
 
 class OuterModel(BaseModel):
-    inner: InnerModel
+    user: User
 
 
-m = OuterModel(inner=SubInnerModel(x=1, y=2))
+user = UserLogin(name='pydantic', password='hunter2')
+
+m = OuterModel(user=user)
 print(m)
-#> inner=SubInnerModel(x=1, y=2)
-print(m.model_dump())
-#> {'inner': {'x': 1}}
+#> user=UserLogin(name='pydantic', password='hunter2')
+print(m.model_dump())  # note: the password field is not included
+#> {'user': {'name': 'pydantic'}}
 ```
 !!! warning "Migration Warning"
     This behavior is different from how things worked in Pydantic V1, where we would always include
@@ -269,7 +272,42 @@ print(m.model_dump())
     even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
     when adding sensitive information like secrets as fields of subclasses.
 
-TODO: Add and document `SerializeAsAny` type.
+### Serializing with duck-typing
+
+If you want to preserve the old duck-typing serialization behavior, this can be done using `SerializeAsAny`:
+
+```py
+from pydantic import BaseModel, SerializeAsAny
+
+
+class User(BaseModel):
+    name: str
+
+
+class UserLogin(User):
+    password: str
+
+
+class OuterModel(BaseModel):
+    as_any: SerializeAsAny[User]
+    as_user: User
+
+
+user = UserLogin(name='pydantic', password='password')
+
+print(OuterModel(as_any=user, as_user=user).model_dump())
+"""
+{
+    'as_any': {'name': 'pydantic', 'password': 'password'},
+    'as_user': {'name': 'pydantic'},
+}
+"""
+```
+
+When a field is annotated as `SerializeAsAny[<SomeType>]`, the validation behavior will be the same as if it was
+annotated as `<SomeType>`, and type-checkers like mypy will treat the attribute as having the appropriate type as well.
+But when serializing, the field will be serialized as though the type hint for the field was `Any`, which is where the
+name comes from.
 
 ## `pickle.dumps(model)`
 

@@ -61,7 +61,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==0.39.0",
+    "pydantic-core==0.40.1",
 ]
 dynamic = ['version', 'readme']
 
@@ -175,11 +175,7 @@ convention = "google"
 'tests/test_forward_ref.py' = ['F821']
 'tests/*' = ['D']
 'pydantic/deprecated/*' = ['D']
-'pydantic/functional_validators.py' = ['D']
 'pydantic/json_schema.py' = ['D']
-'pydantic/main.py' = ['D']
-'pydantic/mypy.py' = ['D']
-'pydantic/root_model.py' = ['D']
 
 [tool.coverage.run]
 source = ['pydantic']

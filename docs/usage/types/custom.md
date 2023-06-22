@@ -2,8 +2,318 @@
 
 You can also define your own custom data types. There are several ways to achieve it.
 
-### Classes with `____get_pydantic_core_schema____`
+### Composing types via `Annotated`
 
+[PEP 593] introduced `Annotated` as a way to attach runtime metadata to types without changing how type checkers interpret them.
+Pydantic takes advantage of this to allow you to create types that are identical to the original type as far as type checkers are concerned, but add validation, serialize differently, etc.
+For example, to create a type representing a positive int:
+
+```py
+# or `from typing import Annotated` for Python 3.9+
+from typing_extensions import Annotated
+
+from pydantic import Field, TypeAdapter, ValidationError
+
+PositiveInt = Annotated[int, Field(gt=0)]
+
+ta = TypeAdapter(PositiveInt)
+
+print(ta.validate_python(1))
+#> 1
+
+try:
+    ta.validate_python(-1)
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for constrained-int
+      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]
+    """
+```
+
+Note that you can also use constraints from [`annotated-types`] to make this Pydantic-agnostic:
+
+```py
+from annotated_types import Gt
+from typing_extensions import Annotated
+
+from pydantic import TypeAdapter, ValidationError
+
+PositiveInt = Annotated[int, Gt(0)]
+
+ta = TypeAdapter(PositiveInt)
+
+print(ta.validate_python(1))
+#> 1
+
+try:
+    ta.validate_python(-1)
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for constrained-int
+      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]
+    """
+```
+
+#### Adding validation and serialization
+
+You can add or override validation, serialization, and json schemas to an arbitrary type using the markers that Pydantic exports:
+
+```py
+from typing_extensions import Annotated
+
+from pydantic import AfterValidator, PlainSerializer, TypeAdapter, WithJsonSchema
+
+
+class MyType:
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+
+TrucatedFloat = Annotated[
+    float,
+    AfterValidator(lambda x: round(x, 1)),
+    PlainSerializer(lambda x: f'{x:.1e}', return_type=str),
+    WithJsonSchema({'type': 'string'}, mode='serialization'),
+]
+
+
+ta = TypeAdapter(TrucatedFloat)
+
+input = 1.02345
+assert input != 1.0
+
+assert ta.validate_python(input) == 1.0
+
+assert ta.dump_json(input) == b'"1.0e+00"'
+
+assert ta.json_schema(mode='validation') == {'type': 'number'}
+assert ta.json_schema(mode='serialization') == {'type': 'string'}
+```
+
+#### Generics
+
+You can use type variables within `Annotated` to make re-usable modifications to types:
+
+```python
+from typing import Any, List, Sequence, TypeVar
+
+from annotated_types import Gt, Len
+from typing_extensions import Annotated
+
+from pydantic import ValidationError
+from pydantic.type_adapter import TypeAdapter
+
+SequenceType = TypeVar('SequenceType', bound=Sequence[Any])
+
+
+ShortSequence = Annotated[SequenceType, Len(max_length=10)]
+
+
+ta = TypeAdapter(ShortSequence[List[int]])
+
+v = ta.validate_python([1, 2, 3, 4, 5])
+assert v == [1, 2, 3, 4, 5]
+
+try:
+    ta.validate_python([1] * 100)
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for list[int]
+      List should have at most 10 items after validation, not 11 [type=too_long, input_value=[1, 1, 1, 1, 1, 1, 1, 1, ... 1, 1, 1, 1, 1, 1, 1, 1], input_type=list]
+    """
+
+
+T = TypeVar('T')  # or a bound=SupportGt
+
+PositiveList = List[Annotated[T, Gt(0)]]
+
+ta = TypeAdapter(PositiveList[float])
+
+v = ta.validate_python([1])
+assert type(v[0]) is float
+
+
+try:
+    ta.validate_python([-1])
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for list[constrained-float]
+    0
+      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]
+    """
+```
+
+### Named type aliases
+
+The above examples make use of implicit type aliases.
+This means that they will not be able to have a `title` in JSON schemas and their schema will be copied between fields.
+You can use [PEP 695]'s `TypeAliasType` via its [typing-extensions] backport to make named aliases, allowing you to define a new type without creating subclasses.
+This new type can be as simple as a name or have complex validation logic attached to it:
+
+```py
+from typing import List, TypeVar
+
+from annotated_types import Gt
+from typing_extensions import Annotated, TypeAliasType
+
+from pydantic import BaseModel
+
+T = TypeVar('T')  # or a `bound=SupportGt`
+
+ImplicitAliasPositiveIntList = List[Annotated[int, Gt(0)]]
+
+
+class Model1(BaseModel):
+    x: ImplicitAliasPositiveIntList
+    y: ImplicitAliasPositiveIntList
+
+
+print(Model1.model_json_schema())
+"""
+{
+    'properties': {
+        'x': {
+            'items': {'exclusiveMinimum': 0, 'type': 'integer'},
+            'title': 'X',
+            'type': 'array',
+        },
+        'y': {
+            'items': {'exclusiveMinimum': 0, 'type': 'integer'},
+            'title': 'Y',
+            'type': 'array',
+        },
+    },
+    'required': ['x', 'y'],
+    'title': 'Model1',
+    'type': 'object',
+}
+"""
+
+PositiveIntList = TypeAliasType('PositiveIntList', List[Annotated[int, Gt(0)]])
+
+
+class Model2(BaseModel):
+    x: PositiveIntList
+    y: PositiveIntList
+
+
+print(Model2.model_json_schema())
+"""
+{
+    '$defs': {
+        'PositiveIntList': {
+            'items': {'exclusiveMinimum': 0, 'type': 'integer'},
+            'type': 'array',
+        }
+    },
+    'properties': {
+        'x': {'$ref': '#/$defs/PositiveIntList'},
+        'y': {'$ref': '#/$defs/PositiveIntList'},
+    },
+    'required': ['x', 'y'],
+    'title': 'Model2',
+    'type': 'object',
+}
+"""
+```
+
+These named type aliases can also be generic:
+
+```py
+from typing import Generic, List, TypeVar
+
+from annotated_types import Gt
+from typing_extensions import Annotated, TypeAliasType
+
+from pydantic import BaseModel, ValidationError
+
+T = TypeVar('T')  # or a bound=SupportGt
+
+PositiveList = TypeAliasType(
+    'PositiveList', List[Annotated[T, Gt(0)]], type_params=(T,)
+)
+
+
+class Model(BaseModel, Generic[T]):
+    x: PositiveList[T]
+
+
+assert Model[int].model_validate_json('{"x": ["1"]}').x == [1]
+
+try:
+    Model[int](x=[-1])
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for Model[int]
+    x.0
+      Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]
+    """
+```
+
+#### Named recursive types
+
+You can also use `TypeAliasType` to create recursive types:
+
+```py
+from typing import Any, Dict, List, Union
+
+from pydantic_core import PydanticCustomError
+from typing_extensions import Annotated, TypeAliasType
+
+from pydantic import (
+    TypeAdapter,
+    ValidationError,
+    ValidationInfo,
+    ValidatorFunctionWrapHandler,
+    WrapValidator,
+)
+
+
+def json_custom_error_validator(
+    value: Any, handler: ValidatorFunctionWrapHandler, _info: ValidationInfo
+) -> Any:
+    """Simplify the error message to avoid a gross error stemming
+    from exhaustive checking of all union options.
+    """
+    try:
+        return handler(value)
+    except ValidationError:
+        raise PydanticCustomError(
+            'invalid_json',
+            'Input is not valid json',
+        )
+
+
+Json = TypeAliasType(
+    'Json',
+    Annotated[
+        Union[Dict[str, 'Json'], List['Json'], str, int, float, bool, None],
+        WrapValidator(json_custom_error_validator),
+    ],
+)
+
+
+ta = TypeAdapter(Json)
+
+v = ta.validate_python({'x': [1], 'y': {'z': True}})
+assert v == {'x': [1], 'y': {'z': True}}
+
+try:
+    ta.validate_python({'x': object()})
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for function-wrap[json_custom_error_validator()]
+      Input is not valid json [type=invalid_json, input_value={'x': <object object at 0x0123456789ab>}, input_type=dict]
+    """
+```
+
+### Classes with `__get_pydantic_core_schema__`
 
 ```py
 import re
@@ -248,3 +558,7 @@ except ValidationError as e:
       Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='yeah', input_type=str]
     """
 ```
+
+[PEP 593]: https://peps.python.org/pep-0593/
+[PEP 695]: https://peps.python.org/pep-0695/
+[typing-extensions]: https://github.com/python/typing_extensions

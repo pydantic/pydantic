@@ -14,6 +14,7 @@ __all__ = (
     'PydanticImportError',
     'PydanticSchemaGenerationError',
     'PydanticInvalidForJsonSchema',
+    'PydanticErrorCodes',
 )
 
 # We use this URL to allow for future flexibility about how we host the docs, while allowing for Pydantic

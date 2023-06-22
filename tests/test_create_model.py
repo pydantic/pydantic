@@ -310,11 +310,7 @@ def test_private_descriptors(base, use_annotation):
         def _double_x(self):
             return self.x * 2
 
-    if use_annotation or base is ModelPrivateAttr:
-        assert set(A.__private_attributes__) == {'_some_func'}
-    else:
-        assert set(A.__private_attributes__) == set()
-
+    assert set(A.__private_attributes__) == {'_some_func'}
     assert set_name_calls == [(A, '_some_func')]
 
     a = A(x=2)
@@ -406,8 +402,8 @@ def test_del_model_attr():
 
 
 @pytest.mark.skipif(
-    platform.python_implementation() == 'PyPy' and platform.python_version_tuple() < ('3', '8'),
-    reason='In this single case `del` behaves weird on pypy 3.7',
+    platform.python_implementation() == 'PyPy',
+    reason='In this single case `del` behaves weird on pypy',
 )
 def test_del_model_attr_error():
     class Model(BaseModel):
@@ -433,6 +429,10 @@ def test_del_model_attr_with_privat_attrs():
     assert not hasattr(m, 'some_field')
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy',
+    reason='In this single case `del` behaves weird on pypy',
+)
 def test_del_model_attr_with_privat_attrs_error():
     class Model(BaseModel):
         _private_attr: int = PrivateAttr(default=1)

@@ -6,6 +6,8 @@ import sys
 from copy import copy
 from typing import TYPE_CHECKING, Any
 
+from pydantic_core import PydanticUndefined
+
 from . import _typing_extra
 from ._config import ConfigWrapper
 from ._repr import Representation
@@ -22,6 +24,19 @@ def get_type_hints_infer_globalns(
     localns: dict[str, Any] | None = None,
     include_extras: bool = False,
 ) -> dict[str, Any]:
+    """Gets type hints for an object by inferring the global namespace.
+
+    It uses the `typing.get_type_hints`, The only thing that we do here is fetching
+    global namespace from `obj.__module__` if it is not `None`.
+
+    Args:
+        obj: The object to get it's type hints.
+        localns: The local namespaces.
+        include_extras: Whether to recursively include annotation metadata.
+
+    Returns:
+        The object type hints.
+    """
     module_name = getattr(obj, '__module__', None)
     globalns: dict[str, Any] | None = None
     if module_name:
@@ -33,25 +48,6 @@ def get_type_hints_infer_globalns(
     return get_type_hints(obj, globalns=globalns, localns=localns, include_extras=include_extras)
 
 
-class _UndefinedType:
-    """Singleton class to represent an undefined value."""
-
-    def __repr__(self) -> str:
-        return 'PydanticUndefined'
-
-    def __copy__(self) -> _UndefinedType:
-        return self
-
-    def __reduce__(self) -> str:
-        return 'Undefined'
-
-    def __deepcopy__(self, _: Any) -> _UndefinedType:
-        return self
-
-
-Undefined = _UndefinedType()
-
-
 class PydanticMetadata(Representation):
     """Base class for annotation markers like `Strict`."""
 
@@ -59,6 +55,8 @@ class PydanticMetadata(Representation):
 
 
 class PydanticGeneralMetadata(PydanticMetadata):
+    """Pydantic general metada like `max_digits`."""
+
     def __init__(self, **metadata: Any):
         self.__dict__ = metadata
 
@@ -77,9 +75,21 @@ def collect_model_fields(  # noqa: C901
 
     The returned value is a tuple of two items: the fields dict, and the set of ClassVar names.
 
-    :param cls: BaseModel or dataclass
-    :param bases: parents of the class, generally `cls.__bases__`
-    :param types_namespace: optional extra namespace to look for types in
+    Args:
+        cls: BaseModel or dataclass.
+        bases: Parents of the class, generally `cls.__bases__`.
+        config_wrapper: The config wrapper instance.
+        types_namespace: Optional extra namespace to look for types in.
+        typevars_map: A dictionary mapping type variables to their concrete types.
+
+    Returns:
+        A tuple contains fields and class variables.
+
+    Raises:
+        NameError:
+            - If there is a conflict between a field name and protected namespaces.
+            - If there is a field other than `root` in `RootModel`.
+            - If a field shadows an attribute in the parent model.
     """
     from ..fields import FieldInfo
 
@@ -103,10 +113,10 @@ def collect_model_fields(  # noqa: C901
         if is_classvar(ann_type):
             class_vars.add(ann_name)
             continue
-        if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, Undefined)):
+        if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, PydanticUndefined)):
             class_vars.add(ann_name)
             continue
-        if ann_name.startswith('_'):
+        if not is_valid_field_name(ann_name):
             continue
         if cls.__pydantic_root_model__ and ann_name != 'root':
             raise NameError(
@@ -127,8 +137,8 @@ def collect_model_fields(  # noqa: C901
                 )
 
         try:
-            default = getattr(cls, ann_name, Undefined)
-            if default is Undefined:
+            default = getattr(cls, ann_name, PydanticUndefined)
+            if default is PydanticUndefined:
                 raise AttributeError
         except AttributeError:
             if ann_name in annotations:
@@ -172,9 +182,9 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 
     if not is_finalvar(type_):
         return False
-    elif val is Undefined:
+    elif val is PydanticUndefined:
         return False
-    elif isinstance(val, FieldInfo) and (val.default is Undefined and val.default_factory is None):
+    elif isinstance(val, FieldInfo) and (val.default is PydanticUndefined and val.default_factory is None):
         return False
     else:
         return True
@@ -183,6 +193,16 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 def collect_dataclass_fields(
     cls: type[StandardDataclass], types_namespace: dict[str, Any] | None, *, typevars_map: dict[Any, Any] | None = None
 ) -> dict[str, FieldInfo]:
+    """Collect the fields of a dataclass.
+
+    Args:
+        cls: dataclass.
+        types_namespace: Optional extra namespace to look for types in.
+        typevars_map: A dictionary mapping type variables to their concrete types.
+
+    Returns:
+        The dataclass fields.
+    """
     from ..fields import FieldInfo
 
     fields: dict[str, FieldInfo] = {}
@@ -208,7 +228,7 @@ def collect_dataclass_fields(
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
         fields[ann_name] = field_info
 
-        if field_info.default is not Undefined:
+        if field_info.default is not PydanticUndefined:
             # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
             setattr(cls, ann_name, field_info.default)
 
@@ -217,3 +237,11 @@ def collect_dataclass_fields(
             field.apply_typevars_map(typevars_map, types_namespace)
 
     return fields
+
+
+def is_valid_field_name(name: str) -> bool:
+    return not name.startswith('_')
+
+
+def is_valid_privateattr_name(name: str) -> bool:
+    return name.startswith('_') and not name.startswith('__')

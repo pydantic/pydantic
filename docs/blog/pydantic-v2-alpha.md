@@ -133,7 +133,7 @@ a full migration guide, but for now the following pointers should be some help w
 
 The following config settings have been removed:
 
-* `allow_mutation`.
+* `allow_mutation` — this has been removed. You should be able to use [frozen](../api/config.md#pydantic.config.ConfigDict) equivalently (inverse of current use).
 * `error_msg_templates`.
 * `fields` — this was the source of various bugs, so has been removed. You should be able to use `Annotated` on fields to modify them as desired.
 * `getter_dict` — `orm_mode` has been removed, and this implementation detail is no longer necessary.

@@ -3,11 +3,10 @@ from typing import Any, Generic, Iterator, List, Set, TypeVar
 
 import pytest
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt
-from pydantic_core import core_schema
+from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, GetCoreSchemaHandler
-from pydantic._internal._fields import Undefined
 from pydantic.errors import PydanticSchemaGenerationError
 
 NO_VALUE = object()
@@ -58,7 +57,7 @@ NO_VALUE = object()
         ),
         (
             lambda: Annotated[int, Gt(0)],
-            Undefined,
+            PydanticUndefined,
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
         ),
         (
@@ -68,7 +67,7 @@ NO_VALUE = object()
         ),
         (
             lambda: Annotated[int, Field(alias='foobar')],
-            Undefined,
+            PydanticUndefined,
             "FieldInfo(annotation=int, required=True, alias='foobar', alias_priority=2)",
         ),
     ],
@@ -128,12 +127,12 @@ def test_annotated_allows_unknown(metadata):
     [
         (
             lambda: int,
-            Undefined,
+            PydanticUndefined,
             pytest.raises(ValueError, match=r'Field required \[type=missing,'),
         ),
         (
             lambda: Annotated[int, Field()],
-            Undefined,
+            PydanticUndefined,
             pytest.raises(ValueError, match=r'Field required \[type=missing,'),
         ),
     ],

@@ -2444,3 +2444,154 @@ def test_get_core_schema_return_new_ref() -> None:
     assert 'inner was here' in str(cs)
 
     assert OuterModel(inner=InnerModel()).x == 2
+
+
+def test_resolve_def_schema_from_core_schema() -> None:
+    class Inner(BaseModel):
+        x: int
+
+    class Marker:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            resolved = handler.resolve_ref_schema(schema)
+            assert resolved['type'] == 'model'
+            assert resolved['cls'] is Inner
+
+            def modify_inner(v: Inner) -> Inner:
+                v.x += 1
+                return v
+
+            return core_schema.no_info_after_validator_function(modify_inner, schema)
+
+    class Outer(BaseModel):
+        inner: Annotated[Inner, Marker()]
+
+    assert Outer.model_validate({'inner': {'x': 1}}).inner.x == 2
+
+
+def test_extra_validator_scalar() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    class Child(Model):
+        __pydantic_extra__: Dict[str, int]
+
+    m = Child(a='1')
+    assert m.__pydantic_extra__ == {'a': 1}
+
+    # insert_assert(Child.model_json_schema())
+    assert Child.model_json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {},
+        'title': 'Child',
+        'type': 'object',
+    }
+
+
+def test_extra_validator_named() -> None:
+    class Foo(BaseModel):
+        x: int
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    class Child(Model):
+        __pydantic_extra__: Dict[str, Foo]
+
+    m = Child(a={'x': '1'})
+    assert m.__pydantic_extra__ == {'a': Foo(x=1)}
+
+    # insert_assert(Child.model_json_schema())
+    assert Child.model_json_schema() == {
+        '$defs': {
+            'Foo': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Foo',
+                'type': 'object',
+            }
+        },
+        'additionalProperties': {'$ref': '#/$defs/Foo'},
+        'properties': {},
+        'title': 'Child',
+        'type': 'object',
+    }
+
+
+def test_super_getattr_extra():
+    class Model(BaseModel):
+        model_config = {'extra': 'allow'}
+
+        def __getattr__(self, item):
+            if item == 'test':
+                return 'success'
+            return super().__getattr__(item)
+
+    m = Model(x=1)
+    assert m.x == 1
+    with pytest.raises(AttributeError):
+        m.y
+    assert m.test == 'success'
+
+
+def test_super_getattr_private():
+    class Model(BaseModel):
+        _x: int = PrivateAttr()
+
+        def __getattr__(self, item):
+            if item == 'test':
+                return 'success'
+            else:
+                return super().__getattr__(item)
+
+    m = Model()
+    m._x = 1
+    assert m._x == 1
+    with pytest.raises(AttributeError):
+        m._y
+    assert m.test == 'success'
+
+
+def test_super_delattr_extra():
+    test_calls = []
+
+    class Model(BaseModel):
+        model_config = {'extra': 'allow'}
+
+        def __delattr__(self, item):
+            if item == 'test':
+                test_calls.append('success')
+            else:
+                super().__delattr__(item)
+
+    m = Model(x=1)
+    assert m.x == 1
+    del m.x
+    with pytest.raises(AttributeError):
+        m._x
+    assert test_calls == []
+    del m.test
+    assert test_calls == ['success']
+
+
+def test_super_delattr_private():
+    test_calls = []
+
+    class Model(BaseModel):
+        _x: int = PrivateAttr()
+
+        def __delattr__(self, item):
+            if item == 'test':
+                test_calls.append('success')
+            else:
+                super().__delattr__(item)
+
+    m = Model()
+    m._x = 1
+    assert m._x == 1
+    del m._x
+    with pytest.raises(AttributeError):
+        m._x
+    assert test_calls == []
+    del m.test
+    assert test_calls == ['success']

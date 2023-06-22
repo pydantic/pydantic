@@ -1,6 +1,10 @@
+"""RootModel class and type definitions."""
+
 from __future__ import annotations as _annotations
 
 import typing
+
+from pydantic_core import PydanticUndefined
 
 from ._internal import _repr
 from .main import BaseModel
@@ -21,19 +25,20 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     """A Pydantic `BaseModel` for the root object of the model.
 
     Attributes:
-        root (RootModelRootType): The root object of the model.
+        root: The root object of the model.
+        __pydantic_root_model__: Whether the model is a RootModel.
+        __pydantic_private__: Private fields in the model.
+        __pydantic_extra__: Extra fields in the model.
+
     """
 
     __pydantic_root_model__ = True
-    # TODO: Make `__pydantic_fields_set__` logic consistent with `BaseModel`, i.e. it should be `set()` if default value
-    # was used
-    __pydantic_fields_set__ = {'root'}  # It's fine having a set here as it will never change
     __pydantic_private__ = None
     __pydantic_extra__ = None
 
     root: RootModelRootType
 
-    def __init__(__pydantic_self__, root: RootModelRootType) -> None:  # type: ignore
+    def __init__(__pydantic_self__, root: RootModelRootType = PydanticUndefined) -> None:  # type: ignore
         __tracebackhide__ = True
         __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
 

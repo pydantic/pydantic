@@ -475,6 +475,8 @@ except PydanticUserError as exc_info:
 This error is raised when you try to import an object that was available in Pydantic V1, but has been removed in
 Pydantic V2.
 
+See the [Migration Guide](../migration/) for more information.
+
 ## `create_model` field definitions {#create-model-field-definitions}
 
 This error is raised when you provide field definitions input in `create_model` that is not valid.
