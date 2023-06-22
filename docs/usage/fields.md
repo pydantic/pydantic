@@ -603,6 +603,10 @@ See [Strict Mode](models.md#strict-mode) for more details.
 
 See [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
 
+Pydantic also provides a [`Strict`][pydantic.types.Strict] field metadata class that indicates an annotated field should
+be validated in strict mode. This is, in fact, the method used to implement strict built-in types such as, for example,
+[`StrictBool`][pydantic.types.StrictBool]. See [Strict Mode](models.md#strict-mode-for-fields) for details.
+
 ## Immutability
 
 The parameter `frozen` is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being

@@ -1245,6 +1245,23 @@ except ValidationError as e:
     """
 ```
 
+Pydantic also provides a [`Strict`][pydantic.types.Strict] field metadata class that indicates an annotated field should
+be validated in strict mode. This is, in fact, the method used to implement strict built-in types such as, for example,
+[`StrictBool`][pydantic.types.StrictBool].
+
+```python
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field
+from pydantic.types import Strict
+
+
+class User(BaseModel):
+    name: str = Field(strict=True)
+    age: int = Field(strict=False)
+    is_active: Annotated[bool, Strict()]
+```
+
 ### Strict mode for models
 
 For all fields on a model, you can
