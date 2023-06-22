@@ -182,12 +182,11 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 
     if not is_finalvar(type_):
         return False
-    elif val is PydanticUndefined:
+    if val is PydanticUndefined:
         return False
-    elif isinstance(val, FieldInfo) and (val.default is PydanticUndefined and val.default_factory is None):
+    if isinstance(val, FieldInfo) and (val.default is PydanticUndefined and val.default_factory is None):
         return False
-    else:
-        return True
+    return True
 
 
 def collect_dataclass_fields(
