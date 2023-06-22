@@ -13,8 +13,8 @@
 : handled the same as `tuple` above
 
 `deque`
-: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a deque;
-  when generic parameters are provided, the appropriate validation is applied to the respective items of the deque
+: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `deque`;
+  when generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`
 
 `typing.Deque`
 : handled the same as `deque` above
@@ -52,7 +52,7 @@ print(Model(deque=[1, 2, 3]).deque)
 ### NamedTuple
 
 `subclasses of typing.NamedTuple`
-: Similar to `tuple`, but creates instances of the given namedtuple class.
+: Similar to `tuple`, but creates instances of the given `namedtuple` class.
 
 `types returned from collections.namedtuple`
 : Similar to `subclass of typing.NamedTuple`, but since field types are not specified, all fields are treated as having
