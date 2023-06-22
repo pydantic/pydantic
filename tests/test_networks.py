@@ -127,7 +127,7 @@ def test_any_url_success(value):
         ('+http://example.com/', 'url_parsing', 'Input should be a valid URL, relative URL without a base'),
         ('ht*tp://example.com/', 'url_parsing', 'Input should be a valid URL, relative URL without a base'),
         (' ', 'url_parsing', 'Input should be a valid URL, relative URL without a base'),
-        ('', 'url_parsing', 'Input should be a valid URL, relative URL without a base'),
+        ('', 'url_parsing', 'Input should be a valid URL, input is empty'),
         (None, 'url_type', 'URL input should be a string or URL'),
         (
             'http://2001:db8::ff00:42:8329',

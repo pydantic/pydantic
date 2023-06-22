@@ -1445,9 +1445,9 @@ def test_datetime_errors(DatetimeModel):
         {
             'type': 'time_delta_parsing',
             'loc': ('duration',),
-            'msg': 'Input should be a valid timedelta, invalid timezone sign',
+            'msg': 'Input should be a valid timedelta, unexpected extra characters at the end of the input',
             'input': '15:30.0001broken',
-            'ctx': {'error': 'invalid timezone sign'},
+            'ctx': {'error': 'unexpected extra characters at the end of the input'},
         },
     ]
 
