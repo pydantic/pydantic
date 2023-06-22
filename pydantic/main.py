@@ -193,7 +193,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             ```py
             from pydantic import BaseModel
 
-
             class MyModel(BaseModel, extra='allow'):
                 ...
             ```

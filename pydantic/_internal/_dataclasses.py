@@ -169,7 +169,6 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
 
     import pydantic.dataclasses
 
-
     @dataclasses.dataclass
     class A:
         x: int

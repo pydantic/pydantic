@@ -168,7 +168,6 @@ class WrapValidator:
 
     from pydantic import BaseModel, ValidationError, WrapValidator
 
-
     def validate_timestamp(v, handler):
         if v == 'now':
             # we don't want to bother with further validation, just return the new value
