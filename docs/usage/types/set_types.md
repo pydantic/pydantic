@@ -33,8 +33,15 @@ print(Model(simple_set=['1', '2', '3']).simple_set)
 print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
 #> {1, 2, 3}
 
-print(Model(simple_frozenset=['1', '2', '3']).simple_frozenset)
-#> frozenset({'2', '3', '1'})
-print(Model(frozenset_of_ints=['1', '2', '3']).frozenset_of_ints)
-#> frozenset({1, 2, 3})
+m1 = Model(simple_frozenset=['1', '2', '3'])
+print(type(m1.simple_frozenset))
+#> <class 'frozenset'>
+print(sorted(m1.simple_frozenset))
+#> ['1', '2', '3']
+
+m2 = Model(frozenset_of_ints=['1', '2', '3'])
+print(type(m2.frozenset_of_ints))
+#> <class 'frozenset'>
+print(sorted(m2.frozenset_of_ints))
+#> [1, 2, 3]
 ```
