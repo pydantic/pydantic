@@ -28,13 +28,13 @@ Pydantic supports the following numeric types from the Python standard library:
 `decimal.Decimal`
 : Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`
 
-## Constrained Types
+## Constrained types
 
 Pydantic provides functions that can be used to constrain numbers:
 
-* `conint`: Add constraints to an `int` type.
-* `confloat`: Add constraints to a `float` type.
-* `condecimal`: Add constraints to a `decimal.Decimal` type.
+* [`conint`][pydantic.types.conint]: Add constraints to an `int` type.
+* [`confloat`][pydantic.types.confloat]: Add constraints to a `float` type.
+* [`condecimal`][pydantic.types.condecimal]: Add constraints to a `decimal.Decimal` type.
 
 Those functions accept the following arguments:
 
@@ -45,20 +45,17 @@ Those functions accept the following arguments:
 * `multiple_of` (multiple of)
 * `strict` (whether to allow coercion from compatible types)
 
-There are other arguments for each function, which you can see in the API Reference of each function:
+Some functions accept additional arguments, which you can see in the API reference of each function. For example,
+`confloat` accepts an `allow_inf_nan`, which specifies whether to allow `-inf`, `inf`, and `nan`.
 
-  * [`conint`](/api/types/#pydantic.types.conint)
-  * [`confloat`](/api/types/#pydantic.types.confloat)
-  * [`condecimal`](/api/types/#pydantic.types.condecimal)
-
-### Constrained Integers
+### Constrained integers
 
 There are also types that can be used to constrain integers:
 
-* [`PositiveInt`](/api/types/#pydantic.types.PositiveInt): Constrain an `int` to be positive.
-* [`NegativeInt`](/api/types/#pydantic.types.NegativeInt): Constrain an `int` to be negative.
-* [`NonPositiveInt`](/api/types/#pydantic.types.NonPositiveInt): Constrain an `int` to be non-positive.
-* [`NonNegativeInt`](/api/types/#pydantic.types.NonNegativeInt): Constrain an `int` to be non-negative.
+* [`PositiveInt`][pydantic.types.PositiveInt]: Constrain an `int` to be positive.
+* [`NegativeInt`][pydantic.types.NegativeInt]: Constrain an `int` to be negative.
+* [`NonPositiveInt`][pydantic.types.NonPositiveInt]: Constrain an `int` to be non-positive.
+* [`NonNegativeInt`][pydantic.types.NonNegativeInt]: Constrain an `int` to be non-negative.
 
 ```py
 from pydantic import BaseModel, NegativeInt, NonNegativeInt, NonPositiveInt, PositiveInt
@@ -76,14 +73,14 @@ print(m)
 #> positive=1 negative=-1 non_positive=0 non_negative=0
 ```
 
-### Constrained Floats
+### Constrained floats
 
 There are also types that can be used to constrain floats:
 
-* [`PositiveFloat`](/api/types/#pydantic.types.PositiveFloat): Constrain a `float` to be positive.
-* [`NegativeFloat`](/api/types/#pydantic.types.NegativeFloat): Constrain a `float` to be negative.
-* [`NonPositiveFloat`](/api/types/#pydantic.types.NonPositiveFloat): Constrain a `float` to be non-positive.
-* [`NonNegativeFloat`](/api/types/#pydantic.types.NonNegativeFloat): Constrain a `float` to be non-negative.
+* [`PositiveFloat`][pydantic.types.PositiveFloat]: Constrain a `float` to be positive.
+* [`NegativeFloat`][pydantic.types.NegativeFloat]: Constrain a `float` to be negative.
+* [`NonPositiveFloat`][pydantic.types.NonPositiveFloat]: Constrain a `float` to be non-positive.
+* [`NonNegativeFloat`][pydantic.types.NonNegativeFloat]: Constrain a `float` to be non-negative.
 
 ```py
 from pydantic import (
@@ -107,7 +104,7 @@ print(m)
 #> positive=1.0 negative=-1.0 non_positive=0.0 non_negative=0.0
 ```
 
-Besides the above, you can also have a `FiniteFloat` type that will only accept finite values (i.e. not `inf`, `-inf` or `nan`).
+Besides the above, you can also have a [`FiniteFloat`][pydantic.types.FiniteFloat] type that will only accept finite values (i.e. not `inf`, `-inf` or `nan`).
 
 ```py
 from pydantic import BaseModel, FiniteFloat
