@@ -13,20 +13,20 @@ Pydantic supports the following numeric types from the Python standard library:
 
 `int`
 : Pydantic uses `int(v)` to coerce types to an `int`;
-  see [this](../models.md#data-conversion) warning on loss of information during data conversion
+  see [Data conversion](../models.md#data-conversion) for details on loss of information during data conversion.
 
 `float`
-: similarly, `float(v)` is used to coerce values to floats
+: similarly, `float(v)` is used to coerce values to floats.
 
 `enum.IntEnum`
-: checks that the value is a valid IntEnum instance
+: checks that the value is a valid `IntEnum` instance.
 
-`subclass of enum.IntEnum`
+subclass of `enum.IntEnum`
 : checks that the value is a valid member of the integer enum;
-  see [Enums and Choices](#enums-and-choices) for more details
+  see [Enums and Choices](enums.md) for more details.
 
 `decimal.Decimal`
-: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`
+: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`.
 
 ## Constrained Types
 
