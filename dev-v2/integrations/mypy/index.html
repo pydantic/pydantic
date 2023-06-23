@@ -1367,15 +1367,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
         
           <li class="md-nav__item">
-  <a href="#respect-configallow_mutation" class="md-nav__link">
-    Respect Config.allow_mutation
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configfrom_attributes" class="md-nav__link">
-    Respect Config.from_attributes
+  <a href="#respect-configfrozen" class="md-nav__link">
+    Respect Config.frozen
   </a>
   
 </li>
@@ -2220,15 +2213,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
         
           <li class="md-nav__item">
-  <a href="#respect-configallow_mutation" class="md-nav__link">
-    Respect Config.allow_mutation
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configfrom_attributes" class="md-nav__link">
-    Respect Config.from_attributes
+  <a href="#respect-configfrozen" class="md-nav__link">
+    Respect Config.frozen
   </a>
   
 </li>
@@ -2388,12 +2374,13 @@ features to mypy that improve its ability to type-check your code.</p>
 </div>
 </div>
 <p>Without any special configuration, mypy catches one of the errors:</p>
-<div class="highlight"><pre><span></span><code>13: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;
+<div class="highlight"><pre><span></span><code>16: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;  [attr-defined]
 </code></pre></div>
 <p>But <a href="#enabling-the-plugin">with the plugin enabled</a>, it catches both:
-<div class="highlight"><pre><span></span><code>13: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;
-16: error: Missing named argument &quot;age&quot; for &quot;Model&quot;
-16: error: Missing named argument &quot;list_of_ints&quot; for &quot;Model&quot;
+<div class="highlight"><pre><span></span><code>9: error: Untyped fields disallowed  [pydantic-field]
+16: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;  [attr-defined]
+17: error: Missing named argument &quot;age&quot; for &quot;Model&quot;  [call-arg]
+17: error: Missing named argument &quot;list_of_ints&quot; for &quot;Model&quot;  [call-arg]
 </code></pre></div></p>
 <p>With the pydantic mypy plugin, you can fearlessly refactor your models knowing mypy will catch any mistakes
 if your field names or types change.</p>
@@ -2409,16 +2396,8 @@ if your field names or types change.</p>
 <h3 id="strict-optional">Strict Optional<a class="headerlink" href="#strict-optional" title="Permanent link">&para;</a></h3>
 <p>For your code to pass with <code>--strict-optional</code>, you need to to use <code>Optional[]</code> or an alias of <code>Optional[]</code>
 for all fields with <code>None</code> as the default. (This is standard with mypy.)</p>
-<p>Pydantic provides a few useful optional or union types:</p>
-<ul>
-<li><code>NoneStr</code> aka. <code>Optional[str]</code></li>
-<li><code>NoneBytes</code> aka. <code>Optional[bytes]</code></li>
-<li><code>StrBytes</code> aka. <code>Union[str, bytes]</code></li>
-<li><code>NoneStrBytes</code> aka. <code>Optional[StrBytes]</code></li>
-</ul>
-<p>If these aren't sufficient you can of course define your own.</p>
 <h3 id="other-pydantic-interfaces">Other Pydantic interfaces<a class="headerlink" href="#other-pydantic-interfaces" title="Permanent link">&para;</a></h3>
-<p>Pydantic <a href="../../usage/dataclasses/">dataclasses</a> and the <a href="../../usage/validation_decorator/"><code>validate_arguments</code> decorator</a>
+<p>Pydantic <a href="../../usage/dataclasses/">dataclasses</a> and the <a href="../../usage/validation_decorator/"><code>validate_call</code> decorator</a>
 should also work well with mypy.</p>
 <h2 id="mypy-plugin-capabilities">Mypy Plugin Capabilities<a class="headerlink" href="#mypy-plugin-capabilities" title="Permanent link">&para;</a></h2>
 <h3 id="generate-a-signature-for-model__init__">Generate a signature for <code>Model.__init__</code><a class="headerlink" href="#generate-a-signature-for-model__init__" title="Permanent link">&para;</a></h3>
@@ -2427,10 +2406,10 @@ should also work well with mypy.</p>
   keyword arguments.</li>
 <li>If <code>Config.populate_by_name=True</code>, the generated signature will use the field names,
   rather than aliases.</li>
-<li>If <code>Config.extra="forbid"</code> and you don't make use of dynamically-determined aliases, the generated signature
+<li>If <code>Config.extra='forbid'</code> and you don't make use of dynamically-determined aliases, the generated signature
   will not allow unexpected inputs.</li>
 <li><strong>Optional:</strong> If the <a href="#configuring-the-plugin"><code>init_forbid_extra</code> <strong>plugin setting</strong></a> is set to <code>True</code>, unexpected inputs to
-  <code>__init__</code> will raise errors even if <code>Config.extra</code> is not <code>"forbid"</code>.</li>
+  <code>__init__</code> will raise errors even if <code>Config.extra</code> is not <code>'forbid'</code>.</li>
 <li><strong>Optional:</strong> If the <a href="#configuring-the-plugin"><code>init_typed</code> <strong>plugin setting</strong></a> is set to <code>True</code>, the generated signature
   will use the types of the model fields (otherwise they will be annotated as <code>Any</code> to allow parsing).</li>
 </ul>
@@ -2440,15 +2419,10 @@ should also work well with mypy.</p>
   when input data is known to be valid and should not be parsed. Because this method performs no runtime validation,
   static checking is important to detect errors.</li>
 </ul>
-<h3 id="respect-configallow_mutation">Respect <code>Config.allow_mutation</code><a class="headerlink" href="#respect-configallow_mutation" title="Permanent link">&para;</a></h3>
+<h3 id="respect-configfrozen">Respect <code>Config.frozen</code><a class="headerlink" href="#respect-configfrozen" title="Permanent link">&para;</a></h3>
 <ul>
-<li>If <code>Config.allow_mutation</code> is <code>False</code>, you'll get a mypy error if you try to change
+<li>If <code>Config.frozen</code> is <code>True</code>, you'll get a mypy error if you try to change
   the value of a model field; cf. <a href="../../usage/models/#faux-immutability">faux immutability</a>.</li>
-</ul>
-<h3 id="respect-configfrom_attributes">Respect <code>Config.from_attributes</code><a class="headerlink" href="#respect-configfrom_attributes" title="Permanent link">&para;</a></h3>
-<ul>
-<li>If <code>Config.from_attributes</code> is <code>False</code>, you'll get a mypy error if you try to call <code>.from_orm()</code>;
-  cf. <a href="../../usage/models/#orm-mode-aka-arbitrary-class-instances">ORM mode</a></li>
 </ul>
 <h3 id="generate-a-signature-for-dataclasses">Generate a signature for <code>dataclasses</code><a class="headerlink" href="#generate-a-signature-for-dataclasses" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2477,7 +2451,7 @@ should also work well with mypy.</p>
 <h2 id="enabling-the-plugin">Enabling the Plugin<a class="headerlink" href="#enabling-the-plugin" title="Permanent link">&para;</a></h2>
 <p>To enable the plugin, just add <code>pydantic.mypy</code> to the list of plugins in your
 <a href="https://mypy.readthedocs.io/en/latest/config_file.html">mypy config file</a>
-(this could be <code>mypy.ini</code> or <code>setup.cfg</code>).</p>
+(this could be <code>mypy.ini</code>, <code>pyproject.toml</code>, or <code>setup.cfg</code>).</p>
 <p>To get started, all you need to do is create a <code>mypy.ini</code> file with following contents:
 <div class="highlight"><pre><span></span><code><span class="k">[mypy]</span>
 <span class="na">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pydantic.mypy</span>
