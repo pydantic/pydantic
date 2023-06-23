@@ -769,22 +769,22 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#constrained-types" class="md-nav__link">
-    Constrained Types
+    Constrained types
   </a>
   
-    <nav class="md-nav" aria-label="Constrained Types">
+    <nav class="md-nav" aria-label="Constrained types">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#constrained-integers" class="md-nav__link">
-    Constrained Integers
+    Constrained integers
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#constrained-floats" class="md-nav__link">
-    Constrained Floats
+    Constrained floats
   </a>
   
 </li>
@@ -2086,22 +2086,22 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#constrained-types" class="md-nav__link">
-    Constrained Types
+    Constrained types
   </a>
   
-    <nav class="md-nav" aria-label="Constrained Types">
+    <nav class="md-nav" aria-label="Constrained types">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#constrained-integers" class="md-nav__link">
-    Constrained Integers
+    Constrained integers
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#constrained-floats" class="md-nav__link">
-    Constrained Floats
+    Constrained floats
   </a>
   
 </li>
@@ -2154,12 +2154,12 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <dt><code>decimal.Decimal</code></dt>
 <dd>Pydantic attempts to convert the value to a string, then passes the string to <code>Decimal(v)</code>.</dd>
 </dl>
-<h2 id="constrained-types">Constrained Types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
+<h2 id="constrained-types">Constrained types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
 <p>Pydantic provides functions that can be used to constrain numbers:</p>
 <ul>
-<li><code>conint</code>: Add constraints to an <code>int</code> type.</li>
-<li><code>confloat</code>: Add constraints to a <code>float</code> type.</li>
-<li><code>condecimal</code>: Add constraints to a <code>decimal.Decimal</code> type.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.conint"><code>conint</code></a>: Add constraints to an <code>int</code> type.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.confloat"><code>confloat</code></a>: Add constraints to a <code>float</code> type.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.condecimal"><code>condecimal</code></a>: Add constraints to a <code>decimal.Decimal</code> type.</li>
 </ul>
 <p>Those functions accept the following arguments:</p>
 <ul>
@@ -2170,19 +2170,15 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <li><code>multiple_of</code> (multiple of)</li>
 <li><code>strict</code> (whether to allow coercion from compatible types)</li>
 </ul>
-<p>There are other arguments for each function, which you can see in the API Reference of each function:</p>
-<ul>
-<li><a href="/api/types/#pydantic.types.conint"><code>conint</code></a></li>
-<li><a href="/api/types/#pydantic.types.confloat"><code>confloat</code></a></li>
-<li><a href="/api/types/#pydantic.types.condecimal"><code>condecimal</code></a></li>
-</ul>
-<h3 id="constrained-integers">Constrained Integers<a class="headerlink" href="#constrained-integers" title="Permanent link">&para;</a></h3>
+<p>Some functions accept additional arguments, which you can see in the API reference of each function. For example,
+<code>confloat</code> accepts an <code>allow_inf_nan</code>, which specifies whether to allow <code>-inf</code>, <code>inf</code>, and <code>nan</code>.</p>
+<h3 id="constrained-integers">Constrained integers<a class="headerlink" href="#constrained-integers" title="Permanent link">&para;</a></h3>
 <p>There are also types that can be used to constrain integers:</p>
 <ul>
-<li><a href="/api/types/#pydantic.types.PositiveInt"><code>PositiveInt</code></a>: Constrain an <code>int</code> to be positive.</li>
-<li><a href="/api/types/#pydantic.types.NegativeInt"><code>NegativeInt</code></a>: Constrain an <code>int</code> to be negative.</li>
-<li><a href="/api/types/#pydantic.types.NonPositiveInt"><code>NonPositiveInt</code></a>: Constrain an <code>int</code> to be non-positive.</li>
-<li><a href="/api/types/#pydantic.types.NonNegativeInt"><code>NonNegativeInt</code></a>: Constrain an <code>int</code> to be non-negative.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.PositiveInt"><code>PositiveInt</code></a>: Constrain an <code>int</code> to be positive.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.NegativeInt"><code>NegativeInt</code></a>: Constrain an <code>int</code> to be negative.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.NonPositiveInt"><code>NonPositiveInt</code></a>: Constrain an <code>int</code> to be non-positive.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.NonNegativeInt"><code>NonNegativeInt</code></a>: Constrain an <code>int</code> to be non-negative.</li>
 </ul>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NegativeInt</span><span class="p">,</span> <span class="n">NonNegativeInt</span><span class="p">,</span> <span class="n">NonPositiveInt</span><span class="p">,</span> <span class="n">PositiveInt</span>
 
@@ -2198,13 +2194,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 <span class="c1">#&gt; positive=1 negative=-1 non_positive=0 non_negative=0</span>
 </code></pre></div>
-<h3 id="constrained-floats">Constrained Floats<a class="headerlink" href="#constrained-floats" title="Permanent link">&para;</a></h3>
+<h3 id="constrained-floats">Constrained floats<a class="headerlink" href="#constrained-floats" title="Permanent link">&para;</a></h3>
 <p>There are also types that can be used to constrain floats:</p>
 <ul>
-<li><a href="/api/types/#pydantic.types.PositiveFloat"><code>PositiveFloat</code></a>: Constrain a <code>float</code> to be positive.</li>
-<li><a href="/api/types/#pydantic.types.NegativeFloat"><code>NegativeFloat</code></a>: Constrain a <code>float</code> to be negative.</li>
-<li><a href="/api/types/#pydantic.types.NonPositiveFloat"><code>NonPositiveFloat</code></a>: Constrain a <code>float</code> to be non-positive.</li>
-<li><a href="/api/types/#pydantic.types.NonNegativeFloat"><code>NonNegativeFloat</code></a>: Constrain a <code>float</code> to be non-negative.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.PositiveFloat"><code>PositiveFloat</code></a>: Constrain a <code>float</code> to be positive.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.NegativeFloat"><code>NegativeFloat</code></a>: Constrain a <code>float</code> to be negative.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.NonPositiveFloat"><code>NonPositiveFloat</code></a>: Constrain a <code>float</code> to be non-positive.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.NonNegativeFloat"><code>NonNegativeFloat</code></a>: Constrain a <code>float</code> to be non-negative.</li>
 </ul>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseModel</span><span class="p">,</span>
@@ -2226,7 +2222,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 <span class="c1">#&gt; positive=1.0 negative=-1.0 non_positive=0.0 non_negative=0.0</span>
 </code></pre></div>
-<p>Besides the above, you can also have a <code>FiniteFloat</code> type that will only accept finite values (i.e. not <code>inf</code>, <code>-inf</code> or <code>nan</code>).</p>
+<p>Besides the above, you can also have a <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.FiniteFloat"><code>FiniteFloat</code></a> type that will only accept finite values (i.e. not <code>inf</code>, <code>-inf</code> or <code>nan</code>).</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FiniteFloat</span>
 
 
