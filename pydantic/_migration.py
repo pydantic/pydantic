@@ -3,6 +3,7 @@ import warnings
 from typing import Any, Callable, Dict
 
 from ._internal._validators import import_string
+from .version import VERSION
 
 MOVED_IN_V2 = {
     'pydantic.utils:version_info': 'pydantic.version:version_info',
@@ -41,7 +42,6 @@ DEPRECATED_MOVED_IN_V2 = {
 }
 
 REMOVED_IN_V2 = {
-    'pydantic:BaseSettings',
     'pydantic:ConstrainedBytes',
     'pydantic:ConstrainedDate',
     'pydantic:ConstrainedDecimal',
@@ -275,6 +275,12 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         if import_path in DEPRECATED_MOVED_IN_V2.keys():
             # skip the warning here because a deprecation warning will be raised elsewhere
             return import_string(DEPRECATED_MOVED_IN_V2[import_path])
+        if import_path == 'pydantic:BaseSettings':
+            raise PydanticImportError(
+                '`BaseSettings` has been moved to the `pydantic-settings` package. '
+                f'See https://docs.pydantic.dev/{VERSION}/migration/#basesettings-has-moved-to-pydantic-settings '
+                'for more details.'
+            )
         if import_path in REMOVED_IN_V2:
             raise PydanticImportError(f'`{import_path}` has been removed in V2.')
         globals: Dict[str, Any] = sys.modules[module].__dict__
