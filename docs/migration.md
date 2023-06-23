@@ -575,6 +575,10 @@ Pydantic V1 that have changed in Pydantic V2, you can use a custom `schema_gener
 [settings management](usage/pydantic_settings.md), has been moved to a separate package,
 [`pydantic-settings`](https://github.com/pydantic/pydantic-settings).
 
+Also, the `parse_env_var` classmethod has been removed. So, you need to
+[customise settings sources](usage/pydantic_settings.md#customise-settings-sources)
+to have your own parsing function.
+
 ## Moved in Pydantic V2
 
 | Pydantic V1 | Pydantic V2 |
