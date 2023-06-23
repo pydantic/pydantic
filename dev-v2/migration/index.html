@@ -3130,6 +3130,9 @@ Pydantic V1 that have changed in Pydantic V2, you can use a custom <code>schema_
 <p><a href="../api/pydantic_settings/#pydantic_settings.BaseSettings"><code>BaseSettings</code></a>, the base object for Pydantic
 <a href="../usage/pydantic_settings/">settings management</a>, has been moved to a separate package,
 <a href="https://github.com/pydantic/pydantic-settings"><code>pydantic-settings</code></a>.</p>
+<p>Also, the <code>parse_env_var</code> classmethod has been removed. So, you need to
+<a href="../usage/pydantic_settings/#customise-settings-sources">customise settings sources</a>
+to have your own parsing function.</p>
 <h2 id="moved-in-pydantic-v2">Moved in Pydantic V2<a class="headerlink" href="#moved-in-pydantic-v2" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
