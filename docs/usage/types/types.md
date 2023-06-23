@@ -2,7 +2,7 @@ Where possible Pydantic uses [standard library types](standard_types.md) to defi
 the learning curve. For many useful applications, however, no standard library type exists,
 so Pydantic implements many commonly used types.
 
-There are also more complex types that can be found in the [Pydantic Extra Types].
+There are also more complex types that can be found in the [Pydantic Extra Types](extra_types/extra_types.md).
 
 If no existing type suits your purpose you can also implement your [own Pydantic-compatible types](custom.md#custom-data-types) with custom properties and validation.
 
