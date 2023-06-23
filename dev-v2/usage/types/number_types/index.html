@@ -2143,16 +2143,16 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <dl>
 <dt><code>int</code></dt>
 <dd>Pydantic uses <code>int(v)</code> to coerce types to an <code>int</code>;
-  see <a href="../../models/#data-conversion">this</a> warning on loss of information during data conversion</dd>
+  see <a href="../../models/#data-conversion">Data conversion</a> for details on loss of information during data conversion.</dd>
 <dt><code>float</code></dt>
-<dd>similarly, <code>float(v)</code> is used to coerce values to floats</dd>
+<dd>similarly, <code>float(v)</code> is used to coerce values to floats.</dd>
 <dt><code>enum.IntEnum</code></dt>
-<dd>checks that the value is a valid IntEnum instance</dd>
-<dt><code>subclass of enum.IntEnum</code></dt>
+<dd>checks that the value is a valid <code>IntEnum</code> instance.</dd>
+<dt>subclass of <code>enum.IntEnum</code></dt>
 <dd>checks that the value is a valid member of the integer enum;
-  see <a href="#enums-and-choices">Enums and Choices</a> for more details</dd>
+  see <a href="../enums/">Enums and Choices</a> for more details.</dd>
 <dt><code>decimal.Decimal</code></dt>
-<dd>Pydantic attempts to convert the value to a string, then passes the string to <code>Decimal(v)</code></dd>
+<dd>Pydantic attempts to convert the value to a string, then passes the string to <code>Decimal(v)</code>.</dd>
 </dl>
 <h2 id="constrained-types">Constrained Types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
 <p>Pydantic provides functions that can be used to constrain numbers:</p>
