@@ -166,9 +166,13 @@ impl TypeSerializer for ModelSerializer {
         if self.root_model {
             extra.field_name = Some(ROOT_FIELD);
             let py = value.py();
-            let root = value
-                .getattr(intern!(py, ROOT_FIELD))
-                .map_err(|_| PydanticSerializationUnexpectedValue::new_err(None))?;
+            let root = value.getattr(intern!(py, ROOT_FIELD)).map_err(|original_err| {
+                if extra.check.enabled() {
+                    PydanticSerializationUnexpectedValue::new_err(None)
+                } else {
+                    original_err
+                }
+            })?;
             self.serializer.to_python(root, include, exclude, &extra)
         } else if self.allow_value(value, &extra)? {
             let inner_value = self.get_inner_value(value, &extra)?;
