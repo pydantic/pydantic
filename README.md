@@ -20,11 +20,11 @@ Learning more from the [Company Announcement](https://pydantic.dev/announcement/
 
 ## Pydantic V1.10 vs. V2
 
-This branch relates to development of pydantic V2 which is not yet ready for production use.
+Pydantic V2 is a ground-up rewrite that offers many new features, performance improvements, and some breaking changes compared to Pydantic V1.
 
-If you're a Pydantic user, you probably want either
+If you're using Pydantic V1 you may want to look at the
 [pydantic V1.10 Documentation](https://docs.pydantic.dev/) or,
-[`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.10.X-fixes).
+[`1.10.X-fixes` git branch](https://github.com/pydantic/pydantic/tree/1.10.X-fixes). Pydantic V2 also ships with the latest version of Pydantic V1 built in so that you can incrementally upgrade your code base and projects: `from pydantic import v1 as pydantic_v1`.
 
 ## Help
 
