@@ -944,7 +944,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     @classmethod
     @typing_extensions.deprecated(
         'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
-        'use `model_json_validate` otherwise `model_validate` instead.'
+        'use `model_validate_json` otherwise `model_validate` instead.'
     )
     def parse_file(  # noqa: D102
         cls: type[Model],
@@ -957,7 +957,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> Model:
         warnings.warn(
             'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
-            'use `model_json_validate` otherwise `model_validate` instead.',
+            'use `model_validate_json` otherwise `model_validate` instead.',
             DeprecationWarning,
         )
         obj = _deprecated_parse.load_file(
