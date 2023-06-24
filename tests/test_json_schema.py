@@ -1,6 +1,7 @@
 import json
 import math
 import re
+import sys
 import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -2078,7 +2079,11 @@ def test_literal_enum():
     }
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="ListEnum doesn't work in 3.8")
 def test_literal_types() -> None:
+    """Test that we properly add `type` to json schema enums when there is a single type."""
+
+    # for float and array we use an Enum because Literal can only accept str, int, bool or None
     class FloatEnum(float, Enum):
         a = 123.0
         b = 123.1
