@@ -2078,6 +2078,53 @@ def test_literal_enum():
     }
 
 
+def test_literal_types() -> None:
+    class FloatEnum(float, Enum):
+        a = 123.0
+        b = 123.1
+
+    class ListEnum(List[int], Enum):
+        a = [123]
+        b = [456]
+
+    class Model(BaseModel):
+        str_literal: Literal['foo', 'bar']
+        int_literal: Literal[123, 456]
+        float_literal: FloatEnum
+        bool_literal: Literal[True, False]
+        none_literal: Literal[None]  # ends up as a const since there's only 1
+        list_literal: ListEnum
+        mixed_literal: Literal[123, 'abc']
+
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'FloatEnum': {'enum': [123.0, 123.1], 'title': 'FloatEnum', 'type': 'numeric'},
+            'ListEnum': {'enum': [[123], [456]], 'title': 'ListEnum', 'type': 'array'},
+        },
+        'properties': {
+            'str_literal': {'enum': ['foo', 'bar'], 'title': 'Str Literal', 'type': 'string'},
+            'int_literal': {'enum': [123, 456], 'title': 'Int Literal', 'type': 'integer'},
+            'float_literal': {'$ref': '#/$defs/FloatEnum'},
+            'bool_literal': {'enum': [True, False], 'title': 'Bool Literal', 'type': 'boolean'},
+            'none_literal': {'const': None, 'title': 'None Literal'},
+            'list_literal': {'$ref': '#/$defs/ListEnum'},
+            'mixed_literal': {'enum': [123, 'abc'], 'title': 'Mixed Literal'},
+        },
+        'required': [
+            'str_literal',
+            'int_literal',
+            'float_literal',
+            'bool_literal',
+            'none_literal',
+            'list_literal',
+            'mixed_literal',
+        ],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_color_type():
     class Model(BaseModel):
         color: Color
