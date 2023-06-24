@@ -557,12 +557,18 @@ class GenerateJsonSchema:
             return {'const': expected[0]}
         else:
             types = {type(e) for e in expected}
-            if types == {
-                str,
-            }:
+            if types == {str}:
                 return {'enum': expected, 'type': 'string'}
-            elif types.issubset({int, float}):
+            elif types == {int}:
+                return {'enum': expected, 'type': 'integer'}
+            elif types == {float}:
                 return {'enum': expected, 'type': 'number'}
+            elif types == {bool}:
+                return {'enum': expected, 'type': 'boolean'}
+            elif types == {list}:
+                return {'enum': expected, 'type': 'array'}
+            elif types == {None}:
+                return {'enum': expected, 'type': 'null'}
             else:
                 return {'enum': expected}
 
