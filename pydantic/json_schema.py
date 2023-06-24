@@ -567,8 +567,8 @@ class GenerateJsonSchema:
                 return {'enum': expected, 'type': 'boolean'}
             elif types == {list}:
                 return {'enum': expected, 'type': 'array'}
-            elif types == {None}:
-                return {'enum': expected, 'type': 'null'}
+            # there is not None case because if it's mixed it hits the final `else`
+            # if it's a single Literal[None] then it becomes a `const` schema above
             else:
                 return {'enum': expected}
 
