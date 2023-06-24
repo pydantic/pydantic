@@ -556,7 +556,15 @@ class GenerateJsonSchema:
         if len(expected) == 1:
             return {'const': expected[0]}
         else:
-            return {'enum': expected}
+            types = {type(e) for e in expected}
+            if types == {
+                str,
+            }:
+                return {'enum': expected, 'type': 'string'}
+            elif types.issubset({int, float}):
+                return {'enum': expected, 'type': 'number'}
+            else:
+                return {'enum': expected}
 
     def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
         """Returns a schema that checks if a value is an instance of a class, equivalent to Python's `isinstance`

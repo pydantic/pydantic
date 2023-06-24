@@ -252,7 +252,11 @@ def test_choices():
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
-        'type': 'object',
+        '$defs': {
+            'BarEnum': {'enum': [1, 2], 'title': 'BarEnum', 'type': 'integer'},
+            'FooEnum': {'enum': ['f', 'b'], 'title': 'FooEnum', 'type': 'string'},
+            'SpamEnum': {'enum': ['f', 'b'], 'title': 'SpamEnum', 'type': 'string'},
+        },
         'properties': {
             'foo': {'$ref': '#/$defs/FooEnum'},
             'bar': {'$ref': '#/$defs/BarEnum'},
@@ -260,11 +264,7 @@ def test_choices():
         },
         'required': ['foo', 'bar'],
         'title': 'Model',
-        '$defs': {
-            'BarEnum': {'enum': [1, 2], 'title': 'BarEnum', 'type': 'integer'},
-            'SpamEnum': {'enum': ['f', 'b'], 'title': 'SpamEnum', 'type': 'string'},
-            'FooEnum': {'enum': ['f', 'b'], 'title': 'FooEnum'},
-        },
+        'type': 'object',
     }
 
 
@@ -2066,11 +2066,15 @@ def test_literal_enum():
         kind: Literal[MyEnum.FOO]
         other: Literal[MyEnum.FOO, MyEnum.BAR]
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
+        'properties': {
+            'kind': {'const': 'foo', 'title': 'Kind'},
+            'other': {'enum': ['foo', 'bar'], 'title': 'Other', 'type': 'string'},
+        },
+        'required': ['kind', 'other'],
         'title': 'Model',
         'type': 'object',
-        'properties': {'kind': {'const': 'foo', 'title': 'Kind'}, 'other': {'enum': ['foo', 'bar'], 'title': 'Other'}},
-        'required': ['kind', 'other'],
     }
 
 
@@ -2358,18 +2362,20 @@ def test_schema_attributes():
     class Example(BaseModel):
         example: ExampleEnum
 
+    # insert_assert(Example.model_json_schema())
     assert Example.model_json_schema() == {
-        'title': 'Example',
-        'type': 'object',
-        'properties': {'example': {'$ref': '#/$defs/ExampleEnum'}},
-        'required': ['example'],
         '$defs': {
             'ExampleEnum': {
-                'title': 'ExampleEnum',
                 'description': 'This is a test description.',
                 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE'],
+                'title': 'ExampleEnum',
+                'type': 'string',
             }
         },
+        'properties': {'example': {'$ref': '#/$defs/ExampleEnum'}},
+        'required': ['example'],
+        'title': 'Example',
+        'type': 'object',
     }
 
 
@@ -2839,7 +2845,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
-        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType'}},
+        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType', 'type': 'string'}},
         'properties': {
             'data0': {
                 'anyOf': [{'type': 'string'}, {'items': {'type': 'string'}, 'type': 'array'}],
@@ -3055,6 +3061,7 @@ def test_discriminated_union():
     class Model(BaseModel):
         pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
             'Cat': {
@@ -3070,7 +3077,7 @@ def test_discriminated_union():
                 'type': 'object',
             },
             'Lizard': {
-                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Lizard',
                 'type': 'object',
@@ -3087,11 +3094,7 @@ def test_discriminated_union():
                     },
                     'propertyName': 'pet_type',
                 },
-                'oneOf': [
-                    {'$ref': '#/$defs/Cat'},
-                    {'$ref': '#/$defs/Dog'},
-                    {'$ref': '#/$defs/Lizard'},
-                ],
+                'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}],
                 'title': 'Pet',
             }
         },
@@ -3114,6 +3117,7 @@ def test_discriminated_annotated_union():
     class Model(BaseModel):
         pet: Annotated[Union[Cat, Dog, Lizard], Field(..., discriminator='pet_type')]
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
             'Cat': {
@@ -3129,7 +3133,7 @@ def test_discriminated_annotated_union():
                 'type': 'object',
             },
             'Lizard': {
-                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Lizard',
                 'type': 'object',
@@ -3146,11 +3150,7 @@ def test_discriminated_annotated_union():
                     },
                     'propertyName': 'pet_type',
                 },
-                'oneOf': [
-                    {'$ref': '#/$defs/Cat'},
-                    {'$ref': '#/$defs/Dog'},
-                    {'$ref': '#/$defs/Lizard'},
-                ],
+                'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}],
                 'title': 'Pet',
             }
         },
