@@ -263,7 +263,7 @@ if sys.version_info < (3, 9, 8):
         The `module` argument is omitted as it breaks <3.9.8 and isn't used in the calls below.
 
         See https://github.com/python/cpython/pull/28560 for some background.
-        The backport happened on 3.9.8, see: 
+        The backport happened on 3.9.8, see:
         https://github.com/pydantic/pydantic/discussions/6244#discussioncomment-6275458.
 
         Implemented as EAFP with memory.
