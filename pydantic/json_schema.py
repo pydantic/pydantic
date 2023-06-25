@@ -556,7 +556,21 @@ class GenerateJsonSchema:
         if len(expected) == 1:
             return {'const': expected[0]}
         else:
-            return {'enum': expected}
+            types = {type(e) for e in expected}
+            if types == {str}:
+                return {'enum': expected, 'type': 'string'}
+            elif types == {int}:
+                return {'enum': expected, 'type': 'integer'}
+            elif types == {float}:
+                return {'enum': expected, 'type': 'number'}
+            elif types == {bool}:
+                return {'enum': expected, 'type': 'boolean'}
+            elif types == {list}:
+                return {'enum': expected, 'type': 'array'}
+            # there is not None case because if it's mixed it hits the final `else`
+            # if it's a single Literal[None] then it becomes a `const` schema above
+            else:
+                return {'enum': expected}
 
     def is_instance_schema(self, schema: core_schema.IsInstanceSchema) -> JsonSchemaValue:
         """Returns a schema that checks if a value is an instance of a class, equivalent to Python's `isinstance`
