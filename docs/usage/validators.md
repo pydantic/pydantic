@@ -385,7 +385,7 @@ You can also use the  `mode` argument for `@field_validator` and `@model_validat
 
 
 ```py
-from typing import Annotated
+from typing_extensions import Annotated
 
 from pydantic import AfterValidator, BaseModel, ValidationError
 
