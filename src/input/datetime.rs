@@ -47,7 +47,7 @@ impl<'a> EitherDate<'a> {
     pub fn try_into_py(self, py: Python<'_>) -> PyResult<PyObject> {
         let date = match self {
             Self::Py(date) => Ok(date),
-            Self::Raw(date) => PyDate::new(py, date.year as i32, date.month, date.day),
+            Self::Raw(date) => PyDate::new(py, date.year.into(), date.month, date.day),
         }?;
         Ok(date.into_py(py))
     }
@@ -236,7 +236,7 @@ impl<'a> EitherDateTime<'a> {
         let dt = match self {
             Self::Raw(datetime) => PyDateTime::new(
                 py,
-                datetime.date.year as i32,
+                datetime.date.year.into(),
                 datetime.date.month,
                 datetime.date.day,
                 datetime.time.hour,

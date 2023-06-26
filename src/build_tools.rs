@@ -129,7 +129,7 @@ impl SchemaError {
 
     fn __str__(&self, py: Python) -> String {
         match &self.0 {
-            SchemaErrorEnum::Message(message) => message.to_owned(),
+            SchemaErrorEnum::Message(message) => message.clone(),
             SchemaErrorEnum::ValidationError(error) => error.display(py, Some("Invalid Schema:"), false),
         }
     }

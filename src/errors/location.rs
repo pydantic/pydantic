@@ -159,7 +159,7 @@ impl fmt::Display for Location {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::List(loc) => {
-                let loc_str = loc.iter().rev().map(|i| i.to_string()).collect::<Vec<_>>();
+                let loc_str = loc.iter().rev().map(ToString::to_string).collect::<Vec<_>>();
                 writeln!(f, "{}", loc_str.join("."))
             }
             Self::Empty => Ok(()),

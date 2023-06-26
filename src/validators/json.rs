@@ -36,7 +36,7 @@ impl BuildValidator for JsonValidator {
         let name = format!(
             "{}[{}]",
             Self::EXPECTED_TYPE,
-            validator.as_ref().map(|v| v.get_name()).unwrap_or("any")
+            validator.as_ref().map_or("any", |v| v.get_name())
         );
         Ok(Self { validator, name }.into())
     }

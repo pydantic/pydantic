@@ -29,7 +29,7 @@ impl BuildValidator for TupleVariableValidator {
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let item_validator = get_items_schema(schema, config, definitions)?;
-        let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
+        let inner_name = item_validator.as_ref().map_or("any", |v| v.get_name());
         let name = format!("tuple[{inner_name}, ...]");
         Ok(Self {
             strict: is_strict(schema, config)?,
@@ -119,7 +119,11 @@ impl BuildValidator for TuplePositionalValidator {
             .map(|item| build_validator(item, config, definitions))
             .collect::<PyResult<_>>()?;
 
-        let descr = validators.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(", ");
+        let descr = validators
+            .iter()
+            .map(Validator::get_name)
+            .collect::<Vec<_>>()
+            .join(", ");
         Ok(Self {
             strict: is_strict(schema, config)?,
             items_validators: validators,

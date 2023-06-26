@@ -40,7 +40,7 @@ impl BuildValidator for ChainValidator {
                 Ok(step)
             }
             _ => {
-                let descr = steps.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(",");
+                let descr = steps.iter().map(Validator::get_name).collect::<Vec<_>>().join(",");
 
                 Ok(Self {
                     steps,

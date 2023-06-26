@@ -285,7 +285,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
                 } else if self.mode == FieldsMode::TypedDictAllow {
                     let output_key = infer_json_key(key, &extra).map_err(py_err_se_err)?;
                     let s = SerializeInfer::new(value, next_include, next_exclude, &extra);
-                    map.serialize_entry(&output_key, &s)?
+                    map.serialize_entry(&output_key, &s)?;
                 }
                 // no error case here since unions (which need the error case) use `to_python(..., mode='json')`
             }
@@ -300,7 +300,7 @@ impl TypeSerializer for GeneralFieldsSerializer {
                 if let Some((next_include, next_exclude)) = filter {
                     let output_key = infer_json_key(key, &td_extra).map_err(py_err_se_err)?;
                     let s = SerializeInfer::new(value, next_include, next_exclude, &td_extra);
-                    map.serialize_entry(&output_key, &s)?
+                    map.serialize_entry(&output_key, &s)?;
                 }
             }
         }

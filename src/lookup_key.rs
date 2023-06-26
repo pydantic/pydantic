@@ -43,7 +43,7 @@ impl fmt::Display for LookupKey {
             Self::PathChoices(paths) => write!(
                 f,
                 "{}",
-                paths.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(" | ")
+                paths.iter().map(ToString::to_string).collect::<Vec<_>>().join(" | ")
             ),
         }
     }
@@ -84,7 +84,7 @@ impl LookupKey {
             };
 
             if let Some(alt_alias) = alt_alias {
-                locs.push(LookupPath::from_str(py, alt_alias, None))
+                locs.push(LookupPath::from_str(py, alt_alias, None));
             }
             Ok(Self::PathChoices(locs))
         }
@@ -464,7 +464,7 @@ impl PathItem {
                         None
                     }
                 }
-                _ => None,
+                Self::S(..) => None,
             },
             _ => None,
         }

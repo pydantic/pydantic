@@ -366,8 +366,8 @@ macro_rules! extract_context {
     }};
 }
 
-fn plural_s(value: &usize) -> &'static str {
-    if *value == 1 {
+fn plural_s(value: usize) -> &'static str {
+    if value == 1 {
         ""
     } else {
         "s"
@@ -607,7 +607,7 @@ impl ErrorType {
                 min_length,
                 actual_length,
             } => {
-                let expected_plural = plural_s(min_length);
+                let expected_plural = plural_s(*min_length);
                 to_string_render!(tmpl, field_type, min_length, actual_length, expected_plural)
             }
             Self::TooLong {
@@ -615,7 +615,7 @@ impl ErrorType {
                 max_length,
                 actual_length,
             } => {
-                let expected_plural = plural_s(max_length);
+                let expected_plural = plural_s(*max_length);
                 to_string_render!(tmpl, field_type, max_length, actual_length, expected_plural)
             }
             Self::IterationError { error } => render!(tmpl, error),

@@ -51,7 +51,7 @@ impl<'a> ValError<'a> {
     pub fn with_outer_location(self, loc_item: LocItem) -> Self {
         match self {
             Self::LineErrors(mut line_errors) => {
-                for line_error in line_errors.iter_mut() {
+                for line_error in &mut line_errors {
                     line_error.location.with_outer(loc_item.clone());
                 }
                 Self::LineErrors(line_errors)

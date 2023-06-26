@@ -96,7 +96,7 @@ impl Validator for DateTimeValidator {
             }
 
             if let Some(ref tz_constraint) = constraints.tz {
-                tz_constraint.tz_check(speedate_dt.time.tz_offset, input)?
+                tz_constraint.tz_check(speedate_dt.time.tz_offset, input)?;
             }
         }
         Ok(datetime.try_into_py(py)?)

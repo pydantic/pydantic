@@ -147,8 +147,8 @@ pub(crate) enum SerCheck {
 }
 
 impl SerCheck {
-    pub fn enabled(&self) -> bool {
-        *self != SerCheck::None
+    pub fn enabled(self) -> bool {
+        self != SerCheck::None
     }
 }
 
@@ -186,10 +186,10 @@ impl ExtraOwned {
             config: extra.config.clone(),
             rec_guard: extra.rec_guard.clone(),
             check: extra.check,
-            model: extra.model.map(|v| v.into()),
-            field_name: extra.field_name.map(|v| v.to_string()),
+            model: extra.model.map(Into::into),
+            field_name: extra.field_name.map(ToString::to_string),
             serialize_unknown: extra.serialize_unknown,
-            fallback: extra.fallback.map(|v| v.into()),
+            fallback: extra.fallback.map(Into::into),
         }
     }
 
@@ -208,7 +208,7 @@ impl ExtraOwned {
             rec_guard: &self.rec_guard,
             check: self.check,
             model: self.model.as_ref().map(|m| m.as_ref(py)),
-            field_name: self.field_name.as_ref().map(|n| n.as_ref()),
+            field_name: self.field_name.as_deref(),
             serialize_unknown: self.serialize_unknown,
             fallback: self.fallback.as_ref().map(|m| m.as_ref(py)),
         }
@@ -335,7 +335,6 @@ impl CollectWarnings {
         if self.active {
             match *self.warnings.borrow() {
                 Some(ref warnings) => {
-                    let warnings = warnings.iter().map(|w| w.as_str()).collect::<Vec<_>>();
                     let message = format!("Pydantic serializer warnings:\n  {}", warnings.join("\n  "));
                     let user_warning_type = py.import("builtins")?.getattr("UserWarning")?;
                     PyErr::warn(py, user_warning_type, &message, 0)
