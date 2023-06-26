@@ -14,7 +14,7 @@ use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{py_error_on_minusone, Input};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::{py_err, SchemaDict};
-use crate::UndefinedType;
+use crate::PydanticUndefinedType;
 
 const ROOT_FIELD: &str = "root";
 const DUNDER_DICT: &str = "__dict__";
@@ -259,7 +259,7 @@ impl ModelValidator {
             .validate(py, input, &new_extra, definitions, recursion_guard)?;
 
         if self.root_model {
-            let fields_set = if input.to_object(py).is(&UndefinedType::py_undefined()) {
+            let fields_set = if input.to_object(py).is(&PydanticUndefinedType::py_undefined()) {
                 PySet::empty(py)?
             } else {
                 PySet::new(py, [&String::from(ROOT_FIELD)])?
@@ -309,7 +309,7 @@ impl ModelValidator {
         let instance_ref = instance.as_ref(py);
 
         if self.root_model {
-            let fields_set = if input.to_object(py).is(&UndefinedType::py_undefined()) {
+            let fields_set = if input.to_object(py).is(&PydanticUndefinedType::py_undefined()) {
                 PySet::empty(py)?
             } else {
                 PySet::new(py, [&String::from(ROOT_FIELD)])?
