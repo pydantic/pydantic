@@ -24,7 +24,7 @@ mod validators;
 
 // required for benchmarks
 pub use self::url::{PyMultiHostUrl, PyUrl};
-pub use argument_markers::{ArgsKwargs, UndefinedType};
+pub use argument_markers::{ArgsKwargs, PydanticUndefinedType};
 pub use build_tools::SchemaError;
 pub use errors::{list_all_errors, PydanticCustomError, PydanticKnownError, PydanticOmit, ValidationError};
 pub use serializers::{
@@ -46,7 +46,8 @@ pub fn get_version() -> String {
 fn _pydantic_core(py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", get_version())?;
     m.add("build_profile", env!("PROFILE"))?;
-    m.add("PydanticUndefined", UndefinedType::new(py))?;
+    m.add("PydanticUndefined", PydanticUndefinedType::new(py))?;
+    m.add_class::<PydanticUndefinedType>()?;
     m.add_class::<PySome>()?;
     m.add_class::<SchemaValidator>()?;
     m.add_class::<ValidationError>()?;

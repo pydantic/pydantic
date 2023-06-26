@@ -267,7 +267,9 @@ class ArgsKwargs:
     @property
     def kwargs(self) -> 'dict[str, Any] | None': ...
 
-PydanticUndefined: object
+class PydanticUndefinedType: ...
+
+PydanticUndefined: PydanticUndefinedType
 
 def list_all_errors() -> 'list[ErrorTypeInfo]':
     """

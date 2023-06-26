@@ -63,14 +63,14 @@ impl ArgsKwargs {
     }
 }
 
-static UNDEFINED_CELL: GILOnceCell<Py<UndefinedType>> = GILOnceCell::new();
+static UNDEFINED_CELL: GILOnceCell<Py<PydanticUndefinedType>> = GILOnceCell::new();
 
 #[pyclass(module = "pydantic_core._pydantic_core", frozen)]
 #[derive(Debug)]
-pub struct UndefinedType {}
+pub struct PydanticUndefinedType {}
 
 #[pymethods]
-impl UndefinedType {
+impl PydanticUndefinedType {
     #[new]
     pub fn py_new(_py: Python) -> PyResult<Self> {
         Err(PyNotImplementedError::new_err(
@@ -81,7 +81,7 @@ impl UndefinedType {
     #[staticmethod]
     pub fn new(py: Python) -> Py<Self> {
         UNDEFINED_CELL
-            .get_or_init(py, || UndefinedType {}.into_py(py).extract(py).unwrap())
+            .get_or_init(py, || PydanticUndefinedType {}.into_py(py).extract(py).unwrap())
             .clone()
     }
 
@@ -102,8 +102,8 @@ impl UndefinedType {
     }
 }
 
-impl UndefinedType {
+impl PydanticUndefinedType {
     pub fn py_undefined() -> Py<Self> {
-        Python::with_gil(UndefinedType::new)
+        Python::with_gil(PydanticUndefinedType::new)
     }
 }

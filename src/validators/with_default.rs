@@ -10,7 +10,7 @@ use crate::errors::{LocItem, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
-use crate::UndefinedType;
+use crate::PydanticUndefinedType;
 
 static COPY_DEEPCOPY: GILOnceCell<PyObject> = GILOnceCell::new();
 
@@ -121,7 +121,7 @@ impl Validator for WithDefaultValidator {
         definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        if input.to_object(py).is(&UndefinedType::py_undefined()) {
+        if input.to_object(py).is(&PydanticUndefinedType::py_undefined()) {
             Ok(self
                 .default_value(py, None::<usize>, extra, definitions, recursion_guard)?
                 .unwrap())
