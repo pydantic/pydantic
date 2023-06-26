@@ -14,3 +14,20 @@ jobs:
 
     - name: test
       run: make test-pydantic-settings
+
+  test-fastapi:
+    name: test fastapi
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: install pydantic
+      run: pip install -e .
+
+    - name: test
+      run: make test-fastapi
