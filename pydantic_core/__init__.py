@@ -44,6 +44,7 @@ __all__ = (
     'MultiHostUrl',
     'ArgsKwargs',
     'PydanticUndefined',
+    'PydanticUndefinedType',
     'SchemaError',
     'ErrorDetails',
     'InitErrorDetails',
