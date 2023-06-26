@@ -1227,7 +1227,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Dotenv (.env) support
   </a>
   
-    <nav class="md-nav" aria-label="Dotenv (.env) support">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    Secrets
+  </a>
+  
+    <nav class="md-nav" aria-label="Secrets">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2167,7 +2174,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     Dotenv (.env) support
   </a>
   
-    <nav class="md-nav" aria-label="Dotenv (.env) support">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    Secrets
+  </a>
+  
+    <nav class="md-nav" aria-label="Secrets">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2314,12 +2328,12 @@ will still be used if the matching environment variable is not set.)</p>
 <li>
 <p>The environment variable name is overridden using <code>validation_alias</code>. In this case, the environment variable
    <code>my_auth_key</code> will be read instead of <code>auth_key</code>.</p>
-<p>Check the <a href="/usage/fields/"><code>Field</code> documentation</a> for more information.</p>
+<p>Check the <a href="../fields/"><code>Field</code> documentation</a> for more information.</p>
 </li>
 <li>
 <p>The <code>AliasChoices</code> class allows to have multiple environment variable names for a single field.
    The first environment variable that is found will be used.</p>
-<p>Check the <a href="/usage/fields/#aliaspath-and-aliaschoices"><code>AliasChoices</code></a> for more information.</p>
+<p>Check the <a href="../fields/#aliaspath-and-aliaschoices"><code>AliasChoices</code></a> for more information.</p>
 </li>
 <li>
 <p>The <code>ImportString</code> class allows to import an object from a string.
@@ -2352,7 +2366,7 @@ or via the <code>_env_prefix</code> keyword argument on instantiation:</p>
 <li>Using <code>Field(alias=...)</code> (see <code>api_key</code> above)</li>
 <li>Using <code>Field(validation_alias=...)</code> (see <code>auth_key</code> above)</li>
 </ul>
-<p>Check the <a href="/usage/fields#field-aliases"><code>Field</code> aliases documentation</a> for more information about aliases.</p>
+<p>Check the <a href="../fields#field-aliases"><code>Field</code> aliases documentation</a> for more information about aliases.</p>
 <h3 id="case-sensitivity">Case-sensitivity<a class="headerlink" href="#case-sensitivity" title="Permanent link">&para;</a></h3>
 <p>By default, environment variable names are case-insensitive.</p>
 <p>If you want to make environment variable names case-sensitive, you can set the <code>case_sensitive</code> config setting:</p>
@@ -2527,15 +2541,25 @@ platform-independent manner.</p>
 <li>Setting the <code>env_file</code> (and <code>env_file_encoding</code> if you don't want the default encoding of your OS) on <code>model_config</code>
 in the <code>BaseSettings</code> class:</li>
 </ol>
-<p>```py test="skip" lint="skip"
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file='.env', env_file_encoding='utf-8')
-<div class="highlight"><pre><span></span><code>2. Instantiating the `BaseSettings` derived class with the `_env_file` keyword argument
-(and the `_env_file_encoding` if needed):
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
-```py test=&quot;skip&quot; lint=&quot;skip&quot;
-settings = Settings(_env_file=&#39;prod.env&#39;, _env_file_encoding=&#39;utf-8&#39;)
-</code></pre></div></p>
+
+<span class="hll"><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+</span><span class="hll">    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="n">env_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+<ol>
+<li>Instantiating the <code>BaseSettings</code> derived class with the <code>_env_file</code> keyword argument
+(and the <code>_env_file_encoding</code> if needed):</li>
+</ol>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="n">env_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+
+
+<span class="hll"><span class="n">settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="p">(</span><span class="n">_env_file</span><span class="o">=</span><span class="s1">&#39;prod.env&#39;</span><span class="p">,</span> <span class="n">_env_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+</span></code></pre></div>
 <p>In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
 current working directory. From there, <em>pydantic</em> will handle everything for you by loading in your variables and
 validating them.</p>
@@ -2551,45 +2575,46 @@ the value (if any) set on the <code>model_config</code> class. If the above snip
 while <code>.env</code> would be ignored.</p>
 <p>If you need to load multiple dotenv files, you can pass multiple file paths as a tuple or list. The files will be
 loaded in order, with each file overriding the previous one.</p>
-<p><code>``py test="skip" lint="skip"
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        #</code>.env.prod<code>takes priority over</code>.env`
-        env_file=('.env', '.env.prod')
-    )
-<div class="highlight"><pre><span></span><code>You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
-the `model_config` class) by passing `None` as the instantiation keyword argument, e.g. `settings = Settings(_env_file=None)`.
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
-Because python-dotenv is used to parse the file, bash-like semantics such as `export` can be used which
-(depending on your OS and environment) may allow your dotenv file to also be used with `source`,
-see [python-dotenv&#39;s documentation](https://saurabh-kumar.com/python-dotenv/#usages) for more details.
 
-Pydantic settings consider `extra` config in case of dotenv file. It means if you set the `extra=forbid`
-on `model_config` and your dotenv file contains an entry for a field that is not defined in settings model,
-it will raise `ValidationError` in settings construction.
-
-## Secrets
-
-Placing secret values in files is a common pattern to provide sensitive configuration to an application.
-
-A secret file follows the same principal as a dotenv file except it only contains a single value and the file name
-is used as the key. A secret file will look like the following:
-
-``` title=&quot;/var/run/database_password&quot;
-super_secret_database_password
-</code></pre></div></p>
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span>
+        <span class="c1"># `.env.prod` takes priority over `.env`</span>
+        <span class="n">env_file</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="s1">&#39;.env.prod&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+</code></pre></div>
+<p>You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
+the <code>model_config</code> class) by passing <code>None</code> as the instantiation keyword argument, e.g. <code>settings = Settings(_env_file=None)</code>.</p>
+<p>Because python-dotenv is used to parse the file, bash-like semantics such as <code>export</code> can be used which
+(depending on your OS and environment) may allow your dotenv file to also be used with <code>source</code>,
+see <a href="https://saurabh-kumar.com/python-dotenv/#usages">python-dotenv's documentation</a> for more details.</p>
+<p>Pydantic settings consider <code>extra</code> config in case of dotenv file. It means if you set the <code>extra=forbid</code>
+on <code>model_config</code> and your dotenv file contains an entry for a field that is not defined in settings model,
+it will raise <code>ValidationError</code> in settings construction.</p>
+<h2 id="secrets">Secrets<a class="headerlink" href="#secrets" title="Permanent link">&para;</a></h2>
+<p>Placing secret values in files is a common pattern to provide sensitive configuration to an application.</p>
+<p>A secret file follows the same principal as a dotenv file except it only contains a single value and the file name
+is used as the key. A secret file will look like the following:</p>
+<div class="highlight"><span class="filename">/var/run/database_password</span><pre><span></span><code>super_secret_database_password
+</code></pre></div>
 <p>Once you have your secret files, <em>pydantic</em> supports loading it in two ways:</p>
 <ol>
 <li>Setting the <code>secrets_dir</code> on <code>model_config</code> in a <code>BaseSettings</code> class to the directory where your secret files are stored.</li>
 </ol>
-<p>```py test="skip" lint="skip"
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(secrets_dir='/var/run')</p>
-<div class="highlight"><pre><span></span><code>database_password: str
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="hll"><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+</span><span class="hll">    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">secrets_dir</span><span class="o">=</span><span class="s1">&#39;/var/run&#39;</span><span class="p">)</span>
+</span><span class="hll">
+</span><span class="hll">    <span class="n">database_password</span><span class="p">:</span> <span class="nb">str</span>
+</span></code></pre></div>
+<ol>
+<li>Instantiating the <code>BaseSettings</code> derived class with the <code>_secrets_dir</code> keyword argument:</li>
+</ol>
+<div class="highlight"><pre><span></span><code>settings = Settings(_secrets_dir=&#39;/var/run&#39;)
 </code></pre></div>
-<p><code>2. Instantiating the `BaseSettings` derived class with the `_secrets_dir` keyword argument:</code>py test="skip" lint="skip"
-settings = Settings(_secrets_dir='/var/run')
-```</p>
 <p>In either case, the value of the passed argument can be any valid directory, either absolute or relative to the
 current working directory. <strong>Note that a non existent directory will only generate a warning</strong>.
 From there, <em>pydantic</em> will handle everything for you by loading in your variables and validating them.</p>
@@ -2603,22 +2628,22 @@ To use these secrets in a <em>pydantic</em> application the process is simple. M
 and using secrets in Docker see the official
 <a href="https://docs.docker.com/engine/reference/commandline/secret/">Docker documentation</a>.</p>
 <p>First, define your <code>Settings</code> class with a <code>SettingsConfigDict</code> that specifies the secrets directory.</p>
-<p>```py test="skip" lint="skip"
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(secrets_dir='/run/secrets')</p>
-<div class="highlight"><pre><span></span><code>my_secret_data: str
-</code></pre></div>
-<p>```
-</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="hll"><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+</span><span class="hll">    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">secrets_dir</span><span class="o">=</span><span class="s1">&#39;/run/secrets&#39;</span><span class="p">)</span>
+</span><span class="hll">
+</span><span class="hll">    <span class="n">my_secret_data</span><span class="p">:</span> <span class="nb">str</span>
+</span></code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>By default <a href="https://docs.docker.com/engine/swarm/secrets/#how-docker-manages-secrets">Docker uses <code>/run/secrets</code></a>
-as the target mount point. If you want to use a different location, change <code>Config.secrets_dir</code> accordingly.
-</p>
+as the target mount point. If you want to use a different location, change <code>Config.secrets_dir</code> accordingly.</p>
 </div>
 <p>Then, create your secret via the Docker CLI
-<code>bash
-printf "This is a secret" | docker secret create my_secret_data -</code></p>
+<div class="highlight"><pre><span></span><code><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;This is a secret&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>docker<span class="w"> </span>secret<span class="w"> </span>create<span class="w"> </span>my_secret_data<span class="w"> </span>-
+</code></pre></div></p>
 <p>Last, run your application inside a Docker container and supply your newly created secret
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>service<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>pydantic-with-secrets<span class="w"> </span>--secret<span class="w"> </span>my_secret_data<span class="w"> </span>pydantic-app:latest
 </code></pre></div></p>
