@@ -1,7 +1,8 @@
 import pytest
 
-from pydantic import PydanticUserError
-from pydantic._internal._decorators import inspect_annotated_serializer, inspect_validator
+from pydantic import PydanticUserError, validate_arguments
+from pydantic._internal._decorators import (inspect_annotated_serializer,
+                                            inspect_validator)
 
 
 def test_inspect_validator_error_wrap():
@@ -51,3 +52,18 @@ def test_inspect_annotated_serializer(mode):
         inspect_annotated_serializer(serializer, mode=mode)
 
     assert e.value.code == 'field-serializer-signature'
+
+
+def test_validate_arguments():
+    class Test1:
+        @validate_arguments
+        def func1(self, arg: 'int'):
+            return arg
+
+        @validate_arguments
+        @classmethod
+        def func2(cls, arg: 'int'):
+            return arg
+
+    assert Test1().func1(7) == 7
+    assert Test1.func2(7) == 7

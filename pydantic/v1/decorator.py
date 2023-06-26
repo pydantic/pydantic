@@ -1,5 +1,7 @@
-from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
+from functools import partial, update_wrapper, wraps
+from types import MethodType
+from typing import (TYPE_CHECKING, Any, Callable, Dict, List, Mapping,
+                    Optional, Tuple, Type, TypeVar, Union, overload)
 
 from . import validator
 from .config import Extra
@@ -15,6 +17,20 @@ if TYPE_CHECKING:
 
     AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
     ConfigType = Union[None, Type[Any], Dict[str, Any]]
+
+
+def is_descriptor(f: 'Callable') -> bool:
+    return hasattr(f, '__get__')
+
+
+class DescriptorDecorator:
+    def __init__(self, wrapper: 'Callable', descriptor: 'MethodType'):
+        self.wrapper = wrapper
+        self.descriptor = descriptor
+        update_wrapper(self, descriptor)
+
+    def __get__(self, obj: 'object', objtype: 'Type' = None):
+        return self.wrapper(self.descriptor.__get__(obj, objtype))
 
 
 @overload
@@ -46,7 +62,8 @@ def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'Config
         return wrapper_function
 
     if func:
-        return validate(func)
+        return validate(func) if not is_descriptor(func) else DescriptorDecorator(validate, func)
+        # return validate(func)
     else:
         return validate
 
