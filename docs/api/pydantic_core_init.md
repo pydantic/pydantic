@@ -1,5 +1,7 @@
 ::: pydantic_core
     options:
+        allow_inspection: false
+        show_source: false
         members:
         - ArgsKwargs
         - MultiHostUrl
