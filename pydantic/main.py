@@ -79,9 +79,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_validator__: The pydantic-core SchemaValidator used to validate instances of the model.
 
         __pydantic_extra__: An instance attribute with the values of extra fields from validation when
-            `model_config['extra'] == 'allow'`
-        __pydantic_fields_set__: An instance attribute with the names of fields explicitly specified during validation
-        __pydantic_private__: Instance attribute with the values of private attributes set on the model instance
+            `model_config['extra'] == 'allow'`.
+        __pydantic_fields_set__: An instance attribute with the names of fields explicitly specified during validation.
+        __pydantic_private__: Instance attribute with the values of private attributes set on the model instance.
     """
 
     if typing.TYPE_CHECKING:
