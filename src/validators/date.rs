@@ -129,7 +129,7 @@ fn date_from_datetime<'data>(
                 ValError::LineErrors(mut line_errors) => {
                     // if we got a errors while parsing the datetime,
                     // convert DateTimeParsing -> DateFromDatetimeParsing but keep the rest of the error unchanged
-                    for line_error in line_errors.iter_mut() {
+                    for line_error in &mut line_errors {
                         match line_error.error_type {
                             ErrorType::DatetimeParsing { ref error } => {
                                 line_error.error_type = ErrorType::DateFromDatetimeParsing {

@@ -26,7 +26,7 @@ mod tests {
             }"#;
             let schema: &PyDict = py.eval(code, None, None).unwrap().extract().unwrap();
             SchemaSerializer::py_new(py, schema, None).unwrap();
-        })
+        });
     }
 
     #[test]
@@ -63,6 +63,6 @@ a = A()
                 .extract(py)
                 .unwrap();
             assert_eq!(serialized, b"{\"b\":\"b\"}");
-        })
+        });
     }
 }

@@ -78,8 +78,8 @@ impl BuildValidator for CustomErrorValidator {
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
         Ok(Self {
             validator,
-            name,
             custom_error,
+            name,
         }
         .into())
     }

@@ -46,7 +46,7 @@ impl BuildValidator for UnionValidator {
             0 => py_schema_err!("One or more union choices required"),
             1 if auto_collapse() => Ok(choices.into_iter().next().unwrap()),
             _ => {
-                let descr = choices.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(",");
+                let descr = choices.iter().map(Validator::get_name).collect::<Vec<_>>().join(",");
 
                 Ok(Self {
                     choices,
