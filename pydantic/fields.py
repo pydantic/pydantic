@@ -7,7 +7,7 @@ import sys
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
-from typing import Any
+from typing import Any, ClassVar
 from warnings import warn
 
 import annotated_types
@@ -142,7 +142,7 @@ class FieldInfo(_repr.Representation):
 
     # used to convert kwargs to metadata/constraints,
     # None has a special meaning - these items are collected into a `PydanticGeneralMetadata`
-    metadata_lookup: typing.ClassVar[dict[str, typing.Callable[[Any], Any] | None]] = {
+    metadata_lookup: ClassVar[dict[str, typing.Callable[[Any], Any] | None]] = {
         'strict': types.Strict,
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
@@ -852,7 +852,7 @@ class ComputedFieldInfo:
         repr: A boolean indicating whether or not to include the field in the __repr__ output.
     """
 
-    decorator_repr: typing.ClassVar[str] = '@computed_field'
+    decorator_repr: ClassVar[str] = '@computed_field'
     wrapped_property: property
     return_type: type[Any]
     alias: str | None
