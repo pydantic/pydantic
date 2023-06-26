@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 
 import pytest
 
-from pydantic import BaseModel, BaseSettings, Field, HttpUrl, NoneStr, SecretStr, ValidationError, dataclasses
+from pydantic import BaseModel, BaseSettings, Field, HttpUrl, Json, NoneStr, SecretStr, ValidationError, dataclasses
 from pydantic.env_settings import (
     EnvSettingsSource,
     InitSettingsSource,
@@ -1278,3 +1278,35 @@ def test_secret_settings_source_custom_env_parse(tmp_path):
 
     s = Settings()
     assert s.top == {1: 'apple', 2: 'banana'}
+
+
+def test_env_json_field(env):
+    class Settings(BaseSettings):
+        x: Json
+
+    env.set('x', '{"foo": "bar"}')
+
+    s = Settings()
+    assert s.x == {'foo': 'bar'}
+
+    env.set('x', 'test')
+    with pytest.raises(ValidationError) as exc_info:
+        Settings()
+    assert exc_info.value.errors() == [{'loc': ('x',), 'msg': 'Invalid JSON', 'type': 'value_error.json'}]
+
+
+def test_env_json_field_dict(env):
+    class Settings(BaseSettings):
+        x: Json[Dict[str, int]]
+
+    env.set('x', '{"foo": 1}')
+
+    s = Settings()
+    assert s.x == {'foo': 1}
+
+    env.set('x', '{"foo": "bar"}')
+    with pytest.raises(ValidationError) as exc_info:
+        Settings()
+    assert exc_info.value.errors() == [
+        {'loc': ('x', 'foo'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+    ]
