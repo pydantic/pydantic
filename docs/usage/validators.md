@@ -368,3 +368,52 @@ print(DemoDataclass())
 print(DemoDataclass(ts='2017-11-08T14:00'))
 #> DemoDataclass(ts=datetime.datetime(2017, 11, 8, 14, 0))
 ```
+
+## Before and after validators
+
+Pydantic provides additional validation classes that can be used to specify when validation occurs.
+
+- [`AfterValidator`][pydantic.functional_validators.AfterValidator] indicates that field validation should be applied **after** the inner validation logic.
+- [`BeforeValidator`][pydantic.functional_validators.BeforeValidator] indicates that field validation should be applied **before** the inner validation logic.
+- [`ModelAfterValidator`][pydantic.functional_validators.ModelAfterValidator] indicates that model validation should be applied **after** the inner validation logic.
+- [`ModelBeforeValidator`][pydantic.functional_validators.ModelBeforeValidator] indicates that model field validation should be applied **before** the inner validation logic.
+- [`ModelWrapValidator`][pydantic.functional_validators.ModelWrapValidator] indicates that model validation should be applied **around** the inner validation logic.
+- [`SkipValidation`][pydantic.functional_validators.SkipValidation] indicates that validation should be **skipped**.
+- [`WrapValidator`][pydantic.functional_validators.WrapValidator] indicates that field validation should be applied **around** the inner validation logic.
+
+You can also use the  `mode` argument for `@field_validator` and `@model_validator` to specify when validation occurs.
+
+
+```py
+from typing import Annotated
+
+from pydantic import AfterValidator, BaseModel, ValidationError
+
+MyInt = Annotated[int, AfterValidator(lambda v: v + 1)]
+
+
+class Model(BaseModel):
+    a: MyInt
+
+
+print(Model(a=1).a)
+#> 2
+
+try:
+    Model(a='a')
+except ValidationError as e:
+    print(e.json(indent=2))
+    """
+    [
+      {
+        "type": "int_parsing",
+        "loc": [
+          "a"
+        ],
+        "msg": "Input should be a valid integer, unable to parse string as an integer",
+        "input": "a",
+        "url": "https://errors.pydantic.dev/2/v/int_parsing"
+      }
+    ]
+    """
+```
