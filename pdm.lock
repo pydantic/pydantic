@@ -462,11 +462,11 @@ dependencies = [
 
 [[package]]
 name = "pydantic-settings"
-version = "2.0b1"
+version = "2.0b2"
 requires_python = ">=3.7"
 summary = "Settings management using Pydantic"
 dependencies = [
-    "pydantic>=2.0b1",
+    "pydantic>=2.0b3",
     "python-dotenv>=0.21.0",
 ]
 
@@ -692,8 +692,8 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 [metadata]
 lock_version = "4.2"
 cross_platform = true
-groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-content_hash = "sha256:d28d03baef0c89f984f6474a5b8a28b816fdff1fea1cc18e861c036f7c890013"
+groups = ["default", "docs", "email", "linting", "memray", "mypy", "settings", "testing", "testing-extra"]
+content_hash = "sha256:9ee8d2df70eddb68caf8ef4e2f1557fdd2db2e75d2114d58203259d52dc1a728"
 
 [metadata.files]
 "annotated-types 0.5.0" = [
@@ -1271,9 +1271,9 @@ content_hash = "sha256:d28d03baef0c89f984f6474a5b8a28b816fdff1fea1cc18e861c036f7
     {url = "https://files.pythonhosted.org/packages/ed/ec/6e8ae9386b3df4aeb70b0e1b4a4d9c29378733942e14af059d8195874f78/pydantic_core-0.41.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:a4cc56ffaeb1d3bf0f80862bbc039fe1156edeb4ab5c178072434dc730b49098"},
     {url = "https://files.pythonhosted.org/packages/f5/e5/5ab8c66d440679412cf722534c1d40d477850351ec94f8d6eec760691285/pydantic_core-0.41.0-pp37-pypy37_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e49f6f06c0fe09d0e65b9905e3fde1a526ca135d0c00cec21c09e2f57e2510e8"},
 ]
-"pydantic-settings 2.0b1" = [
-    {url = "https://files.pythonhosted.org/packages/4d/cf/5fba1186a17a2838ab243586c284bebcee8f13a6eb5028c41c2f70f7e938/pydantic_settings-2.0b1.tar.gz", hash = "sha256:ae4a89d5928fc265ad37c3db20b4c4c353ad90a1b0278c49b933cca09ef3cdba"},
-    {url = "https://files.pythonhosted.org/packages/d1/f3/7845bb1065aeb05a9a90b35324d98f1a790b8e0a31404edaee491f396782/pydantic_settings-2.0b1-py3-none-any.whl", hash = "sha256:2eb89a8274aec5b4a20e44aaf982302fe0f2b57ed90da9c58f9b7a9f7f95635f"},
+"pydantic-settings 2.0b2" = [
+    {url = "https://files.pythonhosted.org/packages/28/a8/876b31f0d37f6691a6f0cc192fb4328dfb89d63d2fcdc52101e5b8646a01/pydantic_settings-2.0b2.tar.gz", hash = "sha256:d42f829555cc98b0e5bcc625e74e3105000effab42b184d0034b35a35541a76e"},
+    {url = "https://files.pythonhosted.org/packages/e3/33/629b53e9c3b7fd27f25fc6f19cc60d688251afc9332e358a68330dd3bb87/pydantic_settings-2.0b2-py3-none-any.whl", hash = "sha256:f30630781bba8bec76d679e3a6eedeee7ea345546fd57de7dc27acfe16bce074"},
 ]
 "pyflakes 3.0.1" = [
     {url = "https://files.pythonhosted.org/packages/af/4c/b1c7008aa7788b3e26c06c60aa18da7d3aa1f00e344aa3f18ac92768854b/pyflakes-3.0.1-py2.py3-none-any.whl", hash = "sha256:ec55bf7fe21fff7f1ad2f7da62363d749e2a470500eab1b555334b67aa1ef8cf"},
