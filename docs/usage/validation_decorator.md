@@ -1,13 +1,9 @@
-The `validate_call` decorator allows the arguments passed to a function to be parsed and validated using
-the function's annotations before the function is called. While under the hood this uses the same approach of model
-creation and initialisation; it provides an extremely easy way to apply validation to your code with minimal
-boilerplate.
+The [`@validate_call`][pydantic.validate_call] decorator allows the arguments passed to a function to be parsed
+and validated using the function's annotations before the function is called.
 
-!!! info "In Beta"
-    The `validate_call` decorator is in **beta**, it has been added to Pydantic in **v1.5** on a
-    **provisional basis**. It may change significantly in future releases and its interface will not be concrete
-    until **v2**. Feedback from the community while it's still provisional would be extremely useful; either comment
-    on [#1205](https://github.com/pydantic/pydantic/issues/1205) or create a new issue.
+While under the hood this uses the same approach of model creation and initialisation
+(see [Validators](validators.md) for more details), it provides an extremely easy way to apply validation
+to your code with minimal boilerplate.
 
 Example of usage:
 
@@ -40,7 +36,7 @@ except ValidationError as exc:
     """
 ```
 
-## Argument Types
+## Argument types
 
 Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
 as `Any`. All types listed in [types](types/types.md) can be validated, including Pydantic models and
@@ -74,23 +70,24 @@ print(find_file(this_dir, '^foobar.*', max=3))
 
 A few notes:
 
-- though they're passed as strings, `path` and `regex` are converted to a `Path` object and regex respectively
-by the decorator
-- `max` has no type annotation, so will be considered as `Any` by the decorator
+- Though they're passed as strings, `path` and `regex` are converted to a `Path` object and regex respectively
+    by the decorator.
+- `max` has no type annotation, so will be considered as `Any` by the decorator.
 
-Type coercion like this can be extremely helpful but also confusing or not desired,
-see [below](#coercion-and-strictness) for a discussion of `validate_call`'s limitations in this regard.
+Type coercion like this can be extremely helpful, but also confusing or not desired.
+See [Coercion and strictness](#coercion-and-strictness) for a discussion of `@validate_call`'s limitations
+in this regard.
 
-## Function Signatures
+## Function signatures
 
-The decorator is designed to work with functions using all possible parameter configurations and all possible
-combinations of these:
+The `@validate_call` decorator is designed to work with functions using all possible parameter configurations and
+all possible combinations of these:
 
-* positional or keyword arguments with or without defaults
-* variable positional arguments defined via `*` (often `*args`)
-* variable keyword arguments defined via `**` (often `**kwargs`)
-* keyword only arguments - arguments after `*,`
-* positional only arguments - arguments before `, /` (new in Python 3.8)
+* Positional or keyword arguments with or without defaults.
+* Variable positional arguments defined via `*` (often `*args`).
+* Variable keyword arguments defined via `**` (often `**kwargs`).
+* Keyword-only arguments: arguments after `*,`.
+* Positional-only arguments: arguments before `, /` (new in Python 3.8).
 
 To demonstrate all the above parameter types:
 
@@ -180,10 +177,10 @@ print(armageddon(1, 2, 3, 4, 5, 6, d=8, e=9, f=10, spam=11))
 
 ## Using Field to describe function arguments
 
-[Field](json_schema.md#field-customization) can also be used with `validate_call` to provide extra information about
+[Field](json_schema.md#field-customization) can also be used with `@validate_call` to provide extra information about
 the field and validations. In general it should be used in a type hint with
-[Annotated](json_schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
-as the default value of the field:
+[Annotated](json_schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be
+used as the default value of the field:
 
 ```py
 from datetime import datetime
@@ -266,9 +263,9 @@ print(b)
 #> b'good bye, good bye'
 ```
 
-## Async Functions
+## Async functions
 
-`validate_call` can also be used on async functions:
+`@validate_call` can also be used on async functions:
 
 ```py
 class Connection:
@@ -319,14 +316,10 @@ asyncio.run(main())
 # requires: `conn.execute()` that will return `'testing@example.com'`
 ```
 
-## Custom Config
+## Custom config
 
-The model behind `validate_call` can be customised using a config setting which is equivalent to
-setting the `Config` sub-class in normal models.
-
-!!! warning
-    The `fields` and `alias_generator` properties of `Config` which allow aliases to be configured are not supported
-    yet with `@validate_call`, using them will raise an error.
+The model behind `@validate_call` can be customised using a `config` setting, which is equivalent to
+setting the [`ConfigDict`][pydantic.config.ConfigDict] sub-class in normal models.
 
 Configuration is set using the `config` keyword argument to the decorator, it may be either a config class
 or a dict of properties which are converted to a class later.
@@ -370,52 +363,36 @@ except ValidationError as e:
 
 ## Limitations
 
-`validate_call` has been released on a provisional basis without all the bells and whistles, which may
-be added later, see [#1205](https://github.com/pydantic/pydantic/issues/1205) for some more discussion of this.
+### Validation exception
 
-In particular:
+Currently upon validation failure, a standard Pydantic [`ValidationError`][pydantic_core.ValidationError] is raised.
+See [model error handling](models.md#error-handling) for details.
 
-### Validation Exception
-
-Currently upon validation failure, a standard Pydantic `ValidationError` is raised,
-see [model error handling](models.md#error-handling).
-
-This is helpful since it's `str()` method provides useful details of the error which occurred and methods like
-`.errors()` and `.json()` can be useful when exposing the errors to end users, however `ValidationError` inherits
-from `ValueError` **not** `TypeError` which may be unexpected since Python would raise a `TypeError` upon invalid
-or missing arguments. This may be addressed in future by either allow a custom error or raising a different
+This is helpful since its `str()` method provides useful details of the error which occurred and methods like
+`.errors()` and `.json()` can be useful when exposing the errors to end users. However, `ValidationError` inherits
+from `ValueError` **not** `TypeError`, which may be unexpected since Python would raise a `TypeError` upon invalid
+or missing arguments. This may be addressed in future by either allowing a custom error or raising a different
 exception by default, or both.
 
-### Coercion and Strictness
+### Coercion and strictness
 
 Pydantic currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
-see [model data conversion](models.md#data-conversion) and `validate_call` is no different.
-
-See [#1098](https://github.com/pydantic/pydantic/issues/1098) and other issues with the "strictness" label
-for a discussion of this. If Pydantic gets a "strict" mode in future, `validate_call` will have an option
-to use this, it may even become the default for the decorator.
+see [model data conversion](models.md#data-conversion) and `@validate_call` is no different.
 
 ### Performance
 
 We've made a big effort to make Pydantic as performant as possible
 and argument inspect and model creation is only performed once when the function is defined, however
-there will still be a performance impact to using the `validate_call` decorator compared to
+there will still be a performance impact to using the `@validate_call` decorator compared to
 calling the raw function.
 
 In many situations this will have little or no noticeable effect, however be aware that
-`validate_call` is not an equivalent or alternative to function definitions in strongly typed languages;
+`@validate_call` is not an equivalent or alternative to function definitions in strongly typed languages;
 it never will be.
 
-### Return Value
+### Return value
 
-The return value of the function is not validated against its return type annotation, this may be added as an option
-in future.
-
-### Config and Validators
-
-`fields` and `alias_generator` on custom [`Config`](model_config.md) are not supported, see [above](#custom-config).
-
-Neither are [validators](validators.md).
+The return value of the function may optionally be validated against its return type annotation.
 
 ### Model fields and reserved arguments
 
