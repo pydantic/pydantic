@@ -46,7 +46,7 @@ fn map_negative_indices(include_or_exclude: &PyAny, len: Option<usize>) -> PyRes
     } else if let Ok(exclude_set) = include_or_exclude.downcast::<PySet>() {
         let mut values = Vec::with_capacity(exclude_set.len());
         for v in exclude_set {
-            values.push(map_negative_index(v, len)?)
+            values.push(map_negative_index(v, len)?);
         }
         Ok(PySet::new(py, values)?)
     } else {
@@ -163,11 +163,10 @@ trait FilterLogic<T: Eq + Copy> {
                     if is_ellipsis_like(exc_value) {
                         // if the index is in exclude, and the exclude value is `None`, we want to omit this index/item
                         return Ok(None);
-                    } else {
-                        // if the index is in exclude, and the exclude-value is not `None`,
-                        // we want to return `Some((..., Some(next_exclude))`
-                        next_exclude = Some(exc_value);
                     }
+                    // if the index is in exclude, and the exclude-value is not `None`,
+                    // we want to return `Some((..., Some(next_exclude))`
+                    next_exclude = Some(exc_value);
                 }
             } else if let Ok(exclude_set) = exclude.downcast::<PySet>() {
                 if exclude_set.contains(py_key)? || exclude_set.contains(intern!(exclude_set.py(), "__all__"))? {
@@ -369,12 +368,11 @@ fn merge_dicts<'py>(item_dict: &'py PyDict, all_value: &'py PyAny) -> PyResult<&
             if let Some(item_value) = item_dict.get_item(all_key) {
                 if is_ellipsis_like(item_value) {
                     continue;
-                } else {
-                    let item_value_dict = as_dict(item_value)?;
-                    // if the all value is an ellipsis, we don't overwrite the item value
-                    if !is_ellipsis_like(all_value) {
-                        item_dict.set_item(all_key, merge_dicts(item_value_dict, all_value)?)?;
-                    }
+                }
+                let item_value_dict = as_dict(item_value)?;
+                // if the all value is an ellipsis, we don't overwrite the item value
+                if !is_ellipsis_like(all_value) {
+                    item_dict.set_item(all_key, merge_dicts(item_value_dict, all_value)?)?;
                 }
             } else {
                 item_dict.set_item(all_key, all_value)?;

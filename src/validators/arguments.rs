@@ -99,8 +99,8 @@ impl BuildValidator for ArgumentsValidator {
             }
             parameters.push(Parameter {
                 positional,
-                kw_lookup_key,
                 name,
+                kw_lookup_key,
                 kwarg_key,
                 validator,
             });

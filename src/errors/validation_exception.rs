@@ -30,8 +30,8 @@ use super::ValError;
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValidationError {
     line_errors: Vec<PyLineError>,
-    error_mode: ErrorMode,
     title: PyObject,
+    error_mode: ErrorMode,
     hide_input: bool,
 }
 

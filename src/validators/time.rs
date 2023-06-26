@@ -69,7 +69,7 @@ impl Validator for TimeValidator {
             check_constraint!(gt, GreaterThan);
 
             if let Some(ref tz_constraint) = constraints.tz {
-                tz_constraint.tz_check(raw_time.tz_offset, input)?
+                tz_constraint.tz_check(raw_time.tz_offset, input)?;
             }
         }
         Ok(time.try_into_py(py)?)

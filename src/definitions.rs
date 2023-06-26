@@ -101,7 +101,7 @@ impl<T: Clone + std::fmt::Debug> DefinitionsBuilder<T> {
     pub fn finish(self) -> PyResult<Vec<T>> {
         // We need to create a vec of defs according to the order in their ids
         let mut defs: Vec<(usize, T)> = Vec::new();
-        for (reference, def) in self.definitions.into_iter() {
+        for (reference, def) in self.definitions {
             match def.value {
                 None => return py_schema_err!("Definitions error: definition {} was never filled", reference),
                 Some(v) => defs.push((def.id, v)),

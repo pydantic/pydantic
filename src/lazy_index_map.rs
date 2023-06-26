@@ -27,7 +27,7 @@ where
     }
 
     pub fn insert(&mut self, key: K, value: V) {
-        self.vec.push((key, value))
+        self.vec.push((key, value));
     }
 
     pub fn len(&self) -> usize {

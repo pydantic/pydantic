@@ -271,9 +271,8 @@ pub(crate) fn infer_to_python_known(
                     let next_result = infer_to_python(next_value, include, exclude, extra);
                     extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
                     return next_result;
-                } else {
-                    value.into_py(py)
                 }
+                value.into_py(py)
             }
             _ => value.into_py(py),
         },
@@ -498,7 +497,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
                     .map_err(py_err_se_err)?;
                 if let Some((next_include, next_exclude)) = op_next {
                     let item_serializer = SerializeInfer::new(element, next_include, next_exclude, extra);
-                    seq.serialize_element(&item_serializer)?
+                    seq.serialize_element(&item_serializer)?;
                 }
             }
             seq.end()

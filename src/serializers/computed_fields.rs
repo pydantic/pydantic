@@ -47,7 +47,7 @@ impl ComputedFields {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> PyResult<()> {
-        for computed_fields in self.0.iter() {
+        for computed_fields in &self.0 {
             computed_fields.to_python(model, output_dict, filter, include, exclude, extra)?;
         }
         Ok(())
@@ -62,7 +62,7 @@ impl ComputedFields {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<(), S::Error> {
-        for computed_field in self.0.iter() {
+        for computed_field in &self.0 {
             let property_name_py = computed_field.property_name_py.as_ref(model.py());
             if let Some((next_include, next_exclude)) = filter
                 .key_filter(property_name_py, include, exclude)

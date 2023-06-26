@@ -509,9 +509,9 @@ impl ValidationInfo {
                 Some(field_name) => Ok(
                     Self {
                         config: config.clone_ref(py),
-                        context: extra.context.map(|v| v.into()),
+                        context: extra.context.map(Into::into),
                         field_name: Some(field_name.to_string()),
-                        data: extra.data.map(|v| v.into()),
+                        data: extra.data.map(Into::into),
                         mode: extra.mode,
                     }
                 ),
@@ -520,7 +520,7 @@ impl ValidationInfo {
         } else {
             Ok(Self {
                 config: config.clone_ref(py),
-                context: extra.context.map(|v| v.into()),
+                context: extra.context.map(Into::into),
                 field_name: None,
                 data: None,
                 mode: extra.mode,

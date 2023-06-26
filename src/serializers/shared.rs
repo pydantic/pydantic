@@ -177,7 +177,7 @@ impl CombinedSerializer {
                     .map_err(|err| py_schema_error_type!("Error building `function-wrap` serializer:\n  {}", err));
                 }
                 // applies to lists tuples and dicts, does not override the main schema `type`
-                Some("include-exclude-sequence") | Some("include-exclude-dict") => (),
+                Some("include-exclude-sequence" | "include-exclude-dict") => (),
                 // applies specifically to bytes, does not override the main schema `type`
                 Some("base64") => (),
                 Some(ser_type) => {

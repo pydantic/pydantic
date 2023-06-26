@@ -97,7 +97,7 @@ impl BuildValidator for ListValidator {
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let item_validator = get_items_schema(schema, config, definitions)?;
-        let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
+        let inner_name = item_validator.as_ref().map_or("any", |v| v.get_name());
         let name = format!("{}[{inner_name}]", Self::EXPECTED_TYPE);
         Ok(Self {
             strict: crate::build_tools::is_strict(schema, config)?,
