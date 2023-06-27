@@ -4,4 +4,17 @@ The following table provides details on how Pydantic converts data during valida
 
 See [Strict Mode](models.md#strict-mode) for more details.
 
-{{ conversion_table }}
+=== "All"
+{{ conversion_table_all }}
+
+=== "JSON"
+{{ conversion_table_json }}
+
+=== "JSON - Strict"
+{{ conversion_table_json_strict }}
+
+=== "Python"
+{{ conversion_table_python }}
+
+=== "Python - Strict"
+{{ conversion_table_python_strict }}
