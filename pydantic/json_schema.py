@@ -646,7 +646,7 @@ class GenerateJsonSchema:
         return json_schema
 
     def tuple_variable_schema(self, schema: core_schema.TupleVariableSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a variable tuple schema e.g. Tuple[int, ...].
+        """Generates a JSON schema that matches a variable tuple schema e.g. `Tuple[int, ...]`.
 
         Args:
             schema: The core schema.
