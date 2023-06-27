@@ -1365,7 +1365,7 @@ table: list[Row] = [
         'Strict',
         'JSON',
         condition='Input value should be convertible to enum values.',
-        core_schemas=[core_schema.PlainValidatorFunctionSchema()],
+        core_schemas=[core_schema.PlainValidatorFunctionSchema],
     ),
     Row(
         Enum,
@@ -1388,7 +1388,7 @@ table: list[Row] = [
         'Strict',
         'JSON',
         condition='Input value should be convertible to enum values.',
-        core_schemas=[core_schema.PlainValidatorFunctionSchema()],
+        core_schemas=[core_schema.PlainValidatorFunctionSchema],
     ),
     Row(
         IntEnum,

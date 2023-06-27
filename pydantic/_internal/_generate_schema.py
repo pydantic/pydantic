@@ -488,13 +488,13 @@ class GenerateSchema:
             pass
 
         if obj is Any or obj is object:
-            return core_schema.AnySchema(type='any')
+            return core_schema.any_schema()
         elif obj is None or obj is _typing_extra.NoneType:
-            return core_schema.NoneSchema(type='none')
+            return core_schema.none_schema()
         elif obj == type:
             return self._type_schema()
         elif _typing_extra.is_callable_type(obj):
-            return core_schema.CallableSchema(type='callable')
+            return core_schema.callable_schema()
         elif _typing_extra.is_literal_type(obj):
             return self._literal_schema(obj)
         elif is_typeddict(obj):
@@ -512,7 +512,7 @@ class GenerateSchema:
             return self._unsubstituted_typevar_schema(obj)
         elif is_finalvar(obj):
             if obj is Final:
-                return core_schema.AnySchema(type='any')
+                return core_schema.any_schema()
             return self.generate_schema(get_args(obj)[0])
         elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
             return self._callable_schema(obj)
@@ -851,12 +851,8 @@ class GenerateSchema:
             # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
             annotations = {k: Any for k in namedtuple_cls._fields}
 
-        arguments_schema = core_schema.ArgumentsSchema(
-            type='arguments',
-            arguments_schema=[
-                self._generate_parameter_schema(field_name, annotation)
-                for field_name, annotation in annotations.items()
-            ],
+        arguments_schema = core_schema.arguments_schema(
+            [self._generate_parameter_schema(field_name, annotation) for field_name, annotation in annotations.items()],
             metadata=build_metadata_dict(js_prefer_positional_arguments=True),
         )
         return core_schema.call_schema(arguments_schema, namedtuple_cls)
@@ -1138,7 +1134,7 @@ class GenerateSchema:
         elif typevar.__constraints__:
             return self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
         else:
-            return core_schema.AnySchema(type='any')
+            return core_schema.any_schema()
 
     def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
         return_type_schema = self.generate_schema(d.info.return_type)
