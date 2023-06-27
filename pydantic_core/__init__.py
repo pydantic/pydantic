@@ -10,6 +10,7 @@ from ._pydantic_core import (
     PydanticSerializationError,
     PydanticSerializationUnexpectedValue,
     PydanticUndefined,
+    PydanticUndefinedType,
     SchemaError,
     SchemaSerializer,
     SchemaValidator,

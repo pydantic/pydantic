@@ -20,15 +20,14 @@ pub enum ErrorMode {
     Json,
 }
 
-impl TryFrom<Option<&str>> for ErrorMode {
+impl TryFrom<&str> for ErrorMode {
     type Error = PyErr;
 
-    fn try_from(error_mode: Option<&str>) -> PyResult<Self> {
+    fn try_from(error_mode: &str) -> PyResult<Self> {
         match error_mode {
-            None => Ok(Self::Python),
-            Some("python") => Ok(Self::Python),
-            Some("json") => Ok(Self::Json),
-            Some(s) => py_err!(PyValueError; "Invalid error mode: {}", s),
+            "python" => Ok(Self::Python),
+            "json" => Ok(Self::Json),
+            s => py_err!(PyValueError; "Invalid error mode: {}", s),
         }
     }
 }
