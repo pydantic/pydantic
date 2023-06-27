@@ -89,7 +89,7 @@ nav:
   - 'Exporting Models': usage/exporting_models.md
   - 'Computed Fields': usage/computed_fields.md
   - 'Dataclasses': usage/dataclasses.md
-  - '@validate_call Decorator': usage/validation_decorator.md
+  - 'Validation Decorator': usage/validation_decorator.md
   - 'Postponed Annotations': usage/postponed_annotations.md
   - 'Conversion Table': usage/conversion_table.md
   - 'Settings Management': usage/pydantic_settings.md
