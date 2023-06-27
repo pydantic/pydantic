@@ -4644,24 +4644,13 @@ def test_default_union_class():
     assert isinstance(Model(y=B(x='b')).y, B)
 
 
-def test_union_subclass():
+@pytest.mark.parametrize('max_length', [10, None])
+def test_union_subclass(max_length: Union[int, None]):
     class MyStr(str):
         ...
 
     class Model(BaseModel):
-        x: Union[int, str]
-
-    v = Model(x=MyStr('1')).x
-    assert type(v) is MyStr
-    assert v == '1'
-
-
-def test_union_subclass_constrained():
-    class MyStr(str):
-        ...
-
-    class Model(BaseModel):
-        x: Union[int, Annotated[str, Field(max_length=10)]]
+        x: Union[int, Annotated[str, Field(max_length=max_length)]]
 
     v = Model(x=MyStr('1')).x
     assert type(v) is MyStr
