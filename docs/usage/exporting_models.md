@@ -10,7 +10,7 @@ This is the primary way of converting a model to a dictionary. Sub-models will b
     and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
     done recursively.
 
-See the [API docs for `model_dump`](../api/main.md#pydantic.main.BaseModel.model_dump) for more information.
+See the [API docs for `model_dump`][pydantic.main.BaseModel.model_dump] for more information.
 
 Example:
 
@@ -641,7 +641,7 @@ print(t.model_dump(include={'id': True, 'user': {'id'}}))
 ## `model_copy(...)`
 
 `model_copy()` allows models to be duplicated (with optional updates), which is particularly useful when working with
-frozen models. See the [API docs for `model_copy`](../api/main.md#pydantic.main.BaseModel.model_copy) for more
+frozen models. See the [API docs for `model_copy`][pydantic.main.BaseModel.model_copy] for more
 information.
 
 Example:

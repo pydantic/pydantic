@@ -1,7 +1,7 @@
 
 The `Field` function is used to customize and add metadata to fields of models.
 
-See the [`Field`](/api/fields/#pydantic.fields.Field) API reference for additional details.
+See the [`Field`][pydantic.fields.Field] API reference for additional details.
 
 ## Default values
 
@@ -72,7 +72,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 1. The alias `'username'` is used for instance creation and validation.
 2. We are using `model_dump` to convert the model into a serializable format.
 
-    You can see more details about [`model_dump`](/api/main/#pydantic.main.BaseModel.model_dump) in the API reference.
+    You can see more details about [`model_dump`][pydantic.main.BaseModel.model_dump] in the API reference.
 
     Note that the `by_alias` keyword argument defaults to `False`, and must be specified explicitly to dump
     models using the field (serialization) aliases.
@@ -123,8 +123,8 @@ In case you use `alias` together with `validation_alias` or `serialization_alias
 the `validation_alias` will have priority over `alias` for validation, and `serialization_alias` will have priority
 over `alias` for serialization.
 
-You can read more about [Alias Precedence](/usage/model_config/#alias-precedence) in the
-[Model Config](/usage/model_config/) documentation.
+You can read more about [Alias Precedence](model_config.md#alias-precedence) in the
+[Model Config](model_config.md) documentation.
 
 
 ??? tip "VSCode and Pyright users"
@@ -145,7 +145,7 @@ You can read more about [Alias Precedence](/usage/model_config/#alias-precedence
     1. VSCode will NOT show a warning here.
 
     When the `'alias'` keyword argument is specified, even if you set `populate_by_name` to `True` in the
-    [Model Config](/usage/model_config/#populate-by-name), VSCode will show a warning when instantiating
+    [Model Config](model_config.md#populate-by-name), VSCode will show a warning when instantiating
     a model using the field name (though it will work at runtime) — in this case, `'name'`:
 
     ```py
@@ -232,7 +232,7 @@ print(user)
 
 1. We are using `model_validate` to validate a dictionary using the field aliases.
 
-    You can see more details about [`model_validate`](/api/main/#pydantic.main.BaseModel.model_validate) in the API reference.
+    You can see more details about [`model_validate`][pydantic.main.BaseModel.model_validate] in the API reference.
 
 In the `'first_name'` field, we are using the alias `'names'` and the index `0` to specify the path to the first name.
 In the `'last_name'` field, we are using the alias `'names'` and the index `1` to specify the path to the last name.
@@ -728,10 +728,10 @@ print(User.model_json_schema())
 TODO: Add `final`, and `alias_priority` parameters.
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
-[Discriminated Unions]: /usage/types/unions/#discriminated-unions-aka-tagged-unions
-[Helper Functions]: /usage/models/#helper-functions
-[Models]: /usage/models/
+[Discriminated Unions]: types/unions.md#discriminated-unions-aka-tagged-unions
+[Helper Functions]: models.md#helper-functions
+[Models]: models.md
 [init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
-[Validate Assignment]: /usage/models/#validate-assignment
-[Exporting Models]: /usage/exporting_models/#model-and-field-level-include-and-exclude
+[Validate Assignment]: models.md#validate-assignment
+[Exporting Models]: exporting_models.md#model-and-field-level-include-and-exclude
