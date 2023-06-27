@@ -1929,6 +1929,7 @@ class GenerateJsonSchema:
 
         Args:
             kind: The kind of warning to render. It can be one of the following:
+
                 - 'skipped-choice': A choice field was skipped because it had no valid choices.
                 - 'non-serializable-default': A default value was skipped because it was not JSON-serializable.
             detail: A string with additional details about the warning.
@@ -1960,6 +1961,7 @@ def model_json_schema(
         ref_template: The template to use for generating JSON Schema references.
         schema_generator: The class to use for generating the JSON Schema.
         mode: The mode to use for generating the JSON Schema. It can be one of the following:
+
             - 'validation': Generate a JSON Schema for validating data.
             - 'serialization': Generate a JSON Schema for serializing data.
 
