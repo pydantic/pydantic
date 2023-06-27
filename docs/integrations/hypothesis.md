@@ -7,5 +7,7 @@ many standard library types, and generic types from the
 
 Pydantic v2.0 drops built-in support for Hypothesis and no more ships with the integrated Hypothesis plugin.
 
-We are temporarily removing the Hypothesis plugin in favor of another mechanism discussed here - [Way to communicate more information between libraries · Issue #37 · annotated-types/annotated-types](https://github.com/annotated-types/annotated-types/issues/37).
-It is also possible that Hypothesis plugin will be back in Pydantic v2.0+ (see [V2: hypothesis plugin rewrite · Issue #4682 · pydantic/pydantic](https://github.com/pydantic/pydantic/issues/4682)).
+!!! warning
+    We are temporarily removing the Hypothesis plugin in favor of studying a different mechanism. For more information, see the issue [annotated-types/annotated-types#37](https://github.com/annotated-types/annotated-types/issues/37).
+
+    The Hypothesis plugin may be back in a future release. Subscribe to [pydantic/pydantic#4682](https://github.com/pydantic/pydantic/issues/4682) for updates.
