@@ -23,15 +23,15 @@ pub(crate) struct SerializationState {
 }
 
 impl SerializationState {
-    pub fn new(timedelta_mode: Option<&str>, bytes_mode: Option<&str>) -> Self {
+    pub fn new(timedelta_mode: &str, bytes_mode: &str) -> PyResult<Self> {
         let warnings = CollectWarnings::new(false);
         let rec_guard = SerRecursionGuard::default();
-        let config = SerializationConfig::from_args(timedelta_mode, bytes_mode).unwrap();
-        Self {
+        let config = SerializationConfig::from_args(timedelta_mode, bytes_mode)?;
+        Ok(Self {
             warnings,
             rec_guard,
             config,
-        }
+        })
     }
 
     #[allow(clippy::too_many_arguments)]

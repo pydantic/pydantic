@@ -128,12 +128,12 @@ impl<'a> IntoPy<ValError<'a>> for ValidationError {
 #[pymethods]
 impl ValidationError {
     #[staticmethod]
-    #[pyo3(signature = (title, line_errors, error_mode=None, hide_input=false))]
+    #[pyo3(signature = (title, line_errors, error_mode="python", hide_input=false))]
     fn from_exception_data(
         py: Python,
         title: PyObject,
         line_errors: &PyList,
-        error_mode: Option<&str>,
+        error_mode: &str,
         hide_input: bool,
     ) -> PyResult<Py<Self>> {
         Py::new(
@@ -186,7 +186,7 @@ impl ValidationError {
         include_url: bool,
         include_context: bool,
     ) -> PyResult<&'py PyString> {
-        let state = SerializationState::new(None, None);
+        let state = SerializationState::new("iso8601", "utf8")?;
         let extra = state.extra(py, &SerMode::Json, true, false, false, true, None);
         let serializer = ValidationErrorSerializer {
             py,
