@@ -189,7 +189,6 @@ all_errors = [
     ('get_attribute_error', 'Error extracting attribute: foo', {'error': 'foo'}),
     ('model_class_type', 'Input should be an instance of foo', {'class_name': 'foo'}),
     ('none_required', 'Input should be None', None),
-    ('bool', 'Input should be a valid boolean', None),
     ('greater_than', 'Input should be greater than 42.1', {'gt': 42.1}),
     ('greater_than', 'Input should be greater than 42.1', {'gt': '42.1'}),
     ('greater_than', 'Input should be greater than 2020-01-01', {'gt': '2020-01-01'}),

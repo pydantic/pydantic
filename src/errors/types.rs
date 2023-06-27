@@ -98,8 +98,6 @@ pub enum ErrorType {
     // ---------------------
     // None errors
     NoneRequired,
-    // boolean errors
-    Bool,
     // ---------------------
     // generic comparison errors - used for all inequality comparisons except int and float which have their
     // own type, bounds arguments are Strings so they can be created from any type
@@ -471,7 +469,6 @@ impl ErrorType {
             Self::GetAttributeError {..} => "Error extracting attribute: {error}",
             Self::ModelClassType {..} => "Input should be an instance of {class_name}",
             Self::NoneRequired => "Input should be None",
-            Self::Bool => "Input should be a valid boolean",
             Self::GreaterThan {..} => "Input should be greater than {gt}",
             Self::GreaterThanEqual {..} => "Input should be greater than or equal to {ge}",
             Self::LessThan {..} => "Input should be less than {lt}",
