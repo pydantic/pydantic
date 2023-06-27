@@ -175,11 +175,15 @@ except ValidationError as e:
     """
 ```
 
-Note that the type of validator dictates the order of validation, not the order in which validators are applied in an `Annotated` type or class definition. In the following example, `func2` will be called before `func1`.
+!!! note "Validation order"
+    Validation order matters. Within a given type, validation goes from right to left and back. That is, it goes
+    from right to left running all "before" validators (or calling into "wrap" validators), then left to right back out calling all "after" validators.
 
-```py test="skip" lint="skip" upgrade="skip"
-MyVal = Annotated[int, AfterValidator(func1), BeforeValidator(func2)]
-```
+    In the following example, `func2` will be called before `func1`.
+
+    ```py test="skip" lint="skip" upgrade="skip"
+    MyVal = Annotated[int, AfterValidator(func1), BeforeValidator(func2)]
+    ```
 
 A few more things to note:
 
