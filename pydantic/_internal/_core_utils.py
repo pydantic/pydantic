@@ -475,6 +475,9 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
 
     schema = walk_core_schema(schema, flatten_refs)
 
+    for def_schema in all_defs.values():
+        walk_core_schema(def_schema, flatten_refs)
+
     if not inline:
         return make_result(schema, all_defs.values())
 
