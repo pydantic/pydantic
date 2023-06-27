@@ -199,23 +199,15 @@ def fruit_enum_fixture():
     return FruitEnum
 
 
-@pytest.mark.parametrize('kwargs', [{}, {'to_lower': True}], ids=repr)
-def test_strict_subclass(FruitEnum, kwargs):
-    v = SchemaValidator(core_schema.str_schema(strict=True, **kwargs))
-    assert v.validate_python('foobar') == 'foobar'
-    with pytest.raises(ValidationError, match='type=string_type,'):
-        v.validate_python(b'foobar')
-    with pytest.raises(ValidationError, match='type=string_sub_type,') as exc_info:
-        v.validate_python(FruitEnum.pear)
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_sub_type',
-            'loc': (),
-            'msg': 'Input should be a string, not an instance of a subclass of str',
-            'input': FruitEnum.pear,
-        }
-    ]
+@pytest.mark.parametrize('to_lower', [False, True], ids=repr)
+def test_strict_subclass(to_lower: bool):
+    v = SchemaValidator(core_schema.str_schema(strict=True, to_lower=to_lower))
+
+    class StrSubclass(str):
+        pass
+
+    res = v.validate_python(StrSubclass('ABC'))
+    assert res == 'abc' if to_lower else 'ABC'
 
 
 @pytest.mark.parametrize('kwargs', [{}, {'to_lower': True}], ids=repr)

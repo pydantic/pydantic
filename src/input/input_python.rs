@@ -186,12 +186,18 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
-        if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
+        if let Ok(py_str) = <PyString as PyTryFrom>::try_from(self) {
             Ok(py_str.into())
-        } else if PyString::is_type_of(self) {
-            Err(ValError::new(ErrorType::StringSubType, self))
         } else {
             Err(ValError::new(ErrorType::StringType, self))
+        }
+    }
+
+    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
+        if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
+            Ok(EitherString::Py(py_str))
+        } else {
+            Err(ValError::new(ErrorType::IntType, self))
         }
     }
 
