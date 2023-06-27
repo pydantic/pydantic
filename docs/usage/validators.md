@@ -1,3 +1,5 @@
+## Field validators
+
 Custom validation and complex relationships between objects can be achieved using the `@field_validator` decorator.
 
 ```py
@@ -85,9 +87,23 @@ A few things to note on validators:
   * If validation fails on another field (or that field is missing) it will not be included in `values`, hence
     `if 'password1' in values and ...` in this example.
 
-## Pre and per-item validators
+## Before, after, and wrap validators
 
-Validators can do a few more complex things:
+Pydantic provides additional validation classes that can be used to specify when validation occurs.
+
+- [`AfterValidator`][pydantic.functional_validators.AfterValidator] indicates that field validation should be applied **after** the inner validation logic.
+- [`BeforeValidator`][pydantic.functional_validators.BeforeValidator] indicates that field validation should be applied **before** the inner validation logic.
+- [`ModelAfterValidator`][pydantic.functional_validators.ModelAfterValidator] indicates that model validation should be applied **after** the inner validation logic.
+- [`ModelBeforeValidator`][pydantic.functional_validators.ModelBeforeValidator] indicates that model field validation should be applied **before** the inner validation logic.
+- [`ModelWrapValidator`][pydantic.functional_validators.ModelWrapValidator] indicates that model validation should be applied **around** the inner validation logic.
+- [`PlainValidator`][pydantic.functional_validators.PlainValidator] indicates that field validation should be applied **instead of** the inner validation logic.
+- [`SkipValidation`][pydantic.functional_validators.SkipValidation] indicates that validation should be **skipped**.
+- [`WrapValidator`][pydantic.functional_validators.WrapValidator] indicates that field validation should be applied **around** the inner validation logic.
+
+You can also use the  `mode` argument for `@field_validator` and `@model_validator` to specify when validation occurs.
+
+!!! note
+    You can use multiple before, after, or wrap validators, but only one `PlainValidator`.
 
 ```py
 from typing import List
@@ -159,12 +175,14 @@ except ValidationError as e:
     """
 ```
 
+Note that the type of validator dictates the order of validation, not the order in which validators are applied in an `Annotated` type or class definition. For example, in the example `Annotated[int, AfterValidator(func1), BeforeValidator(func2)]`, `func2` will be called before `func1`.
+
 A few more things to note:
 
-* a single validator can be applied to multiple fields by passing it multiple field names
-* a single validator can also be called on *all* fields by passing the special value `'*'`
-* the keyword argument `mode='before'` will cause the validator to be called prior to other validation
-* using validator annotations inside of Annotated allows applying validators to items of collections
+* A single validator can be applied to multiple fields by passing it multiple field names.
+* A single validator can also be called on *all* fields by passing the special value `'*'`.
+* The keyword argument `mode='before'` will cause the validator to be called prior to other validation.
+* Using validator annotations inside of `Annotated` allows applying validators to items of collections.
 
 ### Generic validated collections
 
@@ -195,7 +213,43 @@ print(DemoModel(int_list=[3, 2, 1], name_list=['adrian g', 'David']))
 #> int_list=[1, 2, 3] name_list=['Adrian G', 'David']
 ```
 
-## Validate Always
+### Wrap validators
+
+Wrap validators are useful for cases where you want to validate a value, but also want to return a default value if validation fails.
+
+```py
+from datetime import datetime
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, ValidationError, WrapValidator
+
+
+def validate_timestamp(v, handler):
+    if v == 'now':
+        # we don't want to bother with further validation, just return the new value
+        return datetime.now()
+    try:
+        return handler(v)
+    except ValidationError:
+        # validation failed, in this case we want to return a default value
+        return datetime(2000, 1, 1)
+
+
+MyTimestamp = Annotated[datetime, WrapValidator(validate_timestamp)]
+
+
+class Model(BaseModel):
+    a: MyTimestamp
+
+
+print(Model(a='now').a)
+#> 2032-01-02 03:04:05.000006
+print(Model(a='invalid').a)
+#> 2000-01-01 00:00:00
+```
+
+## Validate always
 
 **TODO this content is wrong!**
 
@@ -270,7 +324,7 @@ declarative.
     define a help function with which you will avoid setting `allow_reuse=True` over and
     over again.
 
-## Model Validators
+## Model validators
 
 Validation can also be performed on the entire model's data.
 
@@ -334,14 +388,14 @@ behaviour can be changed by setting the `skip_on_failure=True` keyword argument 
 The `values` argument will be a dict containing the values which passed field validation and
 field defaults where applicable.
 
-## Field Checks
+## Field checks
 
 On class creation, validators are checked to confirm that the fields they specify actually exist on the model.
 
 Occasionally however this is undesirable: e.g. if you define a validator to validate fields on inheriting models.
 In this case you should set `check_fields=False` on the validator.
 
-## Dataclass Validators
+## Dataclass validators
 
 Validators also work with Pydantic dataclasses.
 
@@ -367,53 +421,4 @@ print(DemoDataclass())
 #> DemoDataclass(ts=datetime.datetime(2032, 1, 2, 3, 4, 5, 6))
 print(DemoDataclass(ts='2017-11-08T14:00'))
 #> DemoDataclass(ts=datetime.datetime(2017, 11, 8, 14, 0))
-```
-
-## Before and after validators
-
-Pydantic provides additional validation classes that can be used to specify when validation occurs.
-
-- [`AfterValidator`][pydantic.functional_validators.AfterValidator] indicates that field validation should be applied **after** the inner validation logic.
-- [`BeforeValidator`][pydantic.functional_validators.BeforeValidator] indicates that field validation should be applied **before** the inner validation logic.
-- [`ModelAfterValidator`][pydantic.functional_validators.ModelAfterValidator] indicates that model validation should be applied **after** the inner validation logic.
-- [`ModelBeforeValidator`][pydantic.functional_validators.ModelBeforeValidator] indicates that model field validation should be applied **before** the inner validation logic.
-- [`ModelWrapValidator`][pydantic.functional_validators.ModelWrapValidator] indicates that model validation should be applied **around** the inner validation logic.
-- [`SkipValidation`][pydantic.functional_validators.SkipValidation] indicates that validation should be **skipped**.
-- [`WrapValidator`][pydantic.functional_validators.WrapValidator] indicates that field validation should be applied **around** the inner validation logic.
-
-You can also use the  `mode` argument for `@field_validator` and `@model_validator` to specify when validation occurs.
-
-
-```py
-from typing_extensions import Annotated
-
-from pydantic import AfterValidator, BaseModel, ValidationError
-
-MyInt = Annotated[int, AfterValidator(lambda v: v + 1)]
-
-
-class Model(BaseModel):
-    a: MyInt
-
-
-print(Model(a=1).a)
-#> 2
-
-try:
-    Model(a='a')
-except ValidationError as e:
-    print(e.json(indent=2))
-    """
-    [
-      {
-        "type": "int_parsing",
-        "loc": [
-          "a"
-        ],
-        "msg": "Input should be a valid integer, unable to parse string as an integer",
-        "input": "a",
-        "url": "https://errors.pydantic.dev/2/v/int_parsing"
-      }
-    ]
-    """
 ```
