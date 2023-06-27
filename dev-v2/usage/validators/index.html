@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pre-and-per-item-validators" class="md-skip">
+        <a href="#field-validators" class="md-skip">
           Skip to content
         </a>
       
@@ -1052,16 +1052,30 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pre-and-per-item-validators" class="md-nav__link">
-    Pre and per-item validators
+  <a href="#field-validators" class="md-nav__link">
+    Field validators
   </a>
   
-    <nav class="md-nav" aria-label="Pre and per-item validators">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-after-and-wrap-validators" class="md-nav__link">
+    Before, after, and wrap validators
+  </a>
+  
+    <nav class="md-nav" aria-label="Before, after, and wrap validators">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#generic-validated-collections" class="md-nav__link">
     Generic validated collections
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wrap-validators" class="md-nav__link">
+    Wrap validators
   </a>
   
 </li>
@@ -1073,7 +1087,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#validate-always" class="md-nav__link">
-    Validate Always
+    Validate always
   </a>
   
 </li>
@@ -1087,21 +1101,21 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#model-validators" class="md-nav__link">
-    Model Validators
+    Model validators
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#field-checks" class="md-nav__link">
-    Field Checks
+    Field checks
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#dataclass-validators" class="md-nav__link">
-    Dataclass Validators
+    Dataclass validators
   </a>
   
 </li>
@@ -2097,16 +2111,30 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pre-and-per-item-validators" class="md-nav__link">
-    Pre and per-item validators
+  <a href="#field-validators" class="md-nav__link">
+    Field validators
   </a>
   
-    <nav class="md-nav" aria-label="Pre and per-item validators">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#before-after-and-wrap-validators" class="md-nav__link">
+    Before, after, and wrap validators
+  </a>
+  
+    <nav class="md-nav" aria-label="Before, after, and wrap validators">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#generic-validated-collections" class="md-nav__link">
     Generic validated collections
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wrap-validators" class="md-nav__link">
+    Wrap validators
   </a>
   
 </li>
@@ -2118,7 +2146,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#validate-always" class="md-nav__link">
-    Validate Always
+    Validate always
   </a>
   
 </li>
@@ -2132,21 +2160,21 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#model-validators" class="md-nav__link">
-    Model Validators
+    Model validators
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#field-checks" class="md-nav__link">
-    Field Checks
+    Field checks
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#dataclass-validators" class="md-nav__link">
-    Dataclass Validators
+    Dataclass validators
   </a>
   
 </li>
@@ -2172,6 +2200,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Validators</h1>
 
+<h2 id="field-validators">Field validators<a class="headerlink" href="#field-validators" title="Permanent link">&para;</a></h2>
 <p>Custom validation and complex relationships between objects can be achieved using the <code>@field_validator</code> decorator.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core.core_schema</span> <span class="kn">import</span> <span class="n">FieldValidationInfo</span>
 
@@ -2262,8 +2291,23 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
     <code>if 'password1' in values and ...</code> in this example.</p>
 </li>
 </ul>
-<h2 id="pre-and-per-item-validators">Pre and per-item validators<a class="headerlink" href="#pre-and-per-item-validators" title="Permanent link">&para;</a></h2>
-<p>Validators can do a few more complex things:</p>
+<h2 id="before-after-and-wrap-validators">Before, after, and wrap validators<a class="headerlink" href="#before-after-and-wrap-validators" title="Permanent link">&para;</a></h2>
+<p>Pydantic provides additional validation classes that can be used to specify when validation occurs.</p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>AfterValidator</code></a> indicates that field validation should be applied <strong>after</strong> the inner validation logic.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.BeforeValidator"><code>BeforeValidator</code></a> indicates that field validation should be applied <strong>before</strong> the inner validation logic.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.ModelAfterValidator"><code>ModelAfterValidator</code></a> indicates that model validation should be applied <strong>after</strong> the inner validation logic.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.ModelBeforeValidator"><code>ModelBeforeValidator</code></a> indicates that model field validation should be applied <strong>before</strong> the inner validation logic.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.ModelWrapValidator"><code>ModelWrapValidator</code></a> indicates that model validation should be applied <strong>around</strong> the inner validation logic.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>PlainValidator</code></a> indicates that field validation should be applied <strong>instead of</strong> the inner validation logic.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.SkipValidation"><code>SkipValidation</code></a> indicates that validation should be <strong>skipped</strong>.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.WrapValidator"><code>WrapValidator</code></a> indicates that field validation should be applied <strong>around</strong> the inner validation logic.</li>
+</ul>
+<p>You can also use the  <code>mode</code> argument for <code>@field_validator</code> and <code>@model_validator</code> to specify when validation occurs.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can use multiple before, after, or wrap validators, but only one <code>PlainValidator</code>.</p>
+</div>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2406,12 +2450,20 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
 </div>
 </div>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Validation order</p>
+<p>Validation order matters. Within a given type, validation goes from right to left and back. That is, it goes
+from right to left running all "before" validators (or calling into "wrap" validators), then left to right back out calling all "after" validators.</p>
+<p>In the following example, <code>func2</code> will be called before <code>func1</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="n">MyVal</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">func1</span><span class="p">),</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">func2</span><span class="p">)]</span>
+</code></pre></div>
+</div>
 <p>A few more things to note:</p>
 <ul>
-<li>a single validator can be applied to multiple fields by passing it multiple field names</li>
-<li>a single validator can also be called on <em>all</em> fields by passing the special value <code>'*'</code></li>
-<li>the keyword argument <code>mode='before'</code> will cause the validator to be called prior to other validation</li>
-<li>using validator annotations inside of Annotated allows applying validators to items of collections</li>
+<li>A single validator can be applied to multiple fields by passing it multiple field names.</li>
+<li>A single validator can also be called on <em>all</em> fields by passing the special value <code>'*'</code>.</li>
+<li>The keyword argument <code>mode='before'</code> will cause the validator to be called prior to other validation.</li>
+<li>Using validator annotations inside of <code>Annotated</code> allows applying validators to items of collections.</li>
 </ul>
 <h3 id="generic-validated-collections">Generic validated collections<a class="headerlink" href="#generic-validated-collections" title="Permanent link">&para;</a></h3>
 <p>To validate individual items of a collection (list, dict, etc.) field you can use <code>Annotated</code> to apply validators to the inner items.
@@ -2468,7 +2520,77 @@ In this example we also use type aliases to create a generic validated collectio
 </div>
 </div>
 </div>
-<h2 id="validate-always">Validate Always<a class="headerlink" href="#validate-always" title="Permanent link">&para;</a></h2>
+<h3 id="wrap-validators">Wrap validators<a class="headerlink" href="#wrap-validators" title="Permanent link">&para;</a></h3>
+<p>Wrap validators are useful for cases where you want to validate a value, but also want to return a default value if validation fails.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">WrapValidator</span>
+
+
+<span class="k">def</span> <span class="nf">validate_timestamp</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s1">&#39;now&#39;</span><span class="p">:</span>
+        <span class="c1"># we don&#39;t want to bother with further validation, just return the new value</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
+        <span class="c1"># validation failed, in this case we want to return a default value</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+
+<span class="n">MyTimestamp</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="n">WrapValidator</span><span class="p">(</span><span class="n">validate_timestamp</span><span class="p">)]</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">MyTimestamp</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;now&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1">#&gt; 2032-01-02 03:04:05.000006</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;invalid&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1">#&gt; 2000-01-01 00:00:00</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">WrapValidator</span>
+
+
+<span class="k">def</span> <span class="nf">validate_timestamp</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s1">&#39;now&#39;</span><span class="p">:</span>
+        <span class="c1"># we don&#39;t want to bother with further validation, just return the new value</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
+        <span class="c1"># validation failed, in this case we want to return a default value</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+
+<span class="n">MyTimestamp</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="n">WrapValidator</span><span class="p">(</span><span class="n">validate_timestamp</span><span class="p">)]</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">MyTimestamp</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;now&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1">#&gt; 2032-01-02 03:04:05.000006</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;invalid&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1">#&gt; 2000-01-01 00:00:00</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="validate-always">Validate always<a class="headerlink" href="#validate-always" title="Permanent link">&para;</a></h2>
 <p><strong>TODO this content is wrong!</strong></p>
 <p>For performance reasons, by default validators are not called for fields when a value is not supplied.
 However there are situations where it may be useful or required to always call the validator, e.g.
@@ -2533,7 +2655,7 @@ declarative.</p>
 define a help function with which you will avoid setting <code>allow_reuse=True</code> over and
 over again.</p>
 </div>
-<h2 id="model-validators">Model Validators<a class="headerlink" href="#model-validators" title="Permanent link">&para;</a></h2>
+<h2 id="model-validators">Model validators<a class="headerlink" href="#model-validators" title="Permanent link">&para;</a></h2>
 <p>Validation can also be performed on the entire model's data.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">model_validator</span>
 
@@ -2591,11 +2713,11 @@ they're called after field validation.</p>
 behaviour can be changed by setting the <code>skip_on_failure=True</code> keyword argument to the validator.
 The <code>values</code> argument will be a dict containing the values which passed field validation and
 field defaults where applicable.</p>
-<h2 id="field-checks">Field Checks<a class="headerlink" href="#field-checks" title="Permanent link">&para;</a></h2>
+<h2 id="field-checks">Field checks<a class="headerlink" href="#field-checks" title="Permanent link">&para;</a></h2>
 <p>On class creation, validators are checked to confirm that the fields they specify actually exist on the model.</p>
 <p>Occasionally however this is undesirable: e.g. if you define a validator to validate fields on inheriting models.
 In this case you should set <code>check_fields=False</code> on the validator.</p>
-<h2 id="dataclass-validators">Dataclass Validators<a class="headerlink" href="#dataclass-validators" title="Permanent link">&para;</a></h2>
+<h2 id="dataclass-validators">Dataclass validators<a class="headerlink" href="#dataclass-validators" title="Permanent link">&para;</a></h2>
 <p>Validators also work with Pydantic dataclasses.</p>
 <p><strong>TODO: Change this example so that it <em>should</em> use a validator; right now it would be better off with default_factory..</strong></p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
