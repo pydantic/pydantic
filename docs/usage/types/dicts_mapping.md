@@ -63,6 +63,8 @@ except ValidationError as e:
     We therefore recommend using [typing-extensions](https://pypi.org/project/typing-extensions/) with Python 3.8 as well.
 
 Same as `dict` but Pydantic will validate the dictionary since keys are annotated.
+You can define `__pydantic_config__` to change the model inherited from `TypedDict`.
+See [Model Config](../model_config.md) for more details.
 
 ```py
 from typing import Optional
@@ -79,7 +81,7 @@ class UserIdentity(TypedDict, total=False):
 
 
 class User(TypedDict):
-    __pydantic_config__ = ConfigDict(extra='forbid')  # type: ignore
+    __pydantic_config__ = ConfigDict(extra='forbid')
 
     identity: UserIdentity
     age: int
