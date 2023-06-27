@@ -625,7 +625,7 @@ class GenerateJsonSchema:
         return json_schema
 
     def tuple_positional_schema(self, schema: core_schema.TuplePositionalSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a positional tuple schema e.g. Tuple[int, str, bool].
+        """Generates a JSON schema that matches a positional tuple schema e.g. `Tuple[int, str, bool]`.
 
         Args:
             schema: The core schema.
