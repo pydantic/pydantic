@@ -4656,6 +4656,18 @@ def test_union_subclass():
     assert v == '1'
 
 
+def test_union_subclass_constrained():
+    class MyStr(str):
+        ...
+
+    class Model(BaseModel):
+        x: Union[int, Annotated[str, Field(max_length=10)]]
+
+    v = Model(x=MyStr('1')).x
+    assert type(v) is MyStr
+    assert v == '1'
+
+
 def test_union_compound_types():
     class Model(BaseModel):
         values: Union[Dict[str, str], List[str], Dict[str, List[str]]]
