@@ -1151,14 +1151,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#argument-types" class="md-nav__link">
-    Argument Types
+    Argument types
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#function-signatures" class="md-nav__link">
-    Function Signatures
+    Function signatures
   </a>
   
 </li>
@@ -1186,14 +1186,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#async-functions" class="md-nav__link">
-    Async Functions
+    Async functions
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#custom-config" class="md-nav__link">
-    Custom Config
+    Custom config
   </a>
   
 </li>
@@ -1208,14 +1208,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
         
           <li class="md-nav__item">
   <a href="#validation-exception" class="md-nav__link">
-    Validation Exception
+    Validation exception
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#coercion-and-strictness" class="md-nav__link">
-    Coercion and Strictness
+    Coercion and strictness
   </a>
   
 </li>
@@ -1229,14 +1229,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
         
           <li class="md-nav__item">
   <a href="#return-value" class="md-nav__link">
-    Return Value
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#config-and-validators" class="md-nav__link">
-    Config and Validators
+    Return value
   </a>
   
 </li>
@@ -2147,14 +2140,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#argument-types" class="md-nav__link">
-    Argument Types
+    Argument types
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#function-signatures" class="md-nav__link">
-    Function Signatures
+    Function signatures
   </a>
   
 </li>
@@ -2182,14 +2175,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       
         <li class="md-nav__item">
   <a href="#async-functions" class="md-nav__link">
-    Async Functions
+    Async functions
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#custom-config" class="md-nav__link">
-    Custom Config
+    Custom config
   </a>
   
 </li>
@@ -2204,14 +2197,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
         
           <li class="md-nav__item">
   <a href="#validation-exception" class="md-nav__link">
-    Validation Exception
+    Validation exception
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#coercion-and-strictness" class="md-nav__link">
-    Coercion and Strictness
+    Coercion and strictness
   </a>
   
 </li>
@@ -2225,14 +2218,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
         
           <li class="md-nav__item">
   <a href="#return-value" class="md-nav__link">
-    Return Value
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#config-and-validators" class="md-nav__link">
-    Config and Validators
+    Return value
   </a>
   
 </li>
@@ -2270,17 +2256,11 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Validation Decorator</h1>
 
-<p>The <code>validate_call</code> decorator allows the arguments passed to a function to be parsed and validated using
-the function's annotations before the function is called. While under the hood this uses the same approach of model
-creation and initialisation; it provides an extremely easy way to apply validation to your code with minimal
-boilerplate.</p>
-<div class="admonition info">
-<p class="admonition-title">In Beta</p>
-<p>The <code>validate_call</code> decorator is in <strong>beta</strong>, it has been added to Pydantic in <strong>v1.5</strong> on a
-<strong>provisional basis</strong>. It may change significantly in future releases and its interface will not be concrete
-until <strong>v2</strong>. Feedback from the community while it's still provisional would be extremely useful; either comment
-on <a href="https://github.com/pydantic/pydantic/issues/1205">#1205</a> or create a new issue.</p>
-</div>
+<p>The <a class="autorefs autorefs-internal" href="../../api/validate_call/#pydantic.validate_call"><code>@validate_call</code></a> decorator allows the arguments passed to a function to be parsed
+and validated using the function's annotations before the function is called.</p>
+<p>While under the hood this uses the same approach of model creation and initialisation
+(see <a href="../validators/">Validators</a> for more details), it provides an extremely easy way to apply validation
+to your code with minimal boilerplate.</p>
 <p>Example of usage:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
 
@@ -2309,7 +2289,7 @@ on <a href="https://github.com/pydantic/pydantic/issues/1205">#1205</a> or creat
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;wrong&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h2 id="argument-types">Argument Types<a class="headerlink" href="#argument-types" title="Permanent link">&para;</a></h2>
+<h2 id="argument-types">Argument types<a class="headerlink" href="#argument-types" title="Permanent link">&para;</a></h2>
 <p>Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
 as <code>Any</code>. All types listed in <a href="../types/types/">types</a> can be validated, including Pydantic models and
 <a href="../types/types/#custom-data-types">custom types</a>.
@@ -2396,21 +2376,22 @@ As with the rest of Pydantic, types can be coerced by the decorator before they'
 </div>
 <p>A few notes:</p>
 <ul>
-<li>though they're passed as strings, <code>path</code> and <code>regex</code> are converted to a <code>Path</code> object and regex respectively
-by the decorator</li>
-<li><code>max</code> has no type annotation, so will be considered as <code>Any</code> by the decorator</li>
+<li>Though they're passed as strings, <code>path</code> and <code>regex</code> are converted to a <code>Path</code> object and regex respectively
+    by the decorator.</li>
+<li><code>max</code> has no type annotation, so will be considered as <code>Any</code> by the decorator.</li>
 </ul>
-<p>Type coercion like this can be extremely helpful but also confusing or not desired,
-see <a href="#coercion-and-strictness">below</a> for a discussion of <code>validate_call</code>'s limitations in this regard.</p>
-<h2 id="function-signatures">Function Signatures<a class="headerlink" href="#function-signatures" title="Permanent link">&para;</a></h2>
-<p>The decorator is designed to work with functions using all possible parameter configurations and all possible
-combinations of these:</p>
+<p>Type coercion like this can be extremely helpful, but also confusing or not desired.
+See <a href="#coercion-and-strictness">Coercion and strictness</a> for a discussion of <code>@validate_call</code>'s limitations
+in this regard.</p>
+<h2 id="function-signatures">Function signatures<a class="headerlink" href="#function-signatures" title="Permanent link">&para;</a></h2>
+<p>The <code>@validate_call</code> decorator is designed to work with functions using all possible parameter configurations and
+all possible combinations of these:</p>
 <ul>
-<li>positional or keyword arguments with or without defaults</li>
-<li>variable positional arguments defined via <code>*</code> (often <code>*args</code>)</li>
-<li>variable keyword arguments defined via <code>**</code> (often <code>**kwargs</code>)</li>
-<li>keyword only arguments - arguments after <code>*,</code></li>
-<li>positional only arguments - arguments before <code>, /</code> (new in Python 3.8)</li>
+<li>Positional or keyword arguments with or without defaults.</li>
+<li>Variable positional arguments defined via <code>*</code> (often <code>*args</code>).</li>
+<li>Variable keyword arguments defined via <code>**</code> (often <code>**kwargs</code>).</li>
+<li>Keyword-only arguments: arguments after <code>*,</code>.</li>
+<li>Positional-only arguments: arguments before <code>, /</code> (new in Python 3.8).</li>
 </ul>
 <p>To demonstrate all the above parameter types:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">validate_call</span>
@@ -2496,10 +2477,10 @@ combinations of these:</p>
 <span class="c1">#&gt; a=1 b=2 c=(3, 4, 5, 6) d=8 e=9 f={&#39;f&#39;: 10, &#39;spam&#39;: 11}</span>
 </code></pre></div>
 <h2 id="using-field-to-describe-function-arguments">Using Field to describe function arguments<a class="headerlink" href="#using-field-to-describe-function-arguments" title="Permanent link">&para;</a></h2>
-<p><a href="../json_schema/#field-customization">Field</a> can also be used with <code>validate_call</code> to provide extra information about
+<p><a href="../json_schema/#field-customization">Field</a> can also be used with <code>@validate_call</code> to provide extra information about
 the field and validations. In general it should be used in a type hint with
-<a href="../json_schema/#typingannotated-fields">Annotated</a>, unless <code>default_factory</code> is specified, in which case it should be used
-as the default value of the field:</p>
+<a href="../json_schema/#typingannotated-fields">Annotated</a>, unless <code>default_factory</code> is specified, in which case it should be
+used as the default value of the field:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2628,8 +2609,8 @@ arguments and want to call the function in the most performant way (see <a href=
 <span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
 <span class="c1">#&gt; b&#39;good bye, good bye&#39;</span>
 </code></pre></div>
-<h2 id="async-functions">Async Functions<a class="headerlink" href="#async-functions" title="Permanent link">&para;</a></h2>
-<p><code>validate_call</code> can also be used on async functions:</p>
+<h2 id="async-functions">Async functions<a class="headerlink" href="#async-functions" title="Permanent link">&para;</a></h2>
+<p><code>@validate_call</code> can also be used on async functions:</p>
 <div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Connection</span><span class="p">:</span>
     <span class="k">async</span> <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sql</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;testing@example.com&#39;</span>
@@ -2677,14 +2658,9 @@ arguments and want to call the function in the most performant way (see <a href=
 <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 <span class="c1"># requires: `conn.execute()` that will return `&#39;testing@example.com&#39;`</span>
 </code></pre></div>
-<h2 id="custom-config">Custom Config<a class="headerlink" href="#custom-config" title="Permanent link">&para;</a></h2>
-<p>The model behind <code>validate_call</code> can be customised using a config setting which is equivalent to
-setting the <code>Config</code> sub-class in normal models.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The <code>fields</code> and <code>alias_generator</code> properties of <code>Config</code> which allow aliases to be configured are not supported
-yet with <code>@validate_call</code>, using them will raise an error.</p>
-</div>
+<h2 id="custom-config">Custom config<a class="headerlink" href="#custom-config" title="Permanent link">&para;</a></h2>
+<p>The model behind <code>@validate_call</code> can be customised using a <code>config</code> setting, which is equivalent to
+setting the <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict"><code>ConfigDict</code></a> sub-class in normal models.</p>
 <p>Configuration is set using the <code>config</code> keyword argument to the decorator, it may be either a config class
 or a dict of properties which are converted to a class later.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
@@ -2723,37 +2699,27 @@ or a dict of properties which are converted to a class later.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
-<p><code>validate_call</code> has been released on a provisional basis without all the bells and whistles, which may
-be added later, see <a href="https://github.com/pydantic/pydantic/issues/1205">#1205</a> for some more discussion of this.</p>
-<p>In particular:</p>
-<h3 id="validation-exception">Validation Exception<a class="headerlink" href="#validation-exception" title="Permanent link">&para;</a></h3>
-<p>Currently upon validation failure, a standard Pydantic <code>ValidationError</code> is raised,
-see <a href="../models/#error-handling">model error handling</a>.</p>
-<p>This is helpful since it's <code>str()</code> method provides useful details of the error which occurred and methods like
-<code>.errors()</code> and <code>.json()</code> can be useful when exposing the errors to end users, however <code>ValidationError</code> inherits
-from <code>ValueError</code> <strong>not</strong> <code>TypeError</code> which may be unexpected since Python would raise a <code>TypeError</code> upon invalid
-or missing arguments. This may be addressed in future by either allow a custom error or raising a different
+<h3 id="validation-exception">Validation exception<a class="headerlink" href="#validation-exception" title="Permanent link">&para;</a></h3>
+<p>Currently upon validation failure, a standard Pydantic <a class="autorefs autorefs-internal" href="../../api/pydantic_core_init/#pydantic_core.ValidationError"><code>ValidationError</code></a> is raised.
+See <a href="../models/#error-handling">model error handling</a> for details.</p>
+<p>This is helpful since its <code>str()</code> method provides useful details of the error which occurred and methods like
+<code>.errors()</code> and <code>.json()</code> can be useful when exposing the errors to end users. However, <code>ValidationError</code> inherits
+from <code>ValueError</code> <strong>not</strong> <code>TypeError</code>, which may be unexpected since Python would raise a <code>TypeError</code> upon invalid
+or missing arguments. This may be addressed in future by either allowing a custom error or raising a different
 exception by default, or both.</p>
-<h3 id="coercion-and-strictness">Coercion and Strictness<a class="headerlink" href="#coercion-and-strictness" title="Permanent link">&para;</a></h3>
+<h3 id="coercion-and-strictness">Coercion and strictness<a class="headerlink" href="#coercion-and-strictness" title="Permanent link">&para;</a></h3>
 <p>Pydantic currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
-see <a href="../models/#data-conversion">model data conversion</a> and <code>validate_call</code> is no different.</p>
-<p>See <a href="https://github.com/pydantic/pydantic/issues/1098">#1098</a> and other issues with the "strictness" label
-for a discussion of this. If Pydantic gets a "strict" mode in future, <code>validate_call</code> will have an option
-to use this, it may even become the default for the decorator.</p>
+see <a href="../models/#data-conversion">model data conversion</a> and <code>@validate_call</code> is no different.</p>
 <h3 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h3>
 <p>We've made a big effort to make Pydantic as performant as possible
 and argument inspect and model creation is only performed once when the function is defined, however
-there will still be a performance impact to using the <code>validate_call</code> decorator compared to
+there will still be a performance impact to using the <code>@validate_call</code> decorator compared to
 calling the raw function.</p>
 <p>In many situations this will have little or no noticeable effect, however be aware that
-<code>validate_call</code> is not an equivalent or alternative to function definitions in strongly typed languages;
+<code>@validate_call</code> is not an equivalent or alternative to function definitions in strongly typed languages;
 it never will be.</p>
-<h3 id="return-value">Return Value<a class="headerlink" href="#return-value" title="Permanent link">&para;</a></h3>
-<p>The return value of the function is not validated against its return type annotation, this may be added as an option
-in future.</p>
-<h3 id="config-and-validators">Config and Validators<a class="headerlink" href="#config-and-validators" title="Permanent link">&para;</a></h3>
-<p><code>fields</code> and <code>alias_generator</code> on custom <a href="../model_config/"><code>Config</code></a> are not supported, see <a href="#custom-config">above</a>.</p>
-<p>Neither are <a href="../validators/">validators</a>.</p>
+<h3 id="return-value">Return value<a class="headerlink" href="#return-value" title="Permanent link">&para;</a></h3>
+<p>The return value of the function may optionally be validated against its return type annotation.</p>
 <h3 id="model-fields-and-reserved-arguments">Model fields and reserved arguments<a class="headerlink" href="#model-fields-and-reserved-arguments" title="Permanent link">&para;</a></h3>
 <p>The following names may not be used by arguments since they can be used internally to store information about
 the function's signature:</p>
