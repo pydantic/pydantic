@@ -202,7 +202,7 @@ impl SchemaSerializer {
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
 #[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = true,
-    exclude_none = false, round_trip = false, timedelta_mode = None, bytes_mode = None,
+    exclude_none = false, round_trip = false, timedelta_mode = "iso8601", bytes_mode = "utf8",
     serialize_unknown = false, fallback = None))]
 pub fn to_json(
     py: Python,
@@ -213,12 +213,12 @@ pub fn to_json(
     by_alias: bool,
     exclude_none: bool,
     round_trip: bool,
-    timedelta_mode: Option<&str>,
-    bytes_mode: Option<&str>,
+    timedelta_mode: &str,
+    bytes_mode: &str,
     serialize_unknown: bool,
     fallback: Option<&PyAny>,
 ) -> PyResult<PyObject> {
-    let state = SerializationState::new(timedelta_mode, bytes_mode);
+    let state = SerializationState::new(timedelta_mode, bytes_mode)?;
     let extra = state.extra(
         py,
         &SerMode::Json,
@@ -238,7 +238,7 @@ pub fn to_json(
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
 #[pyo3(signature = (value, *, include = None, exclude = None, by_alias = true, exclude_none = false, round_trip = false,
-    timedelta_mode = None, bytes_mode = None, serialize_unknown = false, fallback = None))]
+    timedelta_mode = "iso8601", bytes_mode = "utf8", serialize_unknown = false, fallback = None))]
 pub fn to_jsonable_python(
     py: Python,
     value: &PyAny,
@@ -247,12 +247,12 @@ pub fn to_jsonable_python(
     by_alias: bool,
     exclude_none: bool,
     round_trip: bool,
-    timedelta_mode: Option<&str>,
-    bytes_mode: Option<&str>,
+    timedelta_mode: &str,
+    bytes_mode: &str,
     serialize_unknown: bool,
     fallback: Option<&PyAny>,
 ) -> PyResult<PyObject> {
-    let state = SerializationState::new(timedelta_mode, bytes_mode);
+    let state = SerializationState::new(timedelta_mode, bytes_mode)?;
     let extra = state.extra(
         py,
         &SerMode::Json,
