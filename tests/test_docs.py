@@ -11,6 +11,7 @@ from tempfile import NamedTemporaryFile
 from typing import Any
 
 import pytest
+from pydantic_core import core_schema
 from pytest_examples import CodeExample, EvalExample, find_examples
 
 from pydantic.errors import PydanticErrorCodes
@@ -218,3 +219,17 @@ def test_error_codes():
     documented_error_codes = tuple(re.findall(r'^## .+ \{#(.+?)}$', error_text, flags=re.MULTILINE))
 
     assert code_error_codes == documented_error_codes, 'Error codes in code and docs do not match'
+
+
+def test_validation_error_codes():
+    error_text = (DOCS_ROOT / 'usage/validation_errors.md').read_text()
+
+    expected_validation_error_codes = set(core_schema.ErrorType.__args__)
+    # Remove codes that are not currently accessible from pydantic:
+    expected_validation_error_codes.remove('bool')  # this line can be removed if this gets removed from pydantic_core
+    expected_validation_error_codes.remove('timezone_offset')  # not currently exposed for configuration in pydantic
+    code_validation_error_codes = tuple(sorted(expected_validation_error_codes))
+
+    documented_validation_error_codes = tuple(re.findall(r'^## `(.+)`$', error_text, flags=re.MULTILINE))
+
+    assert code_validation_error_codes == documented_validation_error_codes, 'Error codes in code and docs do not match'
