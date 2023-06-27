@@ -787,10 +787,10 @@ except ValidationError as exc:
 # from JSON
 i64_max = 9_223_372_036_854_775_807
 try:
-    Model.model_validate_json(json.dumps(-i64_max * 2))
+    Model.model_validate_json(json.dumps({'x': -i64_max * 2}))
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
-    #> 'dict_type'
+    #> 'int_parsing_size'
 ```
 
 ## `int_type`
@@ -1081,10 +1081,10 @@ class Model(BaseModel):
 
 
 try:
-    Model(x=None)
+    Model(x=BadMapping())
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
-    #> 'dict_type'
+    #> 'mapping_type'
 ```
 
 ## `missing`
@@ -1173,19 +1173,29 @@ except ValidationError as exc:
 This error is raised when you validate with `strict=True` and the input value is not an instance of the expected model:
 
 ```py
-from pydantic import BaseModel, ValidationError
+import pydantic.dataclasses
+from pydantic import TypeAdapter, ValidationError
 
 
-class Model(BaseModel):
+@pydantic.dataclasses.dataclass
+class MyDataclass:
     x: str
 
 
-Model.model_validate(Model(x='test'), strict=True)  # OK
+@pydantic.dataclasses.dataclass
+class MyOtherDataclass:
+    x: str
+
+
+adapter = TypeAdapter(MyDataclass)
+
+adapter.validate_python(MyDataclass(x='test'), strict=True)  # OK
 
 try:
-    Model.model_validate({'x': 'test'}, strict=True)
+    adapter.validate_python(MyOtherDataclass(x='test'), strict=True)
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
+    #> 'model_class_type'
 ```
 
 ## `multiple_argument_values`
@@ -1564,6 +1574,7 @@ try:
     Model(x=datetime.now(tz=timezone.utc))
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
+    #> 'timezone_naive'
 ```
 
 ## `too_long`
