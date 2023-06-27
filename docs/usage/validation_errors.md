@@ -156,7 +156,7 @@ This error is also raised for strict fields when the input value is not an insta
 
 ## `callable_type`
 
-This error is raised when the input value is valid as a `Callable`:
+This error is raised when the input value is not valid as a `Callable`:
 
 ```py
 from typing import Any, Callable
