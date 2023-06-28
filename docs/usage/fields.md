@@ -725,7 +725,7 @@ print(User.model_json_schema())
 """
 ```
 
-TODO: Add `final`, and `alias_priority` parameters.
+TODO: Add `alias_priority` parameters.
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
 [Discriminated Unions]: types/unions.md#discriminated-unions-aka-tagged-unions

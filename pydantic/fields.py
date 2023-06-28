@@ -52,7 +52,6 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     discriminator: str | None
     json_schema_extra: dict[str, Any] | None
     frozen: bool | None
-    final: bool | None
     validate_default: bool | None
     repr: bool
     init_var: bool | None
@@ -86,7 +85,6 @@ class FieldInfo(_repr.Representation):
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Dictionary of extra JSON schema properties.
         frozen: Whether the field is frozen.
-        final: Whether the field is final.
         validate_default: Whether to validate the default value of the field.
         repr: Whether to include the field in representation of the model.
         init_var: Whether the field should be included in the constructor of the dataclass.
@@ -109,7 +107,6 @@ class FieldInfo(_repr.Representation):
     discriminator: str | None
     json_schema_extra: dict[str, Any] | None
     frozen: bool | None
-    final: bool | None
     validate_default: bool | None
     repr: bool
     init_var: bool | None
@@ -132,7 +129,6 @@ class FieldInfo(_repr.Representation):
         'discriminator',
         'json_schema_extra',
         'frozen',
-        'final',
         'validate_default',
         'repr',
         'init_var',
@@ -191,7 +187,6 @@ class FieldInfo(_repr.Representation):
         self.json_schema_extra = kwargs.pop('json_schema_extra', None)
         self.validate_default = kwargs.pop('validate_default', None)
         self.frozen = kwargs.pop('frozen', None)
-        self.final = kwargs.pop('final', None)
         # currently only used on dataclasses
         self.init_var = kwargs.pop('init_var', None)
         self.kw_only = kwargs.pop('kw_only', None)
@@ -273,11 +268,11 @@ class FieldInfo(_repr.Representation):
             if field_info:
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
-                new_field_info.final = final
+                new_field_info.frozen = final or field_info.frozen
                 new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                 return new_field_info
 
-        return cls(annotation=annotation, final=final)
+        return cls(annotation=annotation, frozen=final or None)
 
     @classmethod
     def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> typing_extensions.Self:
@@ -309,7 +304,7 @@ class FieldInfo(_repr.Representation):
         if isinstance(default, cls):
             default.annotation, annotation_metadata = cls._extract_metadata(annotation)
             default.metadata += annotation_metadata
-            default.final = final
+            default.frozen = final or default.frozen
             return default
         elif isinstance(default, dataclasses.Field):
             init_var = False
@@ -325,7 +320,7 @@ class FieldInfo(_repr.Representation):
             pydantic_field = cls._from_dataclass_field(default)
             pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
             pydantic_field.metadata += annotation_metadata
-            pydantic_field.final = final
+            pydantic_field.frozen = final or pydantic_field.frozen
             pydantic_field.init_var = init_var
             pydantic_field.kw_only = getattr(default, 'kw_only', None)
             return pydantic_field
@@ -342,7 +337,7 @@ class FieldInfo(_repr.Representation):
                     new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                     return new_field_info
 
-            return cls(annotation=annotation, default=default, final=final)
+            return cls(annotation=annotation, default=default, frozen=final or None)
 
     @classmethod
     def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> typing_extensions.Self:
@@ -511,8 +506,6 @@ class FieldInfo(_repr.Representation):
                 continue
             elif s == 'repr' and self.repr is True:
                 continue
-            elif s == 'final':
-                continue
             if s == 'frozen' and self.frozen is False:
                 continue
             if s == 'validation_alias' and self.validation_alias == self.alias:
@@ -597,7 +590,6 @@ def Field(  # C901
     discriminator: str | None = None,
     json_schema_extra: dict[str, Any] | None = None,
     frozen: bool | None = None,
-    final: bool | None = None,
     validate_default: bool | None = None,
     repr: bool = True,
     init_var: bool | None = None,
@@ -638,7 +630,6 @@ def Field(  # C901
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Any additional JSON schema data for the schema property.
         frozen: Whether the field is frozen.
-        final: Whether the field is final.
         validate_default: Run validation that isn't only checking existence of defaults. `True` by default.
         repr: A boolean indicating whether to include the field in the `__repr__` output.
         init_var: Whether the field should be included in the constructor of the dataclass.
@@ -730,7 +721,6 @@ def Field(  # C901
         discriminator=discriminator,
         json_schema_extra=json_schema_extra,
         frozen=frozen,
-        final=final,
         pattern=pattern,
         validate_default=validate_default,
         repr=repr,
