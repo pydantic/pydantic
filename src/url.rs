@@ -142,6 +142,7 @@ impl PyUrl {
         true // an empty string is not a valid URL
     }
 
+    #[pyo3(signature = (_memo, /))]
     pub fn __deepcopy__(&self, py: Python, _memo: &PyDict) -> Py<PyAny> {
         self.clone().into_py(py)
     }

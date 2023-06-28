@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import sys
 from collections.abc import Mapping
 from datetime import date, datetime, time, timedelta
-from typing import Any, Callable, Dict, Hashable, List, Optional, Set, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, List, Optional, Set, Type, Union
 
 if sys.version_info < (3, 11):
     from typing_extensions import Protocol, Required, TypeAlias
@@ -15,10 +15,16 @@ if sys.version_info < (3, 9):
 else:
     from typing import Literal, TypedDict
 
-try:
+if TYPE_CHECKING:
     from pydantic_core import PydanticUndefined
-except ImportError:
-    PydanticUndefined = object()
+else:
+    # The initial build of pydantic_core requires PydanticUndefined to generate
+    # the core schema; so we need to conditionally skip it. mypy doesn't like
+    # this at all, hence the TYPE_CHECKING branch above.
+    try:
+        from pydantic_core import PydanticUndefined
+    except ImportError:
+        PydanticUndefined = object()
 
 
 def dict_not_none(**kwargs: Any) -> Any:
