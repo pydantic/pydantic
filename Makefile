@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := all
-black = black pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
-ruff = ruff pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
+black = black python/pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
+ruff = ruff python/pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
 
 .PHONY: install
 install:
@@ -17,28 +17,18 @@ install-rust-coverage:
 
 .PHONY: build-dev
 build-dev:
-	@rm -f pydantic_core/*.so
-	cargo build --features extension-module
-	@rm -f target/debug/lib_pydantic_core.d
-	@rm -f target/debug/lib_pydantic_core.rlib
-	@mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
+	@rm -f python/pydantic_core/*.so
+	maturin develop
 
 .PHONY: build-prod
 build-prod:
-	@rm -f pydantic_core/*.so
-	cargo build --release --features extension-module
-	@rm -f target/release/lib_pydantic_core.d
-	@rm -f target/release/lib_pydantic_core.rlib
-	@mv target/release/lib_pydantic_core.* pydantic_core/_pydantic_core.so
+	@rm -f python/pydantic_core/*.so
+	maturin develop --release
 
 .PHONY: build-coverage
 build-coverage:
-	pip uninstall -y pydantic_core
-	rm -f pydantic_core/*.so
-	RUSTFLAGS='-C instrument-coverage -A incomplete_features' cargo build --features extension-module
-	@rm -f target/debug/lib_pydantic_core.d
-	@rm -f target/debug/lib_pydantic_core.rlib
-	mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
+	rm -f python/pydantic_core/*.so
+	maturin develop -- -C instrument-coverage
 
 .PHONY: build-wasm
 build-wasm:
@@ -56,7 +46,7 @@ format:
 lint-python:
 	$(ruff)
 	$(black) --check --diff
-	griffe dump -f -d google -LWARNING -o/dev/null pydantic_core
+	griffe dump -f -d google -LWARNING -o/dev/null python/pydantic_core
 
 .PHONY: lint-rust
 lint-rust:
@@ -110,7 +100,7 @@ testcov: build-coverage
 	coverage run -m pytest
 	coverage report
 	coverage html -d htmlcov/python
-	coverage-prepare html pydantic_core/*.so
+	coverage-prepare html python/pydantic_core/*.so
 
 .PHONY: all
 all: format build-dev lint test
@@ -145,4 +135,4 @@ clean:
 	rm -f .coverage.*
 	rm -rf build
 	rm -rf perf.data*
-	rm -rf pydantic_core/*.so
+	rm -rf python/pydantic_core/*.so

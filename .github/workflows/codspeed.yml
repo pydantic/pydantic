@@ -47,16 +47,12 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Install pydantic-core
-        # build-prod does not include MiMalloc because it bypasses Maturin
+        # --no-default-features to avoid using mimalloc
         run: |
-          pip install -e .
-          make build-prod
-          python -c 'import pydantic_core'
+          pip install -e . --config-settings=build-args='--no-default-features --verbose' -v
+          python -c 'import pydantic_core; assert pydantic_core._pydantic_core.__pydantic_core_default_allocator__'
         env:
           CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
-
-      # this is required so that pytest uses the installed package
-      - run: rm tests/__init__.py
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v1
