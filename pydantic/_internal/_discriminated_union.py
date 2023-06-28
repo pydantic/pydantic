@@ -318,6 +318,12 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'typed-dict':
             return self._infer_discriminator_values_for_typed_dict_choice(choice, source_name=source_name)
 
+        elif choice['type'] == 'definition-ref':
+            schema_ref = choice['schema_ref']
+            if schema_ref not in self.definitions:
+                raise ValueError(f'Missing definition for inner ref {schema_ref!r}')
+            return self._infer_discriminator_values_for_choice(self.definitions[schema_ref], source_name=source_name)
+
         else:
             raise TypeError(
                 f'{choice["type"]!r} is not a valid discriminated union variant;'
