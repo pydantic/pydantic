@@ -11,6 +11,7 @@ from typing_extensions import Literal, Protocol, TypeAlias
 
 from .._internal import _decorators, _decorators_v1
 from ..errors import PydanticUserError
+from ..warnings import PydanticDeprecatedSince20
 
 _ALLOW_REUSE_WARNING_MESSAGE = '`allow_reuse` is deprecated and will be ignored; it should no longer be necessary'
 
@@ -72,6 +73,10 @@ if TYPE_CHECKING:
         _V1RootValidatorClsMethod,
         _PartialClsOrStaticMethod,
     )
+else:
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 
 def validator(

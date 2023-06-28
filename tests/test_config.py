@@ -13,6 +13,7 @@ from pydantic import (
     BaseModel,
     Field,
     PrivateAttr,
+    PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
     ValidationError,
     create_model,
@@ -338,7 +339,7 @@ class TestsBaseConfig:
 
     def test_config_class_is_deprecated(self):
         with pytest.warns(
-            DeprecationWarning, match='Support for class-based `config` is deprecated, use ConfigDict instead.'
+            PydanticDeprecatedSince20, match='Support for class-based `config` is deprecated, use ConfigDict instead.'
         ):
 
             class Config(BaseConfig):
@@ -346,19 +347,19 @@ class TestsBaseConfig:
 
     def test_config_class_attributes_are_deprecated(self):
         with pytest.warns(
-            DeprecationWarning,
+            PydanticDeprecatedSince20,
             match='Support for class-based `config` is deprecated, use ConfigDict instead.',
         ):
             assert BaseConfig.validate_assignment is False
 
         with pytest.warns(
-            DeprecationWarning,
+            PydanticDeprecatedSince20,
             match='Support for class-based `config` is deprecated, use ConfigDict instead.',
         ):
             assert BaseConfig().validate_assignment is False
 
         with pytest.warns(
-            DeprecationWarning,
+            PydanticDeprecatedSince20,
             match='Support for class-based `config` is deprecated, use ConfigDict instead.',
         ):
 
@@ -366,13 +367,13 @@ class TestsBaseConfig:
                 pass
 
         with pytest.warns(
-            DeprecationWarning,
+            PydanticDeprecatedSince20,
             match='Support for class-based `config` is deprecated, use ConfigDict instead.',
         ):
             assert Config.validate_assignment is False
 
         with pytest.warns(
-            DeprecationWarning,
+            PydanticDeprecatedSince20,
             match='Support for class-based `config` is deprecated, use ConfigDict instead.',
         ):
             assert Config().validate_assignment is False

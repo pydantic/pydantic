@@ -19,6 +19,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     FieldValidationInfo,
+    PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     TypeAdapter,
@@ -308,7 +309,7 @@ def test_post_init_inheritance_chain():
 
 
 def test_post_init_post_parse():
-    with pytest.warns(DeprecationWarning, match='Support for `__post_init_post_parse__` has been dropped'):
+    with pytest.warns(PydanticDeprecatedSince20, match='Support for `__post_init_post_parse__` has been dropped'):
 
         @pydantic.dataclasses.dataclass
         class MyDataclass:
@@ -1829,7 +1830,7 @@ def test_config_as_type_deprecated():
         validate_assignment = True
 
     with pytest.warns(
-        DeprecationWarning, match='Support for class-based `config` is deprecated, use ConfigDict instead.'
+        PydanticDeprecatedSince20, match='Support for class-based `config` is deprecated, use ConfigDict instead.'
     ):
 
         @pydantic.dataclasses.dataclass(config=Config)

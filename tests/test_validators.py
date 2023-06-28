@@ -17,6 +17,7 @@ from pydantic import (
     ConfigDict,
     Field,
     FieldValidationInfo,
+    PydanticDeprecatedSince20,
     PydanticUserError,
     ValidationError,
     ValidationInfo,
@@ -507,7 +508,7 @@ def test_use_bare():
         class Model(BaseModel):
             a: str
 
-            with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+            with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
                 @validator
                 def checker(cls, v):
@@ -531,7 +532,7 @@ def test_use_no_fields():
         class Model(BaseModel):
             a: str
 
-            with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+            with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
                 @validator()
                 def checker(cls, v):
@@ -562,7 +563,7 @@ def test_validator_bad_fields_throws_configerror():
             a: str
             b: str
 
-            with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+            with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
                 @validator(['a', 'b'])
                 def check_fields(cls, v):
@@ -591,7 +592,7 @@ def test_validate_always():
     class Model(BaseModel):
         a: str = None
 
-        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
             @validator('a', pre=True, always=True)
             @classmethod
@@ -632,7 +633,7 @@ def test_validate_always_on_inheritance():
         a: str = None
 
     class Model(ParentModel):
-        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
             @validator('a', pre=True, always=True)
             @classmethod
@@ -689,7 +690,7 @@ def test_validate_not_always():
 @pytest.mark.parametrize(
     'decorator, pytest_warns',
     [
-        (validator, pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH)),
+        (validator, pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH)),
         (field_validator, contextlib.nullcontext()),
     ],
 )
@@ -730,7 +731,7 @@ def test_wildcard_validators(decorator, pytest_warns):
 @pytest.mark.parametrize(
     'decorator, pytest_warns',
     [
-        (validator, pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH)),
+        (validator, pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH)),
         (field_validator, contextlib.nullcontext()),
     ],
 )
@@ -822,7 +823,7 @@ def test_validate_child_extra():
 
 
 def test_validate_child_all():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Parent(BaseModel):
             a: str
@@ -864,7 +865,7 @@ def test_validate_parent():
 
 
 def test_validate_parent_all():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Parent(BaseModel):
             a: str
@@ -959,7 +960,7 @@ def test_inheritance_replace_root_validator():
     it replaces the existing validator and is run instead of it.
     """
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
 
         class Parent(BaseModel):
             a: List[str]
@@ -1000,7 +1001,7 @@ def test_inheritance_replace_root_validator():
 
 
 def test_validation_each_item():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             foobar: Dict[int, int]
@@ -1017,7 +1018,7 @@ def test_validation_each_item_invalid_type():
     with pytest.raises(
         TypeError, match=re.escape('@validator(..., each_item=True)` cannot be applied to fields with a schema of int')
     ):
-        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
             class Model(BaseModel):
                 foobar: int
@@ -1029,7 +1030,7 @@ def test_validation_each_item_invalid_type():
 
 
 def test_validation_each_item_nullable():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             foobar: Optional[List[int]]
@@ -1043,7 +1044,7 @@ def test_validation_each_item_nullable():
 
 
 def test_validation_each_item_one_sublevel():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             foobar: List[Tuple[int, int]]
@@ -1076,7 +1077,7 @@ def test_validator_always_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
             @validator('a', pre=True, always=True)
             @classmethod
@@ -1116,7 +1117,7 @@ def test_validator_always_pre():
     class Model(BaseModel):
         a: str = None
 
-        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
             @validator('a', pre=True, always=True)
             @classmethod
@@ -1155,7 +1156,7 @@ def test_validator_always_post():
         # But, I think this is a good thing, and I don't think we should try to support this.
         a: str = ''
 
-        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
             @validator('a', always=True)
             @classmethod
@@ -1183,7 +1184,7 @@ def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
             @validator('a', pre=True, always=True)
             @classmethod
@@ -1213,7 +1214,7 @@ def test_datetime_validator():
     class Model(BaseModel):
         d: datetime = None
 
-        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
             @validator('d', pre=True, always=True)
             @classmethod
@@ -1307,7 +1308,7 @@ def test_root_validator():
         def repeat_b(cls, v: Any):
             return v * 2
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @root_validator(skip_on_failure=True)
             def example_root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -1363,7 +1364,7 @@ def test_root_validator_subclass():
     class Parent(BaseModel):
         x: int
         expected: Any
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @root_validator(skip_on_failure=True)
             @classmethod
@@ -1375,7 +1376,7 @@ def test_root_validator_subclass():
         pass
 
     class Child2(Parent):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @root_validator(skip_on_failure=True)
             @classmethod
@@ -1409,7 +1410,7 @@ def test_root_validator_pre():
         def repeat_b(cls, v: Any):
             return v * 2
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @root_validator(pre=True)
             def root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -1442,7 +1443,7 @@ def test_root_validator_types():
         a: int = 1
         b: str
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @root_validator(skip_on_failure=True)
             def root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -1461,7 +1462,7 @@ def test_root_validator_returns_none_exception():
     class Model(BaseModel):
         a: int = 1
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @root_validator(skip_on_failure=True)
             def root_validator_repeated(cls, values):
@@ -1527,7 +1528,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
         if root_validator_classmethod:
             example_root_validator = classmethod(example_root_validator)
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
             example_root_validator = root_validator(skip_on_failure=True)(example_root_validator)
 
     assert Model(a='123', b='bar').model_dump() == {'a': 123, 'b': 'changed'}
@@ -1756,7 +1757,7 @@ def test_validating_assignment_pre_root_validator_fail():
         max_value: float
 
         model_config = ConfigDict(validate_assignment=True)
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @root_validator(pre=True)
             def values_are_not_string(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -1816,7 +1817,9 @@ def test_validating_assignment_model_validator_before_fail():
 )
 def test_root_validator_skip_on_failure_invalid(kwargs: Dict[str, Any]):
     with pytest.raises(TypeError, match='MUST specify `skip_on_failure=True`'):
-        with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
+        with pytest.warns(
+            PydanticDeprecatedSince20, match='Pydantic V1 style `@root_validator` validators are deprecated.'
+        ):
 
             class Model(BaseModel):
                 @root_validator(**kwargs)
@@ -1834,7 +1837,9 @@ def test_root_validator_skip_on_failure_invalid(kwargs: Dict[str, Any]):
     ],
 )
 def test_root_validator_skip_on_failure_valid(kwargs: Dict[str, Any]):
-    with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='Pydantic V1 style `@root_validator` validators are deprecated.'
+    ):
 
         class Model(BaseModel):
             @root_validator(**kwargs)
@@ -1871,7 +1876,7 @@ def _get_source_line(filename: str, lineno: int) -> str:
 
 
 def test_v1_validator_deprecated():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
 
         class Point(BaseModel):
             y: int
@@ -1950,7 +1955,7 @@ def test_decorator_proxy():
 
 def test_root_validator_self():
     with pytest.raises(TypeError, match=r'`@root_validator` cannot be applied to instance methods'):
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             class Model(BaseModel):
                 a: int = 1
@@ -1961,7 +1966,7 @@ def test_root_validator_self():
 
 
 def test_validator_self():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
         with pytest.raises(TypeError, match=r'`@validator` cannot be applied to instance methods'):
 
             class Model(BaseModel):
@@ -1984,7 +1989,7 @@ def test_field_validator_self():
 
 
 def test_v1_validator_signature_kwargs_not_allowed() -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
         with pytest.raises(TypeError, match=r'Unsupported signature for V1 style validator'):
 
             class Model(BaseModel):
@@ -1996,7 +2001,7 @@ def test_v1_validator_signature_kwargs_not_allowed() -> None:
 
 
 def test_v1_validator_signature_kwargs1() -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             a: int
@@ -2012,7 +2017,7 @@ def test_v1_validator_signature_kwargs1() -> None:
 
 
 def test_v1_validator_signature_kwargs2() -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             a: int
@@ -2029,7 +2034,7 @@ def test_v1_validator_signature_kwargs2() -> None:
 
 
 def test_v1_validator_signature_with_values() -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             a: int
@@ -2045,7 +2050,7 @@ def test_v1_validator_signature_with_values() -> None:
 
 
 def test_v1_validator_signature_with_values_kw_only() -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             a: int
@@ -2061,7 +2066,7 @@ def test_v1_validator_signature_with_values_kw_only() -> None:
 
 
 def test_v1_validator_signature_with_field() -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
         with pytest.raises(TypeError, match=r'The `field` and `config` parameters are not available in Pydantic V2'):
 
             class Model(BaseModel):
@@ -2074,7 +2079,7 @@ def test_v1_validator_signature_with_field() -> None:
 
 
 def test_v1_validator_signature_with_config() -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
         with pytest.raises(TypeError, match=r'The `field` and `config` parameters are not available in Pydantic V2'):
 
             class Model(BaseModel):
@@ -2310,7 +2315,7 @@ def test_functools_partialmethod_validator_v2_cls_method(
 def test_functools_partial_validator_v1(
     func: Callable[..., Any],
 ) -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             x: int
@@ -2335,7 +2340,7 @@ def test_functools_partial_validator_v1(
 def test_functools_partialmethod_validator_v1(
     func: Callable[..., Any],
 ) -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             x: int
@@ -2360,7 +2365,7 @@ def test_functools_partialmethod_validator_v1(
 def test_functools_partialmethod_validator_v1_cls_method(
     func: Callable[..., Any],
 ) -> None:
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest.warns(PydanticDeprecatedSince20, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
         class Model(BaseModel):
             x: int
@@ -2503,7 +2508,7 @@ def test_root_validator_allow_reuse_same_field():
 
 
 def test_root_validator_allow_reuse_inheritance():
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
 
         class Parent(BaseModel):
             x: int
@@ -2513,7 +2518,7 @@ def test_root_validator_allow_reuse_inheritance():
                 v['x'] += 1
                 return v
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
 
         class Child(Parent):
             @root_validator(skip_on_failure=True)
@@ -2535,7 +2540,9 @@ def test_bare_root_validator():
             ' Note that `@root_validator` is deprecated and should be replaced with `@model_validator`.'
         ),
     ):
-        with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
+        with pytest.warns(
+            PydanticDeprecatedSince20, match='Pydantic V1 style `@root_validator` validators are deprecated.'
+        ):
 
             class Model(BaseModel):
                 @root_validator

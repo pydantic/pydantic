@@ -4,7 +4,7 @@ from typing import Any, List, Optional
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
 
 
 class Model(BaseModel):
@@ -80,7 +80,7 @@ def deprecated_copy(m: BaseModel, *, include=None, exclude=None, update=None, de
     that have been removed from `model_copy`. Otherwise, use the `copy_method` fixture below
     """
     with pytest.warns(
-        DeprecationWarning,
+        PydanticDeprecatedSince20,
         match=(
             'The `copy` method is deprecated; use `model_copy` instead. '
             'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.'
@@ -412,7 +412,8 @@ def test_copy_update_exclude():
         }
 
     with pytest.warns(
-        DeprecationWarning, match='The private method `_calculate_keys` will be removed and should no longer be used.'
+        PydanticDeprecatedSince20,
+        match='The private method `_calculate_keys` will be removed and should no longer be used.',
     ):
         assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False) == {'c', 'd'}
         assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False, update={'c': 42}) == {'d'}

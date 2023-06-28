@@ -7,7 +7,7 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from pathlib import Path
 from re import Pattern
 from types import GeneratorType
-from typing import Any, Callable, Dict, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Type, Union
 from uuid import UUID
 
 from typing_extensions import deprecated
@@ -15,6 +15,12 @@ from typing_extensions import deprecated
 from ..color import Color
 from ..networks import NameEmail
 from ..types import SecretBytes, SecretStr
+from ..warnings import PydanticDeprecatedSince20
+
+if not TYPE_CHECKING:
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 __all__ = 'pydantic_encoder', 'custom_pydantic_encoder', 'timedelta_isoformat'
 
@@ -72,7 +78,9 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
 }
 
 
-@deprecated('pydantic_encoder is deprecated, use pydantic_core.to_jsonable_python instead.')
+@deprecated(
+    'pydantic_encoder is deprecated, use pydantic_core.to_jsonable_python instead.', category=PydanticDeprecatedSince20
+)
 def pydantic_encoder(obj: Any) -> Any:
     from dataclasses import asdict, is_dataclass
 
@@ -96,7 +104,7 @@ def pydantic_encoder(obj: Any) -> Any:
 
 
 # TODO: Add a suggested migration path once there is a way to use custom encoders
-@deprecated('custom_pydantic_encoder is deprecated.')
+@deprecated('custom_pydantic_encoder is deprecated.', category=PydanticDeprecatedSince20)
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
     # Check the class type and its superclasses for a matching encoder
     warnings.warn(
@@ -113,7 +121,7 @@ def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]]
         return pydantic_encoder(obj)
 
 
-@deprecated('timedelta_isoformat is deprecated.')
+@deprecated('timedelta_isoformat is deprecated.', category=PydanticDeprecatedSince20)
 def timedelta_isoformat(td: datetime.timedelta) -> str:
     """ISO 8601 encoding for Python timedelta object."""
     warnings.warn('timedelta_isoformat is deprecated.', DeprecationWarning, stacklevel=2)

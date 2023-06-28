@@ -1,13 +1,19 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import Any, Callable, overload
+from typing import TYPE_CHECKING, Any, Callable, overload
 from warnings import warn
 
 from typing_extensions import Literal, Protocol, TypedDict
 
 from ._migration import getattr_migration
 from .deprecated.config import BaseConfig
+from .warnings import PydanticDeprecatedSince20
+
+if not TYPE_CHECKING:
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 

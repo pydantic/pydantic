@@ -18,9 +18,14 @@ from typing_extensions import Unpack
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
 from .errors import PydanticUserError
+from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
+else:
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 
 class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
