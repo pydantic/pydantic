@@ -2028,1349 +2028,3690 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <p>The following table provides details on how Pydantic converts data during validation in both strict and lax modes.</p>
 <p>"Lax mode" indicates the default behavior of Pydantic, where it attempts to coerce values to the correct type, when possible. "Strict mode" indicates the behavior of Pydantic when <code>strict=True</code> is set on either a field or on a model config.</p>
 <p>See <a href="../models/#strict-mode">Strict Mode</a> for more details.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:5"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><input id="__tabbed_1_5" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">All</label><label for="__tabbed_1_2">JSON</label><label for="__tabbed_1_3">JSON - Strict</label><label for="__tabbed_1_4">Python</label><label for="__tabbed_1_5">Python - Strict</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <table>
 <thead>
 <tr>
 <th>Field Type</th>
 <th>Input</th>
-<th>Mode</th>
+<th>Strict</th>
 <th>Input Source</th>
 <th>Conditions</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>str</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>str</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Assumes UTF-8, error on unicode decoding error.</td>
-</tr>
-<tr>
-<td><code>str</code></td>
-<td><code>bytearray</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Assumes UTF-8, error on unicode decoding error.</td>
-</tr>
-<tr>
-<td><code>bytes</code></td>
-<td><code>bytes</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
 <td></td>
-</tr>
-<tr>
-<td><code>bytes</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>bytes</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>bytes</code></td>
-<td><code>bytearray</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>int</code></td>
-<td><code>int</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
-<td>Max abs value <code>2^64</code> - <code>i64</code> is used internally, <code>bool</code> explicitly forbidden.</td>
-</tr>
-<tr>
-<td><code>int</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td><code>i64</code>. Limits <code>numbers &gt; (2 ^ 63) - 1</code> to <code>(2 ^ 63) - 1</code>.</td>
-</tr>
-<tr>
-<td><code>int</code></td>
-<td><code>float</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td><code>i64</code>, Must be exact int, e.g. <code>val % 1 == 0</code>, raises error for <code>nan</code>, <code>inf</code>.</td>
-</tr>
-<tr>
-<td><code>int</code></td>
-<td><code>Decimal</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td><code>i64</code>, Must be exact int, e.g. <code>val % 1 == 0</code>.</td>
-</tr>
-<tr>
-<td><code>int</code></td>
-<td><code>bool</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>int</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td><code>i64</code>, Must be numeric only, e.g. <code>[0-9]+</code>.</td>
-</tr>
-<tr>
-<td><code>int</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td><code>i64</code>, Must be numeric only, e.g. <code>[0-9]+</code>.</td>
-</tr>
-<tr>
-<td><code>float</code></td>
-<td><code>float</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
-<td><code>bool</code> explicitly forbidden.</td>
-</tr>
-<tr>
-<td><code>float</code></td>
-<td><code>int</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>float</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
-</tr>
-<tr>
-<td><code>float</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
-</tr>
-<tr>
-<td><code>float</code></td>
-<td><code>Decimal</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>float</code></td>
-<td><code>bool</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>bool</code></td>
-<td><code>bool</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>bool</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Allowed values: <code>0, 1</code>.</td>
-</tr>
-<tr>
-<td><code>bool</code></td>
-<td><code>float</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
 <td>Allowed values: <code>0.0, 1.0</code>.</td>
 </tr>
 <tr>
-<td><code>bool</code></td>
-<td><code>Decimal</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Allowed values: <code>Decimal(0), Decimal(1)</code>.</td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Allowed values: <code>0, 1</code>.</td>
 </tr>
 <tr>
-<td><code>bool</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
 <td>Allowed values: <code>'f'</code>, <code>'n'</code>, <code>'no'</code>, <code>'off'</code>, <code>'false'</code>, <code>'False'</code>, <code>'t'</code>, <code>'y'</code>, <code>'on'</code>, <code>'yes'</code>, <code>'true'</code>, <code>'True'</code>.</td>
 </tr>
 <tr>
-<td><code>None</code></td>
-<td><code>None</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Allowed values: <code>Decimal(0), Decimal(1)</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytearray</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>date</code></td>
-<td><code>date</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>date</code></td>
-<td><code>datetime</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Must be exact date, eg. no <code>H</code>, <code>M</code>, <code>S</code>, <code>f</code>.</td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
 </tr>
 <tr>
-<td><code>date</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Format: <code>YYYY-MM-DD</code>.</td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
 </tr>
 <tr>
-<td><code>date</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>callable</code></span></td>
+<td><span style="white-space: nowrap;"><code>-</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Never valid.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>callable</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>callable()</code> check must return <code>True</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td>Format: <code>YYYY-MM-DD</code> (UTF-8).</td>
 </tr>
 <tr>
-<td><code>date</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
-</tr>
-<tr>
-<td><code>date</code></td>
-<td><code>float</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
-</tr>
-<tr>
-<td><code>date</code></td>
-<td><code>Decimal</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
-</tr>
-<tr>
-<td><code>datetime</code></td>
-<td><code>datetime</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>datetime</code></td>
-<td><code>date</code></td>
-<td>Lax</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
 <td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Must be exact date, eg. no <code>H</code>, <code>M</code>, <code>S</code>, <code>f</code>.</td>
 </tr>
 <tr>
-<td><code>datetime</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Format: <code>YYYY-MM-DDTHH:MM:SS.f</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
 </tr>
 <tr>
-<td><code>datetime</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>YYYY-MM-DD</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td>Format: <code>YYYY-MM-DDTHH:MM:SS.f</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>, (UTF-8).</td>
 </tr>
 <tr>
-<td><code>datetime</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
 <td>Interpreted as seconds or ms from epoch, see <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
 </tr>
 <tr>
-<td><code>datetime</code></td>
-<td><code>float</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
 <td>Interpreted as seconds or ms from epoch, see <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
 </tr>
 <tr>
-<td><code>datetime</code></td>
-<td><code>Decimal</code></td>
-<td>Lax</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>YYYY-MM-DDTHH:MM:SS.f</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td>Interpreted as seconds or ms from epoch, see <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
 </tr>
 <tr>
-<td><code>time</code></td>
-<td><code>time</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>time</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Format: <code>HH:MM:SS.FFFFFF</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
-</tr>
-<tr>
-<td><code>time</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Format: <code>HH:MM:SS.FFFFFF</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
-</tr>
-<tr>
-<td><code>time</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Interpreted as seconds, range <code>0 - 86399</code>.</td>
-</tr>
-<tr>
-<td><code>time</code></td>
-<td><code>float</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Interpreted as seconds, range <code>0 - 86399.9*</code>.</td>
-</tr>
-<tr>
-<td><code>time</code></td>
-<td><code>Decimal</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Interpreted as seconds, range <code>0 - 86399.9*</code>.</td>
-</tr>
-<tr>
-<td><code>timedelta</code></td>
-<td><code>timedelta</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>timedelta</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Format: <code>ISO8601</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
-</tr>
-<tr>
-<td><code>timedelta</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Format: <code>ISO8601</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>, (UTF-8).</td>
-</tr>
-<tr>
-<td><code>timedelta</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Interpreted as seconds.</td>
-</tr>
-<tr>
-<td><code>timedelta</code></td>
-<td><code>float</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td>Interpreted as seconds.</td>
-</tr>
-<tr>
-<td><code>timedelta</code></td>
-<td><code>Decimal</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Interpreted as seconds.</td>
-</tr>
-<tr>
-<td><code>dict</code></td>
-<td><code>dict</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>dict</code></td>
-<td><code>Object</code></td>
-<td>Strict</td>
-<td>JSON</td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>dict</code></td>
-<td><code>Mapping</code></td>
-<td>Lax</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Mapping</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td>Must implement the mapping interface and have an <code>items()</code> method.</td>
 </tr>
 <tr>
-<td><code>TypedDict</code></td>
-<td><code>dict</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Object</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>TypedDict</code></td>
-<td><code>Object</code></td>
-<td>Strict</td>
-<td>JSON</td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
 <td></td>
-</tr>
-<tr>
-<td><code>TypedDict</code></td>
-<td><code>Any</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>TypedDict</code></td>
-<td><code>Mapping</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Must implement the mapping interface and have an <code>items()</code> method.</td>
-</tr>
-<tr>
-<td><code>list</code></td>
-<td><code>list</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>list</code></td>
-<td><code>Array</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>list</code></td>
-<td><code>tuple</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>list</code></td>
-<td><code>set</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>list</code></td>
-<td><code>frozenset</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>list</code></td>
-<td><code>deque</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>list</code></td>
-<td><code>dict_keys</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>list</code></td>
-<td><code>dict_values</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>tuple</code></td>
-<td><code>tuple</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>tuple</code></td>
-<td><code>Array</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>tuple</code></td>
-<td><code>list</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>tuple</code></td>
-<td><code>set</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>tuple</code></td>
-<td><code>frozenset</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>tuple</code></td>
-<td><code>deque</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>tuple</code></td>
-<td><code>dict_keys</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>tuple</code></td>
-<td><code>dict_values</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>set</code></td>
-<td><code>set</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>set</code></td>
-<td><code>Array</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>set</code></td>
-<td><code>list</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>set</code></td>
-<td><code>tuple</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>set</code></td>
-<td><code>frozenset</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>set</code></td>
-<td><code>deque</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>set</code></td>
-<td><code>dict_keys</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>set</code></td>
-<td><code>dict_values</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>frozenset</code></td>
-<td><code>frozenset</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>frozenset</code></td>
-<td><code>Array</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>frozenset</code></td>
-<td><code>list</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>frozenset</code></td>
-<td><code>tuple</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>frozenset</code></td>
-<td><code>set</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>frozenset</code></td>
-<td><code>deque</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>frozenset</code></td>
-<td><code>dict_keys</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>frozenset</code></td>
-<td><code>dict_values</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>isinstance</code></td>
-<td><code>Any</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td><code>isinstance()</code> check returns <code>True</code>.</td>
-</tr>
-<tr>
-<td><code>isinstance</code></td>
-<td><code>-</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td>Never valid.</td>
-</tr>
-<tr>
-<td><code>callable</code></td>
-<td><code>Any</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td><code>callable()</code> check returns <code>True</code>.</td>
-</tr>
-<tr>
-<td><code>callable</code></td>
-<td>``</td>
-<td>Strict</td>
-<td>JSON</td>
-<td>Never valid.</td>
-</tr>
-<tr>
-<td><code>deque</code></td>
-<td><code>deque</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>deque</code></td>
-<td><code>Array</code></td>
-<td>Strict</td>
-<td>Json</td>
-<td></td>
-</tr>
-<tr>
-<td><code>deque</code></td>
-<td><code>list</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>deque</code></td>
-<td><code>tuple</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>deque</code></td>
-<td><code>set</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>deque</code></td>
-<td><code>frozenset</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Any</code></td>
-<td><code>Any</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>NamedTuple</code></td>
-<td><code>NamedTuple</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>NamedTuple</code></td>
-<td><code>Array</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>NamedTuple</code></td>
-<td><code>namedtuple</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>NamedTuple</code></td>
-<td><code>tuple</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>NamedTuple</code></td>
-<td><code>list</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>NamedTuple</code></td>
-<td><code>dict</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>namedtuple</code></td>
-<td><code>namedtuple</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>namedtuple</code></td>
-<td><code>Array</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>namedtuple</code></td>
-<td><code>NamedTuple</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>namedtuple</code></td>
-<td><code>tuple</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>namedtuple</code></td>
-<td><code>list</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>namedtuple</code></td>
-<td><code>dict</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Sequence</code></td>
-<td><code>list</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Sequence</code></td>
-<td><code>Array</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Sequence</code></td>
-<td><code>tuple</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Sequence</code></td>
-<td><code>deque</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Iterable</code></td>
-<td><code>list</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Iterable</code></td>
-<td><code>Array</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Iterable</code></td>
-<td><code>tuple</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Iterable</code></td>
-<td><code>set</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Iterable</code></td>
-<td><code>frozenset</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Iterable</code></td>
-<td><code>deque</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Type</code></td>
-<td><code>Type</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Pattern</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
-<td>Input should be a valid pattern.</td>
-</tr>
-<tr>
-<td><code>Pattern</code></td>
-<td><code>bytes</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td>Input should be a valid pattern.</td>
-</tr>
-<tr>
-<td><code>IPv4Address</code></td>
-<td><code>IPv4Address</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Address</code></td>
-<td><code>IPv4Interface</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Address</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Address</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Address</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Address</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>integer representing the IP address, should be less than <code>2**32</code></td>
-</tr>
-<tr>
-<td><code>IPv4Interface</code></td>
-<td><code>IPv4Interface</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Interface</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Interface</code></td>
-<td><code>IPv4Address</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Interface</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Interface</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Interface</code></td>
-<td><code>tuple</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Interface</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>integer representing the IP address, should be less than <code>2**32</code></td>
-</tr>
-<tr>
-<td><code>IPv4Network</code></td>
-<td><code>IPv4Network</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Network</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Network</code></td>
-<td><code>IPv4Address</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Network</code></td>
-<td><code>IPv4Interface</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Network</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Network</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv4Network</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>integer representing the IP network, should be less than <code>2**32</code></td>
-</tr>
-<tr>
-<td><code>IPv6Address</code></td>
-<td><code>IPv6Address</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Address</code></td>
-<td><code>IPv6Interface</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Address</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Address</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Address</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Address</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>integer representing the IP address, should be less than <code>2**128</code></td>
-</tr>
-<tr>
-<td><code>IPv6Interface</code></td>
-<td><code>IPv6Interface</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Interface</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Interface</code></td>
-<td><code>IPv6Address</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Interface</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Interface</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Interface</code></td>
-<td><code>tuple</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Interface</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>integer representing the IP address, should be less than <code>2**128</code></td>
-</tr>
-<tr>
-<td><code>IPv6Network</code></td>
-<td><code>IPv6Network</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Network</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Network</code></td>
-<td><code>IPv6Address</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Network</code></td>
-<td><code>IPv6Interface</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Network</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Network</code></td>
-<td><code>bytes</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IPv6Network</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>integer representing the IP address, should be less than <code>2**128</code></td>
-</tr>
-<tr>
-<td><code>Enum</code></td>
-<td><code>Enum</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Enum</code></td>
-<td><code>Any</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td>Input value should be convertible to enum values.</td>
-</tr>
-<tr>
-<td><code>Enum</code></td>
-<td><code>Any</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Input value should be convertible to enum values.</td>
-</tr>
-<tr>
-<td><code>IntEnum</code></td>
-<td><code>IntEnum</code></td>
-<td>Strict</td>
-<td>Python</td>
-<td></td>
-</tr>
-<tr>
-<td><code>IntEnum</code></td>
-<td><code>Any</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td>Input value should be convertible to enum values.</td>
-</tr>
-<tr>
-<td><code>IntEnum</code></td>
-<td><code>Any</code></td>
-<td>Lax</td>
-<td>Python</td>
-<td>Input value should be convertible to enum values.</td>
-</tr>
-<tr>
-<td><code>Decimal</code></td>
-<td><code>Decimal</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>Decimal</code></td>
-<td><code>int</code></td>
-<td>Strict</td>
-<td>JSON</td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
 <td></td>
-</tr>
-<tr>
-<td><code>Decimal</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Decimal</code></td>
-<td><code>float</code></td>
-<td>Strict</td>
-<td>JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Decimal</code></td>
-<td><code>int</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
-<td></td>
-</tr>
-<tr>
-<td><code>Decimal</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
 </tr>
 <tr>
-<td><code>Decimal</code></td>
-<td><code>float</code></td>
-<td>Lax</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>Path</code></td>
-<td><code>Path</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>Path</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>Path</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_keys</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>UUID</code></td>
-<td><code>UUID</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_values</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>UUID</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>JSON</td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>UUID</code></td>
-<td><code>str</code></td>
-<td>Lax</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>ByteSize</code></td>
-<td><code>str</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>ByteSize</code></td>
-<td><code>int</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>ByteSize</code></td>
-<td><code>float</code></td>
-<td>Strict</td>
-<td>Python &amp; JSON</td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
 <td></td>
 </tr>
 <tr>
-<td><code>ByteSize</code></td>
-<td><code>Decimal</code></td>
-<td>Strict</td>
-<td>Python</td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>i64</code>, Must be numeric only, e.g. <code>[0-9]+</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>i64</code>, Must be exact int, e.g. <code>val % 1 == 0</code>, raises error for <code>nan</code>, <code>inf</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Max abs value <code>2^64</code> as <code>i64</code> is used internally; <code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>i64</code>. Limits <code>numbers &gt; (2 ^ 63) - 1</code> to <code>(2 ^ 63) - 1</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>i64</code>, Must be numeric only, e.g. <code>[0-9]+</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>i64</code>, Must be exact int, e.g. <code>val % 1 == 0</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_keys</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_values</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_keys</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_values</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytearray</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Assumes UTF-8, error on unicode decoding error.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Assumes UTF-8, error on unicode decoding error.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Format: <code>HH:MM:SS.FFFFFF</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds, range <code>0 - 86399.9*</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds, range <code>0 - 86399</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>HH:MM:SS.FFFFFF</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Interpreted as seconds, range <code>0 - 86399.9*</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Format: <code>ISO8601</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>, (UTF-8).</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>ISO8601</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Interpreted as seconds.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_keys</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_values</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**32</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**32</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP network, must be less than <code>2**32</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**128</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**128</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**128</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>InstanceOf</code></span></td>
+<td><span style="white-space: nowrap;"><code>-</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Never valid.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>InstanceOf</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>isinstance()</code> check must return <code>True</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Pattern</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Input must be a valid pattern.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Pattern</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Input must be a valid pattern.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Type</code></span></td>
+<td><span style="white-space: nowrap;"><code>Type</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Mapping</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Must implement the mapping interface and have an <code>items()</code> method.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Object</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
 <td></td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="tabbed-block">
+<table>
+<thead>
+<tr>
+<th>Field Type</th>
+<th>Input</th>
+<th>Strict</th>
+<th>Input Source</th>
+<th>Conditions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Allowed values: <code>0.0, 1.0</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Allowed values: <code>0, 1</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Allowed values: <code>'f'</code>, <code>'n'</code>, <code>'no'</code>, <code>'off'</code>, <code>'false'</code>, <code>'False'</code>, <code>'t'</code>, <code>'y'</code>, <code>'on'</code>, <code>'yes'</code>, <code>'true'</code>, <code>'True'</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>callable</code></span></td>
+<td><span style="white-space: nowrap;"><code>-</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Never valid.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>YYYY-MM-DD</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch, see <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch, see <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>YYYY-MM-DDTHH:MM:SS.f</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Object</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>i64</code>, Must be exact int, e.g. <code>val % 1 == 0</code>, raises error for <code>nan</code>, <code>inf</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Max abs value <code>2^64</code> as <code>i64</code> is used internally; <code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>i64</code>. Limits <code>numbers &gt; (2 ^ 63) - 1</code> to <code>(2 ^ 63) - 1</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>i64</code>, Must be numeric only, e.g. <code>[0-9]+</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds, range <code>0 - 86399.9*</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds, range <code>0 - 86399</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>HH:MM:SS.FFFFFF</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>ISO8601</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>InstanceOf</code></span></td>
+<td><span style="white-space: nowrap;"><code>-</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Never valid.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Pattern</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Input must be a valid pattern.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Object</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tabbed-block">
+<table>
+<thead>
+<tr>
+<th>Field Type</th>
+<th>Input</th>
+<th>Strict</th>
+<th>Input Source</th>
+<th>Conditions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Object</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Max abs value <code>2^64</code> as <code>i64</code> is used internally; <code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Pattern</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Input must be a valid pattern.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>Array</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Object</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">JSON</span></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tabbed-block">
+<table>
+<thead>
+<tr>
+<th>Field Type</th>
+<th>Input</th>
+<th>Strict</th>
+<th>Input Source</th>
+<th>Conditions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Allowed values: <code>0.0, 1.0</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Allowed values: <code>0, 1</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Allowed values: <code>'f'</code>, <code>'n'</code>, <code>'no'</code>, <code>'off'</code>, <code>'false'</code>, <code>'False'</code>, <code>'t'</code>, <code>'y'</code>, <code>'on'</code>, <code>'yes'</code>, <code>'true'</code>, <code>'True'</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Allowed values: <code>Decimal(0), Decimal(1)</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytearray</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>callable</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>callable()</code> check must return <code>True</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Format: <code>YYYY-MM-DD</code> (UTF-8).</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Must be exact date, eg. no <code>H</code>, <code>M</code>, <code>S</code>, <code>f</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>YYYY-MM-DD</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Interpreted as seconds or ms from epoch. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>. Must be exact date.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Format: <code>YYYY-MM-DDTHH:MM:SS.f</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>, (UTF-8).</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch, see <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds or ms from epoch, see <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>YYYY-MM-DDTHH:MM:SS.f</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Interpreted as seconds or ms from epoch, see <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Mapping</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Must implement the mapping interface and have an <code>items()</code> method.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_keys</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_values</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>i64</code>, Must be numeric only, e.g. <code>[0-9]+</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>i64</code>, Must be exact int, e.g. <code>val % 1 == 0</code>, raises error for <code>nan</code>, <code>inf</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Max abs value <code>2^64</code> as <code>i64</code> is used internally; <code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>i64</code>. Limits <code>numbers &gt; (2 ^ 63) - 1</code> to <code>(2 ^ 63) - 1</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>i64</code>, Must be numeric only, e.g. <code>[0-9]+</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>i64</code>, Must be exact int, e.g. <code>val % 1 == 0</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_keys</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_values</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_keys</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_values</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytearray</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Assumes UTF-8, error on unicode decoding error.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Assumes UTF-8, error on unicode decoding error.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Format: <code>HH:MM:SS.FFFFFF</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds, range <code>0 - 86399.9*</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds, range <code>0 - 86399</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>HH:MM:SS.FFFFFF</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Interpreted as seconds, range <code>0 - 86399.9*</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Format: <code>ISO8601</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>, (UTF-8).</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Interpreted as seconds.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Format: <code>ISO8601</code>. See <a href="https://docs.rs/speedate/latest/speedate/">speedate</a>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Interpreted as seconds.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_keys</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict_values</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Must match <code>[0-9]+(\.[0-9]+)?</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**32</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**32</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP network, must be less than <code>2**32</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**128</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**128</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>integer representing the IP address, must be less than <code>2**128</code></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>InstanceOf</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>isinstance()</code> check must return <code>True</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Input value must be convertible to enum values.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Pattern</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Input must be a valid pattern.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Pattern</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Input must be a valid pattern.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Type</code></span></td>
+<td><span style="white-space: nowrap;"><code>Type</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Mapping</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Must implement the mapping interface and have an <code>items()</code> method.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td></td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tabbed-block">
+<table>
+<thead>
+<tr>
+<th>Field Type</th>
+<th>Input</th>
+<th>Strict</th>
+<th>Input Source</th>
+<th>Conditions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td><span style="white-space: nowrap;"><code>bool</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>callable</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>callable()</code> check must return <code>True</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td><span style="white-space: nowrap;"><code>date</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td><span style="white-space: nowrap;"><code>datetime</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td><code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Max abs value <code>2^64</code> as <code>i64</code> is used internally; <code>bool</code> is explicitly forbidden.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td><span style="white-space: nowrap;"><code>time</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td><span style="white-space: nowrap;"><code>timedelta</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>float</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>int</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>ByteSize</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td><span style="white-space: nowrap;"><code>Decimal</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td><span style="white-space: nowrap;"><code>Enum</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv4Network</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Address</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Interface</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td><span style="white-space: nowrap;"><code>IPv6Network</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>InstanceOf</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td><code>isinstance()</code> check must return <code>True</code>.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td><span style="white-space: nowrap;"><code>IntEnum</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>deque</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>frozenset</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>set</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Iterable</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>namedtuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>tuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td><span style="white-space: nowrap;"><code>NamedTuple</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td><span style="white-space: nowrap;"><code>None</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td><span style="white-space: nowrap;"><code>Path</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Pattern</code></span></td>
+<td><span style="white-space: nowrap;"><code>bytes</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td>Input must be a valid pattern.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Pattern</code></span></td>
+<td><span style="white-space: nowrap;"><code>str</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python &amp; JSON</span></td>
+<td>Input must be a valid pattern.</td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Sequence</code></span></td>
+<td><span style="white-space: nowrap;"><code>list</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>Type</code></span></td>
+<td><span style="white-space: nowrap;"><code>Type</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>dict</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>TypedDict</code></span></td>
+<td><span style="white-space: nowrap;"><code>Any</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+<tr>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td><span style="white-space: nowrap;"><code>UUID</code></span></td>
+<td>✓</td>
+<td><span style="white-space: nowrap;">Python</span></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
 
 
 
