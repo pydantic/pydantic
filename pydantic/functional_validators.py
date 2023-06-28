@@ -5,7 +5,7 @@ from __future__ import annotations as _annotations
 import sys
 from functools import partialmethod
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, Type, TypeVar, Union, overload
 
 from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
@@ -399,28 +399,13 @@ class ModelBeforeValidator(Protocol):
         ...
 
 
-class ModelAfterValidatorWithoutInfo(Protocol):
-    """A @model_validator decorated function signature. This is used when `mode='after'` and the function does not
-    have info argument.
-    """
+_StaticModelAfterValidatorWithoutInfo = Callable[[_ModelType], _ModelType]
+_ClassModelAfterValidatorWithoutInfo = Callable[[Type[_ModelType], _ModelType], _ModelType]
+ModelAfterValidatorWithoutInfo = Union[_StaticModelAfterValidatorWithoutInfo, _ClassModelAfterValidatorWithoutInfo]
 
-    @staticmethod
-    def __call__(  # noqa: D102
-        self: _ModelType,  # type: ignore
-    ) -> _ModelType:
-        ...
-
-
-class ModelAfterValidator(Protocol):
-    """A @model_validator decorated function signature. This is used when `mode='after'`."""
-
-    @staticmethod
-    def __call__(  # noqa: D102
-        self: _ModelType,  # type: ignore
-        __info: _core_schema.ValidationInfo,
-    ) -> _ModelType:
-        ...
-
+_StaticModelAfterValidatorWithInfo = Callable[[_ModelType, _core_schema.ValidationInfo], _ModelType]
+_ClassModelAfterValidatorWithInfo = Callable[[Type[_ModelType], _ModelType, _core_schema.ValidationInfo], _ModelType]
+ModelAfterValidator = Union[_StaticModelAfterValidatorWithInfo, _ClassModelAfterValidatorWithInfo]
 
 _AnyModelWrapValidator = Union[ModelWrapValidator, ModelWrapValidatorWithoutInfo]
 _AnyModeBeforeValidator = Union[ModelBeforeValidator, ModelBeforeValidatorWithoutInfo]
