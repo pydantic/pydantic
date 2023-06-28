@@ -310,8 +310,6 @@ def test_root_model_equality():
     assert RootModel[int](42) == RootModel[int](42)
     assert RootModel[int](42) != RootModel[int](7)
     assert RootModel[int](42) != RootModel[float](42)
-    print('***', vars(RootModel[int](42)))
-    print('***', vars(RootModel[int].model_construct(42)))
     assert RootModel[int](42) == RootModel[int].model_construct(42)
 
 
