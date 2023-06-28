@@ -1268,20 +1268,6 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
   
     <li class="md-nav__item">
-      <a href="../strict_mode/" class="md-nav__link">
-        Strict Mode
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../conversion_table/" class="md-nav__link">
         Conversion Table
       </a>
@@ -2712,9 +2698,8 @@ does not match the field's type annotation.</p>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
 </code></pre></div>
-<p>See <a href="../strict_mode/">Strict Mode</a> for more details.</p>
-<p>See the <a href="../conversion_table/">Conversion Table</a> for more details on how Pydantic converts data in both strict and lax
-modes.</p>
+<p>See <a href="../models/#strict-mode">Strict Mode</a> for more details.</p>
+<p>See <a href="../conversion_table/">Conversion Table</a> for more details on how Pydantic converts data in both strict and lax modes.</p>
 <h3 id="arbitrary-types-allowed">Arbitrary Types Allowed<a class="headerlink" href="#arbitrary-types-allowed" title="Permanent link">&para;</a></h3>
 <p>You can allow arbitrary types using the <code>arbitrary_types_allowed</code> setting in the model's config:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
