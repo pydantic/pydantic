@@ -8,7 +8,8 @@ eg. `Color((0, 255, 255)).as_named() == 'cyan'` because "cyan" comes after "aqua
 
 Warning: Deprecated
     The `Color` class is deprecated, use `pydantic_extra_types` instead.
-    See more about it [here](/usage/types/extra_types/color_types/).
+    See [`pydantic-extra-types.Color`](../usage/types/extra_types/color_types.md)
+    for more information.
 """
 import math
 import re
