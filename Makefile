@@ -1,6 +1,7 @@
 .DEFAULT_GOAL := all
 black = black python/pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
 ruff = ruff python/pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
+mypy-stubtest = python -m mypy.stubtest pydantic_core._pydantic_core --allowlist .mypy-stubtest-allowlist
 
 .PHONY: install
 install:
@@ -46,6 +47,7 @@ format:
 lint-python:
 	$(ruff)
 	$(black) --check --diff
+	$(mypy-stubtest)
 	griffe dump -f -d google -LWARNING -o/dev/null python/pydantic_core
 
 .PHONY: lint-rust

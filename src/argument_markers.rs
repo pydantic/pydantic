@@ -93,6 +93,7 @@ impl PydanticUndefinedType {
         UNDEFINED_CELL.get(py).unwrap().clone()
     }
 
+    #[pyo3(signature = (_memo, /))]
     fn __deepcopy__(&self, py: Python, _memo: &PyAny) -> Py<Self> {
         self.__copy__(py)
     }
