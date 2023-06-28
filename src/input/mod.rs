@@ -17,7 +17,7 @@ pub(crate) use datetime::{
 pub(crate) use input_abstract::{Input, InputType};
 pub(crate) use parse_json::{JsonInput, JsonObject};
 pub(crate) use return_enums::{
-    py_string_str, AttributesGenericIterator, DictGenericIterator, EitherBytes, EitherInt, EitherString,
+    py_string_str, AttributesGenericIterator, DictGenericIterator, EitherBytes, EitherFloat, EitherInt, EitherString,
     GenericArguments, GenericIterable, GenericIterator, GenericMapping, JsonArgs, JsonObjectGenericIterator,
     MappingGenericIterator, PyArgs,
 };

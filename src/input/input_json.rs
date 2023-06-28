@@ -10,8 +10,8 @@ use super::datetime::{
 use super::parse_json::JsonArray;
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
-    EitherBytes, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable, GenericIterator,
-    GenericMapping, Input, JsonArgs, JsonInput,
+    EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
+    GenericIterator, GenericMapping, Input, JsonArgs, JsonInput,
 };
 
 impl<'a> Input<'a> for JsonInput {
@@ -135,31 +135,31 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
 
-    fn ultra_strict_float(&self) -> ValResult<f64> {
+    fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
         match self {
-            JsonInput::Float(f) => Ok(*f),
+            JsonInput::Float(f) => Ok(EitherFloat::F64(*f)),
             _ => Err(ValError::new(ErrorType::FloatType, self)),
         }
     }
-    fn strict_float(&self) -> ValResult<f64> {
+    fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
         match self {
-            JsonInput::Float(f) => Ok(*f),
-            JsonInput::Int(i) => Ok(*i as f64),
-            JsonInput::Uint(u) => Ok(*u as f64),
+            JsonInput::Float(f) => Ok(EitherFloat::F64(*f)),
+            JsonInput::Int(i) => Ok(EitherFloat::F64(*i as f64)),
+            JsonInput::Uint(u) => Ok(EitherFloat::F64(*u as f64)),
             _ => Err(ValError::new(ErrorType::FloatType, self)),
         }
     }
-    fn lax_float(&self) -> ValResult<f64> {
+    fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
         match self {
             JsonInput::Bool(b) => match *b {
-                true => Ok(1.0),
-                false => Ok(0.0),
+                true => Ok(EitherFloat::F64(1.0)),
+                false => Ok(EitherFloat::F64(0.0)),
             },
-            JsonInput::Float(f) => Ok(*f),
-            JsonInput::Int(i) => Ok(*i as f64),
-            JsonInput::Uint(u) => Ok(*u as f64),
+            JsonInput::Float(f) => Ok(EitherFloat::F64(*f)),
+            JsonInput::Int(i) => Ok(EitherFloat::F64(*i as f64)),
+            JsonInput::Uint(u) => Ok(EitherFloat::F64(*u as f64)),
             JsonInput::String(str) => match str.parse::<f64>() {
-                Ok(i) => Ok(i),
+                Ok(i) => Ok(EitherFloat::F64(i)),
                 Err(_) => Err(ValError::new(ErrorType::FloatParsing, self)),
             },
             _ => Err(ValError::new(ErrorType::FloatType, self)),
@@ -372,16 +372,16 @@ impl<'a> Input<'a> for String {
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn ultra_strict_float(&self) -> ValResult<f64> {
+    fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
         self.strict_float()
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_float(&self) -> ValResult<f64> {
+    fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
         Err(ValError::new(ErrorType::FloatType, self))
     }
-    fn lax_float(&self) -> ValResult<f64> {
+    fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
         match self.parse() {
-            Ok(i) => Ok(i),
+            Ok(f) => Ok(EitherFloat::F64(f)),
             Err(_) => Err(ValError::new(ErrorType::FloatParsing, self)),
         }
     }
