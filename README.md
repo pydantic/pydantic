@@ -106,8 +106,8 @@ make install
 
 That should be it, the example shown above should now run.
 
-You might find it useful to look at [`pydantic_core/_pydantic_core.pyi`](./pydantic_core/_pydantic_core.pyi) and
-[`pydantic_core/core_schema.py`](./pydantic_core/core_schema.py) for more information on the python API,
+You might find it useful to look at [`pydantic_core/_pydantic_core.pyi`](./python/pydantic_core/_pydantic_core.pyi) and
+[`pydantic_core/core_schema.py`](./python/pydantic_core/core_schema.py) for more information on the python API,
 beyond that, [`tests/`](./tests) provide a large number of examples of usage.
 
 If you want to contribute to pydantic-core, you'll want to use some other make commands:
