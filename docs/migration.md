@@ -2,26 +2,29 @@
 description: Migrating from Pydantic V1.
 ---
 
-The Pydantic V2 beta introduces a number of changes to the API, including some breaking changes.
+Pydantic V2 introduces a number of changes to the API, including some breaking changes.
 
-We believe Pydantic V2 is ready for your production applications. This page provides a guide highlighting the most
+This page provides a guide highlighting the most
 important changes to help you migrate your code from Pydantic V1 to Pydantic V2.
 
-## Install Pydantic V2 beta
+## Install Pydantic V2
 
-Your feedback will be a critical part of ensuring that we have made the right tradeoffs with the API changes in
-Pydantic V2.
-
-To get started with the Pydantic V2 beta, install it from PyPI.
-We recommend using a virtual environment to isolate your testing environment:
+Pydantic V2 is now the current production release of Pydantic.
+You can install Pydantic V2 from PyPI:
 
 ```bash
-pip install --pre -U "pydantic>=2.0b3"
+pip install -U pydantic
 ```
 
-If you do encounter any issues, please [create an issue in GitHub](https://github.com/pydantic/pydantic/issues) using
+If you encounter any issues, please [create an issue in GitHub](https://github.com/pydantic/pydantic/issues) using
 the `bug V2` label. This will help us to actively monitor and track errors, and to continue to improve the library's
 performance.
+
+If you need to use latest Pydantic V1 for any reason, you can install it with:
+
+```bash
+pip install "pydantic==1.*"
+```
 
 ## Migration guide
 
