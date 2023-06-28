@@ -54,7 +54,7 @@ class SchemaTransformer:
         return self.get_json_schema(schema, handler)
 
 
-def get_enum_core_schema(enum_type: type[Enum]) -> CoreSchema:
+def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchema:
     cases: list[Any] = list(enum_type.__members__.values())
 
     if not cases:
@@ -65,6 +65,8 @@ def get_enum_core_schema(enum_type: type[Enum]) -> CoreSchema:
         # (or subclasses of enum.Enum) if all parent classes have no cases.
         return core_schema.is_instance_schema(enum_type)
 
+    use_enum_values = config.get('use_enum_values', False)
+
     if len(cases) == 1:
         expected = repr(cases[0].value)
     else:
@@ -72,7 +74,10 @@ def get_enum_core_schema(enum_type: type[Enum]) -> CoreSchema:
 
     def to_enum(__input_value: Any) -> Enum:
         try:
-            return enum_type(__input_value)  # type: ignore
+            enum_field = enum_type(__input_value)  # type: ignore
+            if use_enum_values:
+                return enum_field.value
+            return enum_field
         except ValueError:
             # The type: ignore on the next line is to ignore the requirement of LiteralString
             raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})  # type: ignore

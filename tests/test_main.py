@@ -599,16 +599,22 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
 
 
 def test_enum_values():
-    FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
+    class Foo(Enum):
+        foo = 'foo'
+        bar = 'bar'
 
     class Model(BaseModel):
+        foo: Foo
+
         model_config = ConfigDict(use_enum_values=True)
-        foo: FooEnum
+
+    m = Model(foo=Foo.foo)
+    assert type(m.foo) is str, type(m.foo)
+    assert m.foo == 'foo'
 
     m = Model(foo='foo')
-    # this is the actual value, so has not "values" field
-    assert m.foo == FooEnum.foo
-    assert isinstance(m.foo, FooEnum)
+    assert type(m.foo) is str, type(m.foo)
+    assert m.foo == 'foo'
 
 
 def test_literal_enum_values():
