@@ -2357,7 +2357,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
     <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
         <span class="n">core_schema</span> <span class="o">=</span> <span class="n">_get_schema</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">config_wrapper</span><span class="p">,</span> <span class="n">parent_depth</span><span class="o">=</span><span class="n">_parent_depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
-    <span class="n">core_schema</span> <span class="o">=</span> <span class="n">_core_utils</span><span class="o">.</span><span class="n">flatten_schema_defs</span><span class="p">(</span><span class="n">core_schema</span><span class="p">)</span>
+    <span class="n">core_schema</span> <span class="o">=</span> <span class="n">_discriminated_union</span><span class="o">.</span><span class="n">apply_discriminators</span><span class="p">(</span><span class="n">_core_utils</span><span class="o">.</span><span class="n">flatten_schema_defs</span><span class="p">(</span><span class="n">core_schema</span><span class="p">))</span>
     <span class="n">simplified_core_schema</span> <span class="o">=</span> <span class="n">_core_utils</span><span class="o">.</span><span class="n">inline_schema_defs</span><span class="p">(</span><span class="n">core_schema</span><span class="p">)</span>
 
     <span class="n">core_config</span> <span class="o">=</span> <span class="n">config_wrapper</span><span class="o">.</span><span class="n">core_config</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
