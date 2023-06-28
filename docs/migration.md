@@ -111,6 +111,7 @@ The following properties have been removed from or changed in `Field`:
 - `unique_items`
 - `allow_mutation` (use `frozen` instead)
 - `regex` (use `pattern` instead)
+- `final`
 
 * [TODO: Need to document any other backwards-incompatible changes to `pydantic.Field`]
 

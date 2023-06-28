@@ -1717,7 +1717,7 @@ def test_new_union_origin():
     [None, Field(...)],
     ids=['none', 'field'],
 )
-def test_final_field_decl_without_default_val(ann, value):
+def test_frozen_field_decl_without_default_val(ann, value):
     class Model(BaseModel):
         a: ann
 
@@ -1727,7 +1727,7 @@ def test_final_field_decl_without_default_val(ann, value):
     assert 'a' not in Model.__class_vars__
     assert 'a' in Model.model_fields
 
-    assert Model.model_fields['a'].final
+    assert Model.model_fields['a'].frozen
 
 
 @pytest.mark.parametrize(
@@ -1758,24 +1758,24 @@ def test_final_field_reassignment():
     ]
 
 
-def test_field_by_default_is_not_final():
+def test_field_by_default_is_not_frozen():
     class Model(BaseModel):
         a: int
 
-    assert not Model.model_fields['a'].final
+    assert not Model.model_fields['a'].frozen
 
 
 def test_annotated_final():
     class Model(BaseModel):
         a: Annotated[Final[int], Field(title='abc')]
 
-    assert Model.model_fields['a'].final
+    assert Model.model_fields['a'].frozen
     assert Model.model_fields['a'].title == 'abc'
 
     class Model2(BaseModel):
         a: Final[Annotated[int, Field(title='def')]]
 
-    assert Model2.model_fields['a'].final
+    assert Model2.model_fields['a'].frozen
     assert Model2.model_fields['a'].title == 'def'
 
 

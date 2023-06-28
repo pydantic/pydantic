@@ -718,7 +718,7 @@ class GenerateSchema:
             serialization_exclude=True if field_info.exclude else None,
             validation_alias=validation_alias,
             serialization_alias=field_info.serialization_alias,
-            frozen=field_info.frozen or field_info.final,
+            frozen=field_info.frozen,
             metadata=metadata,
         )
 
