@@ -6,6 +6,7 @@ You can also define your own custom data types. There are several ways to achiev
 
 [PEP 593] introduced `Annotated` as a way to attach runtime metadata to types without changing how type checkers interpret them.
 Pydantic takes advantage of this to allow you to create types that are identical to the original type as far as type checkers are concerned, but add validation, serialize differently, etc.
+
 For example, to create a type representing a positive int:
 
 ```py
@@ -31,7 +32,8 @@ except ValidationError as exc:
     """
 ```
 
-Note that you can also use constraints from [`annotated-types`] to make this Pydantic-agnostic:
+Note that you can also use constraints from [annotated-types](https://github.com/annotated-types/annotated-types)
+to make this Pydantic-agnostic:
 
 ```py
 from annotated_types import Gt
@@ -58,7 +60,8 @@ except ValidationError as exc:
 
 ### Adding validation and serialization
 
-You can add or override validation, serialization, and json schemas to an arbitrary type using the markers that Pydantic exports:
+You can add or override validation, serialization, and JSON schemas to an arbitrary type using the markers that
+Pydantic exports:
 
 ```py
 from typing_extensions import Annotated
@@ -313,9 +316,10 @@ except ValidationError as exc:
     """
 ```
 
-## Handling third party types
+## Handling third-party types
 
-One particularly powerful thing about `Annotated` is that it lets you modify validation or serialization for 3rd party types without creating subclasses or otherwise messing with the types themselves:
+One particularly powerful thing about `Annotated` is that it lets you modify validation or serialization for third-party
+types without creating subclasses or otherwise messing with the types themselves:
 
 ```py
 from typing import (
@@ -336,8 +340,8 @@ from pydantic.json_schema import JsonSchemaValue
 
 class ThirdPartyType:
     """
-    This is meant to represent a type from a third party library that wasn't designed with pydantic
-    integration in mind, and so doesn't have a pydantic_core.CoreSchema or anything.
+    This is meant to represent a type from a third-party library that wasn't designed with Pydantic
+    integration in mind, and so doesn't have a `pydantic_core.CoreSchema` or anything.
     """
 
     x: int
@@ -353,8 +357,9 @@ class _ThirdPartyTypePydanticAnnotation:
     ) -> core_schema.CoreSchema:
         """
         We return a pydantic_core.CoreSchema that behaves in the following ways:
-        * ints will be parsed as ThirdPartyType instances with the int as the x attribute
-        * ThirdPartyType instances will be parsed as ThirdPartyType instances without any changes
+
+        * ints will be parsed as `ThirdPartyType` instances with the int as the x attribute
+        * `ThirdPartyType` instances will be parsed as `ThirdPartyType` instances without any changes
         * Nothing else will pass validation
         * Serialization will always return just an int
         """
@@ -393,7 +398,7 @@ class _ThirdPartyTypePydanticAnnotation:
         return handler(core_schema.int_schema())
 
 
-# We now create an Annotated wrapper that we'll use as the annotation for fields on BaseModels etc.
+# We now create an `Annotated` wrapper that we'll use as the annotation for fields on `BaseModel`s, etc.
 PydanticThirdPartyType = Annotated[ThirdPartyType, _ThirdPartyTypePydanticAnnotation]
 
 
@@ -402,7 +407,7 @@ class Model(BaseModel):
     third_party_type: PydanticThirdPartyType
 
 
-# Demonstrate that this field is handled correctly, that ints are parsed into ThirdPartyType, and that
+# Demonstrate that this field is handled correctly, that ints are parsed into `ThirdPartyType`, and that
 # these instances are also "dumped" directly into ints as expected.
 m_int = Model(third_party_type=1)
 assert isinstance(m_int.third_party_type, ThirdPartyType)
@@ -447,14 +452,27 @@ You can use this approach to e.g. define behavior for Pandas or Numpy types.
 
 ## Creating custom classes using `__get_pydantic_core_schema__`
 
-To do more extensive customization of how Pydantic handles custom classes, and in particular when you have access to the class or can subclass it, you can implement a special `__get_pydantic_core_schema__` to tell Pydantic how to generate the `pydantic-core` schema.
-While `pydantic` uses `pydantic-core` internally to handle validation and serialization, it is a new API for Pydantic V2, thus it is one of the areas most likely to be tweaked in the future and you should try to stick to the built in constructs like those provided by `annotated-types`, `pydantic.Field` or `BeforeValidator` and co.
+To do more extensive customization of how Pydantic handles custom classes, and in particular when you have access to the
+class or can subclass it, you can implement a special `__get_pydantic_core_schema__` to tell Pydantic how to generate the
+`pydantic-core` schema.
 
-You can implement `__get_pydantic_core_schema__` both on a custom type and on metadata intended to be put in `Annotated`. In both cases the API is middleware-like and similar to that of `wrap` validators: you get a `source_type` (which isn't necessarily the same as the class, in particular for generics) and a `handler` that you can call with a type to either call the next metadata in `Annotated` or call into `pydantic`'s internal schema generation.
+While `pydantic` uses `pydantic-core` internally to handle validation and serialization, it is a new API for Pydantic V2,
+thus it is one of the areas most likely to be tweaked in the future and you should try to stick to the built in
+constructs like those provided by `annotated-types`, `pydantic.Field`, or `BeforeValidator` and so on.
 
-The simplest no-op implementation calls the handler with the type you are given and then returns that as the result. You can also choose to modify the type before calling the handler, modify the core schema returned by the handler or not call the handler at all.
+You can implement `__get_pydantic_core_schema__` both on a custom type and on metadata intended to be put in `Annotated`.
+In both cases the API is middleware-like and similar to that of "wrap" validators: you get a `source_type` (which isn't
+necessarily the same as the class, in particular for generics) and a `handler` that you can call with a type to either
+call the next metadata in `Annotated` or call into Pydantic's internal schema generation.
 
-Here is an example of an annotation intended to go into `Annotated` that enforces that a string is a valid postal code. The advantage of doing this via an annotation in `Annotated` instead of making a `PostalCode(str)` class is that any `str` can be passed into a model constructor and type checkers will not complain but Pydantic will still enforce validation.
+The simplest no-op implementation calls the handler with the type you are given, then returns that as the result. You can
+also choose to modify the type before calling the handler, modify the core schema returned by the handler or not call the
+handler at all.
+
+Here is an example of an annotation intended to go into `Annotated` that enforces that a string is a valid postal code.
+The advantage of doing this via an annotation in `Annotated` instead of making a `PostalCode(str)` class is that any
+`str` can be passed into a model constructor and type checkers will not complain, but Pydantic will still enforce
+validation.
 
 ```py
 import re
@@ -565,11 +583,13 @@ except ValidationError as e:
     """
 ```
 
-Similar validation could be achieved using [`Annotated[str, Field(pattern=...)]`](#constrained-types) except the value won't be formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
+Similar validation could be achieved using [`Annotated[str, Field(pattern=...)]`](../fields.md#string-constraints) except
+the value won't be formatted with a space, the schema would just include the full pattern and the returned value would be
+a vanilla string.
 
 See [schema](../json_schema.md) for more details on how the model's schema is generated.
 
-## Generic Classes as Types
+## Generic classes as types
 
 !!! warning
     This is an advanced technique that you might not need in the beginning. In most of
@@ -581,10 +601,14 @@ field types and perform custom validation based on the "type parameters" (or sub
 with `__get_pydantic_core_schema__`.
 
 If the Generic class that you are using as a sub-type has a classmethod
-`__get_pydantic_core_schema__` you don't need to use [`arbitrary_types_allowed`](../model_config.md#arbitrary-types-allowed) for it to work.
+`__get_pydantic_core_schema__`, you don't need to use
+[`arbitrary_types_allowed`](../model_config.md#arbitrary-types-allowed) for it to work.
 
-Because the `source_type` parameter is not the same as the `cls` parameter you can use `typing.get_args` (or `typing_extensions.get_args`) to extract the generic parameters.
-Then you can use the `handler` to generate a schema for them by calling `handler.generate_schema`. Note that we do not do something like `handler(get_args(source_type)[0])` because we want to generate an unrelated schema for that generic parameter, not one that is influenced by the current context of `Annotated` metadata and such. This is less important for custom types but crucial for annotated metadata that modifies schema building.
+Because the `source_type` parameter is not the same as the `cls` parameter, you can use `typing.get_args` (or `typing_extensions.get_args`) to extract the generic parameters.
+Then you can use the `handler` to generate a schema for them by calling `handler.generate_schema`.
+Note that we do not do something like `handler(get_args(source_type)[0])` because we want to generate an unrelated
+schema for that generic parameter, not one that is influenced by the current context of `Annotated` metadata and such.
+This is less important for custom types, but crucial for annotated metadata that modifies schema building.
 
 ```py
 from dataclasses import dataclass
