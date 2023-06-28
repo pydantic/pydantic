@@ -1,25 +1,26 @@
 import decimal
 import sys
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, Type, TypeVar
 
-from pydantic_core import ErrorDetails, InitErrorDetails
+from pydantic_core import ErrorDetails, ErrorTypeInfo, InitErrorDetails, MultiHostHost
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
 
-if sys.version_info < (3, 9):
-    from typing_extensions import TypedDict
+if sys.version_info < (3, 8):
+    from typing_extensions import final
 else:
-    from typing import TypedDict
+    from typing import final
 
 if sys.version_info < (3, 11):
-    from typing_extensions import Literal, LiteralString, NotRequired, TypeAlias
+    from typing_extensions import Literal, LiteralString, Self, TypeAlias
 else:
-    from typing import Literal, LiteralString, NotRequired, TypeAlias
+    from typing import Literal, LiteralString, Self, TypeAlias
 
 from _typeshed import SupportsAllComparisons
 
-__all__ = (
+__all__ = [
     '__version__',
     'build_profile',
+    'ArgsKwargs',
     'SchemaValidator',
     'SchemaSerializer',
     'Url',
@@ -30,19 +31,29 @@ __all__ = (
     'PydanticKnownError',
     'PydanticOmit',
     'PydanticSerializationError',
+    'PydanticSerializationUnexpectedValue',
+    'PydanticUndefined',
+    'PydanticUndefinedType',
+    'Some',
+    'to_json',
+    'to_jsonable_python',
     'list_all_errors',
-)
+]
 __version__: str
 build_profile: str
 
-T = TypeVar('T', default=Any, covariant=True)
+_T = TypeVar('_T', default=Any, covariant=True)
 
-class Some(Generic[T]):
+@final
+class Some(Generic[_T]):
     __match_args__ = ('value',)
 
     @property
-    def value(self) -> T: ...
+    def value(self) -> _T: ...
+    @classmethod
+    def __class_getitem__(cls, item: Any) -> Type[Self]: ...
 
+@final
 class SchemaValidator:
     def __init__(self, schema: CoreSchema, config: 'CoreConfig | None' = None) -> None: ...
     @property
@@ -85,8 +96,9 @@ class SchemaValidator:
     ) -> 'dict[str, Any]': ...
     def get_default_value(self, *, strict: 'bool | None' = None, context: Any = None) -> Some | None: ...
 
-IncEx: TypeAlias = 'set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None'
+_IncEx: TypeAlias = 'set[int] | set[str] | dict[int, _IncEx] | dict[str, _IncEx] | None'
 
+@final
 class SchemaSerializer:
     def __init__(self, schema: CoreSchema, config: 'CoreConfig | None' = None) -> None: ...
     def to_python(
@@ -94,8 +106,8 @@ class SchemaSerializer:
         value: Any,
         *,
         mode: str | None = None,
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: _IncEx = None,
+        exclude: _IncEx = None,
         by_alias: bool = True,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -109,8 +121,8 @@ class SchemaSerializer:
         value: Any,
         *,
         indent: int | None = None,
-        include: IncEx = None,
-        exclude: IncEx = None,
+        include: _IncEx = None,
+        exclude: _IncEx = None,
         by_alias: bool = True,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
@@ -124,8 +136,8 @@ def to_json(
     value: Any,
     *,
     indent: int | None = None,
-    include: IncEx = None,
-    exclude: IncEx = None,
+    include: _IncEx = None,
+    exclude: _IncEx = None,
     by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
@@ -137,8 +149,8 @@ def to_json(
 def to_jsonable_python(
     value: Any,
     *,
-    include: IncEx = None,
-    exclude: IncEx = None,
+    include: _IncEx = None,
+    exclude: _IncEx = None,
     by_alias: bool = True,
     exclude_none: bool = False,
     round_trip: bool = False,
@@ -171,12 +183,7 @@ class Url(SupportsAllComparisons):
     def unicode_string(self) -> str: ...
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
-
-class MultiHostHost(TypedDict):
-    username: 'str | None'
-    password: 'str | None'
-    host: 'str | None'
-    port: 'int | None'
+    def __deepcopy__(self, memo: dict) -> str: ...
 
 class MultiHostUrl(SupportsAllComparisons):
     def __init__(self, url: str) -> None: ...
@@ -193,16 +200,19 @@ class MultiHostUrl(SupportsAllComparisons):
     def unicode_string(self) -> str: ...
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
+    def __deepcopy__(self, memo: dict) -> Self: ...
 
+@final
 class SchemaError(Exception):
     def error_count(self) -> int: ...
     def errors(self) -> 'list[ErrorDetails]': ...
 
+@final
 class ValidationError(ValueError):
     @staticmethod
     def from_exception_data(
         title: str,
-        errors: 'list[InitErrorDetails]',
+        line_errors: 'list[InitErrorDetails]',
         error_mode: Literal['python', 'json'] = 'python',
         hide_input: bool = False,
     ) -> ValidationError:
@@ -218,6 +228,7 @@ class ValidationError(ValueError):
     def errors(self, *, include_url: bool = True, include_context: bool = True) -> 'list[ErrorDetails]': ...
     def json(self, *, indent: 'int | None' = None, include_url: bool = True, include_context: bool = True) -> str: ...
 
+@final
 class PydanticCustomError(ValueError):
     def __init__(
         self, error_type: LiteralString, message_template: LiteralString, context: 'dict[str, Any] | None' = None
@@ -230,6 +241,7 @@ class PydanticCustomError(ValueError):
     def message_template(self) -> str: ...
     def message(self) -> str: ...
 
+@final
 class PydanticKnownError(ValueError):
     def __init__(
         self, error_type: ErrorType, context: 'dict[str, str | int | float | decimal.Decimal] | None' = None
@@ -242,23 +254,19 @@ class PydanticKnownError(ValueError):
     def message_template(self) -> str: ...
     def message(self) -> str: ...
 
+@final
 class PydanticOmit(Exception):
     def __init__(self) -> None: ...
 
+@final
 class PydanticSerializationError(ValueError):
     def __init__(self, message: str) -> None: ...
 
+@final
 class PydanticSerializationUnexpectedValue(ValueError):
     def __init__(self, message: 'str | None' = None) -> None: ...
 
-class ErrorTypeInfo(TypedDict):
-    type: ErrorType
-    message_template_python: str
-    example_message_python: str
-    message_template_json: NotRequired[str]
-    example_message_json: NotRequired[str]
-    example_context: 'dict[str, str | int | float] | None'
-
+@final
 class ArgsKwargs:
     def __init__(self, args: 'tuple[Any, ...]', kwargs: 'dict[str, Any] | None' = None) -> None: ...
     @property
@@ -266,7 +274,10 @@ class ArgsKwargs:
     @property
     def kwargs(self) -> 'dict[str, Any] | None': ...
 
-class PydanticUndefinedType: ...
+@final
+class PydanticUndefinedType:
+    def __copy__(self) -> Self: ...
+    def __deepcopy__(self, memo: Any) -> Self: ...
 
 PydanticUndefined: PydanticUndefinedType
 
