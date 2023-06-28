@@ -599,13 +599,9 @@ print(user)
 1. This is the default value.
 2. The `age` field is not validated in the strict mode. Therefore, it can be assigned a string.
 
-See [Strict Mode](models.md#strict-mode) for more details.
+See [Strict Mode](strict_mode.md) for more details.
 
 See [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
-
-Pydantic also provides a [`Strict`][pydantic.types.Strict] field metadata class that indicates an annotated field should
-be validated in strict mode. This is, in fact, the method used to implement strict built-in types such as, for example,
-[`StrictBool`][pydantic.types.StrictBool]. See [Strict Mode](models.md#strict-mode-for-fields) for details.
 
 ## Immutability
 

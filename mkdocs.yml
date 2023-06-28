@@ -91,6 +91,7 @@ nav:
   - 'Dataclasses': usage/dataclasses.md
   - 'Validation Decorator': usage/validation_decorator.md
   - 'Postponed Annotations': usage/postponed_annotations.md
+  - 'Strict Mode': usage/strict_mode.md
   - 'Conversion Table': usage/conversion_table.md
   - 'Settings Management': usage/pydantic_settings.md
 - Error Messages:
