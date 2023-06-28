@@ -603,7 +603,7 @@ class Foo(Enum):
     bar = 'bar'
 
 
-@pytest.mark.parametrize('value', [Foo.foo, Foo.foo.value])
+@pytest.mark.parametrize('value', [Foo.foo, Foo.foo.value, 'foo'])
 def test_enum_values(value: Any) -> None:
     class Model(BaseModel):
         foo: Foo
