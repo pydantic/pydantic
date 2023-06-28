@@ -402,7 +402,7 @@ def test_all_errors():
     error_types = [e['type'] for e in errors]
     if error_types != list(core_schema.ErrorType.__args__):
         literal = ''.join(f'\n    {e!r},' for e in error_types)
-        print(f'python code (end of pydantic_core/core_schema.py):\n\nErrorType = Literal[{literal}\n]')
+        print(f'python code (end of python/pydantic_core/core_schema.py):\n\nErrorType = Literal[{literal}\n]')
         pytest.fail('core_schema.ErrorType needs to be updated')
 
 

@@ -4,7 +4,7 @@ extern crate core;
 
 use pyo3::prelude::*;
 
-#[cfg(feature = "mimalloc-allocator")]
+#[cfg(feature = "mimalloc")]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
@@ -63,5 +63,9 @@ fn _pydantic_core(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(to_json, m)?)?;
     m.add_function(wrap_pyfunction!(to_jsonable_python, m)?)?;
     m.add_function(wrap_pyfunction!(list_all_errors, m)?)?;
+
+    #[cfg(not(feature = "mimalloc"))]
+    m.setattr("__pydantic_core_default_allocator__", true)?; // uses setattr so this is not in __all__
+
     Ok(())
 }
