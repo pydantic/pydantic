@@ -598,23 +598,26 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
     ]
 
 
-def test_enum_values():
-    class Foo(Enum):
-        foo = 'foo'
-        bar = 'bar'
+class Foo(Enum):
+    foo = 'foo'
+    bar = 'bar'
 
+
+@pytest.mark.parametrize('value', [Foo.foo, Foo.foo.value])
+def test_enum_values(value: Any) -> None:
     class Model(BaseModel):
         foo: Foo
-
         model_config = ConfigDict(use_enum_values=True)
 
-    m = Model(foo=Foo.foo)
-    assert type(m.foo) is str, type(m.foo)
-    assert m.foo == 'foo'
+    m = Model(foo=value)
 
-    m = Model(foo='foo')
-    assert type(m.foo) is str, type(m.foo)
-    assert m.foo == 'foo'
+    foo = m.foo
+    assert type(foo) is str, type(foo)
+    assert foo == 'foo'
+
+    foo = m.model_dump()['foo']
+    assert type(foo) is str, type(foo)
+    assert foo == 'foo'
 
 
 def test_literal_enum_values():
