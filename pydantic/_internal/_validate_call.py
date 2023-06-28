@@ -8,7 +8,7 @@ from typing import Any, Callable
 import pydantic_core
 
 from ..config import ConfigDict
-from . import _generate_schema, _typing_extra
+from . import _discriminated_union, _generate_schema, _typing_extra
 from ._config import ConfigWrapper
 from ._core_utils import flatten_schema_defs, inline_schema_defs
 
@@ -63,7 +63,7 @@ class ValidateCallWrapper:
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         self.__pydantic_core_schema__ = schema = gen_schema.generate_schema(function)
         core_config = config_wrapper.core_config(self)
-        schema = flatten_schema_defs(schema)
+        schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
         simplified_schema = inline_schema_defs(schema)
         self.__pydantic_validator__ = pydantic_core.SchemaValidator(simplified_schema, core_config)
 

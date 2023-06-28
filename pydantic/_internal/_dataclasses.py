@@ -12,7 +12,7 @@ from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
-from . import _config, _decorators, _typing_extra
+from . import _config, _decorators, _discriminated_union, _typing_extra
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
@@ -150,8 +150,8 @@ def complete_dataclass(
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
-    cls.__pydantic_core_schema__ = schema
-    simplified_core_schema = inline_schema_defs(flatten_schema_defs(schema))
+    cls.__pydantic_core_schema__ = schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
+    simplified_core_schema = inline_schema_defs(schema)
     cls.__pydantic_validator__ = validator = SchemaValidator(simplified_core_schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
 

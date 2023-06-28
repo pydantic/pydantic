@@ -11,7 +11,7 @@ from typing_extensions import Literal, is_typeddict
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
 
-from ._internal import _config, _core_utils, _generate_schema, _typing_extra
+from ._internal import _config, _core_utils, _discriminated_union, _generate_schema, _typing_extra
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -151,7 +151,7 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
 
-        core_schema = _core_utils.flatten_schema_defs(core_schema)
+        core_schema = _discriminated_union.apply_discriminators(_core_utils.flatten_schema_defs(core_schema))
         simplified_core_schema = _core_utils.inline_schema_defs(core_schema)
 
         core_config = config_wrapper.core_config(None)
