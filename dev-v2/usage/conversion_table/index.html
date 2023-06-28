@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.pydantic.dev/latest/usage/conversion_table/">
       
       
-        <link rel="prev" href="../postponed_annotations/">
+        <link rel="prev" href="../strict_mode/">
       
       
         <link rel="next" href="../pydantic_settings/">
@@ -1139,6 +1139,20 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
               
   
   
+  
+    <li class="md-nav__item">
+      <a href="../strict_mode/" class="md-nav__link">
+        Strict Mode
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
     
   
   
@@ -2026,8 +2040,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   <h1>Conversion Table</h1>
 
 <p>The following table provides details on how Pydantic converts data during validation in both strict and lax modes.</p>
-<p>"Lax mode" indicates the default behavior of Pydantic, where it attempts to coerce values to the correct type, when possible. "Strict mode" indicates the behavior of Pydantic when <code>strict=True</code> is set on either a field or on a model config.</p>
-<p>See <a href="../models/#strict-mode">Strict Mode</a> for more details.</p>
+<p>The "Strict" column contains checkmarks for type conversions that are allowed when validating in
+<a href="../strict_mode/">Strict Mode</a>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:5"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><input id="__tabbed_1_5" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">All</label><label for="__tabbed_1_2">JSON</label><label for="__tabbed_1_3">JSON - Strict</label><label for="__tabbed_1_4">Python</label><label for="__tabbed_1_5">Python - Strict</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">

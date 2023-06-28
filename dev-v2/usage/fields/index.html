@@ -1289,6 +1289,20 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
   
     <li class="md-nav__item">
+      <a href="../strict_mode/" class="md-nav__link">
+        Strict Mode
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../conversion_table/" class="md-nav__link">
         Conversion Table
       </a>
@@ -2841,11 +2855,8 @@ In strict mode, Pydantic throws an error during validation instead of coercing d
 <li>This is the default value.</li>
 <li>The <code>age</code> field is not validated in the strict mode. Therefore, it can be assigned a string.</li>
 </ol>
-<p>See <a href="../models/#strict-mode">Strict Mode</a> for more details.</p>
+<p>See <a href="../strict_mode/">Strict Mode</a> for more details.</p>
 <p>See <a href="../conversion_table/">Conversion Table</a> for more details on how Pydantic converts data in both strict and lax modes.</p>
-<p>Pydantic also provides a <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.Strict"><code>Strict</code></a> field metadata class that indicates an annotated field should
-be validated in strict mode. This is, in fact, the method used to implement strict built-in types such as, for example,
-<a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.StrictBool"><code>StrictBool</code></a>. See <a href="../models/#strict-mode-for-fields">Strict Mode</a> for details.</p>
 <h2 id="immutability">Immutability<a class="headerlink" href="#immutability" title="Permanent link">&para;</a></h2>
 <p>The parameter <code>frozen</code> is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).</p>
