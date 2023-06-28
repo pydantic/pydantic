@@ -38,8 +38,14 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     root: RootModelRootType
 
-    def __init__(__pydantic_self__, root: RootModelRootType = PydanticUndefined) -> None:  # type: ignore
+    def __init__(__pydantic_self__, root: RootModelRootType = PydanticUndefined, **data) -> None:  # type: ignore
         __tracebackhide__ = True
+        if data:
+            if root is not PydanticUndefined:
+                raise ValueError(
+                    '"RootModel.__init__" accepts either a single positional argument or arbitrary keyword arguments'
+                )
+            root = data  # type: ignore
         __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
 
     __init__.__pydantic_base_init__ = True  # type: ignore
