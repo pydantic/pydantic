@@ -83,6 +83,9 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
   },
   "description": "\n    This is the description of the main model\n    ",
   "properties": {
+    "foo_bar": {
+      "$ref": "#/$defs/FooBar"
+    },
     "Gender": {
       "anyOf": [
         {
@@ -93,9 +96,6 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
         }
       ],
       "default": null
-    },
-    "foo_bar": {
-      "$ref": "#/$defs/FooBar"
     },
     "snap": {
       "default": 42,
@@ -175,13 +175,13 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
   "$defs": {
     "Cat": {
       "properties": {
-        "cat_name": {
-          "title": "Cat Name",
-          "type": "string"
-        },
         "pet_type": {
           "const": "cat",
           "title": "Pet Type"
+        },
+        "cat_name": {
+          "title": "Cat Name",
+          "type": "string"
         }
       },
       "required": [
@@ -193,13 +193,13 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
     },
     "Dog": {
       "properties": {
-        "dog_name": {
-          "title": "Dog Name",
-          "type": "string"
-        },
         "pet_type": {
           "const": "dog",
           "title": "Pet Type"
+        },
+        "dog_name": {
+          "title": "Dog Name",
+          "type": "string"
         }
       },
       "required": [
@@ -794,13 +794,13 @@ print(json.dumps(Person.model_json_schema(), indent=2))
     }
   ],
   "properties": {
-    "age": {
-      "title": "Age",
-      "type": "integer"
-    },
     "name": {
       "title": "Name",
       "type": "string"
+    },
+    "age": {
+      "title": "Age",
+      "type": "integer"
     }
   },
   "required": [

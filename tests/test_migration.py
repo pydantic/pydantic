@@ -33,6 +33,12 @@ def test_removed_on_v2(module: str):
         assert False, f'{module} should not be importable'
 
 
+def test_base_settings_removed():
+    with pytest.raises(PydanticImportError, match='`BaseSettings` has been moved to the `pydantic-settings` package. '):
+        import_from('pydantic:BaseSettings')
+        assert False, 'pydantic:BaseSettings should not be importable'
+
+
 def test_getattr_migration():
     get_attr = getattr_migration(__name__)
 

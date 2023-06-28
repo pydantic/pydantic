@@ -1,6 +1,7 @@
 import json
 import math
 import re
+import sys
 import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -117,7 +118,7 @@ def test_by_alias():
         },
         'required': ['Snap'],
     }
-    assert list(ApplePie.model_json_schema(by_alias=True)['properties'].keys()) == ['Crackle', 'Snap']
+    assert list(ApplePie.model_json_schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
     assert list(ApplePie.model_json_schema(by_alias=False)['properties'].keys()) == ['a', 'b']
 
 
@@ -253,7 +254,11 @@ def test_choices():
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
-        'type': 'object',
+        '$defs': {
+            'BarEnum': {'enum': [1, 2], 'title': 'BarEnum', 'type': 'integer'},
+            'FooEnum': {'enum': ['f', 'b'], 'title': 'FooEnum', 'type': 'string'},
+            'SpamEnum': {'enum': ['f', 'b'], 'title': 'SpamEnum', 'type': 'string'},
+        },
         'properties': {
             'foo': {'$ref': '#/$defs/FooEnum'},
             'bar': {'$ref': '#/$defs/BarEnum'},
@@ -261,11 +266,7 @@ def test_choices():
         },
         'required': ['foo', 'bar'],
         'title': 'Model',
-        '$defs': {
-            'BarEnum': {'enum': [1, 2], 'title': 'BarEnum', 'type': 'integer'},
-            'SpamEnum': {'enum': ['f', 'b'], 'title': 'SpamEnum', 'type': 'string'},
-            'FooEnum': {'enum': ['f', 'b'], 'title': 'FooEnum'},
-        },
+        'type': 'object',
     }
 
 
@@ -2067,11 +2068,66 @@ def test_literal_enum():
         kind: Literal[MyEnum.FOO]
         other: Literal[MyEnum.FOO, MyEnum.BAR]
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
+        'properties': {
+            'kind': {'const': 'foo', 'title': 'Kind'},
+            'other': {'enum': ['foo', 'bar'], 'title': 'Other', 'type': 'string'},
+        },
+        'required': ['kind', 'other'],
         'title': 'Model',
         'type': 'object',
-        'properties': {'kind': {'const': 'foo', 'title': 'Kind'}, 'other': {'enum': ['foo', 'bar'], 'title': 'Other'}},
-        'required': ['kind', 'other'],
+    }
+
+
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason="ListEnum doesn't work in 3.8")
+def test_literal_types() -> None:
+    """Test that we properly add `type` to json schema enums when there is a single type."""
+
+    # for float and array we use an Enum because Literal can only accept str, int, bool or None
+    class FloatEnum(float, Enum):
+        a = 123.0
+        b = 123.1
+
+    class ListEnum(List[int], Enum):
+        a = [123]
+        b = [456]
+
+    class Model(BaseModel):
+        str_literal: Literal['foo', 'bar']
+        int_literal: Literal[123, 456]
+        float_literal: FloatEnum
+        bool_literal: Literal[True, False]
+        none_literal: Literal[None]  # ends up as a const since there's only 1
+        list_literal: ListEnum
+        mixed_literal: Literal[123, 'abc']
+
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'FloatEnum': {'enum': [123.0, 123.1], 'title': 'FloatEnum', 'type': 'numeric'},
+            'ListEnum': {'enum': [[123], [456]], 'title': 'ListEnum', 'type': 'array'},
+        },
+        'properties': {
+            'str_literal': {'enum': ['foo', 'bar'], 'title': 'Str Literal', 'type': 'string'},
+            'int_literal': {'enum': [123, 456], 'title': 'Int Literal', 'type': 'integer'},
+            'float_literal': {'$ref': '#/$defs/FloatEnum'},
+            'bool_literal': {'enum': [True, False], 'title': 'Bool Literal', 'type': 'boolean'},
+            'none_literal': {'const': None, 'title': 'None Literal'},
+            'list_literal': {'$ref': '#/$defs/ListEnum'},
+            'mixed_literal': {'enum': [123, 'abc'], 'title': 'Mixed Literal'},
+        },
+        'required': [
+            'str_literal',
+            'int_literal',
+            'float_literal',
+            'bool_literal',
+            'none_literal',
+            'list_literal',
+            'mixed_literal',
+        ],
+        'title': 'Model',
+        'type': 'object',
     }
 
 
@@ -2359,18 +2415,20 @@ def test_schema_attributes():
     class Example(BaseModel):
         example: ExampleEnum
 
+    # insert_assert(Example.model_json_schema())
     assert Example.model_json_schema() == {
-        'title': 'Example',
-        'type': 'object',
-        'properties': {'example': {'$ref': '#/$defs/ExampleEnum'}},
-        'required': ['example'],
         '$defs': {
             'ExampleEnum': {
-                'title': 'ExampleEnum',
                 'description': 'This is a test description.',
                 'enum': ['GT', 'LT', 'GE', 'LE', 'ML', 'MO', 'RE'],
+                'title': 'ExampleEnum',
+                'type': 'string',
             }
         },
+        'properties': {'example': {'$ref': '#/$defs/ExampleEnum'}},
+        'required': ['example'],
+        'title': 'Example',
+        'type': 'object',
     }
 
 
@@ -2840,7 +2898,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
-        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType'}},
+        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType', 'type': 'string'}},
         'properties': {
             'data0': {
                 'anyOf': [{'type': 'string'}, {'items': {'type': 'string'}, 'type': 'array'}],
@@ -3056,6 +3114,7 @@ def test_discriminated_union():
     class Model(BaseModel):
         pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
             'Cat': {
@@ -3071,7 +3130,7 @@ def test_discriminated_union():
                 'type': 'object',
             },
             'Lizard': {
-                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Lizard',
                 'type': 'object',
@@ -3088,11 +3147,7 @@ def test_discriminated_union():
                     },
                     'propertyName': 'pet_type',
                 },
-                'oneOf': [
-                    {'$ref': '#/$defs/Cat'},
-                    {'$ref': '#/$defs/Dog'},
-                    {'$ref': '#/$defs/Lizard'},
-                ],
+                'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}],
                 'title': 'Pet',
             }
         },
@@ -3115,6 +3170,7 @@ def test_discriminated_annotated_union():
     class Model(BaseModel):
         pet: Annotated[Union[Cat, Dog, Lizard], Field(..., discriminator='pet_type')]
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         '$defs': {
             'Cat': {
@@ -3130,7 +3186,7 @@ def test_discriminated_annotated_union():
                 'type': 'object',
             },
             'Lizard': {
-                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type'}},
+                'properties': {'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type', 'type': 'string'}},
                 'required': ['pet_type'],
                 'title': 'Lizard',
                 'type': 'object',
@@ -3147,11 +3203,7 @@ def test_discriminated_annotated_union():
                     },
                     'propertyName': 'pet_type',
                 },
-                'oneOf': [
-                    {'$ref': '#/$defs/Cat'},
-                    {'$ref': '#/$defs/Dog'},
-                    {'$ref': '#/$defs/Lizard'},
-                ],
+                'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}],
                 'title': 'Pet',
             }
         },
@@ -4775,3 +4827,37 @@ def test_typeddict_field_required_missing() -> None:
             'input': 'abc',
         }
     ]
+
+
+def test_json_schema_keys_sorting() -> None:
+    """We sort all keys except those under a 'property' parent key"""
+
+    class Model(BaseModel):
+        b: int
+        a: str
+
+    class OuterModel(BaseModel):
+        inner: List[Model]
+
+    # verify the schema contents
+    # this is just to get a nicer error message / diff if it fails
+    expected = {
+        '$defs': {
+            'Model': {
+                'properties': {'b': {'title': 'B', 'type': 'integer'}, 'a': {'title': 'A', 'type': 'string'}},
+                'required': ['b', 'a'],
+                'title': 'Model',
+                'type': 'object',
+            }
+        },
+        'properties': {'inner': {'items': {'$ref': '#/$defs/Model'}, 'title': 'Inner', 'type': 'array'}},
+        'required': ['inner'],
+        'title': 'OuterModel',
+        'type': 'object',
+    }
+    actual = OuterModel.model_json_schema()
+    assert actual == expected
+
+    # verify order
+    # dumping to json just happens to be a simple way to verify the order
+    assert json.dumps(actual, indent=2) == json.dumps(expected, indent=2)

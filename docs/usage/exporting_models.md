@@ -10,7 +10,7 @@ This is the primary way of converting a model to a dictionary. Sub-models will b
     and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
     done recursively.
 
-See the [API docs for `model_dump`](../api/main.md#pydantic.main.BaseModel.model_dump) for more information.
+See the [API docs for `model_dump`][pydantic.main.BaseModel.model_dump] for more information.
 
 Example:
 
@@ -146,10 +146,16 @@ Note also that [`RootModel`](models.md#rootmodel-and-custom-root-types) _does_ g
 
 ## Custom serializers
 
-Serialization can be customised on a field using the `@field_serializer` decorator, and on a model using the
-`@model_serializer` decorator.
+Pydantic provides several [functional serializers][pydantic.functional_serializers] to customise how a model is serialized to a dictionary or JSON.
 
-Here is an example:
+- [`@field_serializer`][pydantic.functional_serializers.field_serializer]
+- [`@model_serializer`][pydantic.functional_serializers.model_serializer]
+- [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer]
+- [`WrapSerializer`][pydantic.functional_serializers.WrapSerializer]
+
+Serialization can be customised on a field using the
+[`@field_serializer`][pydantic.functional_serializers.field_serializer] decorator, and on a model using the
+[`@model_serializer`][pydantic.functional_serializers.model_serializer] decorator.
 
 ```py
 from datetime import datetime, timedelta, timezone
@@ -188,7 +194,128 @@ print(Model(x='test value').model_dump_json())
 #> {"x":"serialized test value"}
 ```
 
-### Serializing subclasses
+In addition, [`PlainSerializer`][pydantic.functional_serializers.PlainSerializer] and
+[`WrapSerializer`][pydantic.functional_serializers.WrapSerializer] enable you to use a function to modify the output of serialization.
+
+Both serializers accept optional arguments including:
+
+- `return_type` specifies the return type for the function. If omitted it will be inferred from the type annotation.
+- `when_used` specifies when this serializer should be used. Accepts a string with values 'always',
+    'unless-none', 'json', and 'json-unless-none'. Defaults to 'always'.
+
+`PlainSerializer` uses a simple function to modify the output of serialization.
+
+```py
+from typing_extensions import Annotated
+
+from pydantic import BaseModel
+from pydantic.functional_serializers import PlainSerializer
+
+FancyInt = Annotated[
+    int, PlainSerializer(lambda x: f'{x:,}', return_type=str, when_used='json')
+]
+
+
+class MyModel(BaseModel):
+    x: FancyInt
+
+
+print(MyModel(x=1234).model_dump())
+#> {'x': 1234}
+
+print(MyModel(x=1234).model_dump(mode='json'))
+#> {'x': '1,234'}
+```
+
+`WrapSerializer` receives the raw inputs along with a handler function that applies the standard serialization
+logic, and can modify the resulting value before returning it as the final output of serialization.
+
+```py
+from typing import Any
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, SerializerFunctionWrapHandler
+from pydantic.functional_serializers import WrapSerializer
+
+
+def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler) -> str:
+    return f'{nxt(v + 1):,}'
+
+
+FancyInt = Annotated[int, WrapSerializer(ser_wrap, when_used='json')]
+
+
+class MyModel(BaseModel):
+    x: FancyInt
+
+
+print(MyModel(x=1234).model_dump())
+#> {'x': 1234}
+
+print(MyModel(x=1234).model_dump(mode='json'))
+#> {'x': '1,235'}
+```
+
+### Overriding the return type when dumping a model
+
+While the return value of `.model_dump()` can usually be described as `dict[str, Any]`, through the use of
+`@model_serializer` you can actually cause it to return a value that doesn't match this signature:
+```py
+from pydantic import BaseModel, model_serializer
+
+
+class Model(BaseModel):
+    x: str
+
+    @model_serializer
+    def ser_model(self) -> str:
+        return self.x
+
+
+print(Model(x='not a dict').model_dump())
+#> not a dict
+```
+
+If you want to do this and still get proper type-checking for this method, you can override `.model_dump()` in an
+`if TYPE_CHECKING:` block:
+
+```py
+from typing import TYPE_CHECKING, Any
+
+from typing_extensions import Literal
+
+from pydantic import BaseModel, model_serializer
+
+
+class Model(BaseModel):
+    x: str
+
+    @model_serializer
+    def ser_model(self) -> str:
+        return self.x
+
+    if TYPE_CHECKING:
+        # Ensure type checkers see the correct return type
+        def model_dump(
+            self,
+            *,
+            mode: Literal['json', 'python'] | str = 'python',
+            include: Any = None,
+            exclude: Any = None,
+            by_alias: bool = False,
+            exclude_unset: bool = False,
+            exclude_defaults: bool = False,
+            exclude_none: bool = False,
+            round_trip: bool = False,
+            warnings: bool = True,
+        ) -> str:
+            ...
+```
+
+This trick is actually used in [`RootModel`](models.md#rootmodel-and-custom-root-types) for precisely this purpose.
+
+## Serializing subclasses
 
 ### Subclasses of standard types
 
@@ -233,7 +360,7 @@ print(m.model_dump_json())
 #> {"date":"2023-10-28"}
 ```
 
-## Subclass instances for fields of BaseModel, dataclasses, TypedDict
+### Subclass instances for fields of `BaseModel`, dataclasses, `TypedDict`
 
 When using fields whose annotations are themselves struct-like types (e.g., `BaseModel` subclasses, dataclasses, etc.),
 the default behavior is to serialize the attribute value as though it was an instance of the annotated type,
@@ -271,7 +398,7 @@ print(m.model_dump())  # note: the password field is not included
     even if subclasses get passed when instantiating the object. In particular, this can help prevent surprises
     when adding sensitive information like secrets as fields of subclasses.
 
-#### Serializing with duck-typing
+### Serializing with duck-typing
 
 If you want to preserve the old duck-typing serialization behavior, this can be done using `SerializeAsAny`:
 
@@ -572,7 +699,7 @@ print(t.model_dump(include={'id': True, 'user': {'id'}}))
 ## `model_copy(...)`
 
 `model_copy()` allows models to be duplicated (with optional updates), which is particularly useful when working with
-frozen models. See the [API docs for `model_copy`](../api/main.md#pydantic.main.BaseModel.model_copy) for more
+frozen models. See the [API docs for `model_copy`][pydantic.main.BaseModel.model_copy] for more
 information.
 
 Example:

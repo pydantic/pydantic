@@ -4,7 +4,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections.abc import Hashable
 from decimal import Decimal
-from enum import Enum
+from enum import Enum, auto
 from typing import (
     Any,
     Dict,
@@ -24,7 +24,7 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
-from typing_extensions import Annotated, get_args
+from typing_extensions import Annotated, TypedDict, get_args
 
 from pydantic import (
     BaseModel,
@@ -2492,3 +2492,16 @@ def test_sequences_str(sequence_type, input_data, expected_error_type, expected_
         Model(str_sequence=input_data)
 
     assert e.value.errors(include_url=False) == [expected_error]
+
+
+def test_multiple_enums():
+    """See https://github.com/pydantic/pydantic/issues/6270"""
+
+    class MyEnum(Enum):
+        a = auto()
+
+    class MyModel(TypedDict):
+        a: Optional[MyEnum]
+        b: Optional[MyEnum]
+
+    TypeAdapter(MyModel)

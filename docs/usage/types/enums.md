@@ -5,16 +5,16 @@ description: Support for Enum types and choices.
 Pydantic uses Python's standard `enum` classes to define choices.
 
 `enum.Enum`
-: checks that the value is a valid Enum instance
+: checks that the value is a valid `Enum` instance.
 
-`subclass of enum.Enum`
-: checks that the value is a valid member of the enum
+subclass of `enum.Enum`
+: checks that the value is a valid member of the enum.
 
 `enum.IntEnum`
-: checks that the value is a valid IntEnum instance
+: checks that the value is a valid `IntEnum` instance.
 
-`subclass of enum.IntEnum`
-: checks that the value is a valid member of the integer enum
+subclass of `enum.IntEnum`
+: checks that the value is a valid member of the integer enum.
 
 ```py
 from enum import Enum, IntEnum

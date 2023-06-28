@@ -40,7 +40,6 @@ import dirty_equals
 import pytest
 from dirty_equals import HasRepr, IsOneOf, IsStr
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
-from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import Annotated, Literal, TypedDict, get_args
 
 from pydantic import (
@@ -62,7 +61,6 @@ from pydantic import (
     FutureDate,
     FutureDatetime,
     GetCoreSchemaHandler,
-    GetJsonSchemaHandler,
     InstanceOf,
     Json,
     NaiveDatetime,
@@ -104,7 +102,6 @@ from pydantic import (
 )
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
-from pydantic.json_schema import JsonSchemaValue
 from pydantic.types import AllowInfNan, ImportString, Strict, TransformSchema
 
 try:
@@ -1445,9 +1442,9 @@ def test_datetime_errors(DatetimeModel):
         {
             'type': 'time_delta_parsing',
             'loc': ('duration',),
-            'msg': 'Input should be a valid timedelta, invalid timezone sign',
+            'msg': 'Input should be a valid timedelta, unexpected extra characters at the end of the input',
             'input': '15:30.0001broken',
-            'ctx': {'error': 'invalid timezone sign'},
+            'ctx': {'error': 'unexpected extra characters at the end of the input'},
         },
     ]
 
@@ -2525,6 +2522,8 @@ def test_strict_bytes_max_length():
 
 def test_strict_str():
     class FruitEnum(str, Enum):
+        """A subclass of a string"""
+
         pear = 'pear'
         banana = 'banana'
 
@@ -2533,9 +2532,7 @@ def test_strict_str():
 
     assert Model(v='foobar').v == 'foobar'
 
-    msg = r'Input should be a string, not an instance of a subclass of str \[type=string_sub_type,'
-    with pytest.raises(ValidationError, match=msg):
-        Model(v=FruitEnum.banana)
+    assert Model.model_validate({'v': FruitEnum.banana}) == Model.model_construct(v=FruitEnum.banana)
 
     with pytest.raises(ValidationError, match='Input should be a valid string'):
         Model(v=123)
@@ -4647,16 +4644,17 @@ def test_default_union_class():
     assert isinstance(Model(y=B(x='b')).y, B)
 
 
-def test_union_subclass():
+@pytest.mark.parametrize('max_length', [10, None])
+def test_union_subclass(max_length: Union[int, None]):
     class MyStr(str):
         ...
 
     class Model(BaseModel):
-        x: Union[int, str]
+        x: Union[int, Annotated[str, Field(max_length=max_length)]]
 
-    # see https://github.com/pydantic/pydantic-core/pull/294, since subclasses are no-longer allowed as valid
-    # inputs to strict-string, this doesn't work
-    assert Model(x=MyStr('1')).x == 1
+    v = Model(x=MyStr('1')).x
+    assert type(v) is MyStr
+    assert v == '1'
 
 
 def test_union_compound_types():
@@ -4819,114 +4817,6 @@ def test_base64_invalid(field_type, input_data):
             'type': 'base64_decode',
         },
     ]
-
-
-def test_third_party_type_integration():
-    """
-    The purpose of this test is to demonstrate how a third party type can be integrated with pydantic
-    without making any modifications to the underlying type.
-    """
-
-    class ThirdPartyType:
-        """
-        This is meant to represent a type from a third party library that wasn't designed with pydantic
-        integration in mind, and so doesn't have a pydantic_core.CoreSchema or anything.
-        """
-
-        x: int
-
-        def __init__(self):
-            self.x = 0
-
-    class _ThirdPartyTypePydanticAnnotation:
-        @classmethod
-        def __get_pydantic_core_schema__(
-            cls, _source_type: Any, _handler: Callable[[Any], core_schema.CoreSchema]
-        ) -> core_schema.CoreSchema:
-            """
-            We return a pydantic_core.CoreSchema that behaves in the following ways:
-            * ints will be parsed as ThirdPartyType instances with the int as the x attribute
-            * ThirdPartyType instances will be parsed as ThirdPartyType instances without any changes
-            * Nothing else will pass validation
-            * Serialization will always return just an int
-            """
-
-            def validate_from_int(value: int, _validation_info: Optional[ValidationInfo] = None) -> ThirdPartyType:
-                result = ThirdPartyType()
-                result.x = value
-                return result
-
-            instance_validation_schema = core_schema.json_or_python_schema(
-                json_schema=core_schema.no_info_after_validator_function(validate_from_int, core_schema.int_schema()),
-                python_schema=core_schema.is_instance_schema(ThirdPartyType),
-            )
-            int_validation_schema = core_schema.chain_schema(
-                [core_schema.int_schema(), core_schema.general_plain_validator_function(validate_from_int)]
-            )
-            return core_schema.union_schema(
-                [instance_validation_schema, int_validation_schema],
-                serialization=core_schema.plain_serializer_function_ser_schema(lambda instance: instance.x),
-            )
-
-        @classmethod
-        def __get_pydantic_json_schema__(
-            cls, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            # Use the same schema that would be used for `int`
-            return handler(core_schema.int_schema())
-
-    # We now create an Annotated wrapper that we'll use as the annotation for fields on BaseModels etc.
-    PydanticThirdPartyType = Annotated[ThirdPartyType, _ThirdPartyTypePydanticAnnotation]
-
-    # Create a model class that uses this annotation as a field
-    class Model(BaseModel):
-        third_party_type: PydanticThirdPartyType
-
-    # Demonstrate that this field is handled correctly, that ints are parsed into ThirdPartyType, and that
-    # these instances are also "dumped" directly into ints as expected.
-    m_int = Model(third_party_type=1)
-    assert isinstance(m_int.third_party_type, ThirdPartyType)
-    assert m_int.third_party_type.x == 1
-    assert m_int.model_dump() == {'third_party_type': 1}
-
-    # Do the same thing where an instance of ThirdPartyType is passed in
-    instance = ThirdPartyType()
-    assert instance.x == 0
-    instance.x = 10
-
-    m_instance = Model(third_party_type=instance)
-    assert isinstance(m_instance.third_party_type, ThirdPartyType)
-    assert m_instance.third_party_type.x == 10
-    assert m_instance.model_dump() == {'third_party_type': 10}
-
-    # Demonstrate that validation errors are raised as expected for invalid inputs
-    with pytest.raises(ValidationError) as exc_info:
-        Model(third_party_type='a')
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'is_instance_of',
-            'loc': (
-                'third_party_type',
-                'json-or-python[json=function-after[validate_from_int(), int],python=is-instance[test_third_party_type_integration.<locals>.ThirdPartyType]]',  # noqa: E501
-            ),
-            'msg': 'Input should be an instance of test_third_party_type_integration.<locals>.ThirdPartyType',
-            'input': 'a',
-            'ctx': {'class': 'test_third_party_type_integration.<locals>.ThirdPartyType'},
-        },
-        {
-            'type': 'int_parsing',
-            'loc': ('third_party_type', 'chain[int,function-plain[validate_from_int()]]'),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'a',
-        },
-    ]
-
-    assert Model.model_json_schema() == {
-        'properties': {'third_party_type': {'title': 'Third Party Type', 'type': 'integer'}},
-        'required': ['third_party_type'],
-        'title': 'Model',
-        'type': 'object',
-    }
 
 
 def test_sequence_subclass_without_core_schema() -> None:

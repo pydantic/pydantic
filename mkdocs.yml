@@ -67,6 +67,7 @@ nav:
     - Secret Types: usage/types/secrets.md
     - Sequence, Iterable, & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
+    - Strict Types: usage/types/strict_types.md
     - String Types: usage/types/string_types.md
     - Type and TypeVar: usage/types/typevars.md
     - Types with Fields: usage/types/types_fields.md
@@ -83,15 +84,15 @@ nav:
       - Routing Numbers: usage/types/extra_types/routing_numbers.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
-  - usage/fields.md
+  - 'Fields': usage/fields.md
   - 'JSON Schema': usage/json_schema.md
-  - usage/exporting_models.md
-  - usage/computed_fields.md
-  - usage/dataclasses.md
-  - usage/validation_decorator.md
-  - usage/postponed_annotations.md
-  - usage/conversion_table.md
-  - usage/pydantic_settings.md
+  - 'Exporting Models': usage/exporting_models.md
+  - 'Computed Fields': usage/computed_fields.md
+  - 'Dataclasses': usage/dataclasses.md
+  - 'Validation Decorator': usage/validation_decorator.md
+  - 'Postponed Annotations': usage/postponed_annotations.md
+  - 'Conversion Table': usage/conversion_table.md
+  - 'Settings Management': usage/pydantic_settings.md
 - Error Messages:
   - Error Handling: errors/errors.md
   - Validation Errors: usage/validation_errors.md

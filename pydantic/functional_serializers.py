@@ -17,9 +17,9 @@ class PlainSerializer:
 
     Attributes:
         func: The serializer function.
-        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
-        when_used: The serialization condition. Accepts a string with values `'always'`, `'unless-none'`, `'json'`,
-            and `'json-unless-none'`. Defaults to 'always'.
+        return_type: The return type for the function. If omitted it will be inferred from the type annotation.
+        when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
+            `'unless-none'`, `'json'`, and `'json-unless-none'`. Defaults to 'always'.
     """
 
     func: core_schema.SerializerFunction
@@ -56,8 +56,8 @@ class WrapSerializer:
     logic, and can modify the resulting value before returning it as the final output of serialization.
 
     Attributes:
-        func: The function to be wrapped.
-        return_type: The return type for the function, if omitted it will be inferred from the type annotation.
+        func: The serializer function to be wrapped.
+        return_type: The return type for the function. If omitted it will be inferred from the type annotation.
         when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
             `'unless-none'`, `'json'`, and `'json-unless-none'`. Defaults to 'always'.
     """
@@ -140,7 +140,9 @@ def field_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Decorate methods on the class indicating that they should be used to serialize fields.
+    """Decorator that enables custom field serialization.
+
+    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.
 
     Four signatures are supported:
 
@@ -151,15 +153,17 @@ def field_serializer(
 
     Args:
         fields: Which field(s) the method should be called on.
-        mode: `plain` means the function will be called instead of the default serialization logic,
-            `wrap` means the function will be called with an argument to optionally call the
-            default serialization logic.
+        mode: The serialization mode.
+
+            - `plain` means the function will be called instead of the default serialization logic,
+            - `wrap` means the function will be called with an argument to optionally call the
+               default serialization logic.
         return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
         when_used: Determines the serializer will be used for serialization.
         check_fields: Whether to check that the fields actually exist on the model.
 
     Returns:
-        A decorator that can be used to decorate a function to be used as a field serializer.
+        The decorator function.
     """
 
     def dec(
@@ -202,19 +206,22 @@ def model_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     return_type: Any = None,
 ) -> Callable[[Any], Any]:
-    """Decorate a function which will be called to serialize the model.
+    """Decorator that enables custom model serialization.
+
+    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.
 
     Args:
         __f: The function to be decorated.
-        mode: The serialization mode. `'plain'` means the function will be called
-            instead of the default serialization logic, `'wrap'` means the function will be called with an argument
-            to optionally call the default serialization logic.
-        when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
-            `'unless-none'`, `'json'`, `'json-unless-none'`. Defaults to `'always'`.
-        return_type: The return type for the function, if omitted it will be inferred from the type annotation.
+        mode: The serialization mode.
+
+            - `'plain'` means the function will be called instead of the default serialization logic
+            - `'wrap'` means the function will be called with an argument to optionally call the default
+                serialization logic.
+        when_used: Determines when this serializer should be used.
+        return_type: The return type for the function. If omitted it will be inferred from the type annotation.
 
     Returns:
-        A decorator that can be used to decorate a function to be used as a model serializer.
+        The decorator function.
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:

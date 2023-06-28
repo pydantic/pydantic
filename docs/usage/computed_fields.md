@@ -1,6 +1,4 @@
-## Field with computed value based on other fields
-
-Computed fields allow `property` and `cached_property` to be included when serializing models or dataclasses.
+Computed fields allow `property` and `cached_property` to be included when serializing models or dataclasses. This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.
 
 ```py
 from pydantic import BaseModel, computed_field
@@ -27,10 +25,11 @@ and confuse static type checkers, thus explicit use of `@property` is recommende
 
 !!! warning "Mypy Warning"
     Even with the `@property` or `@cached_property` applied to your function before `@computed_field`,
-    mypy won't be happy because of [this issue](https://github.com/python/mypy/issues/1362),
-    you'll need to add `# type: ignore[misc]` to the `@computed_field` line.
+    mypy may throw a `Decorated property not supported` error.
+    See [mypy issue #1362](https://github.com/python/mypy/issues/1362), for more information.
+    To avoid this error message, add `# type: ignore[misc]` to the `@computed_field` line.
 
-In contract, [pyright](https://github.com/microsoft/pyright) works nicely with `@computed_field`.
+    [pyright](https://github.com/microsoft/pyright) supports `@computed_field` without error.
 
 ```py requires="3.8"
 import random

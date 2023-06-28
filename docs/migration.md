@@ -111,6 +111,7 @@ The following properties have been removed from or changed in `Field`:
 - `unique_items`
 - `allow_mutation` (use `frozen` instead)
 - `regex` (use `pattern` instead)
+- `final` (use the `typing.Final` type hint instead)
 
 * [TODO: Need to document any other backwards-incompatible changes to `pydantic.Field`]
 
@@ -574,6 +575,10 @@ Pydantic V1 that have changed in Pydantic V2, you can use a custom `schema_gener
 [`BaseSettings`](api/pydantic_settings.md#pydantic_settings.BaseSettings), the base object for Pydantic
 [settings management](usage/pydantic_settings.md), has been moved to a separate package,
 [`pydantic-settings`](https://github.com/pydantic/pydantic-settings).
+
+Also, the `parse_env_var` classmethod has been removed. So, you need to
+[customise settings sources](usage/pydantic_settings.md#customise-settings-sources)
+to have your own parsing function.
 
 ## Moved in Pydantic V2
 

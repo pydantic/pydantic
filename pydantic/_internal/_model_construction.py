@@ -17,6 +17,7 @@ from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
+from ._discriminated_union import apply_discriminators
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
@@ -414,7 +415,7 @@ def complete_model_class(
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
-    schema = flatten_schema_defs(schema)
+    schema = apply_discriminators(flatten_schema_defs(schema))
     if collect_invalid_schemas(schema):
         set_basemodel_mock_validator(cls, cls_name, 'all referenced types')
         return False

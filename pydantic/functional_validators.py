@@ -95,14 +95,13 @@ class BeforeValidator:
 
         from pydantic import BaseModel, BeforeValidator
 
-
         MyInt = Annotated[int, BeforeValidator(lambda v: v + 1)]
 
         class Model(BaseModel):
             a: MyInt
 
         print(Model(a=1).a)
-        # > 2
+        #> 2
 
         try:
             Model(a='a')
@@ -136,14 +135,13 @@ class PlainValidator:
 
         from pydantic import BaseModel, PlainValidator
 
-
         MyInt = Annotated[int, PlainValidator(lambda v: int(v) + 1)]
 
         class Model(BaseModel):
             a: MyInt
 
         print(Model(a='1').a)
-        # > 2
+        #> 2
         ```
     """
 
@@ -170,9 +168,8 @@ class WrapValidator:
 
     from pydantic import BaseModel, ValidationError, WrapValidator
 
-
     def validate_timestamp(v, handler):
-        if v == "now":
+        if v == 'now':
             # we don't want to bother with further validation, just return the new value
             return datetime.now()
         try:
@@ -181,18 +178,15 @@ class WrapValidator:
             # validation failed, in this case we want to return a default value
             return datetime(2000, 1, 1)
 
-
     MyTimestamp = Annotated[datetime, WrapValidator(validate_timestamp)]
-
 
     class Model(BaseModel):
         a: MyTimestamp
 
-
-    print(Model(a="now").a)
-    # > 2023-01-22 23:10:00.000000
-    print(Model(a="invalid").a)
-    # > 2000-01-01 00:00:00.000000
+    print(Model(a='now').a)
+    #> 2032-01-02 03:04:05.000006
+    print(Model(a='invalid').a)
+    #> 2000-01-01 00:00:00
     ```
     """
 

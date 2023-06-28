@@ -65,9 +65,9 @@ test-examples: .pdm
 	@find docs/examples -type f -name '*.py' | xargs -I'{}' sh -c 'pdm run python {} >/dev/null 2>&1 || (echo "{} failed")'
 
 .PHONY: test-fastapi  ## Run the FastAPI tests with this version of pydantic
-test-fastapi: .pdm
+test-fastapi:
 	git clone https://github.com/tiangolo/fastapi.git --single-branch
-	pdm run ./tests/test_fastapi.sh
+	./tests/test_fastapi.sh
 
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
 test-pydantic-settings: .pdm

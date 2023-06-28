@@ -8,14 +8,17 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import Any
 
 import pytest
+from pydantic_core import core_schema
 from pytest_examples import CodeExample, EvalExample, find_examples
 
 from pydantic.errors import PydanticErrorCodes
 
 INDEX_MAIN = None
 DOCS_ROOT = Path(__file__).parent.parent / 'docs'
+SOURCES_ROOT = Path(__file__).parent.parent / 'pydantic'
 
 
 def skip_docs_tests():
@@ -63,8 +66,8 @@ group_globals = GroupModuleGlobals()
 
 class MockedDatetime(datetime):
     @classmethod
-    def now(cls, *args, **kwargs):
-        return datetime(2032, 1, 2, 3, 4, 5, 6)
+    def now(cls, *args, tz=None, **kwargs):
+        return datetime(2032, 1, 2, 3, 4, 5, 6, tzinfo=tz)
 
 
 skip_reason = skip_docs_tests()
@@ -74,21 +77,9 @@ def print_callback(print_statement: str) -> str:
     return re.sub(r'(https://errors.pydantic.dev)/.+?/', r'\1/2/', print_statement)
 
 
-@pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
-@pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
-@pytest.mark.parametrize('example', find_examples(str(DOCS_ROOT), skip=sys.platform == 'win32'), ids=str)
-def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):  # noqa: C901
-    global INDEX_MAIN
-    if example.path.name == 'index.md':
-        if INDEX_MAIN is None:
-            INDEX_MAIN = example.source
-        else:
-            (tmp_path / 'index_main.py').write_text(INDEX_MAIN)
-            sys.path.append(str(tmp_path))
-
-    if example.path.name == 'devtools.md':
-        pytest.skip('tested below')
-
+def run_example(  # noqa C901
+    example: CodeExample, eval_example: EvalExample, mocker: Any, ruff_ignore: list[str] | None = None
+) -> None:
     eval_example.print_callback = print_callback
 
     prefix_settings = example.prefix_settings()
@@ -115,6 +106,9 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
         if eval_example.update_examples:
             eval_example.format(example)
         else:
+            if example.in_py_file():
+                # Ignore isort as double newlines will cause it to fail, but we remove them in py files
+                eval_example.set_config(ruff_ignore=eval_example.config.ruff_ignore + ['I001'])
             eval_example.lint(example)
 
     if test_settings.startswith('skip'):
@@ -147,6 +141,34 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
         if xfail:
             pytest.fail('expected xfail')
         group_globals.set(group_name, d2)
+
+
+@pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
+@pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
+@pytest.mark.parametrize('example', find_examples(str(SOURCES_ROOT), skip=sys.platform == 'win32'), ids=str)
+def test_docstrings_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):
+    if str(example.path).startswith(str(SOURCES_ROOT / 'v1')):
+        pytest.skip('skip v1 examples')
+
+    run_example(example, eval_example, mocker, ruff_ignore=['I001'])
+
+
+@pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
+@pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
+@pytest.mark.parametrize('example', find_examples(str(DOCS_ROOT), skip=sys.platform == 'win32'), ids=str)
+def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):
+    global INDEX_MAIN
+    if example.path.name == 'index.md':
+        if INDEX_MAIN is None:
+            INDEX_MAIN = example.source
+        else:
+            (tmp_path / 'index_main.py').write_text(INDEX_MAIN)
+            sys.path.append(str(tmp_path))
+
+    if example.path.name == 'devtools.md':
+        pytest.skip('tested below')
+
+    run_example(example, eval_example, mocker)
 
 
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
@@ -197,3 +219,37 @@ def test_error_codes():
     documented_error_codes = tuple(re.findall(r'^## .+ \{#(.+?)}$', error_text, flags=re.MULTILINE))
 
     assert code_error_codes == documented_error_codes, 'Error codes in code and docs do not match'
+
+
+def test_validation_error_codes():
+    error_text = (DOCS_ROOT / 'usage/validation_errors.md').read_text()
+
+    expected_validation_error_codes = set(core_schema.ErrorType.__args__)
+    # Remove codes that are not currently accessible from pydantic:
+    expected_validation_error_codes.remove('timezone_offset')  # not currently exposed for configuration in pydantic
+
+    test_failures = []
+
+    documented_validation_error_codes = []
+    error_code_section = None
+    printed_error_code = None
+    for line in error_text.splitlines():
+        section_match = re.fullmatch(r'## `(.+)`', line)
+        if section_match:
+            if error_code_section is not None and printed_error_code != error_code_section:
+                test_failures.append(f'Error code {error_code_section!r} is not printed in its example')
+            error_code_section = section_match.group(1)
+            if error_code_section not in expected_validation_error_codes:
+                test_failures.append(f'Documented error code {error_code_section!r} is not a member of ErrorType')
+            documented_validation_error_codes.append(error_code_section)
+            printed_error_code = None
+            continue
+
+        printed_match = re.search("#> '(.+)'", line)
+        if printed_match:
+            printed_error_code = printed_match.group(1)
+
+    assert test_failures == []
+
+    code_validation_error_codes = sorted(expected_validation_error_codes)
+    assert code_validation_error_codes == documented_validation_error_codes, 'Error codes in code and docs do not match'

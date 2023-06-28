@@ -41,7 +41,7 @@ print(user_03_uuid.int)
 
     `Optional[x]` can also be used to specify a required field that can take `None` as a value.
 
-    See more details in [Required Fields](/api/usage/models.md#required-fields).
+    See more details in [Required fields](../models.md#required-fields).
 
 #### Discriminated Unions (a.k.a. Tagged Unions)
 
@@ -97,7 +97,7 @@ except ValidationError as e:
 ```
 
 !!! note
-    Using the [Annotated Fields syntax](/api/usage/schema/#typingannotated-fields) can be handy to regroup
+    Using the [`typing.Annotated` fields syntax](../json_schema.md#typingannotated-fields) can be handy to regroup
     the `Union` and `discriminator` information. See below for an example!
 
 !!! warning

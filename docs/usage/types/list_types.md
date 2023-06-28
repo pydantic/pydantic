@@ -1,59 +1,62 @@
 `list`
 : allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a list;
-  see `typing.List` below for sub-type constraints
+  when a generic parameter is provided, the appropriate validation is applied to all items of the list
+
+`typing.List`
+: handled the same as `list` above
 
 `tuple`
 : allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a tuple;
-  see `typing.Tuple` below for sub-type constraints
-
-`typing.List`
-: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+  when generic parameters are provided, the appropriate validation is applied to the respective items of the tuple
 
 `typing.Tuple`
-: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+: handled the same as `tuple` above
 
-`subclass of typing.NamedTuple`
-: Same as `tuple` but instantiates with the given namedtuple and validates fields since they are annotated.
-  See [Annotated Types](#annotated-types) below for more detail on parsing and validation
+`deque`
+: allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `deque`;
+  when generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`
 
-`subclass of collections.namedtuple`
-: Same as `subclass of typing.NamedTuple` but all fields will have type `Any` since they are not annotated
-
-### Typing Iterables
-
-Pydantic uses standard library `typing` types as defined in PEP 484 to define complex objects.
+`typing.Deque`
+: handled the same as `deque` above
 
 ```py
-from typing import Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
+from typing import Deque, List, Optional, Tuple
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    simple_list: list = None
-    list_of_ints: List[int] = None
+    simple_list: Optional[list] = None
+    list_of_ints: Optional[List[int]] = None
 
-    simple_tuple: tuple = None
-    tuple_of_different_types: Tuple[int, float, str, bool] = None
+    simple_tuple: Optional[tuple] = None
+    tuple_of_different_types: Optional[Tuple[int, float, bool]] = None
 
-    simple_dict: dict = None
-    dict_str_float: Dict[str, float] = None
+    deque: Optional[Deque[int]] = None
 
-    simple_set: set = None
-    set_bytes: Set[bytes] = None
-    frozen_set: FrozenSet[int] = None
 
-    str_or_bytes: Union[str, bytes] = None
-    none_or_str: Optional[str] = None
+print(Model(simple_list=['1', '2', '3']).simple_list)
+#> ['1', '2', '3']
+print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
+#> [1, 2, 3]
 
-    sequence_of_ints: Sequence[int] = None
+print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
+#> (1, 2, 3, 4)
+print(Model(tuple_of_different_types=[3, 2, 1]).tuple_of_different_types)
+#> (3, 2.0, True)
 
-    compound: Dict[Union[str, bytes], List[Set[int]]] = None
-
-    deque: Deque[int] = None
+print(Model(deque=[1, 2, 3]).deque)
+#> deque([1, 2, 3])
 ```
 
 ### NamedTuple
+
+`subclasses of typing.NamedTuple`
+: Similar to `tuple`, but creates instances of the given `namedtuple` class.
+
+`types returned from collections.namedtuple`
+: Similar to `subclass of typing.NamedTuple`, but since field types are not specified, all fields are treated as having
+  type `Any`
 
 ```py
 from typing import NamedTuple
