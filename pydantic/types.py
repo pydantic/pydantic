@@ -748,6 +748,7 @@ class SecretStr(_SecretField[str]):
         ```py
         from pydantic import BaseModel, SecretStr
 
+
         class User(BaseModel):
             username: str
             password: SecretStr
