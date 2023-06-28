@@ -3,7 +3,7 @@ use std::str::from_utf8;
 
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyInt, PyIterator, PyList,
+    PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
     PyMapping, PySequence, PySet, PyString, PyTime, PyTuple, PyType,
 };
 #[cfg(not(PyPy))]
@@ -21,8 +21,8 @@ use super::datetime::{
 };
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
-    py_string_str, EitherBytes, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
-    GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
+    py_string_str, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments,
+    GenericIterable, GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
 };
 
 #[cfg(not(PyPy))]
@@ -308,35 +308,40 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn ultra_strict_float(&self) -> ValResult<f64> {
+    fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
         if self.is_instance_of::<PyInt>() {
             Err(ValError::new(ErrorType::FloatType, self))
-        } else if let Ok(float) = self.extract::<f64>() {
-            Ok(float)
+        } else if self.is_instance_of::<PyFloat>() {
+            Ok(EitherFloat::Py(self))
         } else {
             Err(ValError::new(ErrorType::FloatType, self))
         }
     }
-    fn strict_float(&self) -> ValResult<f64> {
-        if let Ok(float) = self.extract::<f64>() {
+    fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
+        if PyFloat::is_exact_type_of(self) {
+            Ok(EitherFloat::Py(self))
+        } else if let Ok(float) = self.extract::<f64>() {
             // bools are cast to floats as either 0.0 or 1.0, so check for bool type in this specific case
             if (float == 0.0 || float == 1.0) && PyBool::is_exact_type_of(self) {
                 Err(ValError::new(ErrorType::FloatType, self))
             } else {
-                Ok(float)
+                Ok(EitherFloat::Py(self))
             }
         } else {
             Err(ValError::new(ErrorType::FloatType, self))
         }
     }
-    fn lax_float(&self) -> ValResult<f64> {
-        if let Ok(float) = self.extract::<f64>() {
-            Ok(float)
+
+    fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
+        if PyFloat::is_exact_type_of(self) {
+            Ok(EitherFloat::Py(self))
         } else if let Some(cow_str) = maybe_as_string(self, ErrorType::FloatParsing)? {
             match cow_str.as_ref().parse::<f64>() {
-                Ok(i) => Ok(i),
+                Ok(i) => Ok(EitherFloat::F64(i)),
                 Err(_) => Err(ValError::new(ErrorType::FloatParsing, self)),
             }
+        } else if let Ok(float) = self.extract::<f64>() {
+            Ok(EitherFloat::F64(float))
         } else {
             Err(ValError::new(ErrorType::FloatType, self))
         }

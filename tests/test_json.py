@@ -90,7 +90,7 @@ def test_int(input_value, expected):
         ('"123.4"', 123.4),
         ('"123.0"', 123.0),
         ('"123"', 123.0),
-        ('"string"', Err('Input should be a valid number, unable to parse string as an number [type=float_parsing,')),
+        ('"string"', Err('Input should be a valid number, unable to parse string as a number [type=float_parsing,')),
     ],
 )
 def test_float(input_value, expected):
