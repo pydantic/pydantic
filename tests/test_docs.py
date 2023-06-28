@@ -226,7 +226,6 @@ def test_validation_error_codes():
 
     expected_validation_error_codes = set(core_schema.ErrorType.__args__)
     # Remove codes that are not currently accessible from pydantic:
-    expected_validation_error_codes.remove('bool')  # this line can be removed if this gets removed from pydantic_core
     expected_validation_error_codes.remove('timezone_offset')  # not currently exposed for configuration in pydantic
 
     test_failures = []

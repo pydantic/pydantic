@@ -97,7 +97,6 @@ Pydantic provides additional validation classes that can be used to specify when
 - [`ModelBeforeValidator`][pydantic.functional_validators.ModelBeforeValidator] indicates that model field validation should be applied **before** the inner validation logic.
 - [`ModelWrapValidator`][pydantic.functional_validators.ModelWrapValidator] indicates that model validation should be applied **around** the inner validation logic.
 - [`PlainValidator`][pydantic.functional_validators.PlainValidator] indicates that field validation should be applied **instead of** the inner validation logic.
-- [`SkipValidation`][pydantic.functional_validators.SkipValidation] indicates that validation should be **skipped**.
 - [`WrapValidator`][pydantic.functional_validators.WrapValidator] indicates that field validation should be applied **around** the inner validation logic.
 
 You can also use the  `mode` argument for `@field_validator` and `@model_validator` to specify when validation occurs.
@@ -191,6 +190,71 @@ A few more things to note:
 * A single validator can also be called on *all* fields by passing the special value `'*'`.
 * The keyword argument `mode='before'` will cause the validator to be called prior to other validation.
 * Using validator annotations inside of `Annotated` allows applying validators to items of collections.
+
+## Special Types
+
+Pydantic provides a few special types that can be used to customize validation.
+
+- [`InstanceOf`][pydantic.functional_validators.InstanceOf] is a type that can be used to validate that a value is an instance of a given class.
+
+```py
+from typing import List
+
+from pydantic import BaseModel, InstanceOf, ValidationError
+
+
+class Fruit:
+    def __repr__(self):
+        return self.__class__.__name__
+
+
+class Banana(Fruit):
+    ...
+
+
+class Apple(Fruit):
+    ...
+
+
+class Basket(BaseModel):
+    fruits: List[InstanceOf[Fruit]]
+
+
+print(Basket(fruits=[Banana(), Apple()]))
+#> fruits=[Banana, Apple]
+try:
+    Basket(fruits=[Banana(), 'Apple'])
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Basket
+    fruits.1
+      Input should be an instance of Fruit [type=is_instance_of, input_value='Apple', input_type=str]
+    """
+```
+
+- [`SkipValidation`][pydantic.functional_validators.SkipValidation] is a type that can be used to skip validation on a field.
+
+```py
+from typing import List
+
+from pydantic import BaseModel, SkipValidation
+
+
+class Model(BaseModel):
+    names: List[SkipValidation[str]]
+
+
+m = Model(names=['foo', 'bar'])
+print(m)
+#> names=['foo', 'bar']
+
+m = Model(names=['foo', 123])  # (1)!
+print(m)
+#> names=['foo', 123]
+```
+
+1. Note that the validation of the second item is skipped.
 
 ### Generic validated collections
 

@@ -2,7 +2,7 @@
 
 You can also define your own custom data types. There are several ways to achieve it.
 
-### Composing types via `Annotated`
+## Composing types via `Annotated`
 
 [PEP 593] introduced `Annotated` as a way to attach runtime metadata to types without changing how type checkers interpret them.
 Pydantic takes advantage of this to allow you to create types that are identical to the original type as far as type checkers are concerned, but add validation, serialize differently, etc.
@@ -56,7 +56,7 @@ except ValidationError as exc:
     """
 ```
 
-#### Adding validation and serialization
+### Adding validation and serialization
 
 You can add or override validation, serialization, and json schemas to an arbitrary type using the markers that Pydantic exports:
 
@@ -71,7 +71,7 @@ class MyType:
         self.value = value
 
 
-TrucatedFloat = Annotated[
+TruncatedFloat = Annotated[
     float,
     AfterValidator(lambda x: round(x, 1)),
     PlainSerializer(lambda x: f'{x:.1e}', return_type=str),
@@ -79,7 +79,7 @@ TrucatedFloat = Annotated[
 ]
 
 
-ta = TypeAdapter(TrucatedFloat)
+ta = TypeAdapter(TruncatedFloat)
 
 input = 1.02345
 assert input != 1.0
@@ -92,7 +92,7 @@ assert ta.json_schema(mode='validation') == {'type': 'number'}
 assert ta.json_schema(mode='serialization') == {'type': 'string'}
 ```
 
-#### Generics
+### Generics
 
 You can use type variables within `Annotated` to make re-usable modifications to types:
 
@@ -147,7 +147,7 @@ except ValidationError as exc:
     """
 ```
 
-### Named type aliases
+## Named type aliases
 
 The above examples make use of implicit type aliases.
 This means that they will not be able to have a `title` in JSON schemas and their schema will be copied between fields.
@@ -255,7 +255,7 @@ except ValidationError as exc:
     """
 ```
 
-#### Named recursive types
+### Named recursive types
 
 You can also use `TypeAliasType` to create recursive types:
 
@@ -313,7 +313,7 @@ except ValidationError as exc:
     """
 ```
 
-### Handling third party types
+## Handling third party types
 
 One particularly powerful thing about `Annotated` is that it lets you modify validation or serialization for 3rd party types without creating subclasses or otherwise messing with the types themselves:
 
@@ -445,7 +445,7 @@ assert Model.model_json_schema() == {
 
 You can use this approach to e.g. define behavior for Pandas or Numpy types.
 
-### Creating custom classes using `__get_pydantic_core_schema__`
+## Creating custom classes using `__get_pydantic_core_schema__`
 
 To do more extensive customization of how Pydantic handles custom classes, and in particular when you have access to the class or can subclass it, you can implement a special `__get_pydantic_core_schema__` to tell Pydantic how to generate the `pydantic-core` schema.
 While `pydantic` uses `pydantic-core` internally to handle validation and serialization, it is a new API for Pydantic V2, thus it is one of the areas most likely to be tweaked in the future and you should try to stick to the built in constructs like those provided by `annotated-types`, `pydantic.Field` or `BeforeValidator` and co.
@@ -569,7 +569,7 @@ Similar validation could be achieved using [`Annotated[str, Field(pattern=...)]`
 
 See [schema](../json_schema.md) for more details on how the model's schema is generated.
 
-### Generic Classes as Types
+## Generic Classes as Types
 
 !!! warning
     This is an advanced technique that you might not need in the beginning. In most of
@@ -725,7 +725,7 @@ except ValidationError as e:
     """
 ```
 
-#### Generic containers
+### Generic containers
 
 The same idea can be applied to create generic container types, like a custom `Sequence` type:
 
