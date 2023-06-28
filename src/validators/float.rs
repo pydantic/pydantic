@@ -73,9 +73,8 @@ impl Validator for FloatValidator {
         let float: f64 = either_float.try_into()?;
         if !self.allow_inf_nan && !float.is_finite() {
             return Err(ValError::new(ErrorType::FiniteNumber, input));
-        } else {
-            Ok(float.into_py(py))
         }
+        Ok(float.into_py(py))
     }
 
     fn different_strict_behavior(

@@ -194,7 +194,6 @@ jobs:
         if: steps.cache-py.outputs.cache-hit != 'true'
 
       - run: pip install .
-        if: steps.cache-py.outputs.cache-hit != 'true'
 
       - run: pip freeze
 
