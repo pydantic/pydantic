@@ -108,6 +108,7 @@ nav:
   - 'Rich': integrations/rich.md
 - Contribute: contributing.md
 - Blog:
+  - blog/pydantic-v2-final.md
   - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
 - API Documentation:
