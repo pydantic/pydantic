@@ -36,10 +36,10 @@ except ValidationError as exc:
 There are various ways to get strict-mode validation while using Pydantic, which will be discussed in more detail below:
 * [Passing `strict=True` to the validation methods](#strict-mode-in-method-calls), such as `BaseModel.model_validate`,
   `TypeAdapter.validate_python`, and similar for JSON
-* [Using `... = Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
-* Using `pydantic.types.Strict` as a type annotation on a field
+* [Using `Field(strict=True)`](#strict-mode-with-field) with fields of a `BaseModel`, `dataclass`, or `TypedDict`
+* [Using `pydantic.types.Strict` as a type annotation](#strict-mode-with-annotated-strict) on a field
   * Pydantic provides some type aliases that are already annotated with `Strict`, such as `pydantic.types.StrictInt`
-* Using `ConfigDict(strict=True)` with a `BaseModel`, `TypeAdapter`, or function decorated with `@validate_call`
+* [Using `ConfigDict(strict=True)`](#strict-mode-with-configdict)
 
 ## Type coercions in strict mode
 
@@ -252,6 +252,32 @@ except ValidationError as exc:
     """
 ```
 
+### Using `Field` as an annotation
+
+Note that `Field(strict=True)` (or with any other keyword arguments) can be used as an annotation if necessary, e.g.,
+when working with `TypedDict`:
+
+```python
+from typing_extensions import Annotated, TypedDict
+
+from pydantic import Field, TypeAdapter, ValidationError
+
+
+class MyDict(TypedDict):
+    x: Annotated[int, Field(strict=True)]
+
+
+try:
+    TypeAdapter(MyDict).validate_python({'x': '1'})
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for typed-dict
+    x
+      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
+    """
+```
+
 ## Strict mode with `Annotated[..., Strict()]`
 
 Pydantic also provides the [`Strict`](../api/types.md#pydantic.types.Strict) class, which is intended for use as
@@ -459,5 +485,30 @@ except ValidationError as exc:
     """
     1 validation error for bool
       Input should be a valid boolean [type=bool_type, input_value='yes', input_type=str]
+    """
+```
+
+### `@validate_call`
+
+Strict mode is also usable with the [`@validate_call`](../api/validate_call.md#pydantic.validate_call.validate_call)
+decorator by passing the `config` keyword argument:
+
+```python
+from pydantic import ConfigDict, ValidationError, validate_call
+
+
+@validate_call(config=ConfigDict(strict=True))
+def foo(x: int) -> int:
+    return x
+
+
+try:
+    foo('1')
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for foo
+    0
+      Input should be a valid integer [type=int_type, input_value='1', input_type=str]
     """
 ```
