@@ -8,7 +8,7 @@ use crate::{PyMultiHostUrl, PyUrl};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherInt, EitherString};
-use super::{GenericArguments, GenericIterable, GenericIterator, GenericMapping, JsonInput};
+use super::{EitherFloat, GenericArguments, GenericIterable, GenericIterator, GenericMapping, JsonInput};
 
 #[derive(Debug, Clone, Copy)]
 pub enum InputType {
@@ -136,7 +136,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.strict_str()
     }
 
-    fn validate_float(&self, strict: bool, ultra_strict: bool) -> ValResult<f64> {
+    fn validate_float(&'a self, strict: bool, ultra_strict: bool) -> ValResult<EitherFloat<'a>> {
         if ultra_strict {
             self.ultra_strict_float()
         } else if strict {
@@ -145,10 +145,10 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
             self.lax_float()
         }
     }
-    fn ultra_strict_float(&self) -> ValResult<f64>;
-    fn strict_float(&self) -> ValResult<f64>;
+    fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>>;
+    fn strict_float(&'a self) -> ValResult<EitherFloat<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_float(&self) -> ValResult<f64> {
+    fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
         self.strict_float()
     }
 

@@ -126,7 +126,7 @@ def test_validation_error_multiple():
         {
             'type': 'float_parsing',
             'loc': ('x',),
-            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'msg': 'Input should be a valid number, unable to parse string as a number',
             'input': 'x' * 60,
         },
         {
@@ -139,7 +139,7 @@ def test_validation_error_multiple():
     assert repr(exc_info.value) == (
         '2 validation errors for MyModel\n'
         'x\n'
-        '  Input should be a valid number, unable to parse string as an number '
+        '  Input should be a valid number, unable to parse string as a number '
         "[type=float_parsing, input_value='xxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxx', input_type=str]\n"
         f'    For further information visit https://errors.pydantic.dev/{__version__}/v/float_parsing\n'
         'y\n'

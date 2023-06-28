@@ -892,3 +892,29 @@ impl<'a> IntoPy<PyObject> for EitherInt<'a> {
         }
     }
 }
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum EitherFloat<'a> {
+    F64(f64),
+    Py(&'a PyAny),
+}
+
+impl<'a> TryInto<f64> for EitherFloat<'a> {
+    type Error = ValError<'a>;
+
+    fn try_into(self) -> ValResult<'a, f64> {
+        match self {
+            EitherFloat::F64(f) => Ok(f),
+            EitherFloat::Py(i) => i.extract().map_err(|_| ValError::new(ErrorType::FloatParsing, i)),
+        }
+    }
+}
+
+impl<'a> IntoPy<PyObject> for EitherFloat<'a> {
+    fn into_py(self, py: Python<'_>) -> PyObject {
+        match self {
+            Self::F64(float) => float.into_py(py),
+            Self::Py(float) => float.into_py(py),
+        }
+    }
+}
