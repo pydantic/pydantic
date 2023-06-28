@@ -12,6 +12,8 @@ from .main import BaseModel
 if typing.TYPE_CHECKING:
     from typing import Any
 
+    from typing_extensions import Literal
+
     Model = typing.TypeVar('Model', bound='BaseModel')
 
 
@@ -65,6 +67,28 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
             NotImplemented: If the model is not a subclass of `RootModel`.
         """
         return super().model_construct(root=root, _fields_set=_fields_set)
+
+    if typing.TYPE_CHECKING:
+
+        def model_dump(
+            self,
+            *,
+            mode: Literal['json', 'python'] | str = 'python',
+            include: Any = None,
+            exclude: Any = None,
+            by_alias: bool = False,
+            exclude_unset: bool = False,
+            exclude_defaults: bool = False,
+            exclude_none: bool = False,
+            round_trip: bool = False,
+            warnings: bool = True,
+        ) -> RootModelRootType:
+            """This method is included just to get a more accurate return type for type checkers.
+            It is included in this `if TYPE_CHECKING:` block since no override is actually necessary.
+
+            See the documentation of `BaseModel.model_dump` for more details about the arguments.
+            """
+            ...
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, RootModel):

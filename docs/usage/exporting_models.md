@@ -257,6 +257,64 @@ print(MyModel(x=1234).model_dump(mode='json'))
 #> {'x': '1,235'}
 ```
 
+### Overriding the return type when dumping a model
+
+While the return value of `.model_dump()` can usually be described as `dict[str, Any]`, through the use of
+`@model_serializer` you can actually cause it to return a value that doesn't match this signature:
+```py
+from pydantic import BaseModel, model_serializer
+
+
+class Model(BaseModel):
+    x: str
+
+    @model_serializer
+    def ser_model(self) -> str:
+        return self.x
+
+
+print(Model(x='not a dict').model_dump())
+#> not a dict
+```
+
+If you want to do this and still get proper type-checking for this method, you can override `.model_dump()` in an
+`if TYPE_CHECKING:` block:
+
+```py
+from typing import TYPE_CHECKING, Any
+
+from typing_extensions import Literal
+
+from pydantic import BaseModel, model_serializer
+
+
+class Model(BaseModel):
+    x: str
+
+    @model_serializer
+    def ser_model(self) -> str:
+        return self.x
+
+    if TYPE_CHECKING:
+        # Ensure type checkers see the correct return type
+        def model_dump(
+            self,
+            *,
+            mode: Literal['json', 'python'] | str = 'python',
+            include: Any = None,
+            exclude: Any = None,
+            by_alias: bool = False,
+            exclude_unset: bool = False,
+            exclude_defaults: bool = False,
+            exclude_none: bool = False,
+            round_trip: bool = False,
+            warnings: bool = True,
+        ) -> str:
+            ...
+```
+
+This trick is actually used in [`RootModel`](models.md#rootmodel-and-custom-root-types) for precisely this purpose.
+
 ## Serializing subclasses
 
 ### Subclasses of standard types
