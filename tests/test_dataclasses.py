@@ -12,7 +12,7 @@ from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Opti
 import pytest
 from dirty_equals import HasRepr
 from pydantic_core import ArgsKwargs, SchemaValidator
-from typing_extensions import Literal
+from typing_extensions import Annotated, Literal
 
 import pydantic
 from pydantic import (
@@ -2348,3 +2348,52 @@ def test_model_config_override_in_decorator_empty_config() -> None:
 
     ta = TypeAdapter(Model)
     assert ta.validate_python({'x': 'ABC '}).x == 'ABC '
+
+
+def test_pydantic_field_annotation():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: Annotated[int, Field(gt=0)]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=-1)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'gt': 0},
+            'input': -1,
+            'loc': ('x',),
+            'msg': 'Input should be greater than 0',
+            'type': 'greater_than',
+        }
+    ]
+
+
+def test_combined_field_annotations():
+    """
+    This test is included to document the fact that `Field` and `field` can be used together.
+    That said, if you mix them like this, there is a good chance you'll run into surprising behavior/bugs.
+
+    (E.g., `x: Annotated[int, Field(gt=1, validate_default=True)] = field(default=0)` doesn't cause an error)
+
+    I would generally advise against doing this, and if we do change the behavior in the future to somehow merge
+    pydantic.FieldInfo and dataclasses.Field in a way that changes runtime behavior for existing code, I would probably
+    consider it a bugfix rather than a breaking change.
+    """
+
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: Annotated[int, Field(gt=1)] = dataclasses.field(default=1)
+
+    assert Model().x == 1
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=0)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'gt': 1},
+            'input': 0,
+            'loc': ('x',),
+            'msg': 'Input should be greater than 1',
+            'type': 'greater_than',
+        }
+    ]
