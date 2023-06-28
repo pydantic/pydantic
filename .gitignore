@@ -34,5 +34,5 @@ node_modules/
 /*.profdata
 /*.profraw
 /foobar.py
-/pydantic_core/*.so
+/python/pydantic_core/*.so
 /src/self_schema.py

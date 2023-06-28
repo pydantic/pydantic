@@ -53,7 +53,7 @@ jobs:
       - run: ls -lha
       - run: coverage xml
 
-      - run: coverage-prepare lcov pydantic_core/*.so
+      - run: coverage-prepare lcov python/pydantic_core/*.so
 
       - uses: codecov/codecov-action@v3
 
@@ -151,8 +151,7 @@ jobs:
           python-version: '3.11'
 
       - run: pip install -r tests/requirements.txt
-      - run: 'pip install "maturin>=1,<2" typing_extensions'
-      - run: make build-dev
+      - run: pip install -e . --config-settings=build-args='--profile dev'
 
       - run: pip freeze
       - run: pytest
@@ -464,8 +463,6 @@ jobs:
             fi
           run: |
             set -x
-            # this is required so that pytest uses the installed pydantic-core package
-            rm -r pydantic_core
             # typing-extensions isn't automatically installed because of `--no-index --no-deps`
             python3 -m venv venv
             source venv/bin/activate
@@ -499,7 +496,6 @@ jobs:
           name: pypi_files
           path: dist
 
-      - run: rm -r pydantic_core
       - run: pip install typing-extensions
       - run: pip install -r tests/requirements.txt
       - run: pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall

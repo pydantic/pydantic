@@ -13,7 +13,7 @@ except ImportError:
 
 
 @pytest.mark.skipif(sys.platform not in {'linux', 'darwin'}, reason='Only on linux and macos')
-@pytest.mark.parametrize('example', find_examples('pydantic_core/core_schema.py'), ids=str)
+@pytest.mark.parametrize('example', find_examples('python/pydantic_core/core_schema.py'), ids=str)
 def test_docstrings(example: CodeExample, eval_example: EvalExample):
     eval_example.set_config(quotes='single')
 
