@@ -164,7 +164,7 @@ class FieldInfo(_repr.Representation):
 
         See the signature of `pydantic.fields.Field` for more details about the expected arguments.
         """
-        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
+        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'), kwargs.get('default'))
 
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
@@ -307,7 +307,7 @@ class FieldInfo(_repr.Representation):
                 annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, cls):
-            default.annotation, annotation_metadata = cls._extract_metadata(annotation)
+            default.annotation, annotation_metadata = cls._extract_metadata(annotation, default)
             default.metadata += annotation_metadata
             default.frozen = final or default.frozen
             return default
@@ -323,7 +323,7 @@ class FieldInfo(_repr.Representation):
                 init_var = True
                 annotation = annotation.type
             pydantic_field = cls._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
+            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation, default)
             pydantic_field.metadata += annotation_metadata
             pydantic_field.frozen = final or pydantic_field.frozen
             pydantic_field.init_var = init_var
@@ -332,8 +332,11 @@ class FieldInfo(_repr.Representation):
         else:
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
-                field_info = cls._find_field_info_arg(extra_args)
-                if field_info is not None:
+                field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
+                if field_infos:
+                    if len(field_infos) > 1:
+                        raise TypeError('Field may not be used twice on the same field')
+                    field_info = next(iter(field_infos))
                     if not field_info.is_required():
                         raise TypeError('Default may not be specified twice on the same field')
                     new_field_info = copy(field_info)
@@ -369,16 +372,17 @@ class FieldInfo(_repr.Representation):
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
         field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field.metadata)
 
-        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type)
+        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type, dc_field.default)
         field.metadata += annotation_metadata
         return field
 
     @classmethod
-    def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
+    def _extract_metadata(cls, annotation: type[Any] | None, default: Any) -> tuple[type[Any] | None, list[Any]]:
         """Tries to extract metadata/constraints from an annotation if it uses `Annotated`.
 
         Args:
             annotation: The type hint annotation for which metadata has to be extracted.
+            default: The default value for the field, used to check if `Field()` is used more than once.
 
         Returns:
             A tuple containing the extracted metadata type and the list of extra arguments.
@@ -386,10 +390,11 @@ class FieldInfo(_repr.Representation):
         Raises:
             TypeError: If a `Field` is used twice on the same field.
         """
+        default_is_field = isinstance(default, FieldInfo)
         if annotation is not None:
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
-                if cls._find_field_info_arg(extra_args):
+                if sum(1 for a in extra_args if isinstance(a, FieldInfo)) + default_is_field > 1:
                     raise TypeError('Field may not be used twice on the same field')
                 return first_arg, list(extra_args)
 

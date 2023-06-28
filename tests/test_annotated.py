@@ -92,8 +92,13 @@ def test_annotated(hint_fn, value, expected_repr):
     'hint_fn,value,exc_handler',
     [
         (
-            lambda: Annotated[int, Field(0)],
-            Field(default=5, ge=0),
+            lambda: Annotated[int, Field(lt=10), Field(ge=0)],
+            0,
+            pytest.raises(TypeError, match='Field may not be used twice on the same field'),
+        ),
+        (
+            lambda: Annotated[int, Field(lt=10)],
+            Field(ge=0),
             pytest.raises(TypeError, match='Field may not be used twice on the same field'),
         ),
         (
