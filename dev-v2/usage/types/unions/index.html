@@ -2164,7 +2164,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 <p class="admonition-title">Tip</p>
 <p>The type <code>Optional[x]</code> is a shorthand for <code>Union[x, None]</code>.</p>
 <p><code>Optional[x]</code> can also be used to specify a required field that can take <code>None</code> as a value.</p>
-<p>See more details in <a href="/api/usage/models.md#required-fields">Required Fields</a>.</p>
+<p>See more details in <a href="../../models/#required-fields">Required fields</a>.</p>
 </div>
 <h4 id="discriminated-unions-aka-tagged-unions">Discriminated Unions (a.k.a. Tagged Unions)<a class="headerlink" href="#discriminated-unions-aka-tagged-unions" title="Permanent link">&para;</a></h4>
 <p>When <code>Union</code> is used with multiple submodels, you sometimes know exactly which submodel needs to
@@ -2262,7 +2262,7 @@ For your <code>Union</code>, you can set the discriminator in its value: <code>F
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Using the <a href="/api/usage/schema/#typingannotated-fields">Annotated Fields syntax</a> can be handy to regroup
+<p>Using the <a href="../../json_schema/#typingannotated-fields"><code>typing.Annotated</code> fields syntax</a> can be handy to regroup
 the <code>Union</code> and <code>discriminator</code> information. See below for an example!</p>
 </div>
 <div class="admonition warning">

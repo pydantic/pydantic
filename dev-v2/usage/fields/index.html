@@ -2285,7 +2285,7 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   <h1>Fields</h1>
 
 <p>The <code>Field</code> function is used to customize and add metadata to fields of models.</p>
-<p>See the <a href="/api/fields/#pydantic.fields.Field"><code>Field</code></a> API reference for additional details.</p>
+<p>See the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> API reference for additional details.</p>
 <h2 id="default-values">Default values<a class="headerlink" href="#default-values" title="Permanent link">&para;</a></h2>
 <p>The <code>default</code> parameter is used to define a default value for a field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -2345,7 +2345,7 @@ and <code>serialization_alias</code> parameters, which will apply only in their 
 <li>The alias <code>'username'</code> is used for instance creation and validation.</li>
 <li>
 <p>We are using <code>model_dump</code> to convert the model into a serializable format.</p>
-<p>You can see more details about <a href="/api/main/#pydantic.main.BaseModel.model_dump"><code>model_dump</code></a> in the API reference.</p>
+<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/main/#pydantic.main.BaseModel.model_dump"><code>model_dump</code></a> in the API reference.</p>
 <p>Note that the <code>by_alias</code> keyword argument defaults to <code>False</code>, and must be specified explicitly to dump
 models using the field (serialization) aliases.</p>
 <p>When <code>by_alias=True</code>, the alias <code>'username'</code> is also used during serialization.</p>
@@ -2390,8 +2390,8 @@ models using the field (serialization) aliases.</p>
 <p>In case you use <code>alias</code> together with <code>validation_alias</code> or <code>serialization_alias</code> at the same time,
 the <code>validation_alias</code> will have priority over <code>alias</code> for validation, and <code>serialization_alias</code> will have priority
 over <code>alias</code> for serialization.</p>
-<p>You can read more about <a href="/usage/model_config/#alias-precedence">Alias Precedence</a> in the
-<a href="/usage/model_config/">Model Config</a> documentation.</p>
+<p>You can read more about <a href="../model_config/#alias-precedence">Alias Precedence</a> in the
+<a href="../model_config/">Model Config</a> documentation.</p>
 <details class="tip">
 <summary>VSCode and Pyright users</summary>
 <p>In VSCode, if you use the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance">Pylance</a>
@@ -2409,7 +2409,7 @@ extension, you won't see a warning when instantiating a model using a field's al
 <li>VSCode will NOT show a warning here.</li>
 </ol>
 <p>When the <code>'alias'</code> keyword argument is specified, even if you set <code>populate_by_name</code> to <code>True</code> in the
-<a href="/usage/model_config/#populate-by-name">Model Config</a>, VSCode will show a warning when instantiating
+<a href="../model_config/#populate-by-name">Model Config</a>, VSCode will show a warning when instantiating
 a model using the field name (though it will work at runtime) — in this case, <code>'name'</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
@@ -2481,7 +2481,7 @@ decorator, such as Pyright.</p>
 <ol>
 <li>
 <p>We are using <code>model_validate</code> to validate a dictionary using the field aliases.</p>
-<p>You can see more details about <a href="/api/main/#pydantic.main.BaseModel.model_validate"><code>model_validate</code></a> in the API reference.</p>
+<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/main/#pydantic.main.BaseModel.model_validate"><code>model_validate</code></a> in the API reference.</p>
 </li>
 </ol>
 <p>In the <code>'first_name'</code> field, we are using the alias <code>'names'</code> and the index <code>0</code> to specify the path to the first name.
@@ -2819,9 +2819,9 @@ models in a union.</p>
 </div>
 </div>
 <ol>
-<li>See more about <a href="/usage/models/#helper-functions">Helper Functions</a> in the <a href="/usage/models/">Models</a> page.</li>
+<li>See more about <a href="../models/#helper-functions">Helper Functions</a> in the <a href="../models/">Models</a> page.</li>
 </ol>
-<p>See the <a href="/usage/types/unions/#discriminated-unions-aka-tagged-unions">Discriminated Unions</a> for more details.</p>
+<p>See the <a href="../types/unions/#discriminated-unions-aka-tagged-unions">Discriminated Unions</a> for more details.</p>
 <h2 id="strict-mode">Strict Mode<a class="headerlink" href="#strict-mode" title="Permanent link">&para;</a></h2>
 <p>The <code>strict</code> parameter on a <code>Field</code> specifies whether the field should be validated in "strict mode".
 In strict mode, Pydantic throws an error during validation instead of coercing data on the field where <code>strict=True</code>.</p>
@@ -2875,7 +2875,7 @@ assigned a new value after the model is created (immutability).</p>
 <ol>
 <li>
 <p>The <code>model_config</code> field is used to enable the validation of assignments.</p>
-<p>See the <a href="/usage/models/#validate-assignment">Validate Assignment</a> section for more details.</p>
+<p>See the <a href="../models/#validate-assignment">Validate Assignment</a> section for more details.</p>
 </li>
 <li>
 <p>Since <code>validate_assignment</code> is enabled, and the <code>name</code> field is frozen, the assignment is not allowed.</p>
@@ -2900,7 +2900,7 @@ model when exporting the model.</p>
 <ol>
 <li>The <code>age</code> field is not included in the <code>model_dump()</code> output, since it is excluded.</li>
 </ol>
-<p>See the <a href="/usage/exporting_models/#model-and-field-level-include-and-exclude">Exporting Models</a> section for more details.</p>
+<p>See the <a href="../exporting_models/#model-and-field-level-include-and-exclude">Exporting Models</a> section for more details.</p>
 <h2 id="customizing-json-schema">Customizing JSON Schema<a class="headerlink" href="#customizing-json-schema" title="Permanent link">&para;</a></h2>
 <p>There are fields that exclusively to customise the generated JSON Schema:</p>
 <ul>
