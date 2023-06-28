@@ -20,11 +20,24 @@ If you encounter any issues, please [create an issue in GitHub](https://github.c
 the `bug V2` label. This will help us to actively monitor and track errors, and to continue to improve the library's
 performance.
 
-If you need to use latest Pydantic V1 for any reason, you can install it with:
+## Code Transformation Tool
+
+We have created a tool to help you migrate your code. This tool is still in beta, but we hope it will help you to
+migrate your code more quickly.
+
+You can install the tool from PyPI:
 
 ```bash
-pip install "pydantic==1.*"
+pip install bump-pydantic
 ```
+
+The usage is simple:
+
+```bash
+bump-pydantic <package>
+```
+
+See more about it on the [Bump Pydantic](https://github.com/pydantic/bump-pydantic) repository.
 
 ## Migration guide
 
