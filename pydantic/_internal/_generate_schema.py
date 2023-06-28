@@ -517,7 +517,7 @@ class GenerateSchema:
         elif inspect.isclass(obj) and issubclass(obj, Enum):
             from ._std_types_schema import get_enum_core_schema
 
-            return get_enum_core_schema(obj)
+            return get_enum_core_schema(obj, self.config_wrapper.config_dict)
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
