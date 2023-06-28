@@ -18,7 +18,7 @@ Pydantic V2!
 
 ## Getting started with Pydantic V2
 
-To get started with Pydantic V2, install it from PyPI.:
+To get started with Pydantic V2, install it from PyPI:
 
 ```bash
 pip install -U pydantic
@@ -33,7 +33,8 @@ See [the docs](/) for examples of Pydantic at work.
 If you are upgrading an existing project, you can use our extensive [migration guide](../migration.md) to understand
 what has changed.
 
-If you do encounter any issues, please [create an issue in GitHub](https://github.com/pydantic/pydantic/issues) using the `bug V2` label.
+If you do encounter any issues, please [create an issue in GitHub](https://github.com/pydantic/pydantic/issues/new?assignees=&labels=bug+V2%2Cunconfirmed&projects=&template=bug-v2.yml)
+using the `bug V2` label.
 This will help us to actively monitor and track errors, and to continue to improve the library’s performance.
 
 Thank you for your support, and we look forward to your feedback.
