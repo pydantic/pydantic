@@ -1,8 +1,11 @@
 use std::borrow::Cow;
+use std::cmp::Ordering;
+use std::ops::Rem;
 use std::slice::Iter as SliceIter;
 
 use num_bigint::BigInt;
 
+use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::iter::PyDictIterator;
 use pyo3::types::{
@@ -17,6 +20,7 @@ use pyo3::PyTypeInfo;
 
 use crate::errors::{py_err_string, ErrorType, InputValue, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::py_err;
 use crate::validators::{CombinedValidator, Extra, Validator};
 
 use super::parse_json::{JsonArray, JsonInput, JsonObject};
@@ -847,6 +851,18 @@ impl<'a> EitherInt<'a> {
         }
     }
 
+    pub fn as_int(&self) -> ValResult<'a, Int> {
+        match self {
+            EitherInt::I64(i) => Ok(Int::I64(*i)),
+            EitherInt::U64(u) => match i64::try_from(*u) {
+                Ok(i) => Ok(Int::I64(i)),
+                Err(_) => Ok(Int::Big(BigInt::from(*u))),
+            },
+            EitherInt::BigInt(b) => Ok(Int::Big(b.clone())),
+            EitherInt::Py(i) => i.extract().map_err(|_| ValError::new(ErrorType::IntParsingSize, *i)),
+        }
+    }
+
     pub fn as_bool(&self) -> Option<bool> {
         match self {
             EitherInt::I64(i) => match i {
@@ -869,15 +885,6 @@ impl<'a> EitherInt<'a> {
                 Ok(1) => Some(true),
                 _ => None,
             },
-        }
-    }
-
-    pub fn as_bigint(&self) -> PyResult<BigInt> {
-        match self {
-            EitherInt::I64(i) => Ok(BigInt::from(*i)),
-            EitherInt::U64(u) => Ok(BigInt::from(*u)),
-            EitherInt::BigInt(i) => Ok(i.clone()),
-            EitherInt::Py(i) => i.extract(),
         }
     }
 }
@@ -915,6 +922,54 @@ impl<'a> IntoPy<PyObject> for EitherFloat<'a> {
         match self {
             Self::F64(float) => float.into_py(py),
             Self::Py(float) => float.into_py(py),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum Int {
+    I64(i64),
+    Big(BigInt),
+}
+
+impl PartialOrd for Int {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        match (self, other) {
+            (Int::I64(i1), Int::I64(i2)) => Some(i1.cmp(i2)),
+            (Int::Big(b1), Int::Big(b2)) => Some(b1.cmp(b2)),
+            (Int::I64(i), Int::Big(b)) => Some(BigInt::from(*i).cmp(b)),
+            (Int::Big(b), Int::I64(i)) => Some(b.cmp(&BigInt::from(*i))),
+        }
+    }
+}
+
+impl PartialEq for Int {
+    fn eq(&self, other: &Self) -> bool {
+        self.partial_cmp(other) == Some(Ordering::Equal)
+    }
+}
+
+impl<'a> Rem for &'a Int {
+    type Output = Int;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        match (self, rhs) {
+            (Int::I64(i1), Int::I64(i2)) => Int::I64(i1 % i2),
+            (Int::Big(b1), Int::Big(b2)) => Int::Big(b1 % b2),
+            (Int::I64(i), Int::Big(b)) => Int::Big(BigInt::from(*i) % b),
+            (Int::Big(b), Int::I64(i)) => Int::Big(b % BigInt::from(*i)),
+        }
+    }
+}
+
+impl<'a> FromPyObject<'a> for Int {
+    fn extract(obj: &'a PyAny) -> PyResult<Self> {
+        if let Ok(i) = obj.extract::<i64>() {
+            Ok(Int::I64(i))
+        } else if let Ok(b) = obj.extract::<BigInt>() {
+            Ok(Int::Big(b))
+        } else {
+            py_err!(PyTypeError; "Expected int, got {}", obj.get_type())
         }
     }
 }
