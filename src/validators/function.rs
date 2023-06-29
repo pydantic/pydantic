@@ -9,6 +9,7 @@ use crate::errors::{
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::{function_name, py_err, SchemaDict};
+use crate::PydanticUseDefault;
 
 use super::generator::InternalValidator;
 use super::{
@@ -485,6 +486,8 @@ pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) ->
         py_err_string!(err.value(py), AssertionError, input)
     } else if err.is_instance_of::<PydanticOmit>(py) {
         ValError::Omit
+    } else if err.is_instance_of::<PydanticUseDefault>(py) {
+        ValError::UseDefault
     } else {
         ValError::InternalErr(err)
     }

@@ -4,7 +4,15 @@ from typing import Any, Callable, Dict, List, Union, cast
 
 import pytest
 
-from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, Some, ValidationError, core_schema
+from pydantic_core import (
+    ArgsKwargs,
+    PydanticUseDefault,
+    SchemaError,
+    SchemaValidator,
+    Some,
+    ValidationError,
+    core_schema,
+)
 
 from ..conftest import PyAndJson
 
@@ -581,3 +589,32 @@ def f(v: Union[Some[Any], None]) -> str:
 
     res = f(SchemaValidator(core_schema.int_schema()).get_default_value())
     assert res == 'case5'
+
+
+def test_use_default_error() -> None:
+    def val_func(v: Any, handler: core_schema.ValidatorFunctionWrapHandler) -> Any:
+        if isinstance(v, str) and v == '':
+            raise PydanticUseDefault
+        return handler(v)
+
+    validator = SchemaValidator(
+        core_schema.with_default_schema(
+            core_schema.no_info_wrap_validator_function(val_func, core_schema.int_schema()), default=10
+        )
+    )
+
+    assert validator.validate_python('1') == 1
+    assert validator.validate_python('') == 10
+
+    # without a default value the error bubbles up
+    # the error message is the same as the error message produced by PydanticOmit
+    validator = SchemaValidator(
+        core_schema.with_default_schema(core_schema.no_info_wrap_validator_function(val_func, core_schema.int_schema()))
+    )
+    with pytest.raises(SchemaError, match='Uncaught UseDefault error, please check your usage of `default` validators'):
+        validator.validate_python('')
+
+    # same if there is no WithDefault validator
+    validator = SchemaValidator(core_schema.no_info_wrap_validator_function(val_func, core_schema.int_schema()))
+    with pytest.raises(SchemaError, match='Uncaught UseDefault error, please check your usage of `default` validators'):
+        validator.validate_python('')

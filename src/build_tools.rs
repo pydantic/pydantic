@@ -95,6 +95,7 @@ impl SchemaError {
             }
             ValError::InternalErr(err) => err,
             ValError::Omit => Self::new_err("Unexpected Omit error."),
+            ValError::UseDefault => Self::new_err("Unexpected UseDefault error."),
         }
     }
 
