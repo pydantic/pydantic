@@ -86,7 +86,7 @@ nav:
   - 'Model Config': usage/model_config.md
   - 'Fields': usage/fields.md
   - 'JSON Schema': usage/json_schema.md
-  - 'Exporting Models': usage/exporting_models.md
+  - 'Serialization': usage/serialization.md
   - 'Computed Fields': usage/computed_fields.md
   - 'Dataclasses': usage/dataclasses.md
   - 'Validation Decorator': usage/validation_decorator.md
