@@ -1,9 +1,18 @@
 Beyond accessing model attributes directly via their field names (e.g. `model.foobar`), models can be converted, dumped,
 serialized, and exported in a number of ways.
 
-!!! note "Serialize versus dump"
+!!! tip "Serialize versus dump"
     Pydantic uses the terms "serialize" and "dump" interchangeably. Both refer to the process of converting a model to a
     dictionary or JSON-encoded string.
+
+    Outside of Pydantic, the word "serialize" usually refers to converting in-memory data into a string or bytes.
+    However, in the context of Pydantic, there is a very close relationship between converting an object from a more
+    structured form &mdash; such as a Pydantic model, a dataclass, etc. &mdash; into a less structured form comprised of
+    Python built-ins such as dict.
+
+    While we could (and on occasion, do) distinguish between these scenarios by using the word "dump" when converting to
+    primitives and "serialize" when converting to string, for practical purposes, we frequently use the word "serialize"
+    to refer to both of these situations, even though it does not always imply conversion to a string or bytes.
 
 ## `model.model_dump(...)`
 
