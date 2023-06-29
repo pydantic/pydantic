@@ -1148,7 +1148,25 @@ class GenerateSchema:
             d.info.alias = alias
             d.info.alias_priority = 1
 
-        return core_schema.computed_field(d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias)
+        def set_computed_field_metadata(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            json_schema = handler(schema)
+
+            json_schema['readOnly'] = True
+
+            title = d.info.title
+            if title is not None:
+                json_schema['title'] = title
+
+            description = d.info.description
+            if description is not None:
+                json_schema['description'] = description
+
+            return json_schema
+
+        metadata = build_metadata_dict(js_functions=[set_computed_field_metadata])
+        return core_schema.computed_field(
+            d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=metadata
+        )
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""

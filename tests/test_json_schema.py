@@ -4317,7 +4317,10 @@ def test_computed_field():
         'type': 'object',
     }
     assert Model.model_json_schema(mode='serialization') == {
-        'properties': {'double_x': {'title': 'Double X', 'type': 'integer'}, 'x': {'title': 'X', 'type': 'integer'}},
+        'properties': {
+            'double_x': {'readOnly': True, 'title': 'Double X', 'type': 'integer'},
+            'x': {'title': 'X', 'type': 'integer'},
+        },
         'required': ['x', 'double_x'],
         'title': 'Model',
         'type': 'object',

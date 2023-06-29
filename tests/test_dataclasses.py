@@ -1239,7 +1239,7 @@ def test_json_schema_with_computed_field():
         '$defs': {
             'MyDataclass': {
                 'properties': {
-                    'double_x': {'title': 'Double X', 'type': 'integer'},
+                    'double_x': {'readOnly': True, 'title': 'Double X', 'type': 'integer'},
                     'x': {'title': 'X', 'type': 'integer'},
                 },
                 'required': ['x', 'double_x'],
