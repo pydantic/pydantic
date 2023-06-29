@@ -8,6 +8,7 @@ use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
+use crate::input::Int;
 use crate::tools::{extract_i64, py_err, py_error_type};
 use strum::{Display, EnumMessage, IntoEnumIterator};
 use strum_macros::EnumIter;
@@ -724,18 +725,6 @@ impl Default for Number {
     }
 }
 
-impl From<i64> for Number {
-    fn from(i: i64) -> Self {
-        Self::Int(i)
-    }
-}
-
-impl From<BigInt> for Number {
-    fn from(i: BigInt) -> Self {
-        Self::BigInt(i)
-    }
-}
-
 impl From<f64> for Number {
     fn from(f: f64) -> Self {
         Self::Float(f)
@@ -745,6 +734,14 @@ impl From<f64> for Number {
 impl From<String> for Number {
     fn from(s: String) -> Self {
         Self::String(s)
+    }
+}
+impl From<Int> for Number {
+    fn from(i: Int) -> Self {
+        match i {
+            Int::I64(i) => Number::Int(i),
+            Int::Big(b) => Number::BigInt(b),
+        }
     }
 }
 
