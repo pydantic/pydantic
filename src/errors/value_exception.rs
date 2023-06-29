@@ -34,6 +34,26 @@ impl PydanticOmit {
     }
 }
 
+#[pyclass(extends=PyException, module="pydantic_core._pydantic_core")]
+#[derive(Debug, Clone)]
+pub struct PydanticUseDefault {}
+
+#[pymethods]
+impl PydanticUseDefault {
+    #[new]
+    pub fn py_new() -> Self {
+        Self {}
+    }
+
+    fn __str__(&self) -> &'static str {
+        self.__repr__()
+    }
+
+    fn __repr__(&self) -> &'static str {
+        "PydanticUseDefault()"
+    }
+}
+
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
 #[derive(Debug, Clone, Default)]
 pub struct PydanticCustomError {

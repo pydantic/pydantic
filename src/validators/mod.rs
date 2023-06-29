@@ -187,6 +187,7 @@ impl SchemaValidator {
             Ok(_) => Ok(true),
             Err(ValError::InternalErr(err)) => Err(err),
             Err(ValError::Omit) => Err(ValidationError::omit_error()),
+            Err(ValError::UseDefault) => Err(ValidationError::use_default_error()),
             Err(ValError::LineErrors(_)) => Ok(false),
         }
     }

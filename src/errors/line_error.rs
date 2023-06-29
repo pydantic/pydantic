@@ -14,6 +14,7 @@ pub enum ValError<'a> {
     LineErrors(Vec<ValLineError<'a>>),
     InternalErr(PyErr),
     Omit,
+    UseDefault,
 }
 
 impl<'a> From<PyErr> for ValError<'a> {
@@ -66,6 +67,7 @@ impl<'a> ValError<'a> {
             ValError::LineErrors(errors) => errors.iter().map(|e| e.duplicate(py)).collect::<Vec<_>>().into(),
             ValError::InternalErr(err) => ValError::InternalErr(err.clone_ref(py)),
             ValError::Omit => ValError::Omit,
+            ValError::UseDefault => ValError::UseDefault,
         }
     }
 }
