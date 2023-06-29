@@ -5,7 +5,7 @@ use pyo3::types::PyDict;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
-use crate::input::Input;
+use crate::input::{Input, Int};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -73,11 +73,11 @@ impl Validator for IntValidator {
 #[derive(Debug, Clone)]
 pub struct ConstrainedIntValidator {
     strict: bool,
-    multiple_of: Option<BigInt>,
-    le: Option<BigInt>,
-    lt: Option<BigInt>,
-    ge: Option<BigInt>,
-    gt: Option<BigInt>,
+    multiple_of: Option<Int>,
+    le: Option<Int>,
+    lt: Option<Int>,
+    ge: Option<Int>,
+    gt: Option<Int>,
 }
 
 impl Validator for ConstrainedIntValidator {
@@ -90,10 +90,10 @@ impl Validator for ConstrainedIntValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_int = input.validate_int(extra.strict.unwrap_or(self.strict))?;
-        let int = either_int.as_bigint()?;
+        let int_value = either_int.as_int()?;
 
         if let Some(ref multiple_of) = self.multiple_of {
-            if &int % multiple_of != BigInt::from(0) {
+            if &int_value % multiple_of != Int::Big(BigInt::from(0)) {
                 return Err(ValError::new(
                     ErrorType::MultipleOf {
                         multiple_of: multiple_of.clone().into(),
@@ -103,17 +103,17 @@ impl Validator for ConstrainedIntValidator {
             }
         }
         if let Some(ref le) = self.le {
-            if &int > le {
+            if &int_value > le {
                 return Err(ValError::new(ErrorType::LessThanEqual { le: le.clone().into() }, input));
             }
         }
         if let Some(ref lt) = self.lt {
-            if &int >= lt {
+            if &int_value >= lt {
                 return Err(ValError::new(ErrorType::LessThan { lt: lt.clone().into() }, input));
             }
         }
         if let Some(ref ge) = self.ge {
-            if &int < ge {
+            if &int_value < ge {
                 return Err(ValError::new(
                     ErrorType::GreaterThanEqual { ge: ge.clone().into() },
                     input,
@@ -121,7 +121,7 @@ impl Validator for ConstrainedIntValidator {
             }
         }
         if let Some(ref gt) = self.gt {
-            if &int <= gt {
+            if &int_value <= gt {
                 return Err(ValError::new(ErrorType::GreaterThan { gt: gt.clone().into() }, input));
             }
         }
