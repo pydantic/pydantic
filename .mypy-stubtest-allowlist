@@ -1,4 +1,2 @@
-# TODO: __init__ signature inherited from BaseException, probably needs investigating
-pydantic_core._pydantic_core.PydanticOmit.__init__
 # TODO: don't want to expose this staticmethod, requires https://github.com/PyO3/pyo3/issues/2384
 pydantic_core._pydantic_core.PydanticUndefinedType.new

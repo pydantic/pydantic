@@ -70,6 +70,7 @@ impl ValidationError {
             }
             ValError::InternalErr(err) => err,
             ValError::Omit => Self::omit_error(),
+            ValError::UseDefault => Self::use_default_error(),
         }
     }
 
@@ -88,6 +89,10 @@ impl ValidationError {
 
     pub fn omit_error() -> PyErr {
         py_schema_error_type!("Uncaught Omit error, please check your usage of `default` validators.")
+    }
+
+    pub fn use_default_error() -> PyErr {
+        py_schema_error_type!("Uncaught UseDefault error, please check your usage of `default` validators.")
     }
 }
 

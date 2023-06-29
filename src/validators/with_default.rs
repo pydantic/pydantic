@@ -128,12 +128,17 @@ impl Validator for WithDefaultValidator {
         } else {
             match self.validator.validate(py, input, extra, definitions, recursion_guard) {
                 Ok(v) => Ok(v),
-                Err(e) => match self.on_error {
-                    OnError::Raise => Err(e),
-                    OnError::Default => Ok(self
+                Err(e) => match e {
+                    ValError::UseDefault => Ok(self
                         .default_value(py, None::<usize>, extra, definitions, recursion_guard)?
-                        .unwrap()),
-                    OnError::Omit => Err(ValError::Omit),
+                        .ok_or(e)?),
+                    e => match self.on_error {
+                        OnError::Raise => Err(e),
+                        OnError::Default => Ok(self
+                            .default_value(py, None::<usize>, extra, definitions, recursion_guard)?
+                            .ok_or(e)?),
+                        OnError::Omit => Err(ValError::Omit),
+                    },
                 },
             }
         }
