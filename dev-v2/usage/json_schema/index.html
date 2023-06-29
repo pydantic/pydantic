@@ -16,7 +16,7 @@
         <link rel="prev" href="../fields/">
       
       
-        <link rel="next" href="../exporting_models/">
+        <link rel="next" href="../serialization/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.17">
@@ -1170,8 +1170,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
   
     <li class="md-nav__item">
-      <a href="../exporting_models/" class="md-nav__link">
-        Exporting Models
+      <a href="../serialization/" class="md-nav__link">
+        Serialization
       </a>
     </li>
   
@@ -2752,8 +2752,8 @@ It has the following arguments:</p>
 <li><code>title</code>: if omitted, <code>field_name.title()</code> is used</li>
 <li><code>description</code>: if omitted and the annotation is a sub-model,
     the docstring of the sub-model will be used</li>
-<li><code>exclude</code>: exclude this field when dumping (<code>.dict</code> and <code>.json</code>) the instance. The exact syntax and configuration options are described in details in the <a href="../exporting_models/#advanced-include-and-exclude">exporting models section</a>.</li>
-<li><code>include</code>: include (only) this field when dumping (<code>.dict</code> and <code>.json</code>) the instance. The exact syntax and configuration options are described in details in the <a href="../exporting_models/#advanced-include-and-exclude">exporting models section</a>.</li>
+<li><code>exclude</code>: exclude this field when dumping (<code>.dict</code> and <code>.json</code>) the instance. The exact syntax and configuration options are described in details in <a href="../serialization/#advanced-include-and-exclude">Serialization</a>.</li>
+<li><code>include</code>: include (only) this field when dumping (<code>.dict</code> and <code>.json</code>) the instance. The exact syntax and configuration options are described in details in <a href="../serialization/#advanced-include-and-exclude">Serialization</a>.</li>
 <li><code>const</code>: this argument <em>must</em> be the same as the field's default value if present.</li>
 <li><code>gt</code>: for numeric values (<code>int</code>, <code>float</code>, <code>Decimal</code>), adds a validation of "greater than" and an annotation
   of <code>exclusiveMinimum</code> to the JSON Schema</li>

@@ -1334,8 +1334,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
   
     <li class="md-nav__item">
-      <a href="../exporting_models/" class="md-nav__link">
-        Exporting Models
+      <a href="../serialization/" class="md-nav__link">
+        Serialization
       </a>
     </li>
   
@@ -2589,11 +2589,11 @@ Models possess the following methods and attributes:</p>
 <li><code>model_construct()</code>: a class method for creating models without running validation. See
     <a href="#creating-models-without-validation">Creating models without validation</a>.</li>
 <li><code>model_copy()</code>: returns a copy (by default, shallow copy) of the model. See
-    <a href="../exporting_models/#modelcopy">Exporting models</a>.</li>
+    <a href="../serialization/#modelcopy">Serialization</a>.</li>
 <li><code>model_dump()</code>: returns a dictionary of the model's fields and values. See
-    <a href="../exporting_models/#modeldump">Exporting models</a>.</li>
+    <a href="../serialization/#modeldump">Serialization</a>.</li>
 <li><code>model_dump_json()</code>: returns a JSON string representation of <code>model_dump()</code>. See
-    <a href="../exporting_models/#modeldumpjson">Exporting models</a>.</li>
+    <a href="../serialization/#modeldumpjson">Serialization</a>.</li>
 <li><code>model_extra</code>: get extra fields set during validation.</li>
 <li><code>model_fields_set</code>: set of fields which were set when the model instance was initialised.</li>
 <li><code>model_json_schema()</code>: returns a dictionary representing the model as JSON Schema. See <a href="../json_schema/">JSON Schema</a>.</li>
@@ -3964,7 +3964,7 @@ immutability of <code>foobar</code> doesn't stop <code>b</code> from being chang
   can access the values of earlier fields, but not later ones</li>
 <li>field order is preserved in the model <a href="../json_schema/">schema</a></li>
 <li>field order is preserved in <a href="#error-handling">validation errors</a></li>
-<li>field order is preserved by <a href="../exporting_models/#modeldict"><code>.model_dump()</code> and <code>.model_dump_json()</code> etc.</a></li>
+<li>field order is preserved by <a href="../serialization/#modeldict"><code>.model_dump()</code> and <code>.model_dump_json()</code> etc.</a></li>
 </ul>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 

@@ -1074,8 +1074,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   
   
     <li class="md-nav__item">
-      <a href="../../usage/exporting_models/" class="md-nav__link">
-        Exporting Models
+      <a href="../../usage/serialization/" class="md-nav__link">
+        Serialization
       </a>
     </li>
   
@@ -2360,7 +2360,7 @@ logic, and can modify the resulting value before returning it as the final outpu
   <div class="doc doc-contents ">
   
       <p>Decorator that enables custom field serialization.</p>
-<p>See <a href="../../usage/exporting_models/#custom-serializers">Custom serializers</a> for more information.</p>
+<p>See <a href="../../usage/serialization/#custom-serializers">Custom serializers</a> for more information.</p>
 <p>Four signatures are supported:</p>
 <ul>
 <li><code>(self, value: Any, info: FieldSerializationInfo)</code></li>
@@ -2536,7 +2536,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that enables custom field serialization.</span>
 
-<span class="sd">    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.</span>
+<span class="sd">    See [Custom serializers](../usage/serialization.md#custom-serializers) for more information.</span>
 
 <span class="sd">    Four signatures are supported:</span>
 
@@ -2600,7 +2600,7 @@ logic, and can modify the resulting value before returning it as the final outpu
   <div class="doc doc-contents ">
   
       <p>Decorator that enables custom model serialization.</p>
-<p>See <a href="../../usage/exporting_models/#custom-serializers">Custom serializers</a> for more information.</p>
+<p>See <a href="../../usage/serialization/#custom-serializers">Custom serializers</a> for more information.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -2744,7 +2744,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that enables custom model serialization.</span>
 
-<span class="sd">    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.</span>
+<span class="sd">    See [Custom serializers](../usage/serialization.md#custom-serializers) for more information.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        __f: The function to be decorated.</span>
