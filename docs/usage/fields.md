@@ -663,7 +663,7 @@ print(user.model_dump())  # (1)!
 
 1. The `age` field is not included in the `model_dump()` output, since it is excluded.
 
-See the [Exporting Models] section for more details.
+See the [Serialization] section for more details.
 
 ## Customizing JSON Schema
 
@@ -730,4 +730,4 @@ TODO: Add `alias_priority` parameters.
 [init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Validate Assignment]: models.md#validate-assignment
-[Exporting Models]: exporting_models.md#model-and-field-level-include-and-exclude
+[Serialization]: serialization.md#model-and-field-level-include-and-exclude

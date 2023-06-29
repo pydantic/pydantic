@@ -86,11 +86,11 @@ Models possess the following methods and attributes:
 * `model_construct()`: a class method for creating models without running validation. See
     [Creating models without validation](#creating-models-without-validation).
 * `model_copy()`: returns a copy (by default, shallow copy) of the model. See
-    [Exporting models](exporting_models.md#modelcopy).
+    [Serialization](serialization.md#modelcopy).
 * `model_dump()`: returns a dictionary of the model's fields and values. See
-    [Exporting models](exporting_models.md#modeldump).
+    [Serialization](serialization.md#modeldump).
 * `model_dump_json()`: returns a JSON string representation of `model_dump()`. See
-    [Exporting models](exporting_models.md#modeldumpjson).
+    [Serialization](serialization.md#modeldumpjson).
 * `model_extra`: get extra fields set during validation.
 * `model_fields_set`: set of fields which were set when the model instance was initialised.
 * `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
@@ -996,7 +996,7 @@ Field order is important in models for the following reasons:
   can access the values of earlier fields, but not later ones
 * field order is preserved in the model [schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
-* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](exporting_models.md#modeldict)
+* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](serialization.md#modeldict)
 
 ```py
 from pydantic import BaseModel, ValidationError
