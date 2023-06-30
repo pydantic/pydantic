@@ -20,6 +20,12 @@ If you encounter any issues, please [create an issue in GitHub](https://github.c
 the `bug V2` label. This will help us to actively monitor and track errors, and to continue to improve the library's
 performance.
 
+If you need to use latest Pydantic V1 for any reason, you can install it with:
+
+```bash
+pip install "pydantic==1.*"
+```
+
 ## Code Transformation Tool
 
 We have created a tool to help you migrate your code. This tool is still in beta, but we hope it will help you to
@@ -31,11 +37,16 @@ You can install the tool from PyPI:
 pip install bump-pydantic
 ```
 
-The usage is simple:
+The usage is simple. If your project structure is:
 
-```bash
-bump-pydantic <package>
-```
+    * repo_folder
+        * my_package
+            * <python source files> ...
+
+Then you'll want to do:
+
+    cd /path/to/repo_folder
+    bump-pydantic my_package
 
 See more about it on the [Bump Pydantic](https://github.com/pydantic/bump-pydantic) repository.
 
