@@ -9,7 +9,7 @@
 
 Pydantic is the most widely used Python library for data validation and coercion using Python type annotations.
 
-!!! success
+!!! success "Migrating to Pydantic V2"
     Already using Pydantic V1? See the [Migration Guide](migration.md) for notes on upgrading to Pydantic V2 in your applications!
 
 ## Why use Pydantic?
