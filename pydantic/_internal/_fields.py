@@ -109,7 +109,12 @@ def collect_model_fields(  # noqa: C901
             continue
         for protected_namespace in config_wrapper.protected_namespaces:
             if ann_name.startswith(protected_namespace):
-                raise NameError(f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}"')
+                valid_namespaces = tuple(x for x in config_wrapper.protected_namespaces if not ann_name.startswith(x))
+                raise NameError(
+                    f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}".'
+                    '\n\nYou may be able to resolve this error by setting'
+                    f" `model_config['protected_namespaces'] = {valid_namespaces}`."
+                )
         if is_classvar(ann_type):
             class_vars.add(ann_name)
             continue
