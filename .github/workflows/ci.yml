@@ -180,7 +180,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         if [ ${{ matrix.mypy-version }} != 'lockfile' ]; then
-          pdm run pip uninstall mypy -y && pdm run pip install mypy==${{ matrix.mypy-version }}
+          pdm remove -G linting mypy && pdm remove -G mypy mypy && pdm add mypy==${{ matrix.mypy-version }}
         fi
         pdm list
 
