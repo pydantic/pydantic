@@ -138,7 +138,7 @@ except ValidationError as e:
     """
 ```
 
-1. the input data is wrong here &mdash; `id` is a valid int, and `signup_ts` is missing
+1. The input data is wrong here &mdash; `id` is not a valid integer, and `signup_ts` is missing
 2. `User(...)` will raise a `ValidationError` with a list of errors
 
 ## Who is using Pydantic?
