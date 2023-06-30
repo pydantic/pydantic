@@ -243,7 +243,9 @@ def convert_errors(
         custom_message = custom_messages.get(error['type'])
         if custom_message:
             ctx = error.get('ctx')
-            error['msg'] = custom_message.format(**ctx) if ctx else custom_message
+            error['msg'] = (
+                custom_message.format(**ctx) if ctx else custom_message
+            )
         new_errors.append(error)
     return new_errors
 

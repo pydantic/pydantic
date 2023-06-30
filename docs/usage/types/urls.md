@@ -115,7 +115,13 @@ the above types export the following properties:
 If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
 ```py
-from pydantic import BaseModel, HttpUrl, PostgresDsn, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    HttpUrl,
+    PostgresDsn,
+    ValidationError,
+    field_validator,
+)
 
 
 class MyModel(BaseModel):

@@ -36,7 +36,12 @@ print(sm)
 print(sm.password)
 #> **********
 print(sm.model_dump())
-#> {'password': SecretStr('**********'), 'password_bytes': SecretBytes(b'**********')}
+"""
+{
+    'password': SecretStr('**********'),
+    'password_bytes': SecretBytes(b'**********'),
+}
+"""
 print(sm.model_dump_json())
 #> {"password":"**********","password_bytes":"**********"}
 
@@ -70,7 +75,9 @@ class SimpleModelDumpable(BaseModel):
         return v.get_secret_value()
 
 
-sm2 = SimpleModelDumpable(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
+sm2 = SimpleModelDumpable(
+    password='IAmSensitive', password_bytes=b'IAmSensitiveBytes'
+)
 
 # Standard access methods will not display the secret
 print(sm2)
@@ -78,7 +85,12 @@ print(sm2)
 print(sm2.password)
 #> **********
 print(sm2.model_dump())
-#> {'password': SecretStr('**********'), 'password_bytes': SecretBytes(b'**********')}
+"""
+{
+    'password': SecretStr('**********'),
+    'password_bytes': SecretBytes(b'**********'),
+}
+"""
 
 # But the json method will
 print(sm2.model_dump_json())

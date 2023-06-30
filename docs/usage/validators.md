@@ -42,7 +42,9 @@ user = UserModel(
     password2='zxcvbn',
 )
 print(user)
-#> name='Samuel Colvin' username='scolvin' password1='zxcvbn' password2='zxcvbn'
+"""
+name='Samuel Colvin' username='scolvin' password1='zxcvbn' password2='zxcvbn'
+"""
 
 try:
     UserModel(

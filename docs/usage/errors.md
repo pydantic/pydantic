@@ -115,7 +115,9 @@ class Model(BaseModel):
 
 
 print(Model.model_json_schema())
-#> {'examples': 'examples', 'properties': {}, 'title': 'Model', 'type': 'object'}
+"""
+{'examples': 'examples', 'properties': {}, 'title': 'Model', 'type': 'object'}
+"""
 ```
 
 ## Decorator on missing field {#decorator-missing-field}
@@ -201,7 +203,9 @@ from pydantic import AliasChoices, BaseModel, Field, PydanticUserError
 
 
 class Cat(BaseModel):
-    pet_type: Literal['cat'] = Field(validation_alias=AliasChoices('Pet', 'PET'))
+    pet_type: Literal['cat'] = Field(
+        validation_alias=AliasChoices('Pet', 'PET')
+    )
     c: str
 
 

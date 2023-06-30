@@ -66,7 +66,12 @@ Pydantic exports:
 ```py
 from typing_extensions import Annotated
 
-from pydantic import AfterValidator, PlainSerializer, TypeAdapter, WithJsonSchema
+from pydantic import (
+    AfterValidator,
+    PlainSerializer,
+    TypeAdapter,
+    WithJsonSchema,
+)
 
 
 class MyType:
@@ -353,7 +358,9 @@ class ThirdPartyType:
 class _ThirdPartyTypePydanticAnnotation:
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, _source_type: Any, _handler: Callable[[Any], core_schema.CoreSchema]
+        cls,
+        _source_type: Any,
+        _handler: Callable[[Any], core_schema.CoreSchema],
     ) -> core_schema.CoreSchema:
         """
         We return a pydantic_core.CoreSchema that behaves in the following ways:
@@ -399,7 +406,9 @@ class _ThirdPartyTypePydanticAnnotation:
 
 
 # We now create an `Annotated` wrapper that we'll use as the annotation for fields on `BaseModel`s, etc.
-PydanticThirdPartyType = Annotated[ThirdPartyType, _ThirdPartyTypePydanticAnnotation]
+PydanticThirdPartyType = Annotated[
+    ThirdPartyType, _ThirdPartyTypePydanticAnnotation
+]
 
 
 # Create a model class that uses this annotation as a field
@@ -659,7 +668,9 @@ class Owner(Generic[ItemType]):
                 # Ensure the value is an instance of Owner
                 core_schema.is_instance_schema(cls),
                 # Use the item_schema to validate `items`
-                core_schema.no_info_wrap_validator_function(val_item, item_schema),
+                core_schema.no_info_wrap_validator_function(
+                    val_item, item_schema
+                ),
             ]
         )
 
@@ -677,7 +688,9 @@ class Owner(Generic[ItemType]):
                     ),
                     # after validating the json data convert it to python
                     core_schema.no_info_before_validator_function(
-                        lambda data: Owner(name=data['name'], item=data['item']),
+                        lambda data: Owner(
+                            name=data['name'], item=data['item']
+                        ),
                         # note that we re-use the same schema here as below
                         python_schema,
                     ),

@@ -7,38 +7,38 @@
 
 {{ version }}.
 
-Pydantic is the most widely used Python library for data validation and coercion using Python type annotations.
+Pydantic is the most widely used data validation library for Python.
 
 !!! success
     Already using Pydantic V1? See the [Migration Guide](migration.md) for notes on upgrading to Pydantic V2 in your applications!
 
+```py lint="skip" upgrade="skip" title="Pydantic Example"
+from pydantic import BaseModel
+
+class MyModel(BaseModel):
+    a: int
+    b: list[str]
+
+m = MyModel(a=123, b=['a', 'b', 'c'])
+print(m.model_dump())
+#> {'a': 123, 'b': ['a', 'b', 'c']}
+```
+
 ## Why use Pydantic?
 
-Built-in Python type annotations are a useful way to hint about the expected type of data, improving code clarity and supporting development tools. However, Python's type annotations are optional and don't affect the runtime behavior of the program.
-
-Static type checkers like [mypy](https://mypy-lang.org/) use type annotations to catch potential type-related errors before running the program. But static type checkers can't catch all errors, and they don't affect the runtime behavior of the program.
-
-Pydantic, on the other hand, uses type annotations to perform [data validation](usage/validators.md) and [type coercion](usage/conversion_table.md) at runtime, which is particularly useful for ensuring the correctness of user or external data.
-
-Pydantic enables you to convert input data to Python [standard library types and custom types](usage/types/types.md) in a controlled manner, ensuring they meet the specifications you've provided. This eliminates a significant amount of manual data validation and transformation code, making your program more robust and less prone to errors. It's particularly helpful when dealing with untrusted user input such as form data, [JSON documents](usage/json_schema.md), and other data types.
-
-By providing a simple, declarative way of defining how data should be shaped, Pydantic helps you write cleaner, safer, and more reliable code.
-
-## Features of Pydantic
-
-Some of the main features of Pydantic include:
-
-- [**Data validation**](usage/validators.md): Pydantic validates data as it is assigned to ensure it meets the requirements. It automatically handles a broad range of data types, including custom types and custom validators.
-- [**Standard library and custom data types**](usage/types/types.md): Pydantic supports all of the Python standard library types, and you can define custom data types and specify how they should be validated and converted.
-- [**Conversion types**](usage/conversion_table.md): Pydantic will not only validate data, but also convert it to the appropriate type if possible. For instance, a string containing a number will be converted to the proper numerical type.
-- [**Custom and nested models**](usage/models.md): You can define models (similar to classes) that contain other models, allowing for complex data structures to be neatly and efficiently represented.
-- [**Generic models**](usage/models.md#generic-models): Pydantic supports generic models, which allow the declaration of models that are "parameterized" on one or more fields.
-- [**Dataclasses**](usage/dataclasses.md): Pydantic supports `dataclasses.dataclass`, offering same data validation as using `BaseModel`.
-- [**Model schema generation**](usage/json_schema.md): Pydantic models can be converted to and from a JSON Schema, which can be useful for documentation, code generation, or other purposes.
-- [**Error handling**](errors/errors.md): Pydantic models raise informative errors when invalid data is provided, with the option to create your own [custom errors](errors/errors.md#custom-errors).
-- [**Settings management**](api/pydantic_settings.md): The `BaseSettings` class from [pydantic-settings](https://github.com/pydantic/pydantic-settings) provides a way to validate, document, and provide default values for environment variables.
-
-Pydantic is simple to use, even when doing complex things, and enables you to define and validate data in pure, canonical Python.
+- **Powered by type hints** - with Pydantic schema validation and even serialization are controlled by type annotations - less to learn, less code to write and integration with your IDE and static analysis tools
+- **Speed** - Pydantic's core validation logic is written in Rust meaning Pydantic is among the fastest data validation libraries for Python
+- **JSON Schema** - Pydantic models can emit JSON Schema allowing for easy integration with other tools
+- **Strict** and **Lax** mode - Pydantic can run iin either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate
+- **Dataclasses**, **Typed Dicts** and more - Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`
+- **Customisation** - Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways
+- **Ecosystem** - around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
+  [FastAPI](https://github.com/tiangolo/fastapi),
+  [huggingface/transformers](https://github.com/huggingface/transformers),
+  [django-ninja](https://github.com/vitalik/django-ninja),
+  [sqlmodel](https://github.com/tiangolo/sqlmodel),
+  and [langchain](https://github.com/hwchase17/langchain)
+- **Battle tested** - Pydantic is downloaded >70m times/month and used by all FAANG companies and 20/25 largest companies on NASDAQ - if you're trying to do something with Pydantic, someone else has probably already done it
 
 [Installing Pydantic](install.md) is as simple as: [`pip install pydantic`](install.md).
 
@@ -46,76 +46,103 @@ Pydantic is simple to use, even when doing complex things, and enables you to de
 
 To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from `BaseModel`:
 
-```py
+```py upgrade="skip" title="Validation Successful"
 from datetime import datetime
-from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt
 
 
 class User(BaseModel):
-    id: int
-    name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
+    id: int  # (1)
+    name: str = 'John Doe'  # (2)
+    signup_ts: datetime | None  # (3)
+    tastes: dict[str, PositiveInt]  # (4)
 
 
 external_data = {
-    'id': '123',
-    'signup_ts': '2019-06-01 12:22',
+    'id': 123,
+    'signup_ts': '2019-06-01 12:22',  # (5)
+    'tastes': {
+        'wine': 9,
+        b'cheese': 7,  # (6)
+        'cabbage': '1',  # (7)
+    },
 }
 
-user = User(**external_data)
+user = User(**external_data)  # (8)
 
-print(user.model_dump())
-#> {'id': 123, 'name': 'John Doe', 'signup_ts': datetime.datetime(2019, 6, 1, 12, 22)}
+print(user.id)  # (9)
+#> 123
+print(user.model_dump())  # (10)
+"""
+{
+    'id': 123,
+    'name': 'John Doe',
+    'signup_ts': datetime.datetime(2019, 6, 1, 12, 22),
+    'tastes': {'wine': 9, 'cheese': 7, 'cabbage': 1},
+}
+"""
 ```
 
-What's going on here:
-
-* `id` is of type `int`; the annotation-only declaration tells Pydantic that this field is required. Strings,
+1. `id` is of type `int`; the annotation-only declaration tells Pydantic that this field is required. Strings,
   bytes, or floats will be coerced to ints if possible; otherwise an exception will be raised.
-* `name` is inferred as a string from the provided default; because it has a default, it is not required.
-* `signup_ts` is a `datetime` field that is not required (and takes the value `None` if a value is not supplied).
+2. `name` is a string; because it has a default, it is not required.
+3. `signup_ts` is a `datetime` field that is required, but the value `None` may be provided;
   Pydantic will process either a unix timestamp int (e.g. `1496498400`) or a string representing the date and time.
+4. `tastes` is a dictionary with string keys and positive integer values. The `PositiveInt` type is shorthand for `Annotated[int, annotated_types.Gt(0)]`.
+5. The input here is an ISO8601 formatted datetime, Pydantic will convert it to a `datetime` object.
+6. The key here is `bytes`, but Pydantic will take care of coercing it to a string.
+7. Similarly, Pydantic will coerce the string `'1'` to an integer `1`.
+8. Here we create instance of `User` by passing our external data to `User` as keyword arguments
+9. We can access fields as attributes of the mode
+10. We can convert the model to a dictionary with `model_dump()`
 
 If validation fails, Pydantic will raise an error with a breakdown of what was wrong:
 
-```py
+```py upgrade="skip" title="Validation Error"
 from datetime import datetime
-from typing import Optional
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, PositiveInt, ValidationError
 
 
 class User(BaseModel):
     id: int
     name: str = 'John Doe'
-    signup_ts: Optional[datetime] = None
+    signup_ts: datetime | None
+    tastes: dict[str, PositiveInt]
 
+
+external_data = {  # (1)
+    'id': 'not an int',
+    'tastes': {},
+}
 
 try:
-    User(name=1234)
+    User(**external_data)  # (2)
 except ValidationError as e:
     print(e.errors())
     """
     [
         {
-            'type': 'missing',
+            'type': 'int_parsing',
             'loc': ('id',),
-            'msg': 'Field required',
-            'input': {'name': 1234},
-            'url': 'https://errors.pydantic.dev/2/v/missing',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'not a string',
+            'url': 'https://errors.pydantic.dev/2/v/int_parsing',
         },
         {
-            'type': 'string_type',
-            'loc': ('name',),
-            'msg': 'Input should be a valid string',
-            'input': 1234,
-            'url': 'https://errors.pydantic.dev/2/v/string_type',
+            'type': 'missing',
+            'loc': ('signup_ts',),
+            'msg': 'Field required',
+            'input': {'id': 'not a string', 'tastes': {}},
+            'url': 'https://errors.pydantic.dev/2/v/missing',
         },
     ]
     """
 ```
+
+1. the input data is wrong here - `id` is a valid int, and `signup_ts` is missing
+2. `User(...)` will raise a `ValidationError` with a list of errors
 
 ## Who is using Pydantic?
 

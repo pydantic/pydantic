@@ -54,7 +54,11 @@ print(m.model_dump(exclude={'foo', 'bar'}))
 #> {'banana': 3.14}
 print(m.model_dump(by_alias=True))
 #> {'banana': 3.14, 'foo_alias': 'hello', 'bar': {'whatever': 123}}
-print(FooBarModel(foo='hello', bar={'whatever': 123}).model_dump(exclude_unset=True))
+print(
+    FooBarModel(foo='hello', bar={'whatever': 123}).model_dump(
+        exclude_unset=True
+    )
+)
 #> {'foo': 'hello', 'bar': {'whatever': 123}}
 print(
     FooBarModel(banana=1.1, foo='hello', bar={'whatever': 123}).model_dump(
@@ -62,7 +66,11 @@ print(
     )
 )
 #> {'foo': 'hello', 'bar': {'whatever': 123}}
-print(FooBarModel(foo='hello', bar={'whatever': 123}).model_dump(exclude_defaults=True))
+print(
+    FooBarModel(foo='hello', bar={'whatever': 123}).model_dump(
+        exclude_defaults=True
+    )
+)
 #> {'foo': 'hello', 'bar': {'whatever': 123}}
 print(
     FooBarModel(banana=None, foo='hello', bar={'whatever': 123}).model_dump(
@@ -559,7 +567,9 @@ class User(BaseModel):
 user = User(
     first_name='John',
     second_name='Doe',
-    address=Address(post_code=123456, country=Country(name='USA', phone_code=1)),
+    address=Address(
+        post_code=123456, country=Country(name='USA', phone_code=1)
+    ),
     card_details=CardDetails(
         number='4212934504460000', expires=datetime.date(2020, 5, 1)
     ),
@@ -602,7 +612,10 @@ print(user.model_dump(exclude={'hobbies': {'__all__': {'info'}}}))
 {
     'first_name': 'John',
     'second_name': 'Doe',
-    'address': {'post_code': 123456, 'country': {'name': 'USA', 'phone_code': 1}},
+    'address': {
+        'post_code': 123456,
+        'country': {'name': 'USA', 'phone_code': 1},
+    },
     'card_details': {
         'number': SecretStr('**********'),
         'expires': datetime.date(2020, 5, 1),
