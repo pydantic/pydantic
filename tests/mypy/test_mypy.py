@@ -141,9 +141,20 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
             break
         else:
             print(f"Couldn't find {output_path}..")
+            list_files(str(outputs_dir))
 
     current = MypyTestTarget(MYPY_VERSION_TUPLE, _convert_to_output_path(mypy_version))
     return MypyTestConfig(existing, current)
+
+
+def list_files(startpath: str) -> None:
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * level
+        print(f'{indent}{os.path.basename(root)}/')
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            print(f'{subindent}{f}')
 
 
 @pytest.mark.parametrize('config_filename,python_filename', cases)
