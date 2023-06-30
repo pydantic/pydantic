@@ -31,7 +31,9 @@ _inspect_validator = _decorators.inspect_validator
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class AfterValidator:
-    '''A metadata class that indicates that a validation should be applied **after** the inner validation logic.
+    '''usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#annotated-validators
+
+    A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
     Attributes:
         func: The validator function.
@@ -84,7 +86,9 @@ class AfterValidator:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class BeforeValidator:
-    """A metadata class that indicates that a validation should be applied **before** the inner validation logic.
+    """usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#annotated-validators
+
+    A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
     Attributes:
         func: The validator function.
@@ -124,7 +128,9 @@ class BeforeValidator:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class PlainValidator:
-    """A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
+    """usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#annotated-validators
+
+    A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
     Attributes:
         func: The validator function.
@@ -157,7 +163,9 @@ class PlainValidator:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class WrapValidator:
-    """A metadata class that indicates that a validation should be applied **around** the inner validation logic.
+    """usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#annotated-validators
+
+    A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
     Attributes:
         func: The validator function.
@@ -273,7 +281,9 @@ def field_validator(
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Decorate methods on the class indicating that they should be used to validate fields.
+    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#field-validators
+
+    Decorate methods on the class indicating that they should be used to validate fields.
 
     Args:
         __field: The first field the `field_validator` should be called on; this is separate
@@ -385,7 +395,7 @@ class ModelBeforeValidatorWithoutInfo(Protocol):
 
 
 class ModelBeforeValidator(Protocol):
-    """A @model_validator decorated function signature. This is used when `mode='before'`."""
+    """A `@model_validator` decorated function signature. This is used when `mode='before'`."""
 
     def __call__(  # noqa: D102
         self,
@@ -400,7 +410,7 @@ class ModelBeforeValidator(Protocol):
 
 
 class ModelAfterValidatorWithoutInfo(Protocol):
-    """A @model_validator decorated function signature. This is used when `mode='after'` and the function does not
+    """A `@model_validator` decorated function signature. This is used when `mode='after'` and the function does not
     have info argument.
     """
 
@@ -412,7 +422,7 @@ class ModelAfterValidatorWithoutInfo(Protocol):
 
 
 class ModelAfterValidator(Protocol):
-    """A @model_validator decorated function signature. This is used when `mode='after'`."""
+    """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
     @staticmethod
     def __call__(  # noqa: D102

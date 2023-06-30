@@ -269,7 +269,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> dict[str, Any]:
-        """Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
+        """Usage docs: https://docs.pydantic.dev/dev-v2/usage/serialization/#modelmodel_dump
+
+        Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
         Args:
             mode: The mode in which `to_python` should run.
@@ -313,7 +315,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> str:
-        """Generates a JSON representation of the model using Pydantic's `to_json` method.
+        """Usage docs: https://docs.pydantic.dev/dev-v2/usage/serialization/#modelmodel_dump_json
+
+        Generates a JSON representation of the model using Pydantic's `to_json` method.
 
         Args:
             indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
