@@ -48,7 +48,20 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
 """
 {
   "$defs": {
-    "FooBar": {
+    "Gender": {
+      "enum": [
+        "male",
+        "female",
+        "other",
+        "not_given"
+      ],
+      "title": "Gender",
+      "type": "string"
+    }
+  },
+  "description": "\n    This is the description of the main model\n    ",
+  "properties": {
+    "foo_bar": {
       "properties": {
         "count": {
           "title": "Count",
@@ -72,22 +85,6 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
       ],
       "title": "FooBar",
       "type": "object"
-    },
-    "Gender": {
-      "enum": [
-        "male",
-        "female",
-        "other",
-        "not_given"
-      ],
-      "title": "Gender",
-      "type": "string"
-    }
-  },
-  "description": "\n    This is the description of the main model\n    ",
-  "properties": {
-    "foo_bar": {
-      "$ref": "#/$defs/FooBar"
     },
     "Gender": {
       "anyOf": [
@@ -686,7 +683,15 @@ print(json.dumps(top_level_schema, indent=2))
     "Model": {
       "properties": {
         "b": {
-          "$ref": "#/$defs/Foo"
+          "properties": {
+            "a": {
+              "default": null,
+              "title": "A",
+              "type": "string"
+            }
+          },
+          "title": "Foo",
+          "type": "object"
         }
       },
       "required": [
@@ -749,7 +754,17 @@ print(json.dumps(top_level_schema, indent=2))
     "Model": {
       "properties": {
         "a": {
-          "$ref": "#/components/schemas/Foo"
+          "properties": {
+            "a": {
+              "title": "A",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "a"
+          ],
+          "title": "Foo",
+          "type": "object"
         }
       },
       "required": [

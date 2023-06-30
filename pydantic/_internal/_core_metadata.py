@@ -24,6 +24,7 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     """
 
     pydantic_js_functions: list[GetJsonSchemaFunction]
+    pydantic_js_annotation_functions: list[GetJsonSchemaFunction]
 
     # If `pydantic_js_prefer_positional_arguments` is True, the JSON schema generator will
     # prefer positional over keyword arguments for an 'arguments' schema.
@@ -64,6 +65,7 @@ class CoreMetadataHandler:
 def build_metadata_dict(
     *,  # force keyword arguments to make it easier to modify this signature in a backwards-compatible way
     js_functions: list[GetJsonSchemaFunction] | None = None,
+    js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
     js_prefer_positional_arguments: bool | None = None,
     initial_metadata: Any | None = None,
 ) -> Any:
@@ -75,6 +77,7 @@ def build_metadata_dict(
 
     metadata = CoreMetadata(
         pydantic_js_functions=js_functions or [],
+        pydantic_js_annotation_functions=js_annotation_functions or [],
         pydantic_js_prefer_positional_arguments=js_prefer_positional_arguments,
     )
     metadata = {k: v for k, v in metadata.items() if v is not None}  # type: ignore[assignment]

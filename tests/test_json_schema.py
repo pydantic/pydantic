@@ -4864,3 +4864,40 @@ def test_json_schema_keys_sorting() -> None:
     # verify order
     # dumping to json just happens to be a simple way to verify the order
     assert json.dumps(actual, indent=2) == json.dumps(expected, indent=2)
+
+
+def test_custom_type_gets_unpacked_ref() -> None:
+    class Annotation:
+        def __get_pydantic_json_schema__(
+            self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            json_schema = handler(schema)
+            assert '$ref' in json_schema
+            json_schema['title'] = 'Set from annotation'
+            return json_schema
+
+    class Model(BaseModel):
+        x: int
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            json_schema = handler(schema)
+            assert json_schema['type'] == 'object' and '$ref' not in json_schema
+            return json_schema
+
+    ta = TypeAdapter(Annotated[Model, Annotation()])
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {
+        '$defs': {
+            'Model': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Model',
+                'type': 'object',
+            }
+        },
+        'allOf': [{'$ref': '#/$defs/Model'}],
+        'title': 'Set from annotation',
+    }

@@ -694,7 +694,7 @@ class GenerateSchema:
         def json_schema_update_func(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             return {**handler(schema), **json_schema_updates}
 
-        metadata = build_metadata_dict(js_functions=[json_schema_update_func])
+        metadata = build_metadata_dict(js_annotation_functions=[json_schema_update_func])
 
         # apply alias generator
         alias_generator = self.config_wrapper.alias_generator
@@ -1213,7 +1213,7 @@ class GenerateSchema:
 
         return source_type, list(annotations)
 
-    def _apply_annotations(
+    def _apply_annotations(  # noqa: C901
         self,
         source_type: Any,
         annotations: list[Any],
@@ -1238,7 +1238,7 @@ class GenerateSchema:
             if res is not None:
                 source_type, annotations = res
 
-        pydantic_js_functions: list[GetJsonSchemaFunction] = []
+        pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
             if isinstance(obj, type(Annotated[int, 123])):
@@ -1251,7 +1251,12 @@ class GenerateSchema:
                     schema = from_property
                 metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
                 if metadata_js_function is not None:
-                    pydantic_js_functions.append(metadata_js_function)
+                    metadata_schema = resolve_original_schema(schema, self.defs.definitions)
+                    if metadata_schema is not None:
+                        metadata = CoreMetadataHandler(metadata_schema).metadata
+                        pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
+                        if metadata_js_function not in pydantic_js_functions:
+                            pydantic_js_functions.append(metadata_js_function)
             return transform_inner_schema(schema)
 
         get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
@@ -1276,12 +1281,14 @@ class GenerateSchema:
                         transform_inner_schema=transform_inner_schema,
                     )
             annotation = annotations[idx]
-            get_inner_schema = self._get_wrapped_inner_schema(get_inner_schema, annotation, pydantic_js_functions)
+            get_inner_schema = self._get_wrapped_inner_schema(
+                get_inner_schema, annotation, pydantic_js_annotation_functions
+            )
 
         schema = get_inner_schema(source_type)
-        if pydantic_js_functions:
+        if pydantic_js_annotation_functions:
             metadata = CoreMetadataHandler(schema).metadata
-            metadata.setdefault('pydantic_js_functions', []).extend(pydantic_js_functions)
+            metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
         return schema
 
     def apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
@@ -1330,7 +1337,7 @@ class GenerateSchema:
         self,
         get_inner_schema: GetCoreSchemaHandler,
         annotation: Any,
-        pydantic_js_functions: list[GetJsonSchemaFunction],
+        pydantic_js_annotation_functions: list[GetJsonSchemaFunction],
     ) -> CallbackGetCoreSchemaHandler:
         metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
             lambda source, handler: handler(source)
@@ -1342,7 +1349,7 @@ class GenerateSchema:
 
             metadata_js_function = _extract_get_pydantic_json_schema(annotation, schema)
             if metadata_js_function is not None:
-                pydantic_js_functions.append(metadata_js_function)
+                pydantic_js_annotation_functions.append(metadata_js_function)
             return schema
 
         return CallbackGetCoreSchemaHandler(new_handler, self)

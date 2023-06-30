@@ -212,15 +212,9 @@ class Model2(BaseModel):
 print(Model2.model_json_schema())
 """
 {
-    '$defs': {
-        'PositiveIntList': {
-            'items': {'exclusiveMinimum': 0, 'type': 'integer'},
-            'type': 'array',
-        }
-    },
     'properties': {
-        'x': {'$ref': '#/$defs/PositiveIntList'},
-        'y': {'$ref': '#/$defs/PositiveIntList'},
+        'x': {'items': {'exclusiveMinimum': 0, 'type': 'integer'}, 'type': 'array'},
+        'y': {'items': {'exclusiveMinimum': 0, 'type': 'integer'}, 'type': 'array'},
     },
     'required': ['x', 'y'],
     'title': 'Model2',
