@@ -1,0 +1,112 @@
+.sponsors {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.sponsors > div {
+  text-align: center;
+  width: 33%;
+  padding-bottom: 20px;
+}
+
+.sponsors span {
+  display: block;
+}
+
+@media screen and (max-width: 599px) {
+  .sponsors span {
+    display: none;
+  }
+}
+
+.sponsors img {
+  width: 65%;
+  border-radius: 5px;
+}
+
+/*blog post*/
+aside.blog {
+  display: flex;
+  align-items: center;
+}
+
+aside.blog img {
+  width: 50px;
+  height: 50px;
+  border-radius: 25px;
+  margin-right: 20px;
+}
+
+/* Define the company grid layout */
+
+#grid-container {
+  width: 100%;
+  text-align: center;
+}
+
+#company-grid {
+  display: inline-block;
+  margin: 0 auto;
+  gap: 10px;
+  align-content: center;
+  justify-content: center;
+  grid-auto-flow: column;
+}
+
+[data-md-color-scheme="slate"] #company-grid {
+  background-color: #ffffff;
+  border-radius: .5rem;
+  color: black;
+}
+
+.tile {
+  display: flex;
+  text-align: center;
+  width: 120px;
+  height: 120px;
+  display: inline-block;
+  margin: 10px;
+  padding: 5px;
+  border-radius: .5rem;
+}
+
+.tile img {
+  width: 100px;
+}
+
+.md-typeset__table > table {
+  max-height: 60vh;
+}
+
+.md-typeset__table > table thead {
+  position: sticky;
+  top: 0;
+  background-color: var(--md-default-bg-color);
+}
+
+.md-typeset__table > table th {
+  border-bottom: .05rem solid var(--md-typeset-table-color);
+}
+
+.md-typeset__table > table tr:first-child td {
+  border-top: none;
+}
+
+/* API documentation link admonition */
+:root {
+  --md-admonition-icon--api: url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 7H5a2 2 0 0 0-2 2v8h2v-4h2v4h2V9a2 2 0 0 0-2-2m0 4H5V9h2m7-2h-4v10h2v-4h2a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2m0 4h-2V9h2m6 0v6h1v2h-4v-2h1V9h-1V7h4v2Z"/></svg>')
+}
+.md-typeset .admonition.api, .md-typeset details.api {
+  border-color: #448aff;
+}
+.md-typeset .api > .admonition-title, .md-typeset .api > summary {
+  background-color: #448aff1a;
+}
+.md-typeset .api > .admonition-title::before, .md-typeset .api > summary::before {
+  background-color: #448aff;
+  -webkit-mask-image: var(--md-admonition-icon--api);
+          mask-image: var(--md-admonition-icon--api);
+}
