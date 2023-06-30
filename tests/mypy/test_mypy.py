@@ -171,7 +171,7 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
     mypy_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in mypy_out.split('\n') if line]).strip()
     mypy_out = re.sub(r'\n\s*\n', r'\n', mypy_out)
     if mypy_out:
-        print('{0}\n{1:^100}\n{0}\n{2}\n{0}'.format('=' * 100, 'mypy output', mypy_out))
+        print('{0}\n{1:^100}\n{0}\n{2}\n{0}'.format('=' * 100, f'mypy {mypy_version} output', mypy_out))
     assert mypy_err == ''
 
     input_code = input_path.read_text()
