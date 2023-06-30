@@ -99,7 +99,7 @@ Models possess the following methods and attributes:
 * `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
 * `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
     See [JSON Schema](json_schema.md).
-* `model_parameterized_name()`: compute the class name for parametrizations of generic classes.
+* `model_parametrized_name()`: compute the class name for parametrizations of generic classes.
 * `model_post_init()`: perform additional initialization after the model is initialised.
 * `model_rebuild()`: rebuild the model schema.
 * `model_validate()`: a utility for loading any object into a model with error handling if the object is not a
