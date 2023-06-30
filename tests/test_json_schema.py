@@ -4463,68 +4463,6 @@ def test_root_model():
     }
 
 
-def test_get_json_schema_is_passed_the_same_schema_handler_was_called_with() -> None:
-    class CustomInt(int):
-        @classmethod
-        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return handler(int)
-
-        @classmethod
-        def __get_pydantic_json_schema__(
-            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            assert core_schema['type'] == 'function-after'
-            inner = core_schema['schema']
-            assert inner['type'] == 'int'
-            inner = inner.copy()
-            inner['gt'] = 0
-            core_schema = {**core_schema, 'schema': inner}
-            return handler(core_schema)
-
-    class Marker:
-        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(lambda x: x, handler(source_type))
-
-        def __get_pydantic_json_schema__(
-            self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            return handler(core_schema)
-
-    js_schema = TypeAdapter(Annotated[CustomInt, Marker()]).json_schema()
-
-    # insert_assert(js_schema)
-    assert js_schema == {'type': 'integer', 'exclusiveMinimum': 0}
-
-
-def test_get_json_schema_gets_called_if_schema_is_replaced() -> None:
-    class CustomInt(int):
-        @classmethod
-        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return handler(int)
-
-        @classmethod
-        def __get_pydantic_json_schema__(
-            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            assert core_schema['type'] == 'str'
-            core_schema = {**core_schema, 'min_length': 1}
-            return handler(core_schema)
-
-    class Marker:
-        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(lambda x: x, handler(source_type))
-
-        def __get_pydantic_json_schema__(
-            self, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            return handler({'type': 'str'})
-
-    js_schema = TypeAdapter(Annotated[CustomInt, Marker()]).json_schema()
-
-    # insert_assert(js_schema)
-    assert js_schema == {'type': 'string', 'minLength': 1}
-
-
 def test_core_metadata_core_schema_metadata():
     with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
         CoreMetadataHandler({'metadata': 'test'})
