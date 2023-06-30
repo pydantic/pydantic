@@ -3,6 +3,7 @@ env/
 env3*/
 venv/
 .venv/
+__pypackages__/
 
 # IDEs and editors
 .idea/
