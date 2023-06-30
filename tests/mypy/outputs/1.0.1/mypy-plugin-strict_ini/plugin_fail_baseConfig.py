@@ -4,7 +4,6 @@ from pydantic import BaseModel, Extra, Field, field_validator
 from pydantic.dataclasses import dataclass
 
 
-# placeholder for removed line
 class Model(BaseModel):
     x: int
     y: str
@@ -132,6 +131,7 @@ DefaultTestingModel()
 # MYPY: error: Missing named argument "b" for "DefaultTestingModel"  [call-arg]
 # MYPY: error: Missing named argument "c" for "DefaultTestingModel"  [call-arg]
 # MYPY: error: Missing named argument "d" for "DefaultTestingModel"  [call-arg]
+# MYPY: error: Missing named argument "f" for "DefaultTestingModel"  [call-arg]
 
 
 class UndefinedAnnotationModel(BaseModel):

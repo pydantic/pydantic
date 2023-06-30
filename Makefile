@@ -51,10 +51,10 @@ test-mypy-update: .pdm
 .PHONY: test-mypy-update-all  ## Update the mypy integration tests for all mypy versions
 test-mypy-update-all: .pdm
 	rm -rf tests/mypy/outputs
-	pip uninstall mypy -y && pip install mypy==1.0.1
-	make test-mypy-update
-	pip uninstall mypy -y && pip install mypy==1.1.1
-	make test-mypy-update
+	pip install --force mypy==1.0.1 && make test-mypy-update
+	pip install --force mypy==1.1.1 && make test-mypy-update
+	pip install --force mypy==1.2.0 && make test-mypy-update
+	pip install --force mypy==1.4.1 && make test-mypy-update
 
 .PHONY: test-pyright  ## Run the pyright integration tests
 test-pyright: .pdm
