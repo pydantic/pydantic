@@ -53,22 +53,26 @@ class Extension(VisitorExtension):
                 r'usage[\- ]docs: ?https://docs\.pydantic\.dev/.+?/(.+?)/?#(\S+)',
                 partial(replace_links, python_file_name=self.visitor.filepath.name, object_name=current_object.name),
                 current_object.docstring.value,
+                flags=re.I,
             )
 
 
-# def update_docstring(obj: GriffeObject, file_name: str) -> str:
+# recommended by pawamoy on gitter, but not working
+
+# def update_docstring(obj: GriffeObject, python_file_name: str) -> str:
 #     return re.sub(
 #         r'usage[\- ]docs: ?https://docs\.pydantic\.dev/.+?/(.+?)/?#(\S+)',
-#         partial(replace_links, file_name=file_name, object_name=obj.name),
+#         partial(replace_links, python_file_name=python_file_name, object_name=obj.name),
 #         obj.docstring.value,
+#         flags=re.I,
 #     )
 #
 #
-# def update_docstrings_recursively(obj: GriffeObject, file_name: str) -> None:
+# def update_docstrings_recursively(obj: GriffeObject, python_file_name: str) -> None:
 #     if obj.docstring:
-#         obj.docstring.value = update_docstring(obj, file_name)
+#         obj.docstring.value = update_docstring(obj, python_file_name)
 #     for member in obj.members.values():
-#         update_docstrings_recursively(member, file_name)
+#         update_docstrings_recursively(member, python_file_name)
 #
 #
 # class Extension(VisitorExtension):
