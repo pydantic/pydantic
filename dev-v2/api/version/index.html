@@ -1838,6 +1838,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.version.parse_mypy_version" class="md-nav__link">
+    parse_mypy_version()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.version.version_info" class="md-nav__link">
     version_info()
   </a>
@@ -2121,6 +2128,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.version.parse_mypy_version" class="md-nav__link">
+    parse_mypy_version()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.version.version_info" class="md-nav__link">
     version_info()
   </a>
@@ -2195,6 +2209,115 @@
 
 
 
+<h2 id="pydantic.version.parse_mypy_version" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">parse_mypy_version</span>
+
+
+<a href="#pydantic.version.parse_mypy_version" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">parse_mypy_version</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Parse mypy string version to tuple of ints.</p>
+<p>This function is included here rather than the mypy plugin file because the mypy plugin file cannot be imported
+outside a mypy run.</p>
+<p>It parses normal version like <code>0.930</code> and dev version
+like <code>0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty</code>.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>version</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The mypy version string.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="typing.Tuple">Tuple</span>[int, ...]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A tuple of ints. e.g. (0, 930).</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+      <details class="quote">
+        <summary>Source code in <code>pydantic/version.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_mypy_version</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse mypy string version to tuple of ints.</span>
+
+<span class="sd">    This function is included here rather than the mypy plugin file because the mypy plugin file cannot be imported</span>
+<span class="sd">    outside a mypy run.</span>
+
+<span class="sd">    It parses normal version like `0.930` and dev version</span>
+<span class="sd">    like `0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        version: The mypy version string.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A tuple of ints. e.g. (0, 930).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">version</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s1">&#39;+&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)))</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
 <h2 id="pydantic.version.version_info" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">version_info</span>
 
@@ -2209,9 +2332,7 @@
 
       <details class="quote">
         <summary>Source code in <code>pydantic/version.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">10</span>
 <span class="normal">11</span>
 <span class="normal">12</span>
 <span class="normal">13</span>
@@ -2234,7 +2355,9 @@
 <span class="normal">30</span>
 <span class="normal">31</span>
 <span class="normal">32</span>
-<span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">version_info</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">version_info</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return complete version information for Pydantic and its dependencies.&quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">platform</span>
     <span class="kn">import</span> <span class="nn">sys</span>
