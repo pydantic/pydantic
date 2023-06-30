@@ -5,7 +5,7 @@ import re
 import sys
 from bisect import insort
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Optional, Tuple, Union
 
 import pytest
 
@@ -34,11 +34,11 @@ os.chdir(Path(__file__).parent.parent.parent)
 
 @dataclasses.dataclass
 class MypyCasesBuilder:
-    configs: str | list[str]
-    modules: str | list[str]
+    configs: Union[str, List[str]]
+    modules: Union[str, List[str]]
     marks: Any = None
 
-    def build(self) -> list[tuple[str, str] | Any]:
+    def build(self) -> List[Union[Tuple[str, str], Any]]:
         """
         Produces the cartesian product of the configs and modules, optionally with marks.
         """
@@ -110,7 +110,7 @@ class MypyTestTarget:
 
 @dataclasses.dataclass
 class MypyTestConfig:
-    existing: MypyTestTarget | None  # the oldest target with an output that is no older than the installed mypy
+    existing: Optional[MypyTestTarget]  # the oldest target with an output that is no older than the installed mypy
     current: MypyTestTarget  # the target for the current installed mypy
 
 
@@ -135,6 +135,7 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
         output_path = _convert_to_output_path(version)
         if output_path.exists():
             existing = MypyTestTarget(parsed_version, output_path)
+            break
 
     current = MypyTestTarget(MYPY_VERSION_TUPLE, _convert_to_output_path(mypy_version))
     return MypyTestConfig(existing, current)
@@ -173,9 +174,11 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
 
     input_code = input_path.read_text()
 
-    existing_output_code: str | None = None
+    existing_output_code: Optional[str] = None
     if test_config.existing is not None:
         existing_output_code = test_config.existing.output_path.read_text()
+        # Remove any extra indentation on the mypy comments lines when comparing to the generated output
+        existing_output_code = re.sub(r'^\s*# MYPY:', '# MYPY:', existing_output_code, flags=re.MULTILINE)
 
     merged_output = merge_python_and_mypy_output(input_code, mypy_out)
 
@@ -189,7 +192,7 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         assert existing_output_code is not None, 'No output file found, run `make test-mypy-update` to create it'
         expected_returncode = get_expected_return_code(existing_output_code)
         assert mypy_returncode == expected_returncode
-        assert merged_output == existing_output_code
+        assert existing_output_code == merged_output
 
 
 def test_bad_toml_config() -> None:
