@@ -4,7 +4,6 @@ from pydantic import BaseModel, ConfigDict, Extra, Field, field_validator
 from pydantic.dataclasses import dataclass
 
 
-# placeholder for removed line
 class Model(BaseModel):
     model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
     x: int

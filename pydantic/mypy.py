@@ -470,7 +470,6 @@ class PydanticModelTransformer:
 
     def collect_config(self) -> ModelConfigData:  # noqa: C901 (ignore complexity)
         """Collects the values of the config attributes that are used by the plugin, accounting for parent classes."""
-        # ctx = self._ctx
         cls = self._cls
         config = ModelConfigData()
 
@@ -492,8 +491,6 @@ class PydanticModelTransformer:
 
             if isinstance(stmt, AssignmentStmt):
                 lhs = stmt.lvalues[0]
-                if cls.name == 'ForbidExtraModel':
-                    print('here')
                 if not isinstance(lhs, NameExpr) or lhs.name != 'model_config':
                     continue
 

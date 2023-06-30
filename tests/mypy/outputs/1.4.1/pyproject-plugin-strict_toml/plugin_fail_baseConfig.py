@@ -4,7 +4,6 @@ from pydantic import BaseModel, Extra, Field, field_validator
 from pydantic.dataclasses import dataclass
 
 
-# placeholder for removed line
 class Model(BaseModel):
     x: int
     y: str
