@@ -1206,6 +1206,7 @@ def test_multiple_errors():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foobar')
 
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
@@ -1221,10 +1222,7 @@ def test_multiple_errors():
         },
         {
             'type': 'decimal_parsing',
-            'loc': (
-                'a',
-                'lax-or-strict[lax=function-after[validate(), union[json-or-python[json=function-after[Decimal(), union[int,float,constrained-str]],python=is-instance[Decimal]],int,float,constrained-str]],strict=custom-error[function-after[validate(), json-or-python[json=function-after[Decimal(), union[int,float,constrained-str]],python=is-instance[Decimal]]]]]',  # noqa: E501
-            ),
+            'loc': ('a', 'function-after[validate(), any]'),
             'msg': 'Input should be a valid decimal',
             'input': 'foobar',
         },

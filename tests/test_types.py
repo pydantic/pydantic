@@ -1039,6 +1039,18 @@ def test_decimal_strict():
     assert Model(v=v).v == v
     assert Model(v=v).model_dump() == {'v': v}
 
+    assert Model.model_validate_json('{"v": "1.23"}').v == Decimal('1.23')
+
+
+def test_decimal_precision() -> None:
+    ta = TypeAdapter(Decimal)
+
+    num = f'{1234567890 * 100}.{1234567890 * 100}'
+
+    expected = Decimal(num)
+    assert ta.validate_python(num) == expected
+    assert ta.validate_json(f'"{num}"') == expected
+
 
 def test_strict_date():
     class Model(BaseModel):
