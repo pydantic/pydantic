@@ -128,36 +128,20 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
     existing = None
 
     # Build sorted list of (parsed_version, version) pairs, including the current mypy version being used
-    parsed_version_pairs = [(parse_mypy_version(v), v) for v in existing_versions]
+    parsed_version_pairs = sorted([(parse_mypy_version(v), v) for v in existing_versions])
     if MYPY_VERSION_TUPLE not in [x[0] for x in parsed_version_pairs]:
         insort(parsed_version_pairs, (MYPY_VERSION_TUPLE, mypy_version))
 
-    print(f'{parsed_version_pairs=}')
-    print(f'{MYPY_VERSION_TUPLE=}')
     for parsed_version, version in parsed_version_pairs[::-1]:
         if parsed_version > MYPY_VERSION_TUPLE:
-            print(f'{parsed_version=} {parsed_version > MYPY_VERSION_TUPLE=}')
             continue
         output_path = _convert_to_output_path(version)
         if output_path.exists():
             existing = MypyTestTarget(parsed_version, output_path)
             break
-        else:
-            print(f"Couldn't find {output_path}..")
-            list_files(str(outputs_dir))
 
     current = MypyTestTarget(MYPY_VERSION_TUPLE, _convert_to_output_path(mypy_version))
     return MypyTestConfig(existing, current)
-
-
-def list_files(startpath: str) -> None:
-    for root, dirs, files in os.walk(startpath):
-        level = root.replace(startpath, '').count(os.sep)
-        indent = ' ' * 4 * level
-        print(f'{indent}{os.path.basename(root)}/')
-        subindent = ' ' * 4 * (level + 1)
-        for f in files:
-            print(f'{subindent}{f}')
 
 
 @pytest.mark.parametrize('config_filename,python_filename', cases)
