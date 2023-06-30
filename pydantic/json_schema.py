@@ -431,7 +431,11 @@ class GenerateJsonSchema:
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
 
-        return current_handler(schema)
+        json_schema = current_handler(schema)
+        if _core_utils.is_core_schema(schema):
+            json_schema = populate_defs(schema, json_schema)
+            json_schema = convert_to_all_of(json_schema)
+        return json_schema
 
     # ### Schema generation methods
     def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
@@ -1064,6 +1068,8 @@ class GenerateJsonSchema:
             if self.by_alias:
                 name = self._get_alias_name(field, name)
             try:
+                if name == 'data1':
+                    print(1)
                 field_json_schema = self.generate_inner(field).copy()
             except PydanticOmit:
                 continue

@@ -1164,7 +1164,7 @@ class GenerateSchema:
 
             return json_schema
 
-        metadata = build_metadata_dict(js_functions=[set_computed_field_metadata])
+        metadata = build_metadata_dict(js_annotation_functions=[set_computed_field_metadata])
         return core_schema.computed_field(
             d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=metadata
         )

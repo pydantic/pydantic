@@ -2820,7 +2820,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
                 return core_schema.general_plain_validator_function(
                     Gen,
-                    metadata={'pydantic_js_functions': [js_func]},
+                    metadata={'pydantic_js_annotation_functions': [js_func]},
                 )
             else:
                 return handler(source)
@@ -2898,7 +2898,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
-        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType', 'type': 'string'}},
+        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType title', 'type': 'string'}},
         'properties': {
             'data0': {
                 'anyOf': [{'type': 'string'}, {'items': {'type': 'string'}, 'type': 'array'}],
@@ -4538,7 +4538,11 @@ def test_core_metadata_core_schema_metadata():
 
 
 def test_build_metadata_dict_initial_metadata():
-    assert build_metadata_dict(initial_metadata={'foo': 'bar'}) == {'foo': 'bar', 'pydantic_js_functions': []}
+    assert build_metadata_dict(initial_metadata={'foo': 'bar'}) == {
+        'foo': 'bar',
+        'pydantic_js_functions': [],
+        'pydantic_js_annotation_functions': [],
+    }
 
     with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
         build_metadata_dict(initial_metadata='test')
@@ -4630,7 +4634,6 @@ def test_lax_or_strict_schema():
     }
 
 
-@pytest.mark.xfail(reason='Need to fix JSON schema customization for Enum')
 def test_override_enum_json_schema():
     class CustomType(Enum):
         A = 'a'
@@ -4647,17 +4650,13 @@ def test_override_enum_json_schema():
     class Model(BaseModel):
         x: CustomType
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
-        'type': 'object',
+        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType title', 'type': 'string'}},
         'properties': {'x': {'$ref': '#/$defs/CustomType'}},
         'required': ['x'],
         'title': 'Model',
-        '$defs': {
-            'CustomType': {
-                'enum': ['a', 'b'],
-                'title': 'CustomType title',  # <----------- this is not getting set properly
-            }
-        },
+        'type': 'object',
     }
 
 
