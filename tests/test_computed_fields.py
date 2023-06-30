@@ -62,7 +62,6 @@ def test_computed_fields_get():
     assert rect.model_dump_json() == '{"width":10,"length":5,"area":50,"area2":50}'
 
 
-@pytest.mark.skip(reason='waiting for https://github.com/pydantic/pydantic/issues/4697')
 def test_computed_fields_json_schema():
     class Rectangle(BaseModel):
         width: int
@@ -82,7 +81,7 @@ def test_computed_fields_json_schema():
         def double_width(self) -> int:
             return self.width * 2
 
-    assert Rectangle.model_json_schema() == {
+    assert Rectangle.model_json_schema(mode='serialization') == {
         'title': 'Rectangle',
         'type': 'object',
         'properties': {
@@ -107,7 +106,7 @@ def test_computed_fields_json_schema():
                 'readOnly': True,
             },
         },
-        'required': ['width', 'length'],
+        'required': ['width', 'length', 'area', 'area2'],
     }
 
 
@@ -679,9 +678,12 @@ def test_multiple_references_to_schema(model_factory: Callable[[], Any]) -> None
     assert ta.json_schema() == {'type': 'object', 'properties': {}, 'title': 'Model'}
 
     assert ta.json_schema(mode='serialization') == {
-        'type': 'object',
-        'properties': {'comp_1': {'$ref': '#/$defs/CompModel'}, 'comp_2': {'$ref': '#/$defs/CompModel'}},
+        '$defs': {'CompModel': {'properties': {}, 'title': 'CompModel', 'type': 'object'}},
+        'properties': {
+            'comp_1': {'allOf': [{'$ref': '#/$defs/CompModel'}], 'readOnly': True},
+            'comp_2': {'allOf': [{'$ref': '#/$defs/CompModel'}], 'readOnly': True},
+        },
         'required': ['comp_1', 'comp_2'],
         'title': 'Model',
-        '$defs': {'CompModel': {'type': 'object', 'properties': {}, 'title': 'CompModel'}},
+        'type': 'object',
     }

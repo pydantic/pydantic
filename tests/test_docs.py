@@ -11,6 +11,7 @@ from tempfile import NamedTemporaryFile
 from typing import Any
 
 import pytest
+from pydantic_core import core_schema
 from pytest_examples import CodeExample, EvalExample, find_examples
 
 from pydantic.errors import PydanticErrorCodes
@@ -65,8 +66,8 @@ group_globals = GroupModuleGlobals()
 
 class MockedDatetime(datetime):
     @classmethod
-    def now(cls, *args, **kwargs):
-        return datetime(2032, 1, 2, 3, 4, 5, 6)
+    def now(cls, *args, tz=None, **kwargs):
+        return datetime(2032, 1, 2, 3, 4, 5, 6, tzinfo=tz)
 
 
 skip_reason = skip_docs_tests()
@@ -218,3 +219,37 @@ def test_error_codes():
     documented_error_codes = tuple(re.findall(r'^## .+ \{#(.+?)}$', error_text, flags=re.MULTILINE))
 
     assert code_error_codes == documented_error_codes, 'Error codes in code and docs do not match'
+
+
+def test_validation_error_codes():
+    error_text = (DOCS_ROOT / 'usage/validation_errors.md').read_text()
+
+    expected_validation_error_codes = set(core_schema.ErrorType.__args__)
+    # Remove codes that are not currently accessible from pydantic:
+    expected_validation_error_codes.remove('timezone_offset')  # not currently exposed for configuration in pydantic
+
+    test_failures = []
+
+    documented_validation_error_codes = []
+    error_code_section = None
+    printed_error_code = None
+    for line in error_text.splitlines():
+        section_match = re.fullmatch(r'## `(.+)`', line)
+        if section_match:
+            if error_code_section is not None and printed_error_code != error_code_section:
+                test_failures.append(f'Error code {error_code_section!r} is not printed in its example')
+            error_code_section = section_match.group(1)
+            if error_code_section not in expected_validation_error_codes:
+                test_failures.append(f'Documented error code {error_code_section!r} is not a member of ErrorType')
+            documented_validation_error_codes.append(error_code_section)
+            printed_error_code = None
+            continue
+
+        printed_match = re.search("#> '(.+)'", line)
+        if printed_match:
+            printed_error_code = printed_match.group(1)
+
+    assert test_failures == []
+
+    code_validation_error_codes = sorted(expected_validation_error_codes)
+    assert code_validation_error_codes == documented_validation_error_codes, 'Error codes in code and docs do not match'

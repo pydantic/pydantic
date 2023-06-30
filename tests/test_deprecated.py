@@ -9,7 +9,16 @@ from typing import Any, Dict, List, Type
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, conlist, root_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PydanticDeprecatedSince20,
+    PydanticUserError,
+    ValidationError,
+    conlist,
+    root_validator,
+)
 from pydantic.config import Extra
 from pydantic.deprecated.decorator import validate_arguments
 from pydantic.deprecated.json import custom_pydantic_encoder, pydantic_encoder, timedelta_isoformat
@@ -25,7 +34,7 @@ else:
 
 def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
     with pytest.warns(
-        DeprecationWarning,
+        PydanticDeprecatedSince20,
         match=re.escape(
             'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
             'and use `model_validate` instead.'
@@ -45,7 +54,9 @@ def test_from_attributes_root():
         en_name: str
         jp_name: str
 
-    with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='Pydantic V1 style `@root_validator` validators are deprecated.'
+    ):
 
         class PokemonList(BaseModel):
             root: List[Pokemon]
@@ -78,7 +89,9 @@ def test_from_attributes_root():
         Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
     ]
 
-    with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='Pydantic V1 style `@root_validator` validators are deprecated.'
+    ):
 
         class PokemonDict(BaseModel):
             root: Dict[str, Pokemon]
@@ -261,7 +274,7 @@ def test_parse_raw_pass():
         x: int
         y: int
 
-    with pytest.warns(DeprecationWarning, match='The `parse_raw` method is deprecated'):
+    with pytest.warns(PydanticDeprecatedSince20, match='The `parse_raw` method is deprecated'):
         model = Model.parse_raw('{"x": 1, "y": 2}')
     assert model.model_dump() == {'x': 1, 'y': 2}
 
@@ -272,7 +285,7 @@ def test_parse_raw_pass_fail():
         x: int
         y: int
 
-    with pytest.warns(DeprecationWarning, match='The `parse_raw` method is deprecated'):
+    with pytest.warns(PydanticDeprecatedSince20, match='The `parse_raw` method is deprecated'):
         with pytest.raises(ValidationError, match='1 validation error for Model') as exc_info:
             Model.parse_raw('invalid')
 
@@ -295,10 +308,10 @@ def test_fields():
     m = Model(x=1)
     assert len(Model.model_fields) == 2
     assert len(m.model_fields) == 2
-    match = '^The `__fields__` attribute is deprecated, use `model_fields` instead.$'
-    with pytest.warns(DeprecationWarning, match=match):
+    match = '^The `__fields__` attribute is deprecated, use `model_fields` instead.'
+    with pytest.warns(PydanticDeprecatedSince20, match=match):
         assert len(Model.__fields__) == 2
-    with pytest.warns(DeprecationWarning, match=match):
+    with pytest.warns(PydanticDeprecatedSince20, match=match):
         assert len(m.__fields__) == 2
 
 
@@ -309,8 +322,8 @@ def test_fields_set():
 
     m = Model(x=1)
     assert m.model_fields_set == {'x'}
-    match = '^The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.$'
-    with pytest.warns(DeprecationWarning, match=match):
+    match = '^The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.'
+    with pytest.warns(PydanticDeprecatedSince20, match=match):
         assert m.__fields_set__ == {'x'}
 
 
@@ -320,7 +333,7 @@ def test_extra_used_as_enum(
     value: str,
 ) -> None:
     with pytest.warns(
-        DeprecationWarning,
+        PydanticDeprecatedSince20,
         match=re.escape("`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)"),
     ):
         assert getattr(Extra, attribute) == value
@@ -328,7 +341,7 @@ def test_extra_used_as_enum(
 
 def test_field_min_items_deprecation():
     m = '`min_items` is deprecated and will be removed. use `min_length` instead'
-    with pytest.warns(DeprecationWarning, match=m):
+    with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
             x: List[int] = Field(None, min_items=1)
@@ -348,7 +361,7 @@ def test_field_min_items_deprecation():
 
 def test_field_min_items_with_min_length():
     m = '`min_items` is deprecated and will be removed. use `min_length` instead'
-    with pytest.warns(DeprecationWarning, match=m):
+    with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
             x: List[int] = Field(None, min_items=1, min_length=2)
@@ -368,7 +381,7 @@ def test_field_min_items_with_min_length():
 
 def test_field_max_items():
     m = '`max_items` is deprecated and will be removed. use `max_length` instead'
-    with pytest.warns(DeprecationWarning, match=m):
+    with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
             x: List[int] = Field(None, max_items=1)
@@ -388,7 +401,7 @@ def test_field_max_items():
 
 def test_field_max_items_with_max_length():
     m = '`max_items` is deprecated and will be removed. use `max_length` instead'
-    with pytest.warns(DeprecationWarning, match=m):
+    with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
             x: List[int] = Field(None, max_items=1, max_length=2)
@@ -429,7 +442,7 @@ def test_unique_items_conlist():
 
 def test_allow_mutation():
     m = '`allow_mutation` is deprecated and will be removed. use `frozen` instead'
-    with pytest.warns(DeprecationWarning, match=m):
+    with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
             model_config = ConfigDict(validate_assignment=True)
@@ -472,7 +485,7 @@ def test_modify_schema_error():
 
 def test_field_extra_arguments():
     m = 'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead'
-    with pytest.warns(DeprecationWarning, match=m):
+    with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
             x: str = Field('test', test='test')
@@ -484,7 +497,7 @@ def test_field_extra_arguments():
 
 def test_field_extra_does_not_rewrite_json_schema_extra():
     m = 'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead'
-    with pytest.warns(DeprecationWarning, match=m):
+    with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
             x: str = Field('test', test='test', json_schema_extra={'test': 'json_schema_extra value'})
@@ -500,16 +513,18 @@ class SimpleModel(BaseModel):
 
 def test_dict():
     m = SimpleModel(x=1)
-    with pytest.warns(DeprecationWarning, match=r'^The `dict` method is deprecated; use `model_dump` instead\.$'):
+    with pytest.warns(PydanticDeprecatedSince20, match=r'^The `dict` method is deprecated; use `model_dump` instead\.'):
         assert m.dict() == {'x': 1}
 
 
 def test_json():
     m = SimpleModel(x=1)
-    with pytest.warns(DeprecationWarning, match=r'^The `json` method is deprecated; use `model_dump_json` instead\.$'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match=r'^The `json` method is deprecated; use `model_dump_json` instead\.'
+    ):
         assert m.json() == '{"x":1}'
 
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
         with pytest.raises(TypeError, match='The `encoder` argument is no longer supported'):
             m.json(encoder=1)
         with pytest.raises(TypeError, match='The `models_as_dict` argument is no longer supported'):
@@ -519,7 +534,9 @@ def test_json():
 
 
 def test_parse_obj():
-    with pytest.warns(DeprecationWarning, match='^The `parse_obj` method is deprecated; use `model_validate` instead.'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='^The `parse_obj` method is deprecated; use `model_validate` instead.'
+    ):
         m = SimpleModel.parse_obj({'x': 1})
 
     assert m.model_dump() == {'x': 1}
@@ -528,12 +545,16 @@ def test_parse_obj():
 def test_parse_file(tmp_path):
     path = tmp_path / 'test.json'
     path.write_text('{"x": 12}')
-    with pytest.warns(DeprecationWarning, match='^The `parse_file` method is deprecated; load the data from file,'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='^The `parse_file` method is deprecated; load the data from file,'
+    ):
         assert SimpleModel.parse_file(str(path)).model_dump() == {'x': 12}
 
 
 def test_construct():
-    with pytest.warns(DeprecationWarning, match='The `construct` method is deprecated; use `model_construct` instead.'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='The `construct` method is deprecated; use `model_construct` instead.'
+    ):
         m = SimpleModel.construct(x='not an int')
 
     assert m.x == 'not an int'
@@ -541,7 +562,9 @@ def test_construct():
 
 def test_json_schema():
     m = SimpleModel(x=1)
-    with pytest.warns(DeprecationWarning, match='^The `schema` method is deprecated; use `model_json_schema` instead.'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='^The `schema` method is deprecated; use `model_json_schema` instead.'
+    ):
         assert m.schema() == {
             'title': 'SimpleModel',
             'type': 'object',
@@ -551,20 +574,24 @@ def test_json_schema():
 
 
 def test_validate():
-    with pytest.warns(DeprecationWarning, match='^The `validate` method is deprecated; use `model_validate` instead.'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='^The `validate` method is deprecated; use `model_validate` instead.'
+    ):
         m = SimpleModel.validate({'x': 1})
 
     assert m.model_dump() == {'x': 1}
 
 
 def test_update_forward_refs():
-    with pytest.warns(DeprecationWarning, match='^The `update_forward_refs` method is deprecated;'):
+    with pytest.warns(PydanticDeprecatedSince20, match='^The `update_forward_refs` method is deprecated;'):
         SimpleModel.update_forward_refs()
 
 
 def test_copy_and_set_values():
     m = SimpleModel(x=1)
-    with pytest.warns(DeprecationWarning, match='^The private method  `_copy_and_set_values` will be removed and '):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='^The private method  `_copy_and_set_values` will be removed and '
+    ):
         m2 = m._copy_and_set_values(values={'x': 2}, fields_set={'x'}, deep=False)
 
     assert m2.x == 2
@@ -572,7 +599,7 @@ def test_copy_and_set_values():
 
 def test_get_value():
     m = SimpleModel(x=1)
-    with pytest.warns(DeprecationWarning, match='^The private method  `_get_value` will be removed and '):
+    with pytest.warns(PydanticDeprecatedSince20, match='^The private method  `_get_value` will be removed and '):
         v = m._get_value(
             [1, 2, 3],
             to_dict=False,
@@ -592,49 +619,51 @@ def test_deprecated_module(tmp_path: Path) -> None:
 
     assert hasattr(parse_obj_as, '__deprecated__')
     with pytest.warns(
-        DeprecationWarning, match='parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.'
+        PydanticDeprecatedSince20, match='parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.'
     ):
         parse_obj_as(Model, {'x': 1})
 
     assert hasattr(schema_json_of, '__deprecated__')
     with pytest.warns(
-        DeprecationWarning, match='schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.'
+        PydanticDeprecatedSince20, match='schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.'
     ):
         schema_json_of(Model)
 
     assert hasattr(schema_of, '__deprecated__')
     with pytest.warns(
-        DeprecationWarning, match='schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.'
+        PydanticDeprecatedSince20, match='schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.'
     ):
         schema_of(Model)
 
     assert hasattr(load_str_bytes, '__deprecated__')
-    with pytest.warns(DeprecationWarning, match='load_str_bytes is deprecated.'):
+    with pytest.warns(PydanticDeprecatedSince20, match='load_str_bytes is deprecated.'):
         load_str_bytes('{"x": 1}')
 
     assert hasattr(load_file, '__deprecated__')
     file = tmp_path / 'main.py'
     file.write_text('{"x": 1}')
-    with pytest.warns(DeprecationWarning, match='load_file is deprecated.'):
+    with pytest.warns(PydanticDeprecatedSince20, match='load_file is deprecated.'):
         load_file(file)
 
     assert hasattr(pydantic_encoder, '__deprecated__')
-    with pytest.warns(DeprecationWarning, match='pydantic_encoder is deprecated, use BaseModel.model_dump instead.'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='pydantic_encoder is deprecated, use BaseModel.model_dump instead.'
+    ):
         pydantic_encoder(Model(x=1))
 
     assert hasattr(custom_pydantic_encoder, '__deprecated__')
     with pytest.warns(
-        DeprecationWarning, match='custom_pydantic_encoder is deprecated, use BaseModel.model_dump instead.'
+        PydanticDeprecatedSince20, match='custom_pydantic_encoder is deprecated, use BaseModel.model_dump instead.'
     ):
         custom_pydantic_encoder({int: lambda x: str(x)}, Model(x=1))
 
     assert hasattr(timedelta_isoformat, '__deprecated__')
-    with pytest.warns(DeprecationWarning, match='timedelta_isoformat is deprecated.'):
+    with pytest.warns(PydanticDeprecatedSince20, match='timedelta_isoformat is deprecated.'):
         timedelta_isoformat(timedelta(seconds=1))
 
     assert all(hasattr(func, '__deprecated__') for func in get_overloads(validate_arguments))
     with pytest.warns(
-        DeprecationWarning, match='The `validate_arguments` method is deprecated; use `validate_call` instead.'
+        PydanticDeprecatedSince20, match='The `validate_arguments` method is deprecated; use `validate_call` instead.'
     ):
 
         def test(a: int, b: int):
@@ -646,7 +675,9 @@ def test_deprecated_module(tmp_path: Path) -> None:
 def test_deprecated_color():
     from pydantic.color import Color
 
-    with pytest.warns(DeprecationWarning, match='The `Color` class is deprecated, use `pydantic_extra_types` instead.'):
+    with pytest.warns(
+        PydanticDeprecatedSince20, match='The `Color` class is deprecated, use `pydantic_extra_types` instead.'
+    ):
         Color('red')
 
 
@@ -654,7 +685,7 @@ def test_deprecated_payment():
     from pydantic import PaymentCardNumber
 
     with pytest.warns(
-        DeprecationWarning,
+        PydanticDeprecatedSince20,
         match='The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.',
     ):
         PaymentCardNumber('4242424242424242')

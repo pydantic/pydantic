@@ -1,13 +1,19 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import Any, Callable, overload
+from typing import TYPE_CHECKING, Any, Callable, overload
 from warnings import warn
 
 from typing_extensions import Literal, Protocol, TypedDict
 
 from ._migration import getattr_migration
 from .deprecated.config import BaseConfig
+from .warnings import PydanticDeprecatedSince20
+
+if not TYPE_CHECKING:
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 
@@ -59,7 +65,7 @@ class ConfigDict(TypedDict, total=False):
             - `'ignore'` will silently ignore any extra attributes.
             - `'allow'` will assign the attributes to the model.
 
-            See [the dedicated section](/usage/model_config#extra-attributes).
+            See [Extra Attributes](../usage/model_config.md#extra-attributes) for details.
         frozen: Whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
             a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the
             attributes are hashable. Defaults to `False`.
@@ -79,7 +85,7 @@ class ConfigDict(TypedDict, total=False):
             checking if the value is an instance of the type). If `False`, `RuntimeError` will be raised on model
             declaration. Defaults to `False`.
 
-            See [the dedicated section](/usage/model_config/#arbitrary-types-allowed).
+            See [Arbitrary Types Allowed](../usage/model_config.md#arbitrary-types-allowed) for details.
         from_attributes: Whether to allow model creation from object attributes. Defaults to `False`.
 
             !!! note
@@ -87,7 +93,7 @@ class ConfigDict(TypedDict, total=False):
         loc_by_alias: Whether to use the alias for error `loc`s. Defaults to `True`.
         alias_generator: a callable that takes a field name and returns an alias for it.
 
-            See [the dedicated section](/usage/model_config#alias-generator).
+            See [Alias Generator](../usage/model_config.md#alias-generator) for details.
         ignored_types: A tuple of types that may occur as values of class attributes without annotations. This is
             typically used for custom descriptors (classes that behave like `property`). If an attribute is set on a
             class without an annotation and has a type that is not in this tuple (or otherwise recognized by
@@ -95,7 +101,7 @@ class ConfigDict(TypedDict, total=False):
         allow_inf_nan: Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`.
         json_schema_extra: A dict or callable to provide extra JSON schema properties. Defaults to `None`.
         strict: If `True`, strict validation is applied to all fields on the model.
-            See [Strict Mode](../usage/models.md#strict-mode) for details.
+            See [Strict Mode](../usage/strict_mode.md) for details.
         revalidate_instances: When and how to revalidate models and dataclasses during validation. Accepts the string
             values of `'never'`, `'always'` and `'subclass-instances'`. Defaults to `'never'`.
 
@@ -104,7 +110,7 @@ class ConfigDict(TypedDict, total=False):
             - `'subclass-instances'` will revalidate models and dataclasses during validation if the instance is a
                 subclass of the model or dataclass
 
-            See [the dedicated section](/usage/model_config#revalidate-instances).
+            See [Revalidate Instances](../usage/model_config.md#revalidate-instances) for details.
         ser_json_timedelta: The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
             `'float'`. Defaults to `'iso8601'`.
 
@@ -119,10 +125,10 @@ class ConfigDict(TypedDict, total=False):
         protected_namespaces: A `tuple` of strings that prevent model to have field which conflict with them.
             Defaults to `('model_', )`).
 
-            See [the dedicated section](/usage/model_config#protected-namespaces).
+            See [Protected Namespaces](../usage/model_config.md#protected-namespaces) for details.
         hide_input_in_errors: Whether to hide inputs when printing errors. Defaults to `False`.
 
-            See [the dedicated section](/usage/model_config#hide-input-in-errors).
+            See [Hide Input in Errors](../usage/model_config.md#hide-input-in-errors).
     """
 
     title: str | None

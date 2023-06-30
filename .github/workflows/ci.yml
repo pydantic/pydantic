@@ -151,7 +151,7 @@ jobs:
       matrix:
         # test recent mypy versions on 3.10 and mypy 1.0.1 on all supported python versions
         # if you change the value in the lockfile add the old value to this list
-        mypy-version: ['0.971', '0.982', '0.991', '1.0.1', 'lockfile']
+        mypy-version: ['1.0.1', 'lockfile']
         python-version: ['3.10']
         include:
           - mypy-version: '1.0.1'
@@ -180,7 +180,7 @@ jobs:
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         if [ ${{ matrix.mypy-version }} != 'lockfile' ]; then
-          pdm remove mypy && pdm add mypy==${{ matrix.mypy-version }}
+          pdm remove -G linting mypy && pdm remove -G mypy mypy && pdm add mypy==${{ matrix.mypy-version }}
         fi
         pdm list
 

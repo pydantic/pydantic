@@ -7,7 +7,7 @@ import sys
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
-from typing import Any
+from typing import Any, ClassVar
 from warnings import warn
 
 import annotated_types
@@ -18,9 +18,14 @@ from typing_extensions import Unpack
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
 from .errors import PydanticUserError
+from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
+else:
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 
 class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
@@ -52,7 +57,6 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     discriminator: str | None
     json_schema_extra: dict[str, Any] | None
     frozen: bool | None
-    final: bool | None
     validate_default: bool | None
     repr: bool
     init_var: bool | None
@@ -86,7 +90,6 @@ class FieldInfo(_repr.Representation):
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Dictionary of extra JSON schema properties.
         frozen: Whether the field is frozen.
-        final: Whether the field is final.
         validate_default: Whether to validate the default value of the field.
         repr: Whether to include the field in representation of the model.
         init_var: Whether the field should be included in the constructor of the dataclass.
@@ -109,7 +112,6 @@ class FieldInfo(_repr.Representation):
     discriminator: str | None
     json_schema_extra: dict[str, Any] | None
     frozen: bool | None
-    final: bool | None
     validate_default: bool | None
     repr: bool
     init_var: bool | None
@@ -132,7 +134,6 @@ class FieldInfo(_repr.Representation):
         'discriminator',
         'json_schema_extra',
         'frozen',
-        'final',
         'validate_default',
         'repr',
         'init_var',
@@ -142,7 +143,7 @@ class FieldInfo(_repr.Representation):
 
     # used to convert kwargs to metadata/constraints,
     # None has a special meaning - these items are collected into a `PydanticGeneralMetadata`
-    metadata_lookup: typing.ClassVar[dict[str, typing.Callable[[Any], Any] | None]] = {
+    metadata_lookup: ClassVar[dict[str, typing.Callable[[Any], Any] | None]] = {
         'strict': types.Strict,
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
@@ -163,7 +164,7 @@ class FieldInfo(_repr.Representation):
 
         See the signature of `pydantic.fields.Field` for more details about the expected arguments.
         """
-        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
+        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'), kwargs.get('default'))
 
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
@@ -191,7 +192,6 @@ class FieldInfo(_repr.Representation):
         self.json_schema_extra = kwargs.pop('json_schema_extra', None)
         self.validate_default = kwargs.pop('validate_default', None)
         self.frozen = kwargs.pop('frozen', None)
-        self.final = kwargs.pop('final', None)
         # currently only used on dataclasses
         self.init_var = kwargs.pop('init_var', None)
         self.kw_only = kwargs.pop('kw_only', None)
@@ -273,11 +273,11 @@ class FieldInfo(_repr.Representation):
             if field_info:
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
-                new_field_info.final = final
+                new_field_info.frozen = final or field_info.frozen
                 new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                 return new_field_info
 
-        return cls(annotation=annotation, final=final)
+        return cls(annotation=annotation, frozen=final or None)
 
     @classmethod
     def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> typing_extensions.Self:
@@ -307,9 +307,9 @@ class FieldInfo(_repr.Representation):
                 annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, cls):
-            default.annotation, annotation_metadata = cls._extract_metadata(annotation)
+            default.annotation, annotation_metadata = cls._extract_metadata(annotation, default)
             default.metadata += annotation_metadata
-            default.final = final
+            default.frozen = final or default.frozen
             return default
         elif isinstance(default, dataclasses.Field):
             init_var = False
@@ -323,17 +323,20 @@ class FieldInfo(_repr.Representation):
                 init_var = True
                 annotation = annotation.type
             pydantic_field = cls._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
+            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation, default)
             pydantic_field.metadata += annotation_metadata
-            pydantic_field.final = final
+            pydantic_field.frozen = final or pydantic_field.frozen
             pydantic_field.init_var = init_var
             pydantic_field.kw_only = getattr(default, 'kw_only', None)
             return pydantic_field
         else:
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
-                field_info = cls._find_field_info_arg(extra_args)
-                if field_info is not None:
+                field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
+                if field_infos:
+                    if len(field_infos) > 1:
+                        raise TypeError('Field may not be used twice on the same field')
+                    field_info = next(iter(field_infos))
                     if not field_info.is_required():
                         raise TypeError('Default may not be specified twice on the same field')
                     new_field_info = copy(field_info)
@@ -342,7 +345,7 @@ class FieldInfo(_repr.Representation):
                     new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                     return new_field_info
 
-            return cls(annotation=annotation, default=default, final=final)
+            return cls(annotation=annotation, default=default, frozen=final or None)
 
     @classmethod
     def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> typing_extensions.Self:
@@ -369,16 +372,17 @@ class FieldInfo(_repr.Representation):
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
         field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field.metadata)
 
-        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type)
+        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type, dc_field.default)
         field.metadata += annotation_metadata
         return field
 
     @classmethod
-    def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
+    def _extract_metadata(cls, annotation: type[Any] | None, default: Any) -> tuple[type[Any] | None, list[Any]]:
         """Tries to extract metadata/constraints from an annotation if it uses `Annotated`.
 
         Args:
             annotation: The type hint annotation for which metadata has to be extracted.
+            default: The default value for the field, used to check if `Field()` is used more than once.
 
         Returns:
             A tuple containing the extracted metadata type and the list of extra arguments.
@@ -386,10 +390,11 @@ class FieldInfo(_repr.Representation):
         Raises:
             TypeError: If a `Field` is used twice on the same field.
         """
+        default_is_field = isinstance(default, FieldInfo)
         if annotation is not None:
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
-                if cls._find_field_info_arg(extra_args):
+                if sum(1 for a in extra_args if isinstance(a, FieldInfo)) + default_is_field > 1:
                     raise TypeError('Field may not be used twice on the same field')
                 return first_arg, list(extra_args)
 
@@ -511,8 +516,6 @@ class FieldInfo(_repr.Representation):
                 continue
             elif s == 'repr' and self.repr is True:
                 continue
-            elif s == 'final':
-                continue
             if s == 'frozen' and self.frozen is False:
                 continue
             if s == 'validation_alias' and self.validation_alias == self.alias:
@@ -597,7 +600,6 @@ def Field(  # C901
     discriminator: str | None = None,
     json_schema_extra: dict[str, Any] | None = None,
     frozen: bool | None = None,
-    final: bool | None = None,
     validate_default: bool | None = None,
     repr: bool = True,
     init_var: bool | None = None,
@@ -638,13 +640,12 @@ def Field(  # C901
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Any additional JSON schema data for the schema property.
         frozen: Whether the field is frozen.
-        final: Whether the field is final.
         validate_default: Run validation that isn't only checking existence of defaults. `True` by default.
         repr: A boolean indicating whether to include the field in the `__repr__` output.
         init_var: Whether the field should be included in the constructor of the dataclass.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
         strict: If `True`, strict validation is applied to the field.
-            See [Strict Mode](../usage/models.md#strict-mode) for details.
+            See [Strict Mode](../usage/strict_mode.md) for details.
         gt: Greater than. If set, value must be greater than this. Only applicable to numbers.
         ge: Greater than or equal. If set, value must be greater than or equal to this. Only applicable to numbers.
         lt: Less than. If set, value must be less than this. Only applicable to numbers.
@@ -730,7 +731,6 @@ def Field(  # C901
         discriminator=discriminator,
         json_schema_extra=json_schema_extra,
         frozen=frozen,
-        final=final,
         pattern=pattern,
         validate_default=validate_default,
         repr=repr,
@@ -852,7 +852,7 @@ class ComputedFieldInfo:
         repr: A boolean indicating whether or not to include the field in the __repr__ output.
     """
 
-    decorator_repr: typing.ClassVar[str] = '@computed_field'
+    decorator_repr: ClassVar[str] = '@computed_field'
     wrapped_property: property
     return_type: type[Any]
     alias: str | None

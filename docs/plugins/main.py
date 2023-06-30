@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import textwrap
 from pathlib import Path
 from textwrap import dedent, indent
 
@@ -14,7 +15,7 @@ from mkdocs.config import Config
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
-from .conversion_table import table
+from .conversion_table import conversion_table
 
 logger = logging.getLogger('mkdocs.plugin')
 THIS_DIR = Path(__file__).parent
@@ -222,26 +223,20 @@ def build_conversion_table(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'usage/conversion_table.md':
         return None
 
-    col_names = [
-        'Field Type',
-        'Input',
-        'Mode',
-        'Input Source',
-        'Conditions',
-    ]
-    table_text = _generate_table_heading(col_names)
+    filtered_table_predicates = {
+        'all': lambda r: True,
+        'json': lambda r: r.json_input,
+        'json_strict': lambda r: r.json_input and r.strict,
+        'python': lambda r: r.python_input,
+        'python_strict': lambda r: r.python_input and r.strict,
+    }
 
-    for row in table:
-        cols = [
-            f'`{row.field_type.__name__}`' if hasattr(row.field_type, '__name__') else f'`{row.field_type}`',
-            f'`{row.input_type.__name__}`' if hasattr(row.input_type, '__name__') else f'`{row.input_type}`',
-            row.mode,
-            row.input_format,
-            row.condition if row.condition else '',
-        ]
-        table_text += _generate_table_row(cols)
+    for table_id, predicate in filtered_table_predicates.items():
+        table_markdown = conversion_table.filtered(predicate).as_markdown()
+        table_markdown = textwrap.indent(table_markdown, '    ')
+        markdown = re.sub(rf'{{{{ *conversion_table_{table_id} *}}}}', table_markdown, markdown)
 
-    return re.sub(r'{{ *conversion_table *}}', table_text, markdown)
+    return markdown
 
 
 def devtools_example(markdown: str, page: Page) -> str | None:

@@ -13,9 +13,11 @@ from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
+from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
+from ._discriminated_union import apply_discriminators
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
@@ -28,6 +30,10 @@ if typing.TYPE_CHECKING:
     from inspect import Signature
 
     from ..main import BaseModel
+else:
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 
 IGNORED_TYPES: tuple[Any, ...] = (
@@ -213,7 +219,9 @@ class ModelMetaclass(ABCMeta):
         return field_names, class_vars, private_attributes
 
     @property
-    @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.')
+    @deprecated(
+        'The `__fields__` attribute is deprecated, use `model_fields` instead.', category=PydanticDeprecatedSince20
+    )
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
         return self.model_fields
@@ -355,6 +363,18 @@ def set_model_fields(
     cls.model_fields = fields
     cls.__class_vars__.update(class_vars)
 
+    for k in class_vars:
+        # Class vars should not be private attributes
+        #     We remove them _here_ and not earlier because we rely on inspecting the class to determine its classvars,
+        #     but private attributes are determined by inspecting the namespace _prior_ to class creation.
+        #     In the case that a classvar with a leading-'_' is defined via a ForwardRef (e.g., when using
+        #     `__future__.annotations`), we want to remove the private attribute which was detected _before_ we knew it
+        #     evaluated to a classvar
+
+        value = cls.__private_attributes__.pop(k, None)
+        if value is not None and value.default is not PydanticUndefined:
+            setattr(cls, k, value.default)
+
 
 def complete_model_class(
     cls: type[BaseModel],
@@ -407,7 +427,7 @@ def complete_model_class(
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
-    schema = flatten_schema_defs(schema)
+    schema = apply_discriminators(flatten_schema_defs(schema))
     if collect_invalid_schemas(schema):
         set_basemodel_mock_validator(cls, cls_name, 'all referenced types')
         return False

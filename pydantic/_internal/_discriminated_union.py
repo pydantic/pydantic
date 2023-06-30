@@ -2,11 +2,34 @@ from __future__ import annotations as _annotations
 
 from typing import Any, Hashable, Sequence
 
-from pydantic_core import core_schema
+from pydantic_core import CoreSchema, core_schema
 
 from ..errors import PydanticUserError
 from . import _core_utils
 from ._core_utils import CoreSchemaField, collect_definitions
+
+CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic.internal.union_discriminator'
+
+
+def set_discriminator(schema: CoreSchema, discriminator: Any) -> None:
+    schema.setdefault('metadata', {})
+    metadata = schema.get('metadata')
+    assert metadata is not None
+    metadata[CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY] = discriminator
+
+
+def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    definitions = collect_definitions(schema)
+
+    def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
+        s = recurse(s, inner)
+        metadata = s.get('metadata', {})
+        discriminator = metadata.get(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
+        if discriminator is not None:
+            s = apply_discriminator(s, discriminator, definitions)
+        return s
+
+    return _core_utils.walk_core_schema(schema, inner)
 
 
 def apply_discriminator(
@@ -128,19 +151,12 @@ class _ApplyInferredDiscriminator:
                 - If discriminator fields have different aliases.
                 - If discriminator field not of type `Literal`.
         """
-        old_definitions = collect_definitions(schema)
-        self.definitions = {**old_definitions, **self.definitions}
+        self.definitions.update(collect_definitions(schema))
         assert not self._used
         schema = self._apply_to_root(schema)
         if self._should_be_nullable and not self._is_nullable:
             schema = core_schema.nullable_schema(schema)
         self._used = True
-        new_definitions = collect_definitions(schema)
-
-        missing_definitions = [v for k, v in old_definitions.items() if k not in new_definitions]
-        if missing_definitions:
-            schema = core_schema.definitions_schema(schema, missing_definitions)
-
         return schema
 
     def _apply_to_root(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
@@ -317,6 +333,12 @@ class _ApplyInferredDiscriminator:
 
         elif choice['type'] == 'typed-dict':
             return self._infer_discriminator_values_for_typed_dict_choice(choice, source_name=source_name)
+
+        elif choice['type'] == 'definition-ref':
+            schema_ref = choice['schema_ref']
+            if schema_ref not in self.definitions:
+                raise ValueError(f'Missing definition for inner ref {schema_ref!r}')
+            return self._infer_discriminator_values_for_choice(self.definitions[schema_ref], source_name=source_name)
 
         else:
             raise TypeError(

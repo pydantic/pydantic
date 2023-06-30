@@ -61,7 +61,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==0.41.0",
+    "pydantic-core==0.42.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -153,6 +153,7 @@ filterwarnings = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
+assignees = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex']
 reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex']
 require_change_file = false
 
@@ -164,7 +165,7 @@ flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
 target-version = "py37"
-exclude=['pydantic/v1']
+exclude=['pydantic/v1', 'tests/mypy/outputs']
 
 [tool.ruff.pydocstyle]
 convention = "google"

@@ -1,5 +1,8 @@
 Strict types enable you to prevent coercion from compatible types.
 
+## Strict types
+
+
 Pydantic provides the following strict types:
 
 - [`StrictBool`][pydantic.types.StrictBool]
@@ -10,7 +13,9 @@ Pydantic provides the following strict types:
 
 These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
 
-This behavior is also exposed via the `strict` field of the constrained types and can be combined with a multitude of complex validation rules.
+## Constrained types
+
+This behavior is also exposed via the `strict` field of the constrained types and can be combined with a multitude of complex validation rules. See the individual type signatures for supported arguments.
 
 - [`conbytes()`][pydantic.types.conbytes]
 - [`condate()`][pydantic.types.condate]

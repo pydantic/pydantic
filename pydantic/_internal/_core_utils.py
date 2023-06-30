@@ -100,51 +100,25 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     return type_ref
 
 
+def get_ref(s: core_schema.CoreSchema) -> None | str:
+    """Get the ref from the schema if it has one.
+    This exists just for type checking to work correctly.
+    """
+    return s.get('ref', None)  # type: ignore
+
+
 def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema.CoreSchema]:
-    # Only collect valid definitions. This is equivalent to collecting all definitions for "valid" schemas,
-    # but allows us to reuse this logic while removing "invalid" definitions
-    valid_definitions = dict()
+    defs: dict[str, CoreSchema] = {}
 
     def _record_valid_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        ref: str | None = s.get('ref')  # type: ignore[assignment]
+        ref = get_ref(s)
         if ref:
-            metadata = s.get('metadata')
-            definition_is_invalid = isinstance(metadata, dict) and 'invalid' in metadata
-            if not definition_is_invalid:
-                valid_definitions[ref] = s
+            defs[ref] = s
         return recurse(s, _record_valid_refs)
 
     walk_core_schema(schema, _record_valid_refs)
 
-    return valid_definitions
-
-
-def remove_unnecessary_invalid_definitions(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    valid_refs = collect_definitions(schema).keys()
-
-    def _remove_invalid_defs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if s['type'] != 'definitions':
-            return recurse(s, _remove_invalid_defs)
-
-        new_schema = s.copy()
-
-        new_definitions: list[CoreSchema] = []
-        for definition in s['definitions']:
-            metadata = definition.get('metadata')
-            # fmt: off
-            if (
-                isinstance(metadata, dict)
-                and 'invalid' in metadata
-                and definition['ref'] in valid_refs  # type: ignore
-            ):
-                continue
-            # fmt: on
-            new_definitions.append(definition)
-
-        new_schema['definitions'] = new_definitions
-        return new_schema
-
-    return walk_core_schema(schema, _remove_invalid_defs)
+    return defs
 
 
 def define_expected_missing_refs(
@@ -428,9 +402,6 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
             return core_schema.definitions_schema(schema=schema, definitions=definitions)
         return schema
 
-    def get_ref(s: core_schema.CoreSchema) -> None | str:
-        return s.get('ref', None)
-
     def collect_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if s['type'] == 'definitions':
             for definition in s['definitions']:
@@ -474,6 +445,9 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
         return s
 
     schema = walk_core_schema(schema, flatten_refs)
+
+    for def_schema in all_defs.values():
+        walk_core_schema(def_schema, flatten_refs)
 
     if not inline:
         return make_result(schema, all_defs.values())

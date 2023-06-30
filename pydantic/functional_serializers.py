@@ -142,7 +142,7 @@ def field_serializer(
 ) -> Callable[[Any], Any]:
     """Decorator that enables custom field serialization.
 
-    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.
+    See [Custom serializers](../usage/serialization.md#custom-serializers) for more information.
 
     Four signatures are supported:
 
@@ -208,7 +208,7 @@ def model_serializer(
 ) -> Callable[[Any], Any]:
     """Decorator that enables custom model serialization.
 
-    See [Custom serializers](../usage/exporting_models.md#custom-serializers) for more information.
+    See [Custom serializers](../usage/serialization.md#custom-serializers) for more information.
 
     Args:
         __f: The function to be decorated.

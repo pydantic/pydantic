@@ -41,6 +41,7 @@ from ._migration import getattr_migration
 from .config import ConfigDict
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
+from .warnings import PydanticDeprecatedSince20
 
 __all__ = (
     'Strict',
@@ -787,7 +788,8 @@ class PaymentCardBrand(str, Enum):
 
 @deprecated(
     'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. '
-    'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/payment_cards/.'
+    'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/payment_cards/.',
+    category=PydanticDeprecatedSince20,
 )
 class PaymentCardNumber(str):
     """Based on: https://en.wikipedia.org/wiki/Payment_card_number."""

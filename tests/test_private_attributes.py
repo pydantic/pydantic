@@ -110,7 +110,7 @@ def test_underscore_attrs_are_private():
     with pytest.raises(
         AttributeError,
         match=(
-            '"_bar" is a ClassVar of `Model` and cannot be set on an instance. '
+            "'_bar' is a ClassVar of `Model` and cannot be set on an instance. "
             'If you want to set a value on the class, use `Model._bar = value`.'
         ),
     ):
@@ -353,3 +353,20 @@ def test_unannotated_private_attr():
     assert a.__pydantic_private__ == {'_y': 52}
     a._x = 1
     assert a.__pydantic_private__ == {'_x': 1, '_y': 52}
+
+
+def test_classvar_collision_prevention(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+
+from pydantic import BaseModel
+import typing as t
+
+class BaseConfig(BaseModel):
+    _FIELD_UPDATE_STRATEGY: t.ClassVar[t.Dict[str, t.Any]] = {}
+"""
+    )
+
+    assert module.BaseConfig._FIELD_UPDATE_STRATEGY == {}

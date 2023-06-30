@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import json
 import warnings
-from typing import Any, Callable, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Type, TypeVar, Union
 
 from typing_extensions import deprecated
 
 from ..json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
 from ..type_adapter import TypeAdapter
+from ..warnings import PydanticDeprecatedSince20
+
+if not TYPE_CHECKING:
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 __all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
 
@@ -17,7 +23,9 @@ NameFactory = Union[str, Callable[[Type[Any]], str]]
 T = TypeVar('T')
 
 
-@deprecated('parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.')
+@deprecated(
+    'parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.', category=PydanticDeprecatedSince20
+)
 def parse_obj_as(type_: type[T], obj: Any, type_name: NameFactory | None = None) -> T:
     warnings.warn(
         'parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.',
@@ -33,7 +41,9 @@ def parse_obj_as(type_: type[T], obj: Any, type_name: NameFactory | None = None)
     return TypeAdapter(type_).validate_python(obj)
 
 
-@deprecated('schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.')
+@deprecated(
+    'schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.', category=PydanticDeprecatedSince20
+)
 def schema_of(
     type_: Any,
     *,
@@ -64,7 +74,9 @@ def schema_of(
     return res
 
 
-@deprecated('schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.')
+@deprecated(
+    'schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.', category=PydanticDeprecatedSince20
+)
 def schema_json_of(
     type_: Any,
     *,

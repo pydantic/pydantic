@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 import pytest
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Literal
 
 from pydantic import (
     Base64Str,
@@ -11,6 +11,7 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
+    PydanticDeprecatedSince20,
     PydanticUserError,
     RootModel,
     ValidationError,
@@ -175,7 +176,7 @@ def test_v1_compatibility_serializer():
     m = MyOuterModel.model_validate({'my_root': {'x': 1}})
 
     assert m.model_dump() == {'my_root': {'__root__': {'x': 1}}}
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(PydanticDeprecatedSince20):
         assert m.dict() == {'my_root': {'__root__': {'x': 1}}}
 
 
@@ -187,7 +188,6 @@ def test_construct():
     assert v.model_dump() == 'dGVzdA==\n'
 
 
-@pytest.mark.xfail(reason='Raises `PydanticSerializationUnexpectedValue` instead of `AttributeError`')
 def test_construct_nested():
     class Base64RootProperty(BaseModel):
         data: RootModel[Base64Str]
@@ -311,6 +311,7 @@ def test_root_model_equality():
     assert RootModel[int](42) == RootModel[int](42)
     assert RootModel[int](42) != RootModel[int](7)
     assert RootModel[int](42) != RootModel[float](42)
+    assert RootModel[int](42) == RootModel[int].model_construct(42)
 
 
 def test_root_model_with_private_attrs_equality():
@@ -489,3 +490,43 @@ def test_root_model_dump_with_base_model(order):
     assert m.root == [RModel(1), RModel(2), BModel.model_construct(value='abc')]
     assert m.model_dump() == [1, 2, {'value': 'abc'}]
     assert m.model_dump_json() == '[1,2,{"value":"abc"}]'
+
+
+@pytest.mark.parametrize(
+    'data',
+    [
+        pytest.param({'kind': 'IModel', 'int_value': 42}, id='IModel'),
+        pytest.param({'kind': 'SModel', 'str_value': 'abc'}, id='SModel'),
+    ],
+)
+def test_mixed_discriminated_union(data):
+    class IModel(BaseModel):
+        kind: Literal['IModel']
+        int_value: int
+
+    class RModel(RootModel):
+        root: IModel
+
+    class SModel(BaseModel):
+        kind: Literal['SModel']
+        str_value: str
+
+    class Model(RootModel):
+        root: Union[SModel, RModel] = Field(discriminator='kind')
+
+    assert Model(data).model_dump() == data
+    assert Model(**data).model_dump() == data
+
+
+def test_root_and_data_error():
+    class BModel(BaseModel):
+        value: int
+        other_value: str
+
+    Model = RootModel[BModel]
+
+    with pytest.raises(
+        ValueError,
+        match='"RootModel.__init__" accepts either a single positional argument or arbitrary keyword arguments',
+    ):
+        Model({'value': 42}, other_value='abc')

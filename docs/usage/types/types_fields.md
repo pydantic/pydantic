@@ -62,12 +62,13 @@ class UserIdentity(TypedDict, total=False):
 
 
 class User(TypedDict):
+    __pydantic_config__ = ConfigDict(extra='forbid')
+
     identity: UserIdentity
     age: int
 
 
 class Model(BaseModel):
-    model_config = ConfigDict(extra='forbid')
     u: User
 
 

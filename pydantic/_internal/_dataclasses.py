@@ -12,7 +12,8 @@ from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
-from . import _config, _decorators, _typing_extra
+from ..warnings import PydanticDeprecatedSince20
+from . import _config, _decorators, _discriminated_union, _typing_extra
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
@@ -32,14 +33,30 @@ if typing.TYPE_CHECKING:
             pass
 
     class PydanticDataclass(StandardDataclass, typing.Protocol):
-        __pydantic_core_schema__: typing.ClassVar[core_schema.CoreSchema]
-        __pydantic_validator__: typing.ClassVar[SchemaValidator]
-        __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
-        __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
-        """metadata for `@field_validator`, `@root_validator` and `@serializer` decorators"""
-        __pydantic_fields__: typing.ClassVar[dict[str, FieldInfo]]
-        __pydantic_config__: typing.ClassVar[ConfigDict]
-        __pydantic_complete__: typing.ClassVar[bool]
+        """A protocol containing attributes only available once a class has been decorated as a Pydantic dataclass.
+
+        Attributes:
+            __pydantic_config__: Pydantic-specific configuration settings for the dataclass.
+            __pydantic_complete__: Whether dataclass building is completed, or if there are still undefined fields.
+            __pydantic_core_schema__: The pydantic-core schema used to build the SchemaValidator and SchemaSerializer.
+            __pydantic_decorators__: Metadata containing the decorators defined on the dataclass.
+            __pydantic_fields__: Metadata about the fields defined on the dataclass.
+            __pydantic_serializer__: The pydantic-core SchemaSerializer used to dump instances of the dataclass.
+            __pydantic_validator__: The pydantic-core SchemaValidator used to validate instances of the dataclass.
+        """
+
+        __pydantic_config__: ClassVar[ConfigDict]
+        __pydantic_complete__: ClassVar[bool]
+        __pydantic_core_schema__: ClassVar[core_schema.CoreSchema]
+        __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
+        __pydantic_fields__: ClassVar[dict[str, FieldInfo]]
+        __pydantic_serializer__: ClassVar[SchemaSerializer]
+        __pydantic_validator__: ClassVar[SchemaValidator]
+
+else:
+    # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
+    # and https://youtrack.jetbrains.com/issue/PY-51428
+    DeprecationWarning = PydanticDeprecatedSince20
 
 
 def set_dataclass_fields(cls: type[StandardDataclass], types_namespace: dict[str, Any] | None = None) -> None:
@@ -139,8 +156,8 @@ def complete_dataclass(
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
-    cls.__pydantic_core_schema__ = schema
-    simplified_core_schema = inline_schema_defs(flatten_schema_defs(schema))
+    cls.__pydantic_core_schema__ = schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
+    simplified_core_schema = inline_schema_defs(schema)
     cls.__pydantic_validator__ = validator = SchemaValidator(simplified_core_schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
 
@@ -156,13 +173,12 @@ def complete_dataclass(
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
-    """Whether a class is a stdlib dataclass
-    (useful to discriminated a pydantic dataclass that is actually a wrapper around a stdlib dataclass).
+    """Returns True if a class is a stdlib dataclass and *not* a pydantic dataclass.
 
-    we check that
+    We check that
     - `_cls` is a dataclass
-    - `_cls` is not a processed pydantic dataclass (with a `BaseModel` attached)
-    - `_cls` is not a pydantic dataclass inheriting directly from a stdlib dataclass
+    - `_cls` does not inherit from a processed pydantic dataclass (and thus have a `__pydantic_validator__`)
+    - `_cls` does not have any annotations that are not dataclass fields
     e.g.
     ```py
     import dataclasses

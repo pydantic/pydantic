@@ -86,11 +86,11 @@ Models possess the following methods and attributes:
 * `model_construct()`: a class method for creating models without running validation. See
     [Creating models without validation](#creating-models-without-validation).
 * `model_copy()`: returns a copy (by default, shallow copy) of the model. See
-    [Exporting models](exporting_models.md#modelcopy).
+    [Serialization](serialization.md#modelcopy).
 * `model_dump()`: returns a dictionary of the model's fields and values. See
-    [Exporting models](exporting_models.md#modeldump).
+    [Serialization](serialization.md#modeldump).
 * `model_dump_json()`: returns a JSON string representation of `model_dump()`. See
-    [Exporting models](exporting_models.md#modeldumpjson).
+    [Serialization](serialization.md#modeldumpjson).
 * `model_extra`: get extra fields set during validation.
 * `model_fields_set`: set of fields which were set when the model instance was initialised.
 * `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
@@ -996,7 +996,7 @@ Field order is important in models for the following reasons:
   can access the values of earlier fields, but not later ones
 * field order is preserved in the model [schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
-* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](exporting_models.md#modeldict)
+* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](serialization.md#modeldict)
 
 ```py
 from pydantic import BaseModel, ValidationError
@@ -1195,117 +1195,10 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 #> {'a': 3, 'b': 2.72, 'c': 'binary data'}
 ```
 
-This is a deliberate decision of Pydantic, and in general it's the most useful approach. See
+This is a deliberate decision of Pydantic, and is frequently the most useful approach. See
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
-Nevertheless, [strict type checking](types/standard_types.md#strict-types) is partially supported.
-
-## Strict Mode
-
-There are some situations where you want Pydantic to throw an error instead of coercing data.
-For example, input to an `int` field could be `123` or the string `"123"`, which would be converted to `123`.
-While this is useful in many scenarios (think: UUIDs, URL parameters, environment variables, user input),
-there are some situations where it's not desirable.
-
-The [Conversion Table](conversion_table.md) provides more details on how Pydantic converts data in both strict and
-lax modes.
-
-### Strict mode for fields
-
-For individual fields on a model, you can [set `strict=True` on the field](../api/fields.md#pydantic.fields.Field).
-Only the fields for which `strict=True` is set will be affected.
-
-```python
-from pydantic import BaseModel, Field, ValidationError
-
-
-class User(BaseModel):
-    name: str = Field(strict=True)
-    age: int = Field(strict=False)
-
-
-user = User(name='John', age='42')
-print(user)
-#> name='John' age=42
-
-
-class AnotherUser(BaseModel):
-    name: str = Field(strict=True)
-    age: int = Field(strict=True)
-
-
-try:
-    anotheruser = AnotherUser(name='John', age='42')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for AnotherUser
-    age
-      Input should be a valid integer [type=int_type, input_value='42', input_type=str]
-    """
-```
-
-Pydantic also provides a [`Strict`][pydantic.types.Strict] field metadata class that indicates an annotated field should
-be validated in strict mode. This is, in fact, the method used to implement strict built-in types such as, for example,
-[`StrictBool`][pydantic.types.StrictBool].
-
-```python
-from typing_extensions import Annotated
-
-from pydantic import BaseModel, Field
-from pydantic.types import Strict
-
-
-class User(BaseModel):
-    name: str = Field(strict=True)
-    age: int = Field(strict=False)
-    is_active: Annotated[bool, Strict()]
-```
-
-### Strict mode for models
-
-For all fields on a model, you can
-[set `model_config = ConfigDict(strict=True)`](../api/config.md#pydantic.config.ConfigDict) in the config for the model.
-When set, all fields on the model will be validated in strict mode.
-
-```py
-from pydantic import BaseModel, ConfigDict, ValidationError
-
-
-class User(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    name: str
-    age: int
-
-
-try:
-    user = User(name='John', age='42')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for User
-    age
-      Input should be a valid integer [type=int_type, input_value='42', input_type=str]
-    """
-```
-
-!!! note
-    Note that, when using `strict=True` in config on a model, you can still override the strictness
-    of individual fields by setting `strict=False` on individual fields.
-
-    ```py
-    from pydantic import BaseModel, ConfigDict, Field
-
-
-    class User(BaseModel):
-        model_config = ConfigDict(strict=True)
-
-        name: str
-        age: int = Field(strict=False)
-    ```
-
-See [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
+Nevertheless, [strict type checking](strict_mode.md) is also supported.
 
 ## Model signature
 

@@ -65,7 +65,7 @@ nav:
     - Lists and Tuples: usage/types/list_types.md
     - Number Types: usage/types/number_types.md
     - Secret Types: usage/types/secrets.md
-    - Sequence, Iterable, & Iterator: usage/types/sequence_iterable.md
+    - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
     - Strict Types: usage/types/strict_types.md
     - String Types: usage/types/string_types.md
@@ -86,11 +86,12 @@ nav:
   - 'Model Config': usage/model_config.md
   - 'Fields': usage/fields.md
   - 'JSON Schema': usage/json_schema.md
-  - 'Exporting Models': usage/exporting_models.md
+  - 'Serialization': usage/serialization.md
   - 'Computed Fields': usage/computed_fields.md
   - 'Dataclasses': usage/dataclasses.md
   - 'Validation Decorator': usage/validation_decorator.md
   - 'Postponed Annotations': usage/postponed_annotations.md
+  - 'Strict Mode': usage/strict_mode.md
   - 'Conversion Table': usage/conversion_table.md
   - 'Settings Management': usage/pydantic_settings.md
 - Error Messages:
@@ -107,6 +108,7 @@ nav:
   - 'Rich': integrations/rich.md
 - Contribute: contributing.md
 - Blog:
+  - blog/pydantic-v2-final.md
   - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
 - API Documentation:

@@ -37,7 +37,6 @@ from ._core_utils import (
     flatten_schema_defs,
     get_type_ref,
     is_list_like_schema_with_items_schema,
-    remove_unnecessary_invalid_definitions,
 )
 from ._decorators import (
     ComputedFieldInfo,
@@ -292,7 +291,7 @@ class GenerateSchema:
                 metadata = CoreMetadataHandler(metadata_schema).metadata
                 metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
 
-        return remove_unnecessary_invalid_definitions(schema)
+        return schema
 
     def _model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
         """Generate schema for a Pydantic model."""
@@ -383,7 +382,6 @@ class GenerateSchema:
         new_obj, new_annotations = self._prepare_annotations(obj, [])
         if new_obj is not obj or new_annotations:
             return self._apply_annotations(
-                lambda x: x,
                 new_obj,
                 new_annotations,
             )
@@ -488,13 +486,13 @@ class GenerateSchema:
             pass
 
         if obj is Any or obj is object:
-            return core_schema.AnySchema(type='any')
+            return core_schema.any_schema()
         elif obj is None or obj is _typing_extra.NoneType:
-            return core_schema.NoneSchema(type='none')
+            return core_schema.none_schema()
         elif obj == type:
             return self._type_schema()
         elif _typing_extra.is_callable_type(obj):
-            return core_schema.CallableSchema(type='callable')
+            return core_schema.callable_schema()
         elif _typing_extra.is_literal_type(obj):
             return self._literal_schema(obj)
         elif is_typeddict(obj):
@@ -512,14 +510,14 @@ class GenerateSchema:
             return self._unsubstituted_typevar_schema(obj)
         elif is_finalvar(obj):
             if obj is Final:
-                return core_schema.AnySchema(type='any')
+                return core_schema.any_schema()
             return self.generate_schema(get_args(obj)[0])
         elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
             return self._callable_schema(obj)
         elif inspect.isclass(obj) and issubclass(obj, Enum):
             from ._std_types_schema import get_enum_core_schema
 
-            return get_enum_core_schema(obj)
+            return get_enum_core_schema(obj, self.config_wrapper.config_dict)
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
@@ -527,7 +525,7 @@ class GenerateSchema:
         res = self._get_prepare_pydantic_annotations_for_known_type(obj, ())
         if res is not None:
             source_type, annotations = res
-            return self._apply_annotations(lambda x: x, source_type, annotations)
+            return self._apply_annotations(source_type, annotations)
 
         origin = get_origin(obj)
 
@@ -645,19 +643,19 @@ class GenerateSchema:
     def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
 
-        def apply_discriminator(schema: CoreSchema) -> CoreSchema:
-            if field_info.discriminator is not None:
-                schema = _discriminated_union.apply_discriminator(
-                    schema, field_info.discriminator, self.defs.definitions
-                )
+        source_type, annotations = field_info.annotation, field_info.metadata
+
+        def set_discriminator(schema: CoreSchema) -> CoreSchema:
+            _discriminated_union.set_discriminator(schema, field_info.discriminator)
             return schema
 
-        source_type, annotations = field_info.annotation, field_info.metadata
-        schema = self._apply_annotations(
-            apply_discriminator,
-            source_type,
-            annotations,
-        )
+        if field_info.discriminator is not None:
+            schema = self._apply_annotations(source_type, annotations, transform_inner_schema=set_discriminator)
+        else:
+            schema = self._apply_annotations(
+                source_type,
+                annotations,
+            )
 
         # This V1 compatibility shim should eventually be removed
         # push down any `each_item=True` validators
@@ -718,7 +716,7 @@ class GenerateSchema:
             serialization_exclude=True if field_info.exclude else None,
             validation_alias=validation_alias,
             serialization_alias=field_info.serialization_alias,
-            frozen=field_info.frozen or field_info.final,
+            frozen=field_info.frozen,
             metadata=metadata,
         )
 
@@ -851,12 +849,8 @@ class GenerateSchema:
             # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
             annotations = {k: Any for k in namedtuple_cls._fields}
 
-        arguments_schema = core_schema.ArgumentsSchema(
-            type='arguments',
-            arguments_schema=[
-                self._generate_parameter_schema(field_name, annotation)
-                for field_name, annotation in annotations.items()
-            ],
+        arguments_schema = core_schema.arguments_schema(
+            [self._generate_parameter_schema(field_name, annotation) for field_name, annotation in annotations.items()],
             metadata=build_metadata_dict(js_prefer_positional_arguments=True),
         )
         return core_schema.call_schema(arguments_schema, namedtuple_cls)
@@ -875,7 +869,7 @@ class GenerateSchema:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         source_type, annotations = field.annotation, field.metadata
-        schema = self._apply_annotations(lambda x: x, source_type, annotations)
+        schema = self._apply_annotations(source_type, annotations)
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -1138,7 +1132,7 @@ class GenerateSchema:
         elif typevar.__constraints__:
             return self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
         else:
-            return core_schema.AnySchema(type='any')
+            return core_schema.any_schema()
 
     def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
         return_type_schema = self.generate_schema(d.info.return_type)
@@ -1154,12 +1148,30 @@ class GenerateSchema:
             d.info.alias = alias
             d.info.alias_priority = 1
 
-        return core_schema.computed_field(d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias)
+        def set_computed_field_metadata(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            json_schema = handler(schema)
+
+            json_schema['readOnly'] = True
+
+            title = d.info.title
+            if title is not None:
+                json_schema['title'] = title
+
+            description = d.info.description
+            if description is not None:
+                json_schema['description'] = description
+
+            return json_schema
+
+        metadata = build_metadata_dict(js_functions=[set_computed_field_metadata])
+        return core_schema.computed_field(
+            d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=metadata
+        )
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         source_type, *annotations = get_args(annotated_type)
-        schema = self._apply_annotations(lambda x: x, source_type, annotations)
+        schema = self._apply_annotations(source_type, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved
         for annotation in annotations:
@@ -1202,9 +1214,9 @@ class GenerateSchema:
 
     def _apply_annotations(
         self,
-        transform_inner_schema: Callable[[CoreSchema], CoreSchema],
         source_type: Any,
         annotations: list[Any],
+        transform_inner_schema: Callable[[CoreSchema], CoreSchema] = lambda x: x,
     ) -> CoreSchema:
         """Apply arguments from `Annotated` or from `FieldInfo` to a schema.
 
@@ -1258,9 +1270,9 @@ class GenerateSchema:
                 annotations = previous + list(remaining)
                 if new_source_type is not source_type:
                     return self._apply_annotations(
-                        transform_inner_schema,
                         new_source_type,
                         annotations,
+                        transform_inner_schema=transform_inner_schema,
                     )
             annotation = annotations[idx]
             get_inner_schema = self._get_wrapped_inner_schema(get_inner_schema, annotation, pydantic_js_functions)
@@ -1276,10 +1288,9 @@ class GenerateSchema:
             for field_metadata in metadata.metadata:
                 schema = self.apply_single_annotation(schema, field_metadata)
             if metadata.discriminator is not None:
-                schema = _discriminated_union.apply_discriminator(
+                _discriminated_union.set_discriminator(
                     schema,
                     metadata.discriminator,
-                    self.defs.definitions,
                 )
             return schema
 

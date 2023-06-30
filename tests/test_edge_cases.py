@@ -4,7 +4,7 @@ import sys
 from abc import ABC, abstractmethod
 from collections.abc import Hashable
 from decimal import Decimal
-from enum import Enum
+from enum import Enum, auto
 from typing import (
     Any,
     Dict,
@@ -24,11 +24,12 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
-from typing_extensions import Annotated, get_args
+from typing_extensions import Annotated, TypedDict, get_args
 
 from pydantic import (
     BaseModel,
     ConfigDict,
+    PydanticDeprecatedSince20,
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
     TypeAdapter,
@@ -2153,7 +2154,7 @@ def test_iter_coverage():
         y: str = 'a'
 
     with pytest.warns(
-        DeprecationWarning, match='The private method `_iter` will be removed and should no longer be used.'
+        PydanticDeprecatedSince20, match='The private method `_iter` will be removed and should no longer be used.'
     ):
         assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
@@ -2317,7 +2318,7 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         def my_model_validator(cls, values, handler, info):
             raise NotImplementedError
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @root_validator(skip_on_failure=True)
             @classmethod
@@ -2325,7 +2326,7 @@ def test_abstractmethod_missing_for_all_decorators(bases):
             def my_root_validator(cls, values):
                 raise NotImplementedError
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(PydanticDeprecatedSince20):
 
             @validator('side')
             @classmethod
@@ -2491,3 +2492,16 @@ def test_sequences_str(sequence_type, input_data, expected_error_type, expected_
         Model(str_sequence=input_data)
 
     assert e.value.errors(include_url=False) == [expected_error]
+
+
+def test_multiple_enums():
+    """See https://github.com/pydantic/pydantic/issues/6270"""
+
+    class MyEnum(Enum):
+        a = auto()
+
+    class MyModel(TypedDict):
+        a: Optional[MyEnum]
+        b: Optional[MyEnum]
+
+    TypeAdapter(MyModel)

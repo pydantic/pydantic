@@ -75,3 +75,21 @@ aside.blog img {
 .tile img {
   width: 100px;
 }
+
+.md-typeset__table > table {
+  max-height: 60vh;
+}
+
+.md-typeset__table > table thead {
+  position: sticky;
+  top: 0;
+  background-color: var(--md-default-bg-color);
+}
+
+.md-typeset__table > table th {
+  border-bottom: .05rem solid var(--md-typeset-table-color);
+}
+
+.md-typeset__table > table tr:first-child td {
+  border-top: none;
+}
