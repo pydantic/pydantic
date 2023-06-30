@@ -321,7 +321,7 @@ for (const company of companies) {
   const tile = document.createElement('div');
   tile.classList.add('tile');
   tile.innerHTML = `
-    <img src="foo${company.logoUrl}" alt="${company.name}" />
+    <img src="${company.logoUrl}" alt="${company.name}" />
   `;
   grid.appendChild(tile);
 }
