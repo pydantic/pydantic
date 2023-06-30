@@ -494,6 +494,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#code-transformation-tool" class="md-nav__link">
+    Code Transformation Tool
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#migration-guide" class="md-nav__link">
     Migration guide
   </a>
@@ -2291,6 +2298,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#code-transformation-tool" class="md-nav__link">
+    Code Transformation Tool
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#migration-guide" class="md-nav__link">
     Migration guide
   </a>
@@ -2518,6 +2532,22 @@ performance.</p>
 <p>If you need to use latest Pydantic V1 for any reason, you can install it with:</p>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;pydantic==1.*&quot;</span>
 </code></pre></div>
+<h2 id="code-transformation-tool">Code Transformation Tool<a class="headerlink" href="#code-transformation-tool" title="Permanent link">&para;</a></h2>
+<p>We have created a tool to help you migrate your code. This tool is still in beta, but we hope it will help you to
+migrate your code more quickly.</p>
+<p>You can install the tool from PyPI:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>bump-pydantic
+</code></pre></div>
+<p>The usage is simple. If your project structure is:</p>
+<div class="highlight"><pre><span></span><code>* repo_folder
+    * my_package
+        * &lt;python source files&gt; ...
+</code></pre></div>
+<p>Then you'll want to do:</p>
+<div class="highlight"><pre><span></span><code>cd /path/to/repo_folder
+bump-pydantic my_package
+</code></pre></div>
+<p>See more about it on the <a href="https://github.com/pydantic/bump-pydantic">Bump Pydantic</a> repository.</p>
 <h2 id="migration-guide">Migration guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h2>
 <h3 id="changes-to-pydanticbasemodel">Changes to <code>pydantic.BaseModel</code><a class="headerlink" href="#changes-to-pydanticbasemodel" title="Permanent link">&para;</a></h3>
 <p>Various method names have been changed; all non-deprecated <code>BaseModel</code> methods now have names matching either the
