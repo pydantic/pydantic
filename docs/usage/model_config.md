@@ -578,24 +578,34 @@ Pydantic prevents collisions between model attributes and `BaseModel`'s own meth
 namespacing them with the prefix `model_`.
 
 ```py
+import warnings
+
 from pydantic import BaseModel
+
+warnings.filterwarnings('error')  # Raise warnings as errors
 
 try:
 
     class Model(BaseModel):
         model_prefixed_field: str
 
-except NameError as e:
+except UserWarning as e:
     print(e)
     """
-    Field "model_prefixed_field" has conflict with protected namespace "model_"
+    Field "model_prefixed_field" has conflict with protected namespace "model_".
+
+    You may be able to resolve this error by setting `model_config['protected_namespaces'] = ()`.
     """
 ```
 
 You can customize this behavior using the `protected_namespaces` setting:
 
 ```py
+import warnings
+
 from pydantic import BaseModel, ConfigDict
+
+warnings.filterwarnings('error')  # Raise warnings as errors
 
 try:
 
@@ -607,10 +617,30 @@ try:
             protected_namespaces=('protect_me_', 'also_protect_')
         )
 
+except UserWarning as e:
+    print(e)
+    """
+    Field "also_protect_field" has conflict with protected namespace "also_protect_".
+
+    You may be able to resolve this error by setting `model_config['protected_namespaces'] = ('protect_me_',)`.
+    """
+```
+
+While Pydantic will only emit a warning when an item is in a protected namespace but does not actually have a collision,
+an error _is_ raised if there is an actual collision with an existing attribute:
+
+```py
+from pydantic import BaseModel
+
+try:
+
+    class Model(BaseModel):
+        model_validate: str
+
 except NameError as e:
     print(e)
     """
-    Field "also_protect_field" has conflict with protected namespace "also_protect_"
+    Field "model_validate" conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace "model_".
     """
 ```
 

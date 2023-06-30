@@ -2,6 +2,7 @@ import json
 import platform
 import re
 import sys
+import warnings
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -2251,33 +2252,50 @@ def test_recursion_loop_error():
 
 
 def test_protected_namespace_default():
-    with pytest.raises(NameError, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
+    warnings.filterwarnings('error')
+    try:
+        with pytest.raises(
+            UserWarning, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'
+        ):
 
-        class Model(BaseModel):
-            model_prefixed_field: str
+            class Model(BaseModel):
+                model_prefixed_field: str
+
+    finally:
+        warnings.resetwarnings()
 
 
 def test_custom_protected_namespace():
-    with pytest.raises(NameError, match='Field "test_field" has conflict with protected namespace "test_"'):
+    warnings.filterwarnings('error')
+    try:
+        with pytest.raises(UserWarning, match='Field "test_field" has conflict with protected namespace "test_"'):
 
-        class Model(BaseModel):
-            # this field won't raise error because we changed the default value for the
-            # `protected_namespaces` config.
-            model_prefixed_field: str
-            test_field: str
+            class Model(BaseModel):
+                # this field won't raise error because we changed the default value for the
+                # `protected_namespaces` config.
+                model_prefixed_field: str
+                test_field: str
 
-            model_config = ConfigDict(protected_namespaces=('test_',))
+                model_config = ConfigDict(protected_namespaces=('test_',))
+
+    finally:
+        warnings.resetwarnings()
 
 
 def test_multiple_protected_namespace():
-    with pytest.raises(
-        NameError, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
-    ):
+    warnings.filterwarnings('error')
+    try:
+        with pytest.raises(
+            UserWarning, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
+        ):
 
-        class Model(BaseModel):
-            also_protect_field: str
+            class Model(BaseModel):
+                also_protect_field: str
 
-            model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+                model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+
+    finally:
+        warnings.resetwarnings()
 
 
 def test_model_get_core_schema() -> None:
