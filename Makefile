@@ -44,9 +44,17 @@ typecheck: .pre-commit .pdm
 test-mypy: .pdm
 	pdm run coverage run -m pytest tests/mypy --test-mypy
 
-.PHONY: test-mypy-update  ## Run the mypy integration tests
+.PHONY: test-mypy-update  ## Update the mypy integration tests for the current mypy version
 test-mypy-update: .pdm
 	pdm run coverage run -m pytest tests/mypy --test-mypy --update-mypy
+
+.PHONY: test-mypy-update-all  ## Update the mypy integration tests for all mypy versions
+test-mypy-update-all: .pdm
+	rm -rf tests/mypy/outputs
+	pip uninstall mypy -y && pip install mypy==1.0.1
+	make test-mypy-update
+	pip uninstall mypy -y && pip install mypy==1.1.1
+	make test-mypy-update
 
 .PHONY: test-pyright  ## Run the pyright integration tests
 test-pyright: .pdm
