@@ -6,31 +6,31 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Support for Enum types and choices.">
+        <meta name="description" content="Data validation using Python type hints">
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/usage/types/enums/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/blog/pydantic-v2-final/">
       
       
-        <link rel="prev" href="../encoded/">
+        <link rel="prev" href="../../contributing/">
       
       
-        <link rel="next" href="../file_types/">
+        <link rel="next" href="../pydantic-v2-alpha/">
       
-      <link rel="icon" href="../../../favicon.png">
+      <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.17">
     
     
       
-        <title>Enums and Choices - pydantic</title>
+        <title>Pydantic V2 Is Here! - pydantic</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.26e3688c.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ecc896b0.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ecc896b0.min.css">
       
       
 
@@ -46,13 +46,13 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../extra/terminal.css">
+      <link rel="stylesheet" href="../../extra/terminal.css">
     
-      <link rel="stylesheet" href="../../../extra/tweaks.css">
+      <link rel="stylesheet" href="../../extra/tweaks.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -79,6 +79,11 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
+      
+        
+        <a href="#pydantic-v2-is-here" class="md-skip">
+          Skip to content
+        </a>
       
     </div>
     <div data-md-component="announce">
@@ -112,9 +117,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="pydantic" class="md-header__button md-logo" aria-label="pydantic" data-md-component="logo">
+    <a href="../.." title="pydantic" class="md-header__button md-logo" aria-label="pydantic" data-md-component="logo">
       
-  <img src="../../../logo-white.svg" alt="logo">
+  <img src="../../logo-white.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -130,7 +135,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Enums and Choices
+              Pydantic V2 Is Here!
             
           </span>
         </div>
@@ -234,7 +239,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href="../.." class="md-tabs__link">
         Get Started
       </a>
     </li>
@@ -244,15 +249,13 @@
         
   
   
-    
-  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="../../models/" class="md-tabs__link md-tabs__link--active">
+      <a href="../../usage/models/" class="md-tabs__link">
         Usage
       </a>
     </li>
@@ -268,7 +271,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../errors/errors/" class="md-tabs__link">
+      <a href="../../errors/errors/" class="md-tabs__link">
         Error Messages
       </a>
     </li>
@@ -284,7 +287,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../integrations/mypy/" class="md-tabs__link">
+      <a href="../../integrations/mypy/" class="md-tabs__link">
         Integrations
       </a>
     </li>
@@ -297,7 +300,7 @@
 
 
   <li class="md-tabs__item">
-    <a href="../../../contributing/" class="md-tabs__link">
+    <a href="../../contributing/" class="md-tabs__link">
       Contribute
     </a>
   </li>
@@ -306,13 +309,15 @@
         
   
   
+    
+  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="../../../blog/pydantic-v2-final/" class="md-tabs__link">
+      <a href="./" class="md-tabs__link md-tabs__link--active">
         Blog
       </a>
     </li>
@@ -333,7 +338,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../../api/main/" class="md-tabs__link">
+      <a href="../../api/main/" class="md-tabs__link">
         API Documentation
       </a>
     </li>
@@ -363,9 +368,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="pydantic" class="md-nav__button md-logo" aria-label="pydantic" data-md-component="logo">
+    <a href="../.." title="pydantic" class="md-nav__button md-logo" aria-label="pydantic" data-md-component="logo">
       
-  <img src="../../../logo-white.svg" alt="logo">
+  <img src="../../logo-white.svg" alt="logo">
 
     </a>
     pydantic
@@ -420,7 +425,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         Welcome to Pydantic
       </a>
     </li>
@@ -434,7 +439,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../install/" class="md-nav__link">
+      <a href="../../install/" class="md-nav__link">
         Installation
       </a>
     </li>
@@ -448,7 +453,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../migration/" class="md-nav__link">
+      <a href="../../migration/" class="md-nav__link">
         Migration Guide
       </a>
     </li>
@@ -462,7 +467,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../changelog/" class="md-nav__link">
+      <a href="../../changelog/" class="md-nav__link">
         Changelog
       </a>
     </li>
@@ -482,16 +487,14 @@
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
       
       
       
@@ -500,7 +503,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_2">
           <span class="md-nav__icon md-icon"></span>
           Usage
@@ -513,7 +516,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../models/" class="md-nav__link">
+      <a href="../../usage/models/" class="md-nav__link">
         Models
       </a>
     </li>
@@ -525,16 +528,14 @@
               
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
       
       
       
@@ -543,7 +544,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_2_2">
           <span class="md-nav__icon md-icon"></span>
           Field Types
@@ -556,7 +557,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types/" class="md-nav__link">
+      <a href="../../usage/types/types/" class="md-nav__link">
         Types Overview
       </a>
     </li>
@@ -570,7 +571,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../standard_types/" class="md-nav__link">
+      <a href="../../usage/types/standard_types/" class="md-nav__link">
         Standard Library Types
       </a>
     </li>
@@ -584,7 +585,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../booleans/" class="md-nav__link">
+      <a href="../../usage/types/booleans/" class="md-nav__link">
         Booleans
       </a>
     </li>
@@ -598,7 +599,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../bytesize/" class="md-nav__link">
+      <a href="../../usage/types/bytesize/" class="md-nav__link">
         ByteSize
       </a>
     </li>
@@ -612,7 +613,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../callables/" class="md-nav__link">
+      <a href="../../usage/types/callables/" class="md-nav__link">
         Callables
       </a>
     </li>
@@ -626,7 +627,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../datetime/" class="md-nav__link">
+      <a href="../../usage/types/datetime/" class="md-nav__link">
         Datetimes
       </a>
     </li>
@@ -640,7 +641,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../dicts_mapping/" class="md-nav__link">
+      <a href="../../usage/types/dicts_mapping/" class="md-nav__link">
         Dicts and Mapping
       </a>
     </li>
@@ -654,7 +655,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encoded/" class="md-nav__link">
+      <a href="../../usage/types/encoded/" class="md-nav__link">
         Encoded Types
       </a>
     </li>
@@ -666,19 +667,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../usage/types/enums/" class="md-nav__link">
         Enums and Choices
       </a>
-      
     </li>
   
 
@@ -690,7 +683,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../file_types/" class="md-nav__link">
+      <a href="../../usage/types/file_types/" class="md-nav__link">
         File Types
       </a>
     </li>
@@ -704,7 +697,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../json/" class="md-nav__link">
+      <a href="../../usage/types/json/" class="md-nav__link">
         JSON
       </a>
     </li>
@@ -718,7 +711,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../list_types/" class="md-nav__link">
+      <a href="../../usage/types/list_types/" class="md-nav__link">
         Lists and Tuples
       </a>
     </li>
@@ -732,7 +725,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../number_types/" class="md-nav__link">
+      <a href="../../usage/types/number_types/" class="md-nav__link">
         Number Types
       </a>
     </li>
@@ -746,7 +739,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../secrets/" class="md-nav__link">
+      <a href="../../usage/types/secrets/" class="md-nav__link">
         Secret Types
       </a>
     </li>
@@ -760,7 +753,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../sequence_iterable/" class="md-nav__link">
+      <a href="../../usage/types/sequence_iterable/" class="md-nav__link">
         Sequence, Iterable, & Iterator
       </a>
     </li>
@@ -774,7 +767,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../set_types/" class="md-nav__link">
+      <a href="../../usage/types/set_types/" class="md-nav__link">
         Sets and frozenset
       </a>
     </li>
@@ -788,7 +781,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../strict_types/" class="md-nav__link">
+      <a href="../../usage/types/strict_types/" class="md-nav__link">
         Strict Types
       </a>
     </li>
@@ -802,7 +795,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../string_types/" class="md-nav__link">
+      <a href="../../usage/types/string_types/" class="md-nav__link">
         String Types
       </a>
     </li>
@@ -816,7 +809,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../typevars/" class="md-nav__link">
+      <a href="../../usage/types/typevars/" class="md-nav__link">
         Type and TypeVar
       </a>
     </li>
@@ -830,7 +823,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../types_fields/" class="md-nav__link">
+      <a href="../../usage/types/types_fields/" class="md-nav__link">
         Types with Fields
       </a>
     </li>
@@ -844,7 +837,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../unions/" class="md-nav__link">
+      <a href="../../usage/types/unions/" class="md-nav__link">
         Unions
       </a>
     </li>
@@ -858,7 +851,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../urls/" class="md-nav__link">
+      <a href="../../usage/types/urls/" class="md-nav__link">
         URLs
       </a>
     </li>
@@ -872,7 +865,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../uuids/" class="md-nav__link">
+      <a href="../../usage/types/uuids/" class="md-nav__link">
         UUIDs
       </a>
     </li>
@@ -886,7 +879,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../encoded/" class="md-nav__link">
+      <a href="../../usage/types/encoded/" class="md-nav__link">
         Encoded
       </a>
     </li>
@@ -900,7 +893,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../custom/" class="md-nav__link">
+      <a href="../../usage/types/custom/" class="md-nav__link">
         Custom Data Types
       </a>
     </li>
@@ -941,7 +934,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extra_types/extra_types/" class="md-nav__link">
+      <a href="../../usage/types/extra_types/extra_types/" class="md-nav__link">
         Extra Types Overview
       </a>
     </li>
@@ -955,7 +948,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extra_types/color_types/" class="md-nav__link">
+      <a href="../../usage/types/extra_types/color_types/" class="md-nav__link">
         Color Types
       </a>
     </li>
@@ -969,7 +962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extra_types/payment_cards/" class="md-nav__link">
+      <a href="../../usage/types/extra_types/payment_cards/" class="md-nav__link">
         Payment Card Numbers
       </a>
     </li>
@@ -983,7 +976,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extra_types/phone_numbers/" class="md-nav__link">
+      <a href="../../usage/types/extra_types/phone_numbers/" class="md-nav__link">
         Phone Numbers
       </a>
     </li>
@@ -997,7 +990,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../extra_types/routing_numbers/" class="md-nav__link">
+      <a href="../../usage/types/extra_types/routing_numbers/" class="md-nav__link">
         Routing Numbers
       </a>
     </li>
@@ -1025,7 +1018,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validators/" class="md-nav__link">
+      <a href="../../usage/validators/" class="md-nav__link">
         Validators
       </a>
     </li>
@@ -1039,7 +1032,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../model_config/" class="md-nav__link">
+      <a href="../../usage/model_config/" class="md-nav__link">
         Model Config
       </a>
     </li>
@@ -1053,7 +1046,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../fields/" class="md-nav__link">
+      <a href="../../usage/fields/" class="md-nav__link">
         Fields
       </a>
     </li>
@@ -1067,7 +1060,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../json_schema/" class="md-nav__link">
+      <a href="../../usage/json_schema/" class="md-nav__link">
         JSON Schema
       </a>
     </li>
@@ -1081,7 +1074,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../serialization/" class="md-nav__link">
+      <a href="../../usage/serialization/" class="md-nav__link">
         Serialization
       </a>
     </li>
@@ -1095,7 +1088,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../computed_fields/" class="md-nav__link">
+      <a href="../../usage/computed_fields/" class="md-nav__link">
         Computed Fields
       </a>
     </li>
@@ -1109,7 +1102,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../dataclasses/" class="md-nav__link">
+      <a href="../../usage/dataclasses/" class="md-nav__link">
         Dataclasses
       </a>
     </li>
@@ -1123,7 +1116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validation_decorator/" class="md-nav__link">
+      <a href="../../usage/validation_decorator/" class="md-nav__link">
         Validation Decorator
       </a>
     </li>
@@ -1137,7 +1130,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../postponed_annotations/" class="md-nav__link">
+      <a href="../../usage/postponed_annotations/" class="md-nav__link">
         Postponed Annotations
       </a>
     </li>
@@ -1151,7 +1144,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../strict_mode/" class="md-nav__link">
+      <a href="../../usage/strict_mode/" class="md-nav__link">
         Strict Mode
       </a>
     </li>
@@ -1165,7 +1158,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../conversion_table/" class="md-nav__link">
+      <a href="../../usage/conversion_table/" class="md-nav__link">
         Conversion Table
       </a>
     </li>
@@ -1179,7 +1172,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../pydantic_settings/" class="md-nav__link">
+      <a href="../../usage/pydantic_settings/" class="md-nav__link">
         Settings Management
       </a>
     </li>
@@ -1228,7 +1221,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../errors/errors/" class="md-nav__link">
+      <a href="../../errors/errors/" class="md-nav__link">
         Error Handling
       </a>
     </li>
@@ -1242,7 +1235,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../validation_errors/" class="md-nav__link">
+      <a href="../../usage/validation_errors/" class="md-nav__link">
         Validation Errors
       </a>
     </li>
@@ -1256,7 +1249,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../errors/" class="md-nav__link">
+      <a href="../../usage/errors/" class="md-nav__link">
         Usage Errors
       </a>
     </li>
@@ -1305,7 +1298,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../integrations/mypy/" class="md-nav__link">
+      <a href="../../integrations/mypy/" class="md-nav__link">
         Mypy
       </a>
     </li>
@@ -1319,7 +1312,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../integrations/pycharm/" class="md-nav__link">
+      <a href="../../integrations/pycharm/" class="md-nav__link">
         PyCharm
       </a>
     </li>
@@ -1333,7 +1326,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../integrations/hypothesis/" class="md-nav__link">
+      <a href="../../integrations/hypothesis/" class="md-nav__link">
         Hypothesis
       </a>
     </li>
@@ -1347,7 +1340,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../integrations/visual_studio_code/" class="md-nav__link">
+      <a href="../../integrations/visual_studio_code/" class="md-nav__link">
         Visual Studio Code
       </a>
     </li>
@@ -1361,7 +1354,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../integrations/datamodel_code_generator/" class="md-nav__link">
+      <a href="../../integrations/datamodel_code_generator/" class="md-nav__link">
         datamodel-code-generator
       </a>
     </li>
@@ -1375,7 +1368,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../integrations/devtools/" class="md-nav__link">
+      <a href="../../integrations/devtools/" class="md-nav__link">
         devtools
       </a>
     </li>
@@ -1389,7 +1382,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../integrations/rich/" class="md-nav__link">
+      <a href="../../integrations/rich/" class="md-nav__link">
         Rich
       </a>
     </li>
@@ -1411,7 +1404,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../contributing/" class="md-nav__link">
+      <a href="../../contributing/" class="md-nav__link">
         Contribute
       </a>
     </li>
@@ -1424,14 +1417,16 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
       
       
       
@@ -1440,7 +1435,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_6">
           <span class="md-nav__icon md-icon"></span>
           Blog
@@ -1451,11 +1446,61 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../../blog/pydantic-v2-final/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Pydantic V2 Is Here!
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Pydantic V2 Is Here!
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started-with-pydantic-v2" class="md-nav__link">
+    Getting started with Pydantic V2
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-guide" class="md-nav__link">
+    Migration guide
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1467,7 +1512,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/pydantic-v2-alpha/" class="md-nav__link">
+      <a href="../pydantic-v2-alpha/" class="md-nav__link">
         Pydantic V2 Pre Release
       </a>
     </li>
@@ -1481,7 +1526,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../blog/pydantic-v2/" class="md-nav__link">
+      <a href="../pydantic-v2/" class="md-nav__link">
         Pydantic V2 Plan
       </a>
     </li>
@@ -1557,7 +1602,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/main/" class="md-nav__link">
+      <a href="../../api/main/" class="md-nav__link">
         pydantic
       </a>
     </li>
@@ -1571,7 +1616,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/alias_generators/" class="md-nav__link">
+      <a href="../../api/alias_generators/" class="md-nav__link">
         pydantic.alias_generators
       </a>
     </li>
@@ -1585,7 +1630,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/color/" class="md-nav__link">
+      <a href="../../api/color/" class="md-nav__link">
         pydantic.color
       </a>
     </li>
@@ -1599,7 +1644,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/config/" class="md-nav__link">
+      <a href="../../api/config/" class="md-nav__link">
         pydantic.config
       </a>
     </li>
@@ -1613,7 +1658,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/dataclasses/" class="md-nav__link">
+      <a href="../../api/dataclasses/" class="md-nav__link">
         pydantic.dataclasses
       </a>
     </li>
@@ -1627,7 +1672,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/errors/" class="md-nav__link">
+      <a href="../../api/errors/" class="md-nav__link">
         pydantic.errors
       </a>
     </li>
@@ -1641,7 +1686,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/fields/" class="md-nav__link">
+      <a href="../../api/fields/" class="md-nav__link">
         pydantic.fields
       </a>
     </li>
@@ -1655,7 +1700,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/functional_serializers/" class="md-nav__link">
+      <a href="../../api/functional_serializers/" class="md-nav__link">
         pydantic.functional_serializers
       </a>
     </li>
@@ -1669,7 +1714,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/functional_validators/" class="md-nav__link">
+      <a href="../../api/functional_validators/" class="md-nav__link">
         pydantic.functional_validators
       </a>
     </li>
@@ -1683,7 +1728,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/json_schema/" class="md-nav__link">
+      <a href="../../api/json_schema/" class="md-nav__link">
         pydantic.json_schema
       </a>
     </li>
@@ -1697,7 +1742,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/mypy/" class="md-nav__link">
+      <a href="../../api/mypy/" class="md-nav__link">
         pydantic.mypy
       </a>
     </li>
@@ -1711,7 +1756,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/networks/" class="md-nav__link">
+      <a href="../../api/networks/" class="md-nav__link">
         pydantic.networks
       </a>
     </li>
@@ -1725,7 +1770,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/root_model/" class="md-nav__link">
+      <a href="../../api/root_model/" class="md-nav__link">
         pydantic.root_model
       </a>
     </li>
@@ -1739,7 +1784,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/type_adapter/" class="md-nav__link">
+      <a href="../../api/type_adapter/" class="md-nav__link">
         pydantic.type_adapter
       </a>
     </li>
@@ -1753,7 +1798,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/types/" class="md-nav__link">
+      <a href="../../api/types/" class="md-nav__link">
         pydantic.types
       </a>
     </li>
@@ -1767,7 +1812,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/validate_call/" class="md-nav__link">
+      <a href="../../api/validate_call/" class="md-nav__link">
         pydantic.validate_call
       </a>
     </li>
@@ -1781,7 +1826,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/version/" class="md-nav__link">
+      <a href="../../api/version/" class="md-nav__link">
         pydantic.version
       </a>
     </li>
@@ -1829,7 +1874,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/pydantic_core_init/" class="md-nav__link">
+      <a href="../../api/pydantic_core_init/" class="md-nav__link">
         pydantic_core
       </a>
     </li>
@@ -1843,7 +1888,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/pydantic_core_schema/" class="md-nav__link">
+      <a href="../../api/pydantic_core_schema/" class="md-nav__link">
         pydantic_core.core_schema
       </a>
     </li>
@@ -1891,7 +1936,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/pydantic_settings/" class="md-nav__link">
+      <a href="../../api/pydantic_settings/" class="md-nav__link">
         pydantic_settings
       </a>
     </li>
@@ -1939,7 +1984,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/pydantic_extra_types_color/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_color/" class="md-nav__link">
         pydantic_extra_types.color
       </a>
     </li>
@@ -1953,7 +1998,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/pydantic_extra_types_country/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_country/" class="md-nav__link">
         pydantic_extra_types.country
       </a>
     </li>
@@ -1967,7 +2012,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/pydantic_extra_types_payment/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_payment/" class="md-nav__link">
         pydantic_extra_types.payment
       </a>
     </li>
@@ -1981,7 +2026,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
         pydantic_extra_types.phone_numbers
       </a>
     </li>
@@ -1995,7 +2040,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api/pydantic_extra_types_routing_number/" class="md-nav__link">
+      <a href="../../api/pydantic_extra_types_routing_number/" class="md-nav__link">
         pydantic_extra_types.routing_number
       </a>
     </li>
@@ -2035,6 +2080,30 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started-with-pydantic-v2" class="md-nav__link">
+    Getting started with Pydantic V2
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-guide" class="md-nav__link">
+    Migration guide
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -2053,53 +2122,33 @@
   
 
 
-  <h1>Enums and Choices</h1>
-
-<p>Pydantic uses Python's standard <code>enum</code> classes to define choices.</p>
-<dl>
-<dt><code>enum.Enum</code></dt>
-<dd>checks that the value is a valid <code>Enum</code> instance.</dd>
-<dt>subclass of <code>enum.Enum</code></dt>
-<dd>checks that the value is a valid member of the enum.</dd>
-<dt><code>enum.IntEnum</code></dt>
-<dd>checks that the value is a valid <code>IntEnum</code> instance.</dd>
-<dt>subclass of <code>enum.IntEnum</code></dt>
-<dd>checks that the value is a valid member of the integer enum.</dd>
-</dl>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">FruitEnum</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
-    <span class="n">pear</span> <span class="o">=</span> <span class="s1">&#39;pear&#39;</span>
-    <span class="n">banana</span> <span class="o">=</span> <span class="s1">&#39;banana&#39;</span>
-
-
-<span class="k">class</span> <span class="nc">ToolEnum</span><span class="p">(</span><span class="n">IntEnum</span><span class="p">):</span>
-    <span class="n">spanner</span> <span class="o">=</span> <span class="mi">1</span>
-    <span class="n">wrench</span> <span class="o">=</span> <span class="mi">2</span>
-
-
-<span class="k">class</span> <span class="nc">CookingModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">fruit</span><span class="p">:</span> <span class="n">FruitEnum</span> <span class="o">=</span> <span class="n">FruitEnum</span><span class="o">.</span><span class="n">pear</span>
-    <span class="n">tool</span><span class="p">:</span> <span class="n">ToolEnum</span> <span class="o">=</span> <span class="n">ToolEnum</span><span class="o">.</span><span class="n">spanner</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">CookingModel</span><span class="p">())</span>
-<span class="c1">#&gt; fruit=&lt;FruitEnum.pear: &#39;pear&#39;&gt; tool=&lt;ToolEnum.spanner: 1&gt;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">CookingModel</span><span class="p">(</span><span class="n">tool</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">fruit</span><span class="o">=</span><span class="s1">&#39;banana&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; fruit=&lt;FruitEnum.banana: &#39;banana&#39;&gt; tool=&lt;ToolEnum.wrench: 2&gt;</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">CookingModel</span><span class="p">(</span><span class="n">fruit</span><span class="o">=</span><span class="s1">&#39;other&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for CookingModel</span>
-<span class="sd">    fruit</span>
-<span class="sd">      Input should be &#39;pear&#39; or &#39;banana&#39; [type=enum, input_value=&#39;other&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<h1 id="pydantic-v2-is-here">Pydantic V2 Is Here!<a class="headerlink" href="#pydantic-v2-is-here" title="Permanent link">&para;</a></h1>
+<aside class="blog">
+<p><img alt="Terrence Dorsey" src="../../img/terrencedorsey.jpg" /></p>
+<div>
+<p><strong>Terrence Dorsey &amp; Samuel Colvin</strong> &bull;&nbsp;
+  <a href="https://github.com/pydantic"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2Z"/></svg></span></a> &bull;&nbsp;
+  <a href="https://twitter.com/pydantic"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23Z"/></svg></span></a> &bull;&nbsp;
+  <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6.75 0a.75.75 0 0 1 .75.75V3h9V.75a.75.75 0 0 1 1.5 0V3h2.75c.966 0 1.75.784 1.75 1.75v16a1.75 1.75 0 0 1-1.75 1.75H3.25a1.75 1.75 0 0 1-1.75-1.75v-16C1.5 3.784 2.284 3 3.25 3H6V.75A.75.75 0 0 1 6.75 0ZM21 9.5H3v11.25c0 .138.112.25.25.25h17.5a.25.25 0 0 0 .25-.25Zm-17.75-5a.25.25 0 0 0-.25.25V8h18V4.75a.25.25 0 0 0-.25-.25Z"/></svg></span> June 30, 2023 &bull;&nbsp;
+  <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12.5 7.25a.75.75 0 0 0-1.5 0v5.5c0 .27.144.518.378.651l3.5 2a.75.75 0 0 0 .744-1.302L12.5 12.315V7.25Z"/><path d="M12 1c6.075 0 11 4.925 11 11s-4.925 11-11 11S1 18.075 1 12 5.925 1 12 1ZM2.5 12a9.5 9.5 0 0 0 9.5 9.5 9.5 9.5 0 0 0 9.5-9.5A9.5 9.5 0 0 0 12 2.5 9.5 9.5 0 0 0 2.5 12Z"/></svg></span> 2 min read</p>
+</div>
+</aside>
+<hr />
+<p>The last few months have involved a whirlwind of work, and we're finally ready to announce to official release of
+Pydantic V2!</p>
+<h2 id="getting-started-with-pydantic-v2">Getting started with Pydantic V2<a class="headerlink" href="#getting-started-with-pydantic-v2" title="Permanent link">&para;</a></h2>
+<p>To get started with Pydantic V2, install it from PyPI:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>pydantic
 </code></pre></div>
+<p>Pydantic V2 is compatible with Python 3.7 and above.</p>
+<p>See <a href="/">the docs</a> for examples of Pydantic at work.</p>
+<h2 id="migration-guide">Migration guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h2>
+<p>If you are upgrading an existing project, you can use our extensive <a href="../../migration/">migration guide</a> to understand
+what has changed.</p>
+<p>If you do encounter any issues, please <a href="https://github.com/pydantic/pydantic/issues/new?assignees=&amp;labels=bug+V2%2Cunconfirmed&amp;projects=&amp;template=bug-v2.yml">create an issue in GitHub</a>
+using the <code>bug V2</code> label.
+This will help us to actively monitor and track errors, and to continue to improve the library’s performance.</p>
+<p>Thank you for your support, and we look forward to your feedback.</p>
 
 
 
@@ -2141,13 +2190,13 @@
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.tabs.link", "content.code.annotate", "announce.dismiss", "navigation.tabs"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.b425cdc4.min.js"></script>
+      <script src="../../assets/javascripts/bundle.b425cdc4.min.js"></script>
       
         
-          <script src="../../../extra/redirects.js"></script>
+          <script src="../../extra/redirects.js"></script>
         
       
     

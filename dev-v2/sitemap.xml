@@ -156,6 +156,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/blog/pydantic-v2-final/</loc>
+         <lastmod>2023-06-30</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/blog/pydantic-v2/</loc>
          <lastmod>2023-06-30</lastmod>
          <changefreq>daily</changefreq>
