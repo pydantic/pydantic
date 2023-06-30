@@ -1073,8 +1073,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#before-after-and-wrap-validators" class="md-nav__link">
-    Before, after, and wrap validators
+  <a href="#annotated-validators" class="md-nav__link">
+    Annotated Validators
   </a>
   
 </li>
@@ -2187,8 +2187,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#before-after-and-wrap-validators" class="md-nav__link">
-    Before, after, and wrap validators
+  <a href="#annotated-validators" class="md-nav__link">
+    Annotated Validators
   </a>
   
 </li>
@@ -2301,6 +2301,10 @@
 <p>This page still needs to be updated for v2.0.</p>
 </div>
 <h2 id="field-validators">Field validators<a class="headerlink" href="#field-validators" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>pydantic.functional_validators.field_validator</code></a><br></p>
+</details>
 <p>Custom validation and complex relationships between objects can be achieved using the <code>@field_validator</code> decorator.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core.core_schema</span> <span class="kn">import</span> <span class="n">FieldValidationInfo</span>
 
@@ -2391,21 +2395,19 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
     <code>if 'password1' in values and ...</code> in this example.</p>
 </li>
 </ul>
-<h2 id="before-after-and-wrap-validators">Before, after, and wrap validators<a class="headerlink" href="#before-after-and-wrap-validators" title="Permanent link">&para;</a></h2>
-<p>Pydantic provides additional validation classes that can be used to specify when validation occurs.</p>
-<ul>
-<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>AfterValidator</code></a> indicates that field validation should be applied <strong>after</strong> the inner validation logic.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.BeforeValidator"><code>BeforeValidator</code></a> indicates that field validation should be applied <strong>before</strong> the inner validation logic.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.ModelAfterValidator"><code>ModelAfterValidator</code></a> indicates that model validation should be applied <strong>after</strong> the inner validation logic.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.ModelBeforeValidator"><code>ModelBeforeValidator</code></a> indicates that model field validation should be applied <strong>before</strong> the inner validation logic.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.ModelWrapValidator"><code>ModelWrapValidator</code></a> indicates that model validation should be applied <strong>around</strong> the inner validation logic.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>PlainValidator</code></a> indicates that field validation should be applied <strong>instead of</strong> the inner validation logic.</li>
-<li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.WrapValidator"><code>WrapValidator</code></a> indicates that field validation should be applied <strong>around</strong> the inner validation logic.</li>
-</ul>
-<p>You can also use the  <code>mode</code> argument for <code>@field_validator</code> and <code>@model_validator</code> to specify when validation occurs.</p>
+<h2 id="annotated-validators">Annotated Validators<a class="headerlink" href="#annotated-validators" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.WrapValidator"><code>pydantic.functional_validators.WrapValidator</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>pydantic.functional_validators.PlainValidator</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.BeforeValidator"><code>pydantic.functional_validators.BeforeValidator</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>pydantic.functional_validators.AfterValidator</code></a><br></p>
+</details>
+<p>Pydantic also provides a way to apply validators via use of <code>Annotated</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>You can use multiple before, after, or wrap validators, but only one <code>PlainValidator</code>.</p>
+<p>You can use multiple before, after, or wrap validators, but only one <code>PlainValidator</code> since a plain validator
+will not call any inner validators.</p>
 </div>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
