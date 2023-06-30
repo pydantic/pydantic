@@ -119,7 +119,7 @@ def test_model_encoding():
         c: Decimal
         d: ModelA
 
-    m = Model(a=10.2, b='foobar', c=10.2, d={'x': 123, 'y': '123'})
+    m = Model(a=10.2, b='foobar', c='10.2', d={'x': 123, 'y': '123'})
     assert m.model_dump() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}}
     assert m.model_dump_json() == '{"a":10.2,"b":"foobar","c":"10.2","d":{"x":123,"y":"123"}}'
     assert m.model_dump_json(exclude={'b'}) == '{"a":10.2,"c":"10.2","d":{"x":123,"y":"123"}}'
