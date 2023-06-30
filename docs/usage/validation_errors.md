@@ -177,6 +177,36 @@ except ValidationError as exc:
     #> 'callable_type'
 ```
 
+## `dataclass_exact_type`
+
+This error is raised when validating a dataclass with `strict=True`:
+
+```py
+import pydantic.dataclasses
+from pydantic import TypeAdapter, ValidationError
+
+
+@pydantic.dataclasses.dataclass
+class MyDataclass:
+    x: str
+
+
+@pydantic.dataclasses.dataclass
+class MyOtherDataclass:
+    x: str
+
+
+adapter = TypeAdapter(MyDataclass)
+
+adapter.validate_python(MyDataclass(x='test'), strict=True)  # OK
+
+try:
+    adapter.validate_python(MyOtherDataclass(x='test'), strict=True)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'dataclass_exact_type'
+```
+
 ## `dataclass_type`
 
 This error is raised when the input value is not valid for a `dataclass` field:
@@ -450,42 +480,6 @@ except ValidationError as exc:
 ```
 
 This error is also raised for strict fields when the input value is not an instance of `datetime`.
-
-## `dict_attributes_type`
-
-This error is raised when the input value is not a valid dictionary or instance that fields can be extracted from:
-
-```py
-from typing import Union
-
-from typing_extensions import Annotated, Literal
-
-from pydantic import BaseModel, Field, ValidationError
-
-
-class Dog(BaseModel):
-    pet_type: Literal['dog']
-    d: str
-
-
-class Cat(BaseModel):
-    pet_type: Literal['cat']
-    m: str
-
-
-class Model(BaseModel):
-    pet: Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
-    number: int
-
-
-Model.model_validate({'pet': {'pet_type': 'cat', 'm': 'n'}, 'number': 2})  # OK
-
-try:
-    Model.model_validate({'pet': 'fish', 'number': 2})
-except ValidationError as exc:
-    print(repr(exc.errors()[0]['type']))
-    #> 'dict_attributes_type'
-```
 
 ## `dict_type`
 
@@ -1168,34 +1162,68 @@ except ValidationError as exc:
     #> 'missing_positional_only_argument'
 ```
 
-## `model_class_type`
+## `model_attributes_type`
 
-This error is raised when you validate with `strict=True` and the input value is not an instance of the expected model:
+This error is raised when the input value is not a valid dictionary, model instance, or instance that fields can be extracted from:
 
 ```py
-import pydantic.dataclasses
-from pydantic import TypeAdapter, ValidationError
+from pydantic import BaseModel, ValidationError
 
 
-@pydantic.dataclasses.dataclass
-class MyDataclass:
-    x: str
+class Model(BaseModel):
+    a: int
+    b: int
 
 
-@pydantic.dataclasses.dataclass
-class MyOtherDataclass:
-    x: str
+# simply validating a dict
+print(Model.model_validate({'a': 1, 'b': 2}))
+#> a=1 b=2
 
 
-adapter = TypeAdapter(MyDataclass)
+class CustomObj:
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
 
-adapter.validate_python(MyDataclass(x='test'), strict=True)  # OK
+
+# using from attributes to extract fields from an objects
+print(Model.model_validate(CustomObj(3, 4), from_attributes=True))
+#> a=3 b=4
 
 try:
-    adapter.validate_python(MyOtherDataclass(x='test'), strict=True)
+    Model.model_validate('not an object', from_attributes=True)
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
-    #> 'model_class_type'
+    #> 'model_attributes_type'
+```
+
+## `model_type`
+
+This error is raised when the input to a model is not an instance of the model or dict:
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    a: int
+    b: int
+
+
+# simply validating a dict
+m = Model.model_validate({'a': 1, 'b': 2})
+print(m)
+#> a=1 b=2
+
+# validating an existing model instance
+print(Model.model_validate(m))
+#> a=1 b=2
+
+try:
+    Model.model_validate('not an object')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'model_type'
 ```
 
 ## `multiple_argument_values`

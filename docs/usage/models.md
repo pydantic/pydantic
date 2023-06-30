@@ -372,7 +372,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for User
-      Input should be a valid dictionary [type=dict_type, input_value=['not', 'a', 'dict'], input_type=list]
+      Input should be a valid dictionary or instance of Model [type=model_type, input_value=['not', 'a', 'dict'], input_type=list]
     """
 
 m = User.model_validate_json('{"id": 123, "name": "James"}')
@@ -655,7 +655,7 @@ except ValidationError as e:
     outer
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
     nested
-      Input should be a valid dictionary [type=dict_type, input_value=InnerT[str](inner='a'), input_type=InnerT[str]]
+      Input should be a valid dictionary or instance of Model [type=model_type, input_value=InnerT[str](inner='a'), input_type=InnerT[str]]
     """
 ```
 
