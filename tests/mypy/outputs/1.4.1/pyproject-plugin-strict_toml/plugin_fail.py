@@ -1,24 +1,17 @@
-from typing import Any, Generic, List, Optional, Set, TypeVar, Union
+from typing import Generic, List, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, Extra, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Extra, Field, field_validator
 from pydantic.dataclasses import dataclass
 
 
 # placeholder for removed line
 class Model(BaseModel):
+    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
     x: int
     y: str
 
     def method(self) -> None:
         pass
-
-    class Config:
-        alias_generator = None
-        frozen = True
-        extra = Extra.forbid
-
-        def config_method(self) -> None:
-            ...
 
 
 model = Model(x=1, y='y', z='z')
@@ -28,6 +21,7 @@ model = Model(x=1)
 model.y = 'a'
 # MYPY: error: Property "y" defined in "Model" is read-only  [misc]
 Model.from_orm({})
+# MYPY: error: "Model" does not have from_attributes=True  [pydantic-orm]
 
 
 class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
@@ -45,11 +39,11 @@ kwargs_model = KwargsModel(x=1)
 kwargs_model.y = 'a'
 # MYPY: error: Property "y" defined in "KwargsModel" is read-only  [misc]
 KwargsModel.from_orm({})
+# MYPY: error: "KwargsModel" does not have from_attributes=True  [pydantic-orm]
 
 
 class ForbidExtraModel(BaseModel):
-    class Config:
-        extra = 'forbid'
+    model_config = ConfigDict(extra=Extra.forbid)
 
 
 ForbidExtraModel(x=1)
@@ -65,10 +59,13 @@ KwargsForbidExtraModel(x=1)
 
 
 class BadExtraModel(BaseModel):
-    class Config:
-        extra = 1  # type: ignore[pydantic-config]
-        extra = 1
+    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item]
 # MYPY: error: Invalid value for "Config.extra"  [pydantic-config]
+# MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
+
+
+class BadExtraButIgnoredModel(BaseModel):
+    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item,pydantic-config]
 
 
 class KwargsBadExtraModel(BaseModel, extra=1):
@@ -77,9 +74,9 @@ class KwargsBadExtraModel(BaseModel, extra=1):
 
 
 class BadConfig1(BaseModel):
-    class Config:
-        from_attributes: Any = {}  # not sensible, but should still be handled gracefully
+    model_config = ConfigDict(from_attributes={})  # type: ignore[typeddict-item]
 # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+# MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
 
 
 class KwargsBadConfig1(BaseModel, from_attributes={}):
@@ -88,9 +85,9 @@ class KwargsBadConfig1(BaseModel, from_attributes={}):
 
 
 class BadConfig2(BaseModel):
-    class Config:
-        from_attributes = list  # not sensible, but should still be handled gracefully
+    model_config = ConfigDict(from_attributes=list)  # type: ignore[typeddict-item]
 # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+# MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
 
 
 class KwargsBadConfig2(BaseModel, from_attributes=list):
@@ -99,8 +96,7 @@ class KwargsBadConfig2(BaseModel, from_attributes=list):
 
 
 class InheritingModel(Model):
-    class Config:
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 class KwargsInheritingModel(KwargsModel, frozen=False):
@@ -200,8 +196,7 @@ class DynamicAliasModel2(BaseModel):
     x: str = Field(..., alias=x_alias)
     z: int
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 DynamicAliasModel2(y='y', z=1)
@@ -223,9 +218,8 @@ class AliasGeneratorModel(BaseModel):
 # MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
     x: int
 
-    class Config:
+    model_config = ConfigDict(alias_generator=lambda x: x + '_')
 # MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
-        alias_generator = lambda x: x + '_'  # noqa E731
 
 
 AliasGeneratorModel(x=1)
@@ -237,8 +231,7 @@ class AliasGeneratorModel2(BaseModel):
 # MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
     x: int = Field(..., alias='y')
 
-    class Config:  # type: ignore[pydantic-alias]
-        alias_generator = lambda x: x + '_'  # noqa E731
+    model_config = ConfigDict(alias_generator=lambda x: x + '_')  # type: ignore[pydantic-alias]
 
 
 class UntypedFieldModel(BaseModel):
@@ -301,10 +294,7 @@ class FrozenModel(BaseModel):
     x: int
     y: str
 
-    class Config:
-        alias_generator = None
-        frozen = True
-        extra = Extra.forbid
+    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
 
 
 frozenmodel = FrozenModel(x=1, y='b')
@@ -313,8 +303,7 @@ frozenmodel.y = 'a'
 
 
 class InheritingModel2(FrozenModel):
-    class Config:
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 inheriting2 = InheritingModel2(x=1, y='c')
@@ -337,12 +326,12 @@ class FieldDefaultTestingModel(BaseModel):
 
     # Default factory
     g: str = Field(default_factory=set)
-# MYPY: error: Incompatible types in assignment (expression has type "Set[Any]", variable has type "str")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "set[Any]", variable has type "str")  [assignment]
     h: int = Field(default_factory=_default_factory)
 # MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]
     i: List[int] = Field(default_factory=list)
     l_: str = Field(default_factory=3)
-# MYPY: error: Argument "default_factory" to "Field" has incompatible type "int"; expected "Optional[Callable[[], Any]]"  [arg-type]
+# MYPY: error: Argument "default_factory" to "Field" has incompatible type "int"; expected "Callable[[], Any] | None"  [arg-type]
 
     # Default and default factory
     m: int = Field(default=1, default_factory=list)

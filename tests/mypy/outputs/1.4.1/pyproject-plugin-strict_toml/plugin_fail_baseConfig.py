@@ -28,6 +28,7 @@ model = Model(x=1)
 model.y = 'a'
 # MYPY: error: Property "y" defined in "Model" is read-only  [misc]
 Model.from_orm({})
+# MYPY: error: "Model" does not have from_attributes=True  [pydantic-orm]
 
 
 class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
@@ -45,6 +46,7 @@ kwargs_model = KwargsModel(x=1)
 kwargs_model.y = 'a'
 # MYPY: error: Property "y" defined in "KwargsModel" is read-only  [misc]
 KwargsModel.from_orm({})
+# MYPY: error: "KwargsModel" does not have from_attributes=True  [pydantic-orm]
 
 
 class ForbidExtraModel(BaseModel):
@@ -337,12 +339,12 @@ class FieldDefaultTestingModel(BaseModel):
 
     # Default factory
     g: str = Field(default_factory=set)
-# MYPY: error: Incompatible types in assignment (expression has type "Set[Any]", variable has type "str")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "set[Any]", variable has type "str")  [assignment]
     h: int = Field(default_factory=_default_factory)
 # MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]
     i: List[int] = Field(default_factory=list)
     l_: str = Field(default_factory=3)
-# MYPY: error: Argument "default_factory" to "Field" has incompatible type "int"; expected "Optional[Callable[[], Any]]"  [arg-type]
+# MYPY: error: Argument "default_factory" to "Field" has incompatible type "int"; expected "Callable[[], Any] | None"  [arg-type]
 
     # Default and default factory
     m: int = Field(default=1, default_factory=list)

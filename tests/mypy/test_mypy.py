@@ -13,12 +13,14 @@ try:
     from mypy import api as mypy_api
     from mypy.version import __version__ as mypy_version
 
-    from pydantic.mypy import parse_mypy_version
+    from pydantic.version import parse_mypy_version
 
 except ImportError:
     mypy_api = None
     mypy_version = None
+
     parse_mypy_version = lambda _: (0,)  # noqa: E731
+
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 PYDANTIC_ROOT = Path(__file__).parent.parent.parent
@@ -88,6 +90,7 @@ cases = (
     # One-off cases
     + [
         ('mypy-plugin.ini', 'custom_constructor.py'),
+        ('mypy-plugin.ini', 'generics.py'),
         ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),

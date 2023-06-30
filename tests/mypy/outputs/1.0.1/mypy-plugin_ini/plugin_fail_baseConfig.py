@@ -132,6 +132,7 @@ DefaultTestingModel()
 # MYPY: error: Missing named argument "b" for "DefaultTestingModel"  [call-arg]
 # MYPY: error: Missing named argument "c" for "DefaultTestingModel"  [call-arg]
 # MYPY: error: Missing named argument "d" for "DefaultTestingModel"  [call-arg]
+# MYPY: error: Missing named argument "f" for "DefaultTestingModel"  [call-arg]
 
 
 class UndefinedAnnotationModel(BaseModel):

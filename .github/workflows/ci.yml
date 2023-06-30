@@ -151,16 +151,16 @@ jobs:
       matrix:
         # test recent mypy versions on 3.10 and mypy 1.0.1 on all supported python versions
         # if you change the value in the lockfile add the old value to this list
-        mypy-version: ['1.0.1', 'lockfile']
+        mypy-version: ['1.0.1', 'lockfile', '1.2.0', '1.4.1']
         python-version: ['3.10']
         include:
-          - mypy-version: '1.0.1'
+          - mypy-version: 'lockfile'
             python-version: '3.7'
-          - mypy-version: '1.0.1'
+          - mypy-version: 'lockfile'
             python-version: '3.8'
-          - mypy-version: '1.0.1'
+          - mypy-version: 'lockfile'
             python-version: '3.9'
-          - mypy-version: '1.0.1'
+          - mypy-version: 'lockfile'
             python-version: '3.11'
 
     steps:

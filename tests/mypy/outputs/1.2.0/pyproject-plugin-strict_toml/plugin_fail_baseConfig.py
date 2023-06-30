@@ -28,6 +28,7 @@ model = Model(x=1)
 model.y = 'a'
 # MYPY: error: Property "y" defined in "Model" is read-only  [misc]
 Model.from_orm({})
+# MYPY: error: "Model" does not have from_attributes=True  [pydantic-orm]
 
 
 class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
@@ -45,6 +46,7 @@ kwargs_model = KwargsModel(x=1)
 kwargs_model.y = 'a'
 # MYPY: error: Property "y" defined in "KwargsModel" is read-only  [misc]
 KwargsModel.from_orm({})
+# MYPY: error: "KwargsModel" does not have from_attributes=True  [pydantic-orm]
 
 
 class ForbidExtraModel(BaseModel):

@@ -1,24 +1,17 @@
-from typing import Any, Generic, List, Optional, Set, TypeVar, Union
+from typing import Generic, List, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, Extra, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Extra, Field, field_validator
 from pydantic.dataclasses import dataclass
 
 
 # placeholder for removed line
 class Model(BaseModel):
+    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
     x: int
     y: str
 
     def method(self) -> None:
         pass
-
-    class Config:
-        alias_generator = None
-        frozen = True
-        extra = Extra.forbid
-
-        def config_method(self) -> None:
-            ...
 
 
 model = Model(x=1, y='y', z='z')
@@ -28,6 +21,7 @@ model = Model(x=1)
 model.y = 'a'
 # MYPY: error: Property "y" defined in "Model" is read-only  [misc]
 Model.from_orm({})
+# MYPY: error: "Model" does not have from_attributes=True  [pydantic-orm]
 
 
 class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forbid):
@@ -45,11 +39,11 @@ kwargs_model = KwargsModel(x=1)
 kwargs_model.y = 'a'
 # MYPY: error: Property "y" defined in "KwargsModel" is read-only  [misc]
 KwargsModel.from_orm({})
+# MYPY: error: "KwargsModel" does not have from_attributes=True  [pydantic-orm]
 
 
 class ForbidExtraModel(BaseModel):
-    class Config:
-        extra = 'forbid'
+    model_config = ConfigDict(extra=Extra.forbid)
 
 
 ForbidExtraModel(x=1)
@@ -65,10 +59,13 @@ KwargsForbidExtraModel(x=1)
 
 
 class BadExtraModel(BaseModel):
-    class Config:
-        extra = 1  # type: ignore[pydantic-config]
-        extra = 1
+    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item]
 # MYPY: error: Invalid value for "Config.extra"  [pydantic-config]
+# MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
+
+
+class BadExtraButIgnoredModel(BaseModel):
+    model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item,pydantic-config]
 
 
 class KwargsBadExtraModel(BaseModel, extra=1):
@@ -77,9 +74,9 @@ class KwargsBadExtraModel(BaseModel, extra=1):
 
 
 class BadConfig1(BaseModel):
-    class Config:
-        from_attributes: Any = {}  # not sensible, but should still be handled gracefully
+    model_config = ConfigDict(from_attributes={})  # type: ignore[typeddict-item]
 # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+# MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
 
 
 class KwargsBadConfig1(BaseModel, from_attributes={}):
@@ -88,9 +85,9 @@ class KwargsBadConfig1(BaseModel, from_attributes={}):
 
 
 class BadConfig2(BaseModel):
-    class Config:
-        from_attributes = list  # not sensible, but should still be handled gracefully
+    model_config = ConfigDict(from_attributes=list)  # type: ignore[typeddict-item]
 # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+# MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
 
 
 class KwargsBadConfig2(BaseModel, from_attributes=list):
@@ -99,8 +96,7 @@ class KwargsBadConfig2(BaseModel, from_attributes=list):
 
 
 class InheritingModel(Model):
-    class Config:
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 class KwargsInheritingModel(KwargsModel, frozen=False):
@@ -152,9 +148,7 @@ Model.model_construct(x='1', y='2')
 
 # Strict mode fails
 inheriting = InheritingModel(x='1', y='1')
-# MYPY: error: Argument "x" to "InheritingModel" has incompatible type "str"; expected "int"  [arg-type]
 Model(x='1', y='2')
-# MYPY: error: Argument "x" to "Model" has incompatible type "str"; expected "int"  [arg-type]
 
 
 class Blah(BaseModel):
@@ -172,7 +166,6 @@ class Response(BaseModel, Generic[T]):
 
 response = Response[Model](data=model, error=None)
 response = Response[Model](data=1, error=None)
-# MYPY: error: Argument "data" to "Response" has incompatible type "int"; expected "Model"  [arg-type]
 
 
 class AliasModel(BaseModel):
@@ -181,31 +174,27 @@ class AliasModel(BaseModel):
 
 
 AliasModel(y=1, z=2)
-# MYPY: error: Argument "y" to "AliasModel" has incompatible type "int"; expected "str"  [arg-type]
 
 x_alias = 'y'
 
 
 class DynamicAliasModel(BaseModel):
     x: str = Field(..., alias=x_alias)
-# MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
     z: int
 
 
 DynamicAliasModel(y='y', z='1')
-# MYPY: error: Argument "z" to "DynamicAliasModel" has incompatible type "str"; expected "int"  [arg-type]
 
 
 class DynamicAliasModel2(BaseModel):
     x: str = Field(..., alias=x_alias)
     z: int
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 DynamicAliasModel2(y='y', z=1)
-# MYPY: error: Unexpected keyword argument "y" for "DynamicAliasModel2"  [call-arg]
+# MYPY: error: Missing named argument "x" for "DynamicAliasModel2"  [call-arg]
 DynamicAliasModel2(x='y', z=1)
 
 
@@ -215,17 +204,14 @@ class KwargsDynamicAliasModel(BaseModel, populate_by_name=True):
 
 
 KwargsDynamicAliasModel(y='y', z=1)
-# MYPY: error: Unexpected keyword argument "y" for "KwargsDynamicAliasModel"  [call-arg]
+# MYPY: error: Missing named argument "x" for "KwargsDynamicAliasModel"  [call-arg]
 KwargsDynamicAliasModel(x='y', z=1)
 
 
 class AliasGeneratorModel(BaseModel):
-# MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
     x: int
 
-    class Config:
-# MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
-        alias_generator = lambda x: x + '_'  # noqa E731
+    model_config = ConfigDict(alias_generator=lambda x: x + '_')
 
 
 AliasGeneratorModel(x=1)
@@ -234,11 +220,10 @@ AliasGeneratorModel(z=1)
 
 
 class AliasGeneratorModel2(BaseModel):
-# MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
     x: int = Field(..., alias='y')
 
-    class Config:  # type: ignore[pydantic-alias]
-        alias_generator = lambda x: x + '_'  # noqa E731
+    model_config = ConfigDict(alias_generator=lambda x: x + '_')  # type: ignore[pydantic-alias]
+# MYPY: error: Unused "type: ignore" comment
 
 
 class UntypedFieldModel(BaseModel):
@@ -249,15 +234,11 @@ class UntypedFieldModel(BaseModel):
 
 
 AliasGeneratorModel2(x=1)
-# MYPY: error: Unexpected keyword argument "x" for "AliasGeneratorModel2"  [call-arg]
 AliasGeneratorModel2(y=1, z=1)
-# MYPY: error: Unexpected keyword argument "z" for "AliasGeneratorModel2"  [call-arg]
 
 
 class KwargsAliasGeneratorModel(BaseModel, alias_generator=lambda x: x + '_'):
-# MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
     x: int
-# MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
 
 
 KwargsAliasGeneratorModel(x=1)
@@ -266,15 +247,11 @@ KwargsAliasGeneratorModel(z=1)
 
 
 class KwargsAliasGeneratorModel2(BaseModel, alias_generator=lambda x: x + '_'):
-# MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
     x: int = Field(..., alias='y')
-# MYPY: error: Required dynamic aliases disallowed  [pydantic-alias]
 
 
 KwargsAliasGeneratorModel2(x=1)
-# MYPY: error: Unexpected keyword argument "x" for "KwargsAliasGeneratorModel2"  [call-arg]
 KwargsAliasGeneratorModel2(y=1, z=1)
-# MYPY: error: Unexpected keyword argument "z" for "KwargsAliasGeneratorModel2"  [call-arg]
 
 
 class CoverageTester(Missing):  # noqa F821
@@ -301,10 +278,7 @@ class FrozenModel(BaseModel):
     x: int
     y: str
 
-    class Config:
-        alias_generator = None
-        frozen = True
-        extra = Extra.forbid
+    model_config = ConfigDict(alias_generator=None, frozen=True, extra=Extra.forbid)
 
 
 frozenmodel = FrozenModel(x=1, y='b')
@@ -313,8 +287,7 @@ frozenmodel.y = 'a'
 
 
 class InheritingModel2(FrozenModel):
-    class Config:
-        frozen = False
+    model_config = ConfigDict(frozen=False)
 
 
 inheriting2 = InheritingModel2(x=1, y='c')
