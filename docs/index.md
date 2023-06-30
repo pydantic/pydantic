@@ -35,9 +35,9 @@ print(m.model_dump())
 - **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
   [FastAPI](https://github.com/tiangolo/fastapi),
   [huggingface/transformers](https://github.com/huggingface/transformers),
-  [django-ninja](https://github.com/vitalik/django-ninja),
-  [sqlmodel](https://github.com/tiangolo/sqlmodel),
-  and [langchain](https://github.com/hwchase17/langchain)
+  [Django Ninja](https://github.com/vitalik/django-ninja),
+  [SQLModel](https://github.com/tiangolo/sqlmodel),
+  and [LangChain](https://github.com/hwchase17/langchain)
 - **Battle tested** &mdash; Pydantic is downloaded >70m times/month and used by all FAANG companies and 20/25 largest companies on NASDAQ &mdash; if you're trying to do something with Pydantic, someone else has probably already done it
 
 [Installing Pydantic](install.md) is as simple as: [`pip install pydantic`](install.md).
