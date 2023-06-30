@@ -9,7 +9,7 @@
 
 Pydantic is the most widely used data validation library for Python.
 
-!!! success
+!!! success "Migrating to Pydantic V2"
     Already using Pydantic V1? See the [Migration Guide](migration.md) for notes on upgrading to Pydantic V2 in your applications!
 
 ```py lint="skip" upgrade="skip" title="Pydantic Example" requires="3.10"
