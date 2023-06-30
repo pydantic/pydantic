@@ -26,19 +26,19 @@ print(m.model_dump())
 
 ## Why use Pydantic?
 
-- **Powered by type hints** - with Pydantic schema validation and even serialization are controlled by type annotations - less to learn, less code to write and integration with your IDE and static analysis tools
-- **Speed** - Pydantic's core validation logic is written in Rust meaning Pydantic is among the fastest data validation libraries for Python
-- **JSON Schema** - Pydantic models can emit JSON Schema allowing for easy integration with other tools
-- **Strict** and **Lax** mode - Pydantic can run iin either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate
-- **Dataclasses**, **Typed Dicts** and more - Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`
-- **Customisation** - Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways
-- **Ecosystem** - around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
+- **Powered by type hints** &mdash; with Pydantic schema validation and even serialization are controlled by type annotations &mdash; less to learn, less code to write and integration with your IDE and static analysis tools
+- **Speed** &mdash; Pydantic's core validation logic is written in Rust meaning Pydantic is among the fastest data validation libraries for Python
+- **JSON Schema** &mdash; Pydantic models can emit JSON Schema allowing for easy integration with other tools
+- **Strict** and **Lax** mode &mdash; Pydantic can run iin either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate
+- **Dataclasses**, **Typed Dicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`
+- **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways
+- **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
   [FastAPI](https://github.com/tiangolo/fastapi),
   [huggingface/transformers](https://github.com/huggingface/transformers),
   [django-ninja](https://github.com/vitalik/django-ninja),
   [sqlmodel](https://github.com/tiangolo/sqlmodel),
   and [langchain](https://github.com/hwchase17/langchain)
-- **Battle tested** - Pydantic is downloaded >70m times/month and used by all FAANG companies and 20/25 largest companies on NASDAQ - if you're trying to do something with Pydantic, someone else has probably already done it
+- **Battle tested** &mdash; Pydantic is downloaded >70m times/month and used by all FAANG companies and 20/25 largest companies on NASDAQ &mdash; if you're trying to do something with Pydantic, someone else has probably already done it
 
 [Installing Pydantic](install.md) is as simple as: [`pip install pydantic`](install.md).
 
@@ -53,7 +53,7 @@ from pydantic import BaseModel, PositiveInt
 
 
 class User(BaseModel):
-    id: int  # (1)
+    id: int  # (1)!
     name: str = 'John Doe'  # (2)!
     signup_ts: datetime | None  # (3)!
     tastes: dict[str, PositiveInt]  # (4)!
@@ -112,10 +112,7 @@ class User(BaseModel):
     tastes: dict[str, PositiveInt]
 
 
-external_data = {  # (1)!
-    'id': 'not an int',
-    'tastes': {},
-}
+external_data = {'id': 'not an int', 'tastes': {}}  # (1)!
 
 try:
     User(**external_data)  # (2)!
@@ -141,7 +138,7 @@ except ValidationError as e:
     """
 ```
 
-1. the input data is wrong here - `id` is a valid int, and `signup_ts` is missing
+1. the input data is wrong here &mdash; `id` is a valid int, and `signup_ts` is missing
 2. `User(...)` will raise a `ValidationError` with a list of errors
 
 ## Who is using Pydantic?
