@@ -410,7 +410,9 @@ class CompressedString:
             cls._validate,
             core_schema.str_schema(),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                cls._serialize, info_arg=False, return_schema=core_schema.str_schema()
+                cls._serialize,
+                info_arg=False,
+                return_schema=core_schema.str_schema(),
             ),
         )
 
@@ -422,7 +424,9 @@ class CompressedString:
             if word not in inverse_dictionary:
                 inverse_dictionary[word] = len(inverse_dictionary)
             text.append(inverse_dictionary[word])
-        return CompressedString({v: k for k, v in inverse_dictionary.items()}, text)
+        return CompressedString(
+            {v: k for k, v in inverse_dictionary.items()}, text
+        )
 
     @staticmethod
     def _serialize(value: 'CompressedString') -> str:
@@ -443,7 +447,9 @@ print(MyModel.model_json_schema())
 }
 """
 print(MyModel(value='fox fox fox dog fox'))
-#> value=CompressedString(dictionary={0: 'fox', 1: 'dog'}, text=[0, 0, 0, 1, 0])
+"""
+value = CompressedString(dictionary={0: 'fox', 1: 'dog'}, text=[0, 0, 0, 1, 0])
+"""
 
 print(MyModel(value='fox fox fox dog fox').model_dump(mode='json'))
 #> {'value': 'fox fox fox dog fox'}
@@ -472,7 +478,9 @@ class RestrictCharacters:
     ) -> core_schema.CoreSchema:
         if not self.alphabet:
             raise ValueError('Alphabet may not be empty')
-        schema = handler(source)  # get the CoreSchema from the type / inner constraints
+        schema = handler(
+            source
+        )  # get the CoreSchema from the type / inner constraints
         if schema['type'] != 'str':
             raise TypeError('RestrictCharacters can only be applied to strings')
         return core_schema.no_info_after_validator_function(
@@ -482,7 +490,9 @@ class RestrictCharacters:
 
     def validate(self, value: str) -> str:
         if any(c not in self.alphabet for c in value):
-            raise ValueError(f'{value!r} is not restricted to {self.alphabet!r}')
+            raise ValueError(
+                f'{value!r} is not restricted to {self.alphabet!r}'
+            )
         return value
 
 

@@ -198,7 +198,9 @@ You can read more about [Alias Precedence](model_config.md#alias-precedence) in 
 
     class MyModel(BaseModel):
         my_field: int = Field(
-            ..., alias='myValidationAlias', serialization_alias='my_serialization_alias'
+            ...,
+            alias='myValidationAlias',
+            serialization_alias='my_serialization_alias',
         )
 
 
@@ -321,7 +323,9 @@ foo = Foo(
     love_for_pydantic=float('inf'),
 )
 print(foo)
-#> positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=inf
+"""
+positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=inf
+"""
 ```
 
 ??? info "JSON Schema"
@@ -702,7 +706,11 @@ print(User.model_json_schema())
 """
 {
     'properties': {
-        'age': {'description': 'Age of the user', 'title': 'Age', 'type': 'integer'},
+        'age': {
+            'description': 'Age of the user',
+            'title': 'Age',
+            'type': 'integer',
+        },
         'email': {
             'examples': ['marcelo@mail.com'],
             'format': 'email',

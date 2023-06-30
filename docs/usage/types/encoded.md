@@ -54,7 +54,8 @@ class Model(BaseModel):
 
 # Initialize the model with encoded data
 m = Model(
-    my_encoded_bytes=b'**encoded**: some bytes', my_encoded_str='**encoded**: some str'
+    my_encoded_bytes=b'**encoded**: some bytes',
+    my_encoded_str='**encoded**: some str',
 )
 
 # Access decoded value

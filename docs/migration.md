@@ -466,7 +466,7 @@ from pydantic import BaseModel, ValidationError
 
 class Foo(BaseModel):
     f1: str  # required, cannot be None
-    f2: Optional[str]  # required, can be None - same as Union[str, None] / str | None
+    f2: Optional[str]  # required, can be None - same as str | None
     f3: Optional[str] = None  # not required, can be None
     f4: str = 'Foobar'  # not required, but cannot be None
 

@@ -53,8 +53,10 @@ from datetime import datetime
 from pydantic import ConfigDict, ValidationError
 from pydantic.dataclasses import dataclass
 
+config = ConfigDict(str_max_length=10, validate_assignment=True)
 
-@dataclass(config=ConfigDict(str_max_length=10, validate_assignment=True))  # (1)!
+
+@dataclass(config=config)  # (1)!
 class User:
     id: int
     name: str = 'John Doe'
@@ -585,7 +587,9 @@ try:
 
 except NameError as e:
     print(e)
-    #> Field "model_prefixed_field" has conflict with protected namespace "model_"
+    """
+    Field "model_prefixed_field" has conflict with protected namespace "model_"
+    """
 ```
 
 You can customize this behavior using the `protected_namespaces` setting:
@@ -599,11 +603,15 @@ try:
         model_prefixed_field: str
         also_protect_field: str
 
-        model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+        model_config = ConfigDict(
+            protected_namespaces=('protect_me_', 'also_protect_')
+        )
 
 except NameError as e:
     print(e)
-    #> Field "also_protect_field" has conflict with protected namespace "also_protect_"
+    """
+    Field "also_protect_field" has conflict with protected namespace "also_protect_"
+    """
 ```
 
 ## Hide Input in Errors

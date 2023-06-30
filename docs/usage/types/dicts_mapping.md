@@ -120,10 +120,18 @@ class User(TypedDict):
 
 ta = TypeAdapter(User)
 
-print(ta.validate_python({'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}))
+print(
+    ta.validate_python(
+        {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
+    )
+)
 #> {'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
 
-print(ta.validate_python({'identity': {'name': None, 'surname': 'John'}, 'age': 37}))
+print(
+    ta.validate_python(
+        {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
+    )
+)
 #> {'identity': {'name': None, 'surname': 'John'}, 'age': 37}
 
 print(ta.validate_python({'identity': {}, 'age': 37}))
@@ -131,7 +139,9 @@ print(ta.validate_python({'identity': {}, 'age': 37}))
 
 
 try:
-    ta.validate_python({'identity': {'name': ['Smith'], 'surname': 'John'}, 'age': 24})
+    ta.validate_python(
+        {'identity': {'name': ['Smith'], 'surname': 'John'}, 'age': 24}
+    )
 except ValidationError as e:
     print(e)
     """

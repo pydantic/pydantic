@@ -59,6 +59,7 @@ aside.blog img {
 [data-md-color-scheme="slate"] #company-grid {
   background-color: #ffffff;
   border-radius: .5rem;
+  color: black;
 }
 
 .tile {

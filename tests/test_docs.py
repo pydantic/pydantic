@@ -71,15 +71,14 @@ class MockedDatetime(datetime):
 
 
 skip_reason = skip_docs_tests()
+LINE_LENGTH = 80
 
 
 def print_callback(print_statement: str) -> str:
     return re.sub(r'(https://errors.pydantic.dev)/.+?/', r'\1/2/', print_statement)
 
 
-def run_example(  # noqa C901
-    example: CodeExample, eval_example: EvalExample, mocker: Any, ruff_ignore: list[str] | None = None
-) -> None:
+def run_example(example: CodeExample, eval_example: EvalExample, mocker: Any) -> None:  # noqa C901
     eval_example.print_callback = print_callback
 
     prefix_settings = example.prefix_settings()
@@ -96,11 +95,11 @@ def run_example(  # noqa C901
 
     group_name = prefix_settings.get('group')
 
-    eval_example.set_config(ruff_ignore=['D'])
+    eval_example.set_config(ruff_ignore=['D'], line_length=LINE_LENGTH)
     if '# ignore-above' in example.source:
-        eval_example.set_config(ruff_ignore=['D', 'E402'])
+        eval_example.set_config(ruff_ignore=['D', 'E402'], line_length=LINE_LENGTH)
     if group_name:
-        eval_example.set_config(ruff_ignore=['D', 'F821'])
+        eval_example.set_config(ruff_ignore=['D', 'F821'], line_length=LINE_LENGTH)
 
     if not lint_settings.startswith('skip'):
         if eval_example.update_examples:
@@ -108,7 +107,7 @@ def run_example(  # noqa C901
         else:
             if example.in_py_file():
                 # Ignore isort as double newlines will cause it to fail, but we remove them in py files
-                eval_example.set_config(ruff_ignore=eval_example.config.ruff_ignore + ['I001'])
+                eval_example.set_config(ruff_ignore=eval_example.config.ruff_ignore + ['I001'], line_length=LINE_LENGTH)
             eval_example.lint(example)
 
     if test_settings.startswith('skip'):
@@ -150,7 +149,7 @@ def test_docstrings_examples(example: CodeExample, eval_example: EvalExample, tm
     if str(example.path).startswith(str(SOURCES_ROOT / 'v1')):
         pytest.skip('skip v1 examples')
 
-    run_example(example, eval_example, mocker, ruff_ignore=['I001'])
+    run_example(example, eval_example, mocker)
 
 
 @pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
@@ -178,7 +177,7 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, tmp_path: Path):
     from ansi2html import Ansi2HTMLConverter
 
-    eval_example.set_config(ruff_ignore=['D'])
+    eval_example.set_config(ruff_ignore=['D'], line_length=LINE_LENGTH)
 
     if eval_example.update_examples:
         eval_example.format(example)

@@ -207,7 +207,9 @@ print(co_orm)
 #> <__main__.CompanyOrm object at 0x0123456789ab>
 co_model = CompanyModel.model_validate(co_orm)
 print(co_model)
-#> id=123 public_key='foobar' name='Testing' domains=['example.com', 'foobar.com']
+"""
+id=123 public_key='foobar' name='Testing' domains=['example.com', 'foobar.com']
+"""
 ```
 
 ### Reserved names
@@ -716,7 +718,9 @@ the `create_model` method to allow models to be created on the fly.
 ```py
 from pydantic import BaseModel, create_model
 
-DynamicFoobarModel = create_model('DynamicFoobarModel', foo=(str, ...), bar=(int, 123))
+DynamicFoobarModel = create_model(
+    'DynamicFoobarModel', foo=(str, ...), bar=(int, 123)
+)
 
 
 class StaticFoobarModel(BaseModel):
@@ -767,9 +771,13 @@ def username_alphanumeric(cls, v):
     return v
 
 
-validators = {'username_validator': field_validator('username')(username_alphanumeric)}
+validators = {
+    'username_validator': field_validator('username')(username_alphanumeric)
+}
 
-UserModel = create_model('UserModel', username=(str, ...), __validators__=validators)
+UserModel = create_model(
+    'UserModel', username=(str, ...), __validators__=validators
+)
 
 user = UserModel(username='scolvin')
 print(user)
@@ -824,7 +832,9 @@ print(repr(UserListValidator.validate_python([{'name': 'Fred', 'id': '3'}])))
 #> [{'name': 'Fred', 'id': 3}]
 
 try:
-    UserListValidator.validate_python([{'name': 'Fred', 'id': 'wrong', 'other': 'no'}])
+    UserListValidator.validate_python(
+        [{'name': 'Fred', 'id': 'wrong', 'other': 'no'}]
+    )
 except ValidationError as e:
     print(e)
     """
@@ -889,7 +899,9 @@ print(Pets(['dog', 'cat']).model_dump_json())
 print(Pets.model_validate(['dog', 'cat']))
 #> root=['dog', 'cat']
 print(Pets.model_json_schema())
-#> {'items': {'type': 'string'}, 'title': 'RootModel[List[str]]', 'type': 'array'}
+"""
+{'items': {'type': 'string'}, 'title': 'RootModel[List[str]]', 'type': 'array'}
+"""
 
 print(PetsByName({'Otis': 'dog', 'Milo': 'cat'}))
 #> root={'Otis': 'dog', 'Milo': 'cat'}

@@ -58,7 +58,13 @@ There are also types that can be used to constrain integers:
 * [`NonNegativeInt`][pydantic.types.NonNegativeInt]: Constrain an `int` to be non-negative.
 
 ```py
-from pydantic import BaseModel, NegativeInt, NonNegativeInt, NonPositiveInt, PositiveInt
+from pydantic import (
+    BaseModel,
+    NegativeInt,
+    NonNegativeInt,
+    NonPositiveInt,
+    PositiveInt,
+)
 
 
 class Model(BaseModel):

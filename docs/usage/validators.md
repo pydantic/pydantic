@@ -45,7 +45,9 @@ user = UserModel(
     password2='zxcvbn',
 )
 print(user)
-#> name='Samuel Colvin' username='scolvin' password1='zxcvbn' password2='zxcvbn'
+"""
+name='Samuel Colvin' username='scolvin' password1='zxcvbn' password2='zxcvbn'
+"""
 
 try:
     UserModel(
@@ -538,7 +540,12 @@ by context, and having a separate mechanism for updating what is allowed:
 ```python
 from typing import Any, Dict, List
 
-from pydantic import BaseModel, FieldValidationInfo, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    FieldValidationInfo,
+    ValidationError,
+    field_validator,
+)
 
 _allowed_choices = ['a', 'b', 'c']
 
@@ -618,12 +625,16 @@ class Model(BaseModel):
 
     def __init__(__pydantic_self__, **data: Any) -> None:
         __pydantic_self__.__pydantic_validator__.validate_python(
-            data, self_instance=__pydantic_self__, context=_init_context_var.get()
+            data,
+            self_instance=__pydantic_self__,
+            context=_init_context_var.get(),
         )
 
     @field_validator('my_number')
     @classmethod
-    def multiply_with_context(cls, value: int, info: FieldValidationInfo) -> int:
+    def multiply_with_context(
+        cls, value: int, info: FieldValidationInfo
+    ) -> int:
         if info.context:
             multiplier = info.context.get('multiplier', 1)
             value = value * multiplier
