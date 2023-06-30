@@ -65,7 +65,7 @@ nav:
     - Lists and Tuples: usage/types/list_types.md
     - Number Types: usage/types/number_types.md
     - Secret Types: usage/types/secrets.md
-    - Sequence, Iterable, & Iterator: usage/types/sequence_iterable.md
+    - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
     - Strict Types: usage/types/strict_types.md
     - String Types: usage/types/string_types.md
