@@ -30,6 +30,7 @@ struct Field {
 #[derive(Debug, Clone)]
 pub struct ModelFieldsValidator {
     fields: Vec<Field>,
+    model_name: String,
     extra_behavior: ExtraBehavior,
     extra_validator: Option<Box<CombinedValidator>>,
     strict: bool,
@@ -58,6 +59,9 @@ impl BuildValidator for ModelFieldsValidator {
             (Some(_), _) => return py_schema_err!("extra_validator can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
+        let model_name: String = schema
+            .get_as(intern!(py, "model_name"))?
+            .unwrap_or_else(|| "Model".to_string());
 
         let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: Vec<Field> = Vec::with_capacity(fields_dict.len());
@@ -92,6 +96,7 @@ impl BuildValidator for ModelFieldsValidator {
 
         Ok(Self {
             fields,
+            model_name,
             extra_behavior,
             extra_validator,
             strict,
@@ -113,7 +118,28 @@ impl Validator for ModelFieldsValidator {
     ) -> ValResult<'data, PyObject> {
         let strict = extra.strict.unwrap_or(self.strict);
         let from_attributes = extra.from_attributes.unwrap_or(self.from_attributes);
-        let dict = input.validate_model_fields(strict, from_attributes)?;
+
+        // we convert the DictType error to a ModelType error
+        let dict = match input.validate_model_fields(strict, from_attributes) {
+            Ok(d) => d,
+            Err(ValError::LineErrors(errors)) => {
+                let errors: Vec<ValLineError> = errors
+                    .into_iter()
+                    .map(|e| match e.error_type {
+                        ErrorType::DictType => {
+                            let mut e = e;
+                            e.error_type = ErrorType::ModelType {
+                                class_name: self.model_name.clone(),
+                            };
+                            e
+                        }
+                        _ => e,
+                    })
+                    .collect();
+                return Err(ValError::LineErrors(errors));
+            }
+            Err(err) => return Err(err),
+        };
 
         let model_dict = PyDict::new(py);
         let mut model_extra_dict_op: Option<&PyDict> = None;

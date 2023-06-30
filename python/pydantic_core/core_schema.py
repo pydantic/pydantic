@@ -2820,6 +2820,7 @@ def model_field(
 class ModelFieldsSchema(TypedDict, total=False):
     type: Required[Literal['model-fields']]
     fields: Required[Dict[str, ModelField]]
+    model_name: str
     computed_fields: List[ComputedField]
     strict: bool
     extra_validator: CoreSchema
@@ -2835,6 +2836,7 @@ class ModelFieldsSchema(TypedDict, total=False):
 def model_fields_schema(
     fields: Dict[str, ModelField],
     *,
+    model_name: str | None = None,
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extra_validator: CoreSchema | None = None,
@@ -2861,6 +2863,7 @@ def model_fields_schema(
 
     Args:
         fields: The fields to use for the typed dict
+        model_name: The name of the model, used for error messages, defaults to "Model"
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the typed dict is strict
         extra_validator: The extra validator to use for the typed dict
@@ -2874,6 +2877,7 @@ def model_fields_schema(
     return dict_not_none(
         type='model-fields',
         fields=fields,
+        model_name=model_name,
         computed_fields=computed_fields,
         strict=strict,
         extra_validator=extra_validator,
@@ -3769,14 +3773,16 @@ ErrorType = Literal[
     'json_invalid',
     'json_type',
     'recursion_loop',
-    'dict_attributes_type',
     'missing',
     'frozen_field',
     'frozen_instance',
     'extra_forbidden',
     'invalid_key',
     'get_attribute_error',
-    'model_class_type',
+    'model_type',
+    'model_attributes_type',
+    'dataclass_type',
+    'dataclass_exact_type',
     'none_required',
     'greater_than',
     'greater_than_equal',
@@ -3844,7 +3850,6 @@ ErrorType = Literal[
     'unexpected_positional_argument',
     'missing_positional_only_argument',
     'multiple_argument_values',
-    'dataclass_type',
     'url_type',
     'url_parsing',
     'url_syntax_violation',

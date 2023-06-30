@@ -54,12 +54,12 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
 
-    fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<'a, GenericArguments<'a>> {
         match self {
             JsonInput::Object(object) => Ok(JsonArgs::new(None, Some(object)).into()),
             _ => {
-                let dataclass_name = dataclass_name.to_string();
-                Err(ValError::new(ErrorType::DataclassType { dataclass_name }, self))
+                let class_name = class_name.to_string();
+                Err(ValError::new(ErrorType::DataclassType { class_name }, self))
             }
         }
     }
@@ -330,9 +330,9 @@ impl<'a> Input<'a> for String {
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<'a, GenericArguments<'a>> {
-        let dataclass_name = dataclass_name.to_string();
-        Err(ValError::new(ErrorType::DataclassType { dataclass_name }, self))
+    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<'a, GenericArguments<'a>> {
+        let class_name = class_name.to_string();
+        Err(ValError::new(ErrorType::DataclassType { class_name }, self))
     }
 
     fn parse_json(&'a self) -> ValResult<'a, JsonInput> {
