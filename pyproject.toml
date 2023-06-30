@@ -210,6 +210,14 @@ color = true
 line-length = 120
 target-version = ['py310']
 skip-string-normalization = true
+exclude = '''
+(
+  /(
+    pydantic/v1
+    | tests/mypy/outputs
+  )/
+)
+'''
 
 [tool.pyright]
 include = ['pydantic']
