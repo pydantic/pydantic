@@ -326,9 +326,10 @@ print(DemoDataclass(product_id='01234'))
 print(DemoDataclass(product_id=2468))
 #> DemoDataclass(product_id='02468')
 ```
+
 ## Validation Context
 
-New in V2, you can pass a context object to the validation methods which can be accessed from the `info`
+You can pass a context object to the validation methods which can be accessed from the `info`
 argument to decorated validator functions:
 
 ```python
