@@ -2383,7 +2383,7 @@ through the use of <code>TypeAdapter</code>:</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    1 validation error for MyDataclass</span>
-<span class="sd">      Input should be an instance of MyDataclass [type=model_class_type, input_value={&#39;x&#39;: &#39;123&#39;}, input_type=dict]</span>
+<span class="sd">      Input should be an instance of MyDataclass [type=dataclass_exact_type, input_value={&#39;x&#39;: &#39;123&#39;}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></p>
 <p>This also works with the <code>TypeAdapter.validate_json</code> and <code>BaseModel.model_validate_json</code> methods:</p>

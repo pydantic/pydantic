@@ -3059,7 +3059,7 @@ contain information about all the errors and how they happened.</p>
 <span class="sd">    list_of_ints.2</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;bad&#39;, input_type=str]</span>
 <span class="sd">    a_float</span>
-<span class="sd">      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
+<span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
@@ -3086,7 +3086,7 @@ contain information about all the errors and how they happened.</p>
 <span class="sd">    list_of_ints.2</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;bad&#39;, input_type=str]</span>
 <span class="sd">    a_float</span>
-<span class="sd">      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
+<span class="sd">      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
@@ -3124,7 +3124,7 @@ contain information about all the errors and how they happened.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    1 validation error for User</span>
-<span class="sd">      Input should be a valid dictionary [type=dict_type, input_value=[&#39;not&#39;, &#39;a&#39;, &#39;dict&#39;], input_type=list]</span>
+<span class="sd">      Input should be a valid dictionary or instance of User [type=model_type, input_value=[&#39;not&#39;, &#39;a&#39;, &#39;dict&#39;], input_type=list]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;: 123, &quot;name&quot;: &quot;James&quot;}&#39;</span><span class="p">)</span>
@@ -3173,7 +3173,7 @@ contain information about all the errors and how they happened.</p>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    1 validation error for User</span>
-<span class="sd">      Input should be a valid dictionary [type=dict_type, input_value=[&#39;not&#39;, &#39;a&#39;, &#39;dict&#39;], input_type=list]</span>
+<span class="sd">      Input should be a valid dictionary or instance of User [type=model_type, input_value=[&#39;not&#39;, &#39;a&#39;, &#39;dict&#39;], input_type=list]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;{&quot;id&quot;: 123, &quot;name&quot;: &quot;James&quot;}&#39;</span><span class="p">)</span>
@@ -3559,7 +3559,7 @@ parameters in the superclass.</p>
 <span class="sd">    outer</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;a&#39;, input_type=str]</span>
 <span class="sd">    nested</span>
-<span class="sd">      Input should be a valid dictionary [type=dict_type, input_value=InnerT[str](inner=&#39;a&#39;), input_type=InnerT[str]]</span>
+<span class="sd">      Input should be a valid dictionary or instance of InnerT[int] [type=model_type, input_value=InnerT[str](inner=&#39;a&#39;), input_type=InnerT[str]]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>Pydantic also treats <code>GenericModel</code> similarly to how it treats built-in generic types like <code>List</code> and <code>Dict</code> when it
