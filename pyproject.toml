@@ -165,7 +165,7 @@ flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
 target-version = "py37"
-exclude=['pydantic/v1']
+exclude=['pydantic/v1', 'tests/mypy/outputs']
 
 [tool.ruff.pydocstyle]
 convention = "google"
@@ -174,7 +174,6 @@ convention = "google"
 'docs/*' = ['D']
 'pydantic/__init__.py' = ['F405', 'F403', 'D']
 'tests/test_forward_ref.py' = ['F821']
-'tests/mypy/outputs/**/*.py' = ['E501']
 'tests/*' = ['D']
 'pydantic/deprecated/*' = ['D']
 'pydantic/json_schema.py' = ['D']

@@ -5,7 +5,7 @@ class Square(BaseModel):
     side: float
 
     @computed_field
-    # MYPY: error: Decorators on top of @property are not supported  [misc]
+# MYPY: error: Decorators on top of @property are not supported  [misc]
     @property
     def area(self) -> float:
         return self.side**2
@@ -30,7 +30,7 @@ else:
         side: float
 
         @computed_field
-        # MYPY: error: Decorators on top of @property are not supported  [misc]
+# MYPY: error: Decorators on top of @property are not supported  [misc]
         @cached_property
         def area(self) -> float:
             return self.side**2

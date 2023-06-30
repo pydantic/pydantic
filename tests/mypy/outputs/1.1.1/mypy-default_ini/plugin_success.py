@@ -7,6 +7,9 @@ from pydantic.dataclasses import dataclass
 # placeholder for removed line
 class Model(BaseModel):
     x: float
+
+
+
     y: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -80,12 +83,12 @@ MutationModel.model_validate(model.__dict__)
 
 
 class KwargsNoMutationModel(BaseModel, frozen=True):
-    # MYPY: error: Cannot inherit frozen dataclass from a non-frozen one  [misc]
+# MYPY: error: Cannot inherit frozen dataclass from a non-frozen one  [misc]
     x: int
 
 
 class KwargsMutationModel(KwargsNoMutationModel, frozen=False, from_attributes=True):
-    # MYPY: error: Cannot inherit non-frozen dataclass from a frozen one  [misc]
+# MYPY: error: Cannot inherit non-frozen dataclass from a frozen one  [misc]
     a: int = 1
 
 
@@ -176,7 +179,7 @@ NotFrozenModel.model_validate(model.__dict__)
 
 
 class KwargsFrozenModel(BaseModel, frozen=True):
-    # MYPY: error: Cannot inherit frozen dataclass from a non-frozen one  [misc]
+# MYPY: error: Cannot inherit frozen dataclass from a non-frozen one  [misc]
     x: int
 
 
@@ -294,7 +297,7 @@ def foo() -> None:
     class MyModel(BaseModel):
         number: int
         custom_validator = get_my_custom_validator('number')  # type: ignore[pydantic-field]
-        # MYPY: error: Unused "type: ignore" comment
+# MYPY: error: Unused "type: ignore" comment
 
         @model_validator(mode='before')
         @classmethod

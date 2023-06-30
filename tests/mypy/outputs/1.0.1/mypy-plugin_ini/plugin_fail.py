@@ -58,8 +58,6 @@ KwargsForbidExtraModel(x=1)
 
 class BadExtraModel(BaseModel):
     model_config = ConfigDict(extra=1)  # type: ignore[typeddict-item]
-
-
 # MYPY: error: Invalid value for "Config.extra"  [pydantic-config]
 # MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
 
@@ -69,33 +67,29 @@ class BadExtraButIgnoredModel(BaseModel):
 
 
 class KwargsBadExtraModel(BaseModel, extra=1):
-    # MYPY: error: Invalid value for "Config.extra"  [pydantic-config]
+# MYPY: error: Invalid value for "Config.extra"  [pydantic-config]
     pass
 
 
 class BadConfig1(BaseModel):
     model_config = ConfigDict(from_attributes={})  # type: ignore[typeddict-item]
-
-
 # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
 # MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
 
 
 class KwargsBadConfig1(BaseModel, from_attributes={}):
-    # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
     pass
 
 
 class BadConfig2(BaseModel):
     model_config = ConfigDict(from_attributes=list)  # type: ignore[typeddict-item]
-
-
 # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
 # MYPY: note: Error code "pydantic-config" not covered by "type: ignore" comment
 
 
 class KwargsBadConfig2(BaseModel, from_attributes=list):
-    # MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
+# MYPY: error: Invalid value for "Config.from_attributes"  [pydantic-config]
     pass
 
 
@@ -111,21 +105,19 @@ class DefaultTestingModel(BaseModel):
     # Required
     a: int
     b: int = ...
-    # MYPY: error: Incompatible types in assignment (expression has type "ellipsis", variable has type "int")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "ellipsis", variable has type "int")  [assignment]
     c: int = Field(...)
     d: Union[int, str]
     e = ...
-    # MYPY: error: Untyped fields disallowed  [pydantic-field]
+# MYPY: error: Untyped fields disallowed  [pydantic-field]
 
     # Not required
     f: Optional[int]
     g: int = 1
     h: int = Field(1)
     i: int = Field(None)
-    # MYPY: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
     j = 1
-
-
 # MYPY: error: Untyped fields disallowed  [pydantic-field]
 
 
@@ -138,8 +130,6 @@ DefaultTestingModel()
 
 class UndefinedAnnotationModel(BaseModel):
     undefined: Undefined  # noqa F821
-
-
 # MYPY: error: Name "Undefined" is not defined  [name-defined]
 
 
@@ -230,15 +220,13 @@ class AliasGeneratorModel2(BaseModel):
     x: int = Field(..., alias='y')
 
     model_config = ConfigDict(alias_generator=lambda x: x + '_')  # type: ignore[pydantic-alias]
-
-
 # MYPY: error: Unused "type: ignore" comment
 
 
 class UntypedFieldModel(BaseModel):
     x: int = 1
     y = 2
-    # MYPY: error: Untyped fields disallowed  [pydantic-field]
+# MYPY: error: Untyped fields disallowed  [pydantic-field]
     z = 2  # type: ignore[pydantic-field]
 
 
@@ -264,7 +252,7 @@ KwargsAliasGeneratorModel2(y=1, z=1)
 
 
 class CoverageTester(Missing):  # noqa F821
-    # MYPY: error: Name "Missing" is not defined  [name-defined]
+# MYPY: error: Name "Missing" is not defined  [name-defined]
     def from_orm(self) -> None:
         pass
 
@@ -313,23 +301,21 @@ test: List[str] = []
 class FieldDefaultTestingModel(BaseModel):
     # Default
     e: int = Field(None)
-    # MYPY: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
     f: int = None
-    # MYPY: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
 
     # Default factory
     g: str = Field(default_factory=set)
-    # MYPY: error: Incompatible types in assignment (expression has type "Set[Any]", variable has type "str")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "Set[Any]", variable has type "str")  [assignment]
     h: int = Field(default_factory=_default_factory)
-    # MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "int")  [assignment]
     i: List[int] = Field(default_factory=list)
     l_: str = Field(default_factory=3)
-    # MYPY: error: Argument "default_factory" to "Field" has incompatible type "int"; expected "Optional[Callable[[], Any]]"  [arg-type]
+# MYPY: error: Argument "default_factory" to "Field" has incompatible type "int"; expected "Optional[Callable[[], Any]]"  [arg-type]
 
     # Default and default factory
     m: int = Field(default=1, default_factory=list)
-
-
 # MYPY: error: Field default and default_factory cannot be specified together  [pydantic-field]
 
 
@@ -341,7 +327,7 @@ class ModelWithAnnotatedValidator(BaseModel):
         # This is a mistake: the first argument to a validator is the class itself,
         # like a classmethod.
         self.instance_method()
-        # MYPY: error: Missing positional argument "self" in call to "instance_method" of "ModelWithAnnotatedValidator"  [call-arg]
+# MYPY: error: Missing positional argument "self" in call to "instance_method" of "ModelWithAnnotatedValidator"  [call-arg]
         return name
 
     def instance_method(self) -> None:

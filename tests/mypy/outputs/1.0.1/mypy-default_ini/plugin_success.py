@@ -7,6 +7,9 @@ from pydantic.dataclasses import dataclass
 # placeholder for removed line
 class Model(BaseModel):
     x: float
+
+
+
     y: str
 
     model_config = ConfigDict(from_attributes=True)
@@ -293,7 +296,7 @@ def foo() -> None:
     class MyModel(BaseModel):
         number: int
         custom_validator = get_my_custom_validator('number')  # type: ignore[pydantic-field]
-        # MYPY: error: Unused "type: ignore" comment
+# MYPY: error: Unused "type: ignore" comment
 
         @model_validator(mode='before')
         @classmethod

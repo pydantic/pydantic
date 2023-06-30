@@ -5,7 +5,7 @@ from pydantic import BaseModel, root_validator, validate_call
 
 @validate_call
 def foo(a: int, *, c: str = 'x') -> str:
-    # MYPY: note: "foo" defined here
+# MYPY: note: "foo" defined here
     return c * a
 
 
@@ -39,31 +39,31 @@ y: int = bar()
 # Demonstrate type errors for root_validator signatures
 class Model(BaseModel):
     @root_validator()
-    # MYPY: error: All overload variants of "root_validator" require at least one argument  [call-overload]
-    # MYPY: note: Possible overload variants:
-    # MYPY: note:     def root_validator(*, skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
-    # MYPY: note:     def root_validator(*, pre: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
-    # MYPY: note:     def root_validator(*, pre: Literal[False], skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
+# MYPY: error: All overload variants of "root_validator" require at least one argument  [call-overload]
+# MYPY: note: Possible overload variants:
+# MYPY: note:     def root_validator(*, skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
+# MYPY: note:     def root_validator(*, pre: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
+# MYPY: note:     def root_validator(*, pre: Literal[False], skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
     @classmethod
     def validate_1(cls, values: Any) -> Any:
         return values
 
     @root_validator(pre=True, skip_on_failure=True)
-    # MYPY: error: No overload variant of "root_validator" matches argument types "bool", "bool"  [call-overload]
-    # MYPY: note: Possible overload variants:
-    # MYPY: note:     def root_validator(*, skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
-    # MYPY: note:     def root_validator(*, pre: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
-    # MYPY: note:     def root_validator(*, pre: Literal[False], skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
+# MYPY: error: No overload variant of "root_validator" matches argument types "bool", "bool"  [call-overload]
+# MYPY: note: Possible overload variants:
+# MYPY: note:     def root_validator(*, skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
+# MYPY: note:     def root_validator(*, pre: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
+# MYPY: note:     def root_validator(*, pre: Literal[False], skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
     @classmethod
     def validate_2(cls, values: Any) -> Any:
         return values
 
     @root_validator(pre=False)
-    # MYPY: error: No overload variant of "root_validator" matches argument type "bool"  [call-overload]
-    # MYPY: note: Possible overload variants:
-    # MYPY: note:     def root_validator(*, skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
-    # MYPY: note:     def root_validator(*, pre: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
-    # MYPY: note:     def root_validator(*, pre: Literal[False], skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
+# MYPY: error: No overload variant of "root_validator" matches argument type "bool"  [call-overload]
+# MYPY: note: Possible overload variants:
+# MYPY: note:     def root_validator(*, skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
+# MYPY: note:     def root_validator(*, pre: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
+# MYPY: note:     def root_validator(*, pre: Literal[False], skip_on_failure: Literal[True], allow_reuse: bool = ...) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType]
     @classmethod
     def validate_3(cls, values: Any) -> Any:
         return values

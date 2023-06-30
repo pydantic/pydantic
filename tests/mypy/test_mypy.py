@@ -115,12 +115,14 @@ class MypyTestConfig:
 
 
 def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
+    outputs_dir = Path('tests/mypy/outputs')
+    outputs_dir.mkdir(exist_ok=True)
     existing_versions = [
-        x.name for x in Path('tests/mypy/outputs').iterdir() if x.is_dir() and re.match(r'[0-9]+(?:\.[0-9]+)*', x.name)
+        x.name for x in outputs_dir.iterdir() if x.is_dir() and re.match(r'[0-9]+(?:\.[0-9]+)*', x.name)
     ]
 
     def _convert_to_output_path(v: str) -> Path:
-        return Path('tests/mypy/outputs') / v / config_path.name.replace('.', '_') / module_path.name
+        return outputs_dir / v / config_path.name.replace('.', '_') / module_path.name
 
     existing = None
 
@@ -177,8 +179,6 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
     existing_output_code: Optional[str] = None
     if test_config.existing is not None:
         existing_output_code = test_config.existing.output_path.read_text()
-        # Remove any extra indentation on the mypy comments lines when comparing to the generated output
-        existing_output_code = re.sub(r'^\s*# MYPY:', '# MYPY:', existing_output_code, flags=re.MULTILINE)
 
     merged_output = merge_python_and_mypy_output(input_code, mypy_out)
 

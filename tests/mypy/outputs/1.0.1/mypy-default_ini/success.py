@@ -221,24 +221,24 @@ class PydanticTypes(BaseModel):
     my_strict_str: StrictStr = 'pika'
     # ImportString
     import_string_str: ImportString[Any] = 'datetime.date'  # type: ignore[misc]
-    # MYPY: error: Unused "type: ignore" comment
+# MYPY: error: Unused "type: ignore" comment
     import_string_callable: ImportString[Any] = date
     # UUID
     my_uuid1: UUID1 = UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
     my_uuid1_str: UUID1 = 'a8098c1a-f86e-11da-bd1a-00112444be1e'
-    # MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "UUID")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "UUID")  [assignment]
     # Path
     my_file_path: FilePath = Path(__file__)
     my_file_path_str: FilePath = __file__
-    # MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "Path")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "Path")  [assignment]
     my_dir_path: DirectoryPath = Path('.')
     my_dir_path_str: DirectoryPath = '.'
-    # MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "Path")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "Path")  [assignment]
     # Json
     my_json: Json[Dict[str, str]] = '{"hello": "world"}'
-    # MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "Dict[str, str]")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "Dict[str, str]")  [assignment]
     my_json_list: Json[List[str]] = '["hello", "world"]'
-    # MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "List[str]")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "str", variable has type "List[str]")  [assignment]
     # Date
     my_past_date: PastDate = date.today() - timedelta(1)
     my_future_date: FutureDate = date.today() + timedelta(1)

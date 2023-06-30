@@ -7,7 +7,7 @@ class Person(BaseModel):
     birth_year: int
 
     def __init__(self, id: int) -> None:
-        # MYPY: note: "Person" defined here
+# MYPY: note: "Person" defined here
         super().__init__(id=id, name='Patrick', birth_year=1991)
 
 

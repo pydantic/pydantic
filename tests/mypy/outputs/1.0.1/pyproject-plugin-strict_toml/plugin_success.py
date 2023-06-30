@@ -7,6 +7,9 @@ from pydantic.dataclasses import dataclass
 # placeholder for removed line
 class Model(BaseModel):
     x: float
+
+
+
     y: str
 
     model_config = ConfigDict(from_attributes=True)

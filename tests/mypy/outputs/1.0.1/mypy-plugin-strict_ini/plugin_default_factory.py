@@ -18,8 +18,6 @@ class Model(BaseModel):
     l4: Dict[str, str] = Field(default_factory=dict)
     l5: int = Field(default_factory=lambda: 123)
     l6_error: List[str] = Field(default_factory=new_list)
-    # MYPY: error: Incompatible types in assignment (expression has type "List[int]", variable has type "List[str]")  [assignment]
+# MYPY: error: Incompatible types in assignment (expression has type "List[int]", variable has type "List[str]")  [assignment]
     l7_error: int = Field(default_factory=list)
-
-
 # MYPY: error: Incompatible types in assignment (expression has type "List[Any]", variable has type "int")  [assignment]
