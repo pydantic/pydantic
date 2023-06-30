@@ -6,6 +6,7 @@ from typing import (
     Any,
     ClassVar,
     Dict,
+    ForwardRef,
     Generic,
     Iterator,
     List,
@@ -19,7 +20,7 @@ from typing import (
 )
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Literal as ExtLiteral
 
 from .class_validators import gather_all_validators
 from .fields import DeferredType
@@ -30,6 +31,8 @@ from .utils import all_identical, lenient_issubclass
 
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias
+if sys.version_info >= (3, 8):
+    from typing import Literal
 
 GenericModelT = TypeVar('GenericModelT', bound='GenericModel')
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
@@ -267,6 +270,8 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
         annotated_type, *annotations = type_args
         return Annotated[replace_types(annotated_type, type_map), tuple(annotations)]
 
+    if (origin_type is ExtLiteral) or (sys.version_info >= (3, 8) and origin_type is Literal):
+        return type_map.get(type_, type_)
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
     if type_args:
@@ -317,7 +322,12 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
 
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.
-    return type_map.get(type_, type_)
+    new_type = type_map.get(type_, type_)
+    # Convert string to ForwardRef
+    if isinstance(new_type, str):
+        return ForwardRef(new_type)
+    else:
+        return new_type
 
 
 def check_parameters_count(cls: Type[GenericModel], parameters: Tuple[Any, ...]) -> None:
