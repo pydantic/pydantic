@@ -26,21 +26,21 @@ print(m.model_dump())
 
 ## Why use Pydantic?
 
-- **Powered by type hints** &mdash; with Pydantic schema validation and even serialization are controlled by type annotations &mdash; less to learn, less code to write and integration with your IDE and static analysis tools
-- **Speed** &mdash; Pydantic's core validation logic is written in Rust meaning Pydantic is among the fastest data validation libraries for Python
-- **JSON Schema** &mdash; Pydantic models can emit JSON Schema allowing for easy integration with other tools
-- **Strict** and **Lax** mode &mdash; Pydantic can run iin either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate
-- **Dataclasses**, **Typed Dicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`
-- **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways
+- **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write and integration with your IDE and static analysis tools.
+- **Speed** &mdash; Pydantic's core validation logic is written in Rust, as a result Pydantic is among the fastest data validation libraries for Python.
+- **JSON Schema** &mdash; Pydantic models can emit JSON Schema allowing for easy integration with other tools.
+- **Strict** and **Lax** mode &mdash; Pydantic can run in either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate.
+- **Dataclasses**, **TypedDicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`.
+- **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways.
 - **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
   [FastAPI](https://github.com/tiangolo/fastapi),
   [huggingface/transformers](https://github.com/huggingface/transformers),
   [Django Ninja](https://github.com/vitalik/django-ninja),
   [SQLModel](https://github.com/tiangolo/sqlmodel),
-  and [LangChain](https://github.com/hwchase17/langchain)
-- **Battle tested** &mdash; Pydantic is downloaded >70m times/month and used by all FAANG companies and 20/25 largest companies on NASDAQ &mdash; if you're trying to do something with Pydantic, someone else has probably already done it
+  and [LangChain](https://github.com/hwchase17/langchain).
+- **Battle tested** &mdash; Pydantic is downloaded >70m times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ &mdash; if you're trying to do something with Pydantic, someone else has probably already done it.
 
-[Installing Pydantic](install.md) is as simple as: [`pip install pydantic`](install.md).
+[Installing Pydantic](install.md) is as simple as: [`pip install pydantic`](install.md)
 
 ## Pydantic examples
 
@@ -94,7 +94,7 @@ print(user.model_dump())  # (10)!
 6. The key here is `bytes`, but Pydantic will take care of coercing it to a string.
 7. Similarly, Pydantic will coerce the string `'1'` to an integer `1`.
 8. Here we create instance of `User` by passing our external data to `User` as keyword arguments
-9. We can access fields as attributes of the mode
+9. We can access fields as attributes of the model
 10. We can convert the model to a dictionary with `model_dump()`
 
 If validation fails, Pydantic will raise an error with a breakdown of what was wrong:
