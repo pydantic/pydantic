@@ -150,7 +150,13 @@ def test_self_forward_ref_collection(create_module):
         module.Foo(b={'a': '321'}, c=[{'b': 234}], d={'bar': {'a': 345}})
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'dict_type', 'loc': ('c', 0, 'b'), 'msg': 'Input should be a valid dictionary', 'input': 234}
+        {
+            'type': 'model_type',
+            'loc': ('c', 0, 'b'),
+            'msg': 'Input should be a valid dictionary or instance of Foo',
+            'input': 234,
+            'ctx': {'class_name': 'Foo'},
+        }
     ]
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'

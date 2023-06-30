@@ -2196,7 +2196,7 @@ def test_sequence_generator_fails():
                 {
                     'type': 'float_parsing',
                     'loc': ('v', 0),
-                    'msg': 'Input should be a valid number, unable to parse string as an number',
+                    'msg': 'Input should be a valid number, unable to parse string as a number',
                     'input': 'a',
                 },
             ],
@@ -2208,7 +2208,7 @@ def test_sequence_generator_fails():
                 {
                     'type': 'float_parsing',
                     'loc': ('v', 2),
-                    'msg': 'Input should be a valid number, unable to parse string as an number',
+                    'msg': 'Input should be a valid number, unable to parse string as a number',
                     'input': 'a',
                 },
             ],

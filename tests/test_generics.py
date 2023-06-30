@@ -660,8 +660,15 @@ def test_nested():
 
     with pytest.raises(ValidationError) as exc_info:
         OuterT_SameType[int](i=inner_str)
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'input': InnerT[str](a='ate'), 'loc': ('i',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+        {
+            'type': 'model_type',
+            'loc': ('i',),
+            'msg': 'Input should be a valid dictionary or instance of InnerT[int]',
+            'input': InnerT[str](a='ate'),
+            'ctx': {'class_name': 'InnerT[int]'},
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -672,8 +679,15 @@ def test_nested():
 
     with pytest.raises(ValidationError) as exc_info:
         OuterT_SameType[int](i=inner_dict_any)
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'input': InnerT[Any](a={}), 'loc': ('i',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+        {
+            'type': 'model_type',
+            'loc': ('i',),
+            'msg': 'Input should be a valid dictionary or instance of InnerT[int]',
+            'input': InnerT[Any](a={}),
+            'ctx': {'class_name': 'InnerT[int]'},
+        }
     ]
 
 
@@ -1518,24 +1532,26 @@ def test_generic_recursive_models(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'input': {'ref': {'ref': 123}},
+            'type': 'string_type',
             'loc': ('ref', 'ref', 'str'),
             'msg': 'Input should be a valid string',
-            'type': 'string_type',
+            'input': {'ref': {'ref': 123}},
         },
         {
-            'input': 123,
+            'type': 'string_type',
             'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'str'),
             'msg': 'Input should be a valid string',
-            'type': 'string_type',
+            'input': 123,
         },
         {
-            'input': 123,
+            'type': 'model_type',
             'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'Model1[str]'),
-            'msg': 'Input should be a valid dictionary',
-            'type': 'dict_type',
+            'msg': 'Input should be a valid dictionary or instance of Model1[str]',
+            'input': 123,
+            'ctx': {'class_name': 'Model1[str]'},
         },
     ]
     result = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
@@ -1569,24 +1585,26 @@ def test_generic_recursive_models_separate_parameters(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'input': {'ref': {'ref': 123}},
+            'type': 'string_type',
             'loc': ('ref', 'ref', 'str'),
             'msg': 'Input should be a valid string',
-            'type': 'string_type',
+            'input': {'ref': {'ref': 123}},
         },
         {
-            'input': 123,
+            'type': 'string_type',
             'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'str'),
             'msg': 'Input should be a valid string',
-            'type': 'string_type',
+            'input': 123,
         },
         {
-            'input': 123,
+            'type': 'model_type',
             'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'Model1[str]'),
-            'msg': 'Input should be a valid dictionary',
-            'type': 'dict_type',
+            'msg': 'Input should be a valid dictionary or instance of Model1[str]',
+            'input': 123,
+            'ctx': {'class_name': 'Model1[str]'},
         },
     ]
     # TODO: Unlike in the previous test, the following (commented) line currently produces this error:
@@ -1631,24 +1649,26 @@ def test_generic_recursive_models_repeated_separate_parameters(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'input': {'ref': {'ref': 123}},
+            'type': 'string_type',
             'loc': ('ref', 'ref', 'str'),
             'msg': 'Input should be a valid string',
-            'type': 'string_type',
+            'input': {'ref': {'ref': 123}},
         },
         {
-            'input': 123,
+            'type': 'string_type',
             'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'str'),
             'msg': 'Input should be a valid string',
-            'type': 'string_type',
+            'input': 123,
         },
         {
-            'input': 123,
+            'type': 'model_type',
             'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'Model1[str]'),
-            'msg': 'Input should be a valid dictionary',
-            'type': 'dict_type',
+            'msg': 'Input should be a valid dictionary or instance of Model1[str]',
+            'input': 123,
+            'ctx': {'class_name': 'Model1[str]'},
         },
     ]
 
@@ -1685,14 +1705,16 @@ def test_generic_recursive_models_triple(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         A1[str].model_validate({'a1': {'a2': {'a3': 1}}})
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'input': 1,
+            'type': 'model_type',
             'loc': ('a1', 'a2', 'a3', 'A1[str]'),
-            'msg': 'Input should be a valid dictionary',
-            'type': 'dict_type',
+            'msg': 'Input should be a valid dictionary or instance of A1[str]',
+            'input': 1,
+            'ctx': {'class_name': 'A1[str]'},
         },
-        {'input': 1, 'loc': ('a1', 'a2', 'a3', 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
+        {'type': 'string_type', 'loc': ('a1', 'a2', 'a3', 'str'), 'msg': 'Input should be a valid string', 'input': 1},
     ]
 
     A1[int].model_validate({'a1': {'a2': {'a3': 1}}})

@@ -131,7 +131,7 @@ except ValidationError as exc:
     print(exc)
     """
     1 validation error for MyDataclass
-      Input should be an instance of MyDataclass [type=model_class_type, input_value={'x': '123'}, input_type=dict]
+      Input should be an instance of MyDataclass [type=dataclass_exact_type, input_value={'x': '123'}, input_type=dict]
     """
 ```
 
