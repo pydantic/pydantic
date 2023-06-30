@@ -12,7 +12,7 @@ Pydantic is the most widely used data validation library for Python.
 !!! success
     Already using Pydantic V1? See the [Migration Guide](migration.md) for notes on upgrading to Pydantic V2 in your applications!
 
-```py lint="skip" upgrade="skip" title="Pydantic Example"
+```py lint="skip" upgrade="skip" title="Pydantic Example" requires="3.10"
 from pydantic import BaseModel
 
 class MyModel(BaseModel):
@@ -46,7 +46,7 @@ print(m.model_dump())
 
 To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from `BaseModel`:
 
-```py upgrade="skip" title="Validation Successful"
+```py upgrade="skip" title="Validation Successful" requires="3.10"
 from datetime import datetime
 
 from pydantic import BaseModel, PositiveInt
@@ -99,7 +99,7 @@ print(user.model_dump())  # (10)!
 
 If validation fails, Pydantic will raise an error with a breakdown of what was wrong:
 
-```py upgrade="skip" title="Validation Error"
+```py upgrade="skip" title="Validation Error" requires="3.10"
 from datetime import datetime
 
 from pydantic import BaseModel, PositiveInt, ValidationError
