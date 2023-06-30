@@ -1,5 +1,8 @@
 ## Field validators
 
+??? api "API Documentation"
+    [`pydantic.functional_validators.field_validator`][pydantic.functional_validators.field_validator]<br>
+
 Custom validation and complex relationships between objects can be achieved using the `@field_validator` decorator.
 
 ```py

@@ -16,14 +16,15 @@ serialized, and exported in a number of ways.
 
 ## `model.model_dump(...)`
 
+??? api "API Documentation"
+    [`pydantic.main.BaseModel.model_dump`][pydantic.main.BaseModel.model_dump]<br>
+
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
 !!! note
     The one exception to sub-models being converted to dictionaries is that [`RootModel`](models.md#rootmodel-and-custom-root-types)
     and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
     done recursively.
-
-See the [API docs for `model_dump`][pydantic.main.BaseModel.model_dump] for more information.
 
 Example:
 
@@ -83,6 +84,9 @@ print(Model(x=['{"a": 1}', '[1, 2]']).model_dump(round_trip=True))
 ```
 
 ## `model.model_dump_json(...)`
+
+??? api "API Documentation"
+    [`pydantic.main.BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json]<br>
 
 The `.model_dump_json()` method serializes a model directly to a JSON-encoded string
 that is equivalent to the result produced by [`.model_dump()`](#modelmodeldump).
