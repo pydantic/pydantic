@@ -21,6 +21,7 @@ except ImportError:
     parse_mypy_version = lambda _: (0,)  # noqa: E731
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
+PYDANTIC_ROOT = Path(__file__).parent.parent.parent
 
 pytestmark = pytest.mark.skipif(
     '--test-mypy' not in sys.argv
@@ -115,7 +116,7 @@ class MypyTestConfig:
 
 
 def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
-    outputs_dir = Path('tests/mypy/outputs')
+    outputs_dir = PYDANTIC_ROOT / 'tests/mypy/outputs'
     outputs_dir.mkdir(exist_ok=True)
     existing_versions = [
         x.name for x in outputs_dir.iterdir() if x.is_dir() and re.match(r'[0-9]+(?:\.[0-9]+)*', x.name)
@@ -145,8 +146,8 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
 
 @pytest.mark.parametrize('config_filename,python_filename', cases)
 def test_mypy_results(config_filename: str, python_filename: str, request: pytest.FixtureRequest) -> None:
-    input_path = Path('tests/mypy/modules') / python_filename
-    config_path = Path('tests/mypy/configs') / config_filename
+    input_path = PYDANTIC_ROOT / 'tests/mypy/modules' / python_filename
+    config_path = PYDANTIC_ROOT / 'tests/mypy/configs' / config_filename
     test_config = get_test_config(input_path, config_path)
 
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
@@ -179,6 +180,7 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
     existing_output_code: Optional[str] = None
     if test_config.existing is not None:
         existing_output_code = test_config.existing.output_path.read_text()
+        print(f'Comparing output with {test_config.existing.output_path}')
 
     merged_output = merge_python_and_mypy_output(input_code, mypy_out)
 
@@ -190,9 +192,9 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         test_config.current.output_path.write_text(merged_output)
     else:
         assert existing_output_code is not None, 'No output file found, run `make test-mypy-update` to create it'
+        assert merged_output == existing_output_code
         expected_returncode = get_expected_return_code(existing_output_code)
         assert mypy_returncode == expected_returncode
-        assert existing_output_code == merged_output
 
 
 def test_bad_toml_config() -> None:
@@ -218,46 +220,7 @@ def get_expected_return_code(source_code: str) -> int:
     return 0
 
 
-def build_executable_modules():
-    """
-    Iterates over the test cases and returns a list of modules that should be executable.
-    Specifically, we include any modules that are not expected to produce any typechecking errors.
-    Currently, we do not skip/xfail executable modules, but I have included code below that could
-    do so if uncommented.
-    """
-    modules = set()
-    for case in cases:
-        if type(case) != tuple:
-            # this means it is a pytest.param
-            skip_this_case = False
-            for mark in case.marks:
-                # Uncomment the lines below to respect skipif:
-                # if mark.markname == 'skipif' and mark.args[0]:
-                #     skip_this_case = True
-                #     break
-
-                # Uncomment the lines below to respect xfail:
-                # if mark.markname == 'xfail':
-                #     skip_this_case = True  # don't attempt to execute xfail modules
-                #     break
-                pass
-            if skip_this_case:
-                continue
-            case = case.values
-        config_filename, python_filename = case
-
-        output_path = Path(f'tests/mypy/outputs/{mypy_version}/{config_filename.replace(".", "_")}/{python_filename}')
-
-        if output_path.exists() and get_expected_return_code(output_path.read_text()) == 0:
-            # no type errors are expected, so no runtime errors should be raised
-            modules.add(python_filename[:-3])
-    return sorted(modules)
-
-
-executable_modules = build_executable_modules()
-
-
-@pytest.mark.parametrize('module', sorted(executable_modules))
+@pytest.mark.parametrize('module', ['dataclass_no_any', 'plugin_success', 'plugin_success_baseConfig'])
 @pytest.mark.filterwarnings('ignore:.*is deprecated.*:DeprecationWarning')
 @pytest.mark.filterwarnings('ignore:.*are deprecated.*:DeprecationWarning')
 def test_success_cases_run(module: str) -> None:
