@@ -104,7 +104,7 @@ cases = (
 
 @dataclasses.dataclass
 class MypyTestTarget:
-    parsed_mypy_version: tuple[int, ...]
+    parsed_mypy_version: Tuple[int, ...]
     output_path: Path
 
 
