@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, List, Set, Tuple
 
 import pytest
+from dirty_equals import IsInstance
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
@@ -1151,3 +1152,68 @@ def test_validate_assignment_model_validator_function(function_schema: Any, call
     assert m.b == 2
     assert m.__pydantic_fields_set__ == {'a', 'b'}
     assert calls == [call1, call2]
+
+
+def test_model_error():
+    class MyModel:
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        field_a: str
+        field_b: int
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {
+                    'field_a': core_schema.model_field(core_schema.str_schema()),
+                    'field_b': core_schema.model_field(core_schema.int_schema()),
+                },
+                model_name='MyModel',
+            ),
+        )
+    )
+    m = v.validate_python({'field_a': 'test', 'field_b': 12})
+    assert isinstance(m, MyModel)
+    assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
+
+    m2 = MyModel()
+    m2.field_a = '1'
+    m2.field_b = 2
+
+    m3 = v.validate_python(m2)
+    assert isinstance(m3, MyModel)
+    assert m3.__dict__ == {'field_a': '1', 'field_b': 2}
+
+    m4 = v.validate_json('{"field_a": "3", "field_b": 4}')
+    assert isinstance(m4, MyModel)
+    assert m4.__dict__ == {'field_a': '3', 'field_b': 4}
+
+    class OtherModel:
+        pass
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(OtherModel())
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'model_type',
+            'loc': (),
+            'msg': 'Input should be a valid dictionary or instance of MyModel',
+            'input': IsInstance(OtherModel),
+            'ctx': {'class_name': 'MyModel'},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json('123')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'model_type',
+            'loc': (),
+            'msg': 'Input should be an object',
+            'input': 123,
+            'ctx': {'class_name': 'MyModel'},
+        }
+    ]

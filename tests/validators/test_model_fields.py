@@ -136,7 +136,11 @@ field_b
         ({}, {'a': '123', 'c': 4}, ({'a': 123, 'b': 4.2}, None, {'a'})),
         ({'extra_fields_behavior': 'allow'}, {'a': '123', 'c': 4}, ({'a': 123, 'b': 4.2}, {'c': 4}, {'a', 'c'})),
         ({'extra_fields_behavior': 'allow'}, {'a': '123', b'c': 4}, Err('Keys should be strings [type=invalid_key,')),
-        ({'strict': True}, Map(a=123), Err('Input should be a valid dictionary [type=dict_type,')),
+        (
+            {'strict': True},
+            Map(a=123),
+            Err('Input should be a valid dictionary or instance of Model [type=model_type,'),
+        ),
         ({}, {'a': '123', 'b': '4.7'}, ({'a': 123, 'b': 4.7}, None, {'a', 'b'})),
         ({}, {'a': '123', 'b': 'nan'}, ({'a': 123, 'b': FunctionCheck(math.isnan)}, None, {'a', 'b'})),
         (
@@ -833,7 +837,9 @@ def test_alias_error_loc_field_names(py_and_json: PyAndJson):
 def test_empty_model():
     v = SchemaValidator({'type': 'model-fields', 'fields': {}})
     assert v.validate_python({}) == ({}, None, set())
-    with pytest.raises(ValidationError, match=re.escape('Input should be a valid dictionary [type=dict_type,')):
+    with pytest.raises(
+        ValidationError, match=re.escape('Input should be a valid dictionary or instance of Model [type=model_type,')
+    ):
         v.validate_python('x')
 
 
@@ -921,13 +927,13 @@ class MyDataclass:
         ((Cls(a=1, b=2, c='ham'), dict(c='bacon')), ({'a': 1, 'b': 2, 'c': 'bacon'}, None, {'a', 'b', 'c'})),
         ((Cls(a=1, b=2, c='ham'), dict(d='bacon')), ({'a': 1, 'b': 2, 'c': 'ham'}, None, {'a', 'b', 'c'})),
         # using type gives `__module__ == 'builtins'`
-        (type('Testing', (), {}), Err('[type=dict_attributes_type,')),
+        (type('Testing', (), {}), Err('[type=model_attributes_type,')),
         (
             '123',
-            Err('Input should be a valid dictionary or instance to extract fields from [type=dict_attributes_type,'),
+            Err('Input should be a valid dictionary or object to extract fields from [type=model_attributes_type,'),
         ),
-        ([(1, 2)], Err('type=dict_attributes_type,')),
-        (((1, 2),), Err('type=dict_attributes_type,')),
+        ([(1, 2)], Err('type=model_attributes_type,')),
+        (((1, 2),), Err('type=model_attributes_type,')),
     ],
     ids=repr,
 )
@@ -966,6 +972,7 @@ def test_from_attributes_type_error():
                 'c': {'type': 'model-field', 'schema': {'type': 'str'}},
             },
             'from_attributes': True,
+            'model_name': 'MyModel',
         }
     )
     with pytest.raises(ValidationError) as exc_info:
@@ -973,9 +980,9 @@ def test_from_attributes_type_error():
 
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'dict_attributes_type',
+            'type': 'model_attributes_type',
             'loc': (),
-            'msg': 'Input should be a valid dictionary or instance to extract fields from',
+            'msg': 'Input should be a valid dictionary or object to extract fields from',
             'input': '123',
         }
     ]
@@ -984,7 +991,13 @@ def test_from_attributes_type_error():
         v.validate_json('123')
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'dict_type', 'loc': (), 'msg': 'Input should be an object', 'input': 123}
+        {
+            'type': 'model_type',
+            'loc': (),
+            'msg': 'Input should be an object',
+            'input': 123,
+            'ctx': {'class_name': 'MyModel'},
+        }
     ]
 
 

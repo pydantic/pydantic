@@ -143,7 +143,7 @@ def test_dataclass_args_init_only(py_and_json: PyAndJson, input_value, expected)
                         'loc': (),
                         'msg': IsStr(regex='Input should be (an object|a dictionary or an instance of MyDataclass)'),
                         'input': IsListOrTuple('hello'),
-                        'ctx': {'dataclass_name': 'MyDataclass'},
+                        'ctx': {'class_name': 'MyDataclass'},
                     }
                 ],
             ),
@@ -219,7 +219,7 @@ def test_dataclass():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'model_class_type',
+            'type': 'dataclass_exact_type',
             'loc': (),
             'msg': 'Input should be an instance of FooDataclass',
             'input': {'a': 'hello', 'b': True},
@@ -1217,7 +1217,7 @@ def test_custom_dataclass_names():
         v.validate_python({'foo': 123})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'dataclass_name': 'FooDataclass[dataclass_args_schema]'},
+            'ctx': {'class_name': 'FooDataclass[dataclass_args_schema]'},
             'input': 123,
             'loc': ('foo', 'FooDataclass[cls_name]'),
             'msg': 'Input should be a dictionary or an instance of FooDataclass[dataclass_args_schema]',
@@ -1481,7 +1481,7 @@ def test_dataclass_json():
 
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'dataclass_name': 'FooDataclass'},
+            'ctx': {'class_name': 'FooDataclass'},
             'input': ['a', 'b'],
             'loc': (),
             'msg': 'Input should be an object',

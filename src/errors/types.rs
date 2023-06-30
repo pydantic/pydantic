@@ -82,7 +82,6 @@ pub enum ErrorType {
     RecursionLoop,
     // ---------------------
     // typed dict specific errors
-    DictAttributesType,
     Missing,
     FrozenField,
     FrozenInstance,
@@ -93,7 +92,16 @@ pub enum ErrorType {
     },
     // ---------------------
     // model class specific errors
-    ModelClassType {
+    ModelType {
+        class_name: String,
+    },
+    ModelAttributesType,
+    // ---------------------
+    // dataclass errors (we don't talk about ArgsKwargs here for simplicity)
+    DataclassType {
+        class_name: String,
+    },
+    DataclassExactType {
         class_name: String,
     },
     // ---------------------
@@ -280,11 +288,6 @@ pub enum ErrorType {
     MissingPositionalOnlyArgument,
     MultipleArgumentValues,
     // ---------------------
-    // dataclass errors (we don't talk about ArgsKwargs here for simplicity)
-    DataclassType {
-        dataclass_name: String,
-    },
-    // ---------------------
     // URL errors
     UrlType,
     UrlParsing {
@@ -387,7 +390,9 @@ impl ErrorType {
             Self::NoSuchAttribute { .. } => extract_context!(NoSuchAttribute, ctx, attribute: String),
             Self::JsonInvalid { .. } => extract_context!(JsonInvalid, ctx, error: String),
             Self::GetAttributeError { .. } => extract_context!(GetAttributeError, ctx, error: String),
-            Self::ModelClassType { .. } => extract_context!(ModelClassType, ctx, class_name: String),
+            Self::ModelType { .. } => extract_context!(ModelType, ctx, class_name: String),
+            Self::DataclassType { .. } => extract_context!(DataclassType, ctx, class_name: String),
+            Self::DataclassExactType { .. } => extract_context!(DataclassExactType, ctx, class_name: String),
             Self::GreaterThan { .. } => extract_context!(GreaterThan, ctx, gt: Number),
             Self::GreaterThanEqual { .. } => extract_context!(GreaterThanEqual, ctx, ge: Number),
             Self::LessThan { .. } => extract_context!(LessThan, ctx, lt: Number),
@@ -436,7 +441,6 @@ impl ErrorType {
                 expected_tags: String
             ),
             Self::UnionTagNotFound { .. } => extract_context!(UnionTagNotFound, ctx, discriminator: String),
-            Self::DataclassType { .. } => extract_context!(DataclassType, ctx, dataclass_name: String),
             Self::UrlParsing { .. } => extract_context!(UrlParsing, ctx, error: String),
             Self::UrlSyntaxViolation { .. } => extract_context!(Cow::Owned, UrlSyntaxViolation, ctx, error: String),
             Self::UrlTooLong { .. } => extract_context!(UrlTooLong, ctx, max_length: usize),
@@ -461,14 +465,16 @@ impl ErrorType {
             Self::JsonInvalid {..} => "Invalid JSON: {error}",
             Self::JsonType => "JSON input should be string, bytes or bytearray",
             Self::RecursionLoop => "Recursion error - cyclic reference detected",
-            Self::DictAttributesType => "Input should be a valid dictionary or instance to extract fields from",
             Self::Missing => "Field required",
             Self::FrozenField => "Field is frozen",
             Self::FrozenInstance => "Instance is frozen",
             Self::ExtraForbidden => "Extra inputs are not permitted",
             Self::InvalidKey => "Keys should be strings",
             Self::GetAttributeError {..} => "Error extracting attribute: {error}",
-            Self::ModelClassType {..} => "Input should be an instance of {class_name}",
+            Self::ModelType {..} => "Input should be a valid dictionary or instance of {class_name}",
+            Self::ModelAttributesType => "Input should be a valid dictionary or object to extract fields from",
+            Self::DataclassType {..} => "Input should be a dictionary or an instance of {class_name}",
+            Self::DataclassExactType {..} => "Input should be an instance of {class_name}",
             Self::NoneRequired => "Input should be None",
             Self::GreaterThan {..} => "Input should be greater than {gt}",
             Self::GreaterThanEqual {..} => "Input should be greater than or equal to {ge}",
@@ -537,7 +543,6 @@ impl ErrorType {
             Self::UnexpectedPositionalArgument => "Unexpected positional argument",
             Self::MissingPositionalOnlyArgument => "Missing required positional only argument",
             Self::MultipleArgumentValues => "Got multiple values for argument",
-            Self::DataclassType {..} => "Input should be a dictionary or an instance of {dataclass_name}",
             Self::UrlType => "URL input should be a string or URL",
             Self::UrlParsing {..} => "Input should be a valid URL, {error}",
             Self::UrlSyntaxViolation {..} => "Input violated strict URL syntax rules, {error}",
@@ -552,7 +557,9 @@ impl ErrorType {
             Self::ListType | Self::TupleType | Self::IterableType | Self::SetType | Self::FrozenSetType => {
                 "Input should be a valid array"
             }
-            Self::DictAttributesType | Self::DictType | Self::DataclassType { .. } => "Input should be an object",
+            Self::ModelType { .. } | Self::ModelAttributesType | Self::DictType | Self::DataclassType { .. } => {
+                "Input should be an object"
+            }
             Self::TimeDeltaType => "Input should be a valid duration",
             Self::TimeDeltaParsing { .. } => "Input should be a valid duration, {error}",
             Self::ArgumentsType => "Arguments must be an array or an object",
@@ -593,7 +600,9 @@ impl ErrorType {
             Self::NoSuchAttribute { attribute } => render!(tmpl, attribute),
             Self::JsonInvalid { error } => render!(tmpl, error),
             Self::GetAttributeError { error } => render!(tmpl, error),
-            Self::ModelClassType { class_name } => render!(tmpl, class_name),
+            Self::ModelType { class_name } => render!(tmpl, class_name),
+            Self::DataclassType { class_name } => render!(tmpl, class_name),
+            Self::DataclassExactType { class_name } => render!(tmpl, class_name),
             Self::GreaterThan { gt } => to_string_render!(tmpl, gt),
             Self::GreaterThanEqual { ge } => to_string_render!(tmpl, ge),
             Self::LessThan { lt } => to_string_render!(tmpl, lt),
@@ -643,7 +652,6 @@ impl ErrorType {
                 expected_tags,
             } => render!(tmpl, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator } => render!(tmpl, discriminator),
-            Self::DataclassType { dataclass_name } => render!(tmpl, dataclass_name),
             Self::UrlParsing { error } => render!(tmpl, error),
             Self::UrlSyntaxViolation { error } => render!(tmpl, error),
             Self::UrlTooLong { max_length } => to_string_render!(tmpl, max_length),
@@ -657,7 +665,9 @@ impl ErrorType {
             Self::NoSuchAttribute { attribute } => py_dict!(py, attribute),
             Self::JsonInvalid { error } => py_dict!(py, error),
             Self::GetAttributeError { error } => py_dict!(py, error),
-            Self::ModelClassType { class_name } => py_dict!(py, class_name),
+            Self::ModelType { class_name } => py_dict!(py, class_name),
+            Self::DataclassType { class_name } => py_dict!(py, class_name),
+            Self::DataclassExactType { class_name } => py_dict!(py, class_name),
             Self::GreaterThan { gt } => py_dict!(py, gt),
             Self::GreaterThanEqual { ge } => py_dict!(py, ge),
             Self::LessThan { lt } => py_dict!(py, lt),
@@ -701,7 +711,6 @@ impl ErrorType {
                 expected_tags,
             } => py_dict!(py, discriminator, tag, expected_tags),
             Self::UnionTagNotFound { discriminator } => py_dict!(py, discriminator),
-            Self::DataclassType { dataclass_name } => py_dict!(py, dataclass_name),
             Self::UrlParsing { error } => py_dict!(py, error),
             Self::UrlSyntaxViolation { error } => py_dict!(py, error),
             Self::UrlTooLong { max_length } => py_dict!(py, max_length),
