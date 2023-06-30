@@ -87,22 +87,19 @@ A few things to note on validators:
   * If validation fails on another field (or that field is missing) it will not be included in `values`, hence
     `if 'password1' in values and ...` in this example.
 
-## Before, after, and wrap validators
+## Annotated Validators
 
-Pydantic provides additional validation classes that can be used to specify when validation occurs.
+??? api "API Documentation"
+    [`pydantic.functional_validators.WrapValidator`][pydantic.functional_validators.WrapValidator]<br>
+    [`pydantic.functional_validators.PlainValidator`][pydantic.functional_validators.PlainValidator]<br>
+    [`pydantic.functional_validators.BeforeValidator`][pydantic.functional_validators.BeforeValidator]<br>
+    [`pydantic.functional_validators.AfterValidator`][pydantic.functional_validators.AfterValidator]<br>
 
-- [`AfterValidator`][pydantic.functional_validators.AfterValidator] indicates that field validation should be applied **after** the inner validation logic.
-- [`BeforeValidator`][pydantic.functional_validators.BeforeValidator] indicates that field validation should be applied **before** the inner validation logic.
-- [`ModelAfterValidator`][pydantic.functional_validators.ModelAfterValidator] indicates that model validation should be applied **after** the inner validation logic.
-- [`ModelBeforeValidator`][pydantic.functional_validators.ModelBeforeValidator] indicates that model field validation should be applied **before** the inner validation logic.
-- [`ModelWrapValidator`][pydantic.functional_validators.ModelWrapValidator] indicates that model validation should be applied **around** the inner validation logic.
-- [`PlainValidator`][pydantic.functional_validators.PlainValidator] indicates that field validation should be applied **instead of** the inner validation logic.
-- [`WrapValidator`][pydantic.functional_validators.WrapValidator] indicates that field validation should be applied **around** the inner validation logic.
-
-You can also use the  `mode` argument for `@field_validator` and `@model_validator` to specify when validation occurs.
+Pydantic also provides a way to apply validators via use of `Annotated`.
 
 !!! note
-    You can use multiple before, after, or wrap validators, but only one `PlainValidator`.
+    You can use multiple before, after, or wrap validators, but only one `PlainValidator` since a plain validator
+    will not call any inner validators.
 
 ```py
 from typing import List
