@@ -54,26 +54,26 @@ from pydantic import BaseModel, PositiveInt
 
 class User(BaseModel):
     id: int  # (1)
-    name: str = 'John Doe'  # (2)
-    signup_ts: datetime | None  # (3)
-    tastes: dict[str, PositiveInt]  # (4)
+    name: str = 'John Doe'  # (2)!
+    signup_ts: datetime | None  # (3)!
+    tastes: dict[str, PositiveInt]  # (4)!
 
 
 external_data = {
     'id': 123,
-    'signup_ts': '2019-06-01 12:22',  # (5)
+    'signup_ts': '2019-06-01 12:22',  # (5)!
     'tastes': {
         'wine': 9,
-        b'cheese': 7,  # (6)
-        'cabbage': '1',  # (7)
+        b'cheese': 7,  # (6)!
+        'cabbage': '1',  # (7)!
     },
 }
 
-user = User(**external_data)  # (8)
+user = User(**external_data)  # (8)!
 
-print(user.id)  # (9)
+print(user.id)  # (9)!
 #> 123
-print(user.model_dump())  # (10)
+print(user.model_dump())  # (10)!
 """
 {
     'id': 123,
@@ -112,13 +112,13 @@ class User(BaseModel):
     tastes: dict[str, PositiveInt]
 
 
-external_data = {  # (1)
+external_data = {  # (1)!
     'id': 'not an int',
     'tastes': {},
 }
 
 try:
-    User(**external_data)  # (2)
+    User(**external_data)  # (2)!
 except ValidationError as e:
     print(e.errors())
     """

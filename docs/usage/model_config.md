@@ -54,9 +54,8 @@ from pydantic import ConfigDict, ValidationError
 from pydantic.dataclasses import dataclass
 
 
-@dataclass(
-    config=ConfigDict(str_max_length=10, validate_assignment=True)
-)  # (1)!
+config = ConfigDict(str_max_length=10, validate_assignment=True)
+@dataclass(config=config)  # (1)!
 class User:
     id: int
     name: str = 'John Doe'

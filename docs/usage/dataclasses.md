@@ -294,10 +294,9 @@ try:
         dc: DC
         other: str
 
+    # invalid as it is now a pydantic dataclass
     Model(dc=my_dc, other='other')
-except (
-    PydanticSchemaGenerationError
-) as e:  # invalid as it is now a pydantic dataclass
+except PydanticSchemaGenerationError as e:
     print(e.message)
     """
     Unable to generate pydantic-core schema for <class '__main__.ArbitraryType'>. Set `arbitrary_types_allowed=True` in the model_config to ignore this error or implement `__get_pydantic_core_schema__` on your type to fully support it.
