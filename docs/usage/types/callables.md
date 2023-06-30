@@ -2,9 +2,6 @@
 description: Support for callable types.
 ---
 
-!!! warning
-    This page still needs to be updated for v2.0.
-
 `typing.Callable`
 : see below for more detail on parsing and validation
 
