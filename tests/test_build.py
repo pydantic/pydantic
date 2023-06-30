@@ -36,16 +36,16 @@ def test_schema_wrong_type():
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator(1)
     assert str(exc_info.value) == (
-        'Invalid Schema:\n  Input should be a valid dictionary or instance to'
-        ' extract fields from [type=dict_attributes_type, input_value=1, input_type=int]\n'
-        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/dict_attributes_type'
+        'Invalid Schema:\n  Input should be a valid dictionary or object to'
+        ' extract fields from [type=model_attributes_type, input_value=1, input_type=int]\n'
+        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/model_attributes_type'
     )
     assert exc_info.value.errors() == [
         {
             'input': 1,
             'loc': (),
-            'msg': 'Input should be a valid dictionary or instance to extract fields ' 'from',
-            'type': 'dict_attributes_type',
+            'msg': 'Input should be a valid dictionary or object to extract fields from',
+            'type': 'model_attributes_type',
         }
     ]
     assert exc_info.value.error_count() == 1

@@ -502,7 +502,7 @@ impl Validator for DataclassValidator {
             }
         } else if extra.strict.unwrap_or(self.strict) && input.is_python() {
             Err(ValError::new(
-                ErrorType::ModelClassType {
+                ErrorType::DataclassExactType {
                     class_name: self.get_name().to_string(),
                 },
                 input,

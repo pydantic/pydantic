@@ -159,7 +159,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<'a, GenericArguments<'a>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict)).into())
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
@@ -167,8 +167,8 @@ impl<'a> Input<'a> for PyAny {
             let kwargs = args_kwargs.kwargs.map(|d| d.into_ref(self.py()));
             Ok(PyArgs::new(Some(args), kwargs).into())
         } else {
-            let dataclass_name = dataclass_name.to_string();
-            Err(ValError::new(ErrorType::DataclassType { dataclass_name }, self))
+            let class_name = class_name.to_string();
+            Err(ValError::new(ErrorType::DataclassType { class_name }, self))
         }
     }
 
@@ -382,11 +382,11 @@ impl<'a> Input<'a> for PyAny {
                 if from_attributes_applicable(obj) {
                     Ok(GenericMapping::PyGetAttr(obj, Some(kwargs)))
                 } else {
-                    Err(ValError::new(ErrorType::DictAttributesType, self))
+                    Err(ValError::new(ErrorType::ModelAttributesType, self))
                 }
             } else {
                 // note the error here gives a hint about from_attributes
-                Err(ValError::new(ErrorType::DictAttributesType, self))
+                Err(ValError::new(ErrorType::ModelAttributesType, self))
             }
         } else {
             // otherwise we just call back to validate_dict if from_mapping is allowed, note that errors in this
