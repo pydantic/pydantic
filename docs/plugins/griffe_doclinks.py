@@ -20,7 +20,7 @@ def find_heading(content: str, slug: str, file_path: Path) -> Tuple[str, int]:
     raise ValueError(f'heading with slug {slug!r} not found in {file_path}')
 
 
-def replace_links(m: re.Match[str], *, python_file_name: str, object_name: str) -> str:
+def replace_links(m: re.Match, *, python_file_name: str, object_name: str) -> str:
     usage_path, slug = m.groups()
     rel_file = f'{usage_path}.md'
     file_path = DOCS_PATH / rel_file
