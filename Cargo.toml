@@ -1,6 +1,6 @@
 [package]
 name = "pydantic-core"
-version = "0.42.0"
+version = "2.0.0"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/pydantic/pydantic-core"
