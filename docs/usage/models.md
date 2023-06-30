@@ -1,3 +1,6 @@
+!!! warning
+    This page still needs to be updated for v2.0.
+
 The primary means of defining objects in Pydantic is via models. Models are simply classes which inherit from
 `BaseModel`.
 
