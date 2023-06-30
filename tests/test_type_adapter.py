@@ -219,7 +219,13 @@ def test_validate_python_from_attributes() -> None:
         with pytest.raises(ValidationError) as exc_info:
             ta.validate_python(UnrelatedClass(), from_attributes=from_attributes)
         assert exc_info.value.errors(include_url=False) == [
-            {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+            {
+                'type': 'model_type',
+                'loc': (),
+                'msg': 'Input should be a valid dictionary or instance of Model',
+                'input': input,
+                'ctx': {'class_name': 'Model'},
+            }
         ]
 
     res = ta.validate_python(UnrelatedClass(), from_attributes=True)
@@ -230,7 +236,13 @@ def test_validate_python_from_attributes() -> None:
     with pytest.raises(ValidationError) as exc_info:
         ta.validate_python(UnrelatedClass(), from_attributes=False)
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+        {
+            'type': 'model_type',
+            'loc': (),
+            'msg': 'Input should be a valid dictionary or instance of ModelFromAttributesTrue',
+            'input': input,
+            'ctx': {'class_name': 'ModelFromAttributesTrue'},
+        }
     ]
 
     for from_attributes in (True, None):
@@ -243,7 +255,13 @@ def test_validate_python_from_attributes() -> None:
         with pytest.raises(ValidationError) as exc_info:
             ta.validate_python(UnrelatedClass(), from_attributes=from_attributes)
         assert exc_info.value.errors(include_url=False) == [
-            {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+            {
+                'type': 'model_type',
+                'loc': (),
+                'msg': 'Input should be a valid dictionary or instance of ModelFromAttributesFalse',
+                'input': input,
+                'ctx': {'class_name': 'ModelFromAttributesFalse'},
+            }
         ]
 
     res = ta.validate_python(UnrelatedClass(), from_attributes=True)

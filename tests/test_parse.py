@@ -22,7 +22,13 @@ def test_model_validate_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate([1, 2, 3])
     assert exc_info.value.errors(include_url=False) == [
-        {'input': [1, 2, 3], 'loc': (), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+        {
+            'type': 'model_type',
+            'loc': (),
+            'msg': 'Input should be a valid dictionary or instance of Model',
+            'input': [1, 2, 3],
+            'ctx': {'class_name': 'Model'},
+        }
     ]
 
 
@@ -38,7 +44,13 @@ def test_model_validate_wrong_model():
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate(Foo())
     assert exc_info.value.errors(include_url=False) == [
-        {'input': Foo(), 'loc': (), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+        {
+            'type': 'model_type',
+            'loc': (),
+            'msg': 'Input should be a valid dictionary or instance of Model',
+            'input': Foo(),
+            'ctx': {'class_name': 'Model'},
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:

@@ -720,7 +720,7 @@ except ValidationError as e:
     """
     2 validation errors for Model
     wine
-      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='Kinda good', input_type=str]
+      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='Kinda good', input_type=str]
     cheese
       Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='yeah', input_type=str]
     """

@@ -438,7 +438,7 @@ def test_nested_dataclass():
             'loc': ('n',),
             'msg': 'Input should be a dictionary or an instance of Nested',
             'input': 'not nested',
-            'ctx': {'dataclass_name': 'Nested'},
+            'ctx': {'class_name': 'Nested'},
         }
     ]
 
@@ -1497,13 +1497,14 @@ def test_self_reference_dataclass():
     with pytest.raises(ValidationError) as exc_info:
         MyDataclass(self_reference=1)
 
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'dataclass_name': 'MyDataclass'},
-            'input': 1,
+            'type': 'dataclass_type',
             'loc': ('self_reference',),
             'msg': 'Input should be a dictionary or an instance of MyDataclass',
-            'type': 'dataclass_type',
+            'input': 1,
+            'ctx': {'class_name': 'MyDataclass'},
         }
     ]
 
@@ -1542,13 +1543,14 @@ def test_cyclic_reference_dataclass(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         D2(d1=D2())
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'dataclass_name': 'D1'},
-            'input': D2(d1=None),
+            'type': 'dataclass_type',
             'loc': ('d1',),
             'msg': 'Input should be a dictionary or an instance of D1',
-            'type': 'dataclass_type',
+            'input': D2(d1=None),
+            'ctx': {'class_name': 'D1'},
         }
     ]
 
@@ -1604,13 +1606,14 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         module.D2(d1=module.D2())
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'dataclass_name': 'D1'},
+            'type': 'dataclass_type',
             'input': module.D2(d1=None),
             'loc': ('d1',),
             'msg': 'Input should be a dictionary or an instance of D1',
-            'type': 'dataclass_type',
+            'ctx': {'class_name': 'D1'},
         }
     ]
 

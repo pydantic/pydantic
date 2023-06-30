@@ -90,7 +90,7 @@ def test_root_model_field_override():
         {
             'input': 'abc',
             'loc': (),
-            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'msg': 'Input should be a valid number, unable to parse string as a number',
             'type': 'float_parsing',
         }
     ]
