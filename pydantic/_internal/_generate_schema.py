@@ -351,6 +351,7 @@ class GenerateSchema:
                         {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
                         computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
                         extra_validator=extra_validator,
+                        model_name=cls.__name__,
                     )
                 finally:
                     self._config_wrapper_stack.pop()

@@ -464,9 +464,9 @@ def test_recursive_list():
         {
             'type': 'model_type',
             'loc': ('v', 0),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of SubModel',
             'input': 'x',
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'SubModel'},
         }
     ]
 
@@ -2394,9 +2394,9 @@ def test_generic_wrapped_forwardref():
         {
             'type': 'model_type',
             'loc': ('callbacks', 0),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of PathItem',
             'input': 1,
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'PathItem'},
         }
     ]
 
@@ -2416,9 +2416,9 @@ def test_plain_basemodel_field():
         {
             'type': 'model_type',
             'loc': ('x',),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of BaseModel',
             'input': 1,
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'BaseModel'},
         }
     ]
 
@@ -2470,9 +2470,9 @@ def test_invalid_forward_ref_model():
         {
             'type': 'model_type',
             'loc': ('B',),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of B',
             'input': C(),
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'B'},
         }
     ]
 

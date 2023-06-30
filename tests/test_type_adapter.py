@@ -239,9 +239,9 @@ def test_validate_python_from_attributes() -> None:
         {
             'type': 'model_type',
             'loc': (),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of ModelFromAttributesTrue',
             'input': input,
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'ModelFromAttributesTrue'},
         }
     ]
 
@@ -258,9 +258,9 @@ def test_validate_python_from_attributes() -> None:
             {
                 'type': 'model_type',
                 'loc': (),
-                'msg': 'Input should be a valid dictionary or instance of Model',
+                'msg': 'Input should be a valid dictionary or instance of ModelFromAttributesFalse',
                 'input': input,
-                'ctx': {'class_name': 'Model'},
+                'ctx': {'class_name': 'ModelFromAttributesFalse'},
             }
         ]
 

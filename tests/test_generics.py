@@ -665,9 +665,9 @@ def test_nested():
         {
             'type': 'model_type',
             'loc': ('i',),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of InnerT[int]',
             'input': InnerT[str](a='ate'),
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'InnerT[int]'},
         }
     ]
 
@@ -684,9 +684,9 @@ def test_nested():
         {
             'type': 'model_type',
             'loc': ('i',),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of InnerT[int]',
             'input': InnerT[Any](a={}),
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'InnerT[int]'},
         }
     ]
 
@@ -1549,9 +1549,9 @@ def test_generic_recursive_models(create_module):
         {
             'type': 'model_type',
             'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'Model1[str]'),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of Model1[str]',
             'input': 123,
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'Model1[str]'},
         },
     ]
     result = Model1(ref=Model2(ref=Model1(ref=Model2(ref='123'))))
@@ -1602,9 +1602,9 @@ def test_generic_recursive_models_separate_parameters(create_module):
         {
             'type': 'model_type',
             'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'Model1[str]'),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of Model1[str]',
             'input': 123,
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'Model1[str]'},
         },
     ]
     # TODO: Unlike in the previous test, the following (commented) line currently produces this error:
@@ -1666,9 +1666,9 @@ def test_generic_recursive_models_repeated_separate_parameters(create_module):
         {
             'type': 'model_type',
             'loc': ('ref', 'ref', 'Model1[str]', 'ref', 'ref', 'Model1[str]'),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of Model1[str]',
             'input': 123,
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'Model1[str]'},
         },
     ]
 
@@ -1710,9 +1710,9 @@ def test_generic_recursive_models_triple(create_module):
         {
             'type': 'model_type',
             'loc': ('a1', 'a2', 'a3', 'A1[str]'),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of A1[str]',
             'input': 1,
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'A1[str]'},
         },
         {'type': 'string_type', 'loc': ('a1', 'a2', 'a3', 'str'), 'msg': 'Input should be a valid string', 'input': 1},
     ]

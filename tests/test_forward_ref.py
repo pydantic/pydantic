@@ -153,9 +153,9 @@ def test_self_forward_ref_collection(create_module):
         {
             'type': 'model_type',
             'loc': ('c', 0, 'b'),
-            'msg': 'Input should be a valid dictionary or instance of Model',
+            'msg': 'Input should be a valid dictionary or instance of Foo',
             'input': 234,
-            'ctx': {'class_name': 'Model'},
+            'ctx': {'class_name': 'Foo'},
         }
     ]
 
