@@ -1,3 +1,9 @@
+## v2.0b3 (2023-06-16)
+
+Third beta pre-release of Pydantic V2
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0b3)
+
 ## v2.0b2 (2023-06-03)
 
 Add `from_attributes` runtime flag to `TypeAdapter.validate_python` and `BaseModel.model_validate`.
@@ -33,6 +39,13 @@ See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/
 First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
+
+## v1.10.10 (2023-06-30)
+
+* Add Pydantic `Json` field support to settings management, #6250 by @hramezani
+* Fixed literal validator errors for unhashable values, #6188 by @markus1978
+* Fixed bug with generics receiving forward refs, #6130 by @mark-todd
+* Update install method of FastAPI for internal tests in CI, #6117 by @Kludex
 
 ## v1.10.9 (2023-06-07)
 
