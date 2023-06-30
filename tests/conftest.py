@@ -15,6 +15,7 @@ from _pytest.assertion.rewrite import AssertionRewritingHook
 
 def pytest_addoption(parser):
     parser.addoption('--test-mypy', action='store_true', help='run mypy tests')
+    parser.addoption('--update-mypy', action='store_true', help='update mypy tests')
 
 
 def _extract_source_code_from_function(function):
