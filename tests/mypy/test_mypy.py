@@ -1,8 +1,11 @@
+import dataclasses
 import importlib
 import os
 import re
 import sys
+from bisect import insort
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -28,67 +31,188 @@ pytestmark = pytest.mark.skipif(
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
 
-cases = [
-    ('mypy-plugin.ini', 'plugin_success.py', None),
-    ('mypy-plugin.ini', 'plugin_fail.py', 'plugin-fail.txt'),
-    ('mypy-plugin.ini', 'custom_constructor.py', 'custom_constructor.txt'),
-    ('mypy-plugin-strict.ini', 'plugin_success.py', 'plugin-success-strict.txt'),
-    ('mypy-plugin-strict.ini', 'plugin_fail.py', 'plugin-fail-strict.txt'),
-    ('mypy-plugin-strict.ini', 'fail_defaults.py', 'fail_defaults.txt'),
-    pytest.param(
-        'mypy-default.ini',
+
+@dataclasses.dataclass
+class MypyCasesBuilder:
+    configs: str | list[str]
+    modules: str | list[str]
+    marks: Any = None
+
+    def build(self) -> list[tuple[str, str] | Any]:
+        """
+        Produces the cartesian product of the configs and modules, optionally with marks.
+        """
+        if isinstance(self.configs, str):
+            self.configs = [self.configs]
+        if isinstance(self.modules, str):
+            self.modules = [self.modules]
+        built_cases = []
+        for config in self.configs:
+            for module in self.modules:
+                built_cases.append((config, module))
+        if self.marks is not None:
+            built_cases = [pytest.param(config, module, marks=self.marks) for config, module in built_cases]
+        return built_cases
+
+
+cases = (
+    # No plugin
+    MypyCasesBuilder(
+        ['mypy-default.ini', 'pyproject-default.toml'], ['fail1.py', 'fail2.py', 'fail3.py', 'fail4.py']
+    ).build()
+    + MypyCasesBuilder(
+        ['mypy-default.ini', 'pyproject-default.toml'],
         'success.py',
-        None,
-        marks=pytest.mark.skipif(
-            MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'
+        pytest.mark.skipif(MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'),
+    ).build()
+    + MypyCasesBuilder(
+        'mypy-default.ini', ['plugin_success.py', 'plugin_success_baseConfig.py', 'metaclass_args.py']
+    ).build()
+    # Default plugin config
+    + MypyCasesBuilder(
+        ['mypy-plugin.ini', 'pyproject-plugin.toml'],
+        ['plugin_success.py', 'plugin_fail.py', 'plugin_success_baseConfig.py', 'plugin_fail_baseConfig.py'],
+    ).build()
+    # Strict plugin config
+    + MypyCasesBuilder(
+        ['mypy-plugin-strict.ini', 'pyproject-plugin-strict.toml'],
+        [
+            'plugin_success.py',
+            'plugin_fail.py',
+            'fail_defaults.py',
+            'plugin_success_baseConfig.py',
+            'plugin_fail_baseConfig.py',
+        ],
+    ).build()
+    # One-off cases
+    + [
+        ('mypy-plugin.ini', 'custom_constructor.py'),
+        ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
+        ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
+        ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
+        pytest.param(
+            'pyproject-default.toml',
+            'computed_fields.py',
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 8),
+                reason='cached_property is only available in Python 3.8+, errors are different with mypy 0.971',
+            ),
         ),
-    ),
-    ('mypy-default.ini', 'fail1.py', 'fail1.txt'),
-    ('mypy-default.ini', 'fail2.py', 'fail2.txt'),
-    ('mypy-default.ini', 'fail3.py', 'fail3.txt'),
-    ('mypy-default.ini', 'fail4.py', 'fail4.txt'),
-    ('mypy-default.ini', 'plugin_success.py', 'plugin_success.txt'),
-    pytest.param('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py', None),
-    pytest.param(
-        'pyproject-default.toml',
-        'success.py',
-        None,
-        marks=pytest.mark.skipif(
-            MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'
-        ),
-    ),
-    ('pyproject-default.toml', 'fail1.py', 'fail1.txt'),
-    ('pyproject-default.toml', 'fail2.py', 'fail2.txt'),
-    ('pyproject-default.toml', 'fail3.py', 'fail3.txt'),
-    ('pyproject-default.toml', 'fail4.py', 'fail4.txt'),
-    ('pyproject-plugin.toml', 'plugin_success.py', None),
-    ('pyproject-plugin.toml', 'plugin_fail.py', 'plugin-fail.txt'),
-    ('pyproject-plugin-strict.toml', 'plugin_success.py', 'plugin-success-strict.txt'),
-    ('pyproject-plugin-strict.toml', 'plugin_fail.py', 'plugin-fail-strict.txt'),
-    ('pyproject-plugin-strict.toml', 'fail_defaults.py', 'fail_defaults.txt'),
-    ('mypy-plugin-strict.ini', 'plugin_default_factory.py', 'plugin_default_factory.txt'),
-    # with Config-Class
-    ('mypy-plugin.ini', 'plugin_success_baseConfig.py', None),
-    ('mypy-plugin.ini', 'plugin_fail_baseConfig.py', 'plugin-fail-baseConfig.txt'),
-    ('mypy-plugin-strict.ini', 'plugin_success_baseConfig.py', 'plugin-success-strict-baseConfig.txt'),
-    ('mypy-plugin-strict.ini', 'plugin_fail_baseConfig.py', 'plugin-fail-strict-baseConfig.txt'),
-    ('mypy-default.ini', 'plugin_success_baseConfig.py', 'plugin_success_baseConfig.txt'),
-    ('pyproject-plugin.toml', 'plugin_success_baseConfig.py', None),
-    ('pyproject-plugin.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-baseConfig.txt'),
-    ('pyproject-plugin-strict.toml', 'plugin_success_baseConfig.py', 'plugin-success-strict-baseConfig.txt'),
-    ('pyproject-plugin-strict.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-strict-baseConfig.txt'),
-    pytest.param(
-        'pyproject-default.toml',
-        'computed_fields.py',
-        'computed_fields.txt',
-        marks=pytest.mark.skipif(
-            sys.version_info < (3, 8) or MYPY_VERSION_TUPLE < (0, 982),
-            reason='cached_property is only available in Python 3.8+, errors are different with mypy 0.971',
-        ),
-    ),
-    ('mypy-default.ini', 'metaclass_args.py', 'metaclass_args_no_plugin.txt'),
-    ('mypy-plugin-very-strict.ini', 'metaclass_args.py', 'metaclass_args_plugin.txt'),
-]
+    ]
+)
+
+
+@dataclasses.dataclass
+class MypyTestTarget:
+    parsed_mypy_version: tuple[int, ...]
+    output_path: Path
+
+
+@dataclasses.dataclass
+class MypyTestConfig:
+    existing: MypyTestTarget | None  # the oldest target with an output that is no older than the installed mypy
+    current: MypyTestTarget  # the target for the current installed mypy
+
+
+def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
+    existing_versions = [
+        x.name for x in Path('tests/mypy/outputs').iterdir() if x.is_dir() and re.match(r'[0-9]+(?:\.[0-9]+)*', x.name)
+    ]
+
+    def _convert_to_output_path(v: str) -> Path:
+        return Path('tests/mypy/outputs') / v / config_path.name.replace('.', '_') / module_path.name
+
+    existing = None
+
+    # Build sorted list of (parsed_version, version) pairs, including the current mypy version being used
+    parsed_version_pairs = [(parse_mypy_version(v), v) for v in existing_versions]
+    if MYPY_VERSION_TUPLE not in [x[0] for x in parsed_version_pairs]:
+        insort(parsed_version_pairs, (MYPY_VERSION_TUPLE, mypy_version))
+
+    for parsed_version, version in parsed_version_pairs[::-1]:
+        if parsed_version > MYPY_VERSION_TUPLE:
+            continue
+        output_path = _convert_to_output_path(version)
+        if output_path.exists():
+            existing = MypyTestTarget(parsed_version, output_path)
+
+    current = MypyTestTarget(MYPY_VERSION_TUPLE, _convert_to_output_path(mypy_version))
+    return MypyTestConfig(existing, current)
+
+
+@pytest.mark.parametrize('config_filename,python_filename', cases)
+def test_mypy_results(config_filename: str, python_filename: str, request: pytest.FixtureRequest) -> None:
+    input_path = Path('tests/mypy/modules') / python_filename
+    config_path = Path('tests/mypy/configs') / config_filename
+    test_config = get_test_config(input_path, config_path)
+
+    # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
+    # It also prevents cache-invalidation-related bugs in the tests
+    cache_dir = f'.mypy_cache/test-{os.path.splitext(config_filename)[0]}'
+    command = [
+        str(input_path),
+        '--config-file',
+        str(config_path),
+        '--cache-dir',
+        cache_dir,
+        '--show-error-codes',
+        '--show-traceback',
+    ]
+    if MYPY_VERSION_TUPLE < (1, 4, 1):
+        # I don't know exactly what version this got fixed in, but it definitely works in 1.4.1
+        command.append('--disable-recursive-aliases')
+    print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
+    mypy_out, mypy_err, mypy_returncode = mypy_api.run(command)
+
+    # Need to strip filenames due to differences in formatting by OS
+    mypy_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in mypy_out.split('\n') if line]).strip()
+    mypy_out = re.sub(r'\n\s*\n', r'\n', mypy_out)
+    if mypy_out:
+        print('{0}\n{1:^100}\n{0}\n{2}\n{0}'.format('=' * 100, 'mypy output', mypy_out))
+    assert mypy_err == ''
+
+    input_code = input_path.read_text()
+
+    existing_output_code: str | None = None
+    if test_config.existing is not None:
+        existing_output_code = test_config.existing.output_path.read_text()
+
+    merged_output = merge_python_and_mypy_output(input_code, mypy_out)
+
+    if merged_output == existing_output_code:
+        # Test passed, no changes needed
+        pass
+    elif request.config.getoption('update_mypy'):
+        test_config.current.output_path.parent.mkdir(parents=True, exist_ok=True)
+        test_config.current.output_path.write_text(merged_output)
+    else:
+        assert existing_output_code is not None, 'No output file found, run `make test-mypy-update` to create it'
+        expected_returncode = get_expected_return_code(existing_output_code)
+        assert mypy_returncode == expected_returncode
+        assert merged_output == existing_output_code
+
+
+def test_bad_toml_config() -> None:
+    full_config_filename = 'tests/mypy/configs/pyproject-plugin-bad-param.toml'
+    full_filename = 'tests/mypy/modules/success.py'
+
+    # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
+    # It also prevents cache-invalidation-related bugs in the tests
+    cache_dir = '.mypy_cache/test-pyproject-plugin-bad-param'
+    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
+    if MYPY_VERSION_TUPLE >= (0, 990):
+        command.append('--disable-recursive-aliases')
+    print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
+    with pytest.raises(ValueError) as e:
+        mypy_api.run(command)
+
+    assert str(e.value) == 'Configuration value must be a boolean for key: init_forbid_extra'
+
+
+def get_expected_return_code(source_code: str) -> int:
+    if re.findall(r'^\s*# MYPY:', source_code, flags=re.MULTILINE):
+        return 1
+    return 0
 
 
 def build_executable_modules():
@@ -117,98 +241,17 @@ def build_executable_modules():
             if skip_this_case:
                 continue
             case = case.values
-        _, fname, out_fname = case
-        if out_fname is None:
-            # no output file is present, so no errors should be produced; the module should be executable
-            modules.add(fname[:-3])
+        config_filename, python_filename = case
+
+        output_path = Path(f'tests/mypy/outputs/{mypy_version}/{config_filename.replace(".", "_")}/{python_filename}')
+
+        if output_path.exists() and get_expected_return_code(output_path.read_text()) == 0:
+            # no type errors are expected, so no runtime errors should be raised
+            modules.add(python_filename[:-3])
     return sorted(modules)
 
 
 executable_modules = build_executable_modules()
-
-
-@pytest.mark.parametrize('config_filename,python_filename,output_filename', cases)
-def test_mypy_results(config_filename: str, python_filename: str, output_filename: str) -> None:
-    full_config_filename = f'tests/mypy/configs/{config_filename}'
-    full_filename = f'tests/mypy/modules/{python_filename}'
-
-    # Idea: tests/mypy/outputs/latest should have the latest version of the output files
-    #   Older mypy versions can have their own versions of expected output files in tests/mypy/outputs/v1.0.1, etc.
-    #   Only folders corresponding to mypy versions equal to or newer than the installed mypy version will be searched
-    all_output_roots = [((1, 0, 1), Path('tests/mypy/outputs/v1.0.1')), ((9999,), Path('tests/mypy/outputs/latest'))]
-    output_roots = [(v, p) for (v, p) in all_output_roots if v >= MYPY_VERSION_TUPLE]
-
-    if output_filename is None:
-        output_path = None
-    else:
-        for max_version, output_root in output_roots:
-            maybe_output_path = output_root / output_filename
-            if maybe_output_path.exists():
-                output_path = maybe_output_path
-                break
-        else:
-            raise FileNotFoundError(f'Could not find expected output file {output_filename} in any of {output_roots}')
-
-    # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
-    # It also prevents cache-invalidation-related bugs in the tests
-    cache_dir = f'.mypy_cache/test-{os.path.splitext(config_filename)[0]}'
-    command = [
-        full_filename,
-        '--config-file',
-        full_config_filename,
-        '--cache-dir',
-        cache_dir,
-        '--show-error-codes',
-        '--show-traceback',
-    ]
-    if MYPY_VERSION_TUPLE >= (0, 990):
-        command.append('--disable-recursive-aliases')
-    print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
-    actual_result = mypy_api.run(command)
-    actual_out, actual_err, actual_returncode = actual_result
-    # Need to strip filenames due to differences in formatting by OS
-    actual_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in actual_out.split('\n') if line]).strip()
-    actual_out = re.sub(r'\n\s*\n', r'\n', actual_out)
-
-    if actual_out:
-        print('{0}\n{1:^100}\n{0}\n{2}\n{0}'.format('=' * 100, 'mypy output', actual_out))
-
-    assert actual_err == ''
-    expected_returncode = 0 if output_filename is None else 1
-    assert actual_returncode == expected_returncode
-
-    if output_path and not output_path.exists():
-        output_path.write_text(actual_out)
-        raise RuntimeError(f'wrote actual output to {output_path} since file did not exist')
-
-    expected_out = Path(output_path).read_text().rstrip('\n') if output_path else ''
-
-    # fix for compatibility between mypy versions: (this can be dropped once we drop support for mypy<0.930)
-    if actual_out and MYPY_VERSION_TUPLE < (0, 930):
-        actual_out = actual_out.lower()
-        expected_out = expected_out.lower()
-        actual_out = actual_out.replace('variant:', 'variants:')
-        actual_out = re.sub(r'^(\d+: note: {4}).*', r'\1...', actual_out, flags=re.M)
-        expected_out = re.sub(r'^(\d+: note: {4}).*', r'\1...', expected_out, flags=re.M)
-
-    assert actual_out == expected_out, actual_out
-
-
-def test_bad_toml_config() -> None:
-    full_config_filename = 'tests/mypy/configs/pyproject-plugin-bad-param.toml'
-    full_filename = 'tests/mypy/modules/success.py'
-
-    # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
-    # It also prevents cache-invalidation-related bugs in the tests
-    cache_dir = '.mypy_cache/test-pyproject-plugin-bad-param'
-    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
-    if MYPY_VERSION_TUPLE >= (0, 990):
-        command.append('--disable-recursive-aliases')
-    print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
-    with pytest.raises(ValueError) as e:
-        mypy_api.run(command)
-
-    assert str(e.value) == 'Configuration value must be a boolean for key: init_forbid_extra'
 
 
 @pytest.mark.parametrize('module', sorted(executable_modules))
@@ -250,3 +293,21 @@ def test_explicit_reexports_exist():
 )
 def test_parse_mypy_version(v_str, v_tuple):
     assert parse_mypy_version(v_str) == v_tuple
+
+
+def merge_python_and_mypy_output(source_code: str, mypy_output: str) -> str:
+    merged_lines = [(line, False) for line in source_code.splitlines()]
+
+    for line in mypy_output.splitlines()[::-1]:
+        if not line:
+            continue
+        try:
+            line_number, message = line.split(':', maxsplit=1)
+            merged_lines.insert(int(line_number), (f'# MYPY: {message.strip()}', True))
+        except ValueError:
+            # This could happen due to lack of a ':' in `line`, or the pre-':' contents not being a number
+            # Either way, put all such lines at the top of the file
+            merged_lines.insert(0, (f'# MYPY: {line.strip()}', True))
+
+    merged_lines = [line for line, is_mypy in merged_lines if is_mypy or not line.strip().startswith('# MYPY: ')]
+    return '\n'.join(merged_lines) + '\n'

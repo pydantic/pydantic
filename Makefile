@@ -44,6 +44,10 @@ typecheck: .pre-commit .pdm
 test-mypy: .pdm
 	pdm run coverage run -m pytest tests/mypy --test-mypy
 
+.PHONY: test-mypy-update  ## Run the mypy integration tests
+test-mypy-update: .pdm
+	pdm run coverage run -m pytest tests/mypy --test-mypy --update-mypy
+
 .PHONY: test-pyright  ## Run the pyright integration tests
 test-pyright: .pdm
 	pdm run bash -c 'cd tests/pyright && pyright'
