@@ -179,7 +179,7 @@ except ValidationError as exc:
 
 ## `dataclass_exact_type`
 
-This error is raised when validating a dataclass with `strict=True`:
+This error is raised when validating a dataclass with `strict=True` and the input is not an instance of the dataclass:
 
 ```py
 import pydantic.dataclasses
@@ -191,17 +191,15 @@ class MyDataclass:
     x: str
 
 
-@pydantic.dataclasses.dataclass
-class MyOtherDataclass:
-    x: str
-
-
 adapter = TypeAdapter(MyDataclass)
 
-adapter.validate_python(MyDataclass(x='test'), strict=True)  # OK
+print(adapter.validate_python(MyDataclass(x='test'), strict=True))
+#> MyDataclass(x='test')
+print(adapter.validate_python({'x': 'test'}))
+#> MyDataclass(x='test')
 
 try:
-    adapter.validate_python(MyOtherDataclass(x='test'), strict=True)
+    adapter.validate_python({'x': 'test'}, strict=True)
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'dataclass_exact_type'
