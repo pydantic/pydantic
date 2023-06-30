@@ -160,7 +160,7 @@ require_change_file = false
 [tool.ruff]
 line-length = 120
 extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D']
-extend-ignore = ['D105', 'D107', 'D205']
+extend-ignore = ['D105', 'D107', 'D205', 'D415']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }

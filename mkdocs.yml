@@ -180,6 +180,8 @@ plugins:
           docstring_options:
             ignore_init_summary: true
           merge_init_into_class: true
+          extensions:
+            - docs/plugins/griffe_doclinks.py
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'

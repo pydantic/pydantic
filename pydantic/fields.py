@@ -532,7 +532,9 @@ class FieldInfo(_repr.Representation):
 
 @_internal_dataclass.slots_dataclass
 class AliasPath:
-    """A data class used by `validation_alias` as a convenience to create aliases.
+    """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields#aliaspath-and-aliaschoices
+
+    A data class used by `validation_alias` as a convenience to create aliases.
 
     Attributes:
         path: A list of string or integer aliases.
@@ -554,7 +556,9 @@ class AliasPath:
 
 @_internal_dataclass.slots_dataclass
 class AliasChoices:
-    """A data class used by `validation_alias` as a convenience to create aliases.
+    """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields#aliaspath-and-aliaschoices
+
+    A data class used by `validation_alias` as a convenience to create aliases.
 
     Attributes:
         choices: A list containing a string or `AliasPath`.

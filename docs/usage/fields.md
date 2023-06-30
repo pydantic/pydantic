@@ -213,6 +213,11 @@ You can read more about [Alias Precedence](model_config.md#alias-precedence) in 
 
 ### `AliasPath` and `AliasChoices`
 
+??? api "API Documentation"
+
+    [`pydantic.fields.AliasPath`][pydantic.fields.AliasPath]<br>
+    [`pydantic.fields.AliasChoices`][pydantic.fields.AliasChoices]<br>
+
 Pydantic provides two special types for convenience when using `validation_alias`: `AliasPath` and `AliasChoices`.
 
 The `AliasPath` is used to specify a path to a field using aliases. For example:
