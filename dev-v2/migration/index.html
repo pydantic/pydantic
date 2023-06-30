@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#install-pydantic-v2-beta" class="md-skip">
+        <a href="#install-pydantic-v2" class="md-skip">
           Skip to content
         </a>
       
@@ -487,8 +487,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#install-pydantic-v2-beta" class="md-nav__link">
-    Install Pydantic V2 beta
+  <a href="#install-pydantic-v2" class="md-nav__link">
+    Install Pydantic V2
   </a>
   
 </li>
@@ -2256,8 +2256,8 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#install-pydantic-v2-beta" class="md-nav__link">
-    Install Pydantic V2 beta
+  <a href="#install-pydantic-v2" class="md-nav__link">
+    Install Pydantic V2
   </a>
   
 </li>
@@ -2476,19 +2476,20 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Migration Guide</h1>
 
-<p>The Pydantic V2 beta introduces a number of changes to the API, including some breaking changes.</p>
-<p>We believe Pydantic V2 is ready for your production applications. This page provides a guide highlighting the most
+<p>Pydantic V2 introduces a number of changes to the API, including some breaking changes.</p>
+<p>This page provides a guide highlighting the most
 important changes to help you migrate your code from Pydantic V1 to Pydantic V2.</p>
-<h2 id="install-pydantic-v2-beta">Install Pydantic V2 beta<a class="headerlink" href="#install-pydantic-v2-beta" title="Permanent link">&para;</a></h2>
-<p>Your feedback will be a critical part of ensuring that we have made the right tradeoffs with the API changes in
-Pydantic V2.</p>
-<p>To get started with the Pydantic V2 beta, install it from PyPI.
-We recommend using a virtual environment to isolate your testing environment:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--pre<span class="w"> </span>-U<span class="w"> </span><span class="s2">&quot;pydantic&gt;=2.0b3&quot;</span>
+<h2 id="install-pydantic-v2">Install Pydantic V2<a class="headerlink" href="#install-pydantic-v2" title="Permanent link">&para;</a></h2>
+<p>Pydantic V2 is now the current production release of Pydantic.
+You can install Pydantic V2 from PyPI:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>pydantic
 </code></pre></div>
-<p>If you do encounter any issues, please <a href="https://github.com/pydantic/pydantic/issues">create an issue in GitHub</a> using
+<p>If you encounter any issues, please <a href="https://github.com/pydantic/pydantic/issues">create an issue in GitHub</a> using
 the <code>bug V2</code> label. This will help us to actively monitor and track errors, and to continue to improve the library's
 performance.</p>
+<p>If you need to use latest Pydantic V1 for any reason, you can install it with:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;pydantic==1.*&quot;</span>
+</code></pre></div>
 <h2 id="migration-guide">Migration guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h2>
 <h3 id="changes-to-pydanticbasemodel">Changes to <code>pydantic.BaseModel</code><a class="headerlink" href="#changes-to-pydanticbasemodel" title="Permanent link">&para;</a></h3>
 <p>Various method names have been changed; all non-deprecated <code>BaseModel</code> methods now have names matching either the
