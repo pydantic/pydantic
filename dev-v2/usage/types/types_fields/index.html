@@ -2164,12 +2164,13 @@ We therefore recommend using <a href="https://pypi.org/project/typing-extensions
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
+
     <span class="n">identity</span><span class="p">:</span> <span class="n">UserIdentity</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
     <span class="n">u</span><span class="p">:</span> <span class="n">User</span>
 
 
@@ -2223,12 +2224,13 @@ We therefore recommend using <a href="https://pypi.org/project/typing-extensions
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
+
     <span class="n">identity</span><span class="p">:</span> <span class="n">UserIdentity</span>
     <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
     <span class="n">u</span><span class="p">:</span> <span class="n">User</span>
 
 
