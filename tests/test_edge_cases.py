@@ -423,20 +423,37 @@ def test_tuple_value_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=['x', 'y', 'x'])
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'input': 'x',
-            'loc': ('v', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
+            'loc': ('v', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         },
         {
-            'input': 'y',
+            'type': 'float_parsing',
             'loc': ('v', 1),
             'msg': 'Input should be a valid number, unable to parse string as a number',
-            'type': 'float_parsing',
+            'input': 'y',
         },
-        {'input': 'x', 'loc': ('v', 2), 'msg': 'Input should be a valid decimal', 'type': 'decimal_parsing'},
+        {
+            'type': 'is_instance_of',
+            'loc': ('v', 2, 'is-instance[Decimal]'),
+            'msg': 'Input should be an instance of Decimal',
+            'input': 'x',
+            'ctx': {'class': 'Decimal'},
+        },
+        {
+            'type': 'decimal_parsing',
+            'loc': (
+                'v',
+                2,
+                'function-after[to_decimal(), union[float,int,constrained-str,function-plain[<lambda>()]]]',
+            ),
+            'msg': 'Input should be a valid decimal',
+            'input': 'x',
+        },
     ]
 
 
@@ -1221,8 +1238,23 @@ def test_multiple_errors():
             'input': 'foobar',
         },
         {
+            'type': 'is_instance_of',
+            'loc': (
+                'a',
+                'function-after[check_digits_validator(), json-or-python[json=function-after[to_decimal(), union[float,int,constrained-str,function-plain[<lambda>()]]],python=lax-or-strict[lax=union[is-instance[Decimal],function-after[to_decimal(), union[float,int,constrained-str,function-plain[<lambda>()]]]],strict=is-instance[Decimal]]]]',  # noqa: E501
+                'is-instance[Decimal]',
+            ),
+            'msg': 'Input should be an instance of Decimal',
+            'input': 'foobar',
+            'ctx': {'class': 'Decimal'},
+        },
+        {
             'type': 'decimal_parsing',
-            'loc': ('a', 'function-after[validate(), any]'),
+            'loc': (
+                'a',
+                'function-after[check_digits_validator(), json-or-python[json=function-after[to_decimal(), union[float,int,constrained-str,function-plain[<lambda>()]]],python=lax-or-strict[lax=union[is-instance[Decimal],function-after[to_decimal(), union[float,int,constrained-str,function-plain[<lambda>()]]]],strict=is-instance[Decimal]]]]',  # noqa: E501
+                'function-after[to_decimal(), union[float,int,constrained-str,function-plain[<lambda>()]]]',
+            ),
             'msg': 'Input should be a valid decimal',
             'input': 'foobar',
         },
