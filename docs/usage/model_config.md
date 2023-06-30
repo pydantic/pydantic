@@ -74,7 +74,7 @@ except ValidationError as e:
 ```
 
 
-1. If using the `dataclass` from the standard library, you should use `__pydantic_config__` instead.
+1. If using the `dataclass` from the standard library or `TypedDict`, you should use `__pydantic_config__` instead.
    See:
 
     ```py
