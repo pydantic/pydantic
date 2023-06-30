@@ -127,14 +127,14 @@ except ValidationError as e:
             'type': 'int_parsing',
             'loc': ('id',),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'not a string',
+            'input': 'not an int',
             'url': 'https://errors.pydantic.dev/2/v/int_parsing',
         },
         {
             'type': 'missing',
             'loc': ('signup_ts',),
             'msg': 'Field required',
-            'input': {'id': 'not a string', 'tastes': {}},
+            'input': {'id': 'not an int', 'tastes': {}},
             'url': 'https://errors.pydantic.dev/2/v/missing',
         },
     ]

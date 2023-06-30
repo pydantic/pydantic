@@ -53,8 +53,9 @@ from datetime import datetime
 from pydantic import ConfigDict, ValidationError
 from pydantic.dataclasses import dataclass
 
-
 config = ConfigDict(str_max_length=10, validate_assignment=True)
+
+
 @dataclass(config=config)  # (1)!
 class User:
     id: int
