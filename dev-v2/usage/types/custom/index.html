@@ -2383,7 +2383,12 @@ Pydantic exports:</p>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AfterValidator</span><span class="p">,</span> <span class="n">PlainSerializer</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AfterValidator</span><span class="p">,</span>
+    <span class="n">PlainSerializer</span><span class="p">,</span>
+    <span class="n">TypeAdapter</span><span class="p">,</span>
+    <span class="n">WithJsonSchema</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">MyType</span><span class="p">:</span>
@@ -2415,7 +2420,12 @@ Pydantic exports:</p>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AfterValidator</span><span class="p">,</span> <span class="n">PlainSerializer</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">WithJsonSchema</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AfterValidator</span><span class="p">,</span>
+    <span class="n">PlainSerializer</span><span class="p">,</span>
+    <span class="n">TypeAdapter</span><span class="p">,</span>
+    <span class="n">WithJsonSchema</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">MyType</span><span class="p">:</span>
@@ -2921,7 +2931,9 @@ types without creating subclasses or otherwise messing with the types themselves
 <span class="k">class</span> <span class="nc">_ThirdPartyTypePydanticAnnotation</span><span class="p">:</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">_source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">_handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">]</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">_source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">_handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        We return a pydantic_core.CoreSchema that behaves in the following ways:</span>
@@ -2967,7 +2979,9 @@ types without creating subclasses or otherwise messing with the types themselves
 
 
 <span class="c1"># We now create an `Annotated` wrapper that we&#39;ll use as the annotation for fields on `BaseModel`s, etc.</span>
-<span class="n">PydanticThirdPartyType</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">ThirdPartyType</span><span class="p">,</span> <span class="n">_ThirdPartyTypePydanticAnnotation</span><span class="p">]</span>
+<span class="n">PydanticThirdPartyType</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="n">ThirdPartyType</span><span class="p">,</span> <span class="n">_ThirdPartyTypePydanticAnnotation</span>
+<span class="p">]</span>
 
 
 <span class="c1"># Create a model class that uses this annotation as a field</span>
@@ -3048,7 +3062,9 @@ types without creating subclasses or otherwise messing with the types themselves
 <span class="k">class</span> <span class="nc">_ThirdPartyTypePydanticAnnotation</span><span class="p">:</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">_source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">_handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">]</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">_source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">_handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        We return a pydantic_core.CoreSchema that behaves in the following ways:</span>
@@ -3094,7 +3110,9 @@ types without creating subclasses or otherwise messing with the types themselves
 
 
 <span class="c1"># We now create an `Annotated` wrapper that we&#39;ll use as the annotation for fields on `BaseModel`s, etc.</span>
-<span class="n">PydanticThirdPartyType</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">ThirdPartyType</span><span class="p">,</span> <span class="n">_ThirdPartyTypePydanticAnnotation</span><span class="p">]</span>
+<span class="n">PydanticThirdPartyType</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="n">ThirdPartyType</span><span class="p">,</span> <span class="n">_ThirdPartyTypePydanticAnnotation</span>
+<span class="p">]</span>
 
 
 <span class="c1"># Create a model class that uses this annotation as a field</span>
@@ -3175,7 +3193,9 @@ types without creating subclasses or otherwise messing with the types themselves
 <span class="k">class</span> <span class="nc">_ThirdPartyTypePydanticAnnotation</span><span class="p">:</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">_source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">_handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">]</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">_source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">_handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        We return a pydantic_core.CoreSchema that behaves in the following ways:</span>
@@ -3221,7 +3241,9 @@ types without creating subclasses or otherwise messing with the types themselves
 
 
 <span class="c1"># We now create an `Annotated` wrapper that we&#39;ll use as the annotation for fields on `BaseModel`s, etc.</span>
-<span class="n">PydanticThirdPartyType</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">ThirdPartyType</span><span class="p">,</span> <span class="n">_ThirdPartyTypePydanticAnnotation</span><span class="p">]</span>
+<span class="n">PydanticThirdPartyType</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="n">ThirdPartyType</span><span class="p">,</span> <span class="n">_ThirdPartyTypePydanticAnnotation</span>
+<span class="p">]</span>
 
 
 <span class="c1"># Create a model class that uses this annotation as a field</span>
@@ -3586,7 +3608,9 @@ This is less important for custom types, but crucial for annotated metadata that
                 <span class="c1"># Ensure the value is an instance of Owner</span>
                 <span class="n">core_schema</span><span class="o">.</span><span class="n">is_instance_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">),</span>
                 <span class="c1"># Use the item_schema to validate `items`</span>
-                <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span><span class="n">val_item</span><span class="p">,</span> <span class="n">item_schema</span><span class="p">),</span>
+                <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+                    <span class="n">val_item</span><span class="p">,</span> <span class="n">item_schema</span>
+                <span class="p">),</span>
             <span class="p">]</span>
         <span class="p">)</span>
 
@@ -3604,7 +3628,9 @@ This is less important for custom types, but crucial for annotated metadata that
                     <span class="p">),</span>
                     <span class="c1"># after validating the json data convert it to python</span>
                     <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_before_validator_function</span><span class="p">(</span>
-                        <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">Owner</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">item</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;item&#39;</span><span class="p">]),</span>
+                        <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">Owner</span><span class="p">(</span>
+                            <span class="n">name</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">item</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;item&#39;</span><span class="p">]</span>
+                        <span class="p">),</span>
                         <span class="c1"># note that we re-use the same schema here as below</span>
                         <span class="n">python_schema</span><span class="p">,</span>
                     <span class="p">),</span>
@@ -3725,7 +3751,9 @@ This is less important for custom types, but crucial for annotated metadata that
                 <span class="c1"># Ensure the value is an instance of Owner</span>
                 <span class="n">core_schema</span><span class="o">.</span><span class="n">is_instance_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">),</span>
                 <span class="c1"># Use the item_schema to validate `items`</span>
-                <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span><span class="n">val_item</span><span class="p">,</span> <span class="n">item_schema</span><span class="p">),</span>
+                <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+                    <span class="n">val_item</span><span class="p">,</span> <span class="n">item_schema</span>
+                <span class="p">),</span>
             <span class="p">]</span>
         <span class="p">)</span>
 
@@ -3743,7 +3771,9 @@ This is less important for custom types, but crucial for annotated metadata that
                     <span class="p">),</span>
                     <span class="c1"># after validating the json data convert it to python</span>
                     <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_before_validator_function</span><span class="p">(</span>
-                        <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">Owner</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">item</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;item&#39;</span><span class="p">]),</span>
+                        <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">Owner</span><span class="p">(</span>
+                            <span class="n">name</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">item</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;item&#39;</span><span class="p">]</span>
+                        <span class="p">),</span>
                         <span class="c1"># note that we re-use the same schema here as below</span>
                         <span class="n">python_schema</span><span class="p">,</span>
                     <span class="p">),</span>

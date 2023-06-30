@@ -2300,10 +2300,18 @@ See <a href="../../model_config/">Model Config</a> for more details.</p>
 
 <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: &#39;Smith&#39;, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: None, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
@@ -2311,7 +2319,9 @@ See <a href="../../model_config/">Model Config</a> for more details.</p>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Smith&#39;</span><span class="p">],</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">})</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Smith&#39;</span><span class="p">],</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">}</span>
+    <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -2358,10 +2368,18 @@ See <a href="../../model_config/">Model Config</a> for more details.</p>
 
 <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: &#39;Smith&#39;, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: None, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
@@ -2369,7 +2387,9 @@ See <a href="../../model_config/">Model Config</a> for more details.</p>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Smith&#39;</span><span class="p">],</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">})</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Smith&#39;</span><span class="p">],</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">}</span>
+    <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -2416,10 +2436,18 @@ See <a href="../../model_config/">Model Config</a> for more details.</p>
 
 <span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: &#39;Smith&#39;, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: None, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
@@ -2427,7 +2455,9 @@ See <a href="../../model_config/">Model Config</a> for more details.</p>
 
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Smith&#39;</span><span class="p">],</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">})</span>
+    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Smith&#39;</span><span class="p">],</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">}</span>
+    <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>

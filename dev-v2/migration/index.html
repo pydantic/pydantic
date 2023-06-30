@@ -3047,7 +3047,7 @@ more clearly defined.</p>
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">f1</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># required, cannot be None</span>
-    <span class="n">f2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>  <span class="c1"># required, can be None - same as Union[str, None] / str | None</span>
+    <span class="n">f2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>  <span class="c1"># required, can be None - same as str | None</span>
     <span class="n">f3</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># not required, can be None</span>
     <span class="n">f4</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Foobar&#39;</span>  <span class="c1"># not required, but cannot be None</span>
 
@@ -3069,7 +3069,7 @@ more clearly defined.</p>
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">f1</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># required, cannot be None</span>
-    <span class="n">f2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># required, can be None - same as Union[str, None] / str | None</span>
+    <span class="n">f2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># required, can be None - same as str | None</span>
     <span class="n">f3</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># not required, can be None</span>
     <span class="n">f4</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Foobar&#39;</span>  <span class="c1"># not required, but cannot be None</span>
 

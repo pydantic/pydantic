@@ -2342,7 +2342,9 @@
     <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; name=&#39;Samuel Colvin&#39; username=&#39;scolvin&#39; password1=&#39;zxcvbn&#39; password2=&#39;zxcvbn&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">name=&#39;Samuel Colvin&#39; username=&#39;scolvin&#39; password1=&#39;zxcvbn&#39; password2=&#39;zxcvbn&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">UserModel</span><span class="p">(</span>
@@ -3003,7 +3005,12 @@ by context, and having a separate mechanism for updating what is allowed:</p>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FieldValidationInfo</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">FieldValidationInfo</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">field_validator</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">_allowed_choices</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]</span>
 
@@ -3058,7 +3065,12 @@ by context, and having a separate mechanism for updating what is allowed:</p>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FieldValidationInfo</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">FieldValidationInfo</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">field_validator</span><span class="p">,</span>
+<span class="p">)</span>
 
 <span class="n">_allowed_choices</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]</span>
 
@@ -3141,12 +3153,16 @@ the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">__pydantic_self__</span><span class="o">.</span><span class="n">__pydantic_validator__</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="n">self_instance</span><span class="o">=</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">_init_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="n">data</span><span class="p">,</span>
+            <span class="n">self_instance</span><span class="o">=</span><span class="n">__pydantic_self__</span><span class="p">,</span>
+            <span class="n">context</span><span class="o">=</span><span class="n">_init_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
         <span class="p">)</span>
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;my_number&#39;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">multiply_with_context</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">multiply_with_context</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">:</span>
             <span class="n">multiplier</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;multiplier&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="n">multiplier</span>
@@ -3189,12 +3205,16 @@ the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">__pydantic_self__</span><span class="o">.</span><span class="n">__pydantic_validator__</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span> <span class="n">self_instance</span><span class="o">=</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">_init_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="n">data</span><span class="p">,</span>
+            <span class="n">self_instance</span><span class="o">=</span><span class="n">__pydantic_self__</span><span class="p">,</span>
+            <span class="n">context</span><span class="o">=</span><span class="n">_init_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
         <span class="p">)</span>
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;my_number&#39;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">multiply_with_context</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">multiply_with_context</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">:</span>
             <span class="n">multiplier</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;multiplier&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="n">multiplier</span>

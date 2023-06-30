@@ -2265,7 +2265,13 @@ the above types export the following properties:</p>
 <li><code>fragment</code>: optional - the fragment (<code>fragment=is;this=bit</code> above)</li>
 </ul>
 <p>If further validation is required, these properties can be used by validators to enforce specific behaviour:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">PostgresDsn</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">HttpUrl</span><span class="p">,</span>
+    <span class="n">PostgresDsn</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">field_validator</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

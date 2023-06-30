@@ -2335,8 +2335,10 @@
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
+<span class="n">config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>  <span class="c1"># (1)!</span>
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 <span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
@@ -2807,7 +2809,9 @@ namespacing them with the prefix <code>model_</code>.</p>
 
 <span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-    <span class="c1">#&gt; Field &quot;model_prefixed_field&quot; has conflict with protected namespace &quot;model_&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Field &quot;model_prefixed_field&quot; has conflict with protected namespace &quot;model_&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>You can customize this behavior using the <code>protected_namespaces</code> setting:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
@@ -2818,11 +2822,15 @@ namespacing them with the prefix <code>model_</code>.</p>
         <span class="n">model_prefixed_field</span><span class="p">:</span> <span class="nb">str</span>
         <span class="n">also_protect_field</span><span class="p">:</span> <span class="nb">str</span>
 
-        <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">protected_namespaces</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;protect_me_&#39;</span><span class="p">,</span> <span class="s1">&#39;also_protect_&#39;</span><span class="p">))</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
+            <span class="n">protected_namespaces</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;protect_me_&#39;</span><span class="p">,</span> <span class="s1">&#39;also_protect_&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
 
 <span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-    <span class="c1">#&gt; Field &quot;also_protect_field&quot; has conflict with protected namespace &quot;also_protect_&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Field &quot;also_protect_field&quot; has conflict with protected namespace &quot;also_protect_&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="hide-input-in-errors">Hide Input in Errors<a class="headerlink" href="#hide-input-in-errors" title="Permanent link">&para;</a></h2>
 <p><em>Pydantic</em> shows the input value and type when it raises <code>ValidationError</code> during the validation.</p>

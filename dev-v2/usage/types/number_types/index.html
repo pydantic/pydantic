@@ -2222,7 +2222,13 @@
 <li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.NonPositiveInt"><code>NonPositiveInt</code></a>: Constrain an <code>int</code> to be non-positive.</li>
 <li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.NonNegativeInt"><code>NonNegativeInt</code></a>: Constrain an <code>int</code> to be non-negative.</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NegativeInt</span><span class="p">,</span> <span class="n">NonNegativeInt</span><span class="p">,</span> <span class="n">NonPositiveInt</span><span class="p">,</span> <span class="n">PositiveInt</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">NegativeInt</span><span class="p">,</span>
+    <span class="n">NonNegativeInt</span><span class="p">,</span>
+    <span class="n">NonPositiveInt</span><span class="p">,</span>
+    <span class="n">PositiveInt</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

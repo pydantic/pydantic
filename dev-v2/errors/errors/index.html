@@ -2530,7 +2530,9 @@ contain information about all the errors and how they happened.</p>
         <span class="n">custom_message</span> <span class="o">=</span> <span class="n">custom_messages</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">error</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">custom_message</span><span class="p">:</span>
             <span class="n">ctx</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ctx&#39;</span><span class="p">)</span>
-            <span class="n">error</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">custom_message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">ctx</span><span class="p">)</span> <span class="k">if</span> <span class="n">ctx</span> <span class="k">else</span> <span class="n">custom_message</span>
+            <span class="n">error</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">custom_message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">ctx</span><span class="p">)</span> <span class="k">if</span> <span class="n">ctx</span> <span class="k">else</span> <span class="n">custom_message</span>
+            <span class="p">)</span>
         <span class="n">new_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">new_errors</span>
 
@@ -2585,7 +2587,9 @@ contain information about all the errors and how they happened.</p>
         <span class="n">custom_message</span> <span class="o">=</span> <span class="n">custom_messages</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">error</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">custom_message</span><span class="p">:</span>
             <span class="n">ctx</span> <span class="o">=</span> <span class="n">error</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ctx&#39;</span><span class="p">)</span>
-            <span class="n">error</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">custom_message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">ctx</span><span class="p">)</span> <span class="k">if</span> <span class="n">ctx</span> <span class="k">else</span> <span class="n">custom_message</span>
+            <span class="n">error</span><span class="p">[</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">custom_message</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">ctx</span><span class="p">)</span> <span class="k">if</span> <span class="n">ctx</span> <span class="k">else</span> <span class="n">custom_message</span>
+            <span class="p">)</span>
         <span class="n">new_errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">new_errors</span>
 

@@ -2494,7 +2494,9 @@ with:
 
 <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">my_field</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="o">...</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;myValidationAlias&#39;</span><span class="p">,</span> <span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;my_serialization_alias&#39;</span>
+        <span class="o">...</span><span class="p">,</span>
+        <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;myValidationAlias&#39;</span><span class="p">,</span>
+        <span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;my_serialization_alias&#39;</span><span class="p">,</span>
     <span class="p">)</span>
 
 
@@ -2604,7 +2606,9 @@ In the <code>'last_name'</code> field, we are using the alias <code>'names'</cod
     <span class="n">love_for_pydantic</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">foo</span><span class="p">)</span>
-<span class="c1">#&gt; positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=inf</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=inf</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <details class="info">
 <summary>JSON Schema</summary>
@@ -2974,7 +2978,11 @@ model when exporting the model.</p>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">{</span>
 <span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;age&#39;: {&#39;description&#39;: &#39;Age of the user&#39;, &#39;title&#39;: &#39;Age&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">        &#39;age&#39;: {</span>
+<span class="sd">            &#39;description&#39;: &#39;Age of the user&#39;,</span>
+<span class="sd">            &#39;title&#39;: &#39;Age&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;integer&#39;,</span>
+<span class="sd">        },</span>
 <span class="sd">        &#39;email&#39;: {</span>
 <span class="sd">            &#39;examples&#39;: [&#39;marcelo@mail.com&#39;],</span>
 <span class="sd">            &#39;format&#39;: &#39;email&#39;,</span>

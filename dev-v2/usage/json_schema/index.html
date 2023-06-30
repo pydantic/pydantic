@@ -2951,7 +2951,9 @@ This method receives two positional arguments:</p>
             <span class="bp">cls</span><span class="o">.</span><span class="n">_validate</span><span class="p">,</span>
             <span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">(),</span>
             <span class="n">serialization</span><span class="o">=</span><span class="n">core_schema</span><span class="o">.</span><span class="n">plain_serializer_function_ser_schema</span><span class="p">(</span>
-                <span class="bp">cls</span><span class="o">.</span><span class="n">_serialize</span><span class="p">,</span> <span class="n">info_arg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_schema</span><span class="o">=</span><span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">()</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">_serialize</span><span class="p">,</span>
+                <span class="n">info_arg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">return_schema</span><span class="o">=</span><span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">(),</span>
             <span class="p">),</span>
         <span class="p">)</span>
 
@@ -2963,7 +2965,9 @@ This method receives two positional arguments:</p>
             <span class="k">if</span> <span class="n">word</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inverse_dictionary</span><span class="p">:</span>
                 <span class="n">inverse_dictionary</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inverse_dictionary</span><span class="p">)</span>
             <span class="n">text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inverse_dictionary</span><span class="p">[</span><span class="n">word</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">CompressedString</span><span class="p">({</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inverse_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">CompressedString</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inverse_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">text</span>
+        <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_serialize</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="s1">&#39;CompressedString&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -2984,7 +2988,9 @@ This method receives two positional arguments:</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;fox fox fox dog fox&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; value=CompressedString(dictionary={0: &#39;fox&#39;, 1: &#39;dog&#39;}, text=[0, 0, 0, 1, 0])</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">value = CompressedString(dictionary={0: &#39;fox&#39;, 1: &#39;dog&#39;}, text=[0, 0, 0, 1, 0])</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;fox fox fox dog fox&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;value&#39;: &#39;fox fox fox dog fox&#39;}</span>
@@ -3016,7 +3022,9 @@ This method receives two positional arguments:</p>
             <span class="bp">cls</span><span class="o">.</span><span class="n">_validate</span><span class="p">,</span>
             <span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">(),</span>
             <span class="n">serialization</span><span class="o">=</span><span class="n">core_schema</span><span class="o">.</span><span class="n">plain_serializer_function_ser_schema</span><span class="p">(</span>
-                <span class="bp">cls</span><span class="o">.</span><span class="n">_serialize</span><span class="p">,</span> <span class="n">info_arg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_schema</span><span class="o">=</span><span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">()</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">_serialize</span><span class="p">,</span>
+                <span class="n">info_arg</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">return_schema</span><span class="o">=</span><span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">(),</span>
             <span class="p">),</span>
         <span class="p">)</span>
 
@@ -3028,7 +3036,9 @@ This method receives two positional arguments:</p>
             <span class="k">if</span> <span class="n">word</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inverse_dictionary</span><span class="p">:</span>
                 <span class="n">inverse_dictionary</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inverse_dictionary</span><span class="p">)</span>
             <span class="n">text</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">inverse_dictionary</span><span class="p">[</span><span class="n">word</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">CompressedString</span><span class="p">({</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inverse_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">text</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">CompressedString</span><span class="p">(</span>
+            <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inverse_dictionary</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">text</span>
+        <span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_serialize</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="s1">&#39;CompressedString&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -3049,7 +3059,9 @@ This method receives two positional arguments:</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;fox fox fox dog fox&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; value=CompressedString(dictionary={0: &#39;fox&#39;, 1: &#39;dog&#39;}, text=[0, 0, 0, 1, 0])</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">value = CompressedString(dictionary={0: &#39;fox&#39;, 1: &#39;dog&#39;}, text=[0, 0, 0, 1, 0])</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;fox fox fox dog fox&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;value&#39;: &#39;fox fox fox dog fox&#39;}</span>
@@ -3080,7 +3092,9 @@ This method receives two positional arguments:</p>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Alphabet may not be empty&#39;</span><span class="p">)</span>
-        <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>  <span class="c1"># get the CoreSchema from the type / inner constraints</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span>
+            <span class="n">source</span>
+        <span class="p">)</span>  <span class="c1"># get the CoreSchema from the type / inner constraints</span>
         <span class="k">if</span> <span class="n">schema</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;str&#39;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;RestrictCharacters can only be applied to strings&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_after_validator_function</span><span class="p">(</span>
@@ -3090,7 +3104,9 @@ This method receives two positional arguments:</p>
 
     <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">value</span>
 
 
@@ -3141,7 +3157,9 @@ This method receives two positional arguments:</p>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Alphabet may not be empty&#39;</span><span class="p">)</span>
-        <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>  <span class="c1"># get the CoreSchema from the type / inner constraints</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span>
+            <span class="n">source</span>
+        <span class="p">)</span>  <span class="c1"># get the CoreSchema from the type / inner constraints</span>
         <span class="k">if</span> <span class="n">schema</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;str&#39;</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;RestrictCharacters can only be applied to strings&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_after_validator_function</span><span class="p">(</span>
@@ -3151,7 +3169,9 @@ This method receives two positional arguments:</p>
 
     <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">c</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">value</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s1"> is not restricted to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">alphabet</span><span class="si">!r}</span><span class="s1">&#39;</span>
+            <span class="p">)</span>
         <span class="k">return</span> <span class="n">value</span>
 
 

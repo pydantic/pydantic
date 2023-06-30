@@ -464,13 +464,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#features-of-pydantic" class="md-nav__link">
-    Features of Pydantic
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pydantic-examples" class="md-nav__link">
     Pydantic examples
   </a>
@@ -2117,13 +2110,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#features-of-pydantic" class="md-nav__link">
-    Features of Pydantic
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#pydantic-examples" class="md-nav__link">
     Pydantic examples
   </a>
@@ -2164,172 +2150,133 @@
 <a href="https://anaconda.org/conda-forge/pydantic"><img alt="CondaForge" src="https://img.shields.io/conda/v/conda-forge/pydantic.svg" /></a>
 <a href="https://pepy.tech/project/pydantic"><img alt="downloads" src="https://pepy.tech/badge/pydantic/month" /></a><br>
 <a href="https://github.com/pydantic/pydantic/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/pydantic/pydantic.svg" /></a></p>
-<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/89032e12129a87803a9d18e23af46a29e2ca591e">89032e1</a>.</p>
-<p>Pydantic is the most widely used Python library for data validation and coercion using Python type annotations.</p>
+<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/08c473ad2411722b4828f0f190fa9d141aa83c76">08c473a</a>.</p>
+<p>Pydantic is the most widely used data validation library for Python.</p>
 <div class="admonition success">
 <p class="admonition-title">Success</p>
 <p>Already using Pydantic V1? See the <a href="migration/">Migration Guide</a> for notes on upgrading to Pydantic V2 in your applications!</p>
 </div>
+<div class="highlight"><span class="filename">Pydantic Example</span><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;a&#39;: 123, &#39;b&#39;: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]}</span>
+</code></pre></div>
 <h2 id="why-use-pydantic">Why use Pydantic?<a class="headerlink" href="#why-use-pydantic" title="Permanent link">&para;</a></h2>
-<p>Built-in Python type annotations are a useful way to hint about the expected type of data, improving code clarity and supporting development tools. However, Python's type annotations are optional and don't affect the runtime behavior of the program.</p>
-<p>Static type checkers like <a href="https://mypy-lang.org/">mypy</a> use type annotations to catch potential type-related errors before running the program. But static type checkers can't catch all errors, and they don't affect the runtime behavior of the program.</p>
-<p>Pydantic, on the other hand, uses type annotations to perform <a href="usage/validators/">data validation</a> and <a href="usage/conversion_table/">type coercion</a> at runtime, which is particularly useful for ensuring the correctness of user or external data.</p>
-<p>Pydantic enables you to convert input data to Python <a href="usage/types/types/">standard library types and custom types</a> in a controlled manner, ensuring they meet the specifications you've provided. This eliminates a significant amount of manual data validation and transformation code, making your program more robust and less prone to errors. It's particularly helpful when dealing with untrusted user input such as form data, <a href="usage/json_schema/">JSON documents</a>, and other data types.</p>
-<p>By providing a simple, declarative way of defining how data should be shaped, Pydantic helps you write cleaner, safer, and more reliable code.</p>
-<h2 id="features-of-pydantic">Features of Pydantic<a class="headerlink" href="#features-of-pydantic" title="Permanent link">&para;</a></h2>
-<p>Some of the main features of Pydantic include:</p>
 <ul>
-<li><a href="usage/validators/"><strong>Data validation</strong></a>: Pydantic validates data as it is assigned to ensure it meets the requirements. It automatically handles a broad range of data types, including custom types and custom validators.</li>
-<li><a href="usage/types/types/"><strong>Standard library and custom data types</strong></a>: Pydantic supports all of the Python standard library types, and you can define custom data types and specify how they should be validated and converted.</li>
-<li><a href="usage/conversion_table/"><strong>Conversion types</strong></a>: Pydantic will not only validate data, but also convert it to the appropriate type if possible. For instance, a string containing a number will be converted to the proper numerical type.</li>
-<li><a href="usage/models/"><strong>Custom and nested models</strong></a>: You can define models (similar to classes) that contain other models, allowing for complex data structures to be neatly and efficiently represented.</li>
-<li><a href="usage/models/#generic-models"><strong>Generic models</strong></a>: Pydantic supports generic models, which allow the declaration of models that are "parameterized" on one or more fields.</li>
-<li><a href="usage/dataclasses/"><strong>Dataclasses</strong></a>: Pydantic supports <code>dataclasses.dataclass</code>, offering same data validation as using <code>BaseModel</code>.</li>
-<li><a href="usage/json_schema/"><strong>Model schema generation</strong></a>: Pydantic models can be converted to and from a JSON Schema, which can be useful for documentation, code generation, or other purposes.</li>
-<li><a href="errors/errors/"><strong>Error handling</strong></a>: Pydantic models raise informative errors when invalid data is provided, with the option to create your own <a href="errors/errors/#custom-errors">custom errors</a>.</li>
-<li><a href="api/pydantic_settings/"><strong>Settings management</strong></a>: The <code>BaseSettings</code> class from <a href="https://github.com/pydantic/pydantic-settings">pydantic-settings</a> provides a way to validate, document, and provide default values for environment variables.</li>
+<li><strong>Powered by type hints</strong> &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write and integration with your IDE and static analysis tools.</li>
+<li><strong>Speed</strong> &mdash; Pydantic's core validation logic is written in Rust, as a result Pydantic is among the fastest data validation libraries for Python.</li>
+<li><strong>JSON Schema</strong> &mdash; Pydantic models can emit JSON Schema allowing for easy integration with other tools.</li>
+<li><strong>Strict</strong> and <strong>Lax</strong> mode &mdash; Pydantic can run in either <code>strict=True</code> mode (where data is not converted) or <code>strict=False</code> mode where Pydantic tries to coerce data to the correct type where appropriate.</li>
+<li><strong>Dataclasses</strong>, <strong>TypedDicts</strong> and more &mdash; Pydantic supports validation of many standard library types including <code>dataclass</code> and <code>TypedDict</code>.</li>
+<li><strong>Customisation</strong> &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways.</li>
+<li><strong>Ecosystem</strong> &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
+  <a href="https://github.com/tiangolo/fastapi">FastAPI</a>,
+  <a href="https://github.com/huggingface/transformers">huggingface/transformers</a>,
+  <a href="https://github.com/vitalik/django-ninja">Django Ninja</a>,
+  <a href="https://github.com/tiangolo/sqlmodel">SQLModel</a>,
+  and <a href="https://github.com/hwchase17/langchain">LangChain</a>.</li>
+<li><strong>Battle tested</strong> &mdash; Pydantic is downloaded &gt;70m times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ &mdash; if you're trying to do something with Pydantic, someone else has probably already done it.</li>
 </ul>
-<p>Pydantic is simple to use, even when doing complex things, and enables you to define and validate data in pure, canonical Python.</p>
-<p><a href="install/">Installing Pydantic</a> is as simple as: <a href="install/"><code>pip install pydantic</code></a>.</p>
+<p><a href="install/">Installing Pydantic</a> is as simple as: <a href="install/"><code>pip install pydantic</code></a></p>
 <h2 id="pydantic-examples">Pydantic examples<a class="headerlink" href="#pydantic-examples" title="Permanent link">&para;</a></h2>
 <p>To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from <code>BaseModel</code>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<div class="highlight"><span class="filename">Validation Successful</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PositiveInt</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>  <span class="c1"># (1)!</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>  <span class="c1"># (2)!</span>
+    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># (3)!</span>
+    <span class="n">tastes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">]</span>  <span class="c1"># (4)!</span>
 
 
 <span class="n">external_data</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;signup_ts&#39;</span><span class="p">:</span> <span class="s1">&#39;2019-06-01 12:22&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">,</span>
+    <span class="s1">&#39;signup_ts&#39;</span><span class="p">:</span> <span class="s1">&#39;2019-06-01 12:22&#39;</span><span class="p">,</span>  <span class="c1"># (5)!</span>
+    <span class="s1">&#39;tastes&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;wine&#39;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+        <span class="sa">b</span><span class="s1">&#39;cheese&#39;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>  <span class="c1"># (6)!</span>
+        <span class="s1">&#39;cabbage&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span>  <span class="c1"># (7)!</span>
+    <span class="p">},</span>
 <span class="p">}</span>
 
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="n">external_data</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="n">external_data</span><span class="p">)</span>  <span class="c1"># (8)!</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;id&#39;: 123, &#39;name&#39;: &#39;John Doe&#39;, &#39;signup_ts&#39;: datetime.datetime(2019, 6, 1, 12, 22)}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>  <span class="c1"># (9)!</span>
+<span class="c1">#&gt; 123</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (10)!</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;id&#39;: 123,</span>
+<span class="sd">    &#39;name&#39;: &#39;John Doe&#39;,</span>
+<span class="sd">    &#39;signup_ts&#39;: datetime.datetime(2019, 6, 1, 12, 22),</span>
+<span class="sd">    &#39;tastes&#39;: {&#39;wine&#39;: 9, &#39;cheese&#39;: 7, &#39;cabbage&#39;: 1},</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="n">external_data</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;signup_ts&#39;</span><span class="p">:</span> <span class="s1">&#39;2019-06-01 12:22&#39;</span><span class="p">,</span>
-<span class="p">}</span>
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="n">external_data</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;id&#39;: 123, &#39;name&#39;: &#39;John Doe&#39;, &#39;signup_ts&#39;: datetime.datetime(2019, 6, 1, 12, 22)}</span>
-</code></pre></div>
-</div>
-</div>
-</div>
-<p>What's going on here:</p>
-<ul>
+<ol>
 <li><code>id</code> is of type <code>int</code>; the annotation-only declaration tells Pydantic that this field is required. Strings,
   bytes, or floats will be coerced to ints if possible; otherwise an exception will be raised.</li>
-<li><code>name</code> is inferred as a string from the provided default; because it has a default, it is not required.</li>
-<li><code>signup_ts</code> is a <code>datetime</code> field that is not required (and takes the value <code>None</code> if a value is not supplied).
+<li><code>name</code> is a string; because it has a default, it is not required.</li>
+<li><code>signup_ts</code> is a <code>datetime</code> field that is required, but the value <code>None</code> may be provided;
   Pydantic will process either a unix timestamp int (e.g. <code>1496498400</code>) or a string representing the date and time.</li>
-</ul>
+<li><code>tastes</code> is a dictionary with string keys and positive integer values. The <code>PositiveInt</code> type is shorthand for <code>Annotated[int, annotated_types.Gt(0)]</code>.</li>
+<li>The input here is an ISO8601 formatted datetime, Pydantic will convert it to a <code>datetime</code> object.</li>
+<li>The key here is <code>bytes</code>, but Pydantic will take care of coercing it to a string.</li>
+<li>Similarly, Pydantic will coerce the string <code>'1'</code> to an integer <code>1</code>.</li>
+<li>Here we create instance of <code>User</code> by passing our external data to <code>User</code> as keyword arguments</li>
+<li>We can access fields as attributes of the model</li>
+<li>We can convert the model to a dictionary with <code>model_dump()</code></li>
+</ol>
 <p>If validation fails, Pydantic will raise an error with a breakdown of what was wrong:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<div class="highlight"><span class="filename">Validation Error</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">tastes</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">]</span>
 
+
+<span class="n">external_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;not an int&#39;</span><span class="p">,</span> <span class="s1">&#39;tastes&#39;</span><span class="p">:</span> <span class="p">{}}</span>  <span class="c1"># (1)!</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span>
+    <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="n">external_data</span><span class="p">)</span>  <span class="c1"># (2)!</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    [</span>
 <span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;int_parsing&#39;,</span>
 <span class="sd">            &#39;loc&#39;: (&#39;id&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
-<span class="sd">            &#39;input&#39;: {&#39;name&#39;: 1234},</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
+<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid integer, unable to parse string as an integer&#39;,</span>
+<span class="sd">            &#39;input&#39;: &#39;not an int&#39;,</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/int_parsing&#39;,</span>
 <span class="sd">        },</span>
 <span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;string_type&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;name&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid string&#39;,</span>
-<span class="sd">            &#39;input&#39;: 1234,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/string_type&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;signup_ts&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
+<span class="sd">            &#39;input&#39;: {&#39;id&#39;: &#39;not an int&#39;, &#39;tastes&#39;: {}},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
 <span class="sd">        },</span>
 <span class="sd">    ]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    [</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;id&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
-<span class="sd">            &#39;input&#39;: {&#39;name&#39;: 1234},</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;string_type&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;name&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid string&#39;,</span>
-<span class="sd">            &#39;input&#39;: 1234,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/string_type&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">    ]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
+<ol>
+<li>the input data is wrong here &mdash; <code>id</code> is a valid int, and <code>signup_ts</code> is missing</li>
+<li><code>User(...)</code> will raise a <code>ValidationError</code> with a list of errors</li>
+</ol>
 <h2 id="who-is-using-pydantic">Who is using Pydantic?<a class="headerlink" href="#who-is-using-pydantic" title="Permanent link">&para;</a></h2>
 <p>Hundreds of organisations and packages are using Pydantic. Some of the prominent companies and organizations around the world who are using Pydantic include:</p>
 <div id="grid-container">
@@ -2504,7 +2451,7 @@ for (const company of companies) {
   const tile = document.createElement('div');
   tile.classList.add('tile');
   tile.innerHTML = `
-    <img src="${company.logoUrl}" />
+    <img src="${company.logoUrl}" alt="${company.name}" />
   `;
   grid.appendChild(tile);
 }

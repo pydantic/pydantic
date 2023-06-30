@@ -2378,7 +2378,11 @@ done recursively.</p>
 <span class="c1">#&gt; {&#39;banana&#39;: 3.14}</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo_alias&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
 <span class="nb">print</span><span class="p">(</span>
     <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
@@ -2386,7 +2390,11 @@ done recursively.</p>
     <span class="p">)</span>
 <span class="p">)</span>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
 <span class="nb">print</span><span class="p">(</span>
     <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
@@ -2433,7 +2441,11 @@ done recursively.</p>
 <span class="c1">#&gt; {&#39;banana&#39;: 3.14}</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo_alias&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
 <span class="nb">print</span><span class="p">(</span>
     <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
@@ -2441,7 +2453,11 @@ done recursively.</p>
     <span class="p">)</span>
 <span class="p">)</span>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
 <span class="nb">print</span><span class="p">(</span>
     <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
@@ -2488,7 +2504,11 @@ done recursively.</p>
 <span class="c1">#&gt; {&#39;banana&#39;: 3.14}</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo_alias&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
 <span class="nb">print</span><span class="p">(</span>
     <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
@@ -2496,7 +2516,11 @@ done recursively.</p>
     <span class="p">)</span>
 <span class="p">)</span>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
 <span class="nb">print</span><span class="p">(</span>
     <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
@@ -3139,7 +3163,9 @@ To exclude a field from <strong>every</strong> member of a list or tuple, the di
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
     <span class="n">first_name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span>
     <span class="n">second_name</span><span class="o">=</span><span class="s1">&#39;Doe&#39;</span><span class="p">,</span>
-    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">post_code</span><span class="o">=</span><span class="mi">123456</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="n">Country</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span> <span class="n">phone_code</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span>
+    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span>
+        <span class="n">post_code</span><span class="o">=</span><span class="mi">123456</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="n">Country</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span> <span class="n">phone_code</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">),</span>
     <span class="n">card_details</span><span class="o">=</span><span class="n">CardDetails</span><span class="p">(</span>
         <span class="n">number</span><span class="o">=</span><span class="s1">&#39;4212934504460000&#39;</span><span class="p">,</span> <span class="n">expires</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="p">),</span>
@@ -3182,7 +3208,10 @@ To exclude a field from <strong>every</strong> member of a list or tuple, the di
 <span class="sd">{</span>
 <span class="sd">    &#39;first_name&#39;: &#39;John&#39;,</span>
 <span class="sd">    &#39;second_name&#39;: &#39;Doe&#39;,</span>
-<span class="sd">    &#39;address&#39;: {&#39;post_code&#39;: 123456, &#39;country&#39;: {&#39;name&#39;: &#39;USA&#39;, &#39;phone_code&#39;: 1}},</span>
+<span class="sd">    &#39;address&#39;: {</span>
+<span class="sd">        &#39;post_code&#39;: 123456,</span>
+<span class="sd">        &#39;country&#39;: {&#39;name&#39;: &#39;USA&#39;, &#39;phone_code&#39;: 1},</span>
+<span class="sd">    },</span>
 <span class="sd">    &#39;card_details&#39;: {</span>
 <span class="sd">        &#39;number&#39;: SecretStr(&#39;**********&#39;),</span>
 <span class="sd">        &#39;expires&#39;: datetime.date(2020, 5, 1),</span>
@@ -3229,7 +3258,9 @@ To exclude a field from <strong>every</strong> member of a list or tuple, the di
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
     <span class="n">first_name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span>
     <span class="n">second_name</span><span class="o">=</span><span class="s1">&#39;Doe&#39;</span><span class="p">,</span>
-    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">post_code</span><span class="o">=</span><span class="mi">123456</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="n">Country</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span> <span class="n">phone_code</span><span class="o">=</span><span class="mi">1</span><span class="p">)),</span>
+    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span>
+        <span class="n">post_code</span><span class="o">=</span><span class="mi">123456</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="n">Country</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;USA&#39;</span><span class="p">,</span> <span class="n">phone_code</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">),</span>
     <span class="n">card_details</span><span class="o">=</span><span class="n">CardDetails</span><span class="p">(</span>
         <span class="n">number</span><span class="o">=</span><span class="s1">&#39;4212934504460000&#39;</span><span class="p">,</span> <span class="n">expires</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="p">),</span>
@@ -3272,7 +3303,10 @@ To exclude a field from <strong>every</strong> member of a list or tuple, the di
 <span class="sd">{</span>
 <span class="sd">    &#39;first_name&#39;: &#39;John&#39;,</span>
 <span class="sd">    &#39;second_name&#39;: &#39;Doe&#39;,</span>
-<span class="sd">    &#39;address&#39;: {&#39;post_code&#39;: 123456, &#39;country&#39;: {&#39;name&#39;: &#39;USA&#39;, &#39;phone_code&#39;: 1}},</span>
+<span class="sd">    &#39;address&#39;: {</span>
+<span class="sd">        &#39;post_code&#39;: 123456,</span>
+<span class="sd">        &#39;country&#39;: {&#39;name&#39;: &#39;USA&#39;, &#39;phone_code&#39;: 1},</span>
+<span class="sd">    },</span>
 <span class="sd">    &#39;card_details&#39;: {</span>
 <span class="sd">        &#39;number&#39;: SecretStr(&#39;**********&#39;),</span>
 <span class="sd">        &#39;expires&#39;: datetime.date(2020, 5, 1),</span>

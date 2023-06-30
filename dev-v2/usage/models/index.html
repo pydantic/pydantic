@@ -2807,7 +2807,9 @@ to the model field names. One common application of this functionality is integr
 <span class="c1">#&gt; &lt;__main__.CompanyOrm object at 0x0123456789ab&gt;</span>
 <span class="n">co_model</span> <span class="o">=</span> <span class="n">CompanyModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">co_orm</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">co_model</span><span class="p">)</span>
-<span class="c1">#&gt; id=123 public_key=&#39;foobar&#39; name=&#39;Testing&#39; domains=[&#39;example.com&#39;, &#39;foobar.com&#39;]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">id=123 public_key=&#39;foobar&#39; name=&#39;Testing&#39; domains=[&#39;example.com&#39;, &#39;foobar.com&#39;]</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -2848,7 +2850,9 @@ to the model field names. One common application of this functionality is integr
 <span class="c1">#&gt; &lt;__main__.CompanyOrm object at 0x0123456789ab&gt;</span>
 <span class="n">co_model</span> <span class="o">=</span> <span class="n">CompanyModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">co_orm</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">co_model</span><span class="p">)</span>
-<span class="c1">#&gt; id=123 public_key=&#39;foobar&#39; name=&#39;Testing&#39; domains=[&#39;example.com&#39;, &#39;foobar.com&#39;]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">id=123 public_key=&#39;foobar&#39; name=&#39;Testing&#39; domains=[&#39;example.com&#39;, &#39;foobar.com&#39;]</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 </div>
@@ -3610,7 +3614,9 @@ comes to leaving them unparameterized, or using bounded <code>TypeVar</code> ins
 the <code>create_model</code> method to allow models to be created on the fly.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">create_model</span>
 
-<span class="n">DynamicFoobarModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;DynamicFoobarModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">bar</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="mi">123</span><span class="p">))</span>
+<span class="n">DynamicFoobarModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
+    <span class="s1">&#39;DynamicFoobarModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">bar</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="mi">123</span><span class="p">)</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">StaticFoobarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3655,9 +3661,13 @@ extending a base model with extra fields.</p>
     <span class="k">return</span> <span class="n">v</span>
 
 
-<span class="n">validators</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;username_validator&#39;</span><span class="p">:</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)(</span><span class="n">username_alphanumeric</span><span class="p">)}</span>
+<span class="n">validators</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;username_validator&#39;</span><span class="p">:</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)(</span><span class="n">username_alphanumeric</span><span class="p">)</span>
+<span class="p">}</span>
 
-<span class="n">UserModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;UserModel&#39;</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">__validators__</span><span class="o">=</span><span class="n">validators</span><span class="p">)</span>
+<span class="n">UserModel</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
+    <span class="s1">&#39;UserModel&#39;</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">__validators__</span><span class="o">=</span><span class="n">validators</span>
+<span class="p">)</span>
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
@@ -3709,7 +3719,9 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 <span class="c1">#&gt; [{&#39;name&#39;: &#39;Fred&#39;, &#39;id&#39;: 3}]</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">UserListValidator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="s1">&#39;no&#39;</span><span class="p">}])</span>
+    <span class="n">UserListValidator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">[{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="s1">&#39;no&#39;</span><span class="p">}]</span>
+    <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -3735,7 +3747,9 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 <span class="c1">#&gt; [{&#39;name&#39;: &#39;Fred&#39;, &#39;id&#39;: 3}]</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">UserListValidator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="s1">&#39;no&#39;</span><span class="p">}])</span>
+    <span class="n">UserListValidator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">[{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="s1">&#39;no&#39;</span><span class="p">}]</span>
+    <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -3761,7 +3775,9 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 <span class="c1">#&gt; [{&#39;name&#39;: &#39;Fred&#39;, &#39;id&#39;: 3}]</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">UserListValidator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="s1">&#39;no&#39;</span><span class="p">}])</span>
+    <span class="n">UserListValidator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+        <span class="p">[{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Fred&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;wrong&#39;</span><span class="p">,</span> <span class="s1">&#39;other&#39;</span><span class="p">:</span> <span class="s1">&#39;no&#39;</span><span class="p">}]</span>
+    <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -3844,7 +3860,9 @@ The root value can be passed to the model <code>__init__</code> or <code>model_v
 <span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">]))</span>
 <span class="c1">#&gt; root=[&#39;dog&#39;, &#39;cat&#39;]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;string&#39;}, &#39;title&#39;: &#39;RootModel[List[str]]&#39;, &#39;type&#39;: &#39;array&#39;}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{&#39;items&#39;: {&#39;type&#39;: &#39;string&#39;}, &#39;title&#39;: &#39;RootModel[List[str]]&#39;, &#39;type&#39;: &#39;array&#39;}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">PetsByName</span><span class="p">({</span><span class="s1">&#39;Otis&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;Milo&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; root={&#39;Otis&#39;: &#39;dog&#39;, &#39;Milo&#39;: &#39;cat&#39;}</span>
@@ -3868,7 +3886,9 @@ The root value can be passed to the model <code>__init__</code> or <code>model_v
 <span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_validate</span><span class="p">([</span><span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;cat&#39;</span><span class="p">]))</span>
 <span class="c1">#&gt; root=[&#39;dog&#39;, &#39;cat&#39;]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">Pets</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;string&#39;}, &#39;title&#39;: &#39;RootModel[List[str]]&#39;, &#39;type&#39;: &#39;array&#39;}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{&#39;items&#39;: {&#39;type&#39;: &#39;string&#39;}, &#39;title&#39;: &#39;RootModel[List[str]]&#39;, &#39;type&#39;: &#39;array&#39;}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">PetsByName</span><span class="p">({</span><span class="s1">&#39;Otis&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;Milo&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; root={&#39;Otis&#39;: &#39;dog&#39;, &#39;Milo&#39;: &#39;cat&#39;}</span>

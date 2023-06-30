@@ -2274,7 +2274,9 @@
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">,</span> <span class="n">signup_ts</span><span class="o">=</span><span class="s1">&#39;2032-06-21T12:00&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="c1">#&gt; User(id=42, name=&#39;John Doe&#39;, signup_ts=datetime.datetime(2032, 6, 21, 12, 0))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">User(id=42, name=&#39;John Doe&#39;, signup_ts=datetime.datetime(2032, 6, 21, 12, 0))</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -2317,7 +2319,11 @@ Also, fields that require a <code>default_factory</code> can be specified by eit
 <span class="sd">    &#39;properties&#39;: {</span>
 <span class="sd">        &#39;id&#39;: {&#39;title&#39;: &#39;Id&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
 <span class="sd">        &#39;name&#39;: {&#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;friends&#39;: {&#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}, &#39;title&#39;: &#39;Friends&#39;, &#39;type&#39;: &#39;array&#39;},</span>
+<span class="sd">        &#39;friends&#39;: {</span>
+<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">        },</span>
 <span class="sd">        &#39;age&#39;: {</span>
 <span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
 <span class="sd">            &#39;default&#39;: None,</span>
@@ -2367,7 +2373,11 @@ Also, fields that require a <code>default_factory</code> can be specified by eit
 <span class="sd">    &#39;properties&#39;: {</span>
 <span class="sd">        &#39;id&#39;: {&#39;title&#39;: &#39;Id&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
 <span class="sd">        &#39;name&#39;: {&#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;friends&#39;: {&#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}, &#39;title&#39;: &#39;Friends&#39;, &#39;type&#39;: &#39;array&#39;},</span>
+<span class="sd">        &#39;friends&#39;: {</span>
+<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">        },</span>
 <span class="sd">        &#39;age&#39;: {</span>
 <span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
 <span class="sd">            &#39;default&#39;: None,</span>
@@ -2416,7 +2426,11 @@ Also, fields that require a <code>default_factory</code> can be specified by eit
 <span class="sd">    &#39;properties&#39;: {</span>
 <span class="sd">        &#39;id&#39;: {&#39;title&#39;: &#39;Id&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
 <span class="sd">        &#39;name&#39;: {&#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;friends&#39;: {&#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}, &#39;title&#39;: &#39;Friends&#39;, &#39;type&#39;: &#39;array&#39;},</span>
+<span class="sd">        &#39;friends&#39;: {</span>
+<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">        },</span>
 <span class="sd">        &#39;age&#39;: {</span>
 <span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
 <span class="sd">            &#39;default&#39;: None,</span>
@@ -2572,7 +2586,9 @@ the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen<
     <span class="n">last_modification_time</span><span class="o">=</span><span class="s1">&#39;2020-01-01T00:00&#39;</span><span class="p">,</span>
 <span class="p">)</span>  <span class="c1"># nothing is validated as expected</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-<span class="c1">#&gt; File(filename=[&#39;not&#39;, &#39;a&#39;, &#39;string&#39;], last_modification_time=&#39;2020-01-01T00:00&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">File(filename=[&#39;not&#39;, &#39;a&#39;, &#39;string&#39;], last_modification_time=&#39;2020-01-01T00:00&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">Foo</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
@@ -2620,7 +2636,9 @@ the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen<
     <span class="n">last_modification_time</span><span class="o">=</span><span class="s1">&#39;2020-01-01T00:00&#39;</span><span class="p">,</span>
 <span class="p">)</span>  <span class="c1"># nothing is validated as expected</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-<span class="c1">#&gt; File(filename=[&#39;not&#39;, &#39;a&#39;, &#39;string&#39;], last_modification_time=&#39;2020-01-01T00:00&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">File(filename=[&#39;not&#39;, &#39;a&#39;, &#39;string&#39;], last_modification_time=&#39;2020-01-01T00:00&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">Foo</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
@@ -2675,8 +2693,9 @@ In this case you can simply add <code>arbitrary_types_allowed</code> in the conf
         <span class="n">dc</span><span class="p">:</span> <span class="n">DC</span>
         <span class="n">other</span><span class="p">:</span> <span class="nb">str</span>
 
+    <span class="c1"># invalid as it is now a pydantic dataclass</span>
     <span class="n">Model</span><span class="p">(</span><span class="n">dc</span><span class="o">=</span><span class="n">my_dc</span><span class="p">,</span> <span class="n">other</span><span class="o">=</span><span class="s1">&#39;other&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">PydanticSchemaGenerationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># invalid as it is now a pydantic dataclass</span>
+<span class="k">except</span> <span class="n">PydanticSchemaGenerationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Unable to generate pydantic-core schema for &lt;class &#39;__main__.ArbitraryType&#39;&gt;. Set `arbitrary_types_allowed=True` in the model_config to ignore this error or implement `__get_pydantic_core_schema__` on your type to fully support it.</span>
