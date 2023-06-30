@@ -1,3 +1,6 @@
+!!! warning
+    This page still needs to be updated for v2.0.
+
 *Pydantic* allows auto creation of JSON Schemas from models:
 
 ```py output="json"
