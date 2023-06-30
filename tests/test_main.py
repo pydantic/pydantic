@@ -83,7 +83,7 @@ def test_ultra_simple_failed(UltraSimpleModel):
         {
             'type': 'float_parsing',
             'loc': ('a',),
-            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'msg': 'Input should be a valid number, unable to parse string as a number',
             'input': 'x',
         },
         {
@@ -2338,7 +2338,13 @@ def test_validate_python_from_attributes() -> None:
         with pytest.raises(ValidationError) as exc_info:
             Model.model_validate(UnrelatedClass(), from_attributes=from_attributes)
         assert exc_info.value.errors(include_url=False) == [
-            {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+            {
+                'type': 'model_type',
+                'loc': (),
+                'msg': 'Input should be a valid dictionary or instance of Model',
+                'input': input,
+                'ctx': {'class_name': 'Model'},
+            }
         ]
 
     res = Model.model_validate(UnrelatedClass(), from_attributes=True)
@@ -2347,7 +2353,13 @@ def test_validate_python_from_attributes() -> None:
     with pytest.raises(ValidationError) as exc_info:
         ModelFromAttributesTrue.model_validate(UnrelatedClass(), from_attributes=False)
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+        {
+            'type': 'model_type',
+            'loc': (),
+            'msg': 'Input should be a valid dictionary or instance of Model',
+            'input': input,
+            'ctx': {'class_name': 'Model'},
+        }
     ]
 
     for from_attributes in (True, None):
@@ -2358,7 +2370,13 @@ def test_validate_python_from_attributes() -> None:
         with pytest.raises(ValidationError) as exc_info:
             ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=from_attributes)
         assert exc_info.value.errors(include_url=False) == [
-            {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+            {
+                'type': 'model_type',
+                'loc': (),
+                'msg': 'Input should be a valid dictionary or instance of Model',
+                'input': input,
+                'ctx': {'class_name': 'Model'},
+            }
         ]
 
     res = ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=True)

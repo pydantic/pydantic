@@ -433,7 +433,7 @@ def test_tuple_value_error():
         {
             'input': 'y',
             'loc': ('v', 1),
-            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'msg': 'Input should be a valid number, unable to parse string as a number',
             'type': 'float_parsing',
         },
         {'input': 'x', 'loc': ('v', 2), 'msg': 'Input should be a valid decimal', 'type': 'decimal_parsing'},
@@ -459,8 +459,15 @@ def test_recursive_list():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=['x'])
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'input': 'x', 'loc': ('v', 0), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+        {
+            'type': 'model_type',
+            'loc': ('v', 0),
+            'msg': 'Input should be a valid dictionary or instance of Model',
+            'input': 'x',
+            'ctx': {'class_name': 'Model'},
+        }
     ]
 
 
@@ -1209,7 +1216,7 @@ def test_multiple_errors():
         {
             'type': 'float_parsing',
             'loc': ('a', 'float'),
-            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'msg': 'Input should be a valid number, unable to parse string as a number',
             'input': 'foobar',
         },
         {
@@ -2382,8 +2389,15 @@ def test_generic_wrapped_forwardref():
     Operation.model_validate({'callbacks': [PathItem()]})
     with pytest.raises(ValidationError) as exc_info:
         Operation.model_validate({'callbacks': [1]})
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'input': 1, 'loc': ('callbacks', 0), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+        {
+            'type': 'model_type',
+            'loc': ('callbacks', 0),
+            'msg': 'Input should be a valid dictionary or instance of Model',
+            'input': 1,
+            'ctx': {'class_name': 'Model'},
+        }
     ]
 
 
@@ -2397,8 +2411,15 @@ def test_plain_basemodel_field():
     assert Model(x=Model2()).x == Model2()
     with pytest.raises(ValidationError) as exc_info:
         Model(x=1)
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'input': 1, 'loc': ('x',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+        {
+            'type': 'model_type',
+            'loc': ('x',),
+            'msg': 'Input should be a valid dictionary or instance of Model',
+            'input': 1,
+            'ctx': {'class_name': 'Model'},
+        }
     ]
 
 
@@ -2444,8 +2465,15 @@ def test_invalid_forward_ref_model():
     assert A(B=B()).B == B()
     with pytest.raises(ValidationError) as exc_info:
         A(B=C())
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'input': C(), 'loc': ('B',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+        {
+            'type': 'model_type',
+            'loc': ('B',),
+            'msg': 'Input should be a valid dictionary or instance of Model',
+            'input': C(),
+            'ctx': {'class_name': 'Model'},
+        }
     ]
 
 

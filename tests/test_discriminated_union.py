@@ -146,12 +146,13 @@ def test_discriminated_union_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': 'fish', 'number': 2})
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'input': 'fish',
+            'type': 'model_attributes_type',
             'loc': ('pet',),
-            'msg': 'Input should be a valid dictionary or instance to extract fields ' 'from',
-            'type': 'dict_attributes_type',
+            'msg': 'Input should be a valid dictionary or object to extract fields from',
+            'input': 'fish',
         }
     ]
 

@@ -73,9 +73,9 @@ except ValidationError as e:
     list_of_ints.2
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
     a_float
-      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='not a float', input_type=str]
+      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='not a float', input_type=str]
     recursive_model.lng
-      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='New York', input_type=str]
+      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='New York', input_type=str]
     """
 
 try:
@@ -116,14 +116,14 @@ except ValidationError as e:
         {
             'type': 'float_parsing',
             'loc': ('a_float',),
-            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'msg': 'Input should be a valid number, unable to parse string as a number',
             'input': 'not a float',
             'url': 'https://errors.pydantic.dev/2/v/float_parsing',
         },
         {
             'type': 'float_parsing',
             'loc': ('recursive_model', 'lng'),
-            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'msg': 'Input should be a valid number, unable to parse string as a number',
             'input': 'New York',
             'url': 'https://errors.pydantic.dev/2/v/float_parsing',
         },

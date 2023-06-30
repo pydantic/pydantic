@@ -337,7 +337,7 @@ except ValidationError as e:
     list_of_ints.2
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
     a_float
-      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='not a float', input_type=str]
+      Input should be a valid number, unable to parse string as a number [type=float_parsing, input_value='not a float', input_type=str]
     """
 ```
 
