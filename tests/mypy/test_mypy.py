@@ -139,6 +139,8 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
         if output_path.exists():
             existing = MypyTestTarget(parsed_version, output_path)
             break
+        else:
+            print(f"Couldn't find {output_path}..")
 
     current = MypyTestTarget(MYPY_VERSION_TUPLE, _convert_to_output_path(mypy_version))
     return MypyTestConfig(existing, current)
