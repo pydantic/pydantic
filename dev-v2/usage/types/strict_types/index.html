@@ -80,6 +80,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#strict-types" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -753,7 +758,7 @@
   
     <li class="md-nav__item">
       <a href="../sequence_iterable/" class="md-nav__link">
-        Sequence, Iterable, & Iterator
+        Sequence, Iterable & Iterator
       </a>
     </li>
   
@@ -787,9 +792,47 @@
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Strict Types
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Strict Types
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#strict-types" class="md-nav__link">
+    Strict types
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained types
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -2036,6 +2079,28 @@
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#strict-types" class="md-nav__link">
+    Strict types
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained types
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2056,6 +2121,7 @@
   <h1>Strict Types</h1>
 
 <p>Strict types enable you to prevent coercion from compatible types.</p>
+<h2 id="strict-types">Strict types<a class="headerlink" href="#strict-types" title="Permanent link">&para;</a></h2>
 <p>Pydantic provides the following strict types:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.StrictBool"><code>StrictBool</code></a></li>
@@ -2065,7 +2131,8 @@
 <li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.StrictStr"><code>StrictStr</code></a></li>
 </ul>
 <p>These types will only pass validation when the validated value is of the respective type or is a subtype of that type.</p>
-<p>This behavior is also exposed via the <code>strict</code> field of the constrained types and can be combined with a multitude of complex validation rules.</p>
+<h2 id="constrained-types">Constrained types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
+<p>This behavior is also exposed via the <code>strict</code> field of the constrained types and can be combined with a multitude of complex validation rules. See the individual type signatures for supported arguments.</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.conbytes"><code>conbytes()</code></a></li>
 <li><a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.condate"><code>condate()</code></a></li>
