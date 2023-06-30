@@ -1574,7 +1574,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
         has_custom_v2_modify_js_func = (
             js_modify_function is not None
             and BaseModel.__get_pydantic_json_schema__.__func__
-            not in {js_modify_function, getattr(js_modify_function, '__func__', None)}
+            not in (js_modify_function, getattr(js_modify_function, '__func__', None))
         )
 
         if not has_custom_v2_modify_js_func and hasattr(tp, '__modify_schema__'):
