@@ -47,7 +47,7 @@ nav:
   - Welcome to Pydantic: index.md
   - Installation: install.md
   - Migration Guide: migration.md
-  - version-compatibility.md
+  - Version Compatibility: version-compatibility.md
   - changelog.md
 - Usage:
   - usage/models.md
