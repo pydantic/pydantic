@@ -132,8 +132,11 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
     if MYPY_VERSION_TUPLE not in [x[0] for x in parsed_version_pairs]:
         insort(parsed_version_pairs, (MYPY_VERSION_TUPLE, mypy_version))
 
+    print(f'{parsed_version_pairs=}')
+    print(f'{MYPY_VERSION_TUPLE=}')
     for parsed_version, version in parsed_version_pairs[::-1]:
         if parsed_version > MYPY_VERSION_TUPLE:
+            print(f'{parsed_version=} {parsed_version > MYPY_VERSION_TUPLE=}')
             continue
         output_path = _convert_to_output_path(version)
         if output_path.exists():
