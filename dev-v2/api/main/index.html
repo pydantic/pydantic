@@ -5286,7 +5286,7 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
                 <span class="n">f_annotation</span><span class="p">,</span> <span class="n">f_value</span> <span class="o">=</span> <span class="n">f_def</span>
             <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-                    <span class="s1">&#39;Field definitions should either be a `(&lt;type&gt;, &lt;default&gt;)`.&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;Field definitions should be a `(&lt;type&gt;, &lt;default&gt;)`.&#39;</span><span class="p">,</span>
                     <span class="n">code</span><span class="o">=</span><span class="s1">&#39;create-model-field-definitions&#39;</span><span class="p">,</span>
                 <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
         <span class="k">else</span><span class="p">:</span>
