@@ -483,7 +483,7 @@ def test_create_model_tuple():
 
 
 def test_create_model_tuple_3():
-    with pytest.raises(PydanticUserError, match=r'^Field definitions should either be a `\(<type>, <default>\)`\.\n'):
+    with pytest.raises(PydanticUserError, match=r'^Field definitions should be a `\(<type>, <default>\)`\.\n'):
         create_model('FooModel', foo=(Tuple[int, int], (1, 2), 'more'))
 
 
