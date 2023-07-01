@@ -1577,7 +1577,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
             not in (js_modify_function, getattr(js_modify_function, '__func__', None))
         )
 
-        if not has_custom_v2_modify_js_func and hasattr(tp, '__modify_schema__'):
+        if not has_custom_v2_modify_js_func:
             raise PydanticUserError(
                 'The `__modify_schema__` method is not supported in Pydantic v2. '
                 'Use `__get_pydantic_json_schema__` instead.',
