@@ -6,6 +6,7 @@ from dataclasses import is_dataclass
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
+from pydantic_core.core_schema import ModelField
 from typing_extensions import Literal, is_typeddict
 
 from pydantic.errors import PydanticUserError
@@ -13,6 +14,7 @@ from pydantic.main import BaseModel
 
 from ._internal import _config, _core_utils, _discriminated_union, _generate_schema, _typing_extra
 from .config import ConfigDict
+from .fields import FieldInfo
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
     DefsRef,
@@ -77,6 +79,18 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
     schema = gen.generate_schema(type_)
     schema = gen.collect_definitions(schema)
+    return schema
+
+
+def _get_field_schema(
+    name: str, field_info: FieldInfo, config_wrapper: _config.ConfigWrapper, parent_depth: int
+) -> ModelField:
+    local_ns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
+    global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals.copy()
+    global_ns.update(local_ns or {})
+    gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
+    schema = gen.generate_field_schema(name, field_info)
+    schema['schema'] = gen.collect_definitions(schema['schema'])
     return schema
 
 
@@ -170,6 +184,14 @@ class TypeAdapter(Generic[T]):
         self.core_schema = core_schema
         self.validator = validator
         self.serializer = serializer
+
+    @classmethod
+    def model_field_schema(
+        cls, name: str, field: FieldInfo, config: ConfigDict | None = None, _parent_depth: int = 2
+    ) -> ModelField:
+        """Intended for use building JSON schemas from FieldInfos"""
+        config_wrapper = _config.ConfigWrapper(config)
+        return _get_field_schema(name, field, config_wrapper, parent_depth=_parent_depth + 1)
 
     def validate_python(
         self,

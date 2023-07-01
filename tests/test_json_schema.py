@@ -55,6 +55,7 @@ from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
+from pydantic.fields import FieldInfo
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     Examples,
@@ -4864,3 +4865,24 @@ def test_json_schema_keys_sorting() -> None:
     # verify order
     # dumping to json just happens to be a simple way to verify the order
     assert json.dumps(actual, indent=2) == json.dumps(expected, indent=2)
+
+
+def test_build_schema_for_fieldinfo():
+    field_info = FieldInfo.from_annotation(
+        Annotated[
+            str,
+            Field(
+                default='asdf',
+                description='some query param',
+                examples=['yes please', 'oh, no'],
+            ),
+        ]
+    )
+
+    model_field_schema = TypeAdapter.model_field_schema('batch', field_info, config=None)
+    assert GenerateJsonSchema().generate(model_field_schema) == {
+        'default': 'asdf',
+        'description': 'some query param',
+        'examples': ['yes please', 'oh, no'],
+        'type': 'string',
+    }

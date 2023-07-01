@@ -223,7 +223,7 @@ class GenerateJsonSchema:
         return mapping
 
     def generate_definitions(
-        self, inputs: Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema]]
+        self, inputs: Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, CoreSchemaOrField]]
     ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef], dict[DefsRef, JsonSchemaValue]]:
         """Generates JSON schema definitions from a list of core schemas, pairing the generated definitions with a
         mapping that links the input keys to the definition references.
@@ -233,7 +233,7 @@ class GenerateJsonSchema:
 
                 - The first element is a JSON schema key type.
                 - The second element is the JSON mode: either 'validation' or 'serialization'.
-                - The third element is a core schema.
+                - The third element is a core schema or core schema field.
 
         Returns:
             A sequence of tuples, where:
@@ -272,7 +272,7 @@ class GenerateJsonSchema:
         self._used = True
         return refs_map, _sort_json_schema(self.definitions)  # type: ignore
 
-    def generate(self, schema: CoreSchema, mode: JsonSchemaMode = 'validation') -> JsonSchemaValue:
+    def generate(self, schema: CoreSchemaOrField, mode: JsonSchemaMode = 'validation') -> JsonSchemaValue:
         """Generates a JSON schema for a specified schema in a specified mode.
 
         Args:

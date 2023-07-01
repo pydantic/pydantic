@@ -265,6 +265,9 @@ class GenerateSchema:
             obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
         )
 
+    def generate_field_schema(self, name: str, field_info: FieldInfo) -> core_schema.ModelField:
+        return self._generate_md_field_schema(name, field_info, DecoratorInfos())
+
     def _generate_schema_for_type(
         self,
         obj: Any,
