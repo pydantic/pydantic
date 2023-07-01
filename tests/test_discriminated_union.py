@@ -1106,3 +1106,113 @@ def test_wrapped_nullable_union() -> None:
             'from_attributes': True,
         },
     }
+
+
+def test_union_in_submodel() -> None:
+    class UnionModel1(BaseModel):
+        type: Literal[1] = 1
+        other: Literal['UnionModel1'] = 'UnionModel1'
+
+    class UnionModel2(BaseModel):
+        type: Literal[2] = 2
+        other: Literal['UnionModel2'] = 'UnionModel2'
+
+    UnionModel = Annotated[Union[UnionModel1, UnionModel2], Field(discriminator='type')]
+
+    class SubModel1(BaseModel):
+        union_model: UnionModel
+
+    class SubModel2(BaseModel):
+        union_model: UnionModel
+
+    class TestModel(BaseModel):
+        submodel: Union[SubModel1, SubModel2]
+
+    m = TestModel.model_validate({'submodel': {'union_model': {'type': 1}}})
+    assert isinstance(m.submodel, SubModel1)
+    assert isinstance(m.submodel.union_model, UnionModel1)
+
+    m = TestModel.model_validate({'submodel': {'union_model': {'type': 2}}})
+    assert isinstance(m.submodel, SubModel1)
+    assert isinstance(m.submodel.union_model, UnionModel2)
+
+    with pytest.raises(ValidationError) as exc_info:
+        TestModel.model_validate({'submodel': {'union_model': {'type': 1, 'other': 'UnionModel2'}}})
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'literal_error',
+            'loc': ('submodel', 'SubModel1', 'union_model', 1, 'other'),
+            'msg': "Input should be 'UnionModel1'",
+            'input': 'UnionModel2',
+            'ctx': {'expected': "'UnionModel1'"},
+            'url': 'https://errors.pydantic.dev/2.0.1/v/literal_error',
+        },
+        {
+            'type': 'literal_error',
+            'loc': ('submodel', 'SubModel2', 'union_model', 1, 'other'),
+            'msg': "Input should be 'UnionModel1'",
+            'input': 'UnionModel2',
+            'ctx': {'expected': "'UnionModel1'"},
+            'url': 'https://errors.pydantic.dev/2.0.1/v/literal_error',
+        },
+    ]
+
+    # insert_assert(TestModel.model_json_schema())
+    assert TestModel.model_json_schema() == {
+        '$defs': {
+            'SubModel1': {
+                'properties': {
+                    'union_model': {
+                        'discriminator': {
+                            'mapping': {'1': '#/$defs/UnionModel1', '2': '#/$defs/UnionModel2'},
+                            'propertyName': 'type',
+                        },
+                        'oneOf': [{'$ref': '#/$defs/UnionModel1'}, {'$ref': '#/$defs/UnionModel2'}],
+                        'title': 'Union Model',
+                    }
+                },
+                'required': ['union_model'],
+                'title': 'SubModel1',
+                'type': 'object',
+            },
+            'SubModel2': {
+                'properties': {
+                    'union_model': {
+                        'discriminator': {
+                            'mapping': {'1': '#/$defs/UnionModel1', '2': '#/$defs/UnionModel2'},
+                            'propertyName': 'type',
+                        },
+                        'oneOf': [{'$ref': '#/$defs/UnionModel1'}, {'$ref': '#/$defs/UnionModel2'}],
+                        'title': 'Union Model',
+                    }
+                },
+                'required': ['union_model'],
+                'title': 'SubModel2',
+                'type': 'object',
+            },
+            'UnionModel1': {
+                'properties': {
+                    'type': {'const': 1, 'default': 1, 'title': 'Type'},
+                    'other': {'const': 'UnionModel1', 'default': 'UnionModel1', 'title': 'Other'},
+                },
+                'title': 'UnionModel1',
+                'type': 'object',
+            },
+            'UnionModel2': {
+                'properties': {
+                    'type': {'const': 2, 'default': 2, 'title': 'Type'},
+                    'other': {'const': 'UnionModel2', 'default': 'UnionModel2', 'title': 'Other'},
+                },
+                'title': 'UnionModel2',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'submodel': {'anyOf': [{'$ref': '#/$defs/SubModel1'}, {'$ref': '#/$defs/SubModel2'}], 'title': 'Submodel'}
+        },
+        'required': ['submodel'],
+        'title': 'TestModel',
+        'type': 'object',
+    }
