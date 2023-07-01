@@ -4,15 +4,18 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, Iterable, List, Type
 
 import pytest
+from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Literal
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
     PydanticDeprecatedSince20,
     PydanticUserError,
     ValidationError,
@@ -25,6 +28,8 @@ from pydantic.deprecated.json import custom_pydantic_encoder, pydantic_encoder, 
 from pydantic.deprecated.parse import load_file, load_str_bytes
 from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
 from pydantic.functional_serializers import model_serializer
+from pydantic.json_schema import JsonSchemaValue
+from pydantic.type_adapter import TypeAdapter
 
 if sys.version_info < (3, 11):
     from typing_extensions import get_overloads
@@ -477,10 +482,37 @@ def test_modify_schema_error():
     ):
 
         class Model(BaseModel):
-            def __modify_schema__(self, field_schema: Dict[str, Any]) -> None:
+            @classmethod
+            def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
                 pass
 
-        Model()
+
+def test_v1_v2_custom_type_compatibility() -> None:
+    """Create a custom type that works with V1 and V2"""
+
+    class MyType:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.int_schema()
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {'anyOf': [{'type': 'string'}, {'type': 'number'}]}
+
+        @classmethod
+        def __modify_schema__(cls, field_schema: Dict[str, Any]) -> None:
+            raise NotImplementedError  # not actually called, we just want to make sure the method can exist
+
+        @classmethod
+        def __get_validators__(cls) -> Iterable[Any]:
+            raise NotImplementedError  # not actually called, we just want to make sure the method can exist
+            yield
+
+    ta = TypeAdapter(MyType)
+    assert ta.validate_python('123') == 123
+    assert ta.json_schema() == {'anyOf': [{'type': 'string'}, {'type': 'number'}]}
 
 
 def test_field_extra_arguments():

@@ -1569,11 +1569,20 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
     if hasattr(tp, '__modify_schema__'):
-        raise PydanticUserError(
-            'The `__modify_schema__` method is not supported in Pydantic v2. '
-            'Use `__get_pydantic_json_schema__` instead.',
-            code='custom-json-schema',
+        from pydantic import BaseModel  # circular reference
+
+        has_custom_v2_modify_js_func = (
+            js_modify_function is not None
+            and BaseModel.__get_pydantic_json_schema__.__func__
+            not in (js_modify_function, getattr(js_modify_function, '__func__', None))
         )
+
+        if not has_custom_v2_modify_js_func:
+            raise PydanticUserError(
+                'The `__modify_schema__` method is not supported in Pydantic v2. '
+                'Use `__get_pydantic_json_schema__` instead.',
+                code='custom-json-schema',
+            )
 
     # handle GenericAlias' but ignore Annotated which "lies" about it's origin (in this case it would be `int`)
     if hasattr(tp, '__origin__') and not isinstance(tp, type(Annotated[int, 'placeholder'])):
