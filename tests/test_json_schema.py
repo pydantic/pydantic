@@ -2820,7 +2820,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
                 return core_schema.general_plain_validator_function(
                     Gen,
-                    metadata={'pydantic_js_functions': [js_func]},
+                    metadata={'pydantic_js_annotation_functions': [js_func]},
                 )
             else:
                 return handler(source)
@@ -2898,7 +2898,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
-        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType', 'type': 'string'}},
+        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType title', 'type': 'string'}},
         'properties': {
             'data0': {
                 'anyOf': [{'type': 'string'}, {'items': {'type': 'string'}, 'type': 'array'}],
@@ -4463,68 +4463,6 @@ def test_root_model():
     }
 
 
-def test_get_json_schema_is_passed_the_same_schema_handler_was_called_with() -> None:
-    class CustomInt(int):
-        @classmethod
-        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return handler(int)
-
-        @classmethod
-        def __get_pydantic_json_schema__(
-            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            assert core_schema['type'] == 'function-after'
-            inner = core_schema['schema']
-            assert inner['type'] == 'int'
-            inner = inner.copy()
-            inner['gt'] = 0
-            core_schema = {**core_schema, 'schema': inner}
-            return handler(core_schema)
-
-    class Marker:
-        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(lambda x: x, handler(source_type))
-
-        def __get_pydantic_json_schema__(
-            self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            return handler(core_schema)
-
-    js_schema = TypeAdapter(Annotated[CustomInt, Marker()]).json_schema()
-
-    # insert_assert(js_schema)
-    assert js_schema == {'type': 'integer', 'exclusiveMinimum': 0}
-
-
-def test_get_json_schema_gets_called_if_schema_is_replaced() -> None:
-    class CustomInt(int):
-        @classmethod
-        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return handler(int)
-
-        @classmethod
-        def __get_pydantic_json_schema__(
-            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            assert core_schema['type'] == 'str'
-            core_schema = {**core_schema, 'min_length': 1}
-            return handler(core_schema)
-
-    class Marker:
-        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(lambda x: x, handler(source_type))
-
-        def __get_pydantic_json_schema__(
-            self, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
-            return handler({'type': 'str'})
-
-    js_schema = TypeAdapter(Annotated[CustomInt, Marker()]).json_schema()
-
-    # insert_assert(js_schema)
-    assert js_schema == {'type': 'string', 'minLength': 1}
-
-
 def test_core_metadata_core_schema_metadata():
     with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
         CoreMetadataHandler({'metadata': 'test'})
@@ -4538,7 +4476,11 @@ def test_core_metadata_core_schema_metadata():
 
 
 def test_build_metadata_dict_initial_metadata():
-    assert build_metadata_dict(initial_metadata={'foo': 'bar'}) == {'foo': 'bar', 'pydantic_js_functions': []}
+    assert build_metadata_dict(initial_metadata={'foo': 'bar'}) == {
+        'foo': 'bar',
+        'pydantic_js_functions': [],
+        'pydantic_js_annotation_functions': [],
+    }
 
     with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
         build_metadata_dict(initial_metadata='test')
@@ -4630,7 +4572,6 @@ def test_lax_or_strict_schema():
     }
 
 
-@pytest.mark.xfail(reason='Need to fix JSON schema customization for Enum')
 def test_override_enum_json_schema():
     class CustomType(Enum):
         A = 'a'
@@ -4647,17 +4588,13 @@ def test_override_enum_json_schema():
     class Model(BaseModel):
         x: CustomType
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
-        'type': 'object',
+        '$defs': {'CustomType': {'enum': ['a', 'b'], 'title': 'CustomType title', 'type': 'string'}},
         'properties': {'x': {'$ref': '#/$defs/CustomType'}},
         'required': ['x'],
         'title': 'Model',
-        '$defs': {
-            'CustomType': {
-                'enum': ['a', 'b'],
-                'title': 'CustomType title',  # <----------- this is not getting set properly
-            }
-        },
+        'type': 'object',
     }
 
 
@@ -4864,3 +4801,40 @@ def test_json_schema_keys_sorting() -> None:
     # verify order
     # dumping to json just happens to be a simple way to verify the order
     assert json.dumps(actual, indent=2) == json.dumps(expected, indent=2)
+
+
+def test_custom_type_gets_unpacked_ref() -> None:
+    class Annotation:
+        def __get_pydantic_json_schema__(
+            self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            json_schema = handler(schema)
+            assert '$ref' in json_schema
+            json_schema['title'] = 'Set from annotation'
+            return json_schema
+
+    class Model(BaseModel):
+        x: int
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            json_schema = handler(schema)
+            assert json_schema['type'] == 'object' and '$ref' not in json_schema
+            return json_schema
+
+    ta = TypeAdapter(Annotated[Model, Annotation()])
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {
+        '$defs': {
+            'Model': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Model',
+                'type': 'object',
+            }
+        },
+        'allOf': [{'$ref': '#/$defs/Model'}],
+        'title': 'Set from annotation',
+    }

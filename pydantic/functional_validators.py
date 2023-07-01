@@ -575,5 +575,5 @@ else:
             cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             original_schema = handler(source)
-            metadata = _core_metadata.build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
+            metadata = _core_metadata.build_metadata_dict(js_annotation_functions=[lambda _c, h: h(original_schema)])
             return core_schema.any_schema(metadata=metadata, serialization=original_schema)

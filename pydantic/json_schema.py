@@ -328,7 +328,7 @@ class GenerateJsonSchema:
         self._used = True
         return _sort_json_schema(json_schema)
 
-    def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:
+    def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
         """Generates a JSON schema for a given core schema.
 
         Args:
@@ -362,6 +362,9 @@ class GenerateJsonSchema:
                     self.definitions[defs_ref] = json_schema
                     self.core_defs_invalid_for_json_schema.pop(defs_ref, None)
                 json_schema = ref_json_schema
+            return json_schema
+
+        def convert_to_all_of(json_schema: JsonSchemaValue) -> JsonSchemaValue:
             if '$ref' in json_schema and len(json_schema.keys()) > 1:
                 # technically you can't have any other keys next to a "$ref"
                 # but it's an easy mistake to make and not hard to correct automatically here
@@ -390,6 +393,7 @@ class GenerateJsonSchema:
                 raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
             if _core_utils.is_core_schema(schema_or_field):
                 json_schema = populate_defs(schema_or_field, json_schema)
+                json_schema = convert_to_all_of(json_schema)
             return json_schema
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
@@ -404,11 +408,34 @@ class GenerateJsonSchema:
                 json_schema = js_modify_function(schema_or_field, current_handler)
                 if _core_utils.is_core_schema(schema_or_field):
                     json_schema = populate_defs(schema_or_field, json_schema)
+                original_schema = current_handler.resolve_ref_schema(json_schema)
+                ref = json_schema.pop('$ref', None)
+                if ref and json_schema:
+                    original_schema.update(json_schema)
+                return original_schema
+
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
+
+        for js_modify_function in metadata_handler.metadata.get('pydantic_js_annotation_functions', ()):
+
+            def new_handler_func(
+                schema_or_field: CoreSchemaOrField,
+                current_handler: GetJsonSchemaHandler = current_handler,
+                js_modify_function: GetJsonSchemaFunction = js_modify_function,
+            ) -> JsonSchemaValue:
+                json_schema = js_modify_function(schema_or_field, current_handler)
+                if _core_utils.is_core_schema(schema_or_field):
+                    json_schema = populate_defs(schema_or_field, json_schema)
+                    json_schema = convert_to_all_of(json_schema)
                 return json_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
 
-        return current_handler(schema)
+        json_schema = current_handler(schema)
+        if _core_utils.is_core_schema(schema):
+            json_schema = populate_defs(schema, json_schema)
+            json_schema = convert_to_all_of(json_schema)
+        return json_schema
 
     # ### Schema generation methods
     def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
@@ -1041,6 +1068,8 @@ class GenerateJsonSchema:
             if self.by_alias:
                 name = self._get_alias_name(field, name)
             try:
+                if name == 'data1':
+                    print(1)
                 field_json_schema = self.generate_inner(field).copy()
             except PydanticOmit:
                 continue
