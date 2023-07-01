@@ -23,6 +23,9 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
 
     def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
         s = recurse(s, inner)
+        if s['type'] == 'tagged-union':
+            return s
+
         metadata = s.get('metadata', {})
         discriminator = metadata.get(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
         if discriminator is not None:

@@ -1106,3 +1106,22 @@ def test_wrapped_nullable_union() -> None:
             'from_attributes': True,
         },
     }
+
+
+def test_union_in_submodel() -> None:
+    class UnionModel1(BaseModel):
+        type: Literal[1] = 1
+
+    class UnionModel2(BaseModel):
+        type: Literal[2] = 2
+
+    UnionModel = Annotated[Union[UnionModel1, UnionModel2], Field(discriminator='type')]
+
+    class SubModel1(BaseModel):
+        union_model: UnionModel
+
+    class SubModel2(BaseModel):
+        union_model: UnionModel
+
+    class TestModel(BaseModel):
+        submodel: Union[SubModel1, SubModel2]
