@@ -4856,6 +4856,6 @@ def test_custom_type_gets_unpacked_ref() -> None:
     ],
     ids=repr,
 )
-def test_field_json_schema_metadata(annotation: type[Any], expected: JsonSchemaValue) -> None:
+def test_field_json_schema_metadata(annotation: Type[Any], expected: JsonSchemaValue) -> None:
     ta = TypeAdapter(annotation)
     assert ta.json_schema() == expected
