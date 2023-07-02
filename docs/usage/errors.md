@@ -290,8 +290,8 @@ except PydanticUserError as exc_info:
 
 ## `TypedDict` version {#typed-dict-version}
 
-This error is raised when you use `typing_extensions.TypedDict`
-instead of `typing.TypedDict` on Python < 3.11.
+This error is raised when you use `typing.TypedDict`
+instead of `typing_extensions.TypedDict` on Python < 3.12.
 
 ## Model parent field overridden {#model-field-overridden}
 
