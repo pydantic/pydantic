@@ -3087,8 +3087,8 @@ below:</p>
 </div>
 </div>
 <h2 id="typed-dict-version"><code>TypedDict</code> version<a class="headerlink" href="#typed-dict-version" title="Permanent link">&para;</a></h2>
-<p>This error is raised when you use <code>typing_extensions.TypedDict</code>
-instead of <code>typing.TypedDict</code> on Python &lt; 3.11.</p>
+<p>This error is raised when you use <code>typing.TypedDict</code>
+instead of <code>typing_extensions.TypedDict</code> on Python &lt; 3.12.</p>
 <h2 id="model-field-overridden">Model parent field overridden<a class="headerlink" href="#model-field-overridden" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a field defined on a base class was overridden by a non-annotated attribute.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
