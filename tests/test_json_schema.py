@@ -4886,3 +4886,59 @@ def test_build_schema_for_fieldinfo():
         'examples': ['yes please', 'oh, no'],
         'type': 'string',
     }
+
+
+def test_build_schemas_from_field_info_with_name_collisions(create_module):
+    module1 = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    x: int
+    """
+    )
+
+    module2 = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    y: float
+    """
+    )
+
+    field1 = FieldInfo(annotation=module1.Model)
+    field2 = FieldInfo(annotation=module2.Model)
+
+    model_field_schema1 = TypeAdapter.model_field_schema('model1', field1, config=None)
+    model_field_schema2 = TypeAdapter.model_field_schema('model2', field2, config=None)
+
+    assert GenerateJsonSchema().generate_definitions(
+        [
+            (module1.Model, 'validation', model_field_schema1),
+            (module2.Model, 'validation', model_field_schema2),
+        ]
+    ) == (
+        {
+            (module1.Model, 'validation'): f'{module1.__name__}__Model',
+            (module2.Model, 'validation'): f'{module2.__name__}__Model',
+        },
+        {
+            f'{module1.__name__}__Model': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Model',
+                'type': 'object',
+            },
+            f'{module2.__name__}__Model': {
+                'properties': {'y': {'title': 'Y', 'type': 'number'}},
+                'required': ['y'],
+                'title': 'Model',
+                'type': 'object',
+            },
+        },
+    )
