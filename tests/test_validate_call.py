@@ -7,9 +7,10 @@ from typing import List
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 from pydantic import Field, TypeAdapter, ValidationError, validate_call
+from pydantic.main import BaseModel
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 skip_pre_39 = pytest.mark.skipif(sys.version_info < (3, 9), reason='testing >= 3.9 behaviour only')
@@ -621,3 +622,18 @@ def f(a: int, /, **kwargs):
 """
     )
     assert module.f(1, a=2) == (1, {'a': 2})
+
+
+def test_model_as_arg() -> None:
+    class Model1(TypedDict):
+        x: int
+
+    class Model2(BaseModel):
+        y: int
+
+    @validate_call(validate_return=True)
+    def f1(m1: Model1, m2: Model2) -> tuple[Model1, Model2]:
+        return (m1, m2.model_dump())  # type: ignore
+
+    res = f1({'x': '1'}, {'y': '2'})  # type: ignore
+    assert res == (Model1(x=1), Model2(y=2))
