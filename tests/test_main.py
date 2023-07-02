@@ -230,6 +230,10 @@ def test_allow_extra():
     assert m.a == 10.2
     assert m.b == 12
     assert m.model_extra == {'b': 12}
+    m.c = 42
+    assert 'c' not in m.__dict__
+    assert m.__pydantic_extra__ == {'b': 12, 'c': 42}
+    assert m.model_dump() == {'a': 10.2, 'b': 12, 'c': 42}
 
 
 @pytest.mark.parametrize('extra', ['ignore', 'forbid', 'allow'])
