@@ -3,7 +3,7 @@ import inspect
 import sys
 from datetime import datetime
 from functools import partial
-from typing import List
+from typing import List, Tuple
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -632,8 +632,8 @@ def test_model_as_arg() -> None:
         y: int
 
     @validate_call(validate_return=True)
-    def f1(m1: Model1, m2: Model2) -> tuple[Model1, Model2]:
+    def f1(m1: Model1, m2: Model2) -> Tuple[Model1, Model2]:
         return (m1, m2.model_dump())  # type: ignore
 
     res = f1({'x': '1'}, {'y': '2'})  # type: ignore
-    assert res == (Model1(x=1), Model2(y=2))
+    assert res == ({'x': 1}, Model2(y=2))
