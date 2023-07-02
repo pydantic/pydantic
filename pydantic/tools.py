@@ -21,7 +21,7 @@ def _generate_parsing_type_name(type_: Any) -> str:
 
 @lru_cache(maxsize=2048)
 def _get_parsing_type(type_: Any, *, type_name: Optional[NameFactory] = None) -> Any:
-    from pydantic.main import create_model
+    from .main import create_model
 
     if type_name is None:
         type_name = _generate_parsing_type_name
