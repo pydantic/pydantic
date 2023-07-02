@@ -95,8 +95,6 @@ from pydantic.types import (
     constr,
 )
 
-from pydantic.fields import FieldInfo
-
 try:
     import email_validator
 except ImportError:
@@ -4842,15 +4840,21 @@ def test_custom_type_gets_unpacked_ref() -> None:
     }
 
 
-
 @pytest.mark.parametrize(
-    'annotation, expected', [
+    'annotation, expected',
+    [
         (Annotated[int, Field(json_schema_extra={'title': 'abc'})], {'type': 'integer', 'title': 'abc'}),
-        (Annotated[int, Field(title='abc'), Field(description='xyz')], {'type': 'integer', 'title': 'abc', 'description': 'xyz'}),
+        (
+            Annotated[int, Field(title='abc'), Field(description='xyz')],
+            {'type': 'integer', 'title': 'abc', 'description': 'xyz'},
+        ),
         (Annotated[int, Field(gt=0)], {'type': 'integer', 'exclusiveMinimum': 0}),
-        (Annotated[int, Field(gt=0), Field(lt=100)], {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100}),
+        (
+            Annotated[int, Field(gt=0), Field(lt=100)],
+            {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100},
+        ),
     ],
-    ids=repr
+    ids=repr,
 )
 def test_field_json_schema_metadata(annotation: type[Any], expected: JsonSchemaValue) -> None:
     ta = TypeAdapter(annotation)
