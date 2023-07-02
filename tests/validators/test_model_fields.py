@@ -1445,7 +1445,7 @@ def test_alias_extra_forbid(py_and_json: PyAndJson):
             'fields': {'field_a': {'type': 'model-field', 'validation_alias': 'FieldA', 'schema': {'type': 'int'}}},
         }
     )
-    assert v.validate_test({'FieldA': 1}) == ({'field_a': 1}, {}, {'field_a'})
+    assert v.validate_test({'FieldA': 1}) == ({'field_a': 1}, None, {'field_a'})
 
 
 def test_with_default_factory():
