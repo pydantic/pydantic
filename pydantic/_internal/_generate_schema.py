@@ -67,7 +67,7 @@ if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
     from ._schema_generation_shared import GetJsonSchemaFunction
 
-_SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
+_SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
 FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
@@ -256,7 +256,7 @@ class GenerateSchema:
                 - If `alias_generator` returns a non-string value.
                 - If V1 style validator with `each_item=True` applied on a wrong field.
             PydanticUserError:
-                - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
+                - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.11.
                 - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
         """
         if isinstance(obj, type(Annotated[int, 123])):
@@ -794,7 +794,7 @@ class GenerateSchema:
 
             if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
                 raise PydanticUserError(
-                    'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.12.',
+                    'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.',
                     code='typed-dict-version',
                 )
 
