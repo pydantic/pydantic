@@ -302,6 +302,7 @@ def test_recursive_generic_type_alias_annotated_defs() -> None:
     }
 
 
+@pytest.mark.xfail(reason='description is currently dropped')
 def test_field() -> None:
     SomeAlias = TypeAliasType('SomeAlias', Annotated[int, Field(description='number')])
 
@@ -309,7 +310,7 @@ def test_field() -> None:
 
     # insert_assert(ta.json_schema())
     assert ta.json_schema() == {
-        '$defs': {'SomeAlias': {'type': 'integer'}},
+        '$defs': {'SomeAlias': {'type': 'integer', 'description': 'number'}},
         'allOf': [{'$ref': '#/$defs/SomeAlias'}],
         'title': 'abc',
     }
