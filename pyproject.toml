@@ -1,8 +1,7 @@
 [build-system]
 requires = [
     'maturin>=1,<2',
-    'typing-extensions >=4.6.0; platform_python_implementation != "PyPy" or python_version >= "3.9"',
-    'typing-extensions >=4.6.0,<4.7.0; platform_python_implementation == "PyPy" and python_version < "3.9"'
+    'typing-extensions >=4.6.0,!=4.7.0'
 ]
 build-backend = 'maturin'
 
@@ -33,8 +32,7 @@ classifiers = [
     'Typing :: Typed',
 ]
 dependencies = [
-    'typing-extensions >=4.6.0; platform_python_implementation != "PyPy" or python_version >= "3.9"',
-    'typing-extensions >=4.6.0,<4.7.0; platform_python_implementation == "PyPy" and python_version < "3.9"'
+    'typing-extensions >=4.6.0,!=4.7.0'
 ]
 dynamic = [
     'description',
