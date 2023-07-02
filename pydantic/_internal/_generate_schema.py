@@ -1295,6 +1295,23 @@ class GenerateSchema:
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
                 schema = self.apply_single_annotation(schema, field_metadata)
+            json_schema_update: JsonSchemaValue = {}
+            if metadata.title:
+                json_schema_update['title'] = metadata.title
+            if metadata.json_schema_extra:
+                json_schema_update.update(metadata.json_schema_extra)
+            if metadata.description:
+                json_schema_update['description'] = metadata.description
+            if metadata.examples:
+                json_schema_update['examples'] = metadata.examples
+            if json_schema_update:
+    
+                def json_schema_update_func(core_schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+                    json_schema = handler(core_schema)
+                    json_schema.update(json_schema_update)
+                    return json_schema
+
+                CoreMetadataHandler(schema).metadata.setdefault('pydantic_js_annotation_functions', []).append(json_schema_update_func)
             if metadata.discriminator is not None:
                 _discriminated_union.set_discriminator(
                     schema,

@@ -5,7 +5,7 @@ import pytest
 from annotated_types import MaxLen
 from typing_extensions import Annotated, TypeAliasType
 
-from pydantic import ValidationError
+from pydantic import ValidationError, Field
 from pydantic.type_adapter import TypeAdapter
 
 T = TypeVar('T')
@@ -299,4 +299,17 @@ def test_recursive_generic_type_alias_annotated_defs() -> None:
                 'maxItems': 1,
             },
         },
+    }
+
+
+def test_field() -> None:
+    SomeAlias = TypeAliasType('SomeAlias', Annotated[int, Field(description='number')])
+
+    ta = TypeAdapter(Annotated[SomeAlias, Field(title='abc')])
+
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {
+        '$defs': {'SomeAlias': {'type': 'integer'}},
+        'allOf': [{'$ref': '#/$defs/SomeAlias'}],
+        'title': 'abc',
     }
