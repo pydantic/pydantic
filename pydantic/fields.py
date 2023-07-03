@@ -7,7 +7,7 @@ import sys
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 from warnings import warn
 
 import annotated_types
@@ -26,6 +26,9 @@ else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
+
+
+_Unset: Any = PydanticUndefined
 
 
 class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
@@ -139,6 +142,7 @@ class FieldInfo(_repr.Representation):
         'init_var',
         'kw_only',
         'metadata',
+        '_attributes_set',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -164,6 +168,8 @@ class FieldInfo(_repr.Representation):
 
         See the signature of `pydantic.fields.Field` for more details about the expected arguments.
         """
+        self._attributes_set = {k for k, v in kwargs.items() if v is not _Unset}
+        kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
         self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'), kwargs.get('default'))
 
         default = kwargs.pop('default', PydanticUndefined)
@@ -510,6 +516,8 @@ class FieldInfo(_repr.Representation):
         yield 'required', self.is_required()
 
         for s in self.__slots__:
+            if s == '_attributes_set':
+                continue
             if s == 'annotation':
                 continue
             elif s == 'metadata' and not self.metadata:
@@ -588,7 +596,41 @@ class _EmptyKwargs(typing_extensions.TypedDict):
     """This class exists solely to ensure that type checking warns about passing `**extra` in `Field`."""
 
 
-def Field(  # C901
+_DefaultValues = dict(
+    default=...,
+    default_factory=None,
+    alias=None,
+    alias_priority=None,
+    validation_alias=None,
+    serialization_alias=None,
+    title=None,
+    description=None,
+    examples=None,
+    exclude=None,
+    include=None,
+    discriminator=None,
+    json_schema_extra=None,
+    frozen=None,
+    validate_default=None,
+    repr=True,
+    init_var=None,
+    kw_only=None,
+    pattern=None,
+    strict=None,
+    gt=None,
+    ge=None,
+    lt=None,
+    le=None,
+    multiple_of=None,
+    allow_inf_nan=None,
+    max_digits=None,
+    decimal_places=None,
+    min_length=None,
+    max_length=None,
+)
+
+
+def Field(
     default: Any = PydanticUndefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
@@ -669,89 +711,138 @@ def Field(  # C901
     Returns:
         The generated `FieldInfo` object
     """
-    # Check deprecated and removed params from V1. This logic should eventually be removed.
-    const = extra.pop('const', None)  # type: ignore
-    if const is not None:
-        raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')
+    ...
 
-    min_items = extra.pop('min_items', None)  # type: ignore
-    if min_items is not None:
-        warn('`min_items` is deprecated and will be removed, use `min_length` instead', DeprecationWarning)
-        if min_length is None:
-            min_length = min_items  # type: ignore
 
-    max_items = extra.pop('max_items', None)  # type: ignore
-    if max_items is not None:
-        warn('`max_items` is deprecated and will be removed, use `max_length` instead', DeprecationWarning)
-        if max_length is None:
-            max_length = max_items  # type: ignore
+if not TYPE_CHECKING:
+    _field_doc = Field.__doc__
 
-    unique_items = extra.pop('unique_items', None)  # type: ignore
-    if unique_items is not None:
-        raise PydanticUserError(
-            (
-                '`unique_items` is removed, use `Set` instead'
-                '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
-            ),
-            code='removed-kwargs',
+    def Field(  # noqa: C901, D103
+        default: Any = PydanticUndefined,
+        *,
+        default_factory: typing.Callable[[], Any] | None = _Unset,
+        alias: str | None = _Unset,
+        alias_priority: int | None = _Unset,
+        validation_alias: str | AliasPath | AliasChoices | None = _Unset,
+        serialization_alias: str | None = _Unset,
+        title: str | None = _Unset,
+        description: str | None = _Unset,
+        examples: list[Any] | None = _Unset,
+        exclude: bool | None = _Unset,
+        include: bool | None = _Unset,
+        discriminator: str | None = _Unset,
+        json_schema_extra: dict[str, Any] | None = _Unset,
+        frozen: bool | None = _Unset,
+        validate_default: bool | None = _Unset,
+        repr: bool = _Unset,
+        init_var: bool | None = _Unset,
+        kw_only: bool | None = _Unset,
+        pattern: str | None = _Unset,
+        strict: bool | None = _Unset,
+        gt: float | None = _Unset,
+        ge: float | None = _Unset,
+        lt: float | None = _Unset,
+        le: float | None = _Unset,
+        multiple_of: float | None = _Unset,
+        allow_inf_nan: bool | None = _Unset,
+        max_digits: int | None = _Unset,
+        decimal_places: int | None = _Unset,
+        min_length: int | None = _Unset,
+        max_length: int | None = _Unset,
+        **extra: Unpack[_EmptyKwargs],
+    ) -> Any:
+        # Check deprecated and removed params from V1. This logic should eventually be removed.
+        const = extra.pop('const', None)  # type: ignore
+        if const is not None:
+            raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')
+
+        min_items = extra.pop('min_items', None)  # type: ignore
+        if min_items is not None:
+            warn('`min_items` is deprecated and will be removed, use `min_length` instead', DeprecationWarning)
+            if min_length in (None, _Unset):
+                min_length = min_items  # type: ignore
+
+        max_items = extra.pop('max_items', None)  # type: ignore
+        if max_items is not None:
+            warn('`max_items` is deprecated and will be removed, use `max_length` instead', DeprecationWarning)
+            if max_length in (None, _Unset):
+                max_length = max_items  # type: ignore
+
+        unique_items = extra.pop('unique_items', None)  # type: ignore
+        if unique_items is not None:
+            raise PydanticUserError(
+                (
+                    '`unique_items` is removed, use `Set` instead'
+                    '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
+                ),
+                code='removed-kwargs',
+            )
+
+        allow_mutation = extra.pop('allow_mutation', None)  # type: ignore
+        if allow_mutation is not None:
+            warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
+            if allow_mutation is False:
+                frozen = True
+
+        regex = extra.pop('regex', None)  # type: ignore
+        if regex is not None:
+            raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
+
+        if extra:
+            warn(
+                'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
+                DeprecationWarning,
+            )
+            if not json_schema_extra or json_schema_extra is _Unset:
+                json_schema_extra = extra  # type: ignore
+
+        if (
+            validation_alias
+            and validation_alias is not _Unset
+            and not isinstance(validation_alias, (str, AliasChoices, AliasPath))
+        ):
+            raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`')
+
+        if serialization_alias in (_Unset, None) and isinstance(alias, str):
+            serialization_alias = alias
+
+        if validation_alias in (_Unset, None):
+            validation_alias = alias
+
+        return FieldInfo.from_field(
+            default,
+            default_factory=default_factory,
+            alias=alias,
+            alias_priority=alias_priority,
+            validation_alias=validation_alias,
+            serialization_alias=serialization_alias,
+            title=title,
+            description=description,
+            examples=examples,
+            exclude=exclude,
+            include=include,
+            discriminator=discriminator,
+            json_schema_extra=json_schema_extra,
+            frozen=frozen,
+            pattern=pattern,
+            validate_default=validate_default,
+            repr=repr,
+            init_var=init_var,
+            kw_only=kw_only,
+            strict=strict,
+            gt=gt,
+            ge=ge,
+            lt=lt,
+            le=le,
+            multiple_of=multiple_of,
+            min_length=min_length,
+            max_length=max_length,
+            allow_inf_nan=allow_inf_nan,
+            max_digits=max_digits,
+            decimal_places=decimal_places,
         )
 
-    allow_mutation = extra.pop('allow_mutation', None)  # type: ignore
-    if allow_mutation is not None:
-        warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
-        if allow_mutation is False:
-            frozen = True
-
-    regex = extra.pop('regex', None)  # type: ignore
-    if regex is not None:
-        raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
-
-    if extra:
-        warn(
-            'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
-            DeprecationWarning,
-        )
-        if not json_schema_extra:
-            json_schema_extra = extra  # type: ignore
-
-    if validation_alias and not isinstance(validation_alias, (str, AliasChoices, AliasPath)):
-        raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`')
-
-    if serialization_alias is None and isinstance(alias, str):
-        serialization_alias = alias
-
-    return FieldInfo.from_field(
-        default,
-        default_factory=default_factory,
-        alias=alias,
-        alias_priority=alias_priority,
-        validation_alias=validation_alias or alias,
-        serialization_alias=serialization_alias,
-        title=title,
-        description=description,
-        examples=examples,
-        exclude=exclude,
-        include=include,
-        discriminator=discriminator,
-        json_schema_extra=json_schema_extra,
-        frozen=frozen,
-        pattern=pattern,
-        validate_default=validate_default,
-        repr=repr,
-        init_var=init_var,
-        kw_only=kw_only,
-        strict=strict,
-        gt=gt,
-        ge=ge,
-        lt=lt,
-        le=le,
-        multiple_of=multiple_of,
-        min_length=min_length,
-        max_length=max_length,
-        allow_inf_nan=allow_inf_nan,
-        max_digits=max_digits,
-        decimal_places=decimal_places,
-    )
+    Field.__doc__ = _field_doc
 
 
 class ModelPrivateAttr(_repr.Representation):
