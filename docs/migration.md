@@ -683,21 +683,27 @@ Also, the `parse_env_var` classmethod has been removed. So, you need to
 [customise settings sources](usage/pydantic_settings.md#customise-settings-sources)
 to have your own parsing function.
 
-## Moved in Pydantic V2
+### Color and Payment Card Numbers moved to `pydantic-extra-types`
 
-| Pydantic V1 | Pydantic V2 |
-| --- | --- |
-| `pydantic.utils.version_info` | `pydantic.version.version_info` |
-| `pydantic.error_wrappers.ValidationError` | `pydantic.ValidationError` |
-| `pydantic.utils.to_camel` | `pydantic.alias_generators.to_pascal` |
-| `pydantic.utils.to_lower_camel` | `pydantic.alias_generators.to_camel` |
-
-In addition, the following special-use types have been moved to the
+The following special-use types have been moved to the
 [Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) package,
 which may be installed separately if needed.
 
 * [Color Types](usage/types/extra_types/color_types.md)
 * [Payment Card Numbers](usage/types/extra_types/payment_cards.md)
+
+## Moved in Pydantic V2
+
+| Pydantic V1 | Pydantic V2 |
+| --- | --- |
+| `pydantic.BaseSettings` | [`pydantic-settings.BaseSettings`](#basesettings-has-moved-to-pydantic-settings) |
+| `pydantic.color` | `pydantic_extra_types.color` |
+| `pydantic.types.PaymentCardBrand` | [`pydantic_extra_types.PaymentCardBrand`](#color-and-payment-card-numbers-moved-to-pydantic-extra-types) |
+| `pydantic.types.PaymentCardNumber` | [`pydantic_extra_types.PaymentCardNumber`](#color-and-payment-card-numbers-moved-to-pydantic-extra-types) |
+| `pydantic.utils.version_info` | `pydantic.version.version_info` |
+| `pydantic.error_wrappers.ValidationError` | `pydantic.ValidationError` |
+| `pydantic.utils.to_camel` | `pydantic.alias_generators.to_pascal` |
+| `pydantic.utils.to_lower_camel` | `pydantic.alias_generators.to_camel` |
 
 ## Deprecated and moved in Pydantic V2
 
@@ -727,7 +733,6 @@ which may be installed separately if needed.
 
 ## Removed in Pydantic V2
 
-- `pydantic.BaseSettings`
 - `pydantic.ConstrainedBytes`
 - `pydantic.ConstrainedDate`
 - `pydantic.ConstrainedDecimal`
