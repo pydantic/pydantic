@@ -1139,15 +1139,14 @@ def test_union_in_submodel() -> None:
     with pytest.raises(ValidationError) as exc_info:
         TestModel.model_validate({'submodel': {'union_model': {'type': 1, 'other': 'UnionModel2'}}})
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': ('submodel', 'SubModel1', 'union_model', 1, 'other'),
             'msg': "Input should be 'UnionModel1'",
             'input': 'UnionModel2',
             'ctx': {'expected': "'UnionModel1'"},
-            'url': 'https://errors.pydantic.dev/2.0.1/v/literal_error',
         },
         {
             'type': 'literal_error',
@@ -1155,7 +1154,6 @@ def test_union_in_submodel() -> None:
             'msg': "Input should be 'UnionModel1'",
             'input': 'UnionModel2',
             'ctx': {'expected': "'UnionModel1'"},
-            'url': 'https://errors.pydantic.dev/2.0.1/v/literal_error',
         },
     ]
 
