@@ -1,4 +1,4 @@
-use pyo3::exceptions::{PyAssertionError, PyAttributeError, PyRuntimeError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyAssertionError, PyAttributeError, PyTypeError, PyValueError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
@@ -16,17 +16,36 @@ use super::{
     build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, InputType, Validator,
 };
 
-fn destructure_function_schema(schema: &PyDict) -> PyResult<(bool, bool, &PyAny)> {
+struct FunctionInfo {
+    /// The actual function object that will get called
+    pub function: Py<PyAny>,
+    pub field_name: Option<Py<PyString>>,
+    pub info_arg: bool,
+}
+
+fn destructure_function_schema(schema: &PyDict) -> PyResult<FunctionInfo> {
     let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
     let function: &PyAny = func_dict.get_as_req(intern!(schema.py(), "function"))?;
     let func_type: &str = func_dict.get_as_req(intern!(schema.py(), "type"))?;
-    let (is_field_serializer, info_arg) = match func_type {
+    let (is_field_validator, info_arg) = match func_type {
         "field" => (true, true),
         "general" => (false, true),
         "no-info" => (false, false),
         _ => unreachable!(),
     };
-    Ok((is_field_serializer, info_arg, function))
+    let field_name: Option<Py<PyString>> = match is_field_validator {
+        true => Some(
+            func_dict
+                .get_as_req::<&PyString>(intern!(schema.py(), "field_name"))?
+                .into(),
+        ),
+        false => None,
+    };
+    Ok(FunctionInfo {
+        function: function.into(),
+        field_name,
+        info_arg,
+    })
 }
 
 macro_rules! impl_build {
@@ -40,23 +59,23 @@ macro_rules! impl_build {
             ) -> PyResult<CombinedValidator> {
                 let py = schema.py();
                 let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
-                let (is_field_validator, info_arg, function) = destructure_function_schema(schema)?;
+                let func_info = destructure_function_schema(schema)?;
                 let name = format!(
                     "{}[{}(), {}]",
                     $name,
-                    function_name(function)?,
+                    function_name(func_info.function.as_ref(py))?,
                     validator.get_name()
                 );
                 Ok(Self {
                     validator: Box::new(validator),
-                    func: function.into_py(py),
+                    func: func_info.function.clone(),
                     config: match config {
                         Some(c) => c.into(),
                         None => py.None(),
                     },
                     name,
-                    is_field_validator,
-                    info_arg,
+                    field_name: func_info.field_name.clone(),
+                    info_arg: func_info.info_arg,
                 }
                 .into())
             }
@@ -126,7 +145,7 @@ pub struct FunctionBeforeValidator {
     func: PyObject,
     config: PyObject,
     name: String,
-    is_field_validator: bool,
+    field_name: Option<Py<PyString>>,
     info_arg: bool,
 }
 
@@ -141,7 +160,7 @@ impl FunctionBeforeValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         let r = if self.info_arg {
-            let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
+            let info = ValidationInfo::new(py, extra, &self.config, self.field_name.clone());
             self.func.call1(py, (input.to_object(py), info))
         } else {
             self.func.call1(py, (input.to_object(py),))
@@ -159,7 +178,7 @@ pub struct FunctionAfterValidator {
     func: PyObject,
     config: PyObject,
     name: String,
-    is_field_validator: bool,
+    field_name: Option<Py<PyString>>,
     info_arg: bool,
 }
 
@@ -175,7 +194,7 @@ impl FunctionAfterValidator {
     ) -> ValResult<'data, PyObject> {
         let v = call(input, extra)?;
         let r = if self.info_arg {
-            let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
+            let info = ValidationInfo::new(py, extra, &self.config, self.field_name.clone());
             self.func.call1(py, (v.to_object(py), info))
         } else {
             self.func.call1(py, (v.to_object(py),))
@@ -191,7 +210,7 @@ pub struct FunctionPlainValidator {
     func: PyObject,
     config: PyObject,
     name: String,
-    is_field_validator: bool,
+    field_name: Option<Py<PyString>>,
     info_arg: bool,
 }
 
@@ -204,16 +223,19 @@ impl BuildValidator for FunctionPlainValidator {
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let (is_field_validator, info_arg, function) = destructure_function_schema(schema)?;
+        let function_info = destructure_function_schema(schema)?;
         Ok(Self {
-            func: function.into_py(py),
+            func: function_info.function.clone(),
             config: match config {
                 Some(c) => c.into(),
                 None => py.None(),
             },
-            name: format!("function-plain[{}()]", function_name(function)?),
-            is_field_validator,
-            info_arg,
+            name: format!(
+                "function-plain[{}()]",
+                function_name(function_info.function.as_ref(py))?
+            ),
+            field_name: function_info.field_name.clone(),
+            info_arg: function_info.info_arg,
         }
         .into())
     }
@@ -229,7 +251,7 @@ impl Validator for FunctionPlainValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let r = if self.info_arg {
-            let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
+            let info = ValidationInfo::new(py, extra, &self.config, self.field_name.clone());
             self.func.call1(py, (input.to_object(py), info))
         } else {
             self.func.call1(py, (input.to_object(py),))
@@ -261,7 +283,7 @@ pub struct FunctionWrapValidator {
     func: PyObject,
     config: PyObject,
     name: String,
-    is_field_validator: bool,
+    field_name: Option<Py<PyString>>,
     info_arg: bool,
     hide_input_in_errors: bool,
 }
@@ -276,18 +298,18 @@ impl BuildValidator for FunctionWrapValidator {
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
-        let (is_field_validator, info_arg, function) = destructure_function_schema(schema)?;
+        let function_info = destructure_function_schema(schema)?;
         let hide_input_in_errors: bool = config.get_as(intern!(py, "hide_input_in_errors"))?.unwrap_or(false);
         Ok(Self {
             validator: Box::new(validator),
-            func: function.into_py(py),
+            func: function_info.function.clone(),
             config: match config {
                 Some(c) => c.into(),
                 None => py.None(),
             },
-            name: format!("function-wrap[{}()]", function_name(function)?),
-            is_field_validator,
-            info_arg,
+            name: format!("function-wrap[{}()]", function_name(function_info.function.as_ref(py))?),
+            field_name: function_info.field_name.clone(),
+            info_arg: function_info.info_arg,
             hide_input_in_errors,
         }
         .into())
@@ -303,7 +325,7 @@ impl FunctionWrapValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         let r = if self.info_arg {
-            let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
+            let info = ValidationInfo::new(py, extra, &self.config, self.field_name.clone());
             self.func.call1(py, (input.to_object(py), handler, info))
         } else {
             self.func.call1(py, (input.to_object(py), handler))
@@ -500,34 +522,19 @@ pub struct ValidationInfo {
     #[pyo3(get)]
     context: Option<PyObject>,
     data: Option<Py<PyDict>>,
-    field_name: Option<String>,
+    field_name: Option<Py<PyString>>,
     #[pyo3(get)]
     mode: InputType,
 }
 
 impl ValidationInfo {
-    fn new(py: Python, extra: &Extra, config: &PyObject, is_field_validator: bool) -> PyResult<Self> {
-        if is_field_validator {
-            match extra.field_name {
-                Some(field_name) => Ok(
-                    Self {
-                        config: config.clone_ref(py),
-                        context: extra.context.map(Into::into),
-                        field_name: Some(field_name.to_string()),
-                        data: extra.data.map(Into::into),
-                        mode: extra.mode,
-                    }
-                ),
-                _ => Err(PyRuntimeError::new_err("This validator expected to be run inside the context of a model field but no model field was found")),
-            }
-        } else {
-            Ok(Self {
-                config: config.clone_ref(py),
-                context: extra.context.map(Into::into),
-                field_name: None,
-                data: None,
-                mode: extra.mode,
-            })
+    fn new(py: Python, extra: &Extra, config: &PyObject, field_name: Option<Py<PyString>>) -> Self {
+        Self {
+            config: config.clone_ref(py),
+            context: extra.context.map(Into::into),
+            field_name,
+            data: extra.data.map(Into::into),
+            mode: extra.mode,
         }
     }
 }
@@ -536,16 +543,16 @@ impl ValidationInfo {
 impl ValidationInfo {
     #[getter]
     fn get_data(&self, py: Python) -> PyResult<Py<PyDict>> {
-        match self.data {
-            Some(ref data) => Ok(data.clone_ref(py)),
-            None => Err(PyAttributeError::new_err("No attribute named 'data'")),
+        match (&self.data, &self.field_name) {
+            (Some(data), Some(_)) => Ok(data.clone_ref(py)),
+            _ => Err(PyAttributeError::new_err("No attribute named 'data'")),
         }
     }
 
     #[getter]
-    fn get_field_name<'py>(&self, py: Python<'py>) -> PyResult<&'py PyString> {
+    fn get_field_name(&self) -> PyResult<Py<PyString>> {
         match self.field_name {
-            Some(ref field_name) => Ok(PyString::new(py, field_name)),
+            Some(ref field_name) => Ok(field_name.clone()),
             None => Err(PyAttributeError::new_err("No attribute named 'field_name'")),
         }
     }

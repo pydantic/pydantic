@@ -159,7 +159,6 @@ impl Validator for ModelFieldsValidator {
                 for field in &self.fields {
                     let extra = Extra {
                         data: Some(model_dict),
-                        field_name: Some(&field.name),
                         ..*extra
                     };
                     let op_key_value = match field.lookup_key.$get_method($dict $(, $kwargs )? ) {
@@ -331,7 +330,6 @@ impl Validator for ModelFieldsValidator {
 
         let extra = Extra {
             data: Some(data_dict),
-            field_name: Some(field_name),
             ..*extra
         };
 

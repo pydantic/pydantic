@@ -391,7 +391,7 @@ def test_function_after_config():
                     'type': 'typed-dict-field',
                     'schema': {
                         'type': 'function-after',
-                        'function': {'type': 'field', 'function': f},
+                        'function': {'type': 'field', 'function': f, 'field_name': 'test_field'},
                         'schema': {'type': 'str'},
                     },
                 }
@@ -623,7 +623,11 @@ def test_model_field_before_validator() -> None:
         core_schema.model_schema(
             Model,
             core_schema.model_fields_schema(
-                {'x': core_schema.model_field(core_schema.field_before_validator_function(f, core_schema.str_schema()))}
+                {
+                    'x': core_schema.model_field(
+                        core_schema.field_before_validator_function(f, 'x', core_schema.str_schema())
+                    )
+                }
             ),
         )
     )
@@ -645,7 +649,11 @@ def test_model_field_after_validator() -> None:
         core_schema.model_schema(
             Model,
             core_schema.model_fields_schema(
-                {'x': core_schema.model_field(core_schema.field_after_validator_function(f, core_schema.str_schema()))}
+                {
+                    'x': core_schema.model_field(
+                        core_schema.field_after_validator_function(f, 'x', core_schema.str_schema())
+                    )
+                }
             ),
         )
     )
@@ -667,7 +675,7 @@ def test_model_field_plain_validator() -> None:
         core_schema.model_schema(
             Model,
             core_schema.model_fields_schema(
-                {'x': core_schema.model_field(core_schema.field_plain_validator_function(f))}
+                {'x': core_schema.model_field(core_schema.field_plain_validator_function(f, 'x'))}
             ),
         )
     )
@@ -691,7 +699,11 @@ def test_model_field_wrap_validator() -> None:
         core_schema.model_schema(
             Model,
             core_schema.model_fields_schema(
-                {'x': core_schema.model_field(core_schema.field_wrap_validator_function(f, core_schema.str_schema()))}
+                {
+                    'x': core_schema.model_field(
+                        core_schema.field_wrap_validator_function(f, 'x', core_schema.str_schema())
+                    )
+                }
             ),
         )
     )
@@ -799,19 +811,6 @@ def test_non_model_field_wrap_validator_tries_to_access_field_info() -> None:
     assert v.validate_python({'x': b'foo'}).x == 'input: foo'
 
 
-def test_method_function_no_model():
-    def f(*args: Any, **kwargs: Any) -> Any:  # pragma: no cover
-        raise AssertionError('Should not be called')
-
-    v = SchemaValidator({'type': 'function-plain', 'function': {'type': 'field', 'function': f}})
-
-    with pytest.raises(
-        RuntimeError,
-        match='This validator expected to be run inside the context of a model field but no model field was found',
-    ):
-        v.validate_python(123)
-
-
 def test_typed_dict_data() -> None:
     info_stuff = None
 
@@ -827,7 +826,7 @@ def test_typed_dict_data() -> None:
                 'a': core_schema.typed_dict_field(core_schema.int_schema()),
                 'b': core_schema.typed_dict_field(core_schema.int_schema()),
                 'c': core_schema.typed_dict_field(
-                    core_schema.field_after_validator_function(f, core_schema.str_schema())
+                    core_schema.field_after_validator_function(f, 'c', core_schema.str_schema())
                 ),
             }
         )

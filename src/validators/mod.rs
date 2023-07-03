@@ -229,7 +229,6 @@ impl SchemaValidator {
             from_attributes,
             ultra_strict: false,
             context,
-            field_name: None,
             self_instance: None,
         };
 
@@ -248,7 +247,6 @@ impl SchemaValidator {
             from_attributes: None,
             ultra_strict: false,
             context,
-            field_name: None,
             self_instance: None,
         };
         let recursion_guard = &mut RecursionGuard::default();
@@ -529,9 +527,6 @@ pub struct Extra<'a> {
     pub mode: InputType,
     /// This is used as the `data` kwargs to validator functions
     pub data: Option<&'a PyDict>,
-    /// Represents the fields of the model we are currently validating
-    /// If there is no model this will be None
-    pub field_name: Option<&'a str>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
     /// whether we're in ultra-strict mode, only used occasionally in unions
@@ -555,7 +550,6 @@ impl<'a> Extra<'a> {
         Extra {
             mode,
             data: None,
-            field_name: None,
             strict,
             ultra_strict: false,
             from_attributes,
@@ -574,7 +568,6 @@ impl<'a> Extra<'a> {
             ultra_strict,
             from_attributes: self.from_attributes,
             context: self.context,
-            field_name: self.field_name,
             self_instance: self.self_instance,
         }
     }

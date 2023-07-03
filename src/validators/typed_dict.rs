@@ -160,7 +160,6 @@ impl Validator for TypedDictValidator {
                 for field in &self.fields {
                     let extra = Extra {
                         data: Some(output_dict),
-                        field_name: Some(&field.name),
                         ..*extra
                     };
                     let op_key_value = match field.lookup_key.$get_method($dict $(, $kwargs )? ) {
