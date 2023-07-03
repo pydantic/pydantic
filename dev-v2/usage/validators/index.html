@@ -2387,7 +2387,7 @@
 <li><code>config</code>: the model config</li>
 <li><code>field</code>: the field being validated. Type of object is <code>pydantic.fields.ModelField</code>.</li>
 <li><code>**kwargs</code>: if provided, this will include the arguments above not explicitly listed in the signature</li>
-<li>validators should either return the parsed value or raise a <code>ValueError</code>, <code>TypeError</code>, or <code>AssertionError</code>
+<li>validators should either return the parsed value or raise a <code>ValueError</code> or <code>AssertionError</code>
   (<code>assert</code> statements may be used).</li>
 </ul>
 <div class="admonition warning">
