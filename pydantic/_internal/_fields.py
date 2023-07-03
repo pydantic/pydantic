@@ -123,7 +123,7 @@ def collect_model_fields(  # noqa: C901
                 else:
                     warnings.warn(
                         f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}".'
-                        '\n\nYou may be able to resolve this error by setting'
+                        '\n\nYou may be able to resolve this warning by setting'
                         f" `model_config['protected_namespaces'] = {valid_namespaces}`.",
                         UserWarning,
                     )

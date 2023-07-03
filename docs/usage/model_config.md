@@ -594,7 +594,7 @@ except UserWarning as e:
     """
     Field "model_prefixed_field" has conflict with protected namespace "model_".
 
-    You may be able to resolve this error by setting `model_config['protected_namespaces'] = ()`.
+    You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ()`.
     """
 ```
 
@@ -622,7 +622,7 @@ except UserWarning as e:
     """
     Field "also_protect_field" has conflict with protected namespace "also_protect_".
 
-    You may be able to resolve this error by setting `model_config['protected_namespaces'] = ('protect_me_',)`.
+    You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_',)`.
     """
 ```
 
