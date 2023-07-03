@@ -15,6 +15,15 @@ jobs:
     - name: test
       run: make test-pydantic-settings
 
+  test-pydantic-extra-types:
+    name: test pydantic extra types
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: test
+      run: make test-pydantic-extra-types
+
   test-fastapi:
     name: test fastapi
     runs-on: ubuntu-latest

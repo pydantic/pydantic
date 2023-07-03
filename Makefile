@@ -86,6 +86,11 @@ test-pydantic-settings: .pdm
 	git clone https://github.com/pydantic/pydantic-settings.git --single-branch
 	bash ./tests/test_pydantic_settings.sh
 
+.PHONY: test-pydantic-extra-types  ## Run the pydantic-extra-types tests with this version of pydantic
+test-pydantic-extra-types: .pdm
+	git clone https://github.com/pydantic/pydantic-extra-types.git --single-branch
+	bash ./tests/test_pydantic_extra_types.sh
+
 .PHONY: all  ## Run the standard set of checks performed in CI
 all: lint typecheck codespell testcov
 
