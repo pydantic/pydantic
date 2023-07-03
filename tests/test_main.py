@@ -381,6 +381,13 @@ def test_extra_broken_via_pydantic_extra_interference():
     assert e.value.args == ("'Model' object has no attribute 'extra_field'",)
 
 
+def test_model_extra_is_none_when_extra_is_forbid():
+    class Foo(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+
+    assert Foo().model_extra is None
+
+
 def test_set_attr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert m.model_dump() == {'a': 10.2, 'b': 10}
