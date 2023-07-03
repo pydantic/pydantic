@@ -2744,18 +2744,17 @@ def test_namedtuple_default():
     assert LocationBase(coords=Coordinates(1, 2)).coords == Coordinates(1, 2)
 
     assert LocationBase.model_json_schema() == {
-        'title': 'LocationBase',
-        'type': 'object',
-        'properties': {
-            'coords': {
-                'title': 'Coords',
-                'default': [34, 42],
-                'type': 'array',
-                'prefixItems': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
-                'minItems': 2,
+        '$defs': {
+            'Coordinates': {
                 'maxItems': 2,
+                'minItems': 2,
+                'prefixItems': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
+                'type': 'array',
             }
         },
+        'properties': {'coords': {'allOf': [{'$ref': '#/$defs/Coordinates'}], 'default': [34, 42]}},
+        'title': 'LocationBase',
+        'type': 'object',
     }
 
 
@@ -2775,16 +2774,15 @@ def test_namedtuple_modify_schema():
         coords: CustomCoordinates = CustomCoordinates(34, 42)
 
     assert Location.model_json_schema() == {
-        'properties': {
-            'coords': {
+        '$defs': {
+            'CustomCoordinates': {
                 'additionalProperties': False,
                 'properties': {'x': {'title': 'X', 'type': 'number'}, 'y': {'title': 'Y', 'type': 'number'}},
                 'required': ['x', 'y'],
-                'title': 'Coords',
                 'type': 'object',
-                'default': [34, 42],
             }
         },
+        'properties': {'coords': {'allOf': [{'$ref': '#/$defs/CustomCoordinates'}], 'default': [34, 42]}},
         'title': 'Location',
         'type': 'object',
     }

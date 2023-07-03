@@ -1,9 +1,10 @@
 from collections import namedtuple
-from typing import NamedTuple, Tuple
+from typing import Generic, NamedTuple, Optional, Tuple, TypeVar
 
 import pytest
+from typing_extensions import NamedTuple as TypingExtensionsNamedTuple
 
-from pydantic import BaseModel, ConfigDict, PositiveInt, ValidationError
+from pydantic import BaseModel, ConfigDict, PositiveInt, TypeAdapter, ValidationError
 from pydantic.errors import PydanticSchemaGenerationError
 
 
@@ -66,36 +67,29 @@ def test_namedtuple_schema():
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
+        '$defs': {
+            'Position1': {
+                'maxItems': 2,
+                'minItems': 2,
+                'prefixItems': [{'title': 'X', 'type': 'integer'}, {'title': 'Y', 'type': 'integer'}],
+                'type': 'array',
+            },
+            'Position2': {
+                'maxItems': 2,
+                'minItems': 2,
+                'prefixItems': [{'title': 'X'}, {'title': 'Y'}],
+                'type': 'array',
+            },
+        },
         'properties': {
-            'pos1': {
-                'title': 'Pos1',
-                'type': 'array',
-                'prefixItems': [
-                    {'title': 'X', 'type': 'integer'},
-                    {'title': 'Y', 'type': 'integer'},
-                ],
-                'minItems': 2,
-                'maxItems': 2,
-            },
-            'pos2': {
-                'title': 'Pos2',
-                'type': 'array',
-                'prefixItems': [
-                    {'title': 'X'},
-                    {'title': 'Y'},
-                ],
-                'minItems': 2,
-                'maxItems': 2,
-            },
+            'pos1': {'$ref': '#/$defs/Position1'},
+            'pos2': {'$ref': '#/$defs/Position2'},
             'pos3': {
+                'maxItems': 2,
+                'minItems': 2,
+                'prefixItems': [{'type': 'integer'}, {'type': 'integer'}],
                 'title': 'Pos3',
                 'type': 'array',
-                'prefixItems': [
-                    {'type': 'integer'},
-                    {'type': 'integer'},
-                ],
-                'minItems': 2,
-                'maxItems': 2,
             },
         },
         'required': ['pos1', 'pos2', 'pos3'],
@@ -162,3 +156,46 @@ def test_namedtuple_arbitrary_type():
 
         class ModelNoArbitraryTypes(BaseModel):
             x: Tup
+
+
+def test_recursive_namedtuple():
+    class MyNamedTuple(NamedTuple):
+        x: int
+        y: Optional['MyNamedTuple']
+
+    ta = TypeAdapter(MyNamedTuple)
+    assert ta.validate_python({'x': 1, 'y': {'x': 2, 'y': None}}) == (1, (2, None))
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'x': 1, 'y': {'x': 2, 'y': {'x': 'a', 'y': None}}})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'a',
+            'loc': ('y', 'y', 'x'),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
+def test_recursive_generic_namedtuple():
+    # Need to use TypingExtensionsNamedTuple to make it work with Python <3.11
+    T = TypeVar('T')
+
+    class MyNamedTuple(TypingExtensionsNamedTuple, Generic[T]):
+        x: T
+        y: Optional['MyNamedTuple[T]']
+
+    ta = TypeAdapter(MyNamedTuple[int])
+    assert ta.validate_python({'x': 1, 'y': {'x': 2, 'y': None}}) == (1, (2, None))
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'x': 1, 'y': {'x': 2, 'y': {'x': 'a', 'y': None}}})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'a',
+            'loc': ('y', 'y', 'x'),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
+    ]
