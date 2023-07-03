@@ -4838,3 +4838,25 @@ def test_custom_type_gets_unpacked_ref() -> None:
         'allOf': [{'$ref': '#/$defs/Model'}],
         'title': 'Set from annotation',
     }
+
+
+@pytest.mark.parametrize(
+    'annotation, expected',
+    [
+        (Annotated[int, Field(json_schema_extra={'title': 'abc'})], {'type': 'integer', 'title': 'abc'}),
+        (
+            Annotated[int, Field(title='abc'), Field(description='xyz')],
+            {'type': 'integer', 'title': 'abc', 'description': 'xyz'},
+        ),
+        (Annotated[int, Field(gt=0)], {'type': 'integer', 'exclusiveMinimum': 0}),
+        (
+            Annotated[int, Field(gt=0), Field(lt=100)],
+            {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100},
+        ),
+        (Annotated[int, Field(examples={'number': 1})], {'type': 'integer', 'examples': {'number': 1}}),
+    ],
+    ids=repr,
+)
+def test_field_json_schema_metadata(annotation: Type[Any], expected: JsonSchemaValue) -> None:
+    ta = TypeAdapter(annotation)
+    assert ta.json_schema() == expected
