@@ -506,6 +506,15 @@ except ValidationError as e:
     """
 ```
 
+#### Patterns / regex on strings
+
+Pydantic V1 used Python's regex library. Pydantic V2 uses the Rust [regex crate].
+This crate is not just a "Rust version of regular expressions", it's a completely different approach to regular expressions.
+In particular, it promises linear time searching of strings in exchange for dropping a couple of features (namely look arounds and backreferences).
+We believe this is a tradeoff worth making, in particular because Pydantic is used to validate untrusted input where ensuring things don't accidentally run in exponential time depending on the untrusted input is important.
+
+[regex crate]: https://github.com/rust-lang/regex
+
 ### Introduction of `TypeAdapter`
 
 Pydantic V1 had weak support for validating or serializing non-`BaseModel` types.

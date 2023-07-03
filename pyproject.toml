@@ -226,4 +226,5 @@ exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py', 'pydantic/v1']
 [tool.codespell]
 skip = '.git,env*,pydantic/v1/*'
 # `ser` - abbreviation for "ser"ialisation
-ignore-words-list = 'gir,ser'
+# `crate` - a rust crate
+ignore-words-list = 'gir,ser,crate'
