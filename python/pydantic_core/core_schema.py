@@ -1,3 +1,8 @@
+"""
+This module contains definitions to build schemas which `pydantic_core` can
+validate and serialize.
+"""
+
 from __future__ import annotations as _annotations
 
 import sys
@@ -25,10 +30,6 @@ else:
         from pydantic_core import PydanticUndefined
     except ImportError:
         PydanticUndefined = object()
-
-
-def dict_not_none(**kwargs: Any) -> Any:
-    return {k: v for k, v in kwargs.items() if v is not None}
 
 
 ExtraBehavior = Literal['allow', 'forbid', 'ignore']
@@ -279,7 +280,7 @@ def plain_serializer_function_ser_schema(
     if when_used == 'always':
         # just to avoid extra elements in schema, and to use the actual default defined in rust
         when_used = None  # type: ignore
-    return dict_not_none(
+    return _dict_not_none(
         type='function-plain',
         function=function,
         is_field_serializer=is_field_serializer,
@@ -344,7 +345,7 @@ def wrap_serializer_function_ser_schema(
     if when_used == 'always':
         # just to avoid extra elements in schema, and to use the actual default defined in rust
         when_used = None  # type: ignore
-    return dict_not_none(
+    return _dict_not_none(
         type='function-wrap',
         function=function,
         is_field_serializer=is_field_serializer,
@@ -372,7 +373,7 @@ def format_ser_schema(formatting_string: str, *, when_used: WhenUsed = 'json-unl
     if when_used == 'json-unless-none':
         # just to avoid extra elements in schema, and to use the actual default defined in rust
         when_used = None  # type: ignore
-    return dict_not_none(type='format', formatting_string=formatting_string, when_used=when_used)
+    return _dict_not_none(type='format', formatting_string=formatting_string, when_used=when_used)
 
 
 class ToStringSerSchema(TypedDict, total=False):
@@ -441,7 +442,7 @@ def computed_field(
         alias: The name to use in the serialized output
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='computed-field', property_name=property_name, return_schema=return_schema, alias=alias, metadata=metadata
     )
 
@@ -470,7 +471,7 @@ def any_schema(*, ref: str | None = None, metadata: Any = None, serialization: S
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='any', ref=ref, metadata=metadata, serialization=serialization)
+    return _dict_not_none(type='any', ref=ref, metadata=metadata, serialization=serialization)
 
 
 class NoneSchema(TypedDict, total=False):
@@ -497,7 +498,7 @@ def none_schema(*, ref: str | None = None, metadata: Any = None, serialization: 
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='none', ref=ref, metadata=metadata, serialization=serialization)
+    return _dict_not_none(type='none', ref=ref, metadata=metadata, serialization=serialization)
 
 
 class BoolSchema(TypedDict, total=False):
@@ -528,7 +529,7 @@ def bool_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='bool', strict=strict, ref=ref, metadata=metadata, serialization=serialization)
+    return _dict_not_none(type='bool', strict=strict, ref=ref, metadata=metadata, serialization=serialization)
 
 
 class IntSchema(TypedDict, total=False):
@@ -578,7 +579,7 @@ def int_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='int',
         multiple_of=multiple_of,
         le=le,
@@ -642,7 +643,7 @@ def float_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='float',
         allow_inf_nan=allow_inf_nan,
         multiple_of=multiple_of,
@@ -707,7 +708,7 @@ def str_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='str',
         pattern=pattern,
         max_length=max_length,
@@ -760,7 +761,7 @@ def bytes_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='bytes',
         max_length=max_length,
         min_length=min_length,
@@ -824,7 +825,7 @@ def date_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='date',
         strict=strict,
         le=le,
@@ -887,7 +888,7 @@ def time_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='time',
         strict=strict,
         le=le,
@@ -959,7 +960,7 @@ def datetime_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='datetime',
         strict=strict,
         le=le,
@@ -1020,7 +1021,7 @@ def timedelta_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='timedelta',
         strict=strict,
         le=le,
@@ -1061,7 +1062,7 @@ def literal_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='literal', expected=expected, ref=ref, metadata=metadata, serialization=serialization)
+    return _dict_not_none(type='literal', expected=expected, ref=ref, metadata=metadata, serialization=serialization)
 
 
 # must match input/parse_json.rs::JsonType::try_from
@@ -1106,7 +1107,7 @@ def is_instance_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='is-instance', cls=cls, cls_repr=cls_repr, ref=ref, metadata=metadata, serialization=serialization
     )
 
@@ -1152,7 +1153,7 @@ def is_subclass_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='is-subclass', cls=cls, cls_repr=cls_repr, ref=ref, metadata=metadata, serialization=serialization
     )
 
@@ -1183,7 +1184,7 @@ def callable_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='callable', ref=ref, metadata=metadata, serialization=serialization)
+    return _dict_not_none(type='callable', ref=ref, metadata=metadata, serialization=serialization)
 
 
 class IncExSeqSerSchema(TypedDict, total=False):
@@ -1193,7 +1194,7 @@ class IncExSeqSerSchema(TypedDict, total=False):
 
 
 def filter_seq_schema(*, include: Set[int] | None = None, exclude: Set[int] | None = None) -> IncExSeqSerSchema:
-    return dict_not_none(type='include-exclude-sequence', include=include, exclude=exclude)
+    return _dict_not_none(type='include-exclude-sequence', include=include, exclude=exclude)
 
 
 IncExSeqOrElseSerSchema = Union[IncExSeqSerSchema, SerSchema]
@@ -1240,7 +1241,7 @@ def list_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='list',
         items_schema=items_schema,
         min_length=min_length,
@@ -1295,7 +1296,7 @@ def tuple_positional_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='tuple-positional',
         items_schema=items_schema,
         extra_schema=extra_schema,
@@ -1349,7 +1350,7 @@ def tuple_variable_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='tuple-variable',
         items_schema=items_schema,
         min_length=min_length,
@@ -1404,7 +1405,7 @@ def set_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='set',
         items_schema=items_schema,
         min_length=min_length,
@@ -1459,7 +1460,7 @@ def frozenset_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='frozenset',
         items_schema=items_schema,
         min_length=min_length,
@@ -1517,7 +1518,7 @@ def generator_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='generator',
         items_schema=items_schema,
         min_length=min_length,
@@ -1538,7 +1539,7 @@ class IncExDictSerSchema(TypedDict, total=False):
 
 
 def filter_dict_schema(*, include: IncExDict | None = None, exclude: IncExDict | None = None) -> IncExDictSerSchema:
-    return dict_not_none(type='include-exclude-dict', include=include, exclude=exclude)
+    return _dict_not_none(type='include-exclude-dict', include=include, exclude=exclude)
 
 
 IncExDictOrElseSerSchema = Union[IncExDictSerSchema, SerSchema]
@@ -1590,7 +1591,7 @@ def dict_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='dict',
         keys_schema=keys_schema,
         values_schema=values_schema,
@@ -1678,7 +1679,7 @@ def no_info_before_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-before',
         function={'type': 'no-info', 'function': function},
         schema=schema,
@@ -1724,7 +1725,7 @@ def field_before_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-before',
         function={'type': 'field', 'function': function},
         schema=schema,
@@ -1768,7 +1769,7 @@ def general_before_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-before',
         function={'type': 'general', 'function': function},
         schema=schema,
@@ -1813,7 +1814,7 @@ def no_info_after_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-after',
         function={'type': 'no-info', 'function': function},
         schema=schema,
@@ -1859,7 +1860,7 @@ def field_after_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-after',
         function={'type': 'field', 'function': function},
         schema=schema,
@@ -1901,7 +1902,7 @@ def general_after_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-after',
         function={'type': 'general', 'function': function},
         schema=schema,
@@ -1993,7 +1994,7 @@ def no_info_wrap_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-wrap',
         function={'type': 'no-info', 'function': function},
         schema=schema,
@@ -2040,7 +2041,7 @@ def general_wrap_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-wrap',
         function={'type': 'general', 'function': function},
         schema=schema,
@@ -2092,7 +2093,7 @@ def field_wrap_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-wrap',
         function={'type': 'field', 'function': function},
         schema=schema,
@@ -2138,7 +2139,7 @@ def no_info_plain_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-plain',
         function={'type': 'no-info', 'function': function},
         ref=ref,
@@ -2175,7 +2176,7 @@ def general_plain_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-plain',
         function={'type': 'general', 'function': function},
         ref=ref,
@@ -2216,7 +2217,7 @@ def field_plain_validator_function(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='function-plain',
         function={'type': 'field', 'function': function},
         ref=ref,
@@ -2275,7 +2276,7 @@ def with_default_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    s = dict_not_none(
+    s = _dict_not_none(
         type='default',
         schema=schema,
         default_factory=default_factory,
@@ -2326,7 +2327,7 @@ def nullable_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='nullable', schema=schema, strict=strict, ref=ref, metadata=metadata, serialization=serialization
     )
 
@@ -2380,7 +2381,7 @@ def union_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='union',
         choices=choices,
         auto_collapse=auto_collapse,
@@ -2478,7 +2479,7 @@ def tagged_union_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='tagged-union',
         choices=choices,
         discriminator=discriminator,
@@ -2528,7 +2529,7 @@ def chain_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='chain', steps=steps, ref=ref, metadata=metadata, serialization=serialization)
+    return _dict_not_none(type='chain', steps=steps, ref=ref, metadata=metadata, serialization=serialization)
 
 
 class LaxOrStrictSchema(TypedDict, total=False):
@@ -2584,7 +2585,7 @@ def lax_or_strict_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='lax-or-strict',
         lax_schema=lax_schema,
         strict_schema=strict_schema,
@@ -2642,7 +2643,7 @@ def json_or_python_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='json-or-python',
         json_schema=json_schema,
         python_schema=python_schema,
@@ -2688,7 +2689,7 @@ def typed_dict_field(
         serialization_exclude: Whether to exclude the field when serializing
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='typed-dict-field',
         schema=schema,
         required=required,
@@ -2754,7 +2755,7 @@ def typed_dict_schema(
         populate_by_name: Whether the typed dict should populate by name
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='typed-dict',
         fields=fields,
         computed_fields=computed_fields,
@@ -2806,7 +2807,7 @@ def model_field(
         frozen: Whether the field is frozen
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='model-field',
         schema=schema,
         validation_alias=validation_alias,
@@ -2874,7 +2875,7 @@ def model_fields_schema(
         from_attributes: Whether the typed dict should be populated from attributes
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='model-fields',
         fields=fields,
         model_name=model_name,
@@ -2970,7 +2971,7 @@ def model_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='model',
         cls=cls,
         schema=schema,
@@ -3038,7 +3039,7 @@ def dataclass_field(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         frozen: Whether the field is frozen
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='dataclass-field',
         name=name,
         schema=schema,
@@ -3105,7 +3106,7 @@ def dataclass_args_schema(
         serialization: Custom serialization schema
         extra_behavior: How to handle extra fields
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='dataclass-args',
         dataclass_name=dataclass_name,
         fields=fields,
@@ -3173,7 +3174,7 @@ def dataclass_schema(
         slots: Whether `slots=True` on the dataclass, means each field is assigned independently, rather than
             simply setting `__dict__`, default false
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='dataclass',
         cls=cls,
         fields=fields,
@@ -3225,7 +3226,7 @@ def arguments_parameter(
         mode: The mode to use for the argument parameter
         alias: The alias to use for the argument parameter
     """
-    return dict_not_none(name=name, schema=schema, mode=mode, alias=alias)
+    return _dict_not_none(name=name, schema=schema, mode=mode, alias=alias)
 
 
 class ArgumentsSchema(TypedDict, total=False):
@@ -3275,7 +3276,7 @@ def arguments_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='arguments',
         arguments_schema=arguments,
         populate_by_name=populate_by_name,
@@ -3340,7 +3341,7 @@ def call_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='call',
         arguments_schema=arguments,
         function=function,
@@ -3397,7 +3398,7 @@ def custom_error_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='custom-error',
         schema=schema,
         custom_error_type=custom_error_type,
@@ -3460,7 +3461,7 @@ def json_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='json', schema=schema, ref=ref, metadata=metadata, serialization=serialization)
+    return _dict_not_none(type='json', schema=schema, ref=ref, metadata=metadata, serialization=serialization)
 
 
 class UrlSchema(TypedDict, total=False):
@@ -3514,7 +3515,7 @@ def url_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='url',
         max_length=max_length,
         allowed_schemes=allowed_schemes,
@@ -3580,7 +3581,7 @@ def multi_host_url_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(
+    return _dict_not_none(
         type='multi-host-url',
         max_length=max_length,
         allowed_schemes=allowed_schemes,
@@ -3654,7 +3655,7 @@ def definition_reference_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='definition-ref', schema_ref=schema_ref, metadata=metadata, serialization=serialization)
+    return _dict_not_none(type='definition-ref', schema_ref=schema_ref, metadata=metadata, serialization=serialization)
 
 
 MYPY = False
@@ -3856,3 +3857,7 @@ ErrorType = Literal[
     'url_too_long',
     'url_scheme',
 ]
+
+
+def _dict_not_none(**kwargs: Any) -> Any:
+    return {k: v for k, v in kwargs.items() if v is not None}
