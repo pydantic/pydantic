@@ -41,18 +41,37 @@ jobs:
         if: steps.cache-py.outputs.cache-hit != 'true'
 
       - name: install rust stable
+        id: rust-toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
 
       - name: cache rust
         uses: Swatinem/rust-cache@v2
 
-      - name: Install pydantic-core
+      - name: Compile pydantic-core for profiling
         # --no-default-features to avoid using mimalloc
         run: |
           pip install -e . --config-settings=build-args='--no-default-features --verbose' -v
           python -c 'import pydantic_core; assert pydantic_core._pydantic_core.__pydantic_core_default_allocator__'
         env:
           CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
+          RUSTFLAGS: "-Cprofile-generate=${{ github.workspace }}/profdata"
+
+      - name: Gather pgo data
+        run: pytest tests/benchmarks
+
+      - name: Prepare merged pgo data
+        run: rustup run stable bash -c '$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-profdata merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata'
+
+      - name: Compile pydantic-core for benchmarking
+        # --no-default-features to avoid using mimalloc
+        run: |
+          pip install -e . --config-settings=build-args='--no-default-features --verbose' -v
+          python -c 'import pydantic_core; assert pydantic_core._pydantic_core.__pydantic_core_default_allocator__'
+        env:
+          CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
+          RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v1
