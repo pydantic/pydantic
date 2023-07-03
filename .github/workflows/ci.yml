@@ -287,10 +287,25 @@ jobs:
           jobs: ${{ toJSON(needs) }}
           allowed-failures: coverage
 
+  build-sdist:
+    name: build sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: PyO3/maturin-action@v1
+        with:
+          command: sdist
+          args: --out dist
+          rust-toolchain: stable
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
+
   build:
     name: build on ${{ matrix.platform || matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
     # only run on push to main and on release
-    if: "success() && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build'))"
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build')
     strategy:
       fail-fast: false
       matrix:
@@ -345,6 +360,13 @@ jobs:
             container: messense/manylinux_2_24-cross:s390x
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
         exclude:
+          # Optimized PGO builds for x86_64 manylinux and windows follow a different matrix,
+          # maybe in future maturin-action can support this automatically
+          - os: ubuntu
+            target: x86_64
+            manylinux: auto
+          - os: windows
+            target: x86_64
           # Windows on arm64 only supports Python 3.11+
           - os: windows
             target: aarch64
@@ -363,14 +385,6 @@ jobs:
 
       # generate self-schema now, so we don't have to do so inside docker in maturin build
       - run: python generate_self_schema.py
-
-      - name: build sdist
-        if: ${{ matrix.os == 'ubuntu' && matrix.target == 'x86_64' && matrix.manylinux == 'auto' }}
-        uses: PyO3/maturin-action@v1
-        with:
-          command: sdist
-          args: --out dist
-          rust-toolchain: stable
 
       - name: build wheels
         uses: PyO3/maturin-action@v1
@@ -391,8 +405,96 @@ jobs:
           name: pypi_files
           path: dist
 
+  build-pgo:
+    name: build pgo-optimized on ${{ matrix.platform || matrix.os }} (${{ matrix.interpreter}} - ${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
+    # only run on push to main and on release
+    if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build')
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu, windows]
+        target: [x86_64]
+        manylinux: [auto]
+        interpreter: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12-dev", "pypy3.7", "pypy3.8", "pypy3.9"]
+        include:
+          - os: ubuntu
+            platform: linux
+          - os: windows
+            ls: dir
+          - interpreter: 3.12-dev
+            maturin-interpreter: "3.12"
+
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.interpreter }}
+          architecture: ${{ matrix.python-architecture || 'x64' }}
+
+      - name: install rust stable
+        id: rust-toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
+
+      - run: pip install -U 'black>=22.3.0,<23' typing_extensions
+
+      # generate self-schema now, so we don't have to do so inside docker in maturin build
+      - run: python generate_self_schema.py
+
+      - name: build initial wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux || 'auto' }}
+          args: >
+            --release
+            --out pgo-wheel
+            --interpreter ${{ matrix.maturin-interpreter || matrix.interpreter }}
+            -- -Cprofile-generate=${{ github.workspace }}/profdata
+          rust-toolchain: stable
+          docker-options: -e CI
+
+      - name: detect rust host
+        run: echo RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2) >> "$GITHUB_ENV"
+        shell: bash
+
+      - name: generate pgo data
+        run: |
+          pip install -U pip
+          pip install -r tests/requirements.txt
+          pip install pydantic-core --no-index --no-deps --find-links pgo-wheel --force-reinstall
+          pytest tests/benchmarks
+          rustup run stable bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/${{ env.RUST_HOST }}/bin/llvm-profdata >> "$GITHUB_ENV"'
+
+      - name: merge pgo data
+        run: ${{ env.LLVM_PROFDATA }} merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata
+
+      - name: build pgo-optimized wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          target: ${{ matrix.target }}
+          manylinux: ${{ matrix.manylinux || 'auto' }}
+          args: >
+            --release
+            --out dist
+            --interpreter ${{ matrix.maturin-interpreter || matrix.interpreter }}
+            -- -Cprofile-use=${{ github.workspace }}/merged.profdata
+          rust-toolchain: stable
+          docker-options: -e CI
+
+      - run: ${{ matrix.ls || 'ls -lh' }} dist/
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: pypi_files
+          path: dist
+
   inspect-pypi-assets:
-    needs: [build]
+    needs: [build, build-sdist, build-pgo]
     runs-on: ubuntu-latest
 
     steps:
@@ -474,7 +576,7 @@ jobs:
 
   test-builds-os:
     name: test build on ${{ matrix.os }}
-    needs: [build]
+    needs: [build, build-pgo]
 
     strategy:
       fail-fast: false
@@ -502,8 +604,8 @@ jobs:
       - run: pytest --ignore=tests/test_docstrings.py
 
   release:
-    needs: [test-builds-arch, test-builds-os, check]
-    if: "success() && startsWith(github.ref, 'refs/tags/')"
+    needs: [test-builds-arch, test-builds-os, build-sdist, check]
+    if: success() && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
 
     steps:
