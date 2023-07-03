@@ -168,9 +168,9 @@ class FieldInfo(_repr.Representation):
 
         See the signature of `pydantic.fields.Field` for more details about the expected arguments.
         """
-        self._attributes_set = {k for k, v in kwargs.items() if v is not _Unset}
+        self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
         kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
-        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'), kwargs.get('default'))
+        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
 
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
@@ -313,7 +313,7 @@ class FieldInfo(_repr.Representation):
                 annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, cls):
-            default.annotation, annotation_metadata = cls._extract_metadata(annotation, default)
+            default.annotation, annotation_metadata = cls._extract_metadata(annotation)
             default.metadata += annotation_metadata
             default.frozen = final or default.frozen
             return default
@@ -329,7 +329,7 @@ class FieldInfo(_repr.Representation):
                 init_var = True
                 annotation = annotation.type
             pydantic_field = cls._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation, default)
+            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
             pydantic_field.metadata += annotation_metadata
             pydantic_field.frozen = final or pydantic_field.frozen
             pydantic_field.init_var = init_var
@@ -339,19 +339,19 @@ class FieldInfo(_repr.Representation):
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
-                if field_infos:
-                    if len(field_infos) > 1:
-                        raise TypeError('Field may not be used twice on the same field')
-                    field_info = next(iter(field_infos))
-                    if not field_info.is_required():
-                        raise TypeError('Default may not be specified twice on the same field')
-                    new_field_info = copy(field_info)
-                    new_field_info.default = default
-                    new_field_info.annotation = first_arg
-                    new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
-                    return new_field_info
+                field_info = cls._merge_field_infos(*field_infos, annotation=first_arg, default=default)
+                field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                return field_info
 
             return cls(annotation=annotation, default=default, frozen=final or None)
+
+    @staticmethod
+    def _merge_field_infos(*field_infos: FieldInfo, **overrides: dict[str, Any]) -> FieldInfo:
+        new_kwargs: dict[str, Any] = {}
+        for field_info in field_infos:
+            new_kwargs.update(field_info._attributes_set)
+        new_kwargs.update(overrides)
+        return FieldInfo(**new_kwargs)
 
     @classmethod
     def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> typing_extensions.Self:
@@ -378,30 +378,23 @@ class FieldInfo(_repr.Representation):
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
         field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field.metadata)
 
-        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type, dc_field.default)
+        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type)
         field.metadata += annotation_metadata
         return field
 
     @classmethod
-    def _extract_metadata(cls, annotation: type[Any] | None, default: Any) -> tuple[type[Any] | None, list[Any]]:
+    def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
         """Tries to extract metadata/constraints from an annotation if it uses `Annotated`.
 
         Args:
             annotation: The type hint annotation for which metadata has to be extracted.
-            default: The default value for the field, used to check if `Field()` is used more than once.
 
         Returns:
             A tuple containing the extracted metadata type and the list of extra arguments.
-
-        Raises:
-            TypeError: If a `Field` is used twice on the same field.
         """
-        default_is_field = isinstance(default, FieldInfo)
         if annotation is not None:
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
-                if sum(1 for a in extra_args if isinstance(a, FieldInfo)) + default_is_field > 1:
-                    raise TypeError('Field may not be used twice on the same field')
                 return first_arg, list(extra_args)
 
         return annotation, []
