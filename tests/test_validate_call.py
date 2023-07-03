@@ -649,3 +649,15 @@ def test_do_not_call_repr_on_validate_call() -> None:
             assert False
 
     Class(50)
+
+
+def test_methods_are_not_rebound():
+    class Thing:
+        def a(self):
+            pass
+
+        c = validate_call(a)
+
+    thing = Thing()
+    assert thing.a == thing.a
+    assert thing.c == thing.c
