@@ -26,6 +26,7 @@ def test_discriminated_union_type():
 def test_discriminated_single_variant(union):
     class InnerModel(BaseModel):
         qwe: Literal['qwe']
+        y: int
 
     class Model(BaseModel):
         if union:
@@ -33,13 +34,13 @@ def test_discriminated_single_variant(union):
         else:
             x: InnerModel = Field(..., discriminator='qwe')
 
-    assert Model(x={'qwe': 'qwe'}).x.qwe == 'qwe'
+    assert Model(x={'qwe': 'qwe', 'y': 1}).x.qwe == 'qwe'
     with pytest.raises(ValidationError) as exc_info:
-        Model(x={'qwe': 'asd'})
+        Model(x={'qwe': 'asd', 'y': 'a'})  # note: incorrect type of "y" is not reported due to discriminator failure
     assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'qwe'", 'expected_tags': "'qwe'", 'tag': 'asd'},
-            'input': {'qwe': 'asd'},
+            'input': {'qwe': 'asd', 'y': 'a'},
             'loc': ('x',),
             'msg': "Input tag 'asd' found using 'qwe' does not match any of the expected " "tags: 'qwe'",
             'type': 'union_tag_invalid',
