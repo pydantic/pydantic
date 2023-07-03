@@ -19,6 +19,7 @@ from typing import (
     Iterable,
     List,
     Mapping,
+    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -1190,6 +1191,9 @@ def test_replace_types_with_user_defined_generic_type_field():
     class CustomTuple(Tuple[T]):
         pass
 
+    class CustomLongTuple(Tuple[T, VT]):
+        pass
+
     class Model(BaseModel, Generic[T, KT, VT]):
         counter_field: CustomCounter[T]
         default_dict_field: CustomDefaultDict[KT, VT]
@@ -1202,6 +1206,7 @@ def test_replace_types_with_user_defined_generic_type_field():
         ordered_dict_field: CustomOrderedDict[KT, VT]
         set_field: CustomSet[T]
         tuple_field: CustomTuple[T]
+        long_tuple_field: CustomLongTuple[T, VT]
 
     assert replace_types(Model, {T: bool, KT: str, VT: int}) == Model[bool, str, int]
     assert replace_types(Model[T, KT, VT], {T: bool, KT: str, VT: int}) == Model[bool, str, int]
@@ -1219,6 +1224,7 @@ def test_replace_types_with_user_defined_generic_type_field():
         ordered_dict_field=OrderedDict([('a', 1)]),
         set_field={True, False},
         tuple_field=(True,),
+        long_tuple_field=(True, 42),
     )
 
     # The following assertions are just to document the current behavior, and should
@@ -1234,6 +1240,7 @@ def test_replace_types_with_user_defined_generic_type_field():
     assert type(m.ordered_dict_field) is CustomOrderedDict
     assert type(m.set_field) is CustomSet
     assert type(m.tuple_field) is tuple
+    assert type(m.long_tuple_field) is tuple
 
     assert m.model_dump() == {
         'counter_field': {False: 1, True: 1},
@@ -1247,6 +1254,7 @@ def test_replace_types_with_user_defined_generic_type_field():
         'ordered_dict_field': {'a': 1},
         'set_field': {False, True},
         'tuple_field': (True,),
+        'long_tuple_field': (True, 42),
     }
 
 
@@ -2446,3 +2454,27 @@ def test_variadic_generic_with_variadic_fields():
     with pytest.raises(TypeError):
         # Should raise error because integer 5 does not meet the bound requirements of ComponentVar
         MyToolboxClass(manual_toolset=(sa, sb, 5))
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 11),
+    reason=(
+        'Multiple inheritance with NamedTuple and the corresponding type annotations'
+        " aren't supported before Python 3.11"
+    ),
+)
+def test_generic_namedtuple():
+    T = TypeVar('T')
+
+    class FlaggedValue(NamedTuple, Generic[T]):
+        value: T
+        flag: bool
+
+    class Model(BaseModel):
+        f_value: FlaggedValue[float]
+
+    assert Model(f_value=(1, True)).model_dump() == {'f_value': (1, True)}
+    with pytest.raises(ValidationError):
+        Model(f_value=(1, 'abc'))
+    with pytest.raises(ValidationError):
+        Model(f_value=('abc', True))

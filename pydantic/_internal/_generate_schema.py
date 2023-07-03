@@ -499,7 +499,7 @@ class GenerateSchema:
         elif is_typeddict(obj):
             return self._typed_dict_schema(obj, None)
         elif _typing_extra.is_namedtuple(obj):
-            return self._namedtuple_schema(obj)
+            return self._namedtuple_schema(obj, None)
         elif _typing_extra.is_new_type(obj):
             # NewType, can't use isinstance because it fails <3.7
             return self.generate_schema(obj.__supertype__)
@@ -542,6 +542,8 @@ class GenerateSchema:
         # to resolve by modifying the value returned by `Generic.__class_getitem__`, but that is a dangerous game.
         if _typing_extra.is_dataclass(origin):
             return self._dataclass_schema(obj, origin)
+        if _typing_extra.is_namedtuple(origin):
+            return self._namedtuple_schema(obj, origin)
 
         from_property = self._generate_schema_from_property(origin, obj)
         if from_property is not None:
@@ -841,14 +843,23 @@ class GenerateSchema:
             self.defs.definitions[typed_dict_ref] = schema
             return core_schema.definition_reference_schema(typed_dict_ref)
 
-    def _namedtuple_schema(self, namedtuple_cls: Any) -> core_schema.CallSchema:
+    def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CallSchema:
         """Generate schema for a NamedTuple."""
+        typevars_map = get_standard_typevars_map(namedtuple_cls)
+        if origin is not None:
+            namedtuple_cls = origin
+
         annotations: dict[str, Any] = get_type_hints_infer_globalns(
             namedtuple_cls, include_extras=True, localns=self.types_namespace
         )
         if not annotations:
             # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
             annotations = {k: Any for k in namedtuple_cls._fields}
+
+        if typevars_map:
+            annotations = {
+                field_name: typevars_map.get(annotation, annotation) for field_name, annotation in annotations.items()
+            }
 
         arguments_schema = core_schema.arguments_schema(
             [self._generate_parameter_schema(field_name, annotation) for field_name, annotation in annotations.items()],
@@ -888,7 +899,12 @@ class GenerateSchema:
 
     def _tuple_schema(self, tuple_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`."""
+        typevars_map = get_standard_typevars_map(tuple_type)
         params = get_args(tuple_type)
+
+        if typevars_map:
+            params = tuple(typevars_map.get(param, param) for param in params)
+
         # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
         # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
         if not params:

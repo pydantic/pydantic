@@ -615,9 +615,9 @@ def test_set():
 @pytest.mark.parametrize(
     'field_type,extra_props',
     [
-        (tuple, {'items': {}}),
-        (Tuple, {'items': {}}),
-        (
+        pytest.param(tuple, {'items': {}}, id='tuple'),
+        pytest.param(Tuple, {'items': {}}, id='Tuple'),
+        pytest.param(
             Tuple[str, int, Union[str, int, float], float],
             {
                 'prefixItems': [
@@ -629,13 +629,11 @@ def test_set():
                 'minItems': 4,
                 'maxItems': 4,
             },
+            id='Tuple[str, int, Union[str, int, float], float]',
         ),
-        (Tuple[str], {'prefixItems': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}),
-        (Tuple[()], {'maxItems': 0, 'minItems': 0}),
-        (
-            Tuple[str, ...],
-            {'items': {'type': 'string'}, 'type': 'array'},
-        ),
+        pytest.param(Tuple[str], {'prefixItems': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}, id='Tuple[str]'),
+        pytest.param(Tuple[()], {'maxItems': 0, 'minItems': 0}, id='Tuple[()]'),
+        pytest.param(Tuple[str, ...], {'items': {'type': 'string'}, 'type': 'array'}, id='Tuple[str, ...]'),
     ],
 )
 def test_tuple(field_type, extra_props):
