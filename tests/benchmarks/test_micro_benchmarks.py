@@ -1461,7 +1461,7 @@ def test_field_function_validator(benchmark) -> None:
     schema: core_schema.CoreSchema = core_schema.int_schema()
 
     for _ in range(100):
-        schema = core_schema.field_after_validator_function(f, schema)
+        schema = core_schema.field_after_validator_function(f, 'x', schema)
 
     schema = core_schema.typed_dict_schema({'x': core_schema.typed_dict_field(schema)})
 

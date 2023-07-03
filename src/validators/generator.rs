@@ -270,7 +270,6 @@ impl InternalValidator {
             ultra_strict: false,
             from_attributes: self.from_attributes,
             context: self.context.as_ref().map(|data| data.as_ref(py)),
-            field_name: None,
             self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
         };
         self.validator
@@ -311,7 +310,6 @@ impl InternalValidator {
             ultra_strict: false,
             from_attributes: self.from_attributes,
             context: self.context.as_ref().map(|data| data.as_ref(py)),
-            field_name: None,
             self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
         };
         self.validator

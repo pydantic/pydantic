@@ -993,7 +993,7 @@ def test_validate_assignment_function():
                 {
                     'field_a': core_schema.model_field(core_schema.str_schema()),
                     'field_b': core_schema.model_field(
-                        core_schema.field_after_validator_function(func, core_schema.int_schema())
+                        core_schema.field_after_validator_function(func, 'field_b', core_schema.int_schema())
                     ),
                     'field_c': core_schema.model_field(core_schema.int_schema()),
                 }

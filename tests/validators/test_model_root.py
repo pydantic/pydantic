@@ -139,7 +139,7 @@ def test_field_function():
 
     v = SchemaValidator(
         core_schema.model_schema(
-            RootModel, core_schema.field_after_validator_function(f, core_schema.str_schema()), root_model=True
+            RootModel, core_schema.field_after_validator_function(f, 'root', core_schema.str_schema()), root_model=True
         )
     )
     m = v.validate_python('foobar', context='call 1')

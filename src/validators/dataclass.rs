@@ -162,10 +162,6 @@ impl Validator for DataclassArgsValidator {
             ($args:ident, $get_method:ident, $get_macro:ident, $slice_macro:ident) => {{
                 // go through fields getting the value from args or kwargs and validating it
                 for (index, field) in self.fields.iter().enumerate() {
-                    let extra = Extra {
-                        field_name: Some(&field.name),
-                        ..extra
-                    };
                     let mut pos_value = None;
                     if let Some(args) = $args.args {
                         if !field.kw_only {
@@ -349,7 +345,6 @@ impl Validator for DataclassArgsValidator {
                 }
             }
             let next_extra = Extra {
-                field_name: Some(field_name),
                 data: Some(data_dict),
                 ..*extra
             };
