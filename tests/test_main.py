@@ -2,7 +2,6 @@ import json
 import platform
 import re
 import sys
-import warnings
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -2280,19 +2279,14 @@ def test_custom_protected_namespace():
 
 
 def test_multiple_protected_namespace():
-    warnings.filterwarnings('error')
-    try:
-        with pytest.raises(
-            UserWarning, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
-        ):
+    with pytest.warns(
+        UserWarning, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
+    ):
 
-            class Model(BaseModel):
-                also_protect_field: str
+        class Model(BaseModel):
+            also_protect_field: str
 
-                model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
-
-    finally:
-        warnings.resetwarnings()
+            model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
 
 
 def test_model_get_core_schema() -> None:
