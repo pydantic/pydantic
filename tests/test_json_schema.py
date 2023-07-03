@@ -2542,7 +2542,7 @@ def test_new_type():
     }
 
 
-def test_multiple_models_with_same_name(create_module):
+def test_multiple_models_with_same_input_output(create_module):
     module = create_module(
         # language=Python
         """
@@ -2565,6 +2565,70 @@ class ModelTwo(BaseModel):
 
 class NestedModel(BaseModel):
     c: float
+        """
+    )
+
+    # All validation
+    keys_map, schema = models_json_schema(
+        [(module.ModelOne, 'validation'), (module.ModelTwo, 'validation'), (module.NestedModel, 'validation')]
+    )
+    model_names = set(schema['$defs'].keys())
+    expected_model_names = {
+        'ModelOne',
+        'ModelTwo',
+        f'{module.__name__}__ModelOne__NestedModel',
+        f'{module.__name__}__ModelTwo__NestedModel',
+        f'{module.__name__}__NestedModel',
+    }
+    assert model_names == expected_model_names
+
+    # Validation + serialization
+    keys_map, schema = models_json_schema(
+        [
+            (module.ModelOne, 'validation'),
+            (module.ModelTwo, 'validation'),
+            (module.NestedModel, 'validation'),
+            (module.ModelOne, 'serialization'),
+            (module.ModelTwo, 'serialization'),
+            (module.NestedModel, 'serialization'),
+        ]
+    )
+    model_names = set(schema['$defs'].keys())
+    expected_model_names = {
+        'ModelOne',
+        'ModelTwo',
+        f'{module.__name__}__ModelOne__NestedModel',
+        f'{module.__name__}__ModelTwo__NestedModel',
+        f'{module.__name__}__NestedModel',
+    }
+    assert model_names == expected_model_names
+
+
+def test_multiple_models_with_same_name_different_input_output(create_module):
+    module = create_module(
+        # language=Python
+        """
+from decimal import Decimal
+
+from pydantic import BaseModel
+
+
+class ModelOne(BaseModel):
+    class NestedModel(BaseModel):
+        a: Decimal
+
+    nested: NestedModel
+
+
+class ModelTwo(BaseModel):
+    class NestedModel(BaseModel):
+        b: Decimal
+
+    nested: NestedModel
+
+
+class NestedModel(BaseModel):
+    c: Decimal
         """
     )
 
@@ -4860,3 +4924,46 @@ def test_custom_type_gets_unpacked_ref() -> None:
 def test_field_json_schema_metadata(annotation: Type[Any], expected: JsonSchemaValue) -> None:
     ta = TypeAdapter(annotation)
     assert ta.json_schema() == expected
+
+
+def test_multiple_models_with_same_qualname():
+    from pydantic import create_model
+
+    model_a1 = create_model(
+        'A',
+        inner_a1=(str, ...),
+    )
+    model_a2 = create_model(
+        'A',
+        inner_a2=(str, ...),
+    )
+
+    model_c = create_model(
+        'B',
+        outer_a1=(model_a1, ...),
+        outer_a2=(model_a2, ...),
+    )
+
+    assert model_c.model_json_schema() == {
+        '$defs': {
+            'pydantic__main__A__1': {
+                'properties': {'inner_a1': {'title': 'Inner ' 'A1', 'type': 'string'}},
+                'required': ['inner_a1'],
+                'title': 'A',
+                'type': 'object',
+            },
+            'pydantic__main__A__2': {
+                'properties': {'inner_a2': {'title': 'Inner ' 'A2', 'type': 'string'}},
+                'required': ['inner_a2'],
+                'title': 'A',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'outer_a1': {'$ref': '#/$defs/pydantic__main__A__1'},
+            'outer_a2': {'$ref': '#/$defs/pydantic__main__A__2'},
+        },
+        'required': ['outer_a1', 'outer_a2'],
+        'title': 'B',
+        'type': 'object',
+    }
