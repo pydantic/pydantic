@@ -77,7 +77,7 @@ A few things to note on validators:
   * `config`: the model config
   * `field`: the field being validated. Type of object is `pydantic.fields.ModelField`.
   * `**kwargs`: if provided, this will include the arguments above not explicitly listed in the signature
-* validators should either return the parsed value or raise a `ValueError`, `TypeError`, or `AssertionError`
+* validators should either return the parsed value or raise a `ValueError` or `AssertionError`
   (``assert`` statements may be used).
 
 !!! warning
