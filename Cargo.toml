@@ -42,6 +42,7 @@ url = "2.3.1"
 idna = "0.3.0"
 base64 = "0.13.1"
 num-bigint = "0.4.3"
+python3-dll-a = "0.2.7"
 
 [lib]
 name = "_pydantic_core"
