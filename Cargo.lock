@@ -265,6 +265,7 @@ dependencies = [
  "num-bigint",
  "pyo3",
  "pyo3-build-config",
+ "python3-dll-a",
  "regex",
  "serde",
  "serde_json",
@@ -339,9 +340,9 @@ dependencies = [
 
 [[package]]
 name = "python3-dll-a"
-version = "0.2.6"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a915bd72824962bf190bbd3e8a044cccb695d1409f73ff5493712eda5136c7a8"
+checksum = "212d74540270e3a22eed5f0d4bbc0765dff20958d694e9d4f5ebe6e22778c422"
 dependencies = [
  "cc",
 ]

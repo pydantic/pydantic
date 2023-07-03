@@ -21,6 +21,7 @@ classifiers = [
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
     'Programming Language :: Rust',
     'Framework :: Pydantic',
     'Intended Audience :: Developers',
@@ -62,7 +63,13 @@ isort = { known-first-party = ['pydantic_core', 'tests'] }
 [tool.pytest.ini_options]
 testpaths = 'tests'
 log_format = '%(name)s %(levelname)s: %(message)s'
-filterwarnings = 'error'
+filterwarnings = [
+    'error',
+    # Work around https://github.com/pytest-dev/pytest/issues/10977 for Python 3.12
+    'ignore:(ast\.Str|ast\.NameConstant|ast\.Num|Attribute s) is deprecated and will be removed.*:DeprecationWarning:',
+    # issue with pytz - https://github.com/stub42/pytz/issues/105 for Python 3.12
+    'ignore:datetime\.utcfromtimestamp\(\) is deprecated.*:DeprecationWarning:',
+]
 timeout = 30
 xfail_strict = true
 # min, max, mean, stddev, median, iqr, outliers, ops, rounds, iterations
