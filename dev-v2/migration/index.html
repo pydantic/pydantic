@@ -674,6 +674,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#color-and-payment-card-numbers-moved-to-pydantic-extra-types" class="md-nav__link">
+    Color and Payment Card Numbers moved to pydantic-extra-types
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2499,6 +2506,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#color-and-payment-card-numbers-moved-to-pydantic-extra-types" class="md-nav__link">
+    Color and Payment Card Numbers moved to pydantic-extra-types
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3376,6 +3390,14 @@ Pydantic V1 that have changed in Pydantic V2, you can use a custom <code>schema_
 <p>Also, the <code>parse_env_var</code> classmethod has been removed. So, you need to
 <a href="../usage/pydantic_settings/#customise-settings-sources">customise settings sources</a>
 to have your own parsing function.</p>
+<h3 id="color-and-payment-card-numbers-moved-to-pydantic-extra-types">Color and Payment Card Numbers moved to <code>pydantic-extra-types</code><a class="headerlink" href="#color-and-payment-card-numbers-moved-to-pydantic-extra-types" title="Permanent link">&para;</a></h3>
+<p>The following special-use types have been moved to the
+<a href="https://github.com/pydantic/pydantic-extra-types">Pydantic Extra Types</a> package,
+which may be installed separately if needed.</p>
+<ul>
+<li><a href="../usage/types/extra_types/color_types/">Color Types</a></li>
+<li><a href="../usage/types/extra_types/payment_cards/">Payment Card Numbers</a></li>
+</ul>
 <h2 id="moved-in-pydantic-v2">Moved in Pydantic V2<a class="headerlink" href="#moved-in-pydantic-v2" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3385,6 +3407,22 @@ to have your own parsing function.</p>
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>pydantic.BaseSettings</code></td>
+<td><a href="#basesettings-has-moved-to-pydantic-settings"><code>pydantic-settings.BaseSettings</code></a></td>
+</tr>
+<tr>
+<td><code>pydantic.color</code></td>
+<td><code>pydantic_extra_types.color</code></td>
+</tr>
+<tr>
+<td><code>pydantic.types.PaymentCardBrand</code></td>
+<td><a href="#color-and-payment-card-numbers-moved-to-pydantic-extra-types"><code>pydantic_extra_types.PaymentCardBrand</code></a></td>
+</tr>
+<tr>
+<td><code>pydantic.types.PaymentCardNumber</code></td>
+<td><a href="#color-and-payment-card-numbers-moved-to-pydantic-extra-types"><code>pydantic_extra_types.PaymentCardNumber</code></a></td>
+</tr>
 <tr>
 <td><code>pydantic.utils.version_info</code></td>
 <td><code>pydantic.version.version_info</code></td>
@@ -3403,13 +3441,6 @@ to have your own parsing function.</p>
 </tr>
 </tbody>
 </table>
-<p>In addition, the following special-use types have been moved to the
-<a href="https://github.com/pydantic/pydantic-extra-types">Pydantic Extra Types</a> package,
-which may be installed separately if needed.</p>
-<ul>
-<li><a href="../usage/types/extra_types/color_types/">Color Types</a></li>
-<li><a href="../usage/types/extra_types/payment_cards/">Payment Card Numbers</a></li>
-</ul>
 <h2 id="deprecated-and-moved-in-pydantic-v2">Deprecated and moved in Pydantic V2<a class="headerlink" href="#deprecated-and-moved-in-pydantic-v2" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3507,7 +3538,6 @@ which may be installed separately if needed.</p>
 </table>
 <h2 id="removed-in-pydantic-v2">Removed in Pydantic V2<a class="headerlink" href="#removed-in-pydantic-v2" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>pydantic.BaseSettings</code></li>
 <li><code>pydantic.ConstrainedBytes</code></li>
 <li><code>pydantic.ConstrainedDate</code></li>
 <li><code>pydantic.ConstrainedDecimal</code></li>
