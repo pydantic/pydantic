@@ -131,8 +131,12 @@ class ConfigWrapper:
         Returns:
             A `CoreConfig` object created from config.
         """
+
+        def dict_not_none(**kwargs: Any) -> Any:
+            return {k: v for k, v in kwargs.items() if v is not None}
+
         core_config = core_schema.CoreConfig(
-            **core_schema.dict_not_none(
+            **dict_not_none(
                 title=self.config_dict.get('title') or (obj and obj.__name__),
                 extra_fields_behavior=self.config_dict.get('extra'),
                 allow_inf_nan=self.config_dict.get('allow_inf_nan'),
