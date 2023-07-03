@@ -1629,6 +1629,7 @@ FieldValidatorFunction = Callable[[Any, FieldValidationInfo], Any]
 class FieldValidatorFunctionSchema(TypedDict):
     type: Literal['field']
     function: FieldValidatorFunction
+    field_name: str
 
 
 ValidationFunction = Union[NoInfoValidatorFunctionSchema, FieldValidatorFunctionSchema, GeneralValidatorFunctionSchema]
@@ -1691,6 +1692,7 @@ def no_info_before_validator_function(
 
 def field_before_validator_function(
     function: FieldValidatorFunction,
+    field_name: str,
     schema: CoreSchema,
     *,
     ref: str | None = None,
@@ -1710,7 +1712,7 @@ def field_before_validator_function(
         return v.decode() + 'world'
 
     func_schema = core_schema.field_before_validator_function(
-        function=fn, schema=core_schema.str_schema()
+        function=fn, field_name='a', schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -1720,6 +1722,7 @@ def field_before_validator_function(
 
     Args:
         function: The validator function to call
+        field_name: The name of the field
         schema: The schema to validate the output of the validator function
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -1727,7 +1730,7 @@ def field_before_validator_function(
     """
     return _dict_not_none(
         type='function-before',
-        function={'type': 'field', 'function': function},
+        function={'type': 'field', 'function': function, 'field_name': field_name},
         schema=schema,
         ref=ref,
         metadata=metadata,
@@ -1826,6 +1829,7 @@ def no_info_after_validator_function(
 
 def field_after_validator_function(
     function: FieldValidatorFunction,
+    field_name: str,
     schema: CoreSchema,
     *,
     ref: str | None = None,
@@ -1845,7 +1849,7 @@ def field_after_validator_function(
         return v + 'world'
 
     func_schema = core_schema.field_after_validator_function(
-        function=fn, schema=core_schema.str_schema()
+        function=fn, field_name='a', schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -1855,6 +1859,7 @@ def field_after_validator_function(
 
     Args:
         function: The validator function to call after the schema is validated
+        field_name: The name of the field
         schema: The schema to validate before the validator function
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -1862,7 +1867,7 @@ def field_after_validator_function(
     """
     return _dict_not_none(
         type='function-after',
-        function={'type': 'field', 'function': function},
+        function={'type': 'field', 'function': function, 'field_name': field_name},
         schema=schema,
         ref=ref,
         metadata=metadata,
@@ -1942,6 +1947,7 @@ FieldWrapValidatorFunction = Callable[[Any, ValidatorFunctionWrapHandler, FieldV
 class FieldWrapValidatorFunctionSchema(TypedDict):
     type: Literal['field']
     function: FieldWrapValidatorFunction
+    field_name: str
 
 
 WrapValidatorFunction = Union[
@@ -2053,6 +2059,7 @@ def general_wrap_validator_function(
 
 def field_wrap_validator_function(
     function: FieldWrapValidatorFunction,
+    field_name: str,
     schema: CoreSchema,
     *,
     ref: str | None = None,
@@ -2078,7 +2085,7 @@ def field_wrap_validator_function(
         return validator(v) + 'world'
 
     func_schema = core_schema.field_wrap_validator_function(
-        function=fn, schema=core_schema.str_schema()
+        function=fn, field_name='a', schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
@@ -2088,6 +2095,7 @@ def field_wrap_validator_function(
 
     Args:
         function: The validator function to call
+        field_name: The name of the field
         schema: The schema to validate the output of the validator function
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -2095,7 +2103,7 @@ def field_wrap_validator_function(
     """
     return _dict_not_none(
         type='function-wrap',
-        function={'type': 'field', 'function': function},
+        function={'type': 'field', 'function': function, 'field_name': field_name},
         schema=schema,
         ref=ref,
         metadata=metadata,
@@ -2187,6 +2195,7 @@ def general_plain_validator_function(
 
 def field_plain_validator_function(
     function: FieldValidatorFunction,
+    field_name: str,
     *,
     ref: str | None = None,
     metadata: Any = None,
@@ -2204,7 +2213,7 @@ def field_plain_validator_function(
         assert info.field_name is not None
         return str(v) + 'world'
 
-    func_schema = core_schema.field_plain_validator_function(function=fn)
+    func_schema = core_schema.field_plain_validator_function(function=fn, field_name='a')
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
     v = SchemaValidator(schema)
@@ -2213,13 +2222,14 @@ def field_plain_validator_function(
 
     Args:
         function: The validator function to call
+        field_name: The name of the field
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
     return _dict_not_none(
         type='function-plain',
-        function={'type': 'field', 'function': function},
+        function={'type': 'field', 'function': function, 'field_name': field_name},
         ref=ref,
         metadata=metadata,
         serialization=serialization,

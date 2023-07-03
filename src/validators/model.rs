@@ -174,10 +174,7 @@ impl Validator for ModelValidator {
                     field_name.to_string(),
                 ))
             } else {
-                let field_extra = Extra {
-                    field_name: Some(field_name),
-                    ..*extra
-                };
+                let field_extra = Extra { ..*extra };
                 let output = self
                     .validator
                     .validate(py, field_value, &field_extra, definitions, recursion_guard)?;
@@ -294,10 +291,7 @@ impl ModelValidator {
         }
 
         let output = if self.root_model {
-            let field_extra = Extra {
-                field_name: Some(ROOT_FIELD),
-                ..*extra
-            };
+            let field_extra = Extra { ..*extra };
             self.validator
                 .validate(py, input, &field_extra, definitions, recursion_guard)?
         } else {
