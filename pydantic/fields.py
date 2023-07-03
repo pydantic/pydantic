@@ -346,7 +346,7 @@ class FieldInfo(_repr.Representation):
             return cls(annotation=annotation, default=default, frozen=final or None)
 
     @staticmethod
-    def merge_field_infos(*field_infos: FieldInfo, **overrides: dict[str, Any]) -> FieldInfo:
+    def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
         """Merge `FieldInfo` instances keeping only explicitly set attributes.
 
         Returns:
