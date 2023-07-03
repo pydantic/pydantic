@@ -2255,14 +2255,23 @@ def test_recursion_loop_error():
 
 
 def test_protected_namespace_default():
-    with pytest.raises(NameError, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
+    with pytest.warns(UserWarning, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
 
         class Model(BaseModel):
             model_prefixed_field: str
 
 
+def test_protected_namespace_real_conflict():
+    with pytest.raises(
+        NameError, match=r'Field "model_validate" conflicts with member .* of protected namespace "model_"\.'
+    ):
+
+        class Model(BaseModel):
+            model_validate: str
+
+
 def test_custom_protected_namespace():
-    with pytest.raises(NameError, match='Field "test_field" has conflict with protected namespace "test_"'):
+    with pytest.warns(UserWarning, match='Field "test_field" has conflict with protected namespace "test_"'):
 
         class Model(BaseModel):
             # this field won't raise error because we changed the default value for the
@@ -2274,8 +2283,8 @@ def test_custom_protected_namespace():
 
 
 def test_multiple_protected_namespace():
-    with pytest.raises(
-        NameError, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
+    with pytest.warns(
+        UserWarning, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
     ):
 
         class Model(BaseModel):

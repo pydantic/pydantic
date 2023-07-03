@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import sys
+import warnings
 from copy import copy
 from typing import TYPE_CHECKING, Any
 
@@ -109,7 +110,25 @@ def collect_model_fields(  # noqa: C901
             continue
         for protected_namespace in config_wrapper.protected_namespaces:
             if ann_name.startswith(protected_namespace):
-                raise NameError(f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}"')
+                for b in bases:
+                    if hasattr(b, ann_name):
+                        from ..main import BaseModel
+
+                        if not (issubclass(b, BaseModel) and ann_name in b.model_fields):
+                            raise NameError(
+                                f'Field "{ann_name}" conflicts with member {getattr(b, ann_name)}'
+                                f' of protected namespace "{protected_namespace}".'
+                            )
+                else:
+                    valid_namespaces = tuple(
+                        x for x in config_wrapper.protected_namespaces if not ann_name.startswith(x)
+                    )
+                    warnings.warn(
+                        f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}".'
+                        '\n\nYou may be able to resolve this warning by setting'
+                        f" `model_config['protected_namespaces'] = {valid_namespaces}`.",
+                        UserWarning,
+                    )
         if is_classvar(ann_type):
             class_vars.add(ann_name)
             continue
