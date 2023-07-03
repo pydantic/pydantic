@@ -2814,21 +2814,31 @@ modes.</p>
 <h2 id="protected-namespaces">Protected Namespaces<a class="headerlink" href="#protected-namespaces" title="Permanent link">&para;</a></h2>
 <p>Pydantic prevents collisions between model attributes and <code>BaseModel</code>'s own methods by
 namespacing them with the prefix <code>model_</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span>  <span class="c1"># Raise warnings as errors</span>
 
 <span class="k">try</span><span class="p">:</span>
 
     <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">model_prefixed_field</span><span class="p">:</span> <span class="nb">str</span>
 
-<span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="k">except</span> <span class="ne">UserWarning</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Field &quot;model_prefixed_field&quot; has conflict with protected namespace &quot;model_&quot;</span>
+<span class="sd">    Field &quot;model_prefixed_field&quot; has conflict with protected namespace &quot;model_&quot;.</span>
+
+<span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = ()`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>You can customize this behavior using the <code>protected_namespaces</code> setting:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">)</span>  <span class="c1"># Raise warnings as errors</span>
 
 <span class="k">try</span><span class="p">:</span>
 
@@ -2840,10 +2850,27 @@ namespacing them with the prefix <code>model_</code>.</p>
             <span class="n">protected_namespaces</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;protect_me_&#39;</span><span class="p">,</span> <span class="s1">&#39;also_protect_&#39;</span><span class="p">)</span>
         <span class="p">)</span>
 
+<span class="k">except</span> <span class="ne">UserWarning</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Field &quot;also_protect_field&quot; has conflict with protected namespace &quot;also_protect_&quot;.</span>
+
+<span class="sd">    You may be able to resolve this warning by setting `model_config[&#39;protected_namespaces&#39;] = (&#39;protect_me_&#39;,)`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>While Pydantic will only emit a warning when an item is in a protected namespace but does not actually have a collision,
+an error <em>is</em> raised if there is an actual collision with an existing attribute:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">model_validate</span><span class="p">:</span> <span class="nb">str</span>
+
 <span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Field &quot;also_protect_field&quot; has conflict with protected namespace &quot;also_protect_&quot;</span>
+<span class="sd">    Field &quot;model_validate&quot; conflicts with member &lt;bound method BaseModel.model_validate of &lt;class &#39;pydantic.main.BaseModel&#39;&gt;&gt; of protected namespace &quot;model_&quot;.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="hide-input-in-errors">Hide Input in Errors<a class="headerlink" href="#hide-input-in-errors" title="Permanent link">&para;</a></h2>
