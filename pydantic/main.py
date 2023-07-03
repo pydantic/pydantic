@@ -96,7 +96,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # of `BaseModel` here:
 
         # Class attributes
-        model_config: ClassVar[ConfigDict]
         model_fields: ClassVar[dict[str, FieldInfo]]
 
         __class_vars__: ClassVar[set[str]]
@@ -133,7 +132,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
-    model_config = ConfigDict()
+    model_config: ClassVar[ConfigDict] = ConfigDict()
     __pydantic_complete__ = False
     __pydantic_root_model__ = False
 
