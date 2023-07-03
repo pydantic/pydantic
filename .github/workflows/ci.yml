@@ -302,7 +302,7 @@ jobs:
             platform: linux
           - os: windows
             ls: dir
-            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9
+            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9 pypy3.10
           - os: windows
             ls: dir
             target: i686
@@ -378,7 +378,7 @@ jobs:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux || 'auto' }}
           container: ${{ matrix.container }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12 pypy3.7 pypy3.8 pypy3.9' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12 pypy3.7 pypy3.8 pypy3.9 pypy3.10' }}
           rust-toolchain: stable
           docker-options: -e CI
 
