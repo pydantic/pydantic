@@ -55,7 +55,7 @@ jobs:
       run: pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
-    - run: pdm run mkdocs build --verbose
+    - run: pdm run mkdocs build
 
   test-memray:
     name: test memray
