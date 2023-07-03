@@ -858,7 +858,7 @@ class GenerateSchema:
 
         if typevars_map:
             annotations = {
-                field_name: typevars_map.get(annotation, annotation) for field_name, annotation in annotations.items()
+                field_name: replace_types(annotation, typevars_map) for field_name, annotation in annotations.items()
             }
 
         arguments_schema = core_schema.arguments_schema(
@@ -903,7 +903,7 @@ class GenerateSchema:
         params = get_args(tuple_type)
 
         if typevars_map:
-            params = tuple(typevars_map.get(param, param) for param in params)
+            params = tuple(replace_types(param, typevars_map) for param in params)
 
         # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
         # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
