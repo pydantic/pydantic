@@ -205,7 +205,12 @@ impl TypeSerializer for GeneralFieldsSerializer {
                 }
             }
         }
-        if td_extra.check.enabled() && self.required_fields != used_req_fields {
+        if td_extra.check.enabled()
+            // If any of these are true we can't count fields
+            && !(extra.exclude_defaults || extra.exclude_unset || extra.exclude_none)
+            // Check for missing fields, we can't have extra fields here
+            && self.required_fields > used_req_fields
+        {
             return Err(PydanticSerializationUnexpectedValue::new_err(None));
         }
         // this is used to include `__pydantic_extra__` in serialization on models
