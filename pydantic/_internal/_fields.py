@@ -110,7 +110,6 @@ def collect_model_fields(  # noqa: C901
             continue
         for protected_namespace in config_wrapper.protected_namespaces:
             if ann_name.startswith(protected_namespace):
-                valid_namespaces = tuple(x for x in config_wrapper.protected_namespaces if not ann_name.startswith(x))
                 for b in bases:
                     if hasattr(b, ann_name):
                         from ..main import BaseModel
@@ -121,6 +120,9 @@ def collect_model_fields(  # noqa: C901
                                 f' of protected namespace "{protected_namespace}".'
                             )
                 else:
+                    valid_namespaces = tuple(
+                        x for x in config_wrapper.protected_namespaces if not ann_name.startswith(x)
+                    )
                     warnings.warn(
                         f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}".'
                         '\n\nYou may be able to resolve this warning by setting'

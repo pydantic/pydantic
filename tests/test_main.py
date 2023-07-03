@@ -2258,6 +2258,15 @@ def test_protected_namespace_default():
             model_prefixed_field: str
 
 
+def test_protected_namespace_real_conflict():
+    with pytest.raises(
+        NameError, match=r'Field "model_validate" conflicts with member .* of protected namespace "model_"\.'
+    ):
+
+        class Model(BaseModel):
+            model_validate: str
+
+
 def test_custom_protected_namespace():
     with pytest.warns(UserWarning, match='Field "test_field" has conflict with protected namespace "test_"'):
 
