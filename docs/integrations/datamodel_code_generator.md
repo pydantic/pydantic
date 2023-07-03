@@ -1,11 +1,5 @@
 # Code Generation with datamodel-code-generator
 
-!!! warning
-    [datamodel-code-generator still does not support Pydantic V2](https://github.com/koxudaxi/datamodel-code-generator/issues/803).
-    But it is working with Pydantic V1. We will update this doc whenever Pydantic V2 support added to
-    [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator/).
-
-
 The [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator/) project is a library and command-line utility to generate pydantic models from just about any data source, including:
 
 * OpenAPI 3 (YAML/JSON)
