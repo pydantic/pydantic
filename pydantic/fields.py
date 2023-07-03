@@ -339,14 +339,19 @@ class FieldInfo(_repr.Representation):
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
-                field_info = cls._merge_field_infos(*field_infos, annotation=first_arg, default=default)
+                field_info = cls.merge_field_infos(*field_infos, annotation=first_arg, default=default)
                 field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                 return field_info
 
             return cls(annotation=annotation, default=default, frozen=final or None)
 
     @staticmethod
-    def _merge_field_infos(*field_infos: FieldInfo, **overrides: dict[str, Any]) -> FieldInfo:
+    def merge_field_infos(*field_infos: FieldInfo, **overrides: dict[str, Any]) -> FieldInfo:
+        """Merge `FieldInfo` instances keeping only explicitly set attributes.
+
+        Returns:
+            FieldInfo: A merged FieldInfo instance.
+        """
         new_kwargs: dict[str, Any] = {}
         for field_info in field_infos:
             new_kwargs.update(field_info._attributes_set)

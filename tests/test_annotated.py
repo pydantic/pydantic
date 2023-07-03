@@ -260,17 +260,24 @@ def test_get_pydantic_core_schema_source_type() -> None:
 
 
 def test_merge_field_infos_type_adapter() -> None:
-    ta = TypeAdapter(Annotated[int, Field(gt=0), Field(lt=100), Field(gt=1)])
+    ta = TypeAdapter(
+        Annotated[
+            int, Field(gt=0), Field(lt=100), Field(gt=1), Field(description='abc'), Field(3), Field(description=None)
+        ]
+    )
 
     # insert_assert(ta.core_schema)
-    assert ta.core_schema == {'type': 'int', 'gt': 1, 'lt': 100}
+    assert ta.core_schema == {'type': 'default', 'schema': {'type': 'int', 'gt': 1, 'lt': 100}, 'default': 3}
+
     # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {'exclusiveMaximum': 100, 'exclusiveMinimum': 1, 'type': 'integer'}
+    assert ta.json_schema() == {'default': 3, 'exclusiveMaximum': 100, 'exclusiveMinimum': 1, 'type': 'integer'}
 
 
 def test_merge_field_infos_model() -> None:
     class Model(BaseModel):
-        x: Annotated[int, Field(gt=0), Field(lt=100), Field(gt=1), Field(3)] = Field(5)
+        x: Annotated[
+            int, Field(gt=0), Field(lt=100), Field(gt=1), Field(description='abc'), Field(3), Field(description=None)
+        ] = Field(5)
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
