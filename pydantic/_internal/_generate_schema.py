@@ -677,8 +677,6 @@ class GenerateSchema:
         # the default validator needs to go outside of any other validators
         # so that it is the topmost validator for the field validator
         # which uses it to check if the field has a default value or not
-        if field_info.default is ...:
-            print(1)
         if not field_info.is_required():
             schema = wrap_default(field_info, schema)
 
