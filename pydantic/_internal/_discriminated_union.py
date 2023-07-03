@@ -181,10 +181,11 @@ class _ApplyInferredDiscriminator:
             return definitions_wrapper
 
         if schema['type'] != 'union':
-            raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
-
-        if len(schema['choices']) < 2:
-            raise TypeError('`discriminator` can only be used with `Union` type with more than one variant')
+            # If the schema is not a union, it probably means it just had a single member and
+            # was flattened by pydantic_core.
+            # However, it still may make sense to apply the discriminator to this schema,
+            # as a way to get discriminated-union-style error messages, so we allow this here.
+            schema = core_schema.union_schema([schema])
 
         # Reverse the choices list before extending the stack so that they get handled in the order they occur
         self._choices_to_handle.extend(schema['choices'][::-1])
