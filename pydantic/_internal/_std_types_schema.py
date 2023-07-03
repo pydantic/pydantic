@@ -167,42 +167,20 @@ class DecimalValidator:
             return string_schema
 
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
-        primitive_type_union = [
-            core_schema.int_schema(),
-            core_schema.float_schema(),
-            core_schema.str_schema(strip_whitespace=True),
-        ]
-        is_instance_schema = core_schema.json_or_python_schema(
-            json_schema=core_schema.no_info_after_validator_function(
-                decimal.Decimal, core_schema.union_schema(primitive_type_union)
-            ),
-            python_schema=core_schema.is_instance_schema(decimal.Decimal),
-        )
-        lax = core_schema.no_info_after_validator_function(
-            self.validate,
-            core_schema.union_schema(
-                [is_instance_schema, *primitive_type_union],
-                strict=True,
-            ),
-        )
-        strict = core_schema.custom_error_schema(
-            core_schema.no_info_after_validator_function(
-                self.validate,
-                is_instance_schema,
-            ),
-            custom_error_type='decimal_type',
-            custom_error_message='Input should be a valid Decimal instance or decimal string in JSON',
-        )
-        return core_schema.lax_or_strict_schema(
-            lax_schema=lax, strict_schema=strict, serialization=core_schema.to_string_ser_schema()
-        )
+        return core_schema.general_after_validator_function(self.validate, core_schema.any_schema())
 
-    def validate(self, __input_value: int | float | str) -> decimal.Decimal:  # noqa: C901 (ignore complexity)
-        if isinstance(__input_value, decimal.Decimal):
-            value = __input_value
+    def validate(  # noqa: C901 (ignore complexity)
+        self, input_value: Any, info: core_schema.ValidationInfo
+    ) -> decimal.Decimal:
+        if isinstance(input_value, decimal.Decimal):
+            value = input_value
+        elif self.strict or (info.config or {}).get('strict', False) and info.mode == 'python':
+            raise PydanticCustomError(
+                'decimal_type', 'Input should be a valid Decimal instance or decimal string in JSON'
+            )
         else:
             try:
-                value = decimal.Decimal(str(__input_value))
+                value = decimal.Decimal(str(input_value))
             except decimal.DecimalException:
                 raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
 
@@ -267,14 +245,6 @@ class DecimalValidator:
                     {'multiple_of': self.multiple_of},
                 )
 
-        # these type checks are here to handle the following error:
-        # Operator ">" not supported for types "(
-        #   <subclass of int and Decimal>
-        #   | <subclass of float and Decimal>
-        #   | <subclass of str and Decimal>
-        #   | Decimal" and "int
-        #   | Decimal"
-        # )
         if self.gt is not None and not value > self.gt:  # type: ignore
             raise PydanticKnownError('greater_than', {'gt': self.gt})
         elif self.ge is not None and not value >= self.ge:  # type: ignore
