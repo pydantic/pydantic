@@ -760,7 +760,7 @@ class TestBenchmarkDateTime:
 
     @pytest.fixture(scope='class')
     def datetime_raw(self):
-        return datetime.utcnow().replace(tzinfo=timezone.utc) + timedelta(days=1)
+        return datetime.now(timezone.utc) + timedelta(days=1)
 
     @pytest.fixture(scope='class')
     def datetime_str(self, datetime_raw):
