@@ -512,6 +512,70 @@ Pydantic V1 used Python's regex library. Pydantic V2 uses the Rust [regex crate]
 This crate is not just a "Rust version of regular expressions", it's a completely different approach to regular expressions.
 In particular, it promises linear time searching of strings in exchange for dropping a couple of features (namely look arounds and backreferences).
 We believe this is a tradeoff worth making, in particular because Pydantic is used to validate untrusted input where ensuring things don't accidentally run in exponential time depending on the untrusted input is important.
+One the flipside, for anyone not using these features complex regex validation should be orders of magnitude faster because it's done in Rust and in linear time.
+If you need those regex features you can create a custom validator that does the regex validation in Python:
+
+```py
+import re
+from dataclasses import dataclass
+from typing import Annotated, Any
+
+from pydantic_core import CoreSchema, PydanticCustomError, core_schema
+
+from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter, ValidationError
+from pydantic.json_schema import JsonSchemaValue
+
+
+@dataclass
+class Regex:
+    pattern: str
+
+    def __post_init__(self) -> None:
+        re.compile(self.pattern)  # error fast
+
+    def __get_pydantic_core_schema__(
+        self, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        regex = re.compile(self.pattern)
+
+        def match(v: str) -> str:
+            if not regex.match(v):
+                raise PydanticCustomError(
+                    'string_pattern_mismatch',
+                    "String should match pattern '{pattern}'",
+                    {'pattern': self.pattern},
+                )
+            return v
+
+        return core_schema.no_info_after_validator_function(
+            match,
+            handler(source_type),
+        )
+
+    def __get_pydantic_json_schema__(
+        self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = handler(core_schema)
+        json_schema['pattern'] = self.pattern
+        return json_schema
+
+
+ta = TypeAdapter(Annotated[str, Regex('^(?!_)(?!.*__)[a-z_]{1,64}(?<!_)$')])
+
+print(ta.json_schema())
+#> {'pattern': '^(?!_)(?!.*__)[a-z_]{1,64}(?<!_)$', 'type': 'string'}
+
+ta.validate_python('hello_world')
+
+try:
+    ta.validate_python('_invalid_')
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for function-after[match(), str]
+      String should match pattern '^(?!_)(?!.*__)[a-z_]{1,64}(?<!_)$' [type=string_pattern_mismatch, input_value='_invalid_', input_type=str]
+    """
+```
 
 [regex crate]: https://github.com/rust-lang/regex
 
