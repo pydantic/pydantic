@@ -518,11 +518,17 @@ If you need those regex features you can create a custom validator that does the
 ```py
 import re
 from dataclasses import dataclass
-from typing import Annotated, Any
+from typing import Any
 
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
+from typing_extensions import Annotated
 
-from pydantic import GetCoreSchemaHandler, GetJsonSchemaHandler, TypeAdapter, ValidationError
+from pydantic import (
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+    TypeAdapter,
+    ValidationError,
+)
 from pydantic.json_schema import JsonSchemaValue
 
 
