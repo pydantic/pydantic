@@ -83,7 +83,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     if isinstance(origin, TypeAliasType):
         type_ref = f'{module_name}.{origin.__name__}'
     else:
-        qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
+        qualname = getattr(origin, '__qualname__', '<No __qualname__>')
         type_ref = f'{module_name}.{qualname}:{id(origin)}'
 
     arg_refs: list[str] = []
