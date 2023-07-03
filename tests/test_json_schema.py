@@ -4853,6 +4853,7 @@ def test_custom_type_gets_unpacked_ref() -> None:
             Annotated[int, Field(gt=0), Field(lt=100)],
             {'type': 'integer', 'exclusiveMinimum': 0, 'exclusiveMaximum': 100},
         ),
+        (Annotated[int, Field(examples={'number': 1})], {'type': 'integer', 'examples': {'number': 1}}),
     ],
     ids=repr,
 )
