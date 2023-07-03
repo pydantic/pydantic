@@ -491,8 +491,7 @@ jobs:
         with:
           version_file_path: 'pydantic/version.py'
 
-      # need to remove "latest" once V2 is released!
-      - run: mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
+      - run: mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} --update-aliases --push
         if: "startsWith(github.ref, 'refs/tags/') && !fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
 
   release:
