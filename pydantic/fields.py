@@ -28,6 +28,9 @@ else:
     DeprecationWarning = PydanticDeprecatedSince20
 
 
+_Unset: Any = PydanticUndefined
+
+
 class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     """This class exists solely to add type checking for the `**kwargs` in `FieldInfo.from_field`."""
 
@@ -139,6 +142,7 @@ class FieldInfo(_repr.Representation):
         'init_var',
         'kw_only',
         'metadata',
+        '_attributes_set',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -164,7 +168,9 @@ class FieldInfo(_repr.Representation):
 
         See the signature of `pydantic.fields.Field` for more details about the expected arguments.
         """
-        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'), kwargs.get('default'))
+        self._attributes_set = {k: v for k, v in kwargs.items() if v is not _Unset}
+        kwargs = {k: _DefaultValues.get(k) if v is _Unset else v for k, v in kwargs.items()}  # type: ignore
+        self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
 
         default = kwargs.pop('default', PydanticUndefined)
         if default is Ellipsis:
@@ -307,7 +313,7 @@ class FieldInfo(_repr.Representation):
                 annotation = typing_extensions.get_args(annotation)[0]
 
         if isinstance(default, cls):
-            default.annotation, annotation_metadata = cls._extract_metadata(annotation, default)
+            default.annotation, annotation_metadata = cls._extract_metadata(annotation)
             default.metadata += annotation_metadata
             default.frozen = final or default.frozen
             return default
@@ -323,7 +329,7 @@ class FieldInfo(_repr.Representation):
                 init_var = True
                 annotation = annotation.type
             pydantic_field = cls._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation, default)
+            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
             pydantic_field.metadata += annotation_metadata
             pydantic_field.frozen = final or pydantic_field.frozen
             pydantic_field.init_var = init_var
@@ -333,19 +339,24 @@ class FieldInfo(_repr.Representation):
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
-                if field_infos:
-                    if len(field_infos) > 1:
-                        raise TypeError('Field may not be used twice on the same field')
-                    field_info = next(iter(field_infos))
-                    if not field_info.is_required():
-                        raise TypeError('Default may not be specified twice on the same field')
-                    new_field_info = copy(field_info)
-                    new_field_info.default = default
-                    new_field_info.annotation = first_arg
-                    new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
-                    return new_field_info
+                field_info = cls.merge_field_infos(*field_infos, annotation=first_arg, default=default)
+                field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                return field_info
 
             return cls(annotation=annotation, default=default, frozen=final or None)
+
+    @staticmethod
+    def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
+        """Merge `FieldInfo` instances keeping only explicitly set attributes.
+
+        Returns:
+            FieldInfo: A merged FieldInfo instance.
+        """
+        new_kwargs: dict[str, Any] = {}
+        for field_info in field_infos:
+            new_kwargs.update(field_info._attributes_set)
+        new_kwargs.update(overrides)
+        return FieldInfo(**new_kwargs)
 
     @classmethod
     def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> typing_extensions.Self:
@@ -372,30 +383,23 @@ class FieldInfo(_repr.Representation):
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
         field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field.metadata)
 
-        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type, dc_field.default)
+        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type)
         field.metadata += annotation_metadata
         return field
 
     @classmethod
-    def _extract_metadata(cls, annotation: type[Any] | None, default: Any) -> tuple[type[Any] | None, list[Any]]:
+    def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
         """Tries to extract metadata/constraints from an annotation if it uses `Annotated`.
 
         Args:
             annotation: The type hint annotation for which metadata has to be extracted.
-            default: The default value for the field, used to check if `Field()` is used more than once.
 
         Returns:
             A tuple containing the extracted metadata type and the list of extra arguments.
-
-        Raises:
-            TypeError: If a `Field` is used twice on the same field.
         """
-        default_is_field = isinstance(default, FieldInfo)
         if annotation is not None:
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
-                if sum(1 for a in extra_args if isinstance(a, FieldInfo)) + default_is_field > 1:
-                    raise TypeError('Field may not be used twice on the same field')
                 return first_arg, list(extra_args)
 
         return annotation, []
@@ -510,6 +514,8 @@ class FieldInfo(_repr.Representation):
         yield 'required', self.is_required()
 
         for s in self.__slots__:
+            if s == '_attributes_set':
+                continue
             if s == 'annotation':
                 continue
             elif s == 'metadata' and not self.metadata:
@@ -588,38 +594,72 @@ class _EmptyKwargs(typing_extensions.TypedDict):
     """This class exists solely to ensure that type checking warns about passing `**extra` in `Field`."""
 
 
-def Field(  # C901
+_DefaultValues = dict(
+    default=...,
+    default_factory=None,
+    alias=None,
+    alias_priority=None,
+    validation_alias=None,
+    serialization_alias=None,
+    title=None,
+    description=None,
+    examples=None,
+    exclude=None,
+    include=None,
+    discriminator=None,
+    json_schema_extra=None,
+    frozen=None,
+    validate_default=None,
+    repr=True,
+    init_var=None,
+    kw_only=None,
+    pattern=None,
+    strict=None,
+    gt=None,
+    ge=None,
+    lt=None,
+    le=None,
+    multiple_of=None,
+    allow_inf_nan=None,
+    max_digits=None,
+    decimal_places=None,
+    min_length=None,
+    max_length=None,
+)
+
+
+def Field(  # noqa: C901
     default: Any = PydanticUndefined,
     *,
-    default_factory: typing.Callable[[], Any] | None = None,
-    alias: str | None = None,
-    alias_priority: int | None = None,
-    validation_alias: str | AliasPath | AliasChoices | None = None,
-    serialization_alias: str | None = None,
-    title: str | None = None,
-    description: str | None = None,
-    examples: list[Any] | None = None,
-    exclude: bool | None = None,
-    include: bool | None = None,
-    discriminator: str | None = None,
-    json_schema_extra: dict[str, Any] | None = None,
-    frozen: bool | None = None,
-    validate_default: bool | None = None,
-    repr: bool = True,
-    init_var: bool | None = None,
-    kw_only: bool | None = None,
-    pattern: str | None = None,
-    strict: bool | None = None,
-    gt: float | None = None,
-    ge: float | None = None,
-    lt: float | None = None,
-    le: float | None = None,
-    multiple_of: float | None = None,
-    allow_inf_nan: bool | None = None,
-    max_digits: int | None = None,
-    decimal_places: int | None = None,
-    min_length: int | None = None,
-    max_length: int | None = None,
+    default_factory: typing.Callable[[], Any] | None = _Unset,
+    alias: str | None = _Unset,
+    alias_priority: int | None = _Unset,
+    validation_alias: str | AliasPath | AliasChoices | None = _Unset,
+    serialization_alias: str | None = _Unset,
+    title: str | None = _Unset,
+    description: str | None = _Unset,
+    examples: list[Any] | None = _Unset,
+    exclude: bool | None = _Unset,
+    include: bool | None = _Unset,
+    discriminator: str | None = _Unset,
+    json_schema_extra: dict[str, Any] | None = _Unset,
+    frozen: bool | None = _Unset,
+    validate_default: bool | None = _Unset,
+    repr: bool = _Unset,
+    init_var: bool | None = _Unset,
+    kw_only: bool | None = _Unset,
+    pattern: str | None = _Unset,
+    strict: bool | None = _Unset,
+    gt: float | None = _Unset,
+    ge: float | None = _Unset,
+    lt: float | None = _Unset,
+    le: float | None = _Unset,
+    multiple_of: float | None = _Unset,
+    allow_inf_nan: bool | None = _Unset,
+    max_digits: int | None = _Unset,
+    decimal_places: int | None = _Unset,
+    min_length: int | None = _Unset,
+    max_length: int | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
     """Create a field for objects that can be configured.
@@ -677,13 +717,13 @@ def Field(  # C901
     min_items = extra.pop('min_items', None)  # type: ignore
     if min_items is not None:
         warn('`min_items` is deprecated and will be removed, use `min_length` instead', DeprecationWarning)
-        if min_length is None:
+        if min_length in (None, _Unset):
             min_length = min_items  # type: ignore
 
     max_items = extra.pop('max_items', None)  # type: ignore
     if max_items is not None:
         warn('`max_items` is deprecated and will be removed, use `max_length` instead', DeprecationWarning)
-        if max_length is None:
+        if max_length in (None, _Unset):
             max_length = max_items  # type: ignore
 
     unique_items = extra.pop('unique_items', None)  # type: ignore
@@ -711,21 +751,28 @@ def Field(  # C901
             'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
             DeprecationWarning,
         )
-        if not json_schema_extra:
+        if not json_schema_extra or json_schema_extra is _Unset:
             json_schema_extra = extra  # type: ignore
 
-    if validation_alias and not isinstance(validation_alias, (str, AliasChoices, AliasPath)):
+    if (
+        validation_alias
+        and validation_alias is not _Unset
+        and not isinstance(validation_alias, (str, AliasChoices, AliasPath))
+    ):
         raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`')
 
-    if serialization_alias is None and isinstance(alias, str):
+    if serialization_alias in (_Unset, None) and isinstance(alias, str):
         serialization_alias = alias
+
+    if validation_alias in (_Unset, None):
+        validation_alias = alias
 
     return FieldInfo.from_field(
         default,
         default_factory=default_factory,
         alias=alias,
         alias_priority=alias_priority,
-        validation_alias=validation_alias or alias,
+        validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         title=title,
         description=description,
