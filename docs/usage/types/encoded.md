@@ -2,9 +2,6 @@
 description: Support for storing data in an encoded form.
 ---
 
-!!! warning
-    This page still needs to be updated for v2.0.
-
 `EncodedBytes`
 : a bytes value which is decoded from/encoded into a (different) bytes value during validation/serialization
 
