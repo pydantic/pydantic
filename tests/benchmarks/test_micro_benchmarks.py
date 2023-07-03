@@ -1450,3 +1450,23 @@ def test_tagged_union_int_keys_json(benchmark):
         v.validate_json('{"x": 1001, "y": "1"}')
 
     benchmark(v.validate_json, payload)
+
+
+@pytest.mark.benchmark(group='field_function_validator')
+def test_field_function_validator(benchmark) -> None:
+    def f(v: int, info: core_schema.FieldValidationInfo) -> int:
+        assert info.field_name == 'x'
+        return v + 1
+
+    schema: core_schema.CoreSchema = core_schema.int_schema()
+
+    for _ in range(100):
+        schema = core_schema.field_after_validator_function(f, schema)
+
+    schema = core_schema.typed_dict_schema({'x': core_schema.typed_dict_field(schema)})
+
+    v = SchemaValidator(schema)
+    payload = {'x': 0}
+    assert v.validate_python(payload) == {'x': 100}
+
+    benchmark(v.validate_python, payload)
