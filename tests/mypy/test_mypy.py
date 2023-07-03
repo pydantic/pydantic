@@ -61,7 +61,8 @@ class MypyCasesBuilder:
 cases = (
     # No plugin
     MypyCasesBuilder(
-        ['mypy-default.ini', 'pyproject-default.toml'], ['fail1.py', 'fail2.py', 'fail3.py', 'fail4.py']
+        ['mypy-default.ini', 'pyproject-default.toml'],
+        ['fail1.py', 'fail2.py', 'fail3.py', 'fail4.py', 'pydantic_settings.py'],
     ).build()
     + MypyCasesBuilder(
         ['mypy-default.ini', 'pyproject-default.toml'],
@@ -74,7 +75,13 @@ cases = (
     # Default plugin config
     + MypyCasesBuilder(
         ['mypy-plugin.ini', 'pyproject-plugin.toml'],
-        ['plugin_success.py', 'plugin_fail.py', 'plugin_success_baseConfig.py', 'plugin_fail_baseConfig.py'],
+        [
+            'plugin_success.py',
+            'plugin_fail.py',
+            'plugin_success_baseConfig.py',
+            'plugin_fail_baseConfig.py',
+            'pydantic_settings.py',
+        ],
     ).build()
     # Strict plugin config
     + MypyCasesBuilder(

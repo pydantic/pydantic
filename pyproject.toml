@@ -109,6 +109,7 @@ testing = [
 ]
 mypy = [
     "mypy",
+    "pydantic-settings>=2.0.0",
 ]
 memray = [
     "pytest-memray",
