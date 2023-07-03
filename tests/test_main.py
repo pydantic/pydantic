@@ -1370,7 +1370,7 @@ def test_untyped_fields_warning():
         PydanticUserError,
         match=re.escape(
             "A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; "
-            "if `x` is not meant to be a field, You may be able to resolve this warning by annotating it "
+            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it "
             "as a `ClassVar` or updating `model_config['ignored_types']`."
         ),
     ):
@@ -2252,34 +2252,22 @@ def test_recursion_loop_error():
 
 
 def test_protected_namespace_default():
-    warnings.filterwarnings('error')
-    try:
-        with pytest.raises(
-            UserWarning, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'
-        ):
+    with pytest.warns(UserWarning, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
 
-            class Model(BaseModel):
-                model_prefixed_field: str
-
-    finally:
-        warnings.resetwarnings()
+        class Model(BaseModel):
+            model_prefixed_field: str
 
 
 def test_custom_protected_namespace():
-    warnings.filterwarnings('error')
-    try:
-        with pytest.raises(UserWarning, match='Field "test_field" has conflict with protected namespace "test_"'):
+    with pytest.warns(UserWarning, match='Field "test_field" has conflict with protected namespace "test_"'):
 
-            class Model(BaseModel):
-                # this field won't raise error because we changed the default value for the
-                # `protected_namespaces` config.
-                model_prefixed_field: str
-                test_field: str
+        class Model(BaseModel):
+            # this field won't raise error because we changed the default value for the
+            # `protected_namespaces` config.
+            model_prefixed_field: str
+            test_field: str
 
-                model_config = ConfigDict(protected_namespaces=('test_',))
-
-    finally:
-        warnings.resetwarnings()
+            model_config = ConfigDict(protected_namespaces=('test_',))
 
 
 def test_multiple_protected_namespace():
