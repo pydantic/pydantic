@@ -83,6 +83,7 @@ nav:
       - Payment Card Numbers: usage/types/extra_types/payment_cards.md
       - Phone Numbers: usage/types/extra_types/phone_numbers.md
       - Routing Numbers: usage/types/extra_types/routing_numbers.md
+      - MAC Address: usage/types/extra_types/mac_address.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
   - 'Fields': usage/fields.md
