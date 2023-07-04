@@ -1,10 +1,10 @@
 The primary means of defining objects in Pydantic is via models. Models are simply classes which inherit from
-`pydantic.BaseModel`.
+[`pydantic.BaseModel`][pydantic.BaseModel].
 
 You can think of models as similar to structs in languages like C, or as the requirements of a single endpoint
 in an API.
 
-Models share many similarities with Python's dataclasses, but have been designed with some subtle but important
+Models share many similarities with Python's dataclasses, but have been designed with some subtle-yet-important
 differences that streamline certain workflows related to validation, serialization, and JSON schema generation.
 You can find more discussion of this in the [Dataclasses](dataclasses.md) section of the docs.
 
@@ -262,7 +262,7 @@ print(pydantic_model.model_dump(by_alias=True))
 
 ### Nested attributes
 
-When using attributes to parse models, Model instances will be created from both top level attributes and
+When using attributes to parse models, model instances will be created from both top-level attributes and
 deeper-nested attributes as appropriate.
 
 Here is an example demonstrating the principle:
@@ -316,7 +316,7 @@ name='Anna' age=20.0 pets=[Pet(name='Bones', species='dog'), Pet(name='Orion', s
 Pydantic will raise `ValidationError` whenever it finds an error in the data it's validating.
 
 A single exception of type `ValidationError` will be raised regardless of the number of errors found,
-and that `ValidationError` will contain information about all the errors and how they happened.
+and that `ValidationError` will contain information about all of the errors and how they happened.
 
 See [Error Handling](../errors/errors.md) for details on standard and custom errors.
 
@@ -409,7 +409,7 @@ except ValidationError as e:
     """
 ```
 
-If you want to validate serialized data in a format besides JSON, you should load the data into a dict yourself and
+If you want to validate serialized data in a format other than JSON, you should load the data into a dict yourself and
 then pass it to `model_validate`.
 
 !!! note
@@ -555,7 +555,7 @@ except ValidationError as e:
     """
 ```
 
-If you set the `model_config` or make use of `@field_validator` or other pydantic decorators in your generic model
+If you set the `model_config` or make use of `@field_validator` or other Pydantic decorators in your generic model
 definition, they will be applied to parametrized subclasses in the same way as when inheriting from a `BaseModel`
 subclass. Any methods defined on your generic class will also be inherited.
 
@@ -563,7 +563,7 @@ Pydantic's generics also integrate properly with type checkers, so you get all t
 you would expect if you were to declare a distinct type for each parametrization.
 
 !!! note
-    Internally, pydantic creates subclasses of `BaseModel` at runtime when generic models are parametrized.
+    Internally, Pydantic creates subclasses of `BaseModel` at runtime when generic models are parametrized.
     These classes are cached, so there should be minimal overhead introduced by the use of generics models.
 
 To inherit from a generic model and preserve the fact that it is generic, the subclass must also inherit from
@@ -681,8 +681,8 @@ except ValidationError as e:
 When using bound type parameters, and when leaving type parameters unspecified, Pydantic treats generic models
 similarly to how it treats built-in generic types like `List` and `Dict`:
 
-* If you don't specify parameters before instantiating the generic model, they are treated as the bound of the `TypeVar`
-* If the `TypeVar`s involved have no bounds, they are treated as `Any`
+* If you don't specify parameters before instantiating the generic model, they are treated as the bound of the `TypeVar`.
+* If the `TypeVar`s involved have no bounds, they are treated as `Any`.
 
 Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
 
@@ -886,9 +886,9 @@ print(items)
 
 ## `RootModel` and custom root types
 
-Pydantic models can be defined with a "custom root type" by subclassing `pydantic.RootModel`.
+Pydantic models can be defined with a "custom root type" by subclassing [`pydantic.RootModel`][pydantic.RootModel].
 
-The root type can be any type supported by pydantic, and is specified by the generic parameter to `RootModel`.
+The root type can be any type supported by Pydantic, and is specified by the generic parameter to `RootModel`.
 The root value can be passed to the model `__init__` or `model_validate` as via the first and only argument.
 
 Here's an example of how this works:
@@ -972,7 +972,7 @@ print(my_pets.describe())
 ## Faux immutability
 
 Models can be configured to be immutable via `model_config['frozen'] = True`. When this is set, attempting to change the
-values of instance attributes will raise errors. See [model config](model_config.md) for more details on `Config`.
+values of instance attributes will raise errors. See [Model Config](model_config.md) for more details.
 
 !!! note
     This behavior was achieved in Pydantic V1 via the config setting `allow_mutation = False`.
@@ -1158,7 +1158,7 @@ You can find more information in the documentation of the [`Field` function](fie
 ## Automatically excluded attributes
 
 ### Class vars
-Attributes annotated with `typing.ClassVar` will are properly treated by Pydantic as class variables, and will not
+Attributes annotated with `typing.ClassVar` are properly treated by Pydantic as class variables, and will not
 become fields on model instances:
 
 ```py
@@ -1287,7 +1287,7 @@ To be included in the signature, a field's alias or name must be a valid Python 
 Pydantic will prioritize a field's alias over its name when generating the signature, but may use the field name if the
 alias is not a valid Python identifier.
 
-If a field's alias and name are _both_ invalid identifiers (which may be possible through exotic use of `create_model`),
+If a field's alias and name are _both_ not valid identifiers (which may be possible through exotic use of `create_model`),
 a `**data` argument will be added. In addition, the `**data` argument will always be present in the signature if
 `model_config['extra'] == 'allow'`.
 
