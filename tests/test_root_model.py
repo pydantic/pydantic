@@ -520,19 +520,17 @@ def test_mixed_discriminated_union(data):
 
 def test_list_rootmodel():
     class A(BaseModel):
-        type: Literal["a"]
+        type: Literal['a']
         a: str
 
-
     class B(BaseModel):
-        type: Literal["b"]
+        type: Literal['b']
         b: str
 
-
-    class D(RootModel[Annotated[Union[A,B], Field(discriminator="type")]]):
+    class D(RootModel[Annotated[Union[A, B], Field(discriminator='type')]]):
         pass
 
-    LD = RootModel[List[D]]
+    RootModel[List[D]]
 
 
 def test_root_and_data_error():
