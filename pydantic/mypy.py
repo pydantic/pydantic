@@ -88,6 +88,7 @@ except ImportError:  # pragma: no cover
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
+BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
@@ -436,7 +437,8 @@ class PydanticModelTransformer:
             if field.type is None:
                 return False
 
-        self.add_initializer(fields, config)
+        is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
+        self.add_initializer(fields, config, is_settings)
         self.add_model_construct_method(fields, config)
         self.set_frozen(fields, frozen=config.frozen is True)
 
@@ -768,7 +770,7 @@ class PydanticModelTransformer:
 
         return default
 
-    def add_initializer(self, fields: list[PydanticModelField], config: ModelConfigData) -> None:
+    def add_initializer(self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool) -> None:
         """Adds a fields-aware `__init__` method to the class.
 
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
@@ -778,7 +780,7 @@ class PydanticModelTransformer:
 
         typed = self.plugin_config.init_typed
         use_alias = config.populate_by_name is not True
-        force_all_optional = bool(config.has_alias_generator and not config.populate_by_name)
+        force_all_optional = is_settings or bool(config.has_alias_generator and not config.populate_by_name)
         with state.strict_optional_set(self._api.options.strict_optional):
             args = self.get_field_arguments(
                 fields, typed=typed, force_all_optional=force_all_optional, use_alias=use_alias
