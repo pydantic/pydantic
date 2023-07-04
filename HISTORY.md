@@ -1,3 +1,7 @@
+## v1.10.11 (2023-07-04)
+
+* Importing create_model in tools.py through relative path instead of absolute path - so that it doesn't import V2 code when copied over to V2 branch, #6361 by @SharathHuddar
+
 ## v2.0b3 (2023-06-16)
 
 Third beta pre-release of Pydantic V2
