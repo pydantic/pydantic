@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v20-2023-06-30" class="md-skip">
+        <a href="#v201-2023-07-04" class="md-skip">
           Skip to content
         </a>
       
@@ -513,6 +513,13 @@
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v201-2023-07-04" class="md-nav__link">
+    v2.0.1 (2023-07-04)
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v20-2023-06-30" class="md-nav__link">
@@ -2872,6 +2879,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v201-2023-07-04" class="md-nav__link">
+    v2.0.1 (2023-07-04)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v20-2023-06-30" class="md-nav__link">
     v2.0 (2023-06-30)
   </a>
@@ -3666,6 +3680,15 @@
 
   <h1>Changelog</h1>
 
+<h2 id="v201-2023-07-04">v2.0.1 (2023-07-04)<a class="headerlink" href="#v201-2023-07-04" title="Permanent link">&para;</a></h2>
+<p>First patch release of Pydantic V2</p>
+<ul>
+<li>Extra fields added via <code>setattr</code> (i.e. <code>m.some_extra_field = 'extra_value'</code>)
+  are added to <code>.model_extra</code> if <code>model_config</code> <code>extra='allowed'</code>. Fixed <a href="https://github.com/pydantic/pydantic/issues/6333">#6333</a>, <a href="https://github.com/pydantic/pydantic/issues/6365">#6365</a> by <a href="https://github.com/aaraney">@aaraney</a></li>
+<li>Automatically unpack JSON schema '$ref' for custom types, <a href="https://github.com/pydantic/pydantic/issues/6343">#6343</a> by <a href="https://github.com/adriangb">@adriangb</a></li>
+<li>Fix tagged unions multiple processing in submodels, <a href="https://github.com/pydantic/pydantic/issues/6340">#6340</a> by <a href="https://github.com/suharnikov">@suharnikov</a></li>
+</ul>
+<p>See the full changelog <a href="https://github.com/pydantic/pydantic/releases/tag/v2.0.1">here</a></p>
 <h2 id="v20-2023-06-30">v2.0 (2023-06-30)<a class="headerlink" href="#v20-2023-06-30" title="Permanent link">&para;</a></h2>
 <p>Pydantic V2 is here! <img alt="🎉" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f389.svg" title=":tada:" /></p>
 <p>See <a href="https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/">this post</a> for more details.</p>
