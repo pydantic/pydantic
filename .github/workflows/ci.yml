@@ -454,9 +454,10 @@ jobs:
             --release
             --out pgo-wheel
             --interpreter ${{ matrix.maturin-interpreter || matrix.interpreter }}
-            -- -Cprofile-generate=${{ github.workspace }}/profdata
           rust-toolchain: stable
           docker-options: -e CI
+        env:
+          RUSTFLAGS: "-Cprofile-generate=${{ github.workspace }}/profdata"
 
       - name: detect rust host
         run: echo RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2) >> "$GITHUB_ENV"
@@ -482,9 +483,10 @@ jobs:
             --release
             --out dist
             --interpreter ${{ matrix.maturin-interpreter || matrix.interpreter }}
-            -- -Cprofile-use=${{ github.workspace }}/merged.profdata
           rust-toolchain: stable
           docker-options: -e CI
+        env:
+          RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"
 
       - run: ${{ matrix.ls || 'ls -lh' }} dist/
 
