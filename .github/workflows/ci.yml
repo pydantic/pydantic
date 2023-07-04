@@ -386,7 +386,7 @@ jobs:
   send-tweet:
     name: Send tweet
     needs: [release]
-    if: needs.release.status == 'success'
+    if: needs.release.result == 'success'
     runs-on: ubuntu-latest
 
     steps:
