@@ -312,6 +312,22 @@ def test_assign_extra_validate():
         model.b = 2
 
 
+def test_model_property_attribute_error():
+    class Model(BaseModel):
+        @property
+        def a_property(self):
+            raise AttributeError('Internal Error')
+
+    with pytest.raises(
+        AttributeError,
+        match=(
+            "'Model' object has an attribute 'a_property' - it looks like the property raised an "
+            "`AttributeError` which this `__getattr__` method has muted, sorry."
+        ),
+    ):
+        Model().a_property
+
+
 def test_extra_allowed():
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
