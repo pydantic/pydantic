@@ -615,9 +615,9 @@ def test_set():
 @pytest.mark.parametrize(
     'field_type,extra_props',
     [
-        (tuple, {'items': {}}),
-        (Tuple, {'items': {}}),
-        (
+        pytest.param(tuple, {'items': {}}, id='tuple'),
+        pytest.param(Tuple, {'items': {}}, id='Tuple'),
+        pytest.param(
             Tuple[str, int, Union[str, int, float], float],
             {
                 'prefixItems': [
@@ -629,13 +629,11 @@ def test_set():
                 'minItems': 4,
                 'maxItems': 4,
             },
+            id='Tuple[str, int, Union[str, int, float], float]',
         ),
-        (Tuple[str], {'prefixItems': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}),
-        (Tuple[()], {'maxItems': 0, 'minItems': 0}),
-        (
-            Tuple[str, ...],
-            {'items': {'type': 'string'}, 'type': 'array'},
-        ),
+        pytest.param(Tuple[str], {'prefixItems': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}, id='Tuple[str]'),
+        pytest.param(Tuple[()], {'maxItems': 0, 'minItems': 0}, id='Tuple[()]'),
+        pytest.param(Tuple[str, ...], {'items': {'type': 'string'}, 'type': 'array'}, id='Tuple[str, ...]'),
     ],
 )
 def test_tuple(field_type, extra_props):
@@ -2746,18 +2744,17 @@ def test_namedtuple_default():
     assert LocationBase(coords=Coordinates(1, 2)).coords == Coordinates(1, 2)
 
     assert LocationBase.model_json_schema() == {
-        'title': 'LocationBase',
-        'type': 'object',
-        'properties': {
-            'coords': {
-                'title': 'Coords',
-                'default': [34, 42],
-                'type': 'array',
-                'prefixItems': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
-                'minItems': 2,
+        '$defs': {
+            'Coordinates': {
                 'maxItems': 2,
+                'minItems': 2,
+                'prefixItems': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
+                'type': 'array',
             }
         },
+        'properties': {'coords': {'allOf': [{'$ref': '#/$defs/Coordinates'}], 'default': [34, 42]}},
+        'title': 'LocationBase',
+        'type': 'object',
     }
 
 
@@ -2777,16 +2774,15 @@ def test_namedtuple_modify_schema():
         coords: CustomCoordinates = CustomCoordinates(34, 42)
 
     assert Location.model_json_schema() == {
-        'properties': {
-            'coords': {
+        '$defs': {
+            'CustomCoordinates': {
                 'additionalProperties': False,
                 'properties': {'x': {'title': 'X', 'type': 'number'}, 'y': {'title': 'Y', 'type': 'number'}},
                 'required': ['x', 'y'],
-                'title': 'Coords',
                 'type': 'object',
-                'default': [34, 42],
             }
         },
+        'properties': {'coords': {'allOf': [{'$ref': '#/$defs/CustomCoordinates'}], 'default': [34, 42]}},
         'title': 'Location',
         'type': 'object',
     }

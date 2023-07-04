@@ -229,6 +229,8 @@ def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
     origin = get_origin(cls)
     if origin is None:
         return None
+    if not hasattr(origin, '__parameters__'):
+        return None
 
     # In this case, we know that cls is a _GenericAlias, and origin is the generic type
     # So it is safe to access cls.__args__ and origin.__parameters__
