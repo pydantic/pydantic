@@ -669,6 +669,17 @@ def test_literal_enum_values():
     ]
 
 
+def test_strict_enum_values():
+    class MyEnum(Enum):
+        val = 'val'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_enum_values=True)
+        x: MyEnum
+
+    assert Model.model_validate({'x': MyEnum.val}, strict=True).x == 'val'
+
+
 def test_union_enum_values():
     class MyEnum(Enum):
         val = 'val'
