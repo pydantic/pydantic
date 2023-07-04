@@ -704,7 +704,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
                 else:
                     if hasattr(self.__class__, item):
-                        raise AttributeError(
+                        return super().__getattribute__(item)  # Raises AttributeError if appropriate
                             f'{type(self).__name__!r} object has an attribute {item!r} - it looks like the property '
                             'raised an `AttributeError` which this `__getattr__` method has muted, sorry.'
                         )
