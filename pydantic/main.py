@@ -703,7 +703,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                     except KeyError as exc:
                         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
                 else:
-                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+                    if hasattr(self.__class__, item):
+                        return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                    else:
+                        # this is the current error
+                        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__class_vars__:

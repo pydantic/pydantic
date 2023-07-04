@@ -312,6 +312,16 @@ def test_assign_extra_validate():
         model.b = 2
 
 
+def test_model_property_attribute_error():
+    class Model(BaseModel):
+        @property
+        def a_property(self):
+            raise AttributeError('Internal Error')
+
+    with pytest.raises(AttributeError, match='Internal Error'):
+        Model().a_property
+
+
 def test_extra_allowed():
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
