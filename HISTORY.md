@@ -1,3 +1,14 @@
+## v2.0.1 (2023-07-04)
+
+First patch release of Pydantic V2
+
+* Extra fields added via `setattr` (i.e. `m.some_extra_field = 'extra_value'`)
+  are added to `.model_extra` if `model_config` `extra='allowed'`. Fixed #6333, #6365 by @aaraney
+* Automatically unpack JSON schema '$ref' for custom types, #6343 by @adriangb
+* Fix tagged unions multiple processing in submodels, #6340 by @suharnikov
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0.1)
+
 ## v2.0 (2023-06-30)
 
 Pydantic V2 is here! :tada:
