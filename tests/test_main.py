@@ -18,6 +18,7 @@ from typing import (
     Set,
     Type,
     TypeVar,
+    Union,
     get_type_hints,
 )
 from uuid import UUID, uuid4
@@ -685,11 +686,11 @@ def test_union_enum_values():
         val = 'val'
 
     class NormalModel(BaseModel):
-        x: MyEnum | int
+        x: Union[MyEnum, int]
 
     class UseEnumValuesModel(BaseModel):
         model_config = ConfigDict(use_enum_values=True)
-        x: MyEnum | int
+        x: Union[MyEnum, int]
 
     assert NormalModel(x=MyEnum.val).x != 'val'
     assert UseEnumValuesModel(x=MyEnum.val).x == 'val'
