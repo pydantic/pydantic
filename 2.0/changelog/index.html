@@ -19,7 +19,7 @@
         <link rel="next" href="../usage/models/">
       
       <link rel="icon" href="../favicon.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.17">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
     
     
       
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v20-2023-06-30" class="md-skip">
+        <a href="#v201-2023-07-04" class="md-skip">
           Skip to content
         </a>
       
@@ -515,6 +515,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v201-2023-07-04" class="md-nav__link">
+    v2.0.1 (2023-07-04)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v20-2023-06-30" class="md-nav__link">
     v2.0 (2023-06-30)
   </a>
@@ -566,6 +573,13 @@
         <li class="md-nav__item">
   <a href="#v20a1-2023-04-03" class="md-nav__link">
     v2.0a1 (2023-04-03)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v11011-2023-07-04" class="md-nav__link">
+    v1.10.11 (2023-07-04)
   </a>
   
 </li>
@@ -1813,6 +1827,20 @@
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/extra_types/mac_address/" class="md-nav__link">
+        MAC Address
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -2851,6 +2879,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v201-2023-07-04" class="md-nav__link">
+    v2.0.1 (2023-07-04)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v20-2023-06-30" class="md-nav__link">
     v2.0 (2023-06-30)
   </a>
@@ -2902,6 +2937,13 @@
         <li class="md-nav__item">
   <a href="#v20a1-2023-04-03" class="md-nav__link">
     v2.0a1 (2023-04-03)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#v11011-2023-07-04" class="md-nav__link">
+    v1.10.11 (2023-07-04)
   </a>
   
 </li>
@@ -3638,6 +3680,15 @@
 
   <h1>Changelog</h1>
 
+<h2 id="v201-2023-07-04">v2.0.1 (2023-07-04)<a class="headerlink" href="#v201-2023-07-04" title="Permanent link">&para;</a></h2>
+<p>First patch release of Pydantic V2</p>
+<ul>
+<li>Extra fields added via <code>setattr</code> (i.e. <code>m.some_extra_field = 'extra_value'</code>)
+  are added to <code>.model_extra</code> if <code>model_config</code> <code>extra='allowed'</code>. Fixed <a href="https://github.com/pydantic/pydantic/issues/6333">#6333</a>, <a href="https://github.com/pydantic/pydantic/issues/6365">#6365</a> by <a href="https://github.com/aaraney">@aaraney</a></li>
+<li>Automatically unpack JSON schema '$ref' for custom types, <a href="https://github.com/pydantic/pydantic/issues/6343">#6343</a> by <a href="https://github.com/adriangb">@adriangb</a></li>
+<li>Fix tagged unions multiple processing in submodels, <a href="https://github.com/pydantic/pydantic/issues/6340">#6340</a> by <a href="https://github.com/suharnikov">@suharnikov</a></li>
+</ul>
+<p>See the full changelog <a href="https://github.com/pydantic/pydantic/releases/tag/v2.0.1">here</a></p>
 <h2 id="v20-2023-06-30">v2.0 (2023-06-30)<a class="headerlink" href="#v20-2023-06-30" title="Permanent link">&para;</a></h2>
 <p>Pydantic V2 is here! <img alt="🎉" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f389.svg" title=":tada:" /></p>
 <p>See <a href="https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/">this post</a> for more details.</p>
@@ -3663,6 +3714,10 @@
 <h2 id="v20a1-2023-04-03">v2.0a1 (2023-04-03)<a class="headerlink" href="#v20a1-2023-04-03" title="Permanent link">&para;</a></h2>
 <p>First pre-release of Pydantic V2!</p>
 <p>See <a href="https://docs.pydantic.dev/blog/pydantic-v2-alpha/">this post</a> for more details.</p>
+<h2 id="v11011-2023-07-04">v1.10.11 (2023-07-04)<a class="headerlink" href="#v11011-2023-07-04" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Importing create_model in tools.py through relative path instead of absolute path - so that it doesn't import V2 code when copied over to V2 branch, <a href="https://github.com/pydantic/pydantic/issues/6361">#6361</a> by <a href="https://github.com/SharathHuddar">@SharathHuddar</a></li>
+</ul>
 <h2 id="v11010-2023-06-30">v1.10.10 (2023-06-30)<a class="headerlink" href="#v11010-2023-06-30" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Add Pydantic <code>Json</code> field support to settings management, <a href="https://github.com/pydantic/pydantic/issues/6250">#6250</a> by <a href="https://github.com/hramezani">@hramezani</a></li>
@@ -4892,10 +4947,10 @@ for their kind support.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["content.tabs.link", "content.code.annotate", "announce.dismiss", "navigation.tabs"], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.tabs.link", "content.code.annotate", "announce.dismiss", "navigation.tabs"], "search": "../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.b425cdc4.min.js"></script>
+      <script src="../assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
           <script src="../extra/redirects.js"></script>

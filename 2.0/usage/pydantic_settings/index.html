@@ -19,7 +19,7 @@
         <link rel="next" href="../../errors/errors/">
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.17">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
     
     
       
@@ -1008,6 +1008,20 @@
     <li class="md-nav__item">
       <a href="../types/extra_types/routing_numbers/" class="md-nav__link">
         Routing Numbers
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../types/extra_types/mac_address/" class="md-nav__link">
+        MAC Address
       </a>
     </li>
   
@@ -2358,7 +2372,7 @@ will still be used if the matching environment variable is not set.)</p>
 <span class="sd">{</span>
 <span class="sd">    &#39;auth_key&#39;: &#39;xxx&#39;,</span>
 <span class="sd">    &#39;redis_dsn&#39;: Url(&#39;redis://user:pass@localhost:6379/1&#39;),</span>
-<span class="sd">    &#39;pg_dsn&#39;: Url(&#39;postgres://user:pass@localhost:5432/foobar&#39;),</span>
+<span class="sd">    &#39;pg_dsn&#39;: MultiHostUrl(&#39;postgres://user:pass@localhost:5432/foobar&#39;),</span>
 <span class="sd">    &#39;amqp_dsn&#39;: Url(&#39;amqp://user:pass@localhost:5672/&#39;),</span>
 <span class="sd">    &#39;special_function&#39;: math.cos,</span>
 <span class="sd">    &#39;domains&#39;: set(),</span>
@@ -2730,7 +2744,7 @@ In turn these callables are called to build the inputs to the fields of the sett
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">database_dsn</span><span class="o">=</span><span class="s1">&#39;postgres://postgres@localhost:5432/kwargs_db&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; database_dsn=Url(&#39;postgres://postgres@localhost:5432/kwargs_db&#39;)</span>
+<span class="c1">#&gt; database_dsn=MultiHostUrl(&#39;postgres://postgres@localhost:5432/kwargs_db&#39;)</span>
 </code></pre></div>
 <p>By flipping <code>env_settings</code> and <code>init_settings</code>, environment variables now have precedence over <code>__init__</code> kwargs.</p>
 <h3 id="adding-sources">Adding sources<a class="headerlink" href="#adding-sources" title="Permanent link">&para;</a></h3>
@@ -2891,10 +2905,10 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.b425cdc4.min.js"></script>
+      <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
           <script src="../../extra/redirects.js"></script>
