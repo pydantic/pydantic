@@ -13,7 +13,7 @@ See [`tests/benchmarks/`](./tests/benchmarks/) for details.
 
 ## Example of direct usage
 
-_NOTE: You should not need to use pydantic-core directly, instead use pydantic which which in turn uses pydantic-core._
+_NOTE: You should not need to use pydantic-core directly; instead, use pydantic, which in turn uses pydantic-core._
 
 ```py
 from pydantic_core import SchemaValidator, ValidationError
