@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "pydantic-core"
-version = "2.1.1"
+version = "2.1.2"
 dependencies = [
  "ahash",
  "base64",
@@ -340,9 +340,9 @@ dependencies = [
 
 [[package]]
 name = "python3-dll-a"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ae3563d5c06622565866c0fc2cb47a3deda557b3764a8a5853be504dd4fa8f7"
+checksum = "d5f07cd4412be8fa09a721d40007c483981bbe072cd6a21f2e83e04ec8f8343f"
 dependencies = [
  "cc",
 ]
