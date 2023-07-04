@@ -2920,11 +2920,7 @@ in the copied model.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1046</span>
-<span class="normal">1047</span>
-<span class="normal">1048</span>
-<span class="normal">1049</span>
-<span class="normal">1050</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1050</span>
 <span class="normal">1051</span>
 <span class="normal">1052</span>
 <span class="normal">1053</span>
@@ -2991,7 +2987,11 @@ in the copied model.</p>
 <span class="normal">1114</span>
 <span class="normal">1115</span>
 <span class="normal">1116</span>
-<span class="normal">1117</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
+<span class="normal">1117</span>
+<span class="normal">1118</span>
+<span class="normal">1119</span>
+<span class="normal">1120</span>
+<span class="normal">1121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">PydanticDeprecatedSince20</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span>
@@ -5157,11 +5157,7 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1240</span>
-<span class="normal">1241</span>
-<span class="normal">1242</span>
-<span class="normal">1243</span>
-<span class="normal">1244</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1244</span>
 <span class="normal">1245</span>
 <span class="normal">1246</span>
 <span class="normal">1247</span>
@@ -5239,7 +5235,11 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 <span class="normal">1319</span>
 <span class="normal">1320</span>
 <span class="normal">1321</span>
-<span class="normal">1322</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1322</span>
+<span class="normal">1323</span>
+<span class="normal">1324</span>
+<span class="normal">1325</span>
+<span class="normal">1326</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
