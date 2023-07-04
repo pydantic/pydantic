@@ -318,13 +318,7 @@ def test_model_property_attribute_error():
         def a_property(self):
             raise AttributeError('Internal Error')
 
-    with pytest.raises(
-        AttributeError,
-        match=(
-            "'Model' object has an attribute 'a_property' - it looks like the property raised an "
-            "`AttributeError` which this `__getattr__` method has muted, sorry."
-        ),
-    ):
+    with pytest.raises(AttributeError, match='Internal Error'):
         Model().a_property
 
 
