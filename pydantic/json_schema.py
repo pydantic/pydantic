@@ -172,11 +172,7 @@ class _DefinitionsRemapping:
                 return remapping
             definitions_schema = new_definitions_schema
 
-        warnings.warn(
-            'Failed to simplify the JSON schema definitions, this may be a bug in Pydantic', PydanticJsonSchemaWarning
-        )
-        # This will still result in a valid JSON schema, just, the defs refs will be more complex than necessary
-        return _DefinitionsRemapping({}, {})
+        raise PydanticInvalidForJsonSchema('Failed to simplify the JSON schema definitions')
 
     def remap_defs_ref(self, ref: DefsRef) -> DefsRef:
         return self.defs_remapping.get(ref, ref)
@@ -261,6 +257,8 @@ class GenerateJsonSchema:
 
         self.definitions: dict[DefsRef, JsonSchemaValue] = {}
 
+        self.mode: JsonSchemaMode = 'validation'
+
         # The following includes a mapping of a fully-unique defs ref choice to a list of preferred
         # alternatives, which are generally simpler, such as only including the class name.
         # At the end of schema generation, we use these to produce a JSON schema with more human-readable
@@ -271,19 +269,17 @@ class GenerateJsonSchema:
 
         self._schema_type_to_method = self.build_schema_type_to_method()
 
-        # This changes to True after generating a schema, to prevent issues caused by accidental re-use
-        # of a single instance of a schema generator
-        self._used = False
-
-        self.mode: JsonSchemaMode = 'validation'
-
         # When we encounter definitions we need to try to build them immediately
         # so that they are available schemas that reference them
         # But it's possible that that CoreSchema was never going to be used
         # (e.g. because the CoreSchema that references short circuits is JSON schema generation without needing
         #  the reference) so instead of failing altogether if we can't build a definition we
         # store the error raised and re-throw it if we end up needing that def
-        self.core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
+        self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
+
+        # This changes to True after generating a schema, to prevent issues caused by accidental re-use
+        # of a single instance of a schema generator
+        self._used = False
 
     def build_schema_type_to_method(
         self,
@@ -448,7 +444,7 @@ class GenerateJsonSchema:
                 # which is what would happen if we blindly assigned any
                 if json_schema.get('$ref', None) != json_ref:
                     self.definitions[defs_ref] = json_schema
-                    self.core_defs_invalid_for_json_schema.pop(defs_ref, None)
+                    self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
                 json_schema = ref_json_schema
             return json_schema
 
@@ -1650,7 +1646,7 @@ class GenerateJsonSchema:
                 self.generate_inner(definition)
             except PydanticInvalidForJsonSchema as e:
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
-                self.core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
+                self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue
         return self.generate_inner(schema['schema'])
 
@@ -1845,8 +1841,8 @@ class GenerateJsonSchema:
 
     def get_schema_from_definitions(self, json_ref: JsonRef) -> JsonSchemaValue | None:
         def_ref = self.json_to_defs_refs[json_ref]
-        if def_ref in self.core_defs_invalid_for_json_schema:
-            raise self.core_defs_invalid_for_json_schema[def_ref]
+        if def_ref in self._core_defs_invalid_for_json_schema:
+            raise self._core_defs_invalid_for_json_schema[def_ref]
         return self.definitions.get(def_ref, None)
 
     def encode_default(self, dft: Any) -> Any:
@@ -1940,8 +1936,8 @@ class GenerateJsonSchema:
                     if already_visited:
                         return  # prevent recursion on a definition that was already visited
                     defs_ref = self.json_to_defs_refs[json_ref]
-                    if defs_ref in self.core_defs_invalid_for_json_schema:
-                        raise self.core_defs_invalid_for_json_schema[defs_ref]
+                    if defs_ref in self._core_defs_invalid_for_json_schema:
+                        raise self._core_defs_invalid_for_json_schema[defs_ref]
                     try:
                         _add_json_refs(self.definitions[defs_ref])
                     except KeyError as exc:
