@@ -669,6 +669,21 @@ def test_literal_enum_values():
     ]
 
 
+def test_union_enum_values():
+    class MyEnum(Enum):
+        val = 'val'
+
+    class NormalModel(BaseModel):
+        x: MyEnum | int
+
+    class UseEnumValuesModel(BaseModel):
+        model_config = ConfigDict(use_enum_values=True)
+        x: MyEnum | int
+
+    assert NormalModel(x=MyEnum.val).x != 'val'
+    assert UseEnumValuesModel(x=MyEnum.val).x == 'val'
+
+
 def test_enum_raw():
     FooEnum = Enum('FooEnum', {'foo': 'foo', 'bar': 'bar'})
 

@@ -95,6 +95,12 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         update_json_schema(original_schema, updates)
         return json_schema
 
+    strict_python_schema = core_schema.is_instance_schema(enum_type)
+    if use_enum_values:
+        strict_python_schema = core_schema.chain_schema(
+            [strict_python_schema, core_schema.no_info_plain_validator_function(lambda x: x.value)]
+        )
+
     to_enum_validator = core_schema.no_info_plain_validator_function(to_enum)
     if issubclass(enum_type, int):
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
@@ -103,7 +109,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         # Disallow float from JSON due to strict mode
         strict = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.int_schema()),
-            python_schema=core_schema.is_instance_schema(enum_type),
+            python_schema=strict_python_schema,
         )
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
@@ -111,20 +117,18 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
         strict = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.str_schema()),
-            python_schema=core_schema.is_instance_schema(enum_type),
+            python_schema=strict_python_schema,
         )
     elif issubclass(enum_type, float):
         updates['type'] = 'numeric'
         lax = core_schema.chain_schema([core_schema.float_schema(), to_enum_validator])
         strict = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.float_schema()),
-            python_schema=core_schema.is_instance_schema(enum_type),
+            python_schema=strict_python_schema,
         )
     else:
         lax = to_enum_validator
-        strict = core_schema.json_or_python_schema(
-            json_schema=to_enum_validator, python_schema=core_schema.is_instance_schema(enum_type)
-        )
+        strict = core_schema.json_or_python_schema(json_schema=to_enum_validator, python_schema=strict_python_schema)
     return core_schema.lax_or_strict_schema(
         lax_schema=lax, strict_schema=strict, ref=enum_ref, metadata={'pydantic_js_functions': [get_json_schema]}
     )
