@@ -95,10 +95,21 @@ class ValidateCallWrapper:
 
     def __get__(self, obj: Any, objtype: type[Any] | None = None) -> ValidateCallWrapper:
         """Bind the raw function and return another ValidateCallWrapper wrapping that."""
+        if obj is None:
+            try:
+                # Handle the case where a method is accessed as a class attribute
+                return objtype.__getattribute__(objtype, self._name)  # type: ignore
+            except AttributeError:
+                # This will happen the first time the attribute is accessed
+                pass
+
         bound_function = self.raw_function.__get__(obj, objtype)
         result = self.__class__(bound_function, self._config, self._validate_return)
         if self._name is not None:
-            setattr(obj, self._name, result)
+            if obj is not None:
+                setattr(obj, self._name, result)
+            else:
+                setattr(objtype, self._name, result)
         return result
 
     def __set_name__(self, owner: Any, name: str) -> None:
