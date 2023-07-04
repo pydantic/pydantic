@@ -85,6 +85,8 @@ class ValidateCallWrapper:
             self.__return_pydantic_core_schema__ = None
             self.__return_pydantic_validator__ = None
 
+        self._name: str | None = None  # set by __get__, used to set the instance attribute when decorating methods
+
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         res = self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
         if self.__return_pydantic_validator__:
@@ -94,7 +96,13 @@ class ValidateCallWrapper:
     def __get__(self, obj: Any, objtype: type[Any] | None = None) -> ValidateCallWrapper:
         """Bind the raw function and return another ValidateCallWrapper wrapping that."""
         bound_function = self.raw_function.__get__(obj, objtype)
-        return self.__class__(bound_function, self._config, self._validate_return)
+        result = self.__class__(bound_function, self._config, self._validate_return)
+        if self._name is not None:
+            setattr(obj, self._name, result)
+        return result
+
+    def __set_name__(self, owner: Any, name: str) -> None:
+        self._name = name
 
     def __repr__(self) -> str:
         return f'ValidateCallWrapper({self.raw_function})'
