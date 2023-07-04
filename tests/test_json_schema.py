@@ -4437,6 +4437,41 @@ def test_arbitrary_type_json_schema(field_schema, model_schema, instance_of):
     assert Model.model_json_schema() == model_schema
 
 
+@pytest.mark.parametrize(
+    'metadata,json_schema',
+    [
+        (
+            WithJsonSchema({'type': 'float'}),
+            {
+                'properties': {'x': {'anyOf': [{'type': 'float'}, {'type': 'null'}], 'title': 'X'}},
+                'required': ['x'],
+                'title': 'Model',
+                'type': 'object',
+            },
+        ),
+        (
+            Examples({'Custom Example': [1, 2, 3]}),
+            {
+                'properties': {
+                    'x': {
+                        'anyOf': [{'examples': {'Custom Example': [1, 2, 3]}, 'type': 'integer'}, {'type': 'null'}],
+                        'title': 'X',
+                    }
+                },
+                'required': ['x'],
+                'title': 'Model',
+                'type': 'object',
+            },
+        ),
+    ],
+)
+def test_hashable_types(metadata, json_schema):
+    class Model(BaseModel):
+        x: Union[Annotated[int, metadata], None]
+
+    assert Model.model_json_schema() == json_schema
+
+
 def test_root_model():
     class A(RootModel[int]):
         """A Model docstring"""
