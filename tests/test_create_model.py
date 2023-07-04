@@ -516,3 +516,28 @@ def test_create_model_multiple_protected_namespace():
             __config__=ConfigDict(protected_namespaces=('protect_me_', 'also_protect_')),
             also_protect_field=(str, ...),
         )
+
+
+def test_json_schema_with_inner_models_with_duplicate_names():
+    model_a = create_model(
+        'a',
+        inner=(str, ...),
+    )
+    model_b = create_model(
+        'a',
+        outer=(model_a, ...),
+    )
+    assert model_b.model_json_schema() == {
+        '$defs': {
+            'a': {
+                'properties': {'inner': {'title': 'Inner', 'type': 'string'}},
+                'required': ['inner'],
+                'title': 'a',
+                'type': 'object',
+            }
+        },
+        'properties': {'outer': {'$ref': '#/$defs/a'}},
+        'required': ['outer'],
+        'title': 'a',
+        'type': 'object',
+    }

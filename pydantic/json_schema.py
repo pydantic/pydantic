@@ -5,6 +5,8 @@ import inspect
 import math
 import re
 import warnings
+from collections import defaultdict
+from copy import deepcopy
 from dataclasses import is_dataclass
 from enum import Enum
 from typing import (
@@ -120,6 +122,87 @@ CoreModeRef = Tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
 
+@_internal_dataclass.slots_dataclass
+class _DefinitionsRemapping:
+    defs_remapping: dict[DefsRef, DefsRef]
+    json_remapping: dict[JsonRef, JsonRef]
+
+    @staticmethod
+    def from_prioritized_choices(
+        prioritized_choices: dict[DefsRef, list[DefsRef]],
+        defs_to_json: dict[DefsRef, JsonRef],
+        definitions: dict[DefsRef, JsonSchemaValue],
+    ) -> _DefinitionsRemapping:
+        """
+        This function should produce a remapping that replaces complex DefsRef with the simpler ones from the
+        prioritized_choices such that applying the name remapping would result in an equivalent JSON schema.
+        """
+        # We need to iteratively simplify the definitions until we reach a fixed point.
+        # The reason for this is that outer definitions may reference inner definitions that get simplified
+        # into an equivalent reference, and the outer definitions won't be equivalent until we've simplified
+        # the inner definitions.
+        copied_definitions = deepcopy(definitions)
+        definitions_schema = {'$defs': copied_definitions}
+        for _iter in range(100):  # prevent an infinite loop in the case of a bug, 100 iterations should be enough
+            # For every possible remapped DefsRef, collect all schemas that that DefsRef might be used for:
+            schemas_for_alternatives: dict[DefsRef, list[JsonSchemaValue]] = defaultdict(list)
+            for defs_ref in copied_definitions:
+                alternatives = prioritized_choices[defs_ref]
+                for alternative in alternatives:
+                    schemas_for_alternatives[alternative].append(copied_definitions[defs_ref])
+
+            # Deduplicate the schemas for each alternative; the idea is that we only want to remap to a new DefsRef
+            # if it introduces no ambiguity, i.e., there is only one distinct schema for that DefsRef.
+            for defs_ref, schemas in schemas_for_alternatives.items():
+                schemas_for_alternatives[defs_ref] = _deduplicate_schemas(schemas_for_alternatives[defs_ref])
+
+            # Build the remapping
+            defs_remapping: dict[DefsRef, DefsRef] = {}
+            json_remapping: dict[JsonRef, JsonRef] = {}
+            for original_defs_ref in definitions:
+                alternatives = prioritized_choices[original_defs_ref]
+                # Pick the first alternative that has only one schema, since that means there is no collision
+                remapped_defs_ref = next(x for x in alternatives if len(schemas_for_alternatives[x]) == 1)
+                defs_remapping[original_defs_ref] = remapped_defs_ref
+                json_remapping[defs_to_json[original_defs_ref]] = defs_to_json[remapped_defs_ref]
+            remapping = _DefinitionsRemapping(defs_remapping, json_remapping)
+            new_definitions_schema = remapping.remap_json_schema({'$defs': copied_definitions})
+            if definitions_schema == new_definitions_schema:
+                # We've reached the fixed point
+                return remapping
+            definitions_schema = new_definitions_schema
+
+        raise PydanticInvalidForJsonSchema('Failed to simplify the JSON schema definitions')
+
+    def remap_defs_ref(self, ref: DefsRef) -> DefsRef:
+        return self.defs_remapping.get(ref, ref)
+
+    def remap_json_ref(self, ref: JsonRef) -> JsonRef:
+        return self.json_remapping.get(ref, ref)
+
+    def remap_json_schema(self, schema: Any) -> Any:
+        """
+        Recursively update the JSON schema replacing all $refs
+        """
+        if isinstance(schema, str):
+            # Note: this may not really be a JsonRef; we rely on having no collisions between JsonRefs and other strings
+            return self.remap_json_ref(JsonRef(schema))
+        elif isinstance(schema, list):
+            return [self.remap_json_schema(item) for item in schema]
+        elif isinstance(schema, dict):
+            for key, value in schema.items():
+                if key == '$ref':
+                    schema['$ref'] = self.remap_json_ref(JsonRef(schema['$ref']))
+                elif key == '$defs':
+                    schema['$defs'] = {
+                        self.remap_defs_ref(DefsRef(key)): self.remap_json_schema(value)
+                        for key, value in schema['$defs'].items()
+                    }
+                else:
+                    schema[key] = self.remap_json_schema(value)
+        return schema
+
+
 class GenerateJsonSchema:
     """A class for generating JSON schemas.
 
@@ -174,19 +257,17 @@ class GenerateJsonSchema:
 
         self.definitions: dict[DefsRef, JsonSchemaValue] = {}
 
-        # When collisions are detected, we choose a non-colliding name
-        # during generation, but we also track the colliding tag so that it
-        # can be remapped for the first occurrence at the end of the process
-        self.collisions: set[DefsRef] = set()
-        self.defs_ref_fallbacks: dict[CoreModeRef, list[DefsRef]] = {}
+        self.mode: JsonSchemaMode = 'validation'
+
+        # The following includes a mapping of a fully-unique defs ref choice to a list of preferred
+        # alternatives, which are generally simpler, such as only including the class name.
+        # At the end of schema generation, we use these to produce a JSON schema with more human-readable
+        # definitions, which would also work better in a generated OpenAPI client, etc.
+        self._prioritized_defsref_choices: dict[DefsRef, list[DefsRef]] = {}
+        self._collision_counter: dict[str, int] = defaultdict(int)
+        self._collision_index: dict[str, int] = {}
 
         self._schema_type_to_method = self.build_schema_type_to_method()
-
-        # This changes to True after generating a schema, to prevent issues caused by accidental re-use
-        # of a single instance of a schema generator
-        self._used = False
-
-        self.mode: JsonSchemaMode = 'validation'
 
         # When we encounter definitions we need to try to build them immediately
         # so that they are available schemas that reference them
@@ -194,7 +275,11 @@ class GenerateJsonSchema:
         # (e.g. because the CoreSchema that references short circuits is JSON schema generation without needing
         #  the reference) so instead of failing altogether if we can't build a definition we
         # store the error raised and re-throw it if we end up needing that def
-        self.core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
+        self._core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
+
+        # This changes to True after generating a schema, to prevent issues caused by accidental re-use
+        # of a single instance of a schema generator
+        self._used = False
 
     def build_schema_type_to_method(
         self,
@@ -257,7 +342,7 @@ class GenerateJsonSchema:
             self.mode = mode
             self.generate_inner(schema)
 
-        self.resolve_collisions({})
+        definitions_remapping = self._build_definitions_remapping()
 
         refs_map: dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef] = {}
         for key, mode, schema in inputs:
@@ -267,10 +352,13 @@ class GenerateJsonSchema:
                 json_ref = cast(JsonRef, json_schema['$ref'])
                 defs_ref = self.json_to_defs_refs.get(json_ref)
                 if defs_ref is not None:
-                    refs_map[(key, mode)] = defs_ref
+                    remapped = definitions_remapping.remap_defs_ref(defs_ref)
+                    refs_map[(key, mode)] = remapped
 
+        json_schema = {'$defs': self.definitions}
+        json_schema = definitions_remapping.remap_json_schema(json_schema)
         self._used = True
-        return refs_map, _sort_json_schema(self.definitions)  # type: ignore
+        return refs_map, _sort_json_schema(json_schema['$defs'])  # type: ignore
 
     def generate(self, schema: CoreSchema, mode: JsonSchemaMode = 'validation') -> JsonSchemaValue:
         """Generates a JSON schema for a specified schema in a specified mode.
@@ -293,7 +381,7 @@ class GenerateJsonSchema:
                 code='json-schema-already-used',
             )
 
-        json_schema = self.generate_inner(schema)
+        json_schema: JsonSchemaValue = self.generate_inner(schema)
         json_ref_counts = self.get_json_ref_counts(json_schema)
 
         # Remove the top-level $ref if present; note that the _generate method already ensures there are no sibling keys
@@ -309,17 +397,13 @@ class GenerateJsonSchema:
                 json_ref_counts[ref] -= 1
             ref = cast(JsonRef, json_schema.get('$ref'))
 
-        # Remove any definitions that, thanks to $ref-substitution, are no longer present.
-        # I think this should only _possibly_ apply to the root model, though I'm not 100% sure.
-        # It might be safe to remove this logic, but I'm keeping it for now
-        all_json_refs = list(self.json_to_defs_refs.keys())
-        for k in all_json_refs:
-            if json_ref_counts[k] < 1:
-                del self.definitions[self.json_to_defs_refs[k]]
+        self._garbage_collect_definitions(json_schema)
+        definitions_remapping = self._build_definitions_remapping()
 
-        json_schema = self.resolve_collisions(json_schema)
         if self.definitions:
             json_schema['$defs'] = self.definitions
+
+        json_schema = definitions_remapping.remap_json_schema(json_schema)
 
         # For now, we will not set the $schema key. However, if desired, this can be easily added by overriding
         # this method and adding the following line after a call to super().generate(schema):
@@ -360,7 +444,7 @@ class GenerateJsonSchema:
                 # which is what would happen if we blindly assigned any
                 if json_schema.get('$ref', None) != json_ref:
                     self.definitions[defs_ref] = json_schema
-                    self.core_defs_invalid_for_json_schema.pop(defs_ref, None)
+                    self._core_defs_invalid_for_json_schema.pop(defs_ref, None)
                 json_schema = ref_json_schema
             return json_schema
 
@@ -1562,7 +1646,7 @@ class GenerateJsonSchema:
                 self.generate_inner(definition)
             except PydanticInvalidForJsonSchema as e:
                 core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
-                self.core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
+                self._core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
                 continue
         return self.generate_inner(schema['schema'])
 
@@ -1658,109 +1742,33 @@ class GenerateJsonSchema:
         short_ref = ''.join(components)
 
         mode_title = _MODE_TITLE_MAPPING[mode]
-        # It is important that the generated defs_ref values be such that at least one could not
+
+        # It is important that the generated defs_ref values be such that at least one choice will not
         # be generated for any other core_ref. Currently, this should be the case because we include
         # the id of the source type in the core_ref
-        choices = [
-            DefsRef(self.normalize_name(short_ref)),  # name
-            DefsRef(self.normalize_name(short_ref + mode_title)),  # name + mode
-            DefsRef(self.normalize_name(core_ref_no_id)),  # module + qualname
-            DefsRef(self.normalize_name(core_ref_no_id + mode_title)),  # module + qualname + mode
-            DefsRef(self.normalize_name(core_ref)),  # module + qualname + id
-            DefsRef(self.normalize_name(core_ref + mode_title)),  # module + qualname + id + mode
+        name = DefsRef(self.normalize_name(short_ref))
+        name_mode = DefsRef(self.normalize_name(short_ref + mode_title))
+        module_qualname = DefsRef(self.normalize_name(core_ref_no_id))
+        module_qualname_mode = DefsRef(module_qualname + mode_title)
+        module_qualname_id = DefsRef(self.normalize_name(core_ref))
+        occurrence_index = self._collision_index.get(module_qualname_id)
+        if occurrence_index is None:
+            self._collision_counter[module_qualname] += 1
+            occurrence_index = self._collision_index[module_qualname_id] = self._collision_counter[module_qualname]
+
+        module_qualname_occurrence = DefsRef(f'{module_qualname}__{occurrence_index}')
+        module_qualname_occurrence_mode = DefsRef(f'{module_qualname}{mode_title}__{occurrence_index}')
+
+        self._prioritized_defsref_choices[module_qualname_occurrence_mode] = [
+            name,
+            name_mode,
+            module_qualname,
+            module_qualname_mode,
+            module_qualname_occurrence,
+            module_qualname_occurrence_mode,
         ]
 
-        self.defs_ref_fallbacks[core_mode_ref] = choices[1:]
-
-        for choice in choices:
-            if self.defs_to_core_refs.get(choice, core_mode_ref) == core_mode_ref:
-                return choice
-            else:
-                self.collisions.add(choice)
-
-        return choices[-1]  # should never get here if the final choice is guaranteed unique
-
-    def resolve_collisions(self, json_schema: JsonSchemaValue) -> JsonSchemaValue:
-        """This function ensures that any defs_ref's that were involved in collisions
-        (due to simplification of the core_ref) get updated, even if they were the
-        first occurrence of the colliding defs_ref.
-
-        This is intended to prevent confusion where the type that gets the "shortened"
-        ref depends on the order in which the types were visited.
-
-        Args:
-            json_schema: The JSON schema to update.
-
-        Returns:
-            The updated JSON schema.
-        """
-        made_changes = True
-
-        # Note that because the defs ref choices eventually produce values that use the IDs and
-        # should _never_ collide, it should not be possible for this while loop to run forever
-        while made_changes:
-            made_changes = False
-
-            for defs_ref, core_mode_ref in self.defs_to_core_refs.items():
-                if defs_ref not in self.collisions:
-                    continue
-
-                for choice in self.defs_ref_fallbacks[core_mode_ref]:
-                    if choice == defs_ref or choice in self.collisions:
-                        continue
-
-                    if self.defs_to_core_refs.get(choice, core_mode_ref) == core_mode_ref:
-                        json_schema = self.change_defs_ref(defs_ref, choice, json_schema)
-                        made_changes = True
-                        break
-                    else:
-                        self.collisions.add(choice)
-
-                if made_changes:
-                    break
-
-        return json_schema
-
-    def change_defs_ref(self, old: DefsRef, new: DefsRef, json_schema: JsonSchemaValue) -> JsonSchemaValue:
-        """Changes the definitions key for a schema.
-
-        Args:
-            old: The old definitions key.
-            new: The new definitions key.
-            json_schema: The JSON schema to update.
-
-        Returns:
-            The updated JSON schema.
-        """
-        if new == old:
-            return json_schema
-        core_mode_ref = self.defs_to_core_refs[old]
-        old_json_ref = self.core_to_json_refs[core_mode_ref]
-        new_json_ref = JsonRef(self.ref_template.format(model=new))
-
-        self.definitions[new] = self.definitions.pop(old)
-        self.defs_to_core_refs[new] = self.defs_to_core_refs.pop(old)
-        assert self.json_to_defs_refs.pop(old_json_ref) == old
-        self.json_to_defs_refs[new_json_ref] = new
-        self.core_to_defs_refs[core_mode_ref] = new
-        self.core_to_json_refs[core_mode_ref] = new_json_ref
-
-        def walk_replace_json_schema_ref(item: Any) -> Any:
-            """Recursively update the JSON schema to use the new defs_ref."""
-            if isinstance(item, list):
-                return [walk_replace_json_schema_ref(item) for item in item]
-            elif isinstance(item, dict):
-                ref = item.get('$ref')
-                if ref == old_json_ref:
-                    item['$ref'] = new_json_ref
-                return {k: walk_replace_json_schema_ref(v) for k, v in item.items()}
-            else:
-                return item
-
-        for k, v in self.definitions.items():
-            self.definitions[k] = walk_replace_json_schema_ref(v)
-
-        return walk_replace_json_schema_ref(json_schema)
+        return module_qualname_occurrence_mode
 
     def get_cache_defs_ref_schema(self, core_ref: CoreRef) -> tuple[DefsRef, JsonSchemaValue]:
         """This method wraps the get_defs_ref method with some cache-lookup/population logic,
@@ -1833,8 +1841,8 @@ class GenerateJsonSchema:
 
     def get_schema_from_definitions(self, json_ref: JsonRef) -> JsonSchemaValue | None:
         def_ref = self.json_to_defs_refs[json_ref]
-        if def_ref in self.core_defs_invalid_for_json_schema:
-            raise self.core_defs_invalid_for_json_schema[def_ref]
+        if def_ref in self._core_defs_invalid_for_json_schema:
+            raise self._core_defs_invalid_for_json_schema[def_ref]
         return self.definitions.get(def_ref, None)
 
     def encode_default(self, dft: Any) -> Any:
@@ -1927,10 +1935,14 @@ class GenerateJsonSchema:
                     json_refs[json_ref] += 1
                     if already_visited:
                         return  # prevent recursion on a definition that was already visited
-                    def_ref = self.json_to_defs_refs[json_ref]
-                    if def_ref in self.core_defs_invalid_for_json_schema:
-                        raise self.core_defs_invalid_for_json_schema[def_ref]
-                    _add_json_refs(self.definitions[def_ref])
+                    defs_ref = self.json_to_defs_refs[json_ref]
+                    if defs_ref in self._core_defs_invalid_for_json_schema:
+                        raise self._core_defs_invalid_for_json_schema[defs_ref]
+                    try:
+                        _add_json_refs(self.definitions[defs_ref])
+                    except KeyError as exc:
+                        print(exc)
+
                 for v in schema.values():
                     _add_json_refs(v)
             elif isinstance(schema, list):
@@ -1969,6 +1981,30 @@ class GenerateJsonSchema:
         if kind in self.ignored_warning_kinds:
             return None
         return f'{detail} [{kind}]'
+
+    def _build_definitions_remapping(self) -> _DefinitionsRemapping:
+        defs_to_json: dict[DefsRef, JsonRef] = {}
+        for defs_refs in self._prioritized_defsref_choices.values():
+            for defs_ref in defs_refs:
+                json_ref = JsonRef(self.ref_template.format(model=defs_ref))
+                defs_to_json[defs_ref] = json_ref
+
+        return _DefinitionsRemapping.from_prioritized_choices(
+            self._prioritized_defsref_choices, defs_to_json, self.definitions
+        )
+
+    def _garbage_collect_definitions(self, schema: JsonSchemaValue) -> None:
+        visited_defs_refs: set[DefsRef] = set()
+        unvisited_json_refs = _get_all_json_refs(schema)
+        while unvisited_json_refs:
+            next_json_ref = unvisited_json_refs.pop()
+            next_defs_ref = self.json_to_defs_refs[next_json_ref]
+            if next_defs_ref in visited_defs_refs:
+                continue
+            visited_defs_refs.add(next_defs_ref)
+            unvisited_json_refs.update(_get_all_json_refs(self.definitions[next_defs_ref]))
+
+        self.definitions = {k: v for k, v in self.definitions.items() if k in visited_defs_refs}
 
 
 # ##### Start JSON Schema Generation Functions #####
@@ -2140,3 +2176,21 @@ class Examples:
 
     def __hash__(self) -> int:
         return hash(type(self.mode))
+
+
+def _get_all_json_refs(item: Any) -> set[JsonRef]:
+    """Get all the definitions references from a JSON schema."""
+    refs: set[JsonRef] = set()
+    if isinstance(item, dict):
+        for key, value in item.items():
+            if key == '$ref':
+                refs.add(JsonRef(value))
+            elif isinstance(value, dict):
+                refs.update(_get_all_json_refs(value))
+            elif isinstance(value, list):
+                for item in value:
+                    refs.update(_get_all_json_refs(item))
+    elif isinstance(item, list):
+        for item in item:
+            refs.update(_get_all_json_refs(item))
+    return refs
