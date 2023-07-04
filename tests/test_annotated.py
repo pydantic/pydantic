@@ -6,7 +6,7 @@ from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter
 from pydantic.errors import PydanticSchemaGenerationError
 
 NO_VALUE = object()
@@ -86,34 +86,6 @@ def test_annotated(hint_fn, value, expected_repr):
             x: hint = value
 
     assert repr(M.model_fields['x']) == expected_repr
-
-
-@pytest.mark.parametrize(
-    'hint_fn,value,exc_handler',
-    [
-        (
-            lambda: Annotated[int, Field(lt=10), Field(ge=0)],
-            0,
-            pytest.raises(TypeError, match='Field may not be used twice on the same field'),
-        ),
-        (
-            lambda: Annotated[int, Field(lt=10)],
-            Field(ge=0),
-            pytest.raises(TypeError, match='Field may not be used twice on the same field'),
-        ),
-        (
-            lambda: Annotated[int, Field(0)],
-            5,
-            pytest.raises(TypeError, match='Default may not be specified twice on the same field'),
-        ),
-    ],
-)
-def test_annotated_model_exceptions(hint_fn, value, exc_handler):
-    hint = hint_fn()
-    with exc_handler:
-
-        class M(BaseModel):
-            x: hint = value
 
 
 @pytest.mark.parametrize('metadata', [0, 'foo'])
@@ -285,3 +257,33 @@ def test_get_pydantic_core_schema_source_type() -> None:
 
     assert types == {GenericModel[int]}
     types.clear()
+
+
+def test_merge_field_infos_type_adapter() -> None:
+    ta = TypeAdapter(
+        Annotated[
+            int, Field(gt=0), Field(lt=100), Field(gt=1), Field(description='abc'), Field(3), Field(description=None)
+        ]
+    )
+
+    # insert_assert(ta.core_schema)
+    assert ta.core_schema == {'type': 'default', 'schema': {'type': 'int', 'gt': 1, 'lt': 100}, 'default': 3}
+
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {'default': 3, 'exclusiveMaximum': 100, 'exclusiveMinimum': 1, 'type': 'integer'}
+
+
+def test_merge_field_infos_model() -> None:
+    class Model(BaseModel):
+        x: Annotated[
+            int, Field(gt=0), Field(lt=100), Field(gt=1), Field(description='abc'), Field(3), Field(description=None)
+        ] = Field(5)
+
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'properties': {
+            'x': {'default': 5, 'exclusiveMaximum': 100, 'exclusiveMinimum': 1, 'title': 'X', 'type': 'integer'}
+        },
+        'title': 'Model',
+        'type': 'object',
+    }

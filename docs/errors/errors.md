@@ -30,7 +30,7 @@ Each error object contains:
 | `url`    | The URL to further information about the error. |
 
 The first item in the `loc` list will be the field where the error occurred, and if the field is a
-[sub-model](../usage/models.md#recursive-models), subsequent items will be present to indicate the nested location of the error.
+[sub-model](../usage/models.md#nested-models), subsequent items will be present to indicate the nested location of the error.
 
 As a demonstration:
 

@@ -499,7 +499,7 @@ class GenerateSchema:
         elif is_typeddict(obj):
             return self._typed_dict_schema(obj, None)
         elif _typing_extra.is_namedtuple(obj):
-            return self._namedtuple_schema(obj)
+            return self._namedtuple_schema(obj, None)
         elif _typing_extra.is_new_type(obj):
             # NewType, can't use isinstance because it fails <3.7
             return self.generate_schema(obj.__supertype__)
@@ -542,6 +542,8 @@ class GenerateSchema:
         # to resolve by modifying the value returned by `Generic.__class_getitem__`, but that is a dangerous game.
         if _typing_extra.is_dataclass(origin):
             return self._dataclass_schema(obj, origin)
+        if _typing_extra.is_namedtuple(origin):
+            return self._namedtuple_schema(obj, origin)
 
         from_property = self._generate_schema_from_property(origin, obj)
         if from_property is not None:
@@ -841,20 +843,36 @@ class GenerateSchema:
             self.defs.definitions[typed_dict_ref] = schema
             return core_schema.definition_reference_schema(typed_dict_ref)
 
-    def _namedtuple_schema(self, namedtuple_cls: Any) -> core_schema.CallSchema:
+    def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """Generate schema for a NamedTuple."""
-        annotations: dict[str, Any] = get_type_hints_infer_globalns(
-            namedtuple_cls, include_extras=True, localns=self.types_namespace
-        )
-        if not annotations:
-            # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
-            annotations = {k: Any for k in namedtuple_cls._fields}
+        with self.defs.get_schema_or_ref(namedtuple_cls) as (namedtuple_ref, maybe_schema):
+            if maybe_schema is not None:
+                return maybe_schema
+            typevars_map = get_standard_typevars_map(namedtuple_cls)
+            if origin is not None:
+                namedtuple_cls = origin
 
-        arguments_schema = core_schema.arguments_schema(
-            [self._generate_parameter_schema(field_name, annotation) for field_name, annotation in annotations.items()],
-            metadata=build_metadata_dict(js_prefer_positional_arguments=True),
-        )
-        return core_schema.call_schema(arguments_schema, namedtuple_cls)
+            annotations: dict[str, Any] = get_type_hints_infer_globalns(
+                namedtuple_cls, include_extras=True, localns=self.types_namespace
+            )
+            if not annotations:
+                # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
+                annotations = {k: Any for k in namedtuple_cls._fields}
+
+            if typevars_map:
+                annotations = {
+                    field_name: replace_types(annotation, typevars_map)
+                    for field_name, annotation in annotations.items()
+                }
+
+            arguments_schema = core_schema.arguments_schema(
+                [
+                    self._generate_parameter_schema(field_name, annotation)
+                    for field_name, annotation in annotations.items()
+                ],
+                metadata=build_metadata_dict(js_prefer_positional_arguments=True),
+            )
+            return core_schema.call_schema(arguments_schema, namedtuple_cls, ref=namedtuple_ref)
 
     def _generate_parameter_schema(
         self,
@@ -888,7 +906,12 @@ class GenerateSchema:
 
     def _tuple_schema(self, tuple_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`."""
+        typevars_map = get_standard_typevars_map(tuple_type)
         params = get_args(tuple_type)
+
+        if typevars_map:
+            params = tuple(replace_types(param, typevars_map) for param in params)
+
         # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
         # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
         if not params:
@@ -1228,6 +1251,11 @@ class GenerateSchema:
         # expand annotations before we start processing them so that `__prepare_pydantic_annotations` can consume
         # individual items from GroupedMetadata
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
+        non_field_infos, field_infos = [a for a in annotations if not isinstance(a, FieldInfo)], [
+            a for a in annotations if isinstance(a, FieldInfo)
+        ]
+        if field_infos:
+            annotations = [*non_field_infos, FieldInfo.merge_field_infos(*field_infos)]
         idx = -1
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
         if prepare:

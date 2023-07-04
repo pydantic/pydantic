@@ -2144,6 +2144,9 @@ class WithJsonSchema:
         else:
             return self.json_schema
 
+    def __hash__(self) -> int:
+        return hash(type(self.mode))
+
 
 @_internal_dataclass.slots_dataclass
 class Examples:
@@ -2170,6 +2173,9 @@ class Examples:
         examples.update(to_jsonable_python(self.examples))
         json_schema['examples'] = examples
         return json_schema
+
+    def __hash__(self) -> int:
+        return hash(type(self.mode))
 
 
 def _get_all_json_refs(item: Any) -> set[JsonRef]:
