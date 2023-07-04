@@ -653,16 +653,19 @@ def test_do_not_call_repr_on_validate_call() -> None:
 
 def test_methods_are_not_rebound():
     class Thing:
+        def __init__(self, x: int):
+            self.x = x
+
         def a(self, x: int):
-            return x
+            return x + self.x
 
         c = validate_call(a)
 
-    thing = Thing()
+    thing = Thing(1)
     assert thing.a == thing.a
     assert thing.c == thing.c
     assert Thing.c == Thing.c
 
     # Ensure validation is still happening
-    assert thing.c('1') == 1
-    assert Thing.c(thing, '2') == 2
+    assert Thing.c(thing, '2') == 3
+    assert Thing(2).c('3') == 5
