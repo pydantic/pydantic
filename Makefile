@@ -78,7 +78,9 @@ test-examples: .pdm
 
 .PHONY: test-fastapi  ## Run the FastAPI tests with this version of pydantic
 test-fastapi:
-	git clone https://github.com/tiangolo/fastapi.git --single-branch
+	# TODO: Fetch single branch after FastAPI compatible release
+	# git clone https://github.com/tiangolo/fastapi.git --single-branch
+	git clone https://github.com/tiangolo/fastapi.git
 	./tests/test_fastapi.sh
 
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
