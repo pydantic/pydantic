@@ -18,6 +18,7 @@ from typing import (
     Set,
     Type,
     TypeVar,
+    Union,
     get_type_hints,
 )
 from uuid import UUID, uuid4
@@ -667,6 +668,32 @@ def test_literal_enum_values():
             'ctx': {'expected': "<FooEnum.foo: 'foo_value'>"},
         }
     ]
+
+
+def test_strict_enum_values():
+    class MyEnum(Enum):
+        val = 'val'
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_enum_values=True)
+        x: MyEnum
+
+    assert Model.model_validate({'x': MyEnum.val}, strict=True).x == 'val'
+
+
+def test_union_enum_values():
+    class MyEnum(Enum):
+        val = 'val'
+
+    class NormalModel(BaseModel):
+        x: Union[MyEnum, int]
+
+    class UseEnumValuesModel(BaseModel):
+        model_config = ConfigDict(use_enum_values=True)
+        x: Union[MyEnum, int]
+
+    assert NormalModel(x=MyEnum.val).x != 'val'
+    assert UseEnumValuesModel(x=MyEnum.val).x == 'val'
 
 
 def test_enum_raw():
