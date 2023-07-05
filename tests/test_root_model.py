@@ -1,3 +1,4 @@
+import pickle
 from typing import Any, Dict, List, Optional, Union
 
 import pytest
@@ -548,3 +549,15 @@ def test_root_and_data_error():
         match='"RootModel.__init__" accepts either a single positional argument or arbitrary keyword arguments',
     ):
         Model({'value': 42}, other_value='abc')
+
+
+def test_pickle_root_model(create_module):
+    @create_module
+    def module():
+        from pydantic import RootModel
+
+        class MyRootModel(RootModel[str]):
+            pass
+
+    MyRootModel = module.MyRootModel
+    assert MyRootModel(root='abc') == pickle.loads(pickle.dumps(MyRootModel(root='abc')))
