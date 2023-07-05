@@ -70,15 +70,11 @@ except ValidationError as e:
 A few things to note on validators:
 
 * validators are "class methods", so the first argument value they receive is the `UserModel` class, not an instance
-  of `UserModel`.
-* the second argument is always the field value to validate; it can be named as you please
-* you can also add any subset of the following arguments to the signature (the names **must** match):
-  * `values`: a dict containing the name-to-value mapping of any previously-validated fields
-  * `config`: the model config
-  * `field`: the field being validated. Type of object is `pydantic.fields.ModelField`.
-  * `**kwargs`: if provided, this will include the arguments above not explicitly listed in the signature
+    of `UserModel`.
+* the second argument is the field value to validate; it can be named as you please
+* the third argument is an instance of `pydantic.FieldValidationInfo`
 * validators should either return the parsed value or raise a `ValueError` or `AssertionError`
-  (``assert`` statements may be used).
+    (``assert`` statements may be used).
 
 !!! warning
     If you make use of `assert` statements, keep in mind that running
@@ -86,14 +82,13 @@ A few things to note on validators:
     disables `assert` statements, and **validators will stop working**.
 
 * where validators rely on other values, you should be aware that:
+    * Validation is done in the order fields are defined.
+        E.g. in the example above, `password2` has access to `password1` (and `name`),
+        but `password1` does not have access to `password2`. See [Field Ordering](models.md#field-ordering)
+        for more information on how fields are ordered
 
-  * Validation is done in the order fields are defined.
-    E.g. in the example above, `password2` has access to `password1` (and `name`),
-    but `password1` does not have access to `password2`. See [Field Ordering](models.md#field-ordering)
-    for more information on how fields are ordered
-
-  * If validation fails on another field (or that field is missing) it will not be included in `values`, hence
-    `if 'password1' in values and ...` in this example.
+    * If validation fails on another field (or that field is missing) it will not be included in `values`, hence
+        `if 'password1' in values and ...` in this example.
 
 ## Annotated Validators
 
