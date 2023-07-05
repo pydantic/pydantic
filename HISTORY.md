@@ -1,3 +1,13 @@
+## v2.0.2 (2023-07-05)
+
+* Fix bug where round-trip pickling/unpickling a `RootModel` would change the value of `__dict__`, #6457 by @dmontagu
+* Allow single-item discriminated unions, #6405 by @dmontagu
+* Fix issue with union parsing of enums, #6440 by @dmontagu
+* Docs: Fixed `constr` documentation, renamed old `regex` to new `pattern`, #6452 by @miili
+* Change `GenerateJsonSchema.generate_definitions` signature, #6436 by @dmontagu
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0.2)
+
 ## v2.0.1 (2023-07-04)
 
 First patch release of Pydantic V2
