@@ -145,23 +145,27 @@ The following properties have been removed from or changed in `Field`:
 
 ### Changes to dataclasses
 
+Pydantic [dataclasses](usage/dataclasses.md) continue to be useful for enabling the data validation on standard
+dataclasses without having to subclass `BaseModel`. However, we have made some changes to the behavior of Pydantic
+dataclasses in V2:
+
 * When used as fields, dataclasses (Pydantic or vanilla) no longer accept tuples as validation inputs; dicts should be
   used instead.
 * The `__post_init__` in Pydantic dataclasses will now be called _after_ validation, rather than before.
     * As a result, the `__post_init_post_parse__` method would have become redundant, so has been removed.
 * We no longer support `extra='allow'` for Pydantic dataclasses, where extra fields passed to the initializer would be
-  stored as extra attributes on the dataclass. `extra='ignore'` is still supported for the purpose of ignoring
-  unexpected fields while parsing data, they just won't be stored on the instance.
+    stored as extra attributes on the dataclass. `extra='ignore'` is still supported for the purpose of ignoring
+    unexpected fields while parsing data, they just won't be stored on the instance.
 * Pydantic dataclasses no longer have an attribute `__pydantic_model__`, and no longer use an underlying `BaseModel`
-  to perform validation or provide other functionality.
+    to perform validation or provide other functionality.
     * To perform validation, generate a JSON schema, or make use of
-      any other functionality that may have required `__pydantic_model__` in V1, you should now wrap the dataclass
-      with a `TypeAdapter` (discussed more below) and make use of its methods.
-    * [TODO: Add link to TypeAdapter documentation. You can find example usage in `tests/test_type_adapter.py`.]
+        any other functionality that may have required `__pydantic_model__` in V1, you should now wrap the dataclass
+        with a [`TypeAdapter`](usage/models.md#typeadapter) ([discussed more below](#introduction-of-typeadapter)) and
+        make use of its methods.
 * In Pydantic V1, if you used a vanilla (i.e., non-Pydantic) dataclass as a field, the config of the parent type would
-  be used as though it was the config for the dataclass itself as well. In Pydantic V2, this is no longer the case.
-    * [TODO: Need to specify how to override the config used for vanilla dataclass; possibly need to add functionality?]
-
+    be used as though it was the config for the dataclass itself as well. In Pydantic V2, this is no longer the case.
+    * In Pydantic V2, to override the config like you would with a `BaseModel`, you can use the `config` parameter
+        on the `dataclass` decorator. See [Dataclass Config](usage/dataclasses.md#dataclass-config) for examples.
 
 ### Changes to config
 
@@ -589,10 +593,11 @@ Pydantic V1 had weak support for validating or serializing non-`BaseModel` types
 To work with them, you had to either create a "root" model or use the utility functions in `pydantic.tools`
 (namely, `parse_obj_as` and `schema_of`).
 
-In Pydantic V2 this is _a lot_ easier: the `TypeAdapter` class lets you create an object with methods for validating,
-serializing, and producing JSON schemas for arbitrary types. This serves as a complete replacement for `parse_obj_as`
-and `schema_of` (which are now deprecated), and also covers some of the use cases of "root" models
-(`RootModel`, discussed above, covers the others).
+In Pydantic V2 this is _a lot_ easier: the [`TypeAdapter`](usage/models.md#typeadapter) class lets you create an object
+with methods for validating, serializing, and producing JSON schemas for arbitrary types.
+This serves as a complete replacement for `parse_obj_as` and `schema_of` (which are now deprecated),
+and also covers some of the use cases of "root" models. ([`RootModel`](usage/models.md#rootmodel-and-custom-root-types),
+[discussed above](#changes-to-pydanticbasemodel), covers the others.)
 
 ```python
 from typing import List
