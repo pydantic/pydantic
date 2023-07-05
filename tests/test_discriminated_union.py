@@ -13,22 +13,49 @@ from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.errors import PydanticUserError
 
 
-def test_discriminated_union_only_union():
+def test_discriminated_union_type():
     with pytest.raises(
-        TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
+        TypeError, match="'str' is not a valid discriminated union variant; should be a `BaseModel` or `dataclass`"
     ):
 
         class Model(BaseModel):
             x: str = Field(..., discriminator='qwe')
 
 
-def test_discriminated_union_single_variant():
-    with pytest.raises(
-        TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
-    ):
+@pytest.mark.parametrize('union', [True, False])
+def test_discriminated_single_variant(union):
+    class InnerModel(BaseModel):
+        qwe: Literal['qwe']
+        y: int
 
-        class Model(BaseModel):
-            x: Union[str] = Field(..., discriminator='qwe')
+    class Model(BaseModel):
+        if union:
+            x: Union[InnerModel] = Field(..., discriminator='qwe')
+        else:
+            x: InnerModel = Field(..., discriminator='qwe')
+
+    assert Model(x={'qwe': 'qwe', 'y': 1}).x.qwe == 'qwe'
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x={'qwe': 'asd', 'y': 'a'})  # note: incorrect type of "y" is not reported due to discriminator failure
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'discriminator': "'qwe'", 'expected_tags': "'qwe'", 'tag': 'asd'},
+            'input': {'qwe': 'asd', 'y': 'a'},
+            'loc': ('x',),
+            'msg': "Input tag 'asd' found using 'qwe' does not match any of the expected " "tags: 'qwe'",
+            'type': 'union_tag_invalid',
+        }
+    ]
+
+
+def test_discriminated_union_single_variant():
+    class InnerModel(BaseModel):
+        qwe: Literal['qwe']
+
+    class Model(BaseModel):
+        x: Union[InnerModel] = Field(..., discriminator='qwe')
+
+    assert Model(x={'qwe': 'qwe'}).x.qwe == 'qwe'
 
 
 def test_discriminated_union_invalid_type():
@@ -812,15 +839,6 @@ def test_invalid_discriminated_union_type() -> None:
 
         class Model(BaseModel):
             pet: Union[Cat, Dog, str] = Field(discriminator='pet_type')
-
-
-def test_single_item_union_error() -> None:
-    fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['only_choice']))}
-    schema = core_schema.union_schema([core_schema.typed_dict_schema(fields=fields)])
-    with pytest.raises(
-        TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
-    ):
-        apply_discriminator(schema, 'kind')
 
 
 def test_invalid_alias() -> None:
