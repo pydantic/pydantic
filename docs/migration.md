@@ -479,26 +479,18 @@ In Pydantic V2, we recognize that the value is an instance of one of the cases a
 
 Pydantic V2 changes some of the logic for specifying whether a field annotated as `Optional` is required
 (i.e., has no default value) or not (i.e., has a default value of `None`), and now more closely matches the
-behavior of `dataclasses`.
+behavior of `dataclasses`. Similarly, fields annotated as `Any` no longer have a default value of `None`.
 
 The following table describes the behavior of field annotations in V2:
 
-| State                        | Field Definition           |
-|------------------------------|----------------------------|
-| Required, cannot be None     | `f1: str`              |
-| Required, can be None        | `f2: Optional[str]`        |
-| Not required, can be None    | `f3: Optional[str] = None` |
-| Not required, cannot be None | `f4: str = 'Foobar'`       |
-
-
-
-| Required | Can be `None` | Field Definition |
-|----------|---------------|------------------|
-| ✔        | X             | `f1: str`        |
-| ✔         | ✔             | `f2: Optional[str]`        |
-| X        | ✔             | `f3: Optional[str] = None` |
-| X        | X             | `f4: str = 'Foobar'`       |
-
+| State                                            | Field Definition           |
+|--------------------------------------------------|----------------------------|
+| Required, cannot be `None`                       | `f1: str`                  |
+| Required, can be `None`                          | `f2: Optional[str]`        |
+| Not required, can be `None`                      | `f3: Optional[str] = None` |
+| Not required, cannot be `None`                   | `f4: str = 'Foobar'`       |
+| Required, can be any type (including `None`)     | `f5: Any`                  |
+| Not required, can be any type (including `None`) | `f6: Any = None`           |
 
 
 !!! note
