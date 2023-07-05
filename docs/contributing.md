@@ -89,8 +89,8 @@ Run tests and linting locally to make sure everything is working as expected.
 ```bash
 # Run automated code formatting and linting
 make format
-# Pydantic uses black and pydantic
-# (https://github.com/ambv/black, https://github.com/charliermarsh/pydantic)
+# Pydantic uses black and ruff
+# (https://github.com/ambv/black, https://github.com/charliermarsh/ruff)
 
 # Run tests and linting
 make
