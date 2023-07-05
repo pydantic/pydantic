@@ -477,11 +477,35 @@ In Pydantic V2, we recognize that the value is an instance of one of the cases a
 
 #### Required, optional, and nullable fields
 
-Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields. In Pydantic V2, these concepts are
-more clearly defined.
+Pydantic V2 introduces stricter definitions for specifying if a field is `required` or `optional` – more closely
+matching the behavior `dataclasses`.
 
-Pydantic V2 will move to match `dataclasses`, thus you may explicitly specify a field as `required` or `optional` and whether the field accepts `None` or not.
+In V2, fields are specified as follows:
 
+| State                        | Field Definition           |
+|------------------------------|----------------------------|
+| Required, cannot be None     | `f1: str`              |
+| Required, can be None        | `f2: Optional[str]`        |
+| Not required, can be None    | `f3: Optional[str] = None` |
+| Not required, cannot be None | `f4: str = 'Foobar'`       |
+
+
+
+| Required | Can be `None` | Field Definition |
+|----------|---------------|------------------|
+| ✔        | X             | `f1: str`        |
+| ✔         | ✔             | `f2: Optional[str]`        |
+| X        | ✔             | `f3: Optional[str] = None` |
+| X        | X             | `f4: str = 'Foobar'`       |
+
+
+
+!!! note
+    A field annotated as `typing.Optional[T]` will be required, and will allow for a value of `None`.
+    It does not mean that the field has a default value of `None`. _(This is a breaking change from V1.)_
+
+
+Code example demonstrating the above:
 ```py
 from typing import Optional
 
