@@ -704,6 +704,7 @@ which may be installed separately if needed.
 | `pydantic.error_wrappers.ValidationError` | `pydantic.ValidationError` |
 | `pydantic.utils.to_camel` | `pydantic.alias_generators.to_pascal` |
 | `pydantic.utils.to_lower_camel` | `pydantic.alias_generators.to_camel` |
+| `pydantic.PyObject` | [`pydantic.ImportString`](usage/types/string_types/#importstring) |
 
 ## Deprecated and moved in Pydantic V2
 
@@ -747,7 +748,6 @@ which may be installed separately if needed.
 - `pydantic.NoneStr`
 - `pydantic.NoneStrBytes`
 - `pydantic.Protocol`
-- `pydantic.PyObject`
 - `pydantic.Required`
 - `pydantic.StrBytes`
 - `pydantic.compiled`

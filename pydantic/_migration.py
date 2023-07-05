@@ -10,6 +10,8 @@ MOVED_IN_V2 = {
     'pydantic.error_wrappers:ValidationError': 'pydantic:ValidationError',
     'pydantic.utils:to_camel': 'pydantic.alias_generators:to_pascal',
     'pydantic.utils:to_lower_camel': 'pydantic.alias_generators:to_camel',
+    'pydantic:PyObject': 'pydantic.types:ImportString',
+    'pydantic.types:PyObject': 'pydantic.types:ImportString',
 }
 
 DEPRECATED_MOVED_IN_V2 = {
@@ -56,7 +58,6 @@ REMOVED_IN_V2 = {
     'pydantic:NoneStr',
     'pydantic:NoneStrBytes',
     'pydantic:Protocol',
-    'pydantic:PyObject',
     'pydantic:Required',
     'pydantic:StrBytes',
     'pydantic:compiled',
@@ -186,7 +187,6 @@ REMOVED_IN_V2 = {
     'pydantic.types:NoneBytes',
     'pydantic.types:NoneStr',
     'pydantic.types:NoneStrBytes',
-    'pydantic.types:PyObject',
     'pydantic.types:StrBytes',
     'pydantic.typing:evaluate_forwardref',
     'pydantic.typing:AbstractSetIntStr',
