@@ -2345,7 +2345,8 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 
           <details class="quote">
             <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">129</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">128</span>
+<span class="normal">129</span>
 <span class="normal">130</span>
 <span class="normal">131</span>
 <span class="normal">132</span>
@@ -2387,8 +2388,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">_parent_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">_parent_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Initializes the TypeAdapter object.&quot;&quot;&quot;</span>
     <span class="n">config_wrapper</span> <span class="o">=</span> <span class="n">_config</span><span class="o">.</span><span class="n">ConfigWrapper</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
@@ -2653,7 +2653,8 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">266</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">265</span>
+<span class="normal">266</span>
 <span class="normal">267</span>
 <span class="normal">268</span>
 <span class="normal">269</span>
@@ -2694,8 +2695,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 <span class="normal">304</span>
 <span class="normal">305</span>
 <span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_json</span><span class="p">(</span>
+<span class="normal">307</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">__instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -2950,7 +2950,8 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">222</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">221</span>
+<span class="normal">222</span>
 <span class="normal">223</span>
 <span class="normal">224</span>
 <span class="normal">225</span>
@@ -2991,8 +2992,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 <span class="normal">260</span>
 <span class="normal">261</span>
 <span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_python</span><span class="p">(</span>
+<span class="normal">263</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_python</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">__instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3123,7 +3123,8 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">210</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">209</span>
+<span class="normal">210</span>
 <span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span>
@@ -3132,8 +3133,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 <span class="normal">216</span>
 <span class="normal">217</span>
 <span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Some</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">219</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Some</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the default value for the wrapped type.</span>
 
 <span class="sd">    Args:</span>
@@ -3266,7 +3266,8 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">310</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">309</span>
+<span class="normal">310</span>
 <span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
@@ -3285,8 +3286,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 <span class="normal">326</span>
 <span class="normal">327</span>
 <span class="normal">328</span>
-<span class="normal">329</span>
-<span class="normal">330</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
+<span class="normal">329</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -3452,12 +3452,18 @@ definitions in the output JSON schema.</p>
     <tbody>
         <tr>
           <td>
-                <code>tuple[dict[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>], <span title="pydantic.json_schema.DefsRef">DefsRef</span>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
+                <code>tuple[dict[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The first item contains the mapping of key + mode to a definitions reference, which will be a key
-of the $defs mapping in the JSON schema included as the second member of the returned tuple.</p>
+              <p>A tuple where:</p>
+<ul>
+<li>The first element is a dictionary whose keys are tuples of JSON schema key type and JSON mode, and
+    whose values are the JSON schema corresponding to that pair of inputs. (These schemas may have
+    JsonRef references to definitions that are defined in the second returned element.)</li>
+<li>The second element is a JSON schema containing all definitions referenced in the first returned
+    element, along with the optional title and description keys.</li>
+</ul>
             </div>
           </td>
         </tr>
@@ -3466,7 +3472,8 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">332</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">331</span>
+<span class="normal">332</span>
 <span class="normal">333</span>
 <span class="normal">334</span>
 <span class="normal">335</span>
@@ -3506,7 +3513,12 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 <span class="normal">369</span>
 <span class="normal">370</span>
 <span class="normal">371</span>
-<span class="normal">372</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">json_schemas</span><span class="p">(</span>
     <span class="n">__inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3515,7 +3527,7 @@ of the $defs mapping in the JSON schema included as the second member of the ret
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">GenerateJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">],</span> <span class="n">DefsRef</span><span class="p">],</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">],</span> <span class="n">JsonSchemaValue</span><span class="p">],</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a JSON schema including definitions from multiple type adapters.</span>
 
 <span class="sd">    Args:</span>
@@ -3529,14 +3541,20 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 <span class="sd">        schema_generator: The generator class used for creating the schema.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        The first item contains the mapping of key + mode to a definitions reference, which will be a key</span>
-<span class="sd">            of the $defs mapping in the JSON schema included as the second member of the returned tuple.</span>
+<span class="sd">        A tuple where:</span>
+
+<span class="sd">            - The first element is a dictionary whose keys are tuples of JSON schema key type and JSON mode, and</span>
+<span class="sd">                whose values are the JSON schema corresponding to that pair of inputs. (These schemas may have</span>
+<span class="sd">                JsonRef references to definitions that are defined in the second returned element.)</span>
+<span class="sd">            - The second element is a JSON schema containing all definitions referenced in the first returned</span>
+<span class="sd">                element, along with the optional title and description keys.</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
 
     <span class="n">inputs</span> <span class="o">=</span> <span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">adapter</span><span class="o">.</span><span class="n">core_schema</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">adapter</span> <span class="ow">in</span> <span class="n">__inputs</span><span class="p">]</span>
 
-    <span class="n">key_map</span><span class="p">,</span> <span class="n">definitions</span> <span class="o">=</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate_definitions</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="n">json_schemas_map</span><span class="p">,</span> <span class="n">definitions</span> <span class="o">=</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate_definitions</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
 
     <span class="n">json_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">definitions</span><span class="p">:</span>
@@ -3546,7 +3564,7 @@ of the $defs mapping in the JSON schema included as the second member of the ret
     <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
         <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
 
-    <span class="k">return</span> <span class="n">key_map</span><span class="p">,</span> <span class="n">json_schema</span>
+    <span class="k">return</span> <span class="n">json_schemas_map</span><span class="p">,</span> <span class="n">json_schema</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -3649,7 +3667,8 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">195</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">194</span>
+<span class="normal">195</span>
 <span class="normal">196</span>
 <span class="normal">197</span>
 <span class="normal">198</span>
@@ -3661,8 +3680,7 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 <span class="normal">204</span>
 <span class="normal">205</span>
 <span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_json</span><span class="p">(</span>
+<span class="normal">207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">__data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a JSON string or bytes against the model.</span>
@@ -3798,7 +3816,8 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">174</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">173</span>
+<span class="normal">174</span>
 <span class="normal">175</span>
 <span class="normal">176</span>
 <span class="normal">177</span>
@@ -3816,8 +3835,7 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 <span class="normal">189</span>
 <span class="normal">190</span>
 <span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_python</span><span class="p">(</span>
+<span class="normal">192</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_python</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">__object</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
