@@ -477,8 +477,9 @@ In Pydantic V2, we recognize that the value is an instance of one of the cases a
 
 #### Required, optional, and nullable fields
 
-Pydantic V2 introduces stricter definitions for specifying if a field is `required` or `optional` – more closely
-matching the behavior `dataclasses`.
+Pydantic V2 changes some of the logic for specifying whether a field annotated as `Optional` is required
+(i.e., has no default value) or not (i.e., has a default value of `None`), and now more closely matches the
+behavior of `dataclasses`.
 
 In V2, fields are specified as follows:
 
