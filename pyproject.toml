@@ -156,7 +156,7 @@ filterwarnings = [
 [tool.hooky]
 assignees = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt']
 reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt']
-require_change_file = false
+require_change_file = true
 
 [tool.ruff]
 line-length = 120
