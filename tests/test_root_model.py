@@ -518,6 +518,24 @@ def test_mixed_discriminated_union(data):
     assert Model(**data).model_dump() == data
 
 
+def test_list_rootmodel():
+    class A(BaseModel):
+        type: Literal['a']
+        a: str
+
+    class B(BaseModel):
+        type: Literal['b']
+        b: str
+
+    class D(RootModel[Annotated[Union[A, B], Field(discriminator='type')]]):
+        pass
+
+    LD = RootModel[List[D]]
+
+    obj = LD.model_validate([{'type': 'a', 'a': 'a'}, {'type': 'b', 'b': 'b'}])
+    assert obj.model_dump() == [{'type': 'a', 'a': 'a'}, {'type': 'b', 'b': 'b'}]
+
+
 def test_root_and_data_error():
     class BModel(BaseModel):
         value: int
