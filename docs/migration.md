@@ -481,7 +481,7 @@ Pydantic V2 changes some of the logic for specifying whether a field annotated a
 (i.e., has no default value) or not (i.e., has a default value of `None`), and now more closely matches the
 behavior of `dataclasses`.
 
-In V2, fields are specified as follows:
+The following table describes the behavior of field annotations in V2:
 
 | State                        | Field Definition           |
 |------------------------------|----------------------------|
