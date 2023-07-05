@@ -692,6 +692,14 @@ which may be installed separately if needed.
 * [Color Types](usage/types/extra_types/color_types.md)
 * [Payment Card Numbers](usage/types/extra_types/payment_cards.md)
 
+### `PyObject` replaced with `ImportString`
+
+The type `PyObject` has been replaced with `ImportString`, which is a string that can be imported as a module.
+There are some subtle differences between how values are validated for the two types, so if you were using `PyObject`
+in Pydantic V1, you may need to make some changes beyond just changing the name of the type.
+
+See the [`ImportString` docs](usage/types/string_types.md#importstring) for more information.
+
 ## Moved in Pydantic V2
 
 | Pydantic V1 | Pydantic V2 |
@@ -704,7 +712,6 @@ which may be installed separately if needed.
 | `pydantic.error_wrappers.ValidationError` | `pydantic.ValidationError` |
 | `pydantic.utils.to_camel` | `pydantic.alias_generators.to_pascal` |
 | `pydantic.utils.to_lower_camel` | `pydantic.alias_generators.to_camel` |
-| `pydantic.PyObject` | [`pydantic.ImportString`](usage/types/string_types/#importstring) |
 
 ## Deprecated and moved in Pydantic V2
 
@@ -748,6 +755,7 @@ which may be installed separately if needed.
 - `pydantic.NoneStr`
 - `pydantic.NoneStrBytes`
 - `pydantic.Protocol`
+- `pydantic.PyObject`
 - `pydantic.Required`
 - `pydantic.StrBytes`
 - `pydantic.compiled`
