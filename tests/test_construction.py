@@ -353,6 +353,18 @@ def test_pickle_undefined(create_module):
     assert not hasattr(m3, '_foo_')
 
 
+def test_pickle_root_model(create_module):
+    @create_module
+    def module():
+        from pydantic import RootModel
+
+        class MyRootModel(RootModel[str]):
+            pass
+
+    MyRootModel = module.MyRootModel
+    assert MyRootModel(root='abc') == pickle.loads(pickle.dumps(MyRootModel(root='abc')))
+
+
 def test_copy_undefined(ModelTwo, copy_method):
     m = ModelTwo(a=24, d=Model(a='123.45'))
     m2 = copy_method(m)

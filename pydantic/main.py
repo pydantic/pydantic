@@ -782,10 +782,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         }
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
-        _object_setattr(self, '__dict__', state['__dict__'])
         _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
         _object_setattr(self, '__pydantic_extra__', state['__pydantic_extra__'])
         _object_setattr(self, '__pydantic_private__', state['__pydantic_private__'])
+        _object_setattr(self, '__dict__', state['__dict__'])
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, BaseModel):
