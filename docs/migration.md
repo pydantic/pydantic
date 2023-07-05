@@ -694,9 +694,10 @@ which may be installed separately if needed.
 
 ### `PyObject` replaced with `ImportString`
 
-The type `PyObject` has been replaced with `ImportString`, which is a string that can be imported as a module.
-There are some subtle differences between how values are validated for the two types, so if you were using `PyObject`
-in Pydantic V1, you may need to make some changes beyond just changing the name of the type.
+The type `PyObject` has been replaced with `ImportString`, which is a string that represents a module or module
+attribute. While these two types are very similar, there are some subtle differences between how values are validated
+for the two types, so if you were using `PyObject` in Pydantic V1 you may need to make some changes beyond just
+changing the name of the type.
 
 See the [`ImportString` docs](usage/types/string_types.md#importstring) for more information.
 
