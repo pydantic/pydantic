@@ -430,8 +430,8 @@ additional = ""
 defined_in = "JSON Schema Core"
 notes = "If the type has values declared for the constraints, they are included as validations. See the mapping for `constr` below."
 
-["constr(regex='^text$', min_length=2, max_length=10)"]
-py_type = "constr(regex='^text$', min_length=2, max_length=10)"
+["constr(pattern='^text$', min_length=2, max_length=10)"]
+py_type = "constr(pattern='^text$', min_length=2, max_length=10)"
 json_type = "string"
 defined_in = "JSON Schema Validation"
 notes = "Any argument not passed to the function (not defined) will not be included in the schema."
