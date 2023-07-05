@@ -532,6 +532,9 @@ def test_list_rootmodel():
 
     RootModel[List[D]]
 
+    obj = LD.model_validate([{'type': 'a', 'a': 'a'}, {'type': 'b', 'b': 'b'}])
+    assert obj.model_dump() == [{'type': 'a', 'a': 'a'}, {'type': 'b', 'b': 'b'}]
+
 
 def test_root_and_data_error():
     class BModel(BaseModel):
