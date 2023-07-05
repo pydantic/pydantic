@@ -530,7 +530,7 @@ def test_list_rootmodel():
     class D(RootModel[Annotated[Union[A, B], Field(discriminator='type')]]):
         pass
 
-    RootModel[List[D]]
+    LD = RootModel[List[D]]
 
     obj = LD.model_validate([{'type': 'a', 'a': 'a'}, {'type': 'b', 'b': 'b'}])
     assert obj.model_dump() == [{'type': 'a', 'a': 'a'}, {'type': 'b', 'b': 'b'}]
