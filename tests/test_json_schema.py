@@ -1426,12 +1426,15 @@ def test_schema_from_models():
         name: str
         ingredients: List[Ingredient]
 
-    keys_map, model_schema = models_json_schema(
+    json_schemas_map, model_schema = models_json_schema(
         [(Model, 'validation'), (Pizza, 'validation')],
         title='Multi-model schema',
         description='Single JSON Schema with multiple definitions',
     )
-    assert keys_map == {(Pizza, 'validation'): 'Pizza', (Model, 'validation'): 'Model'}
+    assert json_schemas_map == {
+        (Pizza, 'validation'): {'$ref': '#/$defs/Pizza'},
+        (Model, 'validation'): {'$ref': '#/$defs/Model'},
+    }
     assert model_schema == {
         'title': 'Multi-model schema',
         'description': 'Single JSON Schema with multiple definitions',
@@ -1496,7 +1499,10 @@ def test_schema_with_refs():
         c: Bar
 
     keys_map, model_schema = models_json_schema([(Bar, 'validation'), (Baz, 'validation')], ref_template=ref_template)
-    assert keys_map == {(Bar, 'validation'): 'Bar', (Baz, 'validation'): 'Baz'}
+    assert keys_map == {
+        (Bar, 'validation'): {'$ref': '#/components/schemas/Bar'},
+        (Baz, 'validation'): {'$ref': '#/components/schemas/Baz'},
+    }
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -1534,7 +1540,10 @@ def test_schema_with_custom_ref_template():
     keys_map, model_schema = models_json_schema(
         [(Bar, 'validation'), (Baz, 'validation')], ref_template='/schemas/{model}.json#/'
     )
-    assert keys_map == {(Bar, 'validation'): 'Bar', (Baz, 'validation'): 'Baz'}
+    assert keys_map == {
+        (Bar, 'validation'): {'$ref': '/schemas/Bar.json#/'},
+        (Baz, 'validation'): {'$ref': '/schemas/Baz.json#/'},
+    }
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -2377,7 +2386,7 @@ def test_dataclass():
         a: bool
 
     assert models_json_schema([(Model, 'validation')]) == (
-        {(Model, 'validation'): 'Model'},
+        {(Model, 'validation'): {'$ref': '#/$defs/Model'}},
         {
             '$defs': {
                 'Model': {
@@ -4998,3 +5007,26 @@ def test_multiple_models_with_same_qualname():
         'title': 'B',
         'type': 'object',
     }
+
+
+def test_generate_definitions_for_no_ref_schemas():
+    decimal_schema = TypeAdapter(Decimal).core_schema
+
+    class Model(BaseModel):
+        pass
+
+    result = GenerateJsonSchema().generate_definitions(
+        [
+            ('Decimal', 'validation', decimal_schema),
+            ('Decimal', 'serialization', decimal_schema),
+            ('Model', 'validation', Model.__pydantic_core_schema__),
+        ]
+    )
+    assert result == (
+        {
+            ('Decimal', 'serialization'): {'type': 'string'},
+            ('Decimal', 'validation'): {'anyOf': [{'type': 'number'}, {'type': 'string'}]},
+            ('Model', 'validation'): {'$ref': '#/$defs/Model'},
+        },
+        {'Model': {'properties': {}, 'title': 'Model', 'type': 'object'}},
+    )

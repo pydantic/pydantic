@@ -309,7 +309,7 @@ class GenerateJsonSchema:
 
     def generate_definitions(
         self, inputs: Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema]]
-    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef], dict[DefsRef, JsonSchemaValue]]:
+    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], dict[DefsRef, JsonSchemaValue]]:
         """Generates JSON schema definitions from a list of core schemas, pairing the generated definitions with a
         mapping that links the input keys to the definition references.
 
@@ -321,12 +321,13 @@ class GenerateJsonSchema:
                 - The third element is a core schema.
 
         Returns:
-            A sequence of tuples, where:
+            A tuple where:
 
                 - The first element is a dictionary whose keys are tuples of JSON schema key type and JSON mode, and
-                    whose values are definition references.
-                - The second element is a dictionary whose keys are definition references, and whose values are
-                    JSON schema definitions.
+                    whose values are the JSON schema corresponding to that pair of inputs. (These schemas may have
+                    JsonRef references to definitions that are defined in the second returned element.)
+                - The second element is a dictionary whose keys are definition references for the JSON schemas
+                    from the first returned element, and whose values are the actual JSON schema definitions.
 
         Raises:
             PydanticUserError: Raised if the JSON schema generator has already been used to generate a JSON schema.
@@ -344,21 +345,16 @@ class GenerateJsonSchema:
 
         definitions_remapping = self._build_definitions_remapping()
 
-        refs_map: dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef] = {}
+        json_schemas_map: dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef] = {}
         for key, mode, schema in inputs:
             self.mode = mode
             json_schema = self.generate_inner(schema)
-            if '$ref' in json_schema:
-                json_ref = cast(JsonRef, json_schema['$ref'])
-                defs_ref = self.json_to_defs_refs.get(json_ref)
-                if defs_ref is not None:
-                    remapped = definitions_remapping.remap_defs_ref(defs_ref)
-                    refs_map[(key, mode)] = remapped
+            json_schemas_map[(key, mode)] = definitions_remapping.remap_json_schema(json_schema)
 
         json_schema = {'$defs': self.definitions}
         json_schema = definitions_remapping.remap_json_schema(json_schema)
         self._used = True
-        return refs_map, _sort_json_schema(json_schema['$defs'])  # type: ignore
+        return json_schemas_map, _sort_json_schema(json_schema['$defs'])  # type: ignore
 
     def generate(self, schema: CoreSchema, mode: JsonSchemaMode = 'validation') -> JsonSchemaValue:
         """Generates a JSON schema for a specified schema in a specified mode.
@@ -2045,7 +2041,7 @@ def models_json_schema(
     description: str | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], DefsRef], JsonSchemaValue]:
+) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], JsonSchemaValue], JsonSchemaValue]:
     """Utility function to generate a JSON Schema for multiple models.
 
     Args:
@@ -2057,14 +2053,16 @@ def models_json_schema(
         schema_generator: The schema generator to use for generating the JSON Schema.
 
     Returns:
-        A 2-tuple, where:
-            - The first element is a dictionary whose keys are tuples of a JSON schema key type and mode, and
-                whose values are `DefsRef`.
-            - The second element is the generated JSON Schema.
+        A tuple where:
+            - The first element is a dictionary whose keys are tuples of JSON schema key type and JSON mode, and
+                whose values are the JSON schema corresponding to that pair of inputs. (These schemas may have
+                JsonRef references to definitions that are defined in the second returned element.)
+            - The second element is a JSON schema containing all definitions referenced in the first returned
+                    element, along with the optional title and description keys.
     """
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     inputs = [(m, mode, m.__pydantic_core_schema__) for m, mode in models]
-    key_map, definitions = instance.generate_definitions(inputs)
+    json_schemas_map, definitions = instance.generate_definitions(inputs)
 
     json_schema: dict[str, Any] = {}
     if definitions:
@@ -2074,7 +2072,7 @@ def models_json_schema(
     if description:
         json_schema['description'] = description
 
-    return key_map, json_schema
+    return json_schemas_map, json_schema
 
 
 # ##### End JSON Schema Generation Functions #####

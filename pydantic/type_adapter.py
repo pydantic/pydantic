@@ -15,7 +15,6 @@ from ._internal import _config, _core_utils, _discriminated_union, _generate_sch
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
-    DefsRef,
     GenerateJsonSchema,
     JsonSchemaKeyT,
     JsonSchemaMode,
@@ -338,7 +337,7 @@ class TypeAdapter(Generic[T]):
         description: str | None = None,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef], JsonSchemaValue]:
+    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], JsonSchemaValue]:
         """Generate a JSON schema including definitions from multiple type adapters.
 
         Args:
@@ -352,14 +351,20 @@ class TypeAdapter(Generic[T]):
             schema_generator: The generator class used for creating the schema.
 
         Returns:
-            The first item contains the mapping of key + mode to a definitions reference, which will be a key
-                of the $defs mapping in the JSON schema included as the second member of the returned tuple.
+            A tuple where:
+
+                - The first element is a dictionary whose keys are tuples of JSON schema key type and JSON mode, and
+                    whose values are the JSON schema corresponding to that pair of inputs. (These schemas may have
+                    JsonRef references to definitions that are defined in the second returned element.)
+                - The second element is a JSON schema containing all definitions referenced in the first returned
+                    element, along with the optional title and description keys.
+
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
         inputs = [(key, mode, adapter.core_schema) for key, mode, adapter in __inputs]
 
-        key_map, definitions = schema_generator_instance.generate_definitions(inputs)
+        json_schemas_map, definitions = schema_generator_instance.generate_definitions(inputs)
 
         json_schema: dict[str, Any] = {}
         if definitions:
@@ -369,4 +374,4 @@ class TypeAdapter(Generic[T]):
         if description:
             json_schema['description'] = description
 
-        return key_map, json_schema
+        return json_schemas_map, json_schema
