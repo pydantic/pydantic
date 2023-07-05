@@ -2380,15 +2380,11 @@
 <p>A few things to note on validators:</p>
 <ul>
 <li>validators are "class methods", so the first argument value they receive is the <code>UserModel</code> class, not an instance
-  of <code>UserModel</code>.</li>
-<li>the second argument is always the field value to validate; it can be named as you please</li>
-<li>you can also add any subset of the following arguments to the signature (the names <strong>must</strong> match):</li>
-<li><code>values</code>: a dict containing the name-to-value mapping of any previously-validated fields</li>
-<li><code>config</code>: the model config</li>
-<li><code>field</code>: the field being validated. Type of object is <code>pydantic.fields.ModelField</code>.</li>
-<li><code>**kwargs</code>: if provided, this will include the arguments above not explicitly listed in the signature</li>
+    of <code>UserModel</code>.</li>
+<li>the second argument is the field value to validate; it can be named as you please</li>
+<li>the third argument is an instance of <code>pydantic.FieldValidationInfo</code></li>
 <li>validators should either return the parsed value or raise a <code>ValueError</code> or <code>AssertionError</code>
-  (<code>assert</code> statements may be used).</li>
+    (<code>assert</code> statements may be used).</li>
 </ul>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -2399,7 +2395,7 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
 <ul>
 <li>
 <p>where validators rely on other values, you should be aware that:</p>
-</li>
+<ul>
 <li>
 <p>Validation is done in the order fields are defined.
     E.g. in the example above, <code>password2</code> has access to <code>password1</code> (and <code>name</code>),
@@ -2409,6 +2405,8 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
 <li>
 <p>If validation fails on another field (or that field is missing) it will not be included in <code>values</code>, hence
     <code>if 'password1' in values and ...</code> in this example.</p>
+</li>
+</ul>
 </li>
 </ul>
 <h2 id="annotated-validators">Annotated Validators<a class="headerlink" href="#annotated-validators" title="Permanent link">&para;</a></h2>

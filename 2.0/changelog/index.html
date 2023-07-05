@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v201-2023-07-04" class="md-skip">
+        <a href="#v202-2023-07-05" class="md-skip">
           Skip to content
         </a>
       
@@ -513,6 +513,13 @@
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v202-2023-07-05" class="md-nav__link">
+    v2.0.2 (2023-07-05)
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v201-2023-07-04" class="md-nav__link">
@@ -2879,6 +2886,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v202-2023-07-05" class="md-nav__link">
+    v2.0.2 (2023-07-05)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v201-2023-07-04" class="md-nav__link">
     v2.0.1 (2023-07-04)
   </a>
@@ -3680,6 +3694,15 @@
 
   <h1>Changelog</h1>
 
+<h2 id="v202-2023-07-05">v2.0.2 (2023-07-05)<a class="headerlink" href="#v202-2023-07-05" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Fix bug where round-trip pickling/unpickling a <code>RootModel</code> would change the value of <code>__dict__</code>, <a href="https://github.com/pydantic/pydantic/issues/6457">#6457</a> by <a href="https://github.com/dmontagu">@dmontagu</a></li>
+<li>Allow single-item discriminated unions, <a href="https://github.com/pydantic/pydantic/issues/6405">#6405</a> by <a href="https://github.com/dmontagu">@dmontagu</a></li>
+<li>Fix issue with union parsing of enums, <a href="https://github.com/pydantic/pydantic/issues/6440">#6440</a> by <a href="https://github.com/dmontagu">@dmontagu</a></li>
+<li>Docs: Fixed <code>constr</code> documentation, renamed old <code>regex</code> to new <code>pattern</code>, <a href="https://github.com/pydantic/pydantic/issues/6452">#6452</a> by <a href="https://github.com/miili">@miili</a></li>
+<li>Change <code>GenerateJsonSchema.generate_definitions</code> signature, <a href="https://github.com/pydantic/pydantic/issues/6436">#6436</a> by <a href="https://github.com/dmontagu">@dmontagu</a></li>
+</ul>
+<p>See the full changelog <a href="https://github.com/pydantic/pydantic/releases/tag/v2.0.2">here</a></p>
 <h2 id="v201-2023-07-04">v2.0.1 (2023-07-04)<a class="headerlink" href="#v201-2023-07-04" title="Permanent link">&para;</a></h2>
 <p>First patch release of Pydantic V2</p>
 <ul>
