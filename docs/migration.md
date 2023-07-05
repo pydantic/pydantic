@@ -505,7 +505,7 @@ In V2, fields are specified as follows:
     It does not mean that the field has a default value of `None`. _(This is a breaking change from V1.)_
 
 
-Code example demonstrating the above:
+Here is a code example demonstrating the above:
 ```py
 from typing import Optional
 
