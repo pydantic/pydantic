@@ -9,6 +9,6 @@ The following types are supported by [Pydantic Extra Types]:
 * [Phone Numbers](phone_numbers.md) &mdash; a type that allows you to store phone numbers in your model.
 * [Routing Numbers](routing_numbers.md) &mdash; a type that allows you to store ABA transit routing numbers in your model.
 * [MAC Address](mac_address.md) &mdash; a type that allows you to store MAC addresses in your model.
-* [Iban Types](iban_types.md) &mdash; a type that allow you to store Iban in your model.
+* [IBAN Types](iban_types.md) &mdash; a type that allow you to store Iban in your model.
 
 [Pydantic Extra Types]: https://github.com/pydantic/pydantic-extra-types
