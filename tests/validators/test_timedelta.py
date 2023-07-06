@@ -131,27 +131,35 @@ def test_timedelta_strict_json(input_value, expected):
         ({}, 'P0Y0M3D2WT1H2M3S', timedelta(days=3, weeks=2, hours=1, minutes=2, seconds=3)),
         ({'le': timedelta(days=3)}, 'P2DT1H', timedelta(days=2, hours=1)),
         ({'le': timedelta(days=3)}, 'P3DT0H', timedelta(days=3)),
-        ({'le': timedelta(days=3)}, 'P3DT1H', Err('Input should be less than or equal to P3D')),
+        ({'le': timedelta(days=3)}, 'P3DT1H', Err('Input should be less than or equal to datetime.timedelta(days=3)')),
         ({'lt': timedelta(days=3)}, 'P2DT1H', timedelta(days=2, hours=1)),
-        ({'lt': timedelta(days=3)}, 'P3DT1H', Err('Input should be less than P3D')),
+        ({'lt': timedelta(days=3)}, 'P3DT1H', Err('Input should be less than datetime.timedelta(days=3)')),
         ({'ge': timedelta(days=3)}, 'P3DT1H', timedelta(days=3, hours=1)),
         ({'ge': timedelta(days=3)}, 'P3D', timedelta(days=3)),
-        ({'ge': timedelta(days=3)}, 'P2DT1H', Err('Input should be greater than or equal to P3D')),
+        (
+            {'ge': timedelta(days=3)},
+            'P2DT1H',
+            Err('Input should be greater than or equal to datetime.timedelta(days=3)'),
+        ),
         ({'gt': timedelta(days=3)}, 'P3DT1H', timedelta(days=3, hours=1)),
-        ({'gt': 'P3D'}, 'P2DT1H', Err('Input should be greater than P3D')),
+        ({'gt': 'P3D'}, 'P2DT1H', Err('Input should be greater than datetime.timedelta(days=3)')),
         ({'le': timedelta(seconds=-86400.123)}, '-PT86400.123S', timedelta(seconds=-86400.123)),
         ({'le': timedelta(seconds=-86400.123)}, '-PT86400.124S', timedelta(seconds=-86400.124)),
         (
             {'le': timedelta(seconds=-86400.123)},
             '-PT86400.122S',
-            Err('Input should be less than or equal to -P1DT0.123S [type=less_than_equal'),
+            Err(
+                'Input should be less than or equal to datetime.timedelta(days=-2, seconds=86399, microseconds=877000) [type=less_than_equal'  # noqa: E501
+            ),
         ),
         ({'gt': timedelta(seconds=-86400.123)}, timedelta(seconds=-86400.122), timedelta(seconds=-86400.122)),
         ({'gt': timedelta(seconds=-86400.123)}, '-PT86400.122S', timedelta(seconds=-86400.122)),
         (
             {'gt': timedelta(seconds=-86400.123)},
             '-PT86400.124S',
-            Err('Input should be greater than -P1DT0.123S [type=greater_than'),
+            Err(
+                'Input should be greater than datetime.timedelta(days=-2, seconds=86399, microseconds=877000) [type=greater_than'  # noqa: E501
+            ),
         ),
     ],
     ids=repr,
