@@ -409,7 +409,7 @@ assert Model(name='ABC').name == 'abc'
 
 Notice that type checkers will not complain about assigning `'abc'` to `Username` like they did in the previous example because they do not consider `Username` to be a distinct type from `str`.
 
-### Handling third party types
+### Handling third-party types
 
 Another use case for the pattern in the previous section is to handle third party types.
 
