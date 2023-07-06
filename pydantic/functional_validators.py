@@ -549,6 +549,8 @@ else:
             else:
                 return core_schema.json_or_python_schema(python_schema=python_schema, json_schema=json_schema)
 
+        __hash__ = object.__hash__
+
 
 if TYPE_CHECKING:
     SkipValidation = Annotated[AnyType, ...]  # SkipValidation[list[str]] will be treated by type checkers as list[str]
@@ -577,3 +579,5 @@ else:
             original_schema = handler(source)
             metadata = _core_metadata.build_metadata_dict(js_annotation_functions=[lambda _c, h: h(original_schema)])
             return core_schema.any_schema(metadata=metadata, serialization=original_schema)
+
+        __hash__ = object.__hash__

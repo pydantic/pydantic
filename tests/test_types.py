@@ -5074,9 +5074,14 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
     ]
 
 
-def test_skip_validation():
+@pytest.mark.parametrize('optional', [True, False])
+def test_skip_validation(optional):
+    type_hint = SkipValidation[int]
+    if optional:
+        type_hint = Optional[type_hint]
+
     @validate_call
-    def my_function(y: Annotated[int, SkipValidation]):
+    def my_function(y: type_hint):
         return repr(y)
 
     assert my_function('2') == "'2'"
@@ -5259,10 +5264,12 @@ def test_instanceof_invalid_core_schema():
 
     class MyModel(BaseModel):
         a: InstanceOf[MyClass]
+        b: Optional[InstanceOf[MyClass]]
 
-    MyModel(a=MyClass())
+    MyModel(a=MyClass(), b=None)
+    MyModel(a=MyClass(), b=MyClass())
     with pytest.raises(ValidationError) as exc_info:
-        MyModel(a=1)
+        MyModel(a=1, b=1)
     assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
@@ -5270,7 +5277,14 @@ def test_instanceof_invalid_core_schema():
             'loc': ('a',),
             'msg': 'Input should be an instance of ' 'test_instanceof_invalid_core_schema.<locals>.MyClass',
             'type': 'is_instance_of',
-        }
+        },
+        {
+            'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
+            'input': 1,
+            'loc': ('b',),
+            'msg': 'Input should be an instance of ' 'test_instanceof_invalid_core_schema.<locals>.MyClass',
+            'type': 'is_instance_of',
+        },
     ]
     with pytest.raises(
         PydanticInvalidForJsonSchema, match='Cannot generate a JsonSchema for core_schema.IsInstanceSchema'
