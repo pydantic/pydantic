@@ -673,13 +673,13 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-instance-method'
 ```
 
-## Model validator, `pre`, `skip_on_failure` {#model-validator-pre-skip}
+## Root validator, `pre`, `skip_on_failure` {#root-validator-pre-skip}
 
-If you use `@model_validator` with `pre=False` (the default) you MUST specify `skip_on_failure=True`.
+If you use `@root_validator` with `pre=False` (the default) you MUST specify `skip_on_failure=True`.
 The `skip_on_failure=False` option is no longer available.
 
 If you were not trying to set `skip_on_failure=False`, you can safely set `skip_on_failure=True`.
-If you do, this model validator will no longer be called if validation fails for any of the fields.
+If you do, this root validator will no longer be called if validation fails for any of the fields.
 
 Please see the [Migration Guide](../migration.md) for more details.
 
