@@ -146,14 +146,13 @@ The following properties have been removed from or changed in `Field`:
 ### Changes to dataclasses
 
 Pydantic [dataclasses](usage/dataclasses.md) continue to be useful for enabling the data validation on standard
-dataclasses without having to subclass `BaseModel`. However, we have made some changes to the behavior of Pydantic
-dataclasses in V2:
+dataclasses without having to subclass `BaseModel`. Pydantic V2 introduces the following changes to this dataclass behavior:
 
 * When used as fields, dataclasses (Pydantic or vanilla) no longer accept tuples as validation inputs; dicts should be
   used instead.
 * The `__post_init__` in Pydantic dataclasses will now be called _after_ validation, rather than before.
     * As a result, the `__post_init_post_parse__` method would have become redundant, so has been removed.
-* We no longer support `extra='allow'` for Pydantic dataclasses, where extra fields passed to the initializer would be
+* Pydantic no longer supports `extra='allow'` for Pydantic dataclasses, where extra fields passed to the initializer would be
     stored as extra attributes on the dataclass. `extra='ignore'` is still supported for the purpose of ignoring
     unexpected fields while parsing data, they just won't be stored on the instance.
 * Pydantic dataclasses no longer have an attribute `__pydantic_model__`, and no longer use an underlying `BaseModel`
