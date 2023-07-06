@@ -355,12 +355,15 @@ from pydantic import GetCoreSchemaHandler, TypeAdapter
 
 class Username(str):
     @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
         return core_schema.no_info_after_validator_function(cls, handler(str))
 
-ta = TypeAdapter(MyString)
-res = ta.validate_python('ABC')
-assert isinstance(res, MyString)
+
+ta = TypeAdapter(Username)
+res = ta.validate_python('abc')
+assert isinstance(res, Username)
 assert res == 'abc'
 ```
 
@@ -383,14 +386,21 @@ from pydantic import BaseModel, GetCoreSchemaHandler
 @dataclass
 class MyAfterValidator:
     func: Callable[[Any], Any]
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        return core_schema.no_info_after_validator_function(self.func, handler(source_type))
+
+    def __get_pydantic_core_schema__(
+        self, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(
+            self.func, handler(source_type)
+        )
 
 
 Username = Annotated[str, MyAfterValidator(str.lower)]
 
+
 class Model(BaseModel):
     name: Username
+
 
 assert Model(name='ABC').name == 'abc'
 ```
@@ -540,7 +550,6 @@ You may notice that the above examples where we create a marker class require a 
 For many simple cases you can greatly minimize this by using `pydantic.GetPydanticSchema`:
 
 ```py
-
 from pydantic_core import core_schema
 from typing_extensions import Annotated
 
@@ -548,7 +557,17 @@ from pydantic import BaseModel, GetPydanticSchema
 
 
 class Model(BaseModel):
-    y: Annotated[str, GetPydanticSchema(lambda tp, handler: core_schema.no_info_after_validator_function(lambda x: x*2, handler(tp)))]
+    y: Annotated[
+        str,
+        GetPydanticSchema(
+            lambda tp, handler: core_schema.no_info_after_validator_function(
+                lambda x: x * 2, handler(tp)
+            )
+        ),
+    ]
+
+
+assert Model(y='ab').y == 'abab'
 ```
 
 ### Summary
