@@ -2,17 +2,13 @@
 General benchmarks that attempt to cover all field types, through by no means all uses of all field types.
 """
 import json
-import sys
 from datetime import date, datetime, time
 
 import pytest
 
 from pydantic_core import SchemaValidator, ValidationError
 
-from .complete_schema import input_data_lax, input_data_strict, input_data_wrong, pydantic_model, schema
-from .test_micro_benchmarks import skip_pydantic
-
-pytestmark = pytest.mark.skipif(sys.version_info < (3, 10), reason='requires python3.10 or higher')
+from .complete_schema import input_data_lax, input_data_strict, input_data_wrong, schema
 
 
 def test_complete_valid():
@@ -77,14 +73,6 @@ def test_complete_valid():
     output2 = strict_validator.validate_python(input_data_strict())
     assert output_dict == output2.__dict__
 
-    model = pydantic_model()
-    if model is None:
-        print('pydantic is not installed, skipping pydantic tests')
-        return
-
-    output_pydantic = model.parse_obj(input_data_lax())
-    assert output_pydantic.dict() == output_dict
-
 
 def test_complete_invalid():
     lax_schema = schema()
@@ -92,17 +80,6 @@ def test_complete_invalid():
     with pytest.raises(ValidationError) as exc_info:
         lax_validator.validate_python(input_data_wrong())
     assert len(exc_info.value.errors(include_url=False)) == 738
-
-    model = pydantic_model()
-    if model is None:
-        print('pydantic is not installed, skipping pydantic tests')
-        return
-
-    from pydantic import ValidationError as PydanticValidationError
-
-    with pytest.raises(PydanticValidationError) as exc_info:
-        model.parse_obj(input_data_wrong())
-    assert len(exc_info.value.errors()) == 530
 
 
 @pytest.mark.benchmark(group='complete')
@@ -115,14 +92,6 @@ def test_complete_core_lax(benchmark):
 def test_complete_core_strict(benchmark):
     v = SchemaValidator(schema(strict=True))
     benchmark(v.validate_python, input_data_strict())
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='complete')
-def test_complete_pyd(benchmark):
-    model = pydantic_model()
-    assert model is not None
-    benchmark(model.parse_obj, input_data_lax())
 
 
 @pytest.mark.benchmark(group='complete-wrong')
@@ -151,23 +120,6 @@ def test_complete_core_isinstance(benchmark):
         v.isinstance_python(data)
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='complete-wrong')
-def test_complete_pyd_error(benchmark):
-    model = pydantic_model()
-    assert model is not None
-    data = input_data_wrong()
-
-    @benchmark
-    def f():
-        try:
-            model.parse_obj(data)
-        except ValueError:
-            pass
-        else:
-            raise RuntimeError('expected ValueError')
-
-
 def default_json_encoder(obj):
     if isinstance(obj, bytes):
         return obj.decode('utf-8')
@@ -182,18 +134,6 @@ def test_complete_core_json(benchmark):
     v = SchemaValidator(schema())
     json_data = json.dumps(input_data_lax(), default=default_json_encoder)
     benchmark(v.validate_json, json_data)
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='complete-json')
-def test_complete_pyd_json(benchmark):
-    model = pydantic_model()
-    assert model is not None
-    json_data = json.dumps(input_data_lax(), default=default_json_encoder)
-
-    @benchmark
-    def t():
-        model.parse_raw(json_data, content_type='application/json')
 
 
 @pytest.mark.benchmark(group='build')

@@ -103,7 +103,6 @@ jobs:
 
       - run: pytest
         env:
-          BENCHMARK_VS_PYDANTIC: 1
           HYPOTHESIS_PROFILE: slow
 
   test-os:
