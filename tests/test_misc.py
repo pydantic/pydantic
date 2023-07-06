@@ -5,7 +5,7 @@ import re
 import pytest
 from typing_extensions import get_args
 
-from pydantic_core import CoreSchema, CoreSchemaType, PydanticUndefined
+from pydantic_core import CoreSchema, CoreSchemaType, PydanticUndefined, core_schema
 from pydantic_core._pydantic_core import SchemaError, SchemaValidator, ValidationError, __version__, build_profile
 
 
@@ -177,3 +177,19 @@ def test_undefined():
     assert undefined_deepcopy is PydanticUndefined
 
     assert pickle.loads(pickle.dumps(PydanticUndefined)) is PydanticUndefined
+
+
+def test_unicode_error_input_repr() -> None:
+    """https://github.com/pydantic/pydantic/issues/6448"""
+
+    schema = core_schema.int_schema()
+
+    validator = SchemaValidator(schema)
+
+    danger_str = 'ÿ' * 1000
+    expected = "1 validation error for int\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='ÿÿÿÿÿÿÿÿÿÿÿÿ...ÿÿÿÿÿÿÿÿÿÿÿ', input_type=str]"  # noqa: E501
+    with pytest.raises(ValidationError) as exc_info:
+        validator.validate_python(danger_str)
+    actual = repr(exc_info.value).split('For further information visit ')[0].strip()
+
+    assert expected == actual
