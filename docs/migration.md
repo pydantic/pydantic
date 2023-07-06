@@ -477,11 +477,32 @@ In Pydantic V2, we recognize that the value is an instance of one of the cases a
 
 #### Required, optional, and nullable fields
 
-Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields. In Pydantic V2, these concepts are
-more clearly defined.
+Pydantic V2 changes some of the logic for specifying whether a field annotated as `Optional` is required
+(i.e., has no default value) or not (i.e., has a default value of `None` or any other value of the corresponding type), and now more closely matches the
+behavior of `dataclasses`. Similarly, fields annotated as `Any` no longer have a default value of `None`.
 
-Pydantic V2 will move to match `dataclasses`, thus you may explicitly specify a field as `required` or `optional` and whether the field accepts `None` or not.
+The following table describes the behavior of field annotations in V2:
 
+| State                                                 | Field Definition            |
+|-------------------------------------------------------|-----------------------------|
+| Required, cannot be `None`                            | `f1: str`                   |
+| Not required, cannot be `None`, is `'abc'` by default | `f3: str = 'abc'`           |
+| Required, can be `None`                               | `f2: Optional[str]`         |
+| Not required, can be `None`, is `None` by default     | `f3: Optional[str] = None`  |
+| Not required, can be `None`, is `'abc'` by default    | `f3: Optional[str] = 'abc'` |
+| Not required, cannot be `None`                        | `f4: str = 'Foobar'`        |
+| Required, can be any type (including `None`)          | `f5: Any`                   |
+| Not required, can be any type (including `None`)      | `f6: Any = None`            |
+
+
+!!! note
+    A field annotated as `typing.Optional[T]` will be required, and will allow for a value of `None`.
+    It does not mean that the field has a default value of `None`. _(This is a breaking change from V1.)_
+
+!!! note
+    Any default value if provided makes a field not required.
+
+Here is a code example demonstrating the above:
 ```py
 from typing import Optional
 
