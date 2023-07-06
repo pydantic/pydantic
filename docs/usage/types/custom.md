@@ -337,7 +337,7 @@ necessarily the same as the class, in particular for generics) and a `handler` t
 call the next metadata in `Annotated` or call into Pydantic's internal schema generation.
 
 The simplest no-op implementation calls the handler with the type you are given, then returns that as the result. You can
-also choose to modify the type before calling the handler, modify the core schema returned by the handler or not call the
+also choose to modify the type before calling the handler, modify the core schema returned by the handler, or not call the
 handler at all.
 
 ### As a method on a custom type
