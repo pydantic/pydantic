@@ -5,7 +5,6 @@ use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::{intern, AsPyPointer};
 
-use ahash::AHashSet;
 use serde::ser::Error;
 
 use super::config::SerializationConfig;
@@ -13,6 +12,7 @@ use super::errors::{PydanticSerializationUnexpectedValue, UNEXPECTED_TYPE_SER_MA
 use super::ob_type::ObTypeLookup;
 use super::shared::CombinedSerializer;
 use crate::definitions::Definitions;
+use crate::recursion_guard::RecursionGuard;
 
 /// this is ugly, would be much better if extra could be stored in `SerializationState`
 /// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
@@ -347,43 +347,31 @@ impl CollectWarnings {
     }
 }
 
-/// we have `RecursionInfo` then a `RefCell` since `SerializeInfer.serialize` can't take a `&mut self`
-#[derive(Default, Clone)]
-#[cfg_attr(debug_assertions, derive(Debug))]
-pub struct RecursionInfo {
-    ids: AHashSet<(usize, usize)>, // first element is the object's id, the second is the serializer's id
-    /// as with `src/recursion_guard.rs` this is used as a backup in case the identity check recursion guard fails
-    /// see #143
-    depth: u16,
-}
-
 #[derive(Default, Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct SerRecursionGuard {
-    info: RefCell<RecursionInfo>,
+    guard: RefCell<RecursionGuard>,
 }
 
 impl SerRecursionGuard {
-    const MAX_DEPTH: u16 = 200;
-
     pub fn add(&self, value: &PyAny, def_ref_id: usize) -> PyResult<usize> {
         // https://doc.rust-lang.org/std/collections/struct.HashSet.html#method.insert
         // "If the set did not have this value present, `true` is returned."
         let id = value.as_ptr() as usize;
-        let mut info = self.info.borrow_mut();
-        if !info.ids.insert((id, def_ref_id)) {
+        let mut guard = self.guard.borrow_mut();
+
+        if guard.contains_or_insert(id, def_ref_id) {
             Err(PyValueError::new_err("Circular reference detected (id repeated)"))
-        } else if info.depth > Self::MAX_DEPTH {
+        } else if guard.incr_depth() {
             Err(PyValueError::new_err("Circular reference detected (depth exceeded)"))
         } else {
-            info.depth += 1;
             Ok(id)
         }
     }
 
     pub fn pop(&self, id: usize, def_ref_id: usize) {
-        let mut info = self.info.borrow_mut();
-        info.depth -= 1;
-        info.ids.remove(&(id, def_ref_id));
+        let mut guard = self.guard.borrow_mut();
+        guard.decr_depth();
+        guard.remove(id, def_ref_id);
     }
 }

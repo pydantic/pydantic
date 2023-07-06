@@ -1,10 +1,12 @@
 import json
+import platform
 import re
 from typing import List
 
 import pytest
 from dirty_equals import IsList
 
+import pydantic_core
 from pydantic_core import (
     PydanticSerializationError,
     SchemaSerializer,
@@ -285,6 +287,10 @@ def test_cycle_same():
         to_json(f, fallback=fallback_func_passthrough)
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
 def test_cycle_change():
     def fallback_func_change_id(obj):
         return Foobar()

@@ -4,6 +4,7 @@ Numerous benchmarks of specific functionality.
 import json
 import os
 import platform
+import sys
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -12,6 +13,7 @@ from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
 import pytest
 from dirty_equals import IsStr
 
+import pydantic_core
 from pydantic_core import ArgsKwargs, PydanticCustomError, SchemaValidator, ValidationError, core_schema
 from pydantic_core import ValidationError as CoreValidationError
 
@@ -25,6 +27,15 @@ else:
     BaseModel = None
 
 skip_pydantic = pytest.mark.skipif(BaseModel is None, reason='skipping benchmarks vs. pydantic')
+
+skip_pypy_deep_stack = pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
+
+skip_wasm_deep_stack = pytest.mark.skipif(
+    sys.platform == 'emscripten', reason='wasm does not have enough stack space to recurse very deep'
+)
 
 
 class TestBenchmarkSimpleModel:
@@ -328,7 +339,6 @@ def definition_model_data():
     return data
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='crashes on pypy due to recursion depth')
 @skip_pydantic
 @pytest.mark.benchmark(group='recursive model')
 def test_definition_model_pyd(definition_model_data, benchmark):
@@ -339,7 +349,8 @@ def test_definition_model_pyd(definition_model_data, benchmark):
     benchmark(PydanticBranch.parse_obj, definition_model_data)
 
 
-@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='crashes on pypy due to recursion depth')
+@skip_pypy_deep_stack
+@skip_wasm_deep_stack
 @pytest.mark.benchmark(group='recursive model')
 def test_definition_model_core(definition_model_data, benchmark):
     class CoreBranch:
@@ -1452,6 +1463,8 @@ def test_tagged_union_int_keys_json(benchmark):
     benchmark(v.validate_json, payload)
 
 
+@skip_pypy_deep_stack
+@skip_wasm_deep_stack
 @pytest.mark.benchmark(group='field_function_validator')
 def test_field_function_validator(benchmark) -> None:
     def f(v: int, info: core_schema.FieldValidationInfo) -> int:
