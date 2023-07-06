@@ -367,7 +367,7 @@ assert isinstance(res, Username)
 assert res == 'abc'
 ```
 
-See [schema](../json_schema.md) for more details on how to customize json schemas for custom types.
+See [JSON Schema](../json_schema.md) for more details on how to customize JSON schemas for custom types.
 
 ### As an annotation
 
