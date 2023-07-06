@@ -1,7 +1,4 @@
-!!! warning
-    This page still needs to be updated for v2.0.
-
-If you don't want to use _pydantic_'s `BaseModel` you can instead get the same data validation on standard
+If you don't want to use Pydantic's `BaseModel` you can instead get the same data validation on standard
 [dataclasses](https://docs.python.org/3/library/dataclasses.html) (introduced in Python 3.7).
 
 ```py
