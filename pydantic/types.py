@@ -37,7 +37,6 @@ from ._internal import (
     _utils,
     _validators,
 )
-from ._internal._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ._migration import getattr_migration
 from .config import ConfigDict
 from .errors import PydanticUserError
@@ -1342,8 +1341,8 @@ class GetPydanticSchema:
     `__get_pydantic_json_schema__`, and `__prepare_pydantic_annotations__` with a single annotation.
     """
 
-    get_pydantic_core_schema: Callable[[Any, GetCoreSchemaHandler], CoreSchema] | None = None
-    get_pydantic_json_schema: Callable[[Any, GetJsonSchemaHandler], JsonSchemaValue] | None = None
+    get_pydantic_core_schema: Callable[[Any, _annotated_handlers.GetCoreSchemaHandler], CoreSchema] | None = None
+    get_pydantic_json_schema: Callable[[Any, _annotated_handlers.GetJsonSchemaHandler], JsonSchemaValue] | None = None
     prepare_pydantic_annotations: Callable[[Any, tuple[Any, ...], ConfigDict], tuple[Any, Iterable[Any]]] | None = None
 
     @staticmethod
@@ -1374,6 +1373,6 @@ class GetPydanticSchema:
         elif item == '__prepare_pydantic_annotations__' and self.prepare_pydantic_annotations:
             return self.prepare_pydantic_annotations
         else:
-            return super().__getattribute__(item)
+            return object.__getattribute__(self, item)
 
     __hash__ = object.__hash__
