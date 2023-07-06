@@ -180,6 +180,7 @@ __all__ = [
     'SkipValidation',
     'InstanceOf',
     'WithJsonSchema',
+    'GetPydanticSchema',
     # type_adapter
     'TypeAdapter',
     # version

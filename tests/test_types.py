@@ -102,7 +102,7 @@ from pydantic import (
 )
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
-from pydantic.types import AllowInfNan, ImportString, Strict, TransformSchema
+from pydantic.types import AllowInfNan, GetPydanticSchema, ImportString, Strict
 
 try:
     import email_validator
@@ -5107,6 +5107,16 @@ def test_skip_validation_json_schema():
     }
 
 
+def test_transform_schema():
+    ValidateStrAsInt = Annotated[str, GetPydanticSchema(lambda _s, h: core_schema.int_schema())]
+
+    class Model(BaseModel):
+        x: Optional[ValidateStrAsInt]
+
+    assert Model(x=None).x is None
+    assert Model(x='1').x == 1
+
+
 def test_transform_schema_for_first_party_class():
     # Here, first party means you can define the `__prepare_pydantic_annotations__` method on the class directly.
     class LowercaseStr(str):
@@ -5114,10 +5124,11 @@ def test_transform_schema_for_first_party_class():
         def __prepare_pydantic_annotations__(
             cls, _source: Type[Any], annotations: Tuple[Any, ...], _config: ConfigDict
         ) -> Tuple[Any, Iterable[Any]]:
-            def transform_schema(schema: CoreSchema) -> CoreSchema:
+            def get_pydantic_core_schema(source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+                schema = handler(source)
                 return core_schema.no_info_after_validator_function(lambda v: v.lower(), schema)
 
-            return str, (*annotations, TransformSchema(transform_schema))
+            return str, (*annotations, GetPydanticSchema(get_pydantic_core_schema))
 
     class Model(BaseModel):
         lower: LowercaseStr = Field(min_length=1)
@@ -5154,10 +5165,11 @@ def test_transform_schema_for_third_party_class():
         def __prepare_pydantic_annotations__(
             cls, _source: Type[Any], annotations: Tuple[Any, ...], _config: ConfigDict
         ) -> Tuple[Any, Iterable[Any]]:
-            def transform(schema: CoreSchema) -> CoreSchema:
+            def get_pydantic_core_schema(source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+                schema = handler(source)
                 return core_schema.no_info_after_validator_function(lambda v: DatetimeWrapper(v), schema)
 
-            return datetime, list(annotations) + [TransformSchema(transform)]
+            return datetime, list(annotations) + [GetPydanticSchema(get_pydantic_core_schema)]
 
     # Giving a name to Annotated[DatetimeWrapper, _DatetimeWrapperAnnotation] makes it easier to use in code
     # where I want a field of type `DatetimeWrapper` that works as desired with pydantic.
