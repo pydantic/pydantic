@@ -541,3 +541,16 @@ def test_json_schema_with_inner_models_with_duplicate_names():
         'title': 'a',
         'type': 'object',
     }
+
+
+# TODO parametrize
+def test_create_model_cls_kwargs():
+    model = create_model(
+        'FooModel',
+        # __base__=BaseModel,
+        __cls_kwargs__={'a': 'b'},
+        foo=(str, ...),
+        bar=(int, 123),
+    )
+    print(f'{model.__dict__ = }')
+    print(f'{model.a = }')

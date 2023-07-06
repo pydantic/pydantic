@@ -1312,6 +1312,9 @@ def create_model(
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
+    for c_name, c_val in __cls_kwargs__.items():
+        annotations[c_name] = ClassVar[type(c_val)]
+
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
     if __validators__:
         namespace.update(__validators__)
@@ -1319,11 +1322,12 @@ def create_model(
     if __config__:
         namespace['model_config'] = _config.ConfigWrapper(__config__).config_dict
     resolved_bases = types.resolve_bases(__base__)
-    meta, ns, kwds = types.prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
+    meta, ns, cls_kwargs = types.prepare_class(__model_name, resolved_bases, __cls_kwargs__)
     if resolved_bases is not __base__:
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
-    return meta(__model_name, resolved_bases, namespace, __pydantic_reset_parent_namespace__=False, **kwds)
+    namespace.update(cls_kwargs)
+    return meta(__model_name, resolved_bases, namespace, __pydantic_reset_parent_namespace__=False)
 
 
 __getattr__ = getattr_migration(__name__)
