@@ -1,4 +1,4 @@
-"""Logic related to validators applied to models etc. via the `@field_validator` and `@root_validator` decorators."""
+"""Logic related to validators applied to models etc. via the `@field_validator` and `@model_validator` decorators."""
 from __future__ import annotations as _annotations
 
 from collections import deque
@@ -72,15 +72,15 @@ class FieldValidatorDecoratorInfo:
 
 @dataclass(**slots_true)
 class RootValidatorDecoratorInfo:
-    """A container for data from `@root_validator` so that we can access it
+    """A container for data from `@model_validator` so that we can access it
     while building the pydantic-core schema.
 
     Attributes:
-        decorator_repr: A class variable representing the decorator string, '@root_validator'.
+        decorator_repr: A class variable representing the decorator string, '@model_validator'.
         mode: The proposed validator mode.
     """
 
-    decorator_repr: ClassVar[str] = '@root_validator'
+    decorator_repr: ClassVar[str] = '@model_validator'
     mode: Literal['before', 'after']
 
 
