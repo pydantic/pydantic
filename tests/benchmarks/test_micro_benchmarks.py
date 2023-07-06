@@ -2,13 +2,12 @@
 Numerous benchmarks of specific functionality.
 """
 import json
-import os
 import platform
 import sys
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
+from typing import Any, List
 
 import pytest
 from dirty_equals import IsStr
@@ -16,17 +15,6 @@ from dirty_equals import IsStr
 import pydantic_core
 from pydantic_core import ArgsKwargs, PydanticCustomError, SchemaValidator, ValidationError, core_schema
 from pydantic_core import ValidationError as CoreValidationError
-
-if os.getenv('BENCHMARK_VS_PYDANTIC'):
-    try:
-        from pydantic import BaseModel, StrictBool, StrictInt, StrictStr
-        from pydantic import ValidationError as PydanticValidationError
-    except ImportError:
-        BaseModel = None
-else:
-    BaseModel = None
-
-skip_pydantic = pytest.mark.skipif(BaseModel is None, reason='skipping benchmarks vs. pydantic')
 
 skip_pypy_deep_stack = pytest.mark.skipif(
     platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
@@ -39,16 +27,6 @@ skip_wasm_deep_stack = pytest.mark.skipif(
 
 
 class TestBenchmarkSimpleModel:
-    @pytest.fixture(scope='class')
-    def pydantic_model(self):
-        class PydanticModel(BaseModel):
-            name: str
-            age: int
-            friends: List[int]
-            settings: Dict[str, float]
-
-        return PydanticModel
-
     @pytest.fixture(scope='class')
     def core_validator_fs(self):
         class CoreModel:
@@ -79,11 +57,6 @@ class TestBenchmarkSimpleModel:
 
     data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
 
-    @skip_pydantic
-    @pytest.mark.benchmark(group='simple model - python')
-    def test_pyd_python(self, pydantic_model, benchmark):
-        benchmark(pydantic_model.parse_obj, self.data)
-
     @pytest.mark.benchmark(group='simple model - python')
     def test_core_python_fs(self, core_validator_fs, benchmark):
         m = core_validator_fs.validate_python(self.data)
@@ -91,16 +64,6 @@ class TestBenchmarkSimpleModel:
         assert m.__dict__.keys() == {'name', 'age', 'friends', 'settings'}
         assert m.__pydantic_fields_set__ == {'name', 'age', 'friends', 'settings'}
         benchmark(core_validator_fs.validate_python, self.data)
-
-    @skip_pydantic
-    @pytest.mark.benchmark(group='simple model - JSON')
-    def test_pyd_json(self, pydantic_model, benchmark):
-        json_data = json.dumps(self.data)
-
-        @benchmark
-        def pydantic_json():
-            obj = json.loads(json_data)
-            return pydantic_model.parse_obj(obj)
 
     @pytest.mark.benchmark(group='simple model - JSON')
     def test_core_json_fs(self, core_validator_fs, benchmark):
@@ -152,18 +115,6 @@ class TestModelLarge:
 bool_cases = [True, False, 0, 1, '0', '1', 'true', 'false', 'True', 'False']
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='bool')
-def test_bool_pyd(benchmark):
-    class PydanticModel(BaseModel):
-        value: bool
-
-    @benchmark
-    def t():
-        for case in bool_cases:
-            PydanticModel(value=case)
-
-
 @pytest.mark.benchmark(group='bool')
 def test_bool_core(benchmark):
     schema_validator = SchemaValidator({'type': 'bool'})
@@ -175,16 +126,6 @@ def test_bool_core(benchmark):
 
 
 small_class_data = {'name': 'John', 'age': 42}
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='create small model')
-def test_small_class_pyd(benchmark):
-    class PydanticModel(BaseModel):
-        name: str
-        age: int
-
-    benchmark(PydanticModel.parse_obj, small_class_data)
 
 
 @pytest.mark.benchmark(group='create small model')
@@ -339,16 +280,6 @@ def definition_model_data():
     return data
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='recursive model')
-def test_definition_model_pyd(definition_model_data, benchmark):
-    class PydanticBranch(BaseModel):
-        width: int
-        branch: Optional['PydanticBranch'] = None
-
-    benchmark(PydanticBranch.parse_obj, definition_model_data)
-
-
 @skip_pypy_deep_stack
 @skip_wasm_deep_stack
 @pytest.mark.benchmark(group='recursive model')
@@ -384,19 +315,6 @@ def test_definition_model_core(definition_model_data, benchmark):
     benchmark(v.validate_python, definition_model_data)
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='List[TypedDict]')
-def test_list_of_dict_models_pyd(benchmark):
-    class PydanticBranch(BaseModel):
-        width: int
-
-    class PydanticRoot(BaseModel):
-        __root__: List[PydanticBranch]
-
-    data = [{'width': i} for i in range(100)]
-    benchmark(PydanticRoot.parse_obj, data)
-
-
 @pytest.mark.benchmark(group='List[TypedDict]')
 def test_list_of_dict_models_core(benchmark):
     v = SchemaValidator(
@@ -416,18 +334,6 @@ def test_list_of_dict_models_core(benchmark):
 list_of_ints_data = ([i for i in range(1000)], [str(i) for i in range(1000)])
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='List[int]')
-def test_list_of_ints_pyd_py(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: List[int]
-
-    @benchmark
-    def t():
-        PydanticModel.parse_obj(list_of_ints_data[0])
-        PydanticModel.parse_obj(list_of_ints_data[1])
-
-
 @pytest.mark.benchmark(group='List[int]')
 def test_list_of_ints_core_py(benchmark):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
@@ -436,20 +342,6 @@ def test_list_of_ints_core_py(benchmark):
     def t():
         v.validate_python(list_of_ints_data[0])
         v.validate_python(list_of_ints_data[1])
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='List[int] JSON')
-def test_list_of_ints_pyd_json(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: List[int]
-
-    json_data = [json.dumps(d) for d in list_of_ints_data]
-
-    @benchmark
-    def t():
-        PydanticModel.parse_obj(json.loads(json_data[0]))
-        PydanticModel.parse_obj(json.loads(json_data[1]))
 
 
 @pytest.mark.benchmark(group='List[int] JSON')
@@ -464,18 +356,6 @@ def test_list_of_ints_core_json(benchmark):
         v.validate_json(json_data[1])
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='List[Any]')
-def test_list_of_any_pyd_py(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: list
-
-    @benchmark
-    def t():
-        PydanticModel.parse_obj(list_of_ints_data[0])
-        PydanticModel.parse_obj(list_of_ints_data[1])
-
-
 @pytest.mark.benchmark(group='List[Any]')
 def test_list_of_any_core_py(benchmark):
     v = SchemaValidator({'type': 'list'})
@@ -488,18 +368,6 @@ def test_list_of_any_core_py(benchmark):
 
 set_of_ints_data = ({i for i in range(1000)}, {str(i) for i in range(1000)})
 set_of_ints_duplicates = ([i for i in range(100)] * 10, [str(i) for i in range(100)] * 10)
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='Set[int]')
-def test_set_of_ints_pyd(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: Set[int]
-
-    @benchmark
-    def t():
-        PydanticModel.parse_obj(set_of_ints_data[0])
-        PydanticModel.parse_obj(set_of_ints_data[1])
 
 
 @pytest.mark.benchmark(group='Set[int]')
@@ -532,20 +400,6 @@ def test_set_of_ints_core_length(benchmark):
         v.validate_python(set_of_ints_data[1])
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='Set[int] JSON')
-def test_set_of_ints_pyd_json(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: Set[int]
-
-    json_data = [json.dumps(list(d)) for d in set_of_ints_data]
-
-    @benchmark
-    def t():
-        PydanticModel.parse_obj(json.loads(json_data[0]))
-        PydanticModel.parse_obj(json.loads(json_data[1]))
-
-
 @pytest.mark.benchmark(group='Set[int] JSON')
 def test_set_of_ints_core_json(benchmark):
     v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
@@ -574,15 +428,6 @@ frozenset_of_ints = frozenset({i for i in range(1000)})
 frozenset_of_ints_duplicates = [i for i in range(100)] * 10
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='FrozenSet[int]')
-def test_frozenset_of_ints_pyd(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: FrozenSet[int]
-
-    benchmark(PydanticModel.parse_obj, frozenset_of_ints)
-
-
 @pytest.mark.benchmark(group='FrozenSet[int]')
 def test_frozenset_of_ints_core(benchmark):
     v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
@@ -598,18 +443,6 @@ def test_frozenset_of_ints_duplicates_core(benchmark):
 
 
 dict_of_ints_data = ({str(i): i for i in range(1000)}, {str(i): str(i) for i in range(1000)})
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='Dict[str, int]')
-def test_dict_of_ints_pyd(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: Dict[str, int]
-
-    @benchmark
-    def t():
-        PydanticModel.parse_obj(dict_of_ints_data[0])
-        PydanticModel.parse_obj(dict_of_ints_data[1])
 
 
 @pytest.mark.benchmark(group='Dict[str, int]')
@@ -632,20 +465,6 @@ def test_dict_of_any_core(benchmark):
         v.validate_python(dict_of_ints_data[1])
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='Dict[str, int] JSON')
-def test_dict_of_ints_pyd_json(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: Dict[str, int]
-
-    json_data = [json.dumps(d) for d in dict_of_ints_data]
-
-    @benchmark
-    def t():
-        PydanticModel.parse_obj(json.loads(json_data[0]))
-        PydanticModel.parse_obj(json.loads(json_data[1]))
-
-
 @pytest.mark.benchmark(group='Dict[str, int] JSON')
 def test_dict_of_ints_core_json(benchmark):
     v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}})
@@ -659,18 +478,6 @@ def test_dict_of_ints_core_json(benchmark):
 
 
 many_models_data = [{'age': i} for i in range(1000)]
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='List[SimpleMode]')
-def test_many_models_pyd(benchmark):
-    class SimpleMode(BaseModel):
-        age: int
-
-    class PydanticModel(BaseModel):
-        __root__: List[SimpleMode]
-
-    benchmark(PydanticModel.parse_obj, many_models_data)
 
 
 @pytest.mark.benchmark(group='List[DictSimpleMode]')
@@ -710,15 +517,6 @@ def test_many_models_core_model(benchmark):
 list_of_nullable_data = [None if i % 2 else i for i in range(1000)]
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='List[Nullable[int]]')
-def test_list_of_nullable_pyd(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: List[Optional[int]]
-
-    benchmark(PydanticModel.parse_obj, list_of_nullable_data)
-
-
 @pytest.mark.benchmark(group='List[Nullable[int]]')
 def test_list_of_nullable_core(benchmark):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'nullable', 'schema': {'type': 'int'}}})
@@ -736,23 +534,7 @@ def test_bytes_core(benchmark):
     benchmark(v.validate_python, some_bytes)
 
 
-@skip_pydantic
-@pytest.mark.benchmark(group='bytes')
-def test_bytes_pyd(benchmark):
-    class PydanticModel(BaseModel):
-        __root__: bytes
-
-    benchmark(PydanticModel.parse_obj, some_bytes)
-
-
 class TestBenchmarkDateTime:
-    @pytest.fixture(scope='class')
-    def pydantic_model(self):
-        class PydanticModel(BaseModel):
-            dt: datetime
-
-        return PydanticModel
-
     @pytest.fixture(scope='class')
     def core_validator(self):
         class CoreModel:
@@ -785,22 +567,9 @@ class TestBenchmarkDateTime:
     def json_dict_data(self, datetime_str):
         return json.dumps({'dt': datetime_str})
 
-    @skip_pydantic
-    @pytest.mark.benchmark(group='datetime model - python')
-    def test_pyd_python(self, pydantic_model, benchmark, python_data_dict):
-        benchmark(pydantic_model.parse_obj, python_data_dict)
-
     @pytest.mark.benchmark(group='datetime model - python')
     def test_core_python(self, core_validator, benchmark, python_data_dict):
         benchmark(core_validator.validate_python, python_data_dict)
-
-    @skip_pydantic
-    @pytest.mark.benchmark(group='datetime model - JSON')
-    def test_model_pyd_json(self, pydantic_model, benchmark, json_dict_data):
-        @benchmark
-        def pydantic_json():
-            obj = json.loads(json_dict_data)
-            return pydantic_model.parse_obj(obj)
 
     @pytest.mark.benchmark(group='datetime model - JSON')
     def test_model_core_json(self, core_validator, benchmark, json_dict_data):
@@ -872,28 +641,11 @@ class TestBenchmarkUnion:
 
         benchmark(v.validate_python, 1)
 
-    @skip_pydantic
-    @pytest.mark.benchmark(group='smart-union')
-    def test_smart_union_pyd(self, benchmark):
-        # default pydantic-core behavior matches pydantic one with `Config.smart_union`
-        class PydanticModel(BaseModel, smart_union=True):
-            __root__: Union[bool, int, str]
-
-        benchmark(PydanticModel.parse_obj, 1)
-
     @pytest.mark.benchmark(group='smart-union-coerce')
     def test_smart_union_coerce_core(self, benchmark):
         v = SchemaValidator({'type': 'union', 'choices': [{'type': 'bool'}, {'type': 'str'}]})
 
         benchmark(v.validate_python, 1)  # will be True
-
-    @skip_pydantic
-    @pytest.mark.benchmark(group='smart-union-coerce')
-    def test_smart_union_coerce_pyd(self, benchmark):
-        class PydanticModel(BaseModel, smart_union=True):
-            __root__: Union[bool, str]
-
-        benchmark(PydanticModel.parse_obj, 1)  # will be True
 
     @pytest.mark.benchmark(group='strict-union')
     def test_strict_union_core(self, benchmark):
@@ -902,14 +654,6 @@ class TestBenchmarkUnion:
         )
 
         benchmark(v.validate_python, 1)
-
-    @skip_pydantic
-    @pytest.mark.benchmark(group='strict-union')
-    def test_strict_union_pyd(self, benchmark):
-        class PydanticModel(BaseModel):
-            __root__: Union[StrictBool, StrictInt, StrictStr]
-
-        benchmark(PydanticModel.parse_obj, 1)  # will be True
 
     @pytest.mark.benchmark(group='strict-union-error')
     def test_strict_union_error_core(self, benchmark):
@@ -920,21 +664,6 @@ class TestBenchmarkUnion:
                 v.validate_python(2)
                 assert False
             except CoreValidationError:
-                assert True
-
-        benchmark(validate_with_expected_error)
-
-    @skip_pydantic
-    @pytest.mark.benchmark(group='strict-union-error')
-    def test_strict_union_error_pyd(self, benchmark):
-        class PydanticModel(BaseModel):
-            __root__: Union[StrictBool, StrictStr]
-
-        def validate_with_expected_error():
-            try:
-                PydanticModel.parse_obj(2)
-                assert False
-            except PydanticValidationError:
                 assert True
 
         benchmark(validate_with_expected_error)
@@ -1380,18 +1109,6 @@ def test_core_root_model(benchmark):
     assert v.validate_python([1, 2, '3']).root == [1, 2, 3]
     input_data = list(range(100))
     benchmark(v.validate_python, input_data)
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='root_model')
-def test_v1_root_model(benchmark):
-    class MyModel(BaseModel):
-        __root__: List[int]
-
-    assert MyModel.parse_obj([1, 2, '3']).__root__ == [1, 2, 3]
-    input_data = list(range(100))
-
-    benchmark(MyModel.parse_obj, input_data)
 
 
 @pytest.mark.benchmark(group='strict_int')

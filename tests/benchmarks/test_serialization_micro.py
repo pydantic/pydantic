@@ -1,25 +1,12 @@
 import json
 from datetime import date, datetime
-from typing import Dict, List
 
 import pytest
 
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
-from .test_micro_benchmarks import BaseModel, skip_pydantic
-
 
 class TestBenchmarkSimpleModel:
-    @pytest.fixture(scope='class')
-    def pydantic_model(self):
-        class PydanticModel(BaseModel):
-            name: str
-            age: int
-            friends: List[int]
-            settings: Dict[str, float]
-
-        return PydanticModel
-
     @pytest.fixture(scope='class')
     def core_schema(self):
         class CoreModel:
@@ -52,46 +39,20 @@ class TestBenchmarkSimpleModel:
 
     data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
 
-    @skip_pydantic
-    @pytest.mark.benchmark(group='serialize simple model - python')
-    def test_v1_dict(self, pydantic_model, benchmark):
-        m = pydantic_model(**self.data)
-        assert m.dict() == self.data
-        benchmark(m.dict)
-
     @pytest.mark.benchmark(group='serialize simple model - python')
     def test_core_dict(self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, benchmark):
         m = core_validator.validate_python(self.data)
         assert core_serializer.to_python(m) == self.data
         benchmark(core_serializer.to_python, m)
 
-    @skip_pydantic
-    @pytest.mark.benchmark(group='serialize simple model - python filter')
-    def test_v1_dict_filter(self, pydantic_model, benchmark):
-        m = pydantic_model(**self.data)
-        assert m.dict() == self.data
-        exclude = {'age': ..., 'fields': {41, 42}}
-
-        @benchmark
-        def _():
-            m.dict(exclude=exclude)
-
     @pytest.mark.benchmark(group='serialize simple model - python filter')
     def test_core_dict_filter(self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, benchmark):
         m = core_validator.validate_python(self.data)
         exclude = {'age': ..., 'fields': {41, 42}}
-        # assert core_serializer.to_python(m, exclude=exclude) == pydantic_model(**self.data).dict(exclude=exclude)
 
         @benchmark
         def _():
             core_serializer.to_python(m, exclude=exclude)
-
-    @skip_pydantic
-    @pytest.mark.benchmark(group='serialize simple model - JSON')
-    def test_v1_json(self, pydantic_model, benchmark):
-        m = pydantic_model(**self.data)
-        assert json.loads(m.json()) == self.data
-        benchmark(m.json)
 
     @pytest.mark.benchmark(group='serialize simple model - JSON')
     def test_core_json(self, core_validator: SchemaValidator, core_serializer: SchemaSerializer, benchmark):
@@ -215,37 +176,6 @@ def test_date_format_function_no_info(benchmark):
     assert serializer.to_python(d) == '2022-11-20'
 
     benchmark(serializer.to_python, d)
-
-
-@pytest.fixture(scope='module', name='v1_model')
-def v1_model_fixture():
-    class PydanticModel(BaseModel):
-        a: int
-        b: int
-        c: int
-        d: int
-        e: int
-        f: int
-        g: int
-        h: int
-
-    return PydanticModel
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='model-python')
-def test_model_v1_py(benchmark, v1_model):
-    m = v1_model(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8)
-    assert m.dict() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
-    benchmark(m.dict)
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='model-json')
-def test_model_v1_json(benchmark, v1_model):
-    m = v1_model(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8)
-    assert m.json() == '{"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6, "g": 7, "h": 8}'
-    benchmark(m.json)
 
 
 class BasicModel:
@@ -385,25 +315,6 @@ def test_model_exclude_unset_true(benchmark, fs_model_serializer):
     @benchmark
     def r():
         fs_model_serializer.to_python(m, exclude_unset=True)
-
-
-@skip_pydantic
-@pytest.mark.benchmark(group='model-list-json')
-def test_model_list_v1_json(benchmark):
-    class PydanticModel(BaseModel):
-        a: List[int]
-
-    m = PydanticModel(a=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    assert m.json(exclude={'a': {1, 2}}) == '{"a": [0, 3, 4, 5, 6, 7, 8, 9]}'
-
-    m_big = PydanticModel(a=list(range(1000)))
-    j = m_big.json(exclude={'a': {1, 2}})
-    assert j.startswith('{"a": [0, 3, 4')
-    assert j.endswith('998, 999]}')
-
-    @benchmark
-    def r():
-        m_big.json(exclude={'a': {1, 2}})
 
 
 @pytest.mark.benchmark(group='model-list-json')
