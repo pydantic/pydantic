@@ -1,9 +1,11 @@
+import platform
 from dataclasses import dataclass
 from typing import List, Optional
 
 import pytest
 from dirty_equals import AnyThing, HasAttributes, IsList, IsPartialDict, IsStr, IsTuple
 
+import pydantic_core
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, __version__, core_schema
 
 from ..conftest import Err, plain_repr
@@ -714,6 +716,10 @@ def test_function_name():
     ]
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
 @pytest.mark.parametrize('strict', [True, False], ids=lambda s: f'strict={s}')
 def test_function_change_id(strict: bool):
     def f(input_value, info):
@@ -750,7 +756,7 @@ def test_function_change_id(strict: bool):
 
 
 def test_many_uses_of_ref():
-    # check we can safely exceed BACKUP_GUARD_LIMIT without upsetting the backup recursion guard
+    # check we can safely exceed RECURSION_GUARD_LIMIT without upsetting the recursion guard
     v = SchemaValidator(
         {
             'type': 'typed-dict',

@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import platform
 import sys
 from collections import namedtuple
 from datetime import date, datetime, time, timedelta, timezone
@@ -11,6 +12,7 @@ from typing import ClassVar
 import pytest
 from dirty_equals import HasRepr, IsList
 
+import pydantic_core
 from pydantic_core import PydanticSerializationError, SchemaSerializer, SchemaValidator, core_schema, to_json
 
 from ..conftest import plain_repr
@@ -343,6 +345,10 @@ class FoobarCount:
         return f'<FoobarCount {self.v} repr>'
 
 
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and pydantic_core._pydantic_core.build_profile == 'debug',
+    reason='PyPy does not have enough stack space for Rust debug builds to recurse very deep',
+)
 def test_fallback_cycle_change(any_serializer: SchemaSerializer):
     v = 1
 
@@ -359,8 +365,9 @@ def test_fallback_cycle_change(any_serializer: SchemaSerializer):
 
     f = FoobarCount(0)
     v = 0
-    # because when recursion is detected and we're in mode python, we just return the value
-    assert any_serializer.to_python(f, fallback=fallback_func) == HasRepr('<FoobarCount 201 repr>')
+    # when recursion is detected and we're in mode python, we just return the value
+    expected_visits = pydantic_core._pydantic_core._recursion_limit - 1
+    assert any_serializer.to_python(f, fallback=fallback_func) == HasRepr(f'<FoobarCount {expected_visits} repr>')
 
     with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):
         any_serializer.to_json(f, fallback=fallback_func)
