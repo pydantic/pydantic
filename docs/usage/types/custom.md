@@ -328,7 +328,7 @@ class or can subclass it, you can implement a special `__get_pydantic_core_schem
 `pydantic-core` schema.
 
 While `pydantic` uses `pydantic-core` internally to handle validation and serialization, it is a new API for Pydantic V2,
-thus it is one of the areas most likely to be tweaked in the future and you should try to stick to the built in
+thus it is one of the areas most likely to be tweaked in the future and you should try to stick to the built-in
 constructs like those provided by `annotated-types`, `pydantic.Field`, or `BeforeValidator` and so on.
 
 You can implement `__get_pydantic_core_schema__` both on a custom type and on metadata intended to be put in `Annotated`.
