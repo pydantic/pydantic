@@ -1337,41 +1337,43 @@ __getattr__ = getattr_migration(__name__)
 class GetPydanticSchema:
     """A convenience class for creating an annotation that provides pydantic custom type hooks.
 
-    This class lets you replace the use of a custom type defining one or more of `__get_pydantic_core_schema__`,
-    `__get_pydantic_json_schema__`, and `__prepare_pydantic_annotations__` with a single annotation.
+    This class is intended to eliminate the need to create a custom "marker" which defines the
+     `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__` custom hook methods.
+
+    For example, to have a field treated by type checkers as `int`, but by pydantic as `Any`, you can do:
+    ```python
+    from typing import Any
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, GetPydanticSchema
+
+    HandleAsAny = GetPydanticSchema(lambda _s, h: h(Any))
+
+    class Model(BaseModel):
+        x: Annotated[int, HandleAsAny]  # pydantic sees `x: Any`
+
+    print(repr(Model(x='abc').x))
+    #> 'abc'
+    ```
     """
 
     get_pydantic_core_schema: Callable[[Any, _annotated_handlers.GetCoreSchemaHandler], CoreSchema] | None = None
     get_pydantic_json_schema: Callable[[Any, _annotated_handlers.GetJsonSchemaHandler], JsonSchemaValue] | None = None
-    prepare_pydantic_annotations: Callable[[Any, tuple[Any, ...], ConfigDict], tuple[Any, Iterable[Any]]] | None = None
+    # Note: if we find a use, we could uncomment the following as a way to specify `__prepare_pydantic_annotations__`:
+    # prepare_pydantic_annotations: Callable[
+    #   [Any, tuple[Any, ...], ConfigDict], tuple[Any, Iterable[Any]]
+    # ] | None = None
 
-    @staticmethod
-    def for_type(type_: Any) -> GetPydanticSchema:
-        """Returns an annotation that makes pydantic treat the annotated field as the provided type.
-
-        For example:
-        ```python
-        from pydantic import BaseModel, GetPydanticSchema
-
-        class Model(BaseModel):
-            x: Annotated[int, GetPydanticSchema.for_type(Any)]  # pydantic sees `x: Any`
-
-        print(repr(Model(x='abc').x))
-        #> 'abc'
-        ```
-        """
-        return GetPydanticSchema(
-            get_pydantic_core_schema=lambda _s, h: h(type_), get_pydantic_json_schema=lambda _s, h: h(type_)
-        )
+    # Note: we may want to consider adding a convenience staticmethod `def for_type(type_: Any) -> GetPydanticSchema:`
+    #   which returns `GetPydanticSchema(lambda _s, h: h(type_))`
 
     def __getattr__(self, item: str) -> Any:
-        """Use this rather than defining `__get_pydantic_core_schema__` etc. to reduce the number of nested calls"""
+        """Use this rather than defining `__get_pydantic_core_schema__` etc. to reduce the number of nested calls."""
         if item == '__get_pydantic_core_schema__' and self.get_pydantic_core_schema:
             return self.get_pydantic_core_schema
         elif item == '__get_pydantic_json_schema__' and self.get_pydantic_json_schema:
             return self.get_pydantic_json_schema
-        elif item == '__prepare_pydantic_annotations__' and self.prepare_pydantic_annotations:
-            return self.prepare_pydantic_annotations
         else:
             return object.__getattribute__(self, item)
 
