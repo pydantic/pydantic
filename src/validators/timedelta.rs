@@ -1,11 +1,11 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDelta, PyDict, PyString};
+use pyo3::types::{PyDelta, PyDict};
 use speedate::Duration;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
-use crate::input::{EitherTimedelta, Input};
+use crate::input::{duration_as_pytimedelta, pytimedelta_as_duration, Input};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -24,6 +24,7 @@ struct TimedeltaConstraints {
     ge: Option<Duration>,
     gt: Option<Duration>,
 }
+
 impl BuildValidator for TimeDeltaValidator {
     const EXPECTED_TYPE: &'static str = "timedelta";
 
@@ -32,23 +33,29 @@ impl BuildValidator for TimeDeltaValidator {
         config: Option<&PyDict>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
-        let py = schema.py();
-        let has_constraints = schema.get_item(intern!(py, "le")).is_some()
-            || schema.get_item(intern!(py, "lt")).is_some()
-            || schema.get_item(intern!(py, "ge")).is_some()
-            || schema.get_item(intern!(py, "gt")).is_some();
+        let py: Python<'_> = schema.py();
+        let constraints = TimedeltaConstraints {
+            le: schema
+                .get_as::<&PyDelta>(intern!(py, "le"))?
+                .map(pytimedelta_as_duration),
+            lt: schema
+                .get_as::<&PyDelta>(intern!(py, "lt"))?
+                .map(pytimedelta_as_duration),
+            ge: schema
+                .get_as::<&PyDelta>(intern!(py, "ge"))?
+                .map(pytimedelta_as_duration),
+            gt: schema
+                .get_as::<&PyDelta>(intern!(py, "gt"))?
+                .map(pytimedelta_as_duration),
+        };
 
         Ok(Self {
             strict: is_strict(schema, config)?,
-            constraints: match has_constraints {
-                true => Some(TimedeltaConstraints {
-                    le: py_timedelta_as_timedelta(schema, intern!(py, "le"))?,
-                    lt: py_timedelta_as_timedelta(schema, intern!(py, "lt"))?,
-                    ge: py_timedelta_as_timedelta(schema, intern!(py, "ge"))?,
-                    gt: py_timedelta_as_timedelta(schema, intern!(py, "gt"))?,
-                }),
-                false => None,
-            },
+            constraints: (constraints.le.is_some()
+                || constraints.lt.is_some()
+                || constraints.ge.is_some()
+                || constraints.gt.is_some())
+            .then_some(constraints),
         }
         .into())
     }
@@ -64,6 +71,7 @@ impl Validator for TimeDeltaValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let timedelta = input.validate_timedelta(extra.strict.unwrap_or(self.strict))?;
+        let py_timedelta = timedelta.try_into_py(py)?;
         if let Some(constraints) = &self.constraints {
             let raw_timedelta = timedelta.as_raw();
 
@@ -73,9 +81,12 @@ impl Validator for TimeDeltaValidator {
                         if !raw_timedelta.$constraint(constraint) {
                             return Err(ValError::new(
                                 ErrorType::$error {
-                                    $constraint: constraint.to_string().into(),
+                                    $constraint: duration_as_pytimedelta(py, constraint)?
+                                        .repr()?
+                                        .to_string()
+                                        .into(),
                                 },
-                                input,
+                                py_timedelta.as_ref(),
                             ));
                         }
                     }
@@ -87,7 +98,7 @@ impl Validator for TimeDeltaValidator {
             check_constraint!(ge, GreaterThanEqual);
             check_constraint!(gt, GreaterThan);
         }
-        Ok(timedelta.try_into_py(py)?)
+        Ok(py_timedelta.into())
     }
 
     fn different_strict_behavior(
@@ -104,12 +115,5 @@ impl Validator for TimeDeltaValidator {
 
     fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         Ok(())
-    }
-}
-
-fn py_timedelta_as_timedelta(schema: &PyDict, field: &PyString) -> PyResult<Option<Duration>> {
-    match schema.get_as::<&PyDelta>(field)? {
-        Some(timedelta) => Ok(Some(EitherTimedelta::Py(timedelta).as_raw())),
-        None => Ok(None),
     }
 }

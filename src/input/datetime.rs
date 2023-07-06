@@ -120,22 +120,23 @@ impl<'a> EitherTimedelta<'a> {
         }
     }
 
-    pub fn try_into_py(self, py: Python<'_>) -> PyResult<PyObject> {
-        let timedelta = match self {
-            Self::Py(timedelta) => Ok(timedelta),
-            Self::Raw(duration) => {
-                let sign = if duration.positive { 1 } else { -1 };
-                PyDelta::new(
-                    py,
-                    sign * duration.day as i32,
-                    sign * duration.second as i32,
-                    sign * duration.microsecond as i32,
-                    true,
-                )
-            }
-        }?;
-        Ok(timedelta.into_py(py))
+    pub fn try_into_py(&self, py: Python<'a>) -> PyResult<&'a PyDelta> {
+        match self {
+            Self::Py(timedelta) => Ok(*timedelta),
+            Self::Raw(duration) => duration_as_pytimedelta(py, duration),
+        }
     }
+}
+
+pub fn duration_as_pytimedelta<'py>(py: Python<'py>, duration: &Duration) -> PyResult<&'py PyDelta> {
+    let sign = if duration.positive { 1 } else { -1 };
+    PyDelta::new(
+        py,
+        sign * duration.day as i32,
+        sign * duration.second as i32,
+        sign * duration.microsecond as i32,
+        true,
+    )
 }
 
 pub fn pytime_as_time(py_time: &PyAny, py_dt: Option<&PyAny>) -> PyResult<Time> {
