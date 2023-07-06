@@ -478,7 +478,7 @@ In Pydantic V2, we recognize that the value is an instance of one of the cases a
 #### Required, optional, and nullable fields
 
 Pydantic V2 changes some of the logic for specifying whether a field annotated as `Optional` is required
-(i.e., has no default value) or not (i.e., has a default value of `None`), and now more closely matches the
+(i.e., has no default value) or not (i.e., has a default value of `None` or any other value of the corresponding type), and now more closely matches the
 behavior of `dataclasses`. Similarly, fields annotated as `Any` no longer have a default value of `None`.
 
 The following table describes the behavior of field annotations in V2:
