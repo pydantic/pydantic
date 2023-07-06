@@ -321,7 +321,7 @@ except ValidationError as exc:
     """
 ```
 
-## Using `__get_pydantic_core_schema__`
+## Customizing validation with `__get_pydantic_core_schema__`
 
 To do more extensive customization of how Pydantic handles custom classes, and in particular when you have access to the
 class or can subclass it, you can implement a special `__get_pydantic_core_schema__` to tell Pydantic how to generate the
