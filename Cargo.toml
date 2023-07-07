@@ -1,6 +1,6 @@
 [package]
 name = "pydantic-core"
-version = "2.1.2"
+version = "2.1.3"
 edition = "2021"
 license = "MIT"
 homepage = "https://github.com/pydantic/pydantic-core"
@@ -35,7 +35,7 @@ enum_dispatch = "0.3.8"
 serde = "1.0.147"
 # disabled for benchmarks since it makes microbenchmark performance more flakey
 mimalloc = { version = "0.1.30", optional = true, default-features = false, features = ["local_dynamic_tls"] }
-speedate = "0.9.0"
+speedate = "0.9.1"
 ahash = "0.8.0"
 url = "2.3.1"
 # idna is already required by url, added here to be explicit
