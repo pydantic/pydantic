@@ -8,8 +8,6 @@ Pydantic provides several ways to generate JSON schemas or JSON representations 
 * [`TypeAdapter.dump_json`][pydantic.type_adapter.TypeAdapter.dump_json] serializes an instance of the adapted type to
     JSON.
 * [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema] generates a JSON schema for the adapted type.
-* [`TypeAdapter.json_schemas`][pydantic.type_adapter.TypeAdapter.json_schemas] generates a JSON schema including
-    definitions from multiple type adapters.
 
 The generated JSON schemas are compliant with the following specifications:
 
@@ -592,7 +590,6 @@ print(json.dumps(top_level_schema, indent=2))
 """
 ```
 
-
 ## Schema customization
 
 You can customize the generated `$ref` JSON location: the definitions are always stored under the key
@@ -615,12 +612,14 @@ class Model(BaseModel):
     a: Foo
 
 
-# Default location for OpenAPI
-_, top_level_schema = TypeAdapter.json_schemas(
-    [(Model, 'validation', TypeAdapter(Model))],
-    ref_template='#/components/schemas/{model}',
+adapter = TypeAdapter(Model)
+
+print(
+    json.dumps(
+        adapter.json_schema(ref_template='#/components/schemas/{model}'),
+        indent=2,
+    )
 )
-print(json.dumps(top_level_schema, indent=2))
 """
 {
   "$defs": {
@@ -636,20 +635,18 @@ print(json.dumps(top_level_schema, indent=2))
       ],
       "title": "Foo",
       "type": "object"
-    },
-    "Model": {
-      "properties": {
-        "a": {
-          "$ref": "#/components/schemas/Foo"
-        }
-      },
-      "required": [
-        "a"
-      ],
-      "title": "Model",
-      "type": "object"
     }
-  }
+  },
+  "properties": {
+    "a": {
+      "$ref": "#/components/schemas/Foo"
+    }
+  },
+  "required": [
+    "a"
+  ],
+  "title": "Model",
+  "type": "object"
 }
 """
 ```
