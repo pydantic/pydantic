@@ -2703,6 +2703,8 @@ This looks like <code>class MyGenericModel(BaseModel, Generic[T]): ...</code>.</
 <h3 id="changes-to-pydanticfield">Changes to <code>pydantic.Field</code><a class="headerlink" href="#changes-to-pydanticfield" title="Permanent link">&para;</a></h3>
 <p><code>Field</code> no longer supports arbitrary keyword arguments to be added to the JSON schema. Instead, any extra
 data you want to add to the JSON schema should be passed as a dictionary to the <code>json_schema_extra</code> keyword argument.</p>
+<p>In Pydantic V1, the <code>alias</code> property returns the field's name when no alias is set.
+In Pydantic V2, this behavior has changed to return <code>None</code> when no alias is set.</p>
 <p>The following properties have been removed from or changed in <code>Field</code>:</p>
 <ul>
 <li><code>const</code></li>
