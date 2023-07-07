@@ -452,7 +452,8 @@ except ValidationError as e:
     """
 ```
 
-To override the schema completely, do not call the handler and return your own [`CoreSchema`][pydantic_core.core_schema.CoreSchema]:
+To override the schema completely, do not call the handler and return your own
+`CoreSchema`:
 
 ```py
 from typing import Any, Type
@@ -727,3 +728,55 @@ The various methods that can be used to produce JSON schema accept a keyword arg
 `GenerateJsonSchema` implements the translation of a type's `pydantic-core` schema into a JSON schema.
 By design, this class breaks the JSON schema generation process into smaller methods that can be easily overridden in
 subclasses to modify the "global" approach to generating JSON schema.
+
+```py
+import json
+from typing import Any, Dict, Type
+
+from pydantic import BaseModel
+from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
+
+
+class MyGenerateJsonSchema(GenerateJsonSchema):
+    def generate(self, schema, mode='validation'):
+        json_schema = super().generate(schema, mode=mode)
+        json_schema['$schema'] = self.schema_dialect
+        return json_schema
+
+
+class MyBaseModel(BaseModel):
+    @classmethod
+    def model_json_schema(
+        cls,
+        by_alias: bool = True,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
+        schema_generator: Type[GenerateJsonSchema] = MyGenerateJsonSchema,
+        mode='validation',
+    ) -> Dict[str, Any]:
+        return super().model_json_schema(
+            by_alias, ref_template, schema_generator, mode
+        )
+
+
+class MyModel(MyBaseModel):
+    x: int
+
+
+print(json.dumps(MyModel.model_json_schema(), indent=4))
+"""
+{
+    "properties": {
+        "x": {
+            "title": "X",
+            "type": "integer"
+        }
+    },
+    "required": [
+        "x"
+    ],
+    "title": "MyModel",
+    "type": "object",
+    "$schema": "https://json-schema.org/draft/2020-12/schema"
+}
+"""
+```
