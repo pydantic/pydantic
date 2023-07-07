@@ -894,13 +894,15 @@ def test_serialize_as_any() -> None:
         password: SecretStr
 
     class OuterModel(BaseModel):
+        maybe_as_any: Optional[SerializeAsAny[User]]
         as_any: SerializeAsAny[User]
         without: User
 
     user = UserLogin(name='pydantic', password='password')
 
     # insert_assert(json.loads(OuterModel(as_any=user, without=user).model_dump_json()))
-    assert json.loads(OuterModel(as_any=user, without=user).model_dump_json()) == {
+    assert json.loads(OuterModel(maybe_as_any=user, as_any=user, without=user).model_dump_json()) == {
+        'maybe_as_any': {'name': 'pydantic', 'password': '**********'},
         'as_any': {'name': 'pydantic', 'password': '**********'},
         'without': {'name': 'pydantic'},
     }

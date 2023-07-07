@@ -265,3 +265,5 @@ else:
                 lambda x, h: h(x), schema=core_schema.any_schema()
             )
             return schema
+
+        __hash__ = object.__hash__
