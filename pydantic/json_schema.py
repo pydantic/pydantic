@@ -466,16 +466,16 @@ class GenerateJsonSchema:
                 TypeError: If an unexpected schema type is encountered.
             """
             # Generate the core-schema-type-specific bits of the schema generation:
+            json_schema: JsonSchemaValue | None = None
             if self.mode == 'serialization' and 'serialization' in schema_or_field:
-                # Technically this is invalid because this will give us a SerSchema, not a CoreSchema.
-                # However, it works, and making the SerSchema stuff typecheck everywhere will require
-                # a lot of refactoring. TODO: Make schema_or_field into a CoreSchemaOrSerSchemaOrField
-                schema_or_field = schema_or_field['serialization']  # type: ignore
-            if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
-                generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
-                json_schema = generate_for_schema_type(schema_or_field)
-            else:
-                raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
+                ser_schema = schema_or_field['serialization']  # type: ignore
+                json_schema = self.ser_schema(ser_schema)
+            if json_schema is None:
+                if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
+                    generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
+                    json_schema = generate_for_schema_type(schema_or_field)
+                else:
+                    raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
             if _core_utils.is_core_schema(schema_or_field):
                 json_schema = populate_defs(schema_or_field, json_schema)
                 json_schema = convert_to_all_of(json_schema)
@@ -842,13 +842,6 @@ class GenerateJsonSchema:
         self,
         schema: _core_utils.AnyFunctionSchema,
     ) -> JsonSchemaValue:
-        # Note: 'return_schema' is only in the SerSchema versions
-        # See the note: TODO: Make schema_or_field into a CoreSchemaOrSerSchemaOrField
-        # above to see how a SerSchema can end up passed to this function call.
-        # (This should eventually be fixed.)
-        if self.mode == 'serialization' and 'return_schema' in schema and schema['type'] != 'function-before':
-            return self.generate_inner(schema['return_schema'])  # type: ignore
-
         if _core_utils.is_function_with_inner_schema(schema):
             # This could be wrong if the function's mode is 'before', but in practice will often be right, and when it
             # isn't, I think it would be hard to automatically infer what the desired schema should be.
@@ -1672,6 +1665,31 @@ class GenerateJsonSchema:
         core_ref = CoreRef(schema['schema_ref'])
         _, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
         return ref_json_schema
+
+    def ser_schema(
+        self, schema: core_schema.SerSchema | core_schema.IncExSeqSerSchema | core_schema.IncExDictSerSchema
+    ) -> JsonSchemaValue | None:
+        """Generates a JSON schema that matches a schema that defines a serialized object.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        schema_type = schema['type']
+        if schema_type == 'function-plain' or schema_type == 'function-wrap':
+            # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
+            return_schema = schema.get('return_schema')
+            if return_schema is not None:
+                return self.generate_inner(return_schema)
+        elif schema_type == 'format' or schema_type == 'to-string':
+            # FormatSerSchema or ToStringSerSchema
+            return self.str_schema(core_schema.str_schema())
+        elif schema['type'] == 'model':
+            # ModelSerSchema
+            return self.generate_inner(schema['schema'])
+        return None
 
     # ### Utility methods
 

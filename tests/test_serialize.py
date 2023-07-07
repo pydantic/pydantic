@@ -936,7 +936,7 @@ def test_forward_ref_for_serializers(as_annotation, mode):
             x: Annotated[int, annotation]
         else:
             x: int
-            ser_model = field_serializer('x', mode=mode)(ser_model_func)
+            ser_model = field_serializer('x', mode=mode)(ser_model_method)
 
     class OtherModel(BaseModel):
         y: int
