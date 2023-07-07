@@ -243,14 +243,17 @@ jobs:
           path: htmlcov
 
   test-typing-extensions:
-    name: test typing-extensions
+    name: test typing-extensions ${{ matrix.typing-extensions-version }} on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         # test the oldest supported version and main
         typing-extensions-version: ['4.6.1', 'main']
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        include:
+          - typing-extensions-version: '4.6.1'
+            python-version: '3.8'
 
     steps:
     - uses: actions/checkout@v3
@@ -268,9 +271,9 @@ jobs:
     - name: install typing-extensions
       run: |
         if [ ${{ matrix.typing-extensions-version }} == 'main' ]; then
-          pdm remove typing-extensions && pdm add 'git+https://github.com/python/typing_extensions.git'
+          pdm remove typing-extensions && pdm add 'git+https://github.com/python/typing_extensions.git; python_version >= "${{ matrix.python-version }}"'
         else
-          pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}'
+          pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}; python_version >= "${{ matrix.python-version }}"'
         fi
         pdm list
     - name: test
