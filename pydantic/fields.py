@@ -905,7 +905,7 @@ class ComputedFieldInfo:
 
     decorator_repr: ClassVar[str] = '@computed_field'
     wrapped_property: property
-    return_type: type[Any]
+    return_type: Any
     alias: str | None
     alias_priority: int | None
     title: str | None
@@ -921,7 +921,7 @@ PropertyT = typing.TypeVar('PropertyT')
 @typing.overload
 def computed_field(
     *,
-    return_type: Any = None,
+    return_type: Any = PydanticUndefined,
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
@@ -944,7 +944,7 @@ def computed_field(
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
-    return_type: Any = None,
+    return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
     """Decorator to include `property` and `cached_property` when serializing models.
 
@@ -974,14 +974,6 @@ def computed_field(
         nonlocal description, return_type, alias_priority
         if description is None and f.__doc__:
             description = inspect.cleandoc(f.__doc__)
-
-        return_type = _decorators.get_function_return_type(f, return_type)
-        if return_type is None:
-            raise PydanticUserError(
-                'Computed field is missing return type annotation or specifying `return_type`'
-                ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)',
-                code='model-field-missing-annotation',
-            )
 
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
