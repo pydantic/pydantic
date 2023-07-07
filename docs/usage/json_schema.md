@@ -452,7 +452,7 @@ except ValidationError as e:
     """
 ```
 
-To override the schema completely, do not call the handler and return your own `core_schema`:
+To override the schema completely, do not call the handler and return your own [`CoreSchema`][pydantic_core.core_schema.CoreSchema]:
 
 ```py
 from typing import Any, Type
