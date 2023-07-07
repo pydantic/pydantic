@@ -131,7 +131,7 @@ Find more information in the [Generic models](usage/models.md#generic-models) do
 data you want to add to the JSON schema should be passed as a dictionary to the `json_schema_extra` keyword argument.
 
 In Pydantic V1, the `alias` property returns the field's name when no alias is set.
-We have changed this behavior in Pydantic V2 to return `None` when no alias is set.
+In Pydantic V2, this behavior has changed to return `None` when no alias is set.
 
 The following properties have been removed from or changed in `Field`:
 
