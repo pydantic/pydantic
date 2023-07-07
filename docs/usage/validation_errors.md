@@ -500,7 +500,7 @@ except ValidationError as exc:
 
 ## `enum`
 
-This error is raised when the input value's does not exist in a `enum` field:
+This error is raised when the input value does not exist in an `enum` field members:
 
 ```py
 from enum import Enum
