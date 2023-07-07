@@ -200,4 +200,5 @@ plugins:
       'pycharm_plugin.md': 'integrations/pycharm.md'
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
+      'usage/types.md': 'usage/types/types.md'
 - external-markdown:
