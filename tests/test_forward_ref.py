@@ -862,7 +862,7 @@ def pytest_raises_user_error_for_undefined_type(defining_class_name, missing_typ
         PydanticUserError,
         match=re.escape(
             f'`{defining_class_name}` is not fully defined; you should define `{missing_type_name}`, then call'
-            f' `{defining_class_name}.model_rebuild()` before the first `{defining_class_name}` instance is created.'
+            f' `{defining_class_name}.model_rebuild()`.'
         ),
     )
 

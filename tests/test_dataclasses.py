@@ -1586,7 +1586,7 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
         PydanticUserError,
         match=re.escape(
             '`D1` is not fully defined; you should define `D2`, then call'
-            ' `pydantic.dataclasses.rebuild_dataclass(D1)` before the first `D1` instance is created.'
+            ' `pydantic.dataclasses.rebuild_dataclass(D1)`.'
         ),
     ):
         D1()
