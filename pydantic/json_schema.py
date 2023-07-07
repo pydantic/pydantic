@@ -1057,9 +1057,10 @@ class GenerateJsonSchema:
         return openapi_discriminator
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a schema that defines a chain of schemas, where the first schema is
-        used to validate the value, and the remaining schemas are used to validate the value after each step in the
-        chain.
+        """Generates a JSON schema that matches a core_schema.ChainSchema.
+
+        When generating a schema for validation, we return the validation JSON schema for the first step in the chain.
+        For serialization, we return the serialization JSON schema for the last step in the chain.
 
         Args:
             schema: The core schema.
@@ -1067,9 +1068,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        # Note: If we wanted to generate a schema for the _serialization_, would want to use the _last_ step:
-        # There are always more than zero steps, since the ChainSchema is validated on the pydantic-core side.
-        return self.generate_inner(schema['steps'][0])
+        step_index = 0 if self.mode == 'validation' else -1  # use first step for validation, last for serialization
+        return self.generate_inner(schema['steps'][step_index])
 
     def lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that allows values matching either the lax schema or the
