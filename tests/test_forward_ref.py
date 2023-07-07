@@ -1014,8 +1014,6 @@ def test_forward_ref_in_generic(create_module: Any) -> None:
         class Bar(BaseModel):
             pass
 
-        Foo.model_rebuild()
-
     Foo = module.Foo
     Bar = module.Bar
 
