@@ -42,7 +42,7 @@ class PlainSerializer:
         schema = handler(source_type)
         try:
             return_type = _decorators.get_function_return_type(
-                self.func, self.return_type, handler.get_types_namespace()
+                self.func, self.return_type, handler._get_types_namespace()
             )
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
@@ -87,7 +87,7 @@ class WrapSerializer:
         schema = handler(source_type)
         try:
             return_type = _decorators.get_function_return_type(
-                self.func, self.return_type, handler.get_types_namespace()
+                self.func, self.return_type, handler._get_types_namespace()
             )
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
@@ -183,7 +183,7 @@ def field_serializer(
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
-            return_type=_decorators.get_function_return_type(f, return_type),
+            return_type=return_type,
             when_used=when_used,
             check_fields=check_fields,
         )
@@ -236,9 +236,7 @@ def model_serializer(
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
-        dec_info = _decorators.ModelSerializerDecoratorInfo(
-            mode=mode, return_type=_decorators.get_function_return_type(f, return_type), when_used=when_used
-        )
+        dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, return_type=return_type, when_used=when_used)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:

@@ -1505,10 +1505,17 @@ class GenerateSchema:
             serializer = serializers[-1]
             is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
 
-            if serializer.info.return_type is PydanticUndefined:
+            try:
+                return_type = _decorators.get_function_return_type(
+                    serializer.func, serializer.info.return_type, self.types_namespace
+                )
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
+            if return_type is PydanticUndefined:
                 return_schema = None
             else:
-                return_schema = self.generate_schema(serializer.info.return_type)
+                return_schema = self.generate_schema(return_type)
 
             if serializer.info.mode == 'wrap':
                 schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
@@ -1538,10 +1545,16 @@ class GenerateSchema:
             serializer = list(serializers)[-1]
             info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
 
-            if serializer.info.return_type is PydanticUndefined:
+            try:
+                return_type = _decorators.get_function_return_type(
+                    serializer.func, serializer.info.return_type, self.types_namespace
+                )
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+            if return_type is PydanticUndefined:
                 return_schema = None
             else:
-                return_schema = self.generate_schema(serializer.info.return_type)
+                return_schema = self.generate_schema(return_type)
 
             if serializer.info.mode == 'wrap':
                 ser_schema: core_schema.SerSchema = core_schema.wrap_serializer_function_ser_schema(

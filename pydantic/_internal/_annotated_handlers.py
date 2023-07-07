@@ -78,9 +78,6 @@ class GetCoreSchemaHandler:
         """
         raise NotImplementedError
 
-    def get_types_namespace(self) -> dict[str, Any] | None:
-        raise NotImplementedError
-
     def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:
         """Generate a schema unrelated to the current context.
         Use this function if e.g. you are handling schema generation for a sequence
@@ -110,4 +107,8 @@ class GetCoreSchemaHandler:
         Returns:
             A concrete `CoreSchema`.
         """
+        raise NotImplementedError
+
+    def _get_types_namespace(self) -> dict[str, Any] | None:
+        """Internal method used during type resolution for serializer annotations."""
         raise NotImplementedError

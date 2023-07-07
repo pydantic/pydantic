@@ -89,7 +89,7 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         else:  # ref_mode = 'unpack
             return self.resolve_ref_schema(schema)
 
-    def get_types_namespace(self) -> dict[str, Any] | None:
+    def _get_types_namespace(self) -> dict[str, Any] | None:
         return self._generate_schema.types_namespace
 
     def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:

@@ -466,6 +466,11 @@ class GenerateJsonSchema:
                 TypeError: If an unexpected schema type is encountered.
             """
             # Generate the core-schema-type-specific bits of the schema generation:
+            if self.mode == 'serialization' and 'serialization' in schema_or_field:
+                # Technically this is invalid because this will give us a SerSchema, not a CoreSchema.
+                # However, it works, and making the SerSchema stuff typecheck everywhere will require
+                # a lot of refactoring. TODO: Make schema_or_field into a CoreSchemaOrSerSchemaOrField
+                schema_or_field = schema_or_field['serialization']  # type: ignore
             if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
                 generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
                 json_schema = generate_for_schema_type(schema_or_field)
@@ -837,9 +842,18 @@ class GenerateJsonSchema:
         self,
         schema: _core_utils.AnyFunctionSchema,
     ) -> JsonSchemaValue:
+        # Note: 'return_schema' is only in the SerSchema versions
+        # See the note: TODO: Make schema_or_field into a CoreSchemaOrSerSchemaOrField
+        # above to see how a SerSchema can end up passed to this function call.
+        # (This should eventually be fixed.)
+        if self.mode == 'serialization' and 'return_schema' in schema and schema['type'] != 'function-before':
+            return self.generate_inner(schema['return_schema'])  # type: ignore
+
         if _core_utils.is_function_with_inner_schema(schema):
-            # I'm not sure if this might need to be different if the function's mode is 'before'
+            # This could be wrong if the function's mode is 'before', but in practice will often be right, and when it
+            # isn't, I think it would be hard to automatically infer what the desired schema should be.
             return self.generate_inner(schema['schema'])
+
         # function-plain
         return self.handle_invalid_for_json_schema(
             schema, f'core_schema.PlainValidatorFunctionSchema ({schema["function"]})'
