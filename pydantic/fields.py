@@ -972,8 +972,9 @@ def computed_field(
 
     def dec(f: Any) -> Any:
         nonlocal description, return_type, alias_priority
-        if description is None and f.__doc__:
-            description = inspect.cleandoc(f.__doc__)
+        unwrapped = _decorators.unwrap_wrapped_function(f)
+        if description is None and unwrapped.__doc__:
+            description = inspect.cleandoc(unwrapped.__doc__)
 
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
