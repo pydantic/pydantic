@@ -5039,3 +5039,23 @@ def test_chain_schema():
 
     assert GenerateJsonSchema().generate(s, mode='validation') == {'type': 'string'}
     assert GenerateJsonSchema().generate(s, mode='serialization') == {'type': 'integer'}
+
+
+def test_deferred_json_schema():
+    class Foo(BaseModel):
+        x: 'Bar'
+
+    with pytest.raises(PydanticUserError, match='`Foo` is not fully defined'):
+        Foo.model_json_schema()
+
+    class Bar(BaseModel):
+        pass
+
+    Foo.model_rebuild()
+    assert Foo.model_json_schema() == {
+        '$defs': {'Bar': {'properties': {}, 'title': 'Bar', 'type': 'object'}},
+        'properties': {'x': {'$ref': '#/$defs/Bar'}},
+        'required': ['x'],
+        'title': 'Foo',
+        'type': 'object',
+    }

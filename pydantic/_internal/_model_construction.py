@@ -21,7 +21,7 @@ from ._discriminated_union import apply_discriminators
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
-from ._mock_validator import set_basemodel_mock_validator
+from ._mock_validator import MockValidator, set_basemodel_mock_validator
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_types_namespace, is_classvar, parent_frame_namespace
 from ._utils import ClassAttribute, is_valid_identifier
@@ -190,6 +190,12 @@ class ModelMetaclass(ABCMeta):
         private_attributes = self.__dict__.get('__private_attributes__')
         if private_attributes and item in private_attributes:
             return private_attributes[item]
+        if item == '__pydantic_core_schema__':
+            # This means the class didn't get a schema generated for it, likely because there was an undefined reference
+            maybe_mock_validator = getattr(self, '__pydantic_validator__', None)
+            if isinstance(maybe_mock_validator, MockValidator):
+                maybe_mock_validator.force_rebuild()
+                return getattr(self, '__pydantic_core_schema__')
         raise AttributeError(item)
 
     @classmethod
