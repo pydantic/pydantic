@@ -971,9 +971,9 @@ class GenerateSchema:
     def _tuple_schema(self, tuple_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`."""
         typevars_map = get_standard_typevars_map(tuple_type)
-        params = self._get_args_resolving_forward_refs(tuple_type, required=True)
+        params = self._get_args_resolving_forward_refs(tuple_type)
 
-        if typevars_map:
+        if typevars_map and params:
             params = tuple(replace_types(param, typevars_map) for param in params)
 
         # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
