@@ -1,6 +1,7 @@
 import dataclasses
 import re
 import sys
+import typing
 from typing import Any, Optional, Tuple
 
 import pytest
@@ -1017,4 +1018,29 @@ def test_forward_ref_in_generic(create_module: Any) -> None:
     Foo = module.Foo
     Bar = module.Bar
 
+    assert Foo(x={Bar: Bar}).x[Bar] is Bar
+
+
+def test_forward_ref_in_generic_separate_modules(create_module: Any) -> None:
+    """https://github.com/pydantic/pydantic/issues/6503"""
+
+    @create_module
+    def module_1():
+        import typing as tp
+
+        from pydantic import BaseModel
+
+        class Foo(BaseModel):
+            x: tp.Dict['tp.Type[Bar]', tp.Type['Bar']]
+
+    @create_module
+    def module_2():
+        from pydantic import BaseModel
+
+        class Bar(BaseModel):
+            pass
+
+    Foo = module_1.Foo
+    Bar = module_2.Bar
+    Foo.model_rebuild(_types_namespace={'tp': typing, 'Bar': Bar})
     assert Foo(x={Bar: Bar}).x[Bar] is Bar
