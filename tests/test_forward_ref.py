@@ -1,7 +1,7 @@
 import dataclasses
 import re
 import sys
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import pytest
 
@@ -997,3 +997,26 @@ def test_rebuild_recursive_schema():
     models = [allOfExpressions_, Expressions_]
     for m in models:
         m.model_rebuild(_types_namespace=types_namespace)
+
+
+def test_forward_ref_in_generic(create_module: Any) -> None:
+    """https://github.com/pydantic/pydantic/issues/6503"""
+
+    @create_module
+    def module():
+        import typing as tp
+
+        from pydantic import BaseModel
+
+        class Foo(BaseModel):
+            x: tp.Dict['tp.Type[Bar]', tp.Type['Bar']]
+
+        class Bar(BaseModel):
+            pass
+
+        Foo.model_rebuild()
+
+    Foo = module.Foo
+    Bar = module.Bar
+
+    assert Foo(x={Bar: Bar}).x[Bar] is Bar
