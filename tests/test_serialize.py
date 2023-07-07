@@ -3,6 +3,7 @@ New tests for v2 of serialization logic.
 """
 import json
 import re
+import sys
 from functools import partial, partialmethod
 from typing import Any, Callable, ClassVar, Dict, Optional, Pattern
 
@@ -963,12 +964,31 @@ def test_forward_ref_for_serializers(as_annotation, mode):
 def test_forward_ref_for_computed_fields():
     class Model(BaseModel):
         x: int
-        y: ClassVar[int] = 4
 
         @computed_field
         @property
         def two_x(self) -> 'IntAlias':  # noqa F821
             return self.x * 2
+
+    Model.model_rebuild(_types_namespace={'IntAlias': int})
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'two_x': {'readOnly': True, 'title': 'Two X', 'type': 'integer'},
+            'x': {'title': 'X', 'type': 'integer'},
+        },
+        'required': ['x', 'two_x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    assert Model(x=1).model_dump() == {'two_x': 2, 'x': 1}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='@computed_field @classmethod @property only works in 3.9+')
+def test_forward_ref_for_classmethod_computed_fields():
+    class Model(BaseModel):
+        y: ClassVar[int] = 4
 
         @computed_field
         @classmethod
@@ -980,13 +1000,11 @@ def test_forward_ref_for_computed_fields():
 
     assert Model.model_json_schema(mode='serialization') == {
         'properties': {
-            'two_x': {'readOnly': True, 'title': 'Two X', 'type': 'integer'},
             'two_y': {'readOnly': True, 'title': 'Two Y', 'type': 'integer'},
-            'x': {'title': 'X', 'type': 'integer'},
         },
-        'required': ['x', 'two_x', 'two_y'],
+        'required': ['two_y'],
         'title': 'Model',
         'type': 'object',
     }
 
-    assert Model(x=1).model_dump() == {'two_x': 2, 'two_y': 8, 'x': 1}
+    assert Model().model_dump() == {'two_y': 8}
