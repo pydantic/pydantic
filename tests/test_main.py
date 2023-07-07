@@ -2695,3 +2695,16 @@ def test_arbitrary_types_not_a_type() -> None:
 
     bar = Bar()
     assert ta.validate_python(bar) is bar
+
+
+def test_deferred_core_schema() -> None:
+    class Foo(BaseModel):
+        x: 'Bar'
+
+    with pytest.raises(PydanticUserError, match='`Foo` is not fully defined'):
+        Foo.__pydantic_core_schema__
+
+    class Bar(BaseModel):
+        pass
+
+    assert Foo.__pydantic_core_schema__
