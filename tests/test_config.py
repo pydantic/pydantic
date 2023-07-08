@@ -651,3 +651,32 @@ def test_replace_types():
     user = Data(f=1.1, i=1, d=Decimal('1.1'))
 
     assert user.model_dump() == {'f': '1.1', 'i': '1', 'd': '1.1'}
+
+
+def test_replace_types_nested():
+    LaxStr = Annotated[str, BeforeValidator(str_validator)]
+
+    class Inner(BaseModel):
+        x: str
+
+    class Outer(BaseModel):
+        x: str
+        inner: Inner
+        model_config = {'replace_types': {str: LaxStr}}
+
+    user = Outer.model_validate({'x': 1, 'inner': {'x': 'a'}})
+    assert user.model_dump() == {'x': '1', 'inner': {'x': 'a'}}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Outer.model_validate({'x': 1, 'inner': {'x': 1}})
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'string_type',
+            'loc': ('inner', 'x'),
+            'msg': 'Input should be a valid string',
+            'input': 1,
+            'url': 'https://errors.pydantic.dev/2.1.2/v/string_type',
+        }
+    ]
