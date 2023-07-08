@@ -2443,11 +2443,15 @@ models using the field (serialization) aliases.</p>
 <li>The field name <code>'name'</code> is used for validation.</li>
 <li>The serialization alias <code>'username'</code> is used for serialization.</li>
 </ol>
+<div class="admonition note">
+<p class="admonition-title">Alias precedence and priority</p>
 <p>In case you use <code>alias</code> together with <code>validation_alias</code> or <code>serialization_alias</code> at the same time,
 the <code>validation_alias</code> will have priority over <code>alias</code> for validation, and <code>serialization_alias</code> will have priority
 over <code>alias</code> for serialization.</p>
+<p>You may also set <code>alias_priority</code> on a field to change this behavior.</p>
 <p>You can read more about <a href="../model_config/#alias-precedence">Alias Precedence</a> in the
 <a href="../model_config/">Model Config</a> documentation.</p>
+</div>
 <details class="tip">
 <summary>VSCode and Pyright users</summary>
 <p>In VSCode, if you use the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance">Pylance</a>
@@ -3019,7 +3023,6 @@ model when exporting the model.</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<p>TODO: Add <code>alias_priority</code> parameters.</p>
 
 
 
