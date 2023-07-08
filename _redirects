@@ -1,6 +1,6 @@
 / /latest/ 301
-/2.0.1/:else/ /2.0/:else/ 301
-/2.0.2/:else/ /2.0/:else/ 301
+/2.0.1/* /2.0/* 301
+/2.0.2/* /2.0/* 301
 /changelog/ /latest/changelog/ 301
 /contributing/ /latest/contributing/ 301
 /datamodel_code_generator/ /latest/datamodel_code_generator/ 301
