@@ -373,6 +373,12 @@ def set_model_fields(
     typevars_map = get_model_typevars_map(cls)
     fields, class_vars = collect_model_fields(cls, bases, config_wrapper, types_namespace, typevars_map=typevars_map)
 
+    if config_wrapper.replace_types:
+        replace_types = config_wrapper.replace_types
+        for fld in fields.values():
+            if fld.annotation in replace_types:
+                fld.annotation = replace_types[fld.annotation]  # type: ignore
+
     cls.model_fields = fields
     cls.__class_vars__.update(class_vars)
 

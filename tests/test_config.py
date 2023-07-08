@@ -11,6 +11,7 @@ from pydantic_core import SchemaError
 from pydantic import (
     BaseConfig,
     BaseModel,
+    BeforeValidator,
     Field,
     PrivateAttr,
     PydanticDeprecatedSince20,
@@ -23,6 +24,7 @@ from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
+from pydantic.v1.validators import str_validator
 
 if sys.version_info < (3, 9):
     from typing_extensions import Annotated
@@ -633,3 +635,19 @@ def test_config_inheritance_with_annotations():
         model_config: ConfigDict = {'str_to_lower': True}
 
     assert Child.model_config == {'extra': 'allow', 'str_to_lower': True}
+
+
+def test_replace_types():
+    LaxStr = Annotated[str, BeforeValidator(str_validator)]
+
+    class LaxStrBase(BaseModel):
+        model_config: ConfigDict = {'replace_types': {str: LaxStr}}
+
+    class Data(LaxStrBase):
+        f: str
+        i: str
+        d: str
+
+    user = Data(f=1.1, i=1, d=Decimal('1.1'))
+
+    assert user.model_dump() == {'f': '1.1', 'i': '1', 'd': '1.1'}

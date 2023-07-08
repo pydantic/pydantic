@@ -125,6 +125,7 @@ class ConfigDict(TypedDict, total=False):
         hide_input_in_errors: Whether to hide inputs when printing errors. Defaults to `False`.
 
             See [Hide Input in Errors](../usage/model_config.md#hide-input-in-errors).
+        replace_types: A `dict` of types to replace with other annotations. Defaults to None.
     """
 
     title: str | None
@@ -160,6 +161,7 @@ class ConfigDict(TypedDict, total=False):
     validate_return: bool
     protected_namespaces: tuple[str, ...]
     hide_input_in_errors: bool
+    replace_types: dict[type, type] | None
 
 
 __getattr__ = getattr_migration(__name__)
