@@ -189,7 +189,6 @@ class DecimalValidator:
                 core_schema.float_schema(strict=True),
                 core_schema.int_schema(strict=True),
                 core_schema.str_schema(strict=True, strip_whitespace=True),
-                core_schema.no_info_plain_validator_function(lambda x: str(x).strip()),
             ],
         )
         json_schema = core_schema.no_info_after_validator_function(to_decimal, primitive_schema)
