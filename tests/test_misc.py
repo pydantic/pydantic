@@ -6,7 +6,14 @@ import pytest
 from typing_extensions import get_args
 
 from pydantic_core import CoreSchema, CoreSchemaType, PydanticUndefined, core_schema
-from pydantic_core._pydantic_core import SchemaError, SchemaValidator, ValidationError, __version__, build_profile
+from pydantic_core._pydantic_core import (
+    SchemaError,
+    SchemaValidator,
+    ValidationError,
+    __version__,
+    build_info,
+    build_profile,
+)
 
 
 @pytest.mark.parametrize('obj', [ValidationError, SchemaValidator, SchemaError])
@@ -21,6 +28,10 @@ def test_version():
 
 def test_build_profile():
     assert build_profile in ('debug', 'release')
+
+
+def test_build_info():
+    assert isinstance(build_info, str)
 
 
 def test_schema_error():
