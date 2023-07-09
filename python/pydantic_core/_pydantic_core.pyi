@@ -22,6 +22,7 @@ from _typeshed import SupportsAllComparisons
 __all__ = [
     '__version__',
     'build_profile',
+    'build_info',
     '_recursion_limit',
     'ArgsKwargs',
     'SchemaValidator',
@@ -45,6 +46,7 @@ __all__ = [
 ]
 __version__: str
 build_profile: str
+build_info: str
 _recursion_limit: int
 
 _T = TypeVar('_T', default=Any, covariant=True)
