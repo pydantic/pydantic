@@ -124,7 +124,7 @@ def dataclass(
         frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
             attributes to be modified from its constructor.
         config: A configuration for the `dataclass` generation.
-        validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic `dataclass`es
+validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses
             are validated on init.
         kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.
         slots: Determines if the generated class should be a 'slots' `dataclass`, which does not allow the addition of
