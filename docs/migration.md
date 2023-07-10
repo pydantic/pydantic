@@ -163,8 +163,9 @@ dataclasses without having to subclass `BaseModel`. Pydantic V2 introduces the f
         make use of its methods.
 * In Pydantic V1, if you used a vanilla (i.e., non-Pydantic) dataclass as a field, the config of the parent type would
     be used as though it was the config for the dataclass itself as well. In Pydantic V2, this is no longer the case.
-    * In Pydantic V2, to override the `config` (like you would with a `BaseModel`), you can use the `config` parameter
-        on the `dataclass` decorator. See [Dataclass Config](usage/dataclasses.md#dataclass-config) for examples.
+    * In Pydantic V2, to override the config (like you would with `model_config` on a `BaseModel`),
+        you can use the `config` parameter on the `@dataclass` decorator.
+        See [Dataclass Config](usage/dataclasses.md#dataclass-config) for examples.
 
 ### Changes to config
 
