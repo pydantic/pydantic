@@ -8,7 +8,7 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.errors import PydanticUserError
 
@@ -1232,3 +1232,28 @@ def test_union_in_submodel() -> None:
         'title': 'TestModel',
         'type': 'object',
     }
+
+
+def test_function_after_discriminator():
+    class CatModel(BaseModel):
+        name: Literal['kitty', 'cat']
+
+        @field_validator('name', mode='after')
+        def replace_name(cls, v):
+            return 'cat'
+
+    class DogModel(BaseModel):
+        name: Literal['puppy', 'dog']
+
+        # comment out the 2 field validators and model will work!
+        @field_validator('name', mode='after')
+        def replace_name(cls, v):
+            return 'dog'
+
+    AllowedAnimal = Annotated[Union[CatModel, DogModel], Field(discriminator='name')]
+
+    class Model(BaseModel):
+        x: AllowedAnimal
+
+    m = Model(x={'name': 'kitty'})
+    assert m.x.name == 'cat'
