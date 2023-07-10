@@ -166,8 +166,10 @@ def add_version(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'index.md':
         return None
 
-    version_ref = os.getenv('GITHUB_REF')
-    if version_ref and version_ref.startswith('refs/tags/'):
+    if version := os.getenv('PYDANTIC_VERSION'):
+        url = f'https://github.com/pydantic/pydantic/releases/tag/{version}'
+        version_str = f'Documentation for version: [{version}]({url})'
+    elif (version_ref := os.getenv('GITHUB_REF')) and version_ref.startswith('refs/tags/'):
         version = re.sub('^refs/tags/', '', version_ref.lower())
         url = f'https://github.com/pydantic/pydantic/releases/tag/{version}'
         version_str = f'Documentation for version: [{version}]({url})'
@@ -177,6 +179,7 @@ def add_version(markdown: str, page: Page) -> str | None:
         version_str = f'Documentation for development version: [{sha}]({url})'
     else:
         version_str = 'Documentation for development version'
+    print(f'Setting version prefix: {version_str!r}')
     markdown = re.sub(r'{{ *version *}}', version_str, markdown)
     return markdown
 

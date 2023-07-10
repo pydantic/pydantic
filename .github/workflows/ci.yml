@@ -303,56 +303,8 @@ jobs:
         with:
           jobs: ${{ toJSON(needs) }}
 
-  publish_docs:
-    needs: [check]
-    timeout-minutes: 30
-    if: needs.check.outputs.result == 'success' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: checkout docs-site
-        uses: actions/checkout@v3
-        with:
-          ref: docs-site
-
-      - name: checkout current branch
-        uses: actions/checkout@v3
-
-      - uses: pdm-project/setup-pdm@v3
-        with:
-          python-version: '3.10'
-          cache: true
-          version: 2.7.0
-
-      - name: install
-        run: |
-          pdm install -G docs
-          pdm run pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs-material/mkdocs_material-9.1.5+insiders.4.32.4-py3-none-any.whl
-        env:
-          MKDOCS_TOKEN: ${{ secrets.MKDOCS_TOKEN }}
-
-      - run: pdm run python -c 'import docs.plugins.main'
-
-      - name: Set git credentials
-        run: |
-          git config --global user.name "${{ github.actor }}"
-          git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-
-      - run: pdm run mike deploy -b docs-site dev-v2 --push
-        if: github.ref == 'refs/heads/main'
-
-      - name: check version
-        if: "startsWith(github.ref, 'refs/tags/')"
-        id: check-version
-        uses: samuelcolvin/check-python-version@v3.2
-        with:
-          version_file_path: 'pydantic/version.py'
-
-      - run: pdm run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
-        if: "startsWith(github.ref, 'refs/tags/') && !fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
-
   release:
-    needs: [check, publish_docs]
+    needs: [check]
     if: needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     environment: release
@@ -376,7 +328,7 @@ jobs:
 
       - name: check version
         id: check-tag
-        uses: samuelcolvin/check-python-version@v3.2
+        uses: samuelcolvin/check-python-version@v4.1
         with:
           version_file_path: pydantic/version.py
 
