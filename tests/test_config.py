@@ -9,6 +9,7 @@ from dirty_equals import HasRepr, IsPartialDict
 from pydantic_core import SchemaError
 
 from pydantic import (
+    AfterValidator,
     BaseConfig,
     BaseModel,
     BeforeValidator,
@@ -680,3 +681,15 @@ def test_replace_types_nested():
             'url': 'https://errors.pydantic.dev/2.1.2/v/string_type',
         }
     ]
+
+
+def test_replace_types_annotated():
+    DoubleStr = Annotated[str, AfterValidator(lambda x: x * 2)]
+
+    class Model(BaseModel):
+        x: Annotated[str, AfterValidator(str.lower)]
+        model_config = {'replace_types': {str: DoubleStr}}
+
+    user = Model(x='ABC')
+
+    assert user.model_dump() == {'x': 'abcabc'}
