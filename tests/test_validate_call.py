@@ -669,3 +669,21 @@ def test_methods_are_not_rebound():
     # Ensure validation is still happening
     assert Thing.c(thing, '2') == 3
     assert Thing(2).c('3') == 5
+
+
+def test_basemodel_method():
+    class Foo(BaseModel):
+        @classmethod
+        @validate_call
+        def test(cls, x: int):
+            return cls, x
+
+    assert Foo.test('1') == (Foo, 1)
+
+    class Bar(BaseModel):
+        @validate_call
+        def test(self, x: int):
+            return self, x
+
+    bar = Bar()
+    assert bar.test('1') == (bar, 1)
