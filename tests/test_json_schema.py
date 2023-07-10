@@ -2671,12 +2671,12 @@ class NestedModel(BaseModel):
         'ModelOneOutput',
         'ModelTwoInput',
         'ModelTwoOutput',
-        f'{module.__name__}__ModelOne__NestedModelInput',
-        f'{module.__name__}__ModelOne__NestedModelOutput',
-        f'{module.__name__}__ModelTwo__NestedModelInput',
-        f'{module.__name__}__ModelTwo__NestedModelOutput',
-        f'{module.__name__}__NestedModelInput',
-        f'{module.__name__}__NestedModelOutput',
+        f'{module.__name__}__ModelOne__NestedModel__Input',
+        f'{module.__name__}__ModelOne__NestedModel__Output',
+        f'{module.__name__}__ModelTwo__NestedModel__Input',
+        f'{module.__name__}__ModelTwo__NestedModel__Output',
+        f'{module.__name__}__NestedModel__Input',
+        f'{module.__name__}__NestedModel__Output',
     }
     assert model_names == expected_model_names
 
@@ -4504,26 +4504,26 @@ def test_serialization_validation_interaction():
     _, vs_schema = models_json_schema([(Outer, 'validation'), (Outer, 'serialization')])
     assert vs_schema == {
         '$defs': {
-            'InnerInput': {
+            'Inner__Input': {
                 'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
                 'required': ['x'],
                 'title': 'Inner',
                 'type': 'object',
             },
-            'InnerOutput': {
+            'Inner__Output': {
                 'properties': {'x': {'title': 'X', 'type': 'integer'}},
                 'required': ['x'],
                 'title': 'Inner',
                 'type': 'object',
             },
-            'OuterInput': {
-                'properties': {'inner': {'$ref': '#/$defs/InnerInput'}},
+            'Outer__Input': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner__Input'}},
                 'required': ['inner'],
                 'title': 'Outer',
                 'type': 'object',
             },
-            'OuterOutput': {
-                'properties': {'inner': {'$ref': '#/$defs/InnerOutput'}},
+            'Outer__Output': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner__Output'}},
                 'required': ['inner'],
                 'title': 'Outer',
                 'type': 'object',
