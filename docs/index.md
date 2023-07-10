@@ -1,3 +1,5 @@
+# Pydantic
+
 [![CI](https://github.com/pydantic/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)
 [![Coverage](https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)<br>
 [![pypi](https://img.shields.io/pypi/v/pydantic.svg)](https://pypi.python.org/pypi/pydantic)
@@ -9,19 +11,28 @@
 
 Pydantic is the most widely used data validation library for Python.
 
-!!! success "Migrating to Pydantic V2"
-    Already using Pydantic V1? See the [Migration Guide](migration.md) for notes on upgrading to Pydantic V2 in your applications!
+Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.7+; validate it with Pydantic.
 
-```py lint="skip" upgrade="skip" title="Pydantic Example" requires="3.10"
+!!! success "Migrating to Pydantic V2"
+    Using Pydantic V1? See the [Migration Guide](migration.md) for notes on upgrading to Pydantic V2 in your applications!
+
+```py title="Pydantic Example" requires="3.10"
+from datetime import datetime
+from typing import Tuple
+
 from pydantic import BaseModel
 
-class MyModel(BaseModel):
-    a: int
-    b: list[str]
 
-m = MyModel(a=123, b=['a', 'b', 'c'])
-print(m.model_dump())
-#> {'a': 123, 'b': ['a', 'b', 'c']}
+class Delivery(BaseModel):
+    timestamp: datetime
+    dimensions: Tuple[int, int]
+
+
+m = Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20'])
+print(repr(m.timestamp))
+#> datetime.datetime(2020, 1, 2, 3, 4, 5, tzinfo=TzInfo(UTC))
+print(m.dimensions)
+#> (10, 20)
 ```
 
 ## Why use Pydantic?
