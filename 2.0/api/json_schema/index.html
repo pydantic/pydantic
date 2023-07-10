@@ -4640,9 +4640,9 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Generates a JSON schema that matches a schema that defines a chain of schemas, where the first schema is
-used to validate the value, and the remaining schemas are used to validate the value after each step in the
-chain.</p>
+      <p>Generates a JSON schema that matches a core_schema.ChainSchema.</p>
+<p>When generating a schema for validation, we return the validation JSON schema for the first step in the chain.
+For serialization, we return the serialization JSON schema for the last step in the chain.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4710,9 +4710,10 @@ chain.</p>
 <span class="normal">1070</span>
 <span class="normal">1071</span>
 <span class="normal">1072</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">chain_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ChainSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a JSON schema that matches a schema that defines a chain of schemas, where the first schema is</span>
-<span class="sd">    used to validate the value, and the remaining schemas are used to validate the value after each step in the</span>
-<span class="sd">    chain.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a JSON schema that matches a core_schema.ChainSchema.</span>
+
+<span class="sd">    When generating a schema for validation, we return the validation JSON schema for the first step in the chain.</span>
+<span class="sd">    For serialization, we return the serialization JSON schema for the last step in the chain.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        schema: The core schema.</span>
@@ -4720,9 +4721,8 @@ chain.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The generated JSON schema.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Note: If we wanted to generate a schema for the _serialization_, would want to use the _last_ step:</span>
-    <span class="c1"># There are always more than zero steps, since the ChainSchema is validated on the pydantic-core side.</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;steps&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">step_index</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>  <span class="c1"># use first step for validation, last for serialization</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;steps&#39;</span><span class="p">][</span><span class="n">step_index</span><span class="p">])</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>

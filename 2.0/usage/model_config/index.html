@@ -1119,6 +1119,19 @@
     Alias Precedence
   </a>
   
+    <nav class="md-nav" aria-label="Alias Precedence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#alias-priority" class="md-nav__link">
+    Alias Priority
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2213,6 +2226,19 @@
     Alias Precedence
   </a>
   
+    <nav class="md-nav" aria-label="Alias Precedence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#alias-priority" class="md-nav__link">
+    Alias Priority
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2461,7 +2487,7 @@ you can automatically generate aliases using <code>alias_generator</code>:</p>
 e.g. <code>CamelCase</code>. If you'd like instead to use lower camel case e.g. <code>camelCase</code>,
 instead use the <code>to_lower_camel</code> function.</p>
 <h2 id="alias-precedence">Alias Precedence<a class="headerlink" href="#alias-precedence" title="Permanent link">&para;</a></h2>
-<p>If you specify an <code>alias</code> on the <code>Field</code>, it will take precedence over the generated alias:</p>
+<p>If you specify an <code>alias</code> on the <code>Field</code>, it will take precedence over the generated alias by default:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
@@ -2482,6 +2508,13 @@ instead use the <code>to_lower_camel</code> function.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">voice</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
 <span class="c1">#&gt; {&#39;Name&#39;: &#39;Filiz&#39;, &#39;lang&#39;: &#39;tr-TR&#39;}</span>
 </code></pre></div>
+<h3 id="alias-priority">Alias Priority<a class="headerlink" href="#alias-priority" title="Permanent link">&para;</a></h3>
+<p>You may set <code>alias_priority</code> on a field to change this behavior:</p>
+<ul>
+<li><code>alias_priority=2</code> the alias will <em>not</em> be overridden by the alias generator.</li>
+<li><code>alias_priority=1</code> the alias <em>will</em> be overridden by the alias generator.</li>
+<li><code>alias_priority</code> not set, the alias will be overridden by the alias generator.</li>
+</ul>
 <p>The same precedence applies to <code>validation_alias</code> and <code>serialization_alias</code>.
 See more about the different field aliases under <a href="../fields/#field-aliases">field aliases</a>.</p>
 <h2 id="extra-attributes">Extra Attributes<a class="headerlink" href="#extra-attributes" title="Permanent link">&para;</a></h2>

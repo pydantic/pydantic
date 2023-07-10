@@ -1238,6 +1238,20 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    Usage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#environment-variable-names" class="md-nav__link">
     Environment variable names
   </a>
@@ -2199,6 +2213,20 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#installation" class="md-nav__link">
+    Installation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    Usage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#environment-variable-names" class="md-nav__link">
     Environment variable names
   </a>
@@ -2314,6 +2342,11 @@
 
 <h1 id="settings-management">Settings Management<a class="headerlink" href="#settings-management" title="Permanent link">&para;</a></h1>
 <p><a href="https://github.com/pydantic/pydantic-settings">Pydantic Settings</a> provides optional Pydantic features for loading a settings or config class from environment variables or secrets files.</p>
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<p>Installation is as simple as:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pydantic-settings
+</code></pre></div>
+<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
 <p>If you create a model that inherits from <code>BaseSettings</code>, the model initialiser will attempt to determine
 the values of any fields not passed as keyword arguments by reading from the environment. (Default values
 will still be used if the matching environment variable is not set.)</p>
@@ -2444,7 +2477,7 @@ you like through <code>Field(validation_alias=...)</code>.</p>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
 
-<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
 <span class="k">class</span> <span class="nc">RedisSettings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
@@ -2452,9 +2485,7 @@ you like through <code>Field(validation_alias=...)</code>.</p>
     <span class="n">port</span><span class="p">:</span> <span class="nb">int</span>
 
 
-<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">,</span> <span class="n">case_sensitive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="n">redis</span><span class="p">:</span> <span class="n">RedisSettings</span>
 
 

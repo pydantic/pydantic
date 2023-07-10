@@ -2285,7 +2285,10 @@ being worked on.</p>
 
 <span class="c1"># Create an instance</span>
 <span class="n">m</span> <span class="o">=</span> <span class="n">ImportThings</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math:cos&#39;</span><span class="p">)</span>
-<span class="n">m</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; obj=&lt;built-in function cos&gt;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="c1">#&gt; {&quot;obj&quot;:&quot;math.cos&quot;}</span>
 </code></pre></div>
 <h2 id="constrained-types">Constrained Types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
 <p>The value of numerous common types can be restricted using <code>con*</code> type functions.</p>

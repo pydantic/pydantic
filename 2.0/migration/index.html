@@ -2703,6 +2703,8 @@ This looks like <code>class MyGenericModel(BaseModel, Generic[T]): ...</code>.</
 <h3 id="changes-to-pydanticfield">Changes to <code>pydantic.Field</code><a class="headerlink" href="#changes-to-pydanticfield" title="Permanent link">&para;</a></h3>
 <p><code>Field</code> no longer supports arbitrary keyword arguments to be added to the JSON schema. Instead, any extra
 data you want to add to the JSON schema should be passed as a dictionary to the <code>json_schema_extra</code> keyword argument.</p>
+<p>In Pydantic V1, the <code>alias</code> property returns the field's name when no alias is set.
+In Pydantic V2, this behavior has changed to return <code>None</code> when no alias is set.</p>
 <p>The following properties have been removed from or changed in <code>Field</code>:</p>
 <ul>
 <li><code>const</code></li>
@@ -3106,9 +3108,62 @@ As a demonstration, consider the following example:</p>
 <p>In Pydantic V1, the printed result would have been <code>x=1</code>, since the value would pass validation as an <code>int</code>.
 In Pydantic V2, we recognize that the value is an instance of one of the cases and short-circuit the standard union validation.</p>
 <h4 id="required-optional-and-nullable-fields">Required, optional, and nullable fields<a class="headerlink" href="#required-optional-and-nullable-fields" title="Permanent link">&para;</a></h4>
-<p>Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields. In Pydantic V2, these concepts are
-more clearly defined.</p>
-<p>Pydantic V2 will move to match <code>dataclasses</code>, thus you may explicitly specify a field as <code>required</code> or <code>optional</code> and whether the field accepts <code>None</code> or not.</p>
+<p>Pydantic V2 changes some of the logic for specifying whether a field annotated as <code>Optional</code> is required
+(i.e., has no default value) or not (i.e., has a default value of <code>None</code> or any other value of the corresponding type), and now more closely matches the
+behavior of <code>dataclasses</code>. Similarly, fields annotated as <code>Any</code> no longer have a default value of <code>None</code>.</p>
+<p>The following table describes the behavior of field annotations in V2:</p>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Field Definition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Required, cannot be <code>None</code></td>
+<td><code>f1: str</code></td>
+</tr>
+<tr>
+<td>Not required, cannot be <code>None</code>, is <code>'abc'</code> by default</td>
+<td><code>f3: str = 'abc'</code></td>
+</tr>
+<tr>
+<td>Required, can be <code>None</code></td>
+<td><code>f2: Optional[str]</code></td>
+</tr>
+<tr>
+<td>Not required, can be <code>None</code>, is <code>None</code> by default</td>
+<td><code>f3: Optional[str] = None</code></td>
+</tr>
+<tr>
+<td>Not required, can be <code>None</code>, is <code>'abc'</code> by default</td>
+<td><code>f3: Optional[str] = 'abc'</code></td>
+</tr>
+<tr>
+<td>Not required, cannot be <code>None</code></td>
+<td><code>f4: str = 'Foobar'</code></td>
+</tr>
+<tr>
+<td>Required, can be any type (including <code>None</code>)</td>
+<td><code>f5: Any</code></td>
+</tr>
+<tr>
+<td>Not required, can be any type (including <code>None</code>)</td>
+<td><code>f6: Any = None</code></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A field annotated as <code>typing.Optional[T]</code> will be required, and will allow for a value of <code>None</code>.
+It does not mean that the field has a default value of <code>None</code>. <em>(This is a breaking change from V1.)</em></p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Any default value if provided makes a field not required.</p>
+</div>
+<p>Here is a code example demonstrating the above:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3439,6 +3494,10 @@ which may be installed separately if needed.</p>
 <td><code>pydantic.utils.to_lower_camel</code></td>
 <td><code>pydantic.alias_generators.to_camel</code></td>
 </tr>
+<tr>
+<td><code>pydantic.PyObject</code></td>
+<td><a href="usage/types/string_types/#importstring"><code>pydantic.ImportString</code></a></td>
+</tr>
 </tbody>
 </table>
 <h2 id="deprecated-and-moved-in-pydantic-v2">Deprecated and moved in Pydantic V2<a class="headerlink" href="#deprecated-and-moved-in-pydantic-v2" title="Permanent link">&para;</a></h2>
@@ -3552,7 +3611,6 @@ which may be installed separately if needed.</p>
 <li><code>pydantic.NoneStr</code></li>
 <li><code>pydantic.NoneStrBytes</code></li>
 <li><code>pydantic.Protocol</code></li>
-<li><code>pydantic.PyObject</code></li>
 <li><code>pydantic.Required</code></li>
 <li><code>pydantic.StrBytes</code></li>
 <li><code>pydantic.compiled</code></li>
