@@ -2796,7 +2796,7 @@
         <tr>
           <td><code>return_type</code></td>
           <td>
-                <code>type[<span title="typing.Any">Any</span>]</code>
+                <code><span title="typing.Any">Any</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5494,7 +5494,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
     <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="nb">repr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -5615,7 +5615,7 @@ objects.</p>
             </div>
           </td>
           <td>
-                <code>None</code>
+                <code>PydanticUndefined</code>
           </td>
         </tr>
     </tbody>
@@ -5694,14 +5694,7 @@ objects.</p>
 <span class="normal">985</span>
 <span class="normal">986</span>
 <span class="normal">987</span>
-<span class="normal">988</span>
-<span class="normal">989</span>
-<span class="normal">990</span>
-<span class="normal">991</span>
-<span class="normal">992</span>
-<span class="normal">993</span>
-<span class="normal">994</span>
-<span class="normal">995</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">988</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5709,7 +5702,7 @@ objects.</p>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="nb">repr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[</span><span class="n">PropertyT</span><span class="p">],</span> <span class="n">PropertyT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to include `property` and `cached_property` when serializing models.</span>
 
@@ -5737,16 +5730,9 @@ objects.</p>
 
     <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">nonlocal</span> <span class="n">description</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">alias_priority</span>
-        <span class="k">if</span> <span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">:</span>
-            <span class="n">description</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">cleandoc</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
-
-        <span class="n">return_type</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">get_function_return_type</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">return_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-                <span class="s1">&#39;Computed field is missing return type annotation or specifying `return_type`&#39;</span>
-                <span class="s1">&#39; to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)&#39;</span><span class="p">,</span>
-                <span class="n">code</span><span class="o">=</span><span class="s1">&#39;model-field-missing-annotation&#39;</span><span class="p">,</span>
-            <span class="p">)</span>
+        <span class="n">unwrapped</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">unwrap_wrapped_function</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">unwrapped</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">:</span>
+            <span class="n">description</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">cleandoc</span><span class="p">(</span><span class="n">unwrapped</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
 
         <span class="c1"># if the function isn&#39;t already decorated with `@property` (or another descriptor), then we wrap it now</span>
         <span class="n">f</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ensure_property</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>

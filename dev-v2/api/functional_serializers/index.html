@@ -2393,7 +2393,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <div class="highlight"><pre><span></span><code><span class="n">field_serializer</span><span class="p">(</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">,</span>
     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="n">when_used</span><span class="o">=</span><span class="s2">&quot;always&quot;</span><span class="p">,</span>
     <span class="n">check_fields</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
@@ -2466,7 +2466,7 @@ logic, and can modify the resulting value before returning it as the final outpu
             </div>
           </td>
           <td>
-                <code>None</code>
+                <code>PydanticUndefined</code>
           </td>
         </tr>
         <tr>
@@ -2524,18 +2524,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">147</span>
 <span class="normal">148</span>
 <span class="normal">149</span>
 <span class="normal">150</span>
@@ -2569,10 +2558,21 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">178</span>
 <span class="normal">179</span>
 <span class="normal">180</span>
-<span class="normal">181</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
     <span class="n">when_used</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;always&#39;</span><span class="p">,</span>
     <span class="n">check_fields</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
@@ -2608,7 +2608,7 @@ logic, and can modify the resulting value before returning it as the final outpu
         <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">FieldSerializerDecoratorInfo</span><span class="p">(</span>
             <span class="n">fields</span><span class="o">=</span><span class="n">fields</span><span class="p">,</span>
             <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
-            <span class="n">return_type</span><span class="o">=</span><span class="n">_decorators</span><span class="o">.</span><span class="n">get_function_return_type</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">),</span>
+            <span class="n">return_type</span><span class="o">=</span><span class="n">return_type</span><span class="p">,</span>
             <span class="n">when_used</span><span class="o">=</span><span class="n">when_used</span><span class="p">,</span>
             <span class="n">check_fields</span><span class="o">=</span><span class="n">check_fields</span><span class="p">,</span>
         <span class="p">)</span>
@@ -2635,7 +2635,7 @@ logic, and can modify the resulting value before returning it as the final outpu
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
     <span class="n">when_used</span><span class="o">=</span><span class="s2">&quot;always&quot;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2713,7 +2713,7 @@ logic, and can modify the resulting value before returning it as the final outpu
             </div>
           </td>
           <td>
-                <code>None</code>
+                <code>PydanticUndefined</code>
           </td>
         </tr>
     </tbody>
@@ -2743,18 +2743,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">213</span>
 <span class="normal">214</span>
 <span class="normal">215</span>
 <span class="normal">216</span>
@@ -2777,12 +2766,21 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="normal">233</span>
 <span class="normal">234</span>
 <span class="normal">235</span>
-<span class="normal">236</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
     <span class="n">when_used</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;always&#39;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator that enables custom model serialization.</span>
 
@@ -2803,9 +2801,7 @@ logic, and can modify the resulting value before returning it as the final outpu
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ModelSerializerDecoratorInfo</span><span class="p">(</span>
-            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="n">_decorators</span><span class="o">.</span><span class="n">get_function_return_type</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">),</span> <span class="n">when_used</span><span class="o">=</span><span class="n">when_used</span>
-        <span class="p">)</span>
+        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ModelSerializerDecoratorInfo</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="n">return_type</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="n">when_used</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">__f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
