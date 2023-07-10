@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError, __version__, core_schema
+from pydantic_core import SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -53,7 +53,7 @@ def test_bool_strict(py_and_json: PyAndJson):
         v.validate_test('true')
 
 
-def test_bool_error():
+def test_bool_error(pydantic_version):
     v = SchemaValidator({'type': 'bool'})
 
     with pytest.raises(ValidationError) as exc_info:
@@ -63,7 +63,7 @@ def test_bool_error():
         '1 validation error for bool\n'
         '  Input should be a valid boolean, '
         "unable to interpret input [type=bool_parsing, input_value='wrong', input_type=str]\n"
-        f"    For further information visit https://errors.pydantic.dev/{__version__}/v/bool_parsing"
+        f"    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/bool_parsing"
     )
     assert exc_info.value.errors(include_url=False) == [
         {

@@ -41,7 +41,7 @@ def test_schema_error():
     assert repr(err) == 'SchemaError("test")'
 
 
-def test_validation_error():
+def test_validation_error(pydantic_version):
     v = SchemaValidator({'type': 'int'})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(1.5)
@@ -67,7 +67,7 @@ def test_validation_error():
             'loc': (),
             'msg': 'Input should be a valid integer, got a number with a fractional part',
             'input': 1.5,
-            'url': f'https://errors.pydantic.dev/{__version__}/v/int_from_float',
+            'url': f'https://errors.pydantic.dev/{pydantic_version}/v/int_from_float',
         }
     ]
 
@@ -108,7 +108,7 @@ def test_custom_title():
     assert exc_info.value.title == 'MyInt'
 
 
-def test_validation_error_multiple():
+def test_validation_error_multiple(pydantic_version):
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
@@ -152,11 +152,11 @@ def test_validation_error_multiple():
         'x\n'
         '  Input should be a valid number, unable to parse string as a number '
         "[type=float_parsing, input_value='xxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxx', input_type=str]\n"
-        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/float_parsing\n'
+        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/float_parsing\n'
         'y\n'
         '  Input should be a valid integer, unable to parse string as an integer '
         "[type=int_parsing, input_value='y', input_type=str]\n"
-        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/int_parsing'
+        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing'
     )
 
 

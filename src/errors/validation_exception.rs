@@ -15,7 +15,7 @@ use serde_json::ser::PrettyFormatter;
 
 use crate::build_tools::py_schema_error_type;
 use crate::errors::LocItem;
-use crate::get_version;
+use crate::get_pydantic_version;
 use crate::serializers::{SerMode, SerializationState};
 use crate::tools::{safe_repr, SchemaDict};
 
@@ -113,7 +113,12 @@ static URL_PREFIX: GILOnceCell<String> = GILOnceCell::new();
 
 fn get_url_prefix(py: Python, include_url: bool) -> Option<&str> {
     if include_url {
-        Some(URL_PREFIX.get_or_init(py, || format!("https://errors.pydantic.dev/{}/v/", get_version())))
+        Some(URL_PREFIX.get_or_init(py, || {
+            format!(
+                "https://errors.pydantic.dev/{}/v/",
+                get_pydantic_version(py).unwrap_or("latest")
+            )
+        }))
     } else {
         None
     }

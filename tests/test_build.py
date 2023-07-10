@@ -2,7 +2,7 @@ import pickle
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, __version__
+from pydantic_core import SchemaError, SchemaValidator
 from pydantic_core import core_schema as cs
 
 
@@ -32,13 +32,13 @@ def test_schema_as_string():
     assert v.validate_python('tRuE') is True
 
 
-def test_schema_wrong_type():
+def test_schema_wrong_type(pydantic_version):
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator(1)
     assert str(exc_info.value) == (
         'Invalid Schema:\n  Input should be a valid dictionary or object to'
         ' extract fields from [type=model_attributes_type, input_value=1, input_type=int]\n'
-        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/model_attributes_type'
+        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/model_attributes_type'
     )
     assert exc_info.value.errors() == [
         {
