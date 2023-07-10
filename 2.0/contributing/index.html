@@ -1547,9 +1547,22 @@
   
 </li>
         
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation-pull-requests" class="md-nav__link">
+    Documentation Pull Requests
+  </a>
+  
+    <nav class="md-nav" aria-label="Documentation Pull Requests">
+      <ul class="md-nav__list">
+        
           <li class="md-nav__item">
-  <a href="#guide-documentation" class="md-nav__link">
-    Guide documentation
+  <a href="#documentation-style_1" class="md-nav__link">
+    Documentation Style
   </a>
   
 </li>
@@ -2275,9 +2288,22 @@
   
 </li>
         
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#documentation-pull-requests" class="md-nav__link">
+    Documentation Pull Requests
+  </a>
+  
+    <nav class="md-nav" aria-label="Documentation Pull Requests">
+      <ul class="md-nav__list">
+        
           <li class="md-nav__item">
-  <a href="#guide-documentation" class="md-nav__link">
-    Guide documentation
+  <a href="#documentation-style_1" class="md-nav__link">
+    Documentation Style
   </a>
   
 </li>
@@ -2440,12 +2466,14 @@ make<span class="w"> </span>docs
 <p>Class attributes should be documented in the class docstring.</p>
 <p>Instance attributes should be documented as "Args" in the <code>__init__</code> docstring.</p>
 </div>
-<h3 id="guide-documentation">Guide documentation<a class="headerlink" href="#guide-documentation" title="Permanent link">&para;</a></h3>
+<h2 id="documentation-pull-requests">Documentation Pull Requests<a class="headerlink" href="#documentation-pull-requests" title="Permanent link">&para;</a></h2>
+<p>If you wish to submit a pure-documentation pull request, please set the target branch to <code>docs-update</code> instead of <code>main</code>. This will mean that your changes will go live in the docs as soon as the pull request is merged.</p>
+<h3 id="documentation-style_1">Documentation Style<a class="headerlink" href="#documentation-style_1" title="Permanent link">&para;</a></h3>
 <p>In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.</p>
 <p>Code examples are encouraged, but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.</p>
-<p>Pydantic's test coverage will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use <code>pytest --update-examples</code> to update the output and create Python version-specific examples when appropriate.</p>
+<p>Pydantic's unit test will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use the following to test examples and update their formatting and output:</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Run tests and update code examples</span>
-pytest<span class="w"> </span>--update-examples
+pytest<span class="w"> </span>tests/docs/<span class="w"> </span>--update-examples
 </code></pre></div>
 
 
