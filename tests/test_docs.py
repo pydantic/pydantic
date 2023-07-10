@@ -152,6 +152,19 @@ def test_docstrings_examples(example: CodeExample, eval_example: EvalExample, tm
     run_example(example, eval_example, mocker)
 
 
+@pytest.fixture(scope='module', autouse=True)
+def set_cwd():
+    # `test_docs_examples` needs to be run from this folder or relative paths will be wrong and some tests fail
+    execution_path = str(DOCS_ROOT.parent)
+
+    cwd = os.getcwd()
+    os.chdir(execution_path)
+    try:
+        yield
+    finally:
+        os.chdir(cwd)
+
+
 @pytest.mark.filterwarnings('ignore:(parse_obj_as|schema_json_of|schema_of) is deprecated.*:DeprecationWarning')
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
 @pytest.mark.parametrize('example', find_examples(str(DOCS_ROOT), skip=sys.platform == 'win32'), ids=str)

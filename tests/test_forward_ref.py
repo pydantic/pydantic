@@ -1,7 +1,8 @@
 import dataclasses
 import re
 import sys
-from typing import Optional, Tuple
+import typing
+from typing import Any, Optional, Tuple
 
 import pytest
 
@@ -861,7 +862,7 @@ def pytest_raises_user_error_for_undefined_type(defining_class_name, missing_typ
         PydanticUserError,
         match=re.escape(
             f'`{defining_class_name}` is not fully defined; you should define `{missing_type_name}`, then call'
-            f' `{defining_class_name}.model_rebuild()` before the first `{defining_class_name}` instance is created.'
+            f' `{defining_class_name}.model_rebuild()`.'
         ),
     )
 
@@ -997,3 +998,49 @@ def test_rebuild_recursive_schema():
     models = [allOfExpressions_, Expressions_]
     for m in models:
         m.model_rebuild(_types_namespace=types_namespace)
+
+
+def test_forward_ref_in_generic(create_module: Any) -> None:
+    """https://github.com/pydantic/pydantic/issues/6503"""
+
+    @create_module
+    def module():
+        import typing as tp
+
+        from pydantic import BaseModel
+
+        class Foo(BaseModel):
+            x: tp.Dict['tp.Type[Bar]', tp.Type['Bar']]
+
+        class Bar(BaseModel):
+            pass
+
+    Foo = module.Foo
+    Bar = module.Bar
+
+    assert Foo(x={Bar: Bar}).x[Bar] is Bar
+
+
+def test_forward_ref_in_generic_separate_modules(create_module: Any) -> None:
+    """https://github.com/pydantic/pydantic/issues/6503"""
+
+    @create_module
+    def module_1():
+        import typing as tp
+
+        from pydantic import BaseModel
+
+        class Foo(BaseModel):
+            x: tp.Dict['tp.Type[Bar]', tp.Type['Bar']]
+
+    @create_module
+    def module_2():
+        from pydantic import BaseModel
+
+        class Bar(BaseModel):
+            pass
+
+    Foo = module_1.Foo
+    Bar = module_2.Bar
+    Foo.model_rebuild(_types_namespace={'tp': typing, 'Bar': Bar})
+    assert Foo(x={Bar: Bar}).x[Bar] is Bar

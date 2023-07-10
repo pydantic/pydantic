@@ -94,6 +94,7 @@ __all__ = (
     'Base64Encoder',
     'Base64Bytes',
     'Base64Str',
+    'GetPydanticSchema',
 )
 
 
@@ -1333,12 +1334,47 @@ __getattr__ = getattr_migration(__name__)
 
 
 @_internal_dataclass.slots_dataclass
-class TransformSchema:
-    """An annotation that can be used to apply a transform to a core schema."""
+class GetPydanticSchema:
+    """A convenience class for creating an annotation that provides pydantic custom type hooks.
 
-    transform: Callable[[CoreSchema], CoreSchema]
+    This class is intended to eliminate the need to create a custom "marker" which defines the
+     `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__` custom hook methods.
 
-    def __get_pydantic_core_schema__(
-        self, source_type: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> CoreSchema:
-        return self.transform(handler(source_type))
+    For example, to have a field treated by type checkers as `int`, but by pydantic as `Any`, you can do:
+    ```python
+    from typing import Any
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, GetPydanticSchema
+
+    HandleAsAny = GetPydanticSchema(lambda _s, h: h(Any))
+
+    class Model(BaseModel):
+        x: Annotated[int, HandleAsAny]  # pydantic sees `x: Any`
+
+    print(repr(Model(x='abc').x))
+    #> 'abc'
+    ```
+    """
+
+    get_pydantic_core_schema: Callable[[Any, _annotated_handlers.GetCoreSchemaHandler], CoreSchema] | None = None
+    get_pydantic_json_schema: Callable[[Any, _annotated_handlers.GetJsonSchemaHandler], JsonSchemaValue] | None = None
+    # Note: if we find a use, we could uncomment the following as a way to specify `__prepare_pydantic_annotations__`:
+    # prepare_pydantic_annotations: Callable[
+    #   [Any, tuple[Any, ...], ConfigDict], tuple[Any, Iterable[Any]]
+    # ] | None = None
+
+    # Note: we may want to consider adding a convenience staticmethod `def for_type(type_: Any) -> GetPydanticSchema:`
+    #   which returns `GetPydanticSchema(lambda _s, h: h(type_))`
+
+    def __getattr__(self, item: str) -> Any:
+        """Use this rather than defining `__get_pydantic_core_schema__` etc. to reduce the number of nested calls."""
+        if item == '__get_pydantic_core_schema__' and self.get_pydantic_core_schema:
+            return self.get_pydantic_core_schema
+        elif item == '__get_pydantic_json_schema__' and self.get_pydantic_json_schema:
+            return self.get_pydantic_json_schema
+        else:
+            return object.__getattribute__(self, item)
+
+    __hash__ = object.__hash__

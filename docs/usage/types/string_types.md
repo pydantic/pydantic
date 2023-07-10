@@ -83,7 +83,10 @@ class ImportThings(BaseModel):
 
 # Create an instance
 m = ImportThings(obj='math:cos')
-m.model_dump_json()
+print(m)
+#> obj=<built-in function cos>
+print(m.model_dump_json())
+#> {"obj":"math.cos"}
 ```
 
 ## Constrained Types

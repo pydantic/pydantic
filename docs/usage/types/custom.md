@@ -321,10 +321,97 @@ except ValidationError as exc:
     """
 ```
 
-## Handling third-party types
+## Customizing validation with `__get_pydantic_core_schema__`
 
-One particularly powerful thing about `Annotated` is that it lets you modify validation or serialization for third-party
-types without creating subclasses or otherwise messing with the types themselves:
+To do more extensive customization of how Pydantic handles custom classes, and in particular when you have access to the
+class or can subclass it, you can implement a special `__get_pydantic_core_schema__` to tell Pydantic how to generate the
+`pydantic-core` schema.
+
+While `pydantic` uses `pydantic-core` internally to handle validation and serialization, it is a new API for Pydantic V2,
+thus it is one of the areas most likely to be tweaked in the future and you should try to stick to the built-in
+constructs like those provided by `annotated-types`, `pydantic.Field`, or `BeforeValidator` and so on.
+
+You can implement `__get_pydantic_core_schema__` both on a custom type and on metadata intended to be put in `Annotated`.
+In both cases the API is middleware-like and similar to that of "wrap" validators: you get a `source_type` (which isn't
+necessarily the same as the class, in particular for generics) and a `handler` that you can call with a type to either
+call the next metadata in `Annotated` or call into Pydantic's internal schema generation.
+
+The simplest no-op implementation calls the handler with the type you are given, then returns that as the result. You can
+also choose to modify the type before calling the handler, modify the core schema returned by the handler, or not call the
+handler at all.
+
+### As a method on a custom type
+
+The following is an example of a type that uses `__get_pydantic_core_schema__` to customize how it gets validated.
+This is equivalent to implementing `__get_validators__` in Pydantic V1.
+
+```py
+from typing import Any
+
+from pydantic_core import CoreSchema, core_schema
+
+from pydantic import GetCoreSchemaHandler, TypeAdapter
+
+
+class Username(str):
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(cls, handler(str))
+
+
+ta = TypeAdapter(Username)
+res = ta.validate_python('abc')
+assert isinstance(res, Username)
+assert res == 'abc'
+```
+
+See [JSON Schema](../json_schema.md) for more details on how to customize JSON schemas for custom types.
+
+### As an annotation
+
+Often you'll want to parametrize your custom type by more than just generic type parameters (which you can do via the type system and will be discussed later). Or you may not actually care (or want to) make an instance of your subclass; you actually want the original type, just with some extra validation done.
+
+For example, if you were to implement `pydantic.AfterValidator` (see [Adding validation and serialization](#adding-validation-and-serialization)) yourself, you'd do something similar to the following:
+
+```py
+from dataclasses import dataclass
+from typing import Any, Callable
+
+from pydantic_core import CoreSchema, core_schema
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, GetCoreSchemaHandler
+
+
+@dataclass
+class MyAfterValidator:
+    func: Callable[[Any], Any]
+
+    def __get_pydantic_core_schema__(
+        self, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(
+            self.func, handler(source_type)
+        )
+
+
+Username = Annotated[str, MyAfterValidator(str.lower)]
+
+
+class Model(BaseModel):
+    name: Username
+
+
+assert Model(name='ABC').name == 'abc'
+```
+
+Notice that type checkers will not complain about assigning `'abc'` to `Username` like they did in the previous example because they do not consider `Username` to be a distinct type from `str`.
+
+### Handling third-party types
+
+Another use case for the pattern in the previous section is to handle third party types.
 
 ```py
 from typing import (
@@ -459,146 +546,41 @@ assert Model.model_json_schema() == {
 
 You can use this approach to e.g. define behavior for Pandas or Numpy types.
 
-## Creating custom classes using `__get_pydantic_core_schema__`
+### Using `GetPydanticSchema` to reduce boilerplate
 
-To do more extensive customization of how Pydantic handles custom classes, and in particular when you have access to the
-class or can subclass it, you can implement a special `__get_pydantic_core_schema__` to tell Pydantic how to generate the
-`pydantic-core` schema.
-
-While `pydantic` uses `pydantic-core` internally to handle validation and serialization, it is a new API for Pydantic V2,
-thus it is one of the areas most likely to be tweaked in the future and you should try to stick to the built in
-constructs like those provided by `annotated-types`, `pydantic.Field`, or `BeforeValidator` and so on.
-
-You can implement `__get_pydantic_core_schema__` both on a custom type and on metadata intended to be put in `Annotated`.
-In both cases the API is middleware-like and similar to that of "wrap" validators: you get a `source_type` (which isn't
-necessarily the same as the class, in particular for generics) and a `handler` that you can call with a type to either
-call the next metadata in `Annotated` or call into Pydantic's internal schema generation.
-
-The simplest no-op implementation calls the handler with the type you are given, then returns that as the result. You can
-also choose to modify the type before calling the handler, modify the core schema returned by the handler or not call the
-handler at all.
-
-Here is an example of an annotation intended to go into `Annotated` that enforces that a string is a valid postal code.
-The advantage of doing this via an annotation in `Annotated` instead of making a `PostalCode(str)` class is that any
-`str` can be passed into a model constructor and type checkers will not complain, but Pydantic will still enforce
-validation.
+You may notice that the above examples where we create a marker class require a good amount of boilerplate.
+For many simple cases you can greatly minimize this by using `pydantic.GetPydanticSchema`:
 
 ```py
-import re
-from typing import Any
-
-from pydantic_core import PydanticCustomError, core_schema
+from pydantic_core import core_schema
 from typing_extensions import Annotated
 
-from pydantic import (
-    BaseModel,
-    GetCoreSchemaHandler,
-    GetJsonSchemaHandler,
-    ValidationError,
-)
-from pydantic.json_schema import JsonSchemaValue
-
-# https://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom#Validation
-post_code_regex = re.compile(
-    r'(?:'
-    r'([A-Z]{1,2}[0-9][A-Z0-9]?|ASCN|STHL|TDCU|BBND|[BFS]IQQ|PCRN|TKCA) ?'
-    r'([0-9][A-Z]{2})|'
-    r'(BFPO) ?([0-9]{1,4})|'
-    r'(KY[0-9]|MSR|VG|AI)[ -]?[0-9]{4}|'
-    r'([A-Z]{2}) ?([0-9]{2})|'
-    r'(GE) ?(CX)|'
-    r'(GIR) ?(0A{2})|'
-    r'(SAN) ?(TA1)'
-    r')'
-)
-
-
-class PostCodeAnnotation:
-    """
-    Partial UK postcode validation. Note: this is just an example, and is not
-    intended for use in production; in particular this does NOT guarantee
-    a postcode exists, just that it has a valid format.
-    """
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, _source_type: Any, _handler: GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        return core_schema.no_info_after_validator_function(
-            cls.validate,
-            core_schema.str_schema(),
-        )
-
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        json_schema = handler(schema)
-        json_schema.update(
-            # simplified regex here for brevity, see the wikipedia link above
-            pattern='^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
-            # some example postcodes
-            examples=['SP11 9DG', 'W1J 7BU'],
-        )
-        return json_schema
-
-    @classmethod
-    def validate(cls, v: str):
-        m = post_code_regex.fullmatch(v.upper())
-        if m:
-            return f'{m.group(1)} {m.group(2)}'
-        else:
-            raise PydanticCustomError('postcode', 'invalid postcode format')
+from pydantic import BaseModel, GetPydanticSchema
 
 
 class Model(BaseModel):
-    post_code: Annotated[str, PostCodeAnnotation]
-
-
-model = Model(post_code='sw8 5el')
-print(model)
-#> post_code='SW8 5EL'
-print(model.post_code)
-#> SW8 5EL
-print(Model.model_json_schema())
-"""
-{
-    'properties': {
-        'post_code': {
-            'examples': ['SP11 9DG', 'W1J 7BU'],
-            'pattern': '^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
-            'title': 'Post Code',
-            'type': 'string',
-        }
-    },
-    'required': ['post_code'],
-    'title': 'Model',
-    'type': 'object',
-}
-"""
-try:
-    Model(post_code='invalid')
-except ValidationError as e:
-    print(e.errors())
-    """
-    [
-        {
-            'type': 'postcode',
-            'loc': ('post_code',),
-            'msg': 'invalid postcode format',
-            'input': 'invalid',
-        }
+    y: Annotated[
+        str,
+        GetPydanticSchema(
+            lambda tp, handler: core_schema.no_info_after_validator_function(
+                lambda x: x * 2, handler(tp)
+            )
+        ),
     ]
-    """
+
+
+assert Model(y='ab').y == 'abab'
 ```
 
-Similar validation could be achieved using [`Annotated[str, Field(pattern=...)]`](../fields.md#string-constraints) except
-the value won't be formatted with a space, the schema would just include the full pattern and the returned value would be
-a vanilla string.
+### Summary
 
-See [schema](../json_schema.md) for more details on how the model's schema is generated.
+Let's recap:
 
-## Generic classes as types
+1. Pydantic provides high level hooks to customize types via `Annotated` like `AfterValidator` and `Field`. Use these when possible.
+2. Under the hood these use `pydantic-core` to customize validation, and you can hook into that directly using `GetPydanticSchema` or a marker class with `__get_pydantic_core_schema__`.
+3. If you really want a custom type you can implement `__get_pydantic_core_schema__` on the type itself.
+
+## Handling custom generic classes
 
 !!! warning
     This is an advanced technique that you might not need in the beginning. In most of

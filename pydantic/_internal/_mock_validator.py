@@ -39,12 +39,18 @@ class MockValidator:
         getattr(SchemaValidator, item)
         raise PydanticUserError(self._error_message, code=self._code)
 
+    def force_rebuild(self) -> SchemaValidator:
+        if self._attempt_rebuild:
+            validator = self._attempt_rebuild()
+            if validator is not None:
+                return validator
+        raise PydanticUserError(self._error_message, code=self._code)
+
 
 def set_basemodel_mock_validator(cls: type[BaseModel], cls_name: str, undefined_name: str) -> None:
     undefined_type_error_message = (
         f'`{cls_name}` is not fully defined; you should define {undefined_name},'
-        f' then call `{cls_name}.model_rebuild()`'
-        f' before the first `{cls_name}` instance is created.'
+        f' then call `{cls_name}.model_rebuild()`.'
     )
 
     def attempt_rebuild() -> SchemaValidator | None:
@@ -61,8 +67,7 @@ def set_basemodel_mock_validator(cls: type[BaseModel], cls_name: str, undefined_
 def set_dataclass_mock_validator(cls: type[PydanticDataclass], cls_name: str, undefined_name: str) -> None:
     undefined_type_error_message = (
         f'`{cls_name}` is not fully defined; you should define {undefined_name},'
-        f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`'
-        f' before the first `{cls_name}` instance is created.'
+        f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`.'
     )
 
     def attempt_rebuild() -> SchemaValidator | None:

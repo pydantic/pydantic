@@ -31,7 +31,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
-from pydantic_core import CoreSchema, core_schema, to_json
+from pydantic_core import CoreSchema, SchemaValidator, core_schema, to_json
 from typing_extensions import Annotated, Literal, TypedDict
 
 import pydantic
@@ -5030,3 +5030,32 @@ def test_generate_definitions_for_no_ref_schemas():
         },
         {'Model': {'properties': {}, 'title': 'Model', 'type': 'object'}},
     )
+
+
+def test_chain_schema():
+    # this is a contrived schema which requires a string input that can be coerced to an int:
+    s = core_schema.chain_schema([core_schema.str_schema(), core_schema.int_schema()])
+    assert SchemaValidator(s).validate_python('1') == 1  # proof it works this way
+
+    assert GenerateJsonSchema().generate(s, mode='validation') == {'type': 'string'}
+    assert GenerateJsonSchema().generate(s, mode='serialization') == {'type': 'integer'}
+
+
+def test_deferred_json_schema():
+    class Foo(BaseModel):
+        x: 'Bar'
+
+    with pytest.raises(PydanticUserError, match='`Foo` is not fully defined'):
+        Foo.model_json_schema()
+
+    class Bar(BaseModel):
+        pass
+
+    Foo.model_rebuild()
+    assert Foo.model_json_schema() == {
+        '$defs': {'Bar': {'properties': {}, 'title': 'Bar', 'type': 'object'}},
+        'properties': {'x': {'$ref': '#/$defs/Bar'}},
+        'required': ['x'],
+        'title': 'Foo',
+        'type': 'object',
+    }

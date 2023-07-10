@@ -4,10 +4,11 @@ from __future__ import annotations
 from functools import partialmethod
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
 
-from pydantic_core import core_schema
+from pydantic_core import PydanticUndefined, core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Annotated, Literal, TypeAlias
 
+from . import PydanticUndefinedAnnotation
 from ._internal import _annotated_handlers, _decorators, _internal_dataclass
 
 
@@ -23,7 +24,7 @@ class PlainSerializer:
     """
 
     func: core_schema.SerializerFunction
-    return_type: Any = None
+    return_type: Any = PydanticUndefined
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
     def __get_pydantic_core_schema__(
@@ -39,8 +40,13 @@ class PlainSerializer:
             The Pydantic core schema.
         """
         schema = handler(source_type)
-        return_type = _decorators.get_function_return_type(self.func, self.return_type)
-        return_schema = None if return_type is None else handler.generate_schema(return_type)
+        try:
+            return_type = _decorators.get_function_return_type(
+                self.func, self.return_type, handler._get_types_namespace()
+            )
+        except NameError as e:
+            raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        return_schema = None if return_type is PydanticUndefined else handler.generate_schema(return_type)
         schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
             function=self.func,
             info_arg=_decorators.inspect_annotated_serializer(self.func, 'plain'),
@@ -63,7 +69,7 @@ class WrapSerializer:
     """
 
     func: core_schema.WrapSerializerFunction
-    return_type: Any = None
+    return_type: Any = PydanticUndefined
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
     def __get_pydantic_core_schema__(
@@ -79,8 +85,13 @@ class WrapSerializer:
             The generated core schema of the class.
         """
         schema = handler(source_type)
-        return_type = _decorators.get_function_return_type(self.func, self.return_type)
-        return_schema = None if return_type is None else handler.generate_schema(return_type)
+        try:
+            return_type = _decorators.get_function_return_type(
+                self.func, self.return_type, handler._get_types_namespace()
+            )
+        except NameError as e:
+            raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        return_schema = None if return_type is PydanticUndefined else handler.generate_schema(return_type)
         schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
             function=self.func,
             info_arg=_decorators.inspect_annotated_serializer(self.func, 'wrap'),
@@ -136,7 +147,7 @@ def field_serializer(
 def field_serializer(
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
-    return_type: Any = None,
+    return_type: Any = PydanticUndefined,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
@@ -172,7 +183,7 @@ def field_serializer(
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
-            return_type=_decorators.get_function_return_type(f, return_type),
+            return_type=return_type,
             when_used=when_used,
             check_fields=check_fields,
         )
@@ -204,7 +215,7 @@ def model_serializer(
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
-    return_type: Any = None,
+    return_type: Any = PydanticUndefined,
 ) -> Callable[[Any], Any]:
     """Decorator that enables custom model serialization.
 
@@ -225,9 +236,7 @@ def model_serializer(
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
-        dec_info = _decorators.ModelSerializerDecoratorInfo(
-            mode=mode, return_type=_decorators.get_function_return_type(f, return_type), when_used=when_used
-        )
+        dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, return_type=return_type, when_used=when_used)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:
@@ -265,3 +274,5 @@ else:
                 lambda x, h: h(x), schema=core_schema.any_schema()
             )
             return schema
+
+        __hash__ = object.__hash__

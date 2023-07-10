@@ -119,12 +119,15 @@ print(user.model_dump(by_alias=True))  # (2)!
 1. The field name `'name'` is used for validation.
 2. The serialization alias `'username'` is used for serialization.
 
-In case you use `alias` together with `validation_alias` or `serialization_alias` at the same time,
-the `validation_alias` will have priority over `alias` for validation, and `serialization_alias` will have priority
-over `alias` for serialization.
+!!! note "Alias precedence and priority"
+    In case you use `alias` together with `validation_alias` or `serialization_alias` at the same time,
+    the `validation_alias` will have priority over `alias` for validation, and `serialization_alias` will have priority
+    over `alias` for serialization.
 
-You can read more about [Alias Precedence](model_config.md#alias-precedence) in the
-[Model Config](model_config.md) documentation.
+    You may also set `alias_priority` on a field to change this behavior.
+
+    You can read more about [Alias Precedence](model_config.md#alias-precedence) in the
+    [Model Config](model_config.md) documentation.
 
 
 ??? tip "VSCode and Pyright users"
@@ -734,7 +737,6 @@ print(User.model_json_schema())
 """
 ```
 
-TODO: Add `alias_priority` parameters.
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
 [Discriminated Unions]: types/unions.md#discriminated-unions-aka-tagged-unions

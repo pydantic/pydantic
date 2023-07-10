@@ -2679,3 +2679,32 @@ def test_super_delattr_private():
     assert test_calls == []
     del m.test
     assert test_calls == ['success']
+
+
+def test_arbitrary_types_not_a_type() -> None:
+    """https://github.com/pydantic/pydantic/issues/6477"""
+
+    class Foo:
+        pass
+
+    class Bar:
+        pass
+
+    with pytest.warns(UserWarning, match='is not a Python type'):
+        ta = TypeAdapter(Foo(), config=ConfigDict(arbitrary_types_allowed=True))
+
+    bar = Bar()
+    assert ta.validate_python(bar) is bar
+
+
+def test_deferred_core_schema() -> None:
+    class Foo(BaseModel):
+        x: 'Bar'
+
+    with pytest.raises(PydanticUserError, match='`Foo` is not fully defined'):
+        Foo.__pydantic_core_schema__
+
+    class Bar(BaseModel):
+        pass
+
+    assert Foo.__pydantic_core_schema__

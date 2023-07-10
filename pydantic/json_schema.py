@@ -466,11 +466,16 @@ class GenerateJsonSchema:
                 TypeError: If an unexpected schema type is encountered.
             """
             # Generate the core-schema-type-specific bits of the schema generation:
-            if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
-                generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
-                json_schema = generate_for_schema_type(schema_or_field)
-            else:
-                raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
+            json_schema: JsonSchemaValue | None = None
+            if self.mode == 'serialization' and 'serialization' in schema_or_field:
+                ser_schema = schema_or_field['serialization']  # type: ignore
+                json_schema = self.ser_schema(ser_schema)
+            if json_schema is None:
+                if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
+                    generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
+                    json_schema = generate_for_schema_type(schema_or_field)
+                else:
+                    raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
             if _core_utils.is_core_schema(schema_or_field):
                 json_schema = populate_defs(schema_or_field, json_schema)
                 json_schema = convert_to_all_of(json_schema)
@@ -838,8 +843,10 @@ class GenerateJsonSchema:
         schema: _core_utils.AnyFunctionSchema,
     ) -> JsonSchemaValue:
         if _core_utils.is_function_with_inner_schema(schema):
-            # I'm not sure if this might need to be different if the function's mode is 'before'
+            # This could be wrong if the function's mode is 'before', but in practice will often be right, and when it
+            # isn't, I think it would be hard to automatically infer what the desired schema should be.
             return self.generate_inner(schema['schema'])
+
         # function-plain
         return self.handle_invalid_for_json_schema(
             schema, f'core_schema.PlainValidatorFunctionSchema ({schema["function"]})'
@@ -1057,9 +1064,10 @@ class GenerateJsonSchema:
         return openapi_discriminator
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a schema that defines a chain of schemas, where the first schema is
-        used to validate the value, and the remaining schemas are used to validate the value after each step in the
-        chain.
+        """Generates a JSON schema that matches a core_schema.ChainSchema.
+
+        When generating a schema for validation, we return the validation JSON schema for the first step in the chain.
+        For serialization, we return the serialization JSON schema for the last step in the chain.
 
         Args:
             schema: The core schema.
@@ -1067,9 +1075,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        # Note: If we wanted to generate a schema for the _serialization_, would want to use the _last_ step:
-        # There are always more than zero steps, since the ChainSchema is validated on the pydantic-core side.
-        return self.generate_inner(schema['steps'][0])
+        step_index = 0 if self.mode == 'validation' else -1  # use first step for validation, last for serialization
+        return self.generate_inner(schema['steps'][step_index])
 
     def lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that allows values matching either the lax schema or the
@@ -1658,6 +1665,31 @@ class GenerateJsonSchema:
         core_ref = CoreRef(schema['schema_ref'])
         _, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
         return ref_json_schema
+
+    def ser_schema(
+        self, schema: core_schema.SerSchema | core_schema.IncExSeqSerSchema | core_schema.IncExDictSerSchema
+    ) -> JsonSchemaValue | None:
+        """Generates a JSON schema that matches a schema that defines a serialized object.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        schema_type = schema['type']
+        if schema_type == 'function-plain' or schema_type == 'function-wrap':
+            # PlainSerializerFunctionSerSchema or WrapSerializerFunctionSerSchema
+            return_schema = schema.get('return_schema')
+            if return_schema is not None:
+                return self.generate_inner(return_schema)
+        elif schema_type == 'format' or schema_type == 'to-string':
+            # FormatSerSchema or ToStringSerSchema
+            return self.str_schema(core_schema.str_schema())
+        elif schema['type'] == 'model':
+            # ModelSerSchema
+            return self.generate_inner(schema['schema'])
+        return None
 
     # ### Utility methods
 
