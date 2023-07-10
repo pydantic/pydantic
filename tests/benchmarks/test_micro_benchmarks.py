@@ -274,7 +274,7 @@ def definition_model_data():
     data = {'width': -1}
 
     _data = data
-    for i in range(100):
+    for i in range(pydantic_core._pydantic_core._recursion_limit - 2):
         _data['branch'] = {'width': i}
         _data = _data['branch']
     return data
@@ -1189,14 +1189,15 @@ def test_field_function_validator(benchmark) -> None:
         return v + 1
 
     schema: core_schema.CoreSchema = core_schema.int_schema()
+    limit = pydantic_core._pydantic_core._recursion_limit - 3
 
-    for _ in range(100):
+    for _ in range(limit):
         schema = core_schema.field_after_validator_function(f, 'x', schema)
 
     schema = core_schema.typed_dict_schema({'x': core_schema.typed_dict_field(schema)})
 
     v = SchemaValidator(schema)
     payload = {'x': 0}
-    assert v.validate_python(payload) == {'x': 100}
+    assert v.validate_python(payload) == {'x': limit}
 
     benchmark(v.validate_python, payload)
