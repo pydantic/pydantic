@@ -176,15 +176,19 @@ You may include example code in docstrings. This code should be complete, self-c
 
     Instance attributes should be documented as "Args" in the `__init__` docstring.
 
-### Guide documentation
+## Documentation Pull Requests
+
+If you wish to submit a pure-documentation pull request, please set the target branch to `docs-update` instead of `main`. This will mean that your changes will go live in the docs as soon as the pull request is merged.
+
+### Documentation Style
 
 In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.
 
 Code examples are encouraged, but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.
 
-Pydantic's test coverage will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use `pytest --update-examples` to update the output and create Python version-specific examples when appropriate.
+Pydantic's unit test will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use the following to test examples and update their formatting and output:
 
 ```bash
 # Run tests and update code examples
-pytest --update-examples
+pytest tests/docs/ --update-examples
 ```
