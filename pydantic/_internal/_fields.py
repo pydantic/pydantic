@@ -12,6 +12,7 @@ from pydantic_core import PydanticUndefined
 
 from . import _typing_extra
 from ._config import ConfigWrapper
+from ._docs_extraction import extract_docstrings_from_cls
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
@@ -83,6 +84,12 @@ def _general_metadata_cls() -> type[BaseMetadata]:
             self.__dict__ = metadata
 
     return _PydanticGeneralMetadata  # type: ignore
+
+
+def _update_fields_from_docstrings(fields: dict[str, FieldInfo], fields_docs: dict[str, str]) -> None:
+    for ann_name, field_info in fields.items():
+        if field_info.description is None and ann_name in fields_docs:
+            field_info.description = fields_docs[ann_name]
 
 
 def collect_model_fields(  # noqa: C901
@@ -229,6 +236,9 @@ def collect_model_fields(  # noqa: C901
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
 
+    fields_docs = extract_docstrings_from_cls(cls)
+    _update_fields_from_docstrings(fields, fields_docs)
+
     return fields, class_vars
 
 
@@ -294,6 +304,9 @@ def collect_dataclass_fields(
     if typevars_map:
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
+
+    fields_docs = extract_docstrings_from_cls(cls)
+    _update_fields_from_docstrings(fields, fields_docs)
 
     return fields
 
