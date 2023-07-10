@@ -5,7 +5,7 @@ from typing import Any, Dict, Mapping, Union
 import pytest
 from dirty_equals import FunctionCheck
 
-from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, __version__, core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -90,7 +90,7 @@ def test_with_default():
     assert v.validate_python({'field_a': b'abc', 'field_b': 1}) == {'field_a': 'abc', 'field_b': 1}
 
 
-def test_missing_error():
+def test_missing_error(pydantic_version):
     v = SchemaValidator(
         {
             'type': 'typed-dict',
@@ -107,7 +107,7 @@ def test_missing_error():
         "1 validation error for typed-dict\n"
         "field_b\n"
         "  Field required [type=missing, input_value={'field_a': b'abc'}, input_type=dict]\n"
-        f"    For further information visit https://errors.pydantic.dev/{__version__}/v/missing"
+        f"    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing"
     )
 
 

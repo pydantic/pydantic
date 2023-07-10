@@ -6,7 +6,7 @@ from typing import Any, Dict
 import pytest
 from dirty_equals import IsStr
 
-from pydantic_core import SchemaValidator, ValidationError, __version__
+from pydantic_core import SchemaValidator, ValidationError
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -340,7 +340,7 @@ def test_int_repr():
     assert plain_repr(v).startswith('SchemaValidator(title="constrained-int",validator=ConstrainedInt(')
 
 
-def test_too_long():
+def test_too_long(pydantic_version):
     v = SchemaValidator({'type': 'int'})
 
     with pytest.raises(ValidationError) as exc_info:
@@ -359,7 +359,7 @@ def test_too_long():
         "1 validation error for int\n"
         "  Unable to parse input string as an integer, exceeded maximum size "
         "[type=int_parsing_size, input_value='111111111111111111111111...11111111111111111111111', input_type=str]\n"
-        f"    For further information visit https://errors.pydantic.dev/{__version__}/v/int_parsing_size"
+        f"    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing_size"
     )
 
 

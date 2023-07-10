@@ -6,7 +6,7 @@ import pytest
 from dirty_equals import AnyThing, HasAttributes, IsList, IsPartialDict, IsStr, IsTuple
 
 import pydantic_core
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, __version__, core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, plain_repr
 from .test_typed_dict import Cls
@@ -818,7 +818,7 @@ def test_error_inside_definition_wrapper():
     )
 
 
-def test_recursive_definitions_schema() -> None:
+def test_recursive_definitions_schema(pydantic_version) -> None:
     s = core_schema.definitions_schema(
         core_schema.definition_reference_schema(schema_ref='a'),
         [
@@ -854,7 +854,7 @@ def test_recursive_definitions_schema() -> None:
             'loc': ('b', 0, 'a'),
             'msg': 'Input should be a valid list',
             'input': {},
-            'url': f'https://errors.pydantic.dev/{__version__}/v/list_type',
+            'url': f'https://errors.pydantic.dev/{pydantic_version}/v/list_type',
         }
     ]
 
@@ -878,7 +878,7 @@ def test_unsorted_definitions_schema() -> None:
         v.validate_python({'x': 'abc'})
 
 
-def test_validate_assignment() -> None:
+def test_validate_assignment(pydantic_version) -> None:
     @dataclass
     class Model:
         x: List['Model']
@@ -916,6 +916,6 @@ def test_validate_assignment() -> None:
             'msg': 'Input should be a dictionary or an instance of Model',
             'input': 123,
             'ctx': {'class_name': 'Model'},
-            'url': f'https://errors.pydantic.dev/{__version__}/v/dataclass_type',
+            'url': f'https://errors.pydantic.dev/{pydantic_version}/v/dataclass_type',
         }
     ]

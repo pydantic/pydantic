@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Mapping, Union
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
 
-from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, __version__, core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -105,7 +105,7 @@ def test_with_default():
     )
 
 
-def test_missing_error():
+def test_missing_error(pydantic_version):
     v = SchemaValidator(
         {
             'type': 'model-fields',
@@ -123,7 +123,7 @@ def test_missing_error():
 1 validation error for model-fields
 field_b
   Field required [type=missing, input_value={{'field_a': b'abc'}}, input_type=dict]
-    For further information visit https://errors.pydantic.dev/{__version__}/v/missing"""
+    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing"""
     )
 
 
