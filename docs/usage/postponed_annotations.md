@@ -91,7 +91,7 @@ When working with self-referencing recursive models, it is possible that you mig
 in validation inputs. For example, this can happen when validating ORM instances with back-references from
 attributes.
 
-Rather than raising a python `RecursionError` while attempting to validate data with cyclic references, Pydantic is able
+Rather than raising a Python `RecursionError` while attempting to validate data with cyclic references, Pydantic is able
 to detect the cyclic reference and raise an appropriate `ValidationError`:
 
 ```py
@@ -124,7 +124,7 @@ except ValidationError as exc:
     """
 ```
 
-Because this error is raised without actually exceeding the maximum recursion depth, it means that you can catch and
+Because this error is raised without actually exceeding the maximum recursion depth, you can catch and
 handle the raised `ValidationError` without needing to worry about the limited remaining recursion depth:
 
 ```python
@@ -181,7 +181,7 @@ print(Node.model_validate(node_data))
 ```
 
 Similarly, if Pydantic encounters a recursive reference during _serialization_, rather than waiting for the maximum
-recursion depth to be exceeded a `ValueError` is raised immediately:
+recursion depth to be exceeded, a `ValueError` is raised immediately:
 
 ```py
 from pydantic import TypeAdapter
