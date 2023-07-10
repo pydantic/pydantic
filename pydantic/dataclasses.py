@@ -119,7 +119,7 @@ def dataclass(
             own  `__init__` function.
         repr: A boolean indicating whether or not to include the field in the `__repr__` output.
         eq: Determines if a `__eq__` should be generated for the class.
-        order: Determines if comparison magic methods should be generated, such as` __lt__`, but not `__eq__`.
+        order: Determines if comparison magic methods should be generated, such as `__lt__`, but not `__eq__`.
         unsafe_hash: Determines if an unsafe hashing function should be included in the class.
         frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
             attributes to be modified from its constructor.
