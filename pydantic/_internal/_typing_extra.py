@@ -227,7 +227,9 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         return value
 
 
-def get_function_type_hints(function: Callable[..., Any], *, include_keys: set[str] | None = None) -> dict[str, Any]:
+def get_function_type_hints(
+    function: Callable[..., Any], *, include_keys: set[str] | None = None, types_namespace: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
     copes with `partial`.
     """
@@ -246,7 +248,7 @@ def get_function_type_hints(function: Callable[..., Any], *, include_keys: set[s
         elif isinstance(value, str):
             value = _make_forward_ref(value)
 
-        type_hints[name] = typing._eval_type(value, globalns, None)  # type: ignore
+        type_hints[name] = typing._eval_type(value, globalns, types_namespace)  # type: ignore
 
     return type_hints
 

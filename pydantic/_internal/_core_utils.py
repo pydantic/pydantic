@@ -206,6 +206,9 @@ class _WalkCoreSchema:
         schema: core_schema.CoreSchema | None = ser_schema.get('schema', None)
         if schema is not None:
             ser_schema['schema'] = self.walk(schema, f)  # type: ignore
+        return_schema: core_schema.CoreSchema | None = ser_schema.get('return_schema', None)
+        if return_schema is not None:
+            ser_schema['return_schema'] = self.walk(return_schema, f)  # type: ignore
         return ser_schema
 
     def handle_definitions_schema(self, schema: core_schema.DefinitionsSchema, f: Walk) -> core_schema.CoreSchema:

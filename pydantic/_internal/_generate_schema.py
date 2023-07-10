@@ -38,7 +38,7 @@ from ..config import ConfigDict
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import AliasChoices, AliasPath, FieldInfo
 from ..json_schema import JsonSchemaValue
-from . import _discriminated_union, _known_annotated_metadata, _typing_extra
+from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ._config import ConfigWrapper
 from ._core_metadata import (
@@ -1226,7 +1226,18 @@ class GenerateSchema:
             return core_schema.any_schema()
 
     def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
-        return_type_schema = self.generate_schema(d.info.return_type)
+        try:
+            return_type = _decorators.get_function_return_type(d.func, d.info.return_type, self.types_namespace)
+        except NameError as e:
+            raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        if return_type is PydanticUndefined:
+            raise PydanticUserError(
+                'Computed field is missing return type annotation or specifying `return_type`'
+                ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)',
+                code='model-field-missing-annotation',
+            )
+
+        return_type_schema = self.generate_schema(return_type)
 
         # Handle alias_generator using similar logic to that from
         # pydantic._internal._generate_schema.GenerateSchema._common_field_schema,
@@ -1494,10 +1505,17 @@ class GenerateSchema:
             serializer = serializers[-1]
             is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
 
-            if serializer.info.return_type is None:
+            try:
+                return_type = _decorators.get_function_return_type(
+                    serializer.func, serializer.info.return_type, self.types_namespace
+                )
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
+            if return_type is PydanticUndefined:
                 return_schema = None
             else:
-                return_schema = self.generate_schema(serializer.info.return_type)
+                return_schema = self.generate_schema(return_type)
 
             if serializer.info.mode == 'wrap':
                 schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
@@ -1527,10 +1545,16 @@ class GenerateSchema:
             serializer = list(serializers)[-1]
             info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
 
-            if serializer.info.return_type is None:
+            try:
+                return_type = _decorators.get_function_return_type(
+                    serializer.func, serializer.info.return_type, self.types_namespace
+                )
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+            if return_type is PydanticUndefined:
                 return_schema = None
             else:
-                return_schema = self.generate_schema(serializer.info.return_type)
+                return_schema = self.generate_schema(return_type)
 
             if serializer.info.mode == 'wrap':
                 ser_schema: core_schema.SerSchema = core_schema.wrap_serializer_function_ser_schema(

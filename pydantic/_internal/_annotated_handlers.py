@@ -108,3 +108,7 @@ class GetCoreSchemaHandler:
             A concrete `CoreSchema`.
         """
         raise NotImplementedError
+
+    def _get_types_namespace(self) -> dict[str, Any] | None:
+        """Internal method used during type resolution for serializer annotations."""
+        raise NotImplementedError

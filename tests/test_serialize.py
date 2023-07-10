@@ -3,8 +3,9 @@ New tests for v2 of serialization logic.
 """
 import json
 import re
+import sys
 from functools import partial, partialmethod
-from typing import Any, Callable, Dict, Optional, Pattern
+from typing import Any, Callable, ClassVar, Dict, Optional, Pattern
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
@@ -19,6 +20,7 @@ from pydantic import (
     SerializeAsAny,
     SerializerFunctionWrapHandler,
     TypeAdapter,
+    computed_field,
     errors,
     field_serializer,
     model_serializer,
@@ -906,3 +908,103 @@ def test_serialize_as_any() -> None:
         'as_any': {'name': 'pydantic', 'password': '**********'},
         'without': {'name': 'pydantic'},
     }
+
+
+@pytest.mark.parametrize('as_annotation', [True, False])
+@pytest.mark.parametrize('mode', ['plain', 'wrap'])
+def test_forward_ref_for_serializers(as_annotation, mode):
+    if mode == 'plain':
+
+        def ser_model_func(v) -> 'SomeOtherModel':  # noqa F821
+            return OtherModel(y=v + 1)
+
+        def ser_model_method(self, v) -> 'SomeOtherModel':  # noqa F821
+            return ser_model_func(v)
+
+        annotation = PlainSerializer(ser_model_func)
+    else:
+
+        def ser_model_func(v, handler) -> 'SomeOtherModel':  # noqa F821
+            return OtherModel(y=v + 1)
+
+        def ser_model_method(self, v, handler) -> 'SomeOtherModel':  # noqa F821
+            return ser_model_func(v, handler)
+
+        annotation = WrapSerializer(ser_model_func)
+
+    class Model(BaseModel):
+        if as_annotation:
+            x: Annotated[int, annotation]
+        else:
+            x: int
+            ser_model = field_serializer('x', mode=mode)(ser_model_method)
+
+    class OtherModel(BaseModel):
+        y: int
+
+    Model.model_rebuild(_types_namespace={'SomeOtherModel': OtherModel})
+
+    assert Model(x=1).model_dump() == {'x': {'y': 2}}
+    assert Model.model_json_schema(mode='serialization') == {
+        '$defs': {
+            'OtherModel': {
+                'properties': {'y': {'title': 'Y', 'type': 'integer'}},
+                'required': ['y'],
+                'title': 'OtherModel',
+                'type': 'object',
+            }
+        },
+        'properties': {'x': {'allOf': [{'$ref': '#/$defs/OtherModel'}], 'title': 'X'}},
+        'required': ['x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_forward_ref_for_computed_fields():
+    class Model(BaseModel):
+        x: int
+
+        @computed_field
+        @property
+        def two_x(self) -> 'IntAlias':  # noqa F821
+            return self.x * 2
+
+    Model.model_rebuild(_types_namespace={'IntAlias': int})
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'two_x': {'readOnly': True, 'title': 'Two X', 'type': 'integer'},
+            'x': {'title': 'X', 'type': 'integer'},
+        },
+        'required': ['x', 'two_x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    assert Model(x=1).model_dump() == {'two_x': 2, 'x': 1}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='@computed_field @classmethod @property only works in 3.9+')
+def test_forward_ref_for_classmethod_computed_fields():
+    class Model(BaseModel):
+        y: ClassVar[int] = 4
+
+        @computed_field
+        @classmethod
+        @property
+        def two_y(cls) -> 'IntAlias':  # noqa F821
+            return cls.y * 2
+
+    Model.model_rebuild(_types_namespace={'IntAlias': int})
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'two_y': {'readOnly': True, 'title': 'Two Y', 'type': 'integer'},
+        },
+        'required': ['two_y'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+    assert Model().model_dump() == {'two_y': 8}

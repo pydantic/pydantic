@@ -8,7 +8,7 @@ from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, 
 from itertools import islice
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Iterable, TypeVar, Union
 
-from pydantic_core import core_schema
+from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Literal, TypeAlias, is_typeddict
 
 from ..errors import PydanticUserError
@@ -247,6 +247,12 @@ class Decorator(Generic[DecoratorInfoType]):
         func = get_attribute_from_bases(cls_, cls_var_name)
         if shim is not None:
             func = shim(func)
+        func = unwrap_wrapped_function(func, unwrap_partial=False)
+        if not callable(func):
+            # This branch will get hit for classmethod properties
+            attribute = get_attribute_from_base_dicts(cls_, cls_var_name)  # prevents the binding call to `__get__`
+            if isinstance(attribute, PydanticDescriptorProxy):
+                func = unwrap_wrapped_function(attribute.wrapped)
         return Decorator(
             cls_ref=get_type_ref(cls_),
             cls_var_name=cls_var_name,
@@ -354,11 +360,32 @@ def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
     """
     try:
         return getattr(tp, name)
-    except Exception as e:
+    except AttributeError as e:
         for base in reversed(mro(tp)):
             if hasattr(base, name):
                 return getattr(base, name)
         raise e
+
+
+def get_attribute_from_base_dicts(tp: type[Any], name: str) -> Any:
+    """Get an attribute out of the `__dict__` following the MRO.
+    This prevents the call to `__get__` on the descriptor, and allows
+    us to get the original function for classmethod properties.
+
+    Args:
+        tp: The type or class to search for the attribute.
+        name: The name of the attribute to retrieve.
+
+    Returns:
+        Any: The attribute value, if found.
+
+    Raises:
+        KeyError: If the attribute is not found in any class's `__dict__` in the MRO.
+    """
+    for base in reversed(mro(tp)):
+        if name in base.__dict__:
+            return base.__dict__[name]
+    return tp.__dict__[name]  # raise the error
 
 
 @slots_dataclass
@@ -653,20 +680,26 @@ def _is_classmethod_from_sig(function: AnyDecoratorCallable) -> bool:
 def unwrap_wrapped_function(
     func: Any,
     *,
+    unwrap_partial: bool = True,
     unwrap_class_static_method: bool = True,
 ) -> Any:
     """Recursively unwraps a wrapped function until the underlying function is reached.
-    This handles functools.partial, functools.partialmethod, staticmethod and classmethod.
+    This handles property, functools.partial, functools.partialmethod, staticmethod and classmethod.
 
     Args:
         func: The function to unwrap.
+        unwrap_partial: If True (default), unwrap partial and partialmethod decorators, otherwise don't.
+            decorators.
         unwrap_class_static_method: If True (default), also unwrap classmethod and staticmethod
             decorators. If False, only unwrap partial and partialmethod decorators.
 
     Returns:
         The underlying function of the wrapped function.
     """
-    all: set[Any] = {partial, partialmethod, property}
+    all: set[Any] = {property}
+
+    if unwrap_partial:
+        all.update({partial, partialmethod})
 
     try:
         from functools import cached_property  # type: ignore
@@ -693,7 +726,9 @@ def unwrap_wrapped_function(
     return func
 
 
-def get_function_return_type(func: Any, explicit_return_type: Any) -> Any:
+def get_function_return_type(
+    func: Any, explicit_return_type: Any, types_namespace: dict[str, Any] | None = None
+) -> Any:
     """Get the function return type.
 
     It gets the return type from the type annotation if `explicit_return_type` is `None`.
@@ -702,15 +737,17 @@ def get_function_return_type(func: Any, explicit_return_type: Any) -> Any:
     Args:
         func: The function to get its return type.
         explicit_return_type: The explicit return type.
+        types_namespace: The types namespace, defaults to `None`.
 
     Returns:
         The function return type.
     """
-    if explicit_return_type is None:
+    if explicit_return_type is PydanticUndefined:
         # try to get it from the type annotation
-        func = unwrap_wrapped_function(func)
-        hints = get_function_type_hints(unwrap_wrapped_function(func), include_keys={'return'})
-        return hints.get('return', None)
+        hints = get_function_type_hints(
+            unwrap_wrapped_function(func), include_keys={'return'}, types_namespace=types_namespace
+        )
+        return hints.get('return', PydanticUndefined)
     else:
         return explicit_return_type
 
