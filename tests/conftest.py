@@ -123,6 +123,16 @@ def import_execute(request, tmp_work_path: Path):
     return _import_execute
 
 
+@pytest.fixture
+def pydantic_version():
+    try:
+        import pydantic
+
+        return pydantic.__version__
+    except ImportError:
+        return 'latest'
+
+
 def infinite_generator():
     i = 0
     while True:
