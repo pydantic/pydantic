@@ -650,7 +650,7 @@ def test_nested_optional_unions() -> None:
         {
             'type': 'union_tag_invalid',
             'loc': ('pet',),
-            'msg': "Input tag 'None' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",  # noqa: E501
+            'msg': "Input tag 'None' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",
             'input': {'pet_type': None},
             'ctx': {'discriminator': "'pet_type'", 'tag': 'None', 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'"},
         }
@@ -663,7 +663,7 @@ def test_nested_optional_unions() -> None:
         {
             'type': 'union_tag_invalid',
             'loc': ('pet',),
-            'msg': "Input tag 'fox' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",  # noqa: E501
+            'msg': "Input tag 'fox' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",
             'input': {'pet_type': 'fox'},
             'ctx': {'discriminator': "'pet_type'", 'tag': 'fox', 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'"},
         }
@@ -697,7 +697,7 @@ def test_nested_discriminated_union() -> None:
         {
             'type': 'union_tag_invalid',
             'loc': ('pet',),
-            'msg': "Input tag 'reptile' found using 'pet_type' does not match any of the expected tags: 'cat', 'CAT', 'dog', 'DOG', 'lizard', 'LIZARD'",  # noqa: E501
+            'msg': "Input tag 'reptile' found using 'pet_type' does not match any of the expected tags: 'cat', 'CAT', 'dog', 'DOG', 'lizard', 'LIZARD'",
             'input': {'pet_type': 'reptile'},
             'ctx': {
                 'discriminator': "'pet_type'",
@@ -751,7 +751,7 @@ def test_union_discriminator_literals() -> None:
         {
             'type': 'union_tag_invalid',
             'loc': ('pet',),
-            'msg': "Input tag 'Cat' found using 'pet_type' | 'typeOfPet' does not match any of the expected tags: 'cat', 'CAT', 'dog'",  # noqa: E501
+            'msg': "Input tag 'Cat' found using 'pet_type' | 'typeOfPet' does not match any of the expected tags: 'cat', 'CAT', 'dog'",
             'input': {'typeOfPet': 'Cat'},
             'ctx': {'discriminator': "'pet_type' | 'typeOfPet'", 'tag': 'Cat', 'expected_tags': "'cat', 'CAT', 'dog'"},
         }
