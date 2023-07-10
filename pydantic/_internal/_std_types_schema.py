@@ -198,6 +198,7 @@ class DecimalValidator:
                 lax_schema=core_schema.union_schema([core_schema.is_instance_schema(decimal.Decimal), json_schema]),
                 strict_schema=core_schema.is_instance_schema(decimal.Decimal),
             ),
+            serialization=core_schema.to_string_ser_schema(when_used='json'),
         )
 
         if not self.allow_inf_nan or self.check_digits:
