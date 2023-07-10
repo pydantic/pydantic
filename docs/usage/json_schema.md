@@ -715,6 +715,8 @@ print(json.dumps(Person.model_json_schema(), indent=2))
 
 Note that you *must* return a schema, even if you are just mutating it in place.
 
+<!-- TODO: Commented pending further review of GenerateJsonSchema
+
 ## Customizing the JSON schema generation process
 
 If you need custom schema generation, you can use a `schema_generator`, modifying the
@@ -727,11 +729,8 @@ By design, this class breaks the JSON schema generation process into smaller met
 subclasses to modify the "global" approach to generating JSON schema.
 
 ```py
-import json
-from typing import Any, Dict, Type
-
 from pydantic import BaseModel
-from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
+from pydantic.json_schema import GenerateJsonSchema
 
 
 class MyGenerateJsonSchema(GenerateJsonSchema):
@@ -741,39 +740,9 @@ class MyGenerateJsonSchema(GenerateJsonSchema):
         return json_schema
 
 
-class MyBaseModel(BaseModel):
-    @classmethod
-    def model_json_schema(
-        cls,
-        by_alias: bool = True,
-        ref_template: str = DEFAULT_REF_TEMPLATE,
-        schema_generator: Type[GenerateJsonSchema] = MyGenerateJsonSchema,
-        mode='validation',
-    ) -> Dict[str, Any]:
-        return super().model_json_schema(
-            by_alias, ref_template, schema_generator, mode
-        )
-
-
-class MyModel(MyBaseModel):
+class MyModel(BaseModel):
     x: int
 
 
-print(json.dumps(MyModel.model_json_schema(), indent=4))
-"""
-{
-    "properties": {
-        "x": {
-            "title": "X",
-            "type": "integer"
-        }
-    },
-    "required": [
-        "x"
-    ],
-    "title": "MyModel",
-    "type": "object",
-    "$schema": "https://json-schema.org/draft/2020-12/schema"
-}
-"""
-```
+MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema)
+``` -->
