@@ -20,7 +20,15 @@ pub struct RecursionGuard {
 }
 
 // A hard limit to avoid stack overflows when rampant recursion occurs
-pub const RECURSION_GUARD_LIMIT: u16 = if cfg!(target_family = "wasm") { 50 } else { 255 };
+pub const RECURSION_GUARD_LIMIT: u16 = if cfg!(any(target_family = "wasm", all(windows, PyPy))) {
+    // wasm and windows PyPy have very limited stack sizes
+    50
+} else if cfg!(any(PyPy, windows)) {
+    // PyPy and Windows in general have more restricted stack space
+    100
+} else {
+    255
+};
 
 impl RecursionGuard {
     // insert a new id into the set, return whether the set already had the id in it
