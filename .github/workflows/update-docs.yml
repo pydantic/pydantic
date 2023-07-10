@@ -51,7 +51,7 @@ jobs:
 
       - run: make test
 
-  publish_docs:
+  publish:
     needs: [lint, test]
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -90,7 +90,7 @@ jobs:
 
       - if: "github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')"
         id: check-version
-        uses: samuelcolvin/check-python-version@v4
+        uses: samuelcolvin/check-python-version@v4.1
         with:
           version_file_path: 'pydantic/version.py'
           skip_env_check: true
@@ -98,4 +98,4 @@ jobs:
       - run: pdm run mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
         if: "(github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')) && !fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
         env:
-          PYDANTIC_VERSION: ${{ steps.check-version.outputs.VERSION }}
+          PYDANTIC_VERSION: v${{ steps.check-version.outputs.VERSION }}

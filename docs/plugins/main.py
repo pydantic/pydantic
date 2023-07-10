@@ -179,6 +179,7 @@ def add_version(markdown: str, page: Page) -> str | None:
         version_str = f'Documentation for development version: [{sha}]({url})'
     else:
         version_str = 'Documentation for development version'
+    print(f'Setting version prefix: {version_str!r}')
     markdown = re.sub(r'{{ *version *}}', version_str, markdown)
     return markdown
 

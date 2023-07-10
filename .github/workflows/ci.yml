@@ -328,7 +328,7 @@ jobs:
 
       - name: check version
         id: check-tag
-        uses: samuelcolvin/check-python-version@v3.2
+        uses: samuelcolvin/check-python-version@v4.1
         with:
           version_file_path: pydantic/version.py
 
