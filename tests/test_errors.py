@@ -191,6 +191,7 @@ all_errors = [
     ('invalid_key', 'Keys should be strings', None),
     ('get_attribute_error', 'Error extracting attribute: foo', {'error': 'foo'}),
     ('none_required', 'Input should be None', None),
+    ('enum', 'Input should be foo', {'expected': 'foo'}),
     ('greater_than', 'Input should be greater than 42.1', {'gt': 42.1}),
     ('greater_than', 'Input should be greater than 42.1', {'gt': '42.1'}),
     ('greater_than', 'Input should be greater than 2020-01-01', {'gt': '2020-01-01'}),
