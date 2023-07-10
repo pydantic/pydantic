@@ -8,7 +8,7 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.errors import PydanticUserError
 
@@ -1231,4 +1231,73 @@ def test_union_in_submodel() -> None:
         'required': ['submodel'],
         'title': 'TestModel',
         'type': 'object',
+    }
+
+
+def test_field_validator_wrapping_union() -> None:
+    """https://github.com/pydantic/pydantic/issues/6525"""
+
+    class CatModel(BaseModel):
+        name: Literal['kitty', 'cat']
+
+        @field_validator('name', mode='after')
+        def replace_name(cls, v: str) -> str:
+            return 'cat'
+
+    class SparrowModel(BaseModel):
+        name: Literal['sparrow', 'birdie']
+
+        @field_validator('name', mode='after')
+        def replace_name(cls, v: str) -> str:
+            return 'sparrow'
+
+    Animal = Annotated[
+        Union[CatModel, SparrowModel],
+        Field(discriminator='name'),
+    ]
+
+    ta = TypeAdapter(Animal)
+
+    assert ta.validate_python({'name': 'kitty'}) == CatModel(name='cat')
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python({'name': 'rabbit'})
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'union_tag_invalid',
+            'loc': (),
+            'msg': "Input tag 'rabbit' found using 'name' does not match any of the expected tags: 'kitty', 'cat', 'sparrow', 'birdie'",  # noqa: E501
+            'input': {'name': 'rabbit'},
+            'ctx': {'discriminator': "'name'", 'tag': 'rabbit', 'expected_tags': "'kitty', 'cat', 'sparrow', 'birdie'"},
+        }
+    ]
+
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {
+        '$defs': {
+            'CatModel': {
+                'properties': {'name': {'enum': ['kitty', 'cat'], 'title': 'Name', 'type': 'string'}},
+                'required': ['name'],
+                'title': 'CatModel',
+                'type': 'object',
+            },
+            'SparrowModel': {
+                'properties': {'name': {'enum': ['sparrow', 'birdie'], 'title': 'Name', 'type': 'string'}},
+                'required': ['name'],
+                'title': 'SparrowModel',
+                'type': 'object',
+            },
+        },
+        'discriminator': {
+            'mapping': {
+                'birdie': '#/$defs/SparrowModel',
+                'cat': '#/$defs/CatModel',
+                'kitty': '#/$defs/CatModel',
+                'sparrow': '#/$defs/SparrowModel',
+            },
+            'propertyName': 'name',
+        },
+        'oneOf': [{'$ref': '#/$defs/CatModel'}, {'$ref': '#/$defs/SparrowModel'}],
     }

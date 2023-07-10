@@ -429,7 +429,9 @@ class _ApplyInferredDiscriminator:
         elif schema['type'] == 'default':
             # This will happen if the field has a default value; we ignore it while extracting the discriminator values
             return self._infer_discriminator_values_for_inner_schema(schema['schema'], source)
-
+        elif _core_utils.is_function_with_inner_schema(schema):
+            # This happens if there is a `@field_validator` or similar wrapping the type
+            return self._infer_discriminator_values_for_inner_schema(schema['schema'], source)
         else:
             raise PydanticUserError(
                 f'{source} needs field {self.discriminator!r} to be of type `Literal`',
