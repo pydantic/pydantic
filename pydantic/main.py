@@ -835,6 +835,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __iter__(self) -> TupleGenerator:
         """So `dict(model)` works."""
         yield from self.__dict__.items()
+        yield from (self.__pydantic_extra__ or {}).items()
 
     def __repr__(self) -> str:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
