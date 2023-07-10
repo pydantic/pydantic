@@ -189,7 +189,7 @@ Pydantic's unit test will test all code examples in the documentation, so it's i
 
 ```bash
 # Run tests and update code examples
-pytest tests/docs/ --update-examples
+pytest tests/test_docs.py --update-examples
 ```
 
 ## Badges
