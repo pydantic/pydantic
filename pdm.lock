@@ -534,7 +534,7 @@ dependencies = [
 
 [[package]]
 name = "pytest-examples"
-version = "0.0.9"
+version = "0.0.10"
 requires_python = ">=3.7"
 summary = "Pytest plugin for testing examples in docstrings and markdown files."
 dependencies = [
@@ -716,9 +716,8 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.2"
-cross_platform = true
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-content_hash = "sha256:f1a4767e86b811f54bd86c21269524faca0714d5b5c8a4dd265c52954fb16f0a"
+content_hash = "sha256:c8e823e2f5b090f12386b16b6c52b2d1ba4dba9e946bfe526e46644068912f99"
 
 [metadata.files]
 "annotated-types 0.5.0" = [
@@ -1348,9 +1347,9 @@ content_hash = "sha256:f1a4767e86b811f54bd86c21269524faca0714d5b5c8a4dd265c52954
     {url = "https://files.pythonhosted.org/packages/28/08/e6b0067efa9a1f2a1eb3043ecd8a0c48bfeb60d3255006dcc829d72d5da2/pytest-benchmark-4.0.0.tar.gz", hash = "sha256:fb0785b83efe599a6a956361c0691ae1dbb5318018561af10f3e915caa0048d1"},
     {url = "https://files.pythonhosted.org/packages/4d/a1/3b70862b5b3f830f0422844f25a823d0470739d994466be9dbbbb414d85a/pytest_benchmark-4.0.0-py3-none-any.whl", hash = "sha256:fdb7db64e31c8b277dff9850d2a2556d8b60bcb0ea6524e36e28ffd7c87f71d6"},
 ]
-"pytest-examples 0.0.9" = [
-    {url = "https://files.pythonhosted.org/packages/8b/60/a29aaeb7daee6f02090be1c668d61eb5078800abac5a4dcdfd9f46ad1a4b/pytest_examples-0.0.9.tar.gz", hash = "sha256:d5f9d670d4ae16f55f3e4ef79949e1133ee5e52856cc482fb9e305f2cdf4016a"},
-    {url = "https://files.pythonhosted.org/packages/a5/00/30349de6979cf6f7ccc432a186cb79bd795f3a108c9dd833a62aa769c625/pytest_examples-0.0.9-py3-none-any.whl", hash = "sha256:a37c798289580bd8fce47582a67cf821e6dda0d45b63fa8e9cbbd4713ed2bf08"},
+"pytest-examples 0.0.10" = [
+    {url = "https://files.pythonhosted.org/packages/0a/4b/1aa9afeed3029ea53591c4dcd0a5104512487415e5d62d2797882d880e1e/pytest_examples-0.0.10.tar.gz", hash = "sha256:5d34d22e689aca2bbad8dd6b7cdcc9d0107e2942853b3154f3a3c68d145d91c5"},
+    {url = "https://files.pythonhosted.org/packages/85/74/4c09d847e082f4f779800c2a200336419804f444298b26045d3bd25ce152/pytest_examples-0.0.10-py3-none-any.whl", hash = "sha256:3d0b52424e454846beed8621a12b85db88c6c17049f65c2f417211372c20dc9e"},
 ]
 "pytest-memray 1.4.0" = [
     {url = "https://files.pythonhosted.org/packages/aa/17/53b10c79a76e019e29e79a717ffab4cf9d21c9411e91e30ed9283dd3e4c9/pytest_memray-1.4.0-py3-none-any.whl", hash = "sha256:cbac61c0a278011e77d57f0afc72ae08de41e59600d2a3f5406874251ed89785"},
