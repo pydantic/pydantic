@@ -61,7 +61,9 @@ impl FromStr for TimedeltaMode {
 
 impl TimedeltaMode {
     pub fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
-        let Some(config_dict) = config else { return Ok(Self::default()) };
+        let Some(config_dict) = config else {
+            return Ok(Self::default());
+        };
         let raw_mode = config_dict.get_as::<&str>(intern!(config_dict.py(), "ser_json_timedelta"))?;
         raw_mode.map_or_else(|| Ok(Self::default()), Self::from_str)
     }
@@ -136,7 +138,9 @@ impl FromStr for BytesMode {
 
 impl BytesMode {
     pub fn from_config(config: Option<&PyDict>) -> PyResult<Self> {
-        let Some(config_dict) = config else { return Ok(Self::default()) };
+        let Some(config_dict) = config else {
+            return Ok(Self::default());
+        };
         let raw_mode = config_dict.get_as::<&str>(intern!(config_dict.py(), "ser_json_bytes"))?;
         raw_mode.map_or_else(|| Ok(Self::default()), Self::from_str)
     }

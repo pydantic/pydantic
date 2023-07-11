@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
 use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValResult};
@@ -264,15 +265,18 @@ impl<'a> Input<'a> for JsonInput {
         self.validate_date(false)
     }
 
-    fn strict_time(&self) -> ValResult<EitherTime> {
+    fn strict_time(
+        &self,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTime> {
         match self {
-            JsonInput::String(v) => bytes_as_time(self, v.as_bytes()),
+            JsonInput::String(v) => bytes_as_time(self, v.as_bytes(), microseconds_overflow_behavior),
             _ => Err(ValError::new(ErrorType::TimeType, self)),
         }
     }
-    fn lax_time(&self) -> ValResult<EitherTime> {
+    fn lax_time(&self, microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior) -> ValResult<EitherTime> {
         match self {
-            JsonInput::String(v) => bytes_as_time(self, v.as_bytes()),
+            JsonInput::String(v) => bytes_as_time(self, v.as_bytes(), microseconds_overflow_behavior),
             JsonInput::Int(v) => int_as_time(self, *v, 0),
             JsonInput::Float(v) => float_as_time(self, *v),
             JsonInput::BigInt(_) => Err(ValError::new(
@@ -289,30 +293,42 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
 
-    fn strict_datetime(&self) -> ValResult<EitherDateTime> {
+    fn strict_datetime(
+        &self,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherDateTime> {
         match self {
-            JsonInput::String(v) => bytes_as_datetime(self, v.as_bytes()),
+            JsonInput::String(v) => bytes_as_datetime(self, v.as_bytes(), microseconds_overflow_behavior),
             _ => Err(ValError::new(ErrorType::DatetimeType, self)),
         }
     }
-    fn lax_datetime(&self) -> ValResult<EitherDateTime> {
+    fn lax_datetime(
+        &self,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherDateTime> {
         match self {
-            JsonInput::String(v) => bytes_as_datetime(self, v.as_bytes()),
+            JsonInput::String(v) => bytes_as_datetime(self, v.as_bytes(), microseconds_overflow_behavior),
             JsonInput::Int(v) => int_as_datetime(self, *v, 0),
             JsonInput::Float(v) => float_as_datetime(self, *v),
             _ => Err(ValError::new(ErrorType::DatetimeType, self)),
         }
     }
 
-    fn strict_timedelta(&self) -> ValResult<EitherTimedelta> {
+    fn strict_timedelta(
+        &self,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTimedelta> {
         match self {
-            JsonInput::String(v) => bytes_as_timedelta(self, v.as_bytes()),
+            JsonInput::String(v) => bytes_as_timedelta(self, v.as_bytes(), microseconds_overflow_behavior),
             _ => Err(ValError::new(ErrorType::TimeDeltaType, self)),
         }
     }
-    fn lax_timedelta(&self) -> ValResult<EitherTimedelta> {
+    fn lax_timedelta(
+        &self,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTimedelta> {
         match self {
-            JsonInput::String(v) => bytes_as_timedelta(self, v.as_bytes()),
+            JsonInput::String(v) => bytes_as_timedelta(self, v.as_bytes(), microseconds_overflow_behavior),
             JsonInput::Int(v) => Ok(int_as_duration(self, *v)?.into()),
             JsonInput::Float(v) => Ok(float_as_duration(self, *v)?.into()),
             _ => Err(ValError::new(ErrorType::TimeDeltaType, self)),
@@ -462,28 +478,49 @@ impl<'a> Input<'a> for String {
         self.validate_date(false)
     }
 
-    fn validate_time(&self, _strict: bool) -> ValResult<EitherTime> {
-        bytes_as_time(self, self.as_bytes())
+    fn validate_time(
+        &self,
+        _strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTime> {
+        bytes_as_time(self, self.as_bytes(), microseconds_overflow_behavior)
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_time(&self) -> ValResult<EitherTime> {
-        self.validate_time(false)
+    fn strict_time(
+        &self,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTime> {
+        self.validate_time(false, microseconds_overflow_behavior)
     }
 
-    fn validate_datetime(&self, _strict: bool) -> ValResult<EitherDateTime> {
-        bytes_as_datetime(self, self.as_bytes())
+    fn validate_datetime(
+        &self,
+        _strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherDateTime> {
+        bytes_as_datetime(self, self.as_bytes(), microseconds_overflow_behavior)
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_datetime(&self) -> ValResult<EitherDateTime> {
-        self.validate_datetime(false)
+    fn strict_datetime(
+        &self,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherDateTime> {
+        self.validate_datetime(false, microseconds_overflow_behavior)
     }
 
-    fn validate_timedelta(&self, _strict: bool) -> ValResult<EitherTimedelta> {
-        bytes_as_timedelta(self, self.as_bytes())
+    fn validate_timedelta(
+        &self,
+        _strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTimedelta> {
+        bytes_as_timedelta(self, self.as_bytes(), microseconds_overflow_behavior)
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_timedelta(&self) -> ValResult<EitherTimedelta> {
-        self.validate_timedelta(false)
+    fn strict_timedelta(
+        &self,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTimedelta> {
+        self.validate_timedelta(false, microseconds_overflow_behavior)
     }
 }
 

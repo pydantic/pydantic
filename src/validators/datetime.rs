@@ -6,8 +6,8 @@ use speedate::DateTime;
 use std::cmp::Ordering;
 use strum::EnumMessage;
 
-use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, py_schema_error_type};
+use crate::build_tools::{py_schema_err, schema_or_config_same};
 use crate::errors::{py_err_string, ErrorType, ValError, ValResult};
 use crate::input::{EitherDateTime, Input};
 use crate::recursion_guard::RecursionGuard;
@@ -19,6 +19,23 @@ use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, 
 pub struct DateTimeValidator {
     strict: bool,
     constraints: Option<DateTimeConstraints>,
+    microseconds_precision: speedate::MicrosecondsPrecisionOverflowBehavior,
+}
+
+pub(crate) fn extract_microseconds_precision(
+    schema: &PyDict,
+    config: Option<&PyDict>,
+) -> PyResult<speedate::MicrosecondsPrecisionOverflowBehavior> {
+    schema_or_config_same(schema, config, intern!(schema.py(), "microseconds_precision"))?
+        .map_or(
+            Ok(speedate::MicrosecondsPrecisionOverflowBehavior::Truncate),
+            |v: &PyString| {
+                speedate::MicrosecondsPrecisionOverflowBehavior::try_from(String::extract(v).unwrap().as_str())
+            },
+        )
+        .map_err(|_| {
+            py_schema_error_type!("Invalid `microseconds_precision`, must be one of \"truncate\" or \"error\"")
+        })
 }
 
 impl BuildValidator for DateTimeValidator {
@@ -32,6 +49,7 @@ impl BuildValidator for DateTimeValidator {
         Ok(Self {
             strict: is_strict(schema, config)?,
             constraints: DateTimeConstraints::from_py(schema)?,
+            microseconds_precision: extract_microseconds_precision(schema, config)?,
         }
         .into())
     }
@@ -46,7 +64,7 @@ impl Validator for DateTimeValidator {
         _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let datetime = input.validate_datetime(extra.strict.unwrap_or(self.strict))?;
+        let datetime = input.validate_datetime(extra.strict.unwrap_or(self.strict), self.microseconds_precision)?;
         if let Some(constraints) = &self.constraints {
             // if we get an error from as_speedate, it's probably because the input datetime was invalid
             // specifically had an invalid tzinfo, hence here we return a validation error

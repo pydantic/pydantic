@@ -122,7 +122,7 @@ fn date_from_datetime<'data>(
     input: &'data impl Input<'data>,
     date_err: ValError<'data>,
 ) -> ValResult<'data, EitherDate<'data>> {
-    let either_dt = match input.validate_datetime(false) {
+    let either_dt = match input.validate_datetime(false, speedate::MicrosecondsPrecisionOverflowBehavior::Truncate) {
         Ok(dt) => dt,
         Err(dt_err) => {
             return match dt_err {
