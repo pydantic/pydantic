@@ -101,7 +101,7 @@ pub(crate) fn infer_to_python_known(
 
     let serialize_with_serializer = || {
         let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
-        let serializer: SchemaSerializer = py_serializer.extract()?;
+        let serializer: PyRef<SchemaSerializer> = py_serializer.extract()?;
         let extra = serializer.build_extra(
             py,
             extra.mode,
@@ -464,7 +464,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             let py_serializer = value
                 .getattr(intern!(py, "__pydantic_serializer__"))
                 .map_err(py_err_se_err)?;
-            let extracted_serializer: SchemaSerializer = py_serializer.extract().map_err(py_err_se_err)?;
+            let extracted_serializer: PyRef<SchemaSerializer> = py_serializer.extract().map_err(py_err_se_err)?;
             let extra = extracted_serializer.build_extra(
                 py,
                 extra.mode,

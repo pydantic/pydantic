@@ -308,11 +308,11 @@ pub(crate) fn to_json_bytes(
     exclude: Option<&PyAny>,
     extra: &Extra,
     indent: Option<usize>,
-    json_size: usize,
+    expected_json_size: usize,
 ) -> PyResult<Vec<u8>> {
     let serializer = PydanticSerializer::new(value, serializer, include, exclude, extra);
 
-    let writer: Vec<u8> = Vec::with_capacity(json_size);
+    let writer: Vec<u8> = Vec::with_capacity(expected_json_size);
     let bytes = match indent {
         Some(indent) => {
             let indent = vec![b' '; indent];
