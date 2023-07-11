@@ -139,19 +139,26 @@ def test_strict_raw_type():
         Model(v=b'fo')
 
 
-def test_constrained_bytes_too_long(ConBytesModel):
-    with pytest.raises(ValidationError) as exc_info:
-        ConBytesModel(v=b'this is too long')
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'bytes_too_long',
-            'loc': ('v',),
-            'msg': 'Data should have at most 10 bytes',
-            'input': b'this is too long',
-            'ctx': {'max_length': 10},
-        }
-    ]
+@pytest.mark.parametrize(
+    ('data', 'valid'),
+    [(b'this is too long', False), ('⪶⓲⽷01'.encode(), False), (b'not long90', True), ('⪶⓲⽷0'.encode(), True)],
+)
+def test_constrained_bytes_too_long(ConBytesModel, data: bytes, valid: bool):
+    if valid:
+        assert ConBytesModel(v=data).model_dump() == {'v': data}
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            ConBytesModel(v=data)
+        # insert_assert(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == [
+            {
+                'ctx': {'max_length': 10},
+                'input': data,
+                'loc': ('v',),
+                'msg': 'Data should have at most 10 bytes',
+                'type': 'bytes_too_long',
+            }
+        ]
 
 
 def test_constrained_bytes_strict_true():
@@ -723,19 +730,26 @@ def test_constrained_str_default(ConStringModel):
     assert m.v == 'foobar'
 
 
-def test_constrained_str_too_long(ConStringModel):
-    with pytest.raises(ValidationError) as exc_info:
-        ConStringModel(v='this is too long')
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_too_long',
-            'loc': ('v',),
-            'msg': 'String should have at most 10 characters',
-            'input': 'this is too long',
-            'ctx': {'max_length': 10},
-        }
-    ]
+@pytest.mark.parametrize(
+    ('data', 'valid'),
+    [('this is too long', False), ('⛄' * 11, False), ('not long90', True), ('⛄' * 10, True)],
+)
+def test_constrained_str_too_long(ConStringModel, data, valid):
+    if valid:
+        assert ConStringModel(v=data).model_dump() == {'v': data}
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            ConStringModel(v=data)
+        # insert_assert(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == [
+            {
+                'ctx': {'max_length': 10},
+                'input': data,
+                'loc': ('v',),
+                'msg': 'String should have at most 10 characters',
+                'type': 'string_too_long',
+            }
+        ]
 
 
 @pytest.mark.parametrize(
@@ -1026,12 +1040,15 @@ def test_decimal_strict():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1.23)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'decimal_type',
+            'type': 'is_instance_of',
             'loc': ('v',),
-            'msg': 'Input should be a valid Decimal instance or decimal string in JSON',
+            'msg': 'Input should be an instance of Decimal',
             'input': 1.23,
+            'ctx': {'class': 'Decimal'},
         }
     ]
 
@@ -1275,7 +1292,7 @@ class BoolCastable:
         ('uuid_check', b'\x12\x34\x56\x78' * 4, UUID('12345678-1234-5678-1234-567812345678')),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-', ValidationError),
         ('uuid_check', 123, ValidationError),
-        ('decimal_check', 42.24, Decimal('42.24')),
+        ('decimal_check', 42.24, Decimal(42.24)),
         ('decimal_check', '42.24', Decimal('42.24')),
         ('decimal_check', b'42.24', ValidationError),
         ('decimal_check', '  42.24  ', Decimal('42.24')),
@@ -2599,15 +2616,10 @@ def test_strict_int():
         Model(v=True)
 
 
-def test_int_parsing_size_error():
+def test_int_parsing_size():
     i64_max = 9_223_372_036_854_775_807
     v = TypeAdapter(int)
-
-    with pytest.raises(
-        ValidationError,
-        match=r'Unable to parse input string as an integer, exceeded maximum size \[type=int_parsing_size,',
-    ):
-        v.validate_json(json.dumps(-i64_max * 2))
+    assert v.validate_json(json.dumps(-i64_max * 2)) == -18_446_744_073_709_551_614
 
 
 def test_strict_float():
@@ -2889,7 +2901,7 @@ ANY_THING = object()
                     'loc': ('foo',),
                     'msg': 'Input should be greater than 42.24',
                     'input': Decimal('42'),
-                    'ctx': {'gt': 42.24},
+                    'ctx': {'gt': '42.24'},
                 }
             ],
         ),
@@ -2904,7 +2916,7 @@ ANY_THING = object()
                     'msg': 'Input should be less than 42.24',
                     'input': Decimal('43'),
                     'ctx': {
-                        'lt': 42.24,
+                        'lt': '42.24',
                     },
                 },
             ],
@@ -2921,7 +2933,7 @@ ANY_THING = object()
                     'msg': 'Input should be greater than or equal to 42.24',
                     'input': Decimal('42'),
                     'ctx': {
-                        'ge': 42.24,
+                        'ge': '42.24',
                     },
                 }
             ],
@@ -2938,7 +2950,7 @@ ANY_THING = object()
                     'msg': 'Input should be less than or equal to 42.24',
                     'input': Decimal('43'),
                     'ctx': {
-                        'le': 42.24,
+                        'le': '42.24',
                     },
                 }
             ],
@@ -3067,7 +3079,7 @@ ANY_THING = object()
             Decimal('42'),
             [
                 {
-                    'type': 'decimal_multiple_of',
+                    'type': 'multiple_of',
                     'loc': ('foo',),
                     'msg': 'Input should be a multiple of 5',
                     'input': Decimal('42'),
@@ -5069,8 +5081,15 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
     assert isinstance(Model(x=1).x, PdDecimal)
     with pytest.raises(ValidationError) as exc_info:
         Model(x=-1)
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'greater_than', 'loc': ('x',), 'msg': 'Input should be greater than 0', 'input': -1, 'ctx': {'gt': 0}}
+        {
+            'type': 'greater_than',
+            'loc': ('x',),
+            'msg': 'Input should be greater than 0',
+            'input': -1,
+            'ctx': {'gt': '0'},
+        }
     ]
 
 

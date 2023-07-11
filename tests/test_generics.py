@@ -94,7 +94,7 @@ def test_double_parameterize_error():
 
 
 def test_value_validation():
-    T = TypeVar('T')
+    T = TypeVar('T', bound=Dict[Any, Any])
 
     class Response(BaseModel, Generic[T]):
         data: T
@@ -107,12 +107,11 @@ def test_value_validation():
             return v
 
         @model_validator(mode='after')
-        @classmethod
-        def validate_sum(cls, m):
-            data = m.data
+        def validate_sum(self) -> 'Response[T]':
+            data = self.data
             if sum(data.values()) > 5:
                 raise ValueError('sum too large')
-            return m
+            return self
 
     assert Response[Dict[int, int]](data={1: '4'}).model_dump() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:
@@ -130,11 +129,11 @@ def test_value_validation():
         Response[Dict[int, int]](data={1: 0})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('some value is zero')))},
+            'input': {1: 0},
             'loc': ('data',),
             'msg': 'Value error, some value is zero',
-            'input': {1: 0},
-            'ctx': {'error': 'some value is zero'},
+            'type': 'value_error',
         }
     ]
 
@@ -142,11 +141,11 @@ def test_value_validation():
         Response[Dict[int, int]](data={1: 3, 2: 6})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('sum too large')))},
+            'input': {'data': {1: 3, 2: 6}},
             'loc': (),
             'msg': 'Value error, sum too large',
-            'input': {'data': {1: 3, 2: 6}},
-            'ctx': {'error': 'sum too large'},
+            'type': 'value_error',
         }
     ]
 
@@ -515,11 +514,11 @@ def test_generic():
         Result[Data, Error](error=Error(message='error'), positive_number=-1)
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
-            'loc': ('positive_number',),
-            'msg': 'Value error, Unknown error',
+            'ctx': {'error': HasRepr(repr(ValueError()))},
             'input': -1,
-            'ctx': {'error': 'Unknown error'},
+            'loc': ('positive_number',),
+            'msg': 'Value error, ',
+            'type': 'value_error',
         }
     ]
 
@@ -527,11 +526,11 @@ def test_generic():
         Result[Data, Error](data=[Data(number=1, text='a')], error=Error(message='error'), positive_number=1)
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('Must not provide both data and error')))},
+            'input': Error(message='error'),
             'loc': ('error',),
             'msg': 'Value error, Must not provide both data and error',
-            'input': Error(message='error'),
-            'ctx': {'error': 'Must not provide both data and error'},
+            'type': 'value_error',
         }
     ]
 

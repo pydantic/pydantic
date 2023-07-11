@@ -2,7 +2,7 @@ import importlib
 
 import pytest
 
-from pydantic._migration import DEPRECATED_MOVED_IN_V2, MOVED_IN_V2, REMOVED_IN_V2, getattr_migration
+from pydantic._migration import DEPRECATED_MOVED_IN_V2, MOVED_IN_V2, REDIRECT_TO_V1, REMOVED_IN_V2, getattr_migration
 from pydantic.errors import PydanticImportError
 
 
@@ -23,6 +23,12 @@ def test_moved_on_v2(module: str):
 
 @pytest.mark.parametrize('module', DEPRECATED_MOVED_IN_V2.keys())
 def test_moved_but_not_warn_on_v2(module: str):
+    import_from(module)
+
+
+@pytest.mark.filterwarnings('ignore::UserWarning')
+@pytest.mark.parametrize('module', REDIRECT_TO_V1.keys())
+def test_redirect_to_v1(module: str):
     import_from(module)
 
 

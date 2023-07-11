@@ -178,7 +178,7 @@ else:
                 email: EmailStr
 
             print(Model(email='contact@mail.com'))
-            # > email='contact@mail.com'
+            #> email='contact@mail.com'
             ```
         """
 
@@ -293,7 +293,9 @@ class IPvAnyAddress:
         cls,
         source: type[Any],
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(cls._validate)
+        return core_schema.general_plain_validator_function(
+            cls._validate, serialization=core_schema.to_string_ser_schema()
+        )
 
     @classmethod
     def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> IPv4Address | IPv6Address:
@@ -330,7 +332,9 @@ class IPvAnyInterface:
         cls,
         source: type[Any],
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(cls._validate)
+        return core_schema.general_plain_validator_function(
+            cls._validate, serialization=core_schema.to_string_ser_schema()
+        )
 
     @classmethod
     def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Interface | IPv6Interface:
@@ -369,7 +373,9 @@ class IPvAnyNetwork:
         cls,
         source: type[Any],
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(cls._validate)
+        return core_schema.general_plain_validator_function(
+            cls._validate, serialization=core_schema.to_string_ser_schema()
+        )
 
     @classmethod
     def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Network | IPv6Network:

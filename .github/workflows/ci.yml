@@ -36,9 +36,6 @@ jobs:
         with:
           extra_args: --all-files --verbose
 
-      - name: make history
-        run: pdm run python3 ./changes/make_history.py
-
   docs-build:
     runs-on: ubuntu-latest
     steps:
@@ -271,7 +268,7 @@ jobs:
     - name: install typing-extensions
       run: |
         if [ ${{ matrix.typing-extensions-version }} == 'main' ]; then
-          pdm remove typing-extensions && pip install 'git+https://github.com/python/typing_extensions.git'
+          pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git ; python_version >= "3.8"'
         else
           pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}'
         fi
