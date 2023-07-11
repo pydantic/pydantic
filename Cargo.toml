@@ -30,9 +30,9 @@ pyo3 = { version = "0.19.1", features = ["generate-import-lib", "num-bigint"] }
 regex = "1.6.0"
 strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.24.3"
-serde_json = {version = "1.0.87", features = ["preserve_order"]}
+serde_json = {version = "1.0.87", features = ["arbitrary_precision", "preserve_order"]}
 enum_dispatch = "0.3.8"
-serde = "1.0.147"
+serde = { version = "1.0.147", features = ["derive"] }
 # disabled for benchmarks since it makes microbenchmark performance more flakey
 mimalloc = { version = "0.1.30", optional = true, default-features = false, features = ["local_dynamic_tls"] }
 speedate = "0.9.1"

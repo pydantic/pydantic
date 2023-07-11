@@ -10,6 +10,7 @@ use pyo3::types::{
 
 use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
+use crate::input::Int;
 use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{PydanticSerializer, TypeSerializer};
@@ -406,7 +407,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
 
     let ser_result = match ob_type {
         ObType::None => serializer.serialize_none(),
-        ObType::Int | ObType::IntSubclass => serialize!(i64),
+        ObType::Int | ObType::IntSubclass => serialize!(Int),
         ObType::Bool => serialize!(bool),
         ObType::Float | ObType::FloatSubclass => serialize!(f64),
         ObType::Decimal => value.to_string().serialize(serializer),

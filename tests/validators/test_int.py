@@ -162,13 +162,7 @@ def test_negative_int(input_value, expected):
         (i64_max, i64_max),
         (i64_max + 1, i64_max + 1),
         (i64_max * 2, i64_max * 2),
-        (
-            int(1e30),
-            Err(
-                'Unable to parse input string as an integer, exceeded maximum size '
-                '[type=int_parsing_size, input_value=1e+30, input_type=float]'
-            ),
-        ),
+        (int(1e30), int(1e30)),
         (0, Err('Input should be greater than 0 [type=greater_than, input_value=0, input_type=int]')),
         (-1, Err('Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]')),
         pytest.param(
@@ -197,10 +191,7 @@ def test_positive_json(input_value, expected):
         (0, Err('Input should be less than 0 [type=less_than, input_value=0, input_type=int]')),
         (-i64_max, -i64_max),
         (-i64_max - 1, -i64_max - 1),
-        (
-            -i64_max * 2,
-            Err(' Unable to parse input string as an integer, exceeded maximum size [type=int_parsing_size'),
-        ),
+        (-i64_max * 2, -i64_max * 2),
     ],
 )
 def test_negative_json(input_value, expected):
@@ -391,8 +382,7 @@ def test_long_python_inequality():
 def test_long_json():
     v = SchemaValidator({'type': 'int'})
 
-    with pytest.raises(ValidationError, match=r'number out of range at line 1 column 401 \[type=json_invalid,'):
-        v.validate_json('-' + '1' * 400)
+    assert v.validate_json('-' + '1' * 400) == int('-' + '1' * 400)
 
     with pytest.raises(ValidationError, match=r'expected ident at line 1 column 2 \[type=json_invalid,'):
         v.validate_json('nan')

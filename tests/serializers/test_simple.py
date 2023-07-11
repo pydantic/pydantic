@@ -19,11 +19,16 @@ class FloatSubClass(float):
     pass
 
 
+# A number well outside of i64 range
+_BIG_NUMBER_BYTES = b'1' + (b'0' * 40)
+
+
 @pytest.mark.parametrize('custom_type_schema', [None, 'any'])
 @pytest.mark.parametrize(
     'schema_type,value,expected_python,expected_json',
     [
         ('int', 1, 1, b'1'),
+        ('int', int(_BIG_NUMBER_BYTES), int(_BIG_NUMBER_BYTES), _BIG_NUMBER_BYTES),
         ('bool', True, True, b'true'),
         ('bool', False, False, b'false'),
         ('float', 1.0, 1.0, b'1.0'),
