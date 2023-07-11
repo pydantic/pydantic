@@ -20,13 +20,9 @@ If you encounter any issues, please [create an issue in GitHub](https://github.c
 the `bug V2` label. This will help us to actively monitor and track errors, and to continue to improve the library's
 performance.
 
-If you need to use latest Pydantic V1 for any reason, you can install it with:
+If you need to use latest Pydantic V1 for any reason, see the [Continue using Pydantic V1 features](#continue-using-pydantic-v1-features) section below for details on installation and imports from `pydantic.v1`.
 
-```bash
-pip install "pydantic==1.*"
-```
-
-## Code Transformation Tool
+## Code transformation tool
 
 We have created a tool to help you migrate your code. This tool is still in beta, but we hope it will help you to
 migrate your code more quickly.
@@ -50,7 +46,34 @@ Then you'll want to do:
 
 See more about it on the [Bump Pydantic](https://github.com/pydantic/bump-pydantic) repository.
 
+## Continue using Pydantic V1 features
+
+Pydantic V1 is still available when you need it, though we recommend migrating to Pydantic V2 for its improvements and new features.
+
+If you need to use latest Pydantic V1, you can install it with:
+
+```bash
+pip install "pydantic==1.*"
+```
+
+The Pydantic V2 package also continues to provide access to the Pydantic V1 API by importing through `pydantic.v1`.
+For example, you can use the `BaseModel` class from Pydantic V1 instead of the Pydantic V2 `pydantic.BaseModel` class:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.v1 import BaseModel
+```
+
+You can also import functions that have been removed from Pydantic V2, such as `lenient_isinstance`:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.v1.utils import lenient_isinstance
+```
+
+Pydantic V1 documentation is available at [https://docs.pydantic.dev/1.10/](https://docs.pydantic.dev/1.10/).
+
 ## Migration guide
+
+The following sections provide details on the most important changes in Pydantic V2.
 
 ### Changes to `pydantic.BaseModel`
 
