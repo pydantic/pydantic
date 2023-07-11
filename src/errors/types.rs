@@ -204,10 +204,10 @@ pub enum ErrorType {
     // ---------------------
     // python errors from functions
     ValueError {
-        error: String,
+        error: Option<PyObject>, // Use Option because EnumIter requires Default to be implemented
     },
     AssertionError {
-        error: String,
+        error: Option<PyObject>, // Use Option because EnumIter requires Default to be implemented
     },
     // Note: strum message and serialize are not used here
     CustomError {
@@ -425,8 +425,8 @@ impl ErrorType {
             Self::MappingType { .. } => extract_context!(Cow::Owned, MappingType, ctx, error: String),
             Self::BytesTooShort { .. } => extract_context!(BytesTooShort, ctx, min_length: usize),
             Self::BytesTooLong { .. } => extract_context!(BytesTooLong, ctx, max_length: usize),
-            Self::ValueError { .. } => extract_context!(ValueError, ctx, error: String),
-            Self::AssertionError { .. } => extract_context!(AssertionError, ctx, error: String),
+            Self::ValueError { .. } => extract_context!(ValueError, ctx, error: Option<PyObject>),
+            Self::AssertionError { .. } => extract_context!(AssertionError, ctx, error: Option<PyObject>),
             Self::LiteralError { .. } => extract_context!(LiteralError, ctx, expected: String),
             Self::DateParsing { .. } => extract_context!(Cow::Owned, DateParsing, ctx, error: String),
             Self::DateFromDatetimeParsing { .. } => extract_context!(DateFromDatetimeParsing, ctx, error: String),
@@ -639,8 +639,18 @@ impl ErrorType {
             Self::MappingType { error } => render!(tmpl, error),
             Self::BytesTooShort { min_length } => to_string_render!(tmpl, min_length),
             Self::BytesTooLong { max_length } => to_string_render!(tmpl, max_length),
-            Self::ValueError { error } => render!(tmpl, error),
-            Self::AssertionError { error } => render!(tmpl, error),
+            Self::ValueError { error, .. } => {
+                let error = &error
+                    .as_ref()
+                    .map_or(Cow::Borrowed("None"), |v| Cow::Owned(v.as_ref(py).to_string()));
+                render!(tmpl, error)
+            }
+            Self::AssertionError { error, .. } => {
+                let error = &error
+                    .as_ref()
+                    .map_or(Cow::Borrowed("None"), |v| Cow::Owned(v.as_ref(py).to_string()));
+                render!(tmpl, error)
+            }
             Self::CustomError {
                 custom_error: value_error,
             } => value_error.message(py),

@@ -248,8 +248,20 @@ def test_list_function_val_error():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1, 2])
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'value_error', 'loc': (0,), 'msg': 'Value error, error 1', 'input': 1, 'ctx': {'error': 'error 1'}},
-        {'type': 'value_error', 'loc': (1,), 'msg': 'Value error, error 2', 'input': 2, 'ctx': {'error': 'error 2'}},
+        {
+            'type': 'value_error',
+            'loc': (0,),
+            'msg': 'Value error, error 1',
+            'input': 1,
+            'ctx': {'error': HasRepr(repr(ValueError('error 1')))},
+        },
+        {
+            'type': 'value_error',
+            'loc': (1,),
+            'msg': 'Value error, error 2',
+            'input': 2,
+            'ctx': {'error': HasRepr(repr(ValueError('error 2')))},
+        },
     ]
 
 
