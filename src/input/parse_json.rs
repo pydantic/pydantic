@@ -1,5 +1,6 @@
 use std::fmt;
 
+use num_bigint::BigInt;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use serde::de::{Deserialize, DeserializeSeed, Error as SerdeError, MapAccess, SeqAccess, Visitor};
@@ -12,6 +13,7 @@ pub enum JsonInput {
     Null,
     Bool(bool),
     Int(i64),
+    BigInt(BigInt),
     Uint(u64),
     Float(f64),
     String(String),
@@ -27,6 +29,7 @@ impl ToPyObject for JsonInput {
             Self::Null => py.None(),
             Self::Bool(b) => b.into_py(py),
             Self::Int(i) => i.into_py(py),
+            Self::BigInt(b) => b.to_object(py),
             Self::Uint(i) => i.into_py(py),
             Self::Float(f) => f.into_py(py),
             Self::String(s) => s.into_py(py),
@@ -83,9 +86,8 @@ impl<'de> Deserialize<'de> for JsonInput {
                 Ok(JsonInput::String(value.to_string()))
             }
 
-            #[cfg_attr(has_no_coverage, no_coverage)]
-            fn visit_string<E>(self, _: String) -> Result<JsonInput, E> {
-                unreachable!()
+            fn visit_string<E>(self, value: String) -> Result<JsonInput, E> {
+                Ok(JsonInput::String(value))
             }
 
             #[cfg_attr(has_no_coverage, no_coverage)]
@@ -122,11 +124,50 @@ impl<'de> Deserialize<'de> for JsonInput {
             where
                 V: MapAccess<'de>,
             {
+                const SERDE_JSON_NUMBER: &str = "$serde_json::private::Number";
                 match visitor.next_key_seed(KeyDeserializer)? {
                     Some(first_key) => {
                         let mut values = LazyIndexMap::new();
+                        let first_value = visitor.next_value()?;
 
-                        values.insert(first_key, visitor.next_value()?);
+                        // serde_json will parse arbitrary precision numbers into a map
+                        // structure with a "number" key and a String value
+                        'try_number: {
+                            if first_key == SERDE_JSON_NUMBER {
+                                // Just in case someone tries to actually store that key in a real map,
+                                // keep parsing and continue as a map if so
+
+                                if let Some((key, value)) = visitor.next_entry::<String, JsonInput>()? {
+                                    // Important to preserve order of the keys
+                                    values.insert(first_key, first_value);
+                                    values.insert(key, value);
+                                    break 'try_number;
+                                }
+
+                                if let JsonInput::String(s) = &first_value {
+                                    // Normalize the string to either an int or float
+                                    let normalized = if s.contains('.') {
+                                        JsonInput::Float(
+                                            s.parse()
+                                                .map_err(|e| V::Error::custom(format!("expected a float: {e}")))?,
+                                        )
+                                    } else if let Ok(i) = s.parse::<i64>() {
+                                        JsonInput::Int(i)
+                                    } else if let Ok(big) = s.parse::<BigInt>() {
+                                        JsonInput::BigInt(big)
+                                    } else {
+                                        // Failed to normalize, just throw it in the map and continue
+                                        values.insert(first_key, first_value);
+                                        break 'try_number;
+                                    };
+
+                                    return Ok(normalized);
+                                };
+                            } else {
+                                values.insert(first_key, first_value);
+                            }
+                        }
+
                         while let Some((key, value)) = visitor.next_entry()? {
                             values.insert(key, value);
                         }

@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 use serde::Serialize;
 
-use crate::definitions::DefinitionsBuilder;
+use crate::{definitions::DefinitionsBuilder, input::Int};
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, IsType, ObType,
@@ -163,7 +163,7 @@ pub(crate) fn to_str_json_key(key: &PyAny) -> PyResult<Cow<str>> {
     Ok(key.str()?.to_string_lossy())
 }
 
-build_simple_serializer!(IntSerializer, "int", i64, ObType::Int, to_str_json_key);
+build_simple_serializer!(IntSerializer, "int", Int, ObType::Int, to_str_json_key);
 
 pub(crate) fn bool_json_key(key: &PyAny) -> PyResult<Cow<str>> {
     let v = if key.is_true().unwrap_or(false) {
