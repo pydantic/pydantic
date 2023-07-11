@@ -139,19 +139,26 @@ def test_strict_raw_type():
         Model(v=b'fo')
 
 
-def test_constrained_bytes_too_long(ConBytesModel):
-    with pytest.raises(ValidationError) as exc_info:
-        ConBytesModel(v=b'this is too long')
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'bytes_too_long',
-            'loc': ('v',),
-            'msg': 'Data should have at most 10 bytes',
-            'input': b'this is too long',
-            'ctx': {'max_length': 10},
-        }
-    ]
+@pytest.mark.parametrize(
+    ('data', 'valid'),
+    [(b'this is too long', False), ('⪶⓲⽷01'.encode(), False), (b'not long90', True), ('⪶⓲⽷0'.encode(), True)],
+)
+def test_constrained_bytes_too_long(ConBytesModel, data: bytes, valid: bool):
+    if valid:
+        assert ConBytesModel(v=data).model_dump() == {'v': data}
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            ConBytesModel(v=data)
+        # insert_assert(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == [
+            {
+                'ctx': {'max_length': 10},
+                'input': data,
+                'loc': ('v',),
+                'msg': 'Data should have at most 10 bytes',
+                'type': 'bytes_too_long',
+            }
+        ]
 
 
 def test_constrained_bytes_strict_true():
@@ -723,19 +730,26 @@ def test_constrained_str_default(ConStringModel):
     assert m.v == 'foobar'
 
 
-def test_constrained_str_too_long(ConStringModel):
-    with pytest.raises(ValidationError) as exc_info:
-        ConStringModel(v='this is too long')
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_too_long',
-            'loc': ('v',),
-            'msg': 'String should have at most 10 characters',
-            'input': 'this is too long',
-            'ctx': {'max_length': 10},
-        }
-    ]
+@pytest.mark.parametrize(
+    ('data', 'valid'),
+    [('this is too long', False), ('⛄' * 11, False), ('not long90', True), ('⛄' * 10, True)],
+)
+def test_constrained_str_too_long(ConStringModel, data, valid):
+    if valid:
+        assert ConStringModel(v=data).model_dump() == {'v': data}
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            ConStringModel(v=data)
+        # insert_assert(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == [
+            {
+                'ctx': {'max_length': 10},
+                'input': data,
+                'loc': ('v',),
+                'msg': 'String should have at most 10 characters',
+                'type': 'string_too_long',
+            }
+        ]
 
 
 @pytest.mark.parametrize(
