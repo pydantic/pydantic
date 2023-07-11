@@ -93,17 +93,23 @@ impl Validator for StrConstrainedValidator {
         if self.strip_whitespace {
             str = str.trim();
         }
+
+        let str_len: Option<usize> = if self.min_length.is_some() | self.max_length.is_some() {
+            Some(str.chars().count())
+        } else {
+            None
+        };
         if let Some(min_length) = self.min_length {
-            if str.len() < min_length {
-                // return py_schema_err!("{} is shorter than {}", str, min_length);
+            if str_len.unwrap() < min_length {
                 return Err(ValError::new(ErrorType::StringTooShort { min_length }, input));
             }
         }
         if let Some(max_length) = self.max_length {
-            if str.len() > max_length {
+            if str_len.unwrap() > max_length {
                 return Err(ValError::new(ErrorType::StringTooLong { max_length }, input));
             }
         }
+
         if let Some(pattern) = &self.pattern {
             if !pattern.is_match(str) {
                 return Err(ValError::new(
