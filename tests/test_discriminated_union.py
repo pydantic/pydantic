@@ -1257,3 +1257,17 @@ def test_function_after_discriminator():
 
     m = Model(x={'name': 'kitty'})
     assert m.x.name == 'cat'
+
+    # Ensure a discriminated union is actually being used during validation
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x={'name': 'invalid'})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'discriminator': "'name'", 'expected_tags': "'kitty', 'cat', 'puppy', 'dog'", 'tag': 'invalid'},
+            'input': {'name': 'invalid'},
+            'loc': ('x',),
+            'msg': "Input tag 'invalid' found using 'name' does not match any of the "
+            "expected tags: 'kitty', 'cat', 'puppy', 'dog'",
+            'type': 'union_tag_invalid',
+        }
+    ]
