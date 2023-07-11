@@ -2911,12 +2911,12 @@ over again.</p>
         <span class="k">return</span> <span class="n">data</span>
 
     <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="s1">&#39;UserModel&#39;</span><span class="p">):</span>
-        <span class="n">pw1</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">password1</span>
-        <span class="n">pw2</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">password2</span>
+    <span class="k">def</span> <span class="nf">check_passwords_match</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;UserModel&#39;</span><span class="p">:</span>
+        <span class="n">pw1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password1</span>
+        <span class="n">pw2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password2</span>
         <span class="k">if</span> <span class="n">pw1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw1</span> <span class="o">!=</span> <span class="n">pw2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;passwords do not match&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">m</span>
+        <span class="k">return</span> <span class="bp">self</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">))</span>

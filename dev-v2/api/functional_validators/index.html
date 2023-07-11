@@ -1733,6 +1733,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelAfterValidator" class="md-nav__link">
+    ModelAfterValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="md-nav__link">
+    ModelAfterValidatorWithoutInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.AfterValidator" class="md-nav__link">
     AfterValidator
   </a>
@@ -1749,20 +1763,6 @@
         <li class="md-nav__item">
   <a href="#pydantic.functional_validators.InstanceOf" class="md-nav__link">
     InstanceOf
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_validators.ModelAfterValidator" class="md-nav__link">
-    ModelAfterValidator
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="md-nav__link">
-    ModelAfterValidatorWithoutInfo
   </a>
   
 </li>
@@ -2219,6 +2219,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelAfterValidator" class="md-nav__link">
+    ModelAfterValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="md-nav__link">
+    ModelAfterValidatorWithoutInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.AfterValidator" class="md-nav__link">
     AfterValidator
   </a>
@@ -2235,20 +2249,6 @@
         <li class="md-nav__item">
   <a href="#pydantic.functional_validators.InstanceOf" class="md-nav__link">
     InstanceOf
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_validators.ModelAfterValidator" class="md-nav__link">
-    ModelAfterValidator
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="md-nav__link">
-    ModelAfterValidatorWithoutInfo
   </a>
   
 </li>
@@ -2361,6 +2361,57 @@
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pydantic.functional_validators.ModelAfterValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">ModelAfterValidator</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.functional_validators.ModelAfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">ModelAfterValidator</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
+    <span class="p">[</span><span class="n">_ModelType</span><span class="p">,</span> <span class="n">_core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">],</span> <span class="n">_ModelType</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='after'</code>.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">ModelAfterValidatorWithoutInfo</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">ModelAfterValidatorWithoutInfo</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[</span>
+    <span class="p">[</span><span class="n">_ModelType</span><span class="p">],</span> <span class="n">_ModelType</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='after'</code> and the function does not
+have info argument.</p>
+  </div>
+
+</div>
 
 
 <div class="doc doc-object doc-class">
@@ -2595,87 +2646,6 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 </details>
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="pydantic.functional_validators.ModelAfterValidator" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">ModelAfterValidator</span>
-
-
-<a href="#pydantic.functional_validators.ModelAfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
-
-  
-      <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='after'</code>.</p>
-
-
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">ModelAfterValidatorWithoutInfo</span>
-
-
-<a href="#pydantic.functional_validators.ModelAfterValidatorWithoutInfo" class="headerlink" title="Permanent link">&para;</a></h2>
-
-
-  <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
-
-  
-      <p>A <code>@model_validator</code> decorated function signature. This is used when <code>mode='after'</code> and the function does not
-have info argument.</p>
-
 
 
   
@@ -3444,27 +3414,27 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">464</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
 <span class="normal">465</span>
 <span class="normal">466</span>
 <span class="normal">467</span>
 <span class="normal">468</span>
 <span class="normal">469</span>
 <span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span>
-<span class="normal">473</span>
-<span class="normal">474</span>
-<span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span>
-<span class="normal">478</span>
-<span class="normal">479</span>
-<span class="normal">480</span>
-<span class="normal">481</span>
-<span class="normal">482</span>
-<span class="normal">483</span>
-<span class="normal">484</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">471</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
