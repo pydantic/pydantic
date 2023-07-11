@@ -60,14 +60,14 @@ def test_validate_multiple():
         MyDataclass(a='x', b='x')
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'error': 'a is too short'},
+            'ctx': {'error': HasRepr(repr(ValueError('a is too short')))},
             'input': 'x',
             'loc': ('a',),
             'msg': 'Value error, a is too short',
             'type': 'value_error',
         },
         {
-            'ctx': {'error': 'b is too short'},
+            'ctx': {'error': HasRepr(repr(ValueError('b is too short')))},
             'input': 'x',
             'loc': ('b',),
             'msg': 'Value error, b is too short',
@@ -178,7 +178,7 @@ def test_model_validator():
 
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'error': 'foobar'},
+            'ctx': {'error': HasRepr(repr(ValueError('foobar')))},
             'input': HasRepr("ArgsKwargs((1,), {'b': 'snap dragon'})"),
             'loc': (),
             'msg': 'Value error, foobar',

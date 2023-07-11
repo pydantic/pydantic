@@ -10,6 +10,7 @@ from typing import Any, Callable, Deque, Dict, FrozenSet, List, Optional, Tuple,
 from unittest.mock import MagicMock
 
 import pytest
+from dirty_equals import HasRepr
 from typing_extensions import Annotated, Literal
 
 from pydantic import (
@@ -90,11 +91,11 @@ def test_annotated_validator_wrap() -> None:
         Model(x=date(year=1970, month=4, day=17))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('1970-04-17 is not in the sixties!')))},
+            'input': date(1970, 4, 17),
             'loc': ('x',),
             'msg': 'Value error, 1970-04-17 is not in the sixties!',
-            'input': date(1970, 4, 17),
-            'ctx': {'error': '1970-04-17 is not in the sixties!'},
+            'type': 'value_error',
         }
     ]
 
@@ -117,11 +118,11 @@ def test_annotated_validator_nested() -> None:
 
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'assertion_error',
+            'ctx': {'error': HasRepr(repr(AssertionError('assert -2 >= 0')))},
+            'input': [0, -1, -2],
             'loc': ('x',),
             'msg': 'Assertion failed, assert -2 >= 0',
-            'input': [0, -1, -2],
-            'ctx': {'error': 'assert -2 >= 0'},
+            'type': 'assertion_error',
         }
     ]
 
@@ -177,11 +178,11 @@ def test_simple():
         Model(a='snap')
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('"foobar" not found in a')))},
+            'input': 'snap',
             'loc': ('a',),
             'msg': 'Value error, "foobar" not found in a',
-            'input': 'snap',
-            'ctx': {'error': '"foobar" not found in a'},
+            'type': 'value_error',
         }
     ]
 
@@ -331,11 +332,11 @@ def test_validate_pre_error():
         Model(a=[1, 3])
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('a1 broken')))},
+            'input': [1, 3],
             'loc': ('a',),
             'msg': 'Value error, a1 broken',
-            'input': [1, 3],
-            'ctx': {'error': 'a1 broken'},
+            'type': 'value_error',
         }
     ]
     assert calls == ['check_a1 [1, 3]']
@@ -345,11 +346,11 @@ def test_validate_pre_error():
         Model(a=[5, 10])
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('a2 broken')))},
+            'input': [6, 10],
             'loc': ('a',),
             'msg': 'Value error, a2 broken',
-            'input': [6, 10],
-            'ctx': {'error': 'a2 broken'},
+            'type': 'value_error',
         }
     ]
     assert calls == ['check_a1 [5, 10]', 'check_a2 [6, 10]']
@@ -471,18 +472,18 @@ def test_validate_multiple():
         Model(a='x', b='x')
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'assertion_error',
+            'ctx': {'error': HasRepr(repr(AssertionError('a is too short')))},
+            'input': 'x',
             'loc': ('a',),
             'msg': 'Assertion failed, a is too short',
-            'input': 'x',
-            'ctx': {'error': 'a is too short'},
+            'type': 'assertion_error',
         },
         {
-            'type': 'assertion_error',
+            'ctx': {'error': HasRepr(repr(AssertionError('b is too short')))},
+            'input': 'x',
             'loc': ('b',),
             'msg': 'Assertion failed, b is too short',
-            'input': 'x',
-            'ctx': {'error': 'b is too short'},
+            'type': 'assertion_error',
         },
     ]
 
@@ -755,11 +756,11 @@ def test_wildcard_validator_error(decorator, pytest_warns):
 
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('"foobar" not found in a')))},
+            'input': 'snap',
             'loc': ('a',),
             'msg': 'Value error, "foobar" not found in a',
-            'input': 'snap',
-            'ctx': {'error': '"foobar" not found in a'},
+            'type': 'value_error',
         },
         {'type': 'missing', 'loc': ('b',), 'msg': 'Field required', 'input': {'a': 'snap'}},
     ]
@@ -1286,11 +1287,11 @@ def test_assert_raises_validation_error():
     injected_by_pytest = "assert 'snap' == 'a'\n  - a\n  + snap"
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'assertion_error',
+            'ctx': {'error': HasRepr(repr(AssertionError("invalid a\nassert 'snap' == 'a'\n  - a\n  + snap")))},
+            'input': 'snap',
             'loc': ('a',),
             'msg': f'Assertion failed, invalid a\n{injected_by_pytest}',
-            'input': 'snap',
-            'ctx': {'error': "invalid a\nassert 'snap' == 'a'\n  - a\n  + snap"},
+            'type': 'assertion_error',
         }
     ]
 
@@ -1330,11 +1331,11 @@ def test_root_validator():
         Model(b='snap dragon', c='snap dragon2')
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('foobar')))},
+            'input': {'b': 'snap dragon', 'c': 'snap dragon2'},
             'loc': (),
             'msg': 'Value error, foobar',
-            'input': {'b': 'snap dragon', 'c': 'snap dragon2'},
-            'ctx': {'error': 'foobar'},
+            'type': 'value_error',
         }
     ]
 
@@ -1427,11 +1428,11 @@ def test_root_validator_pre():
     assert root_val_values == [{'a': '123', 'b': 'bar'}, {'b': 'snap dragon'}]
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('foobar')))},
+            'input': {'b': 'snap dragon'},
             'loc': (),
             'msg': 'Value error, foobar',
-            'input': {'b': 'snap dragon'},
-            'ctx': {'error': 'foobar'},
+            'type': 'value_error',
         }
     ]
 
@@ -1537,11 +1538,11 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
         Model(b='snap dragon')
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('foobar')))},
+            'input': {'b': 'snap dragon'},
             'loc': (),
             'msg': 'Value error, foobar',
-            'input': {'b': 'snap dragon'},
-            'ctx': {'error': 'foobar'},
+            'type': 'value_error',
         }
     ]
 
@@ -1770,11 +1771,11 @@ def test_validating_assignment_pre_root_validator_fail():
         m.current_value = '100'
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('values cannot be a string')))},
+            'input': {'current_value': '100', 'max_value': 200.0},
             'loc': (),
             'msg': 'Value error, values cannot be a string',
-            'input': {'current_value': '100', 'max_value': 200.0},
-            'ctx': {'error': 'values cannot be a string'},
+            'type': 'value_error',
         }
     ]
 
@@ -1798,11 +1799,11 @@ def test_validating_assignment_model_validator_before_fail():
         m.current_value = '100'
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('values cannot be a string')))},
+            'input': {'current_value': '100', 'max_value': 200.0},
             'loc': (),
             'msg': 'Value error, values cannot be a string',
-            'input': {'current_value': '100', 'max_value': 200.0},
-            'ctx': {'error': 'values cannot be a string'},
+            'type': 'value_error',
         }
     ]
 
@@ -2110,7 +2111,7 @@ def test_model_config_validate_default():
         ValidatingModel()
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'error': 'assert -1 > 0'},
+            'ctx': {'error': HasRepr(repr(AssertionError('assert -1 > 0')))},
             'input': -1,
             'loc': ('x',),
             'msg': 'Assertion failed, assert -1 > 0',

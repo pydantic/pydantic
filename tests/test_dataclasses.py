@@ -1985,7 +1985,7 @@ def test_dataclass_config_validate_default():
         ValidatingModel()
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'error': 'assert -1 > 0'},
+            'ctx': {'error': HasRepr(repr(AssertionError('assert -1 > 0')))},
             'input': -1,
             'loc': ('x',),
             'msg': 'Assertion failed, assert -1 > 0',

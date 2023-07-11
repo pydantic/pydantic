@@ -2599,15 +2599,10 @@ def test_strict_int():
         Model(v=True)
 
 
-def test_int_parsing_size_error():
+def test_int_parsing_size():
     i64_max = 9_223_372_036_854_775_807
     v = TypeAdapter(int)
-
-    with pytest.raises(
-        ValidationError,
-        match=r'Unable to parse input string as an integer, exceeded maximum size \[type=int_parsing_size,',
-    ):
-        v.validate_json(json.dumps(-i64_max * 2))
+    assert v.validate_json(json.dumps(-i64_max * 2)) == -18_446_744_073_709_551_614
 
 
 def test_strict_float():
