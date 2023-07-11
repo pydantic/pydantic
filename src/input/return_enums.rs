@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::ops::Rem;
 use std::slice::Iter as SliceIter;
+use std::str::FromStr;
 
 use num_bigint::BigInt;
 
@@ -17,6 +18,7 @@ use pyo3::{ffi, intern, AsPyPointer, PyNativeType};
 use pyo3::types::PyFunction;
 #[cfg(not(PyPy))]
 use pyo3::PyTypeInfo;
+use serde::{ser::Error, Serialize, Serializer};
 
 use crate::errors::{py_err_string, ErrorType, InputValue, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
@@ -926,10 +928,24 @@ impl<'a> IntoPy<PyObject> for EitherFloat<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(untagged)]
 pub enum Int {
     I64(i64),
+    #[serde(serialize_with = "serialize_bigint_as_number")]
     Big(BigInt),
+}
+
+// The default serialization for BigInt is some internal representation which roundtrips efficiently
+// but is not the JSON value which users would expect to see.
+fn serialize_bigint_as_number<S>(big_int: &BigInt, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serde_json::Number::from_str(&big_int.to_string())
+        .map_err(S::Error::custom)
+        .expect("a valid number")
+        .serialize(serializer)
 }
 
 impl PartialOrd for Int {
@@ -970,6 +986,15 @@ impl<'a> FromPyObject<'a> for Int {
             Ok(Int::Big(b))
         } else {
             py_err!(PyTypeError; "Expected int, got {}", obj.get_type())
+        }
+    }
+}
+
+impl ToPyObject for Int {
+    fn to_object(&self, py: Python<'_>) -> PyObject {
+        match self {
+            Self::I64(i) => i.to_object(py),
+            Self::Big(big_i) => big_i.to_object(py),
         }
     }
 }

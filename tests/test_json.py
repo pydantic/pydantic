@@ -63,6 +63,10 @@ def test_bytes():
         s.validate_json('123')
 
 
+# A number well outside of i64 range
+_BIG_NUMBER_STR = '1' + ('0' * 40)
+
+
 @pytest.mark.parametrize(
     'input_value,expected',
     [
@@ -70,7 +74,9 @@ def test_bytes():
         ('"123"', 123),
         ('123.0', 123),
         ('"123.0"', 123),
+        (_BIG_NUMBER_STR, int(_BIG_NUMBER_STR)),
         ('123.4', Err('Input should be a valid integer, got a number with a fractional part [type=int_from_float,')),
+        ('"123.4"', Err('Input should be a valid integer, unable to parse string as an integer [type=int_parsing,')),
         ('"string"', Err('Input should be a valid integer, unable to parse string as an integer [type=int_parsing,')),
     ],
 )

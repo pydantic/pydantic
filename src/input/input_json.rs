@@ -1,5 +1,8 @@
+use std::borrow::Cow;
+
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use strum::EnumMessage;
 
 use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValResult};
 
@@ -118,6 +121,7 @@ impl<'a> Input<'a> for JsonInput {
         match self {
             JsonInput::Int(i) => Ok(EitherInt::I64(*i)),
             JsonInput::Uint(u) => Ok(EitherInt::U64(*u)),
+            JsonInput::BigInt(b) => Ok(EitherInt::BigInt(b.clone())),
             _ => Err(ValError::new(ErrorType::IntType, self)),
         }
     }
@@ -129,6 +133,7 @@ impl<'a> Input<'a> for JsonInput {
             },
             JsonInput::Int(i) => Ok(EitherInt::I64(*i)),
             JsonInput::Uint(u) => Ok(EitherInt::U64(*u)),
+            JsonInput::BigInt(b) => Ok(EitherInt::BigInt(b.clone())),
             JsonInput::Float(f) => float_as_int(self, *f),
             JsonInput::String(str) => str_as_int(self, str),
             _ => Err(ValError::new(ErrorType::IntType, self)),
@@ -270,6 +275,16 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::String(v) => bytes_as_time(self, v.as_bytes()),
             JsonInput::Int(v) => int_as_time(self, *v, 0),
             JsonInput::Float(v) => float_as_time(self, *v),
+            JsonInput::BigInt(_) => Err(ValError::new(
+                ErrorType::TimeParsing {
+                    error: Cow::Borrowed(
+                        speedate::ParseError::TimeTooLarge
+                            .get_documentation()
+                            .unwrap_or_default(),
+                    ),
+                },
+                self,
+            )),
             _ => Err(ValError::new(ErrorType::TimeType, self)),
         }
     }
