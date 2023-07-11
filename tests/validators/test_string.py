@@ -1,6 +1,6 @@
 import re
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import pytest
 
@@ -134,12 +134,28 @@ def test_unicode_error():
     ]
 
 
-def test_str_constrained():
-    v = SchemaValidator({'type': 'str', 'max_length': 5})
-    assert v.validate_python('test') == 'test'
-
-    with pytest.raises(ValidationError, match='String should have at most 5 characters'):
-        v.validate_python('test long')
+@pytest.mark.parametrize(
+    ('data', 'max_length', 'error'),
+    [
+        pytest.param('test', 5, None, id='short string'),
+        pytest.param('test long', 5, 'String should have at most 5 characters', id='long string'),
+        pytest.param('␛⯋℃▤', 5, None, id='short string with unicode characters'),
+        pytest.param(
+            '␛⯋℃▤⩥⠫⳼⣪⨺✒⧐♳⩚⏭⏣⍥┙⧃Ⰴ┽⏏♜',
+            5,
+            'String should have at most 5 characters',
+            id='long string with unicode characters',
+        ),
+        pytest.param('а' * 25, 32, None, id='a lot of `а`s'),
+    ],
+)
+def test_str_constrained(data: str, max_length: int, error: Union[re.Pattern, None]):
+    v = SchemaValidator({'type': 'str', 'max_length': max_length})
+    if error is None:
+        assert v.validate_python(data) == data
+    else:
+        with pytest.raises(ValidationError, match=error):
+            v.validate_python(data)
 
 
 def test_str_constrained_config():
