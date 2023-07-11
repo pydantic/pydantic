@@ -1040,12 +1040,15 @@ def test_decimal_strict():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=1.23)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'decimal_type',
+            'type': 'is_instance_of',
             'loc': ('v',),
-            'msg': 'Input should be a valid Decimal instance or decimal string in JSON',
+            'msg': 'Input should be an instance of Decimal',
             'input': 1.23,
+            'ctx': {'class': 'Decimal'},
         }
     ]
 
@@ -1289,7 +1292,7 @@ class BoolCastable:
         ('uuid_check', b'\x12\x34\x56\x78' * 4, UUID('12345678-1234-5678-1234-567812345678')),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-', ValidationError),
         ('uuid_check', 123, ValidationError),
-        ('decimal_check', 42.24, Decimal('42.24')),
+        ('decimal_check', 42.24, Decimal(42.24)),
         ('decimal_check', '42.24', Decimal('42.24')),
         ('decimal_check', b'42.24', ValidationError),
         ('decimal_check', '  42.24  ', Decimal('42.24')),
@@ -2898,7 +2901,7 @@ ANY_THING = object()
                     'loc': ('foo',),
                     'msg': 'Input should be greater than 42.24',
                     'input': Decimal('42'),
-                    'ctx': {'gt': 42.24},
+                    'ctx': {'gt': '42.24'},
                 }
             ],
         ),
@@ -2913,7 +2916,7 @@ ANY_THING = object()
                     'msg': 'Input should be less than 42.24',
                     'input': Decimal('43'),
                     'ctx': {
-                        'lt': 42.24,
+                        'lt': '42.24',
                     },
                 },
             ],
@@ -2930,7 +2933,7 @@ ANY_THING = object()
                     'msg': 'Input should be greater than or equal to 42.24',
                     'input': Decimal('42'),
                     'ctx': {
-                        'ge': 42.24,
+                        'ge': '42.24',
                     },
                 }
             ],
@@ -2947,7 +2950,7 @@ ANY_THING = object()
                     'msg': 'Input should be less than or equal to 42.24',
                     'input': Decimal('43'),
                     'ctx': {
-                        'le': 42.24,
+                        'le': '42.24',
                     },
                 }
             ],
@@ -3076,7 +3079,7 @@ ANY_THING = object()
             Decimal('42'),
             [
                 {
-                    'type': 'decimal_multiple_of',
+                    'type': 'multiple_of',
                     'loc': ('foo',),
                     'msg': 'Input should be a multiple of 5',
                     'input': Decimal('42'),
@@ -5078,8 +5081,15 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
     assert isinstance(Model(x=1).x, PdDecimal)
     with pytest.raises(ValidationError) as exc_info:
         Model(x=-1)
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'greater_than', 'loc': ('x',), 'msg': 'Input should be greater than 0', 'input': -1, 'ctx': {'gt': 0}}
+        {
+            'type': 'greater_than',
+            'loc': ('x',),
+            'msg': 'Input should be greater than 0',
+            'input': -1,
+            'ctx': {'gt': '0'},
+        }
     ]
 
 
