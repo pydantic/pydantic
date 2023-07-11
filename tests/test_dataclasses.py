@@ -1748,9 +1748,9 @@ def test_model_validator_after():
         b: float
 
         @model_validator(mode='after')
-        def double_b(cls, dc: 'MyDataclass'):
-            dc.b *= 2
-            return dc
+        def double_b(self) -> 'MyDataclass':
+            self.b *= 2
+            return self
 
     d = MyDataclass('1', b='2')
     assert d.a == 1

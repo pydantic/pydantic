@@ -150,7 +150,7 @@ def test_inheritance_replace():
 
 
 def test_model_validator():
-    root_val_values = []
+    root_val_values: list[Any] = []
 
     @dataclass
     class MyDataclass:
@@ -159,16 +159,16 @@ def test_model_validator():
 
         @field_validator('b')
         @classmethod
-        def repeat_b(cls, v):
+        def repeat_b(cls, v: str) -> str:
             return v * 2
 
         @model_validator(mode='after')
-        def root_validator(cls, m):
-            root_val_values.append(asdict(m))
-            if 'snap' in m.b:
+        def root_validator(self) -> 'MyDataclass':
+            root_val_values.append(asdict(self))
+            if 'snap' in self.b:
                 raise ValueError('foobar')
-            m.b = 'changed'
-            return m
+            self.b = 'changed'
+            return self
 
     assert asdict(MyDataclass(a='123', b='bar')) == {'a': 123, 'b': 'changed'}
 

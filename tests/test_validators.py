@@ -1481,8 +1481,8 @@ def test_model_validator_returns_ignore():
     class Model(BaseModel):
         a: int = 1
 
-        @model_validator(mode='after')
-        def model_validator_return_none(cls, m):
+        @model_validator(mode='after')  # type: ignore
+        def model_validator_return_none(self) -> None:
             return None
 
     m = Model(a=2)
@@ -1727,9 +1727,9 @@ def test_overridden_root_validators():
             return values
 
         @model_validator(mode='after')
-        def post_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        def post_root(self) -> 'A':
             validate_stub('A', 'post')
-            return values
+            return self
 
     class B(A):
         @model_validator(mode='before')
@@ -1738,9 +1738,9 @@ def test_overridden_root_validators():
             return values
 
         @model_validator(mode='after')
-        def post_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        def post_root(self) -> 'B':
             validate_stub('B', 'post')
-            return values
+            return self
 
     A(x='pika')
     assert validate_stub.call_args_list == [[('A', 'pre'), {}], [('A', 'post'), {}]]
@@ -1858,9 +1858,9 @@ def test_model_validator_many_values_change():
         model_config = ConfigDict(validate_assignment=True)
 
         @model_validator(mode='after')
-        def set_area(cls, m: 'Rectangle') -> 'Rectangle':
-            m.__dict__['area'] = m.width * m.height
-            return m
+        def set_area(self) -> 'Rectangle':
+            self.__dict__['area'] = self.width * self.height
+            return self
 
     r = Rectangle(width=1, height=1)
     assert r.area == 1
