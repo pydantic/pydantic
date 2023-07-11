@@ -1,3 +1,4 @@
+import json
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, List
 
@@ -345,6 +346,20 @@ def test_ip_v6_network_fails(value):
         'loc': ('ip',),
         'msg': 'Input is not a valid IPv6 network',
         'input': value,
+    }
+
+
+def test_ipvany_serialization():
+    class Model(BaseModel):
+        address: IPvAnyAddress
+        network: IPvAnyNetwork
+        interface: IPvAnyInterface
+
+    m = Model(address='127.0.0.1', network='192.0.2.0/27', interface='127.0.0.1/32')
+    assert json.loads(m.model_dump_json()) == {
+        'address': '127.0.0.1',
+        'interface': '127.0.0.1/32',
+        'network': '192.0.2.0/27',
     }
 
 

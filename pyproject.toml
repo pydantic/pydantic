@@ -61,7 +61,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    'pydantic-core==2.1.2',
+    "pydantic-core==2.2.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -83,7 +83,7 @@ docs = [
     "mike @ git+https://github.com/jimporter/mike.git",
     "mkdocs-embed-external-markdown>=2.3.0",
     "black>=23.3.0",
-    "pytest-examples>=0.0.9",
+    "pytest-examples>=0.0.10",
     "pydantic-settings>=2.0b1",
     "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
 ]
@@ -106,6 +106,8 @@ testing = [
     "pytest-mock",
     "pytest-pretty",
     "pytest-examples",
+    "faker>=18.13.0",
+    "pytest-benchmark>=4.0.0",
 ]
 mypy = [
     "mypy",
@@ -151,12 +153,18 @@ filterwarnings = [
     # Work around https://github.com/pytest-dev/pytest/issues/10977 for Python 3.12
     'ignore:(ast\.Str|ast\.NameConstant|ast\.Num|Attribute s) is deprecated and will be removed.*:DeprecationWarning:',
 ]
+addopts = [
+    '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
+    '--benchmark-group-by', 'group',
+    '--benchmark-warmup', 'on',
+    '--benchmark-disable',  # this is enable by `make benchmark` when you actually want to run benchmarks
+]
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
 assignees = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt']
 reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt']
-require_change_file = true
+require_change_file = false
 
 [tool.ruff]
 line-length = 120

@@ -26,6 +26,7 @@ _build/
 
 # Benchmark and test files
 /benchmarks/*.json
+/tests/benchmarks/*.json
 /htmlcov/
 /codecov.sh
 /coverage.lcov

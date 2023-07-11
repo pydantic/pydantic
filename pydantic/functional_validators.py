@@ -95,7 +95,7 @@ class BeforeValidator:
 
     Example:
         ```py
-        from typing import Annotated
+        from typing_extensions import Annotated
 
         from pydantic import BaseModel, BeforeValidator
 
@@ -137,7 +137,7 @@ class PlainValidator:
 
     Example:
         ```py
-        from typing import Annotated
+        from typing_extensions import Annotated
 
         from pydantic import BaseModel, PlainValidator
 
@@ -172,7 +172,8 @@ class WrapValidator:
 
     ```py
     from datetime import datetime
-    from typing import Annotated
+
+    from typing_extensions import Annotated
 
     from pydantic import BaseModel, ValidationError, WrapValidator
 
@@ -409,32 +410,17 @@ class ModelBeforeValidator(Protocol):
         ...
 
 
-class ModelAfterValidatorWithoutInfo(Protocol):
-    """A `@model_validator` decorated function signature. This is used when `mode='after'` and the function does not
-    have info argument.
-    """
+ModelAfterValidatorWithoutInfo = Callable[[_ModelType], _ModelType]
+"""A `@model_validator` decorated function signature. This is used when `mode='after'` and the function does not
+have info argument.
+"""
 
-    @staticmethod
-    def __call__(  # noqa: D102
-        self: _ModelType,  # type: ignore
-    ) -> _ModelType:
-        ...
-
-
-class ModelAfterValidator(Protocol):
-    """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
-
-    @staticmethod
-    def __call__(  # noqa: D102
-        self: _ModelType,  # type: ignore
-        __info: _core_schema.ValidationInfo,
-    ) -> _ModelType:
-        ...
-
+ModelAfterValidator = Callable[[_ModelType, _core_schema.ValidationInfo], _ModelType]
+"""A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
 _AnyModelWrapValidator = Union[ModelWrapValidator, ModelWrapValidatorWithoutInfo]
 _AnyModeBeforeValidator = Union[ModelBeforeValidator, ModelBeforeValidatorWithoutInfo]
-_AnyModeAfterValidator = Union[ModelAfterValidator, ModelAfterValidatorWithoutInfo]
+_AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
 
 
 @overload
@@ -457,7 +443,9 @@ def model_validator(
 def model_validator(
     *,
     mode: Literal['after'],
-) -> Callable[[_AnyModeAfterValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
+) -> Callable[
+    [_AnyModelAfterValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+]:
     ...
 
 
