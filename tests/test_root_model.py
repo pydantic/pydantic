@@ -244,9 +244,9 @@ def test_model_validator_before():
 def test_model_validator_after():
     class Model(RootModel[int]):
         @model_validator(mode='after')
-        def double(cls, v):
-            v.root *= 2
-            return v
+        def double(self) -> 'Model':
+            self.root *= 2
+            return self
 
     assert Model('1').root == 2
     assert Model('21').root == 42

@@ -169,7 +169,7 @@ except ValidationError as e:
             'loc': ('foo',),
             'msg': 'Value error, value must be "bar"',
             'input': 'ber',
-            'ctx': {'error': 'value must be "bar"'},
+            'ctx': {'error': ValueError('value must be "bar"')},
             'url': 'https://errors.pydantic.dev/2/v/value_error',
         }
     ]

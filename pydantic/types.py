@@ -111,7 +111,6 @@ class Strict(_fields.PydanticMetadata):
 
         from pydantic.types import Strict
 
-
         StrictBool = Annotated[bool, Strict()]
         ```
     """

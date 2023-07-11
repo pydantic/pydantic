@@ -415,12 +415,12 @@ class UserModel(BaseModel):
         return data
 
     @model_validator(mode='after')
-    def check_passwords_match(cls, m: 'UserModel'):
-        pw1 = m.password1
-        pw2 = m.password2
+    def check_passwords_match(self) -> 'UserModel':
+        pw1 = self.password1
+        pw2 = self.password2
         if pw1 is not None and pw2 is not None and pw1 != pw2:
             raise ValueError('passwords do not match')
-        return m
+        return self
 
 
 print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))

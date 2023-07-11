@@ -1029,6 +1029,21 @@ def test_model_iteration():
     assert dict(m) == {'c': 3, 'd': Foo()}
 
 
+def test_model_iteration_extra() -> None:
+    class Foo(BaseModel):
+        x: int = 1
+
+    class Bar(BaseModel):
+        a: int
+        b: Foo
+        model_config = ConfigDict(extra='allow')
+
+    m = Bar.model_validate({'a': 1, 'b': {}, 'c': 2, 'd': Foo()})
+    assert m.model_dump() == {'a': 1, 'b': {'x': 1}, 'c': 2, 'd': {'x': 1}}
+    assert list(m) == [('a', 1), ('b', Foo()), ('c', 2), ('d', Foo())]
+    assert dict(m) == {'a': 1, 'b': Foo(), 'c': 2, 'd': Foo()}
+
+
 @pytest.mark.parametrize(
     'exclude,expected,raises_match',
     [

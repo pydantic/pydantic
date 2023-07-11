@@ -20,13 +20,9 @@ If you encounter any issues, please [create an issue in GitHub](https://github.c
 the `bug V2` label. This will help us to actively monitor and track errors, and to continue to improve the library's
 performance.
 
-If you need to use latest Pydantic V1 for any reason, you can install it with:
+If you need to use latest Pydantic V1 for any reason, see the [Continue using Pydantic V1 features](#continue-using-pydantic-v1-features) section below for details on installation and imports from `pydantic.v1`.
 
-```bash
-pip install "pydantic==1.*"
-```
-
-## Code Transformation Tool
+## Code transformation tool
 
 We have created a tool to help you migrate your code. This tool is still in beta, but we hope it will help you to
 migrate your code more quickly.
@@ -50,7 +46,34 @@ Then you'll want to do:
 
 See more about it on the [Bump Pydantic](https://github.com/pydantic/bump-pydantic) repository.
 
+## Continue using Pydantic V1 features
+
+Pydantic V1 is still available when you need it, though we recommend migrating to Pydantic V2 for its improvements and new features.
+
+If you need to use latest Pydantic V1, you can install it with:
+
+```bash
+pip install "pydantic==1.*"
+```
+
+The Pydantic V2 package also continues to provide access to the Pydantic V1 API by importing through `pydantic.v1`.
+For example, you can use the `BaseModel` class from Pydantic V1 instead of the Pydantic V2 `pydantic.BaseModel` class:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.v1 import BaseModel
+```
+
+You can also import functions that have been removed from Pydantic V2, such as `lenient_isinstance`:
+
+```python test="skip" lint="skip" upgrade="skip"
+from pydantic.v1.utils import lenient_isinstance
+```
+
+Pydantic V1 documentation is available at [https://docs.pydantic.dev/1.10/](https://docs.pydantic.dev/1.10/).
+
 ## Migration guide
+
+The following sections provide details on the most important changes in Pydantic V2.
 
 ### Changes to `pydantic.BaseModel`
 
@@ -148,23 +171,27 @@ The following properties have been removed from or changed in `Field`:
 
 ### Changes to dataclasses
 
+Pydantic [dataclasses](usage/dataclasses.md) continue to be useful for enabling the data validation on standard
+dataclasses without having to subclass `BaseModel`. Pydantic V2 introduces the following changes to this dataclass behavior:
+
 * When used as fields, dataclasses (Pydantic or vanilla) no longer accept tuples as validation inputs; dicts should be
   used instead.
 * The `__post_init__` in Pydantic dataclasses will now be called _after_ validation, rather than before.
     * As a result, the `__post_init_post_parse__` method would have become redundant, so has been removed.
-* We no longer support `extra='allow'` for Pydantic dataclasses, where extra fields passed to the initializer would be
-  stored as extra attributes on the dataclass. `extra='ignore'` is still supported for the purpose of ignoring
-  unexpected fields while parsing data, they just won't be stored on the instance.
+* Pydantic no longer supports `extra='allow'` for Pydantic dataclasses, where extra fields passed to the initializer would be
+    stored as extra attributes on the dataclass. `extra='ignore'` is still supported for the purpose of ignoring
+    unexpected fields while parsing data, they just won't be stored on the instance.
 * Pydantic dataclasses no longer have an attribute `__pydantic_model__`, and no longer use an underlying `BaseModel`
-  to perform validation or provide other functionality.
+    to perform validation or provide other functionality.
     * To perform validation, generate a JSON schema, or make use of
-      any other functionality that may have required `__pydantic_model__` in V1, you should now wrap the dataclass
-      with a `TypeAdapter` (discussed more below) and make use of its methods.
-    * [TODO: Add link to TypeAdapter documentation. You can find example usage in `tests/test_type_adapter.py`.]
+        any other functionality that may have required `__pydantic_model__` in V1, you should now wrap the dataclass
+        with a [`TypeAdapter`](usage/models.md#typeadapter) ([discussed more below](#introduction-of-typeadapter)) and
+        make use of its methods.
 * In Pydantic V1, if you used a vanilla (i.e., non-Pydantic) dataclass as a field, the config of the parent type would
-  be used as though it was the config for the dataclass itself as well. In Pydantic V2, this is no longer the case.
-    * [TODO: Need to specify how to override the config used for vanilla dataclass; possibly need to add functionality?]
-
+    be used as though it was the config for the dataclass itself as well. In Pydantic V2, this is no longer the case.
+    * In Pydantic V2, to override the config (like you would with `model_config` on a `BaseModel`),
+        you can use the `config` parameter on the `@dataclass` decorator.
+        See [Dataclass Config](usage/dataclasses.md#dataclass-config) for examples.
 
 ### Changes to config
 
@@ -613,10 +640,11 @@ Pydantic V1 had weak support for validating or serializing non-`BaseModel` types
 To work with them, you had to either create a "root" model or use the utility functions in `pydantic.tools`
 (namely, `parse_obj_as` and `schema_of`).
 
-In Pydantic V2 this is _a lot_ easier: the `TypeAdapter` class lets you create an object with methods for validating,
-serializing, and producing JSON schemas for arbitrary types. This serves as a complete replacement for `parse_obj_as`
-and `schema_of` (which are now deprecated), and also covers some of the use cases of "root" models
-(`RootModel`, discussed above, covers the others).
+In Pydantic V2 this is _a lot_ easier: the [`TypeAdapter`](usage/models.md#typeadapter) class lets you create an object
+with methods for validating, serializing, and producing JSON schemas for arbitrary types.
+This serves as a complete replacement for `parse_obj_as` and `schema_of` (which are now deprecated),
+and also covers some of the use cases of "root" models. ([`RootModel`](usage/models.md#rootmodel-and-custom-root-types),
+[discussed above](#changes-to-pydanticbasemodel), covers the others.)
 
 ```python
 from typing import List
