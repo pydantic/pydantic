@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any, Dict, Type, Union
 
 import pytest
+from dirty_equals import HasRepr
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
@@ -58,7 +59,7 @@ def test_function_before_raise():
             'loc': (),
             'msg': 'Value error, foobar',
             'input': 'input value',
-            'ctx': {'error': 'foobar'},
+            'ctx': {'error': HasRepr(repr(ValueError('foobar')))},
         }
     ]
 
@@ -350,7 +351,7 @@ def test_function_after_raise():
             'loc': (),
             'msg': 'Value error, foobar',
             'input': 'input value',
-            'ctx': {'error': 'foobar'},
+            'ctx': {'error': HasRepr(repr(ValueError('foobar')))},
         }
     ]
 
@@ -551,7 +552,7 @@ def test_raise_assertion_error():
             'loc': (),
             'msg': 'Assertion failed, foobar',
             'input': 'input value',
-            'ctx': {'error': 'foobar'},
+            'ctx': {'error': HasRepr(repr(AssertionError('foobar')))},
         }
     ]
 
@@ -571,9 +572,9 @@ def test_raise_assertion_error_plain():
         {
             'type': 'assertion_error',
             'loc': (),
-            'msg': 'Assertion failed, Unknown error',
+            'msg': 'Assertion failed, ',
             'input': 'input value',
-            'ctx': {'error': 'Unknown error'},
+            'ctx': {'error': HasRepr(repr(AssertionError()))},
         }
     ]
 

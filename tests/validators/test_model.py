@@ -3,7 +3,7 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, List, Set, Tuple
 
 import pytest
-from dirty_equals import IsInstance
+from dirty_equals import HasRepr, IsInstance
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
@@ -139,7 +139,7 @@ def test_model_class_root_validator_wrap():
             'loc': (),
             'msg': 'Assertion failed, assert 456 == 123',
             'input': {'field_a': 456},
-            'ctx': {'error': 'assert 456 == 123'},
+            'ctx': {'error': HasRepr(repr(AssertionError('assert 456 == 123')))},
         }
     ]
 
@@ -173,7 +173,7 @@ def test_model_class_root_validator_before():
             'loc': (),
             'msg': 'Assertion failed, assert 456 == 123',
             'input': {'field_a': 456},
-            'ctx': {'error': 'assert 456 == 123'},
+            'ctx': {'error': HasRepr(repr(AssertionError('assert 456 == 123')))},
         }
     ]
 
@@ -208,7 +208,7 @@ def test_model_class_root_validator_after():
             'loc': (),
             'msg': 'Assertion failed, assert 456 == 123',
             'input': {'field_a': 456},
-            'ctx': {'error': 'assert 456 == 123'},
+            'ctx': {'error': HasRepr(repr(AssertionError('assert 456 == 123')))},
         }
     ]
 
@@ -876,7 +876,7 @@ def test_post_init_validation_error():
             'loc': (),
             'msg': 'Value error, this is broken: test',
             'input': {'field_a': 'test'},
-            'ctx': {'error': 'this is broken: test'},
+            'ctx': {'error': HasRepr(repr(ValueError('this is broken: test')))},
         }
     ]
 
