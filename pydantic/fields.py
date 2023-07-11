@@ -227,7 +227,7 @@ class FieldInfo(_repr.Representation):
             import pydantic
 
             class MyModel(pydantic.BaseModel):
-                foo: int = pydantic.Field(4, ...)
+                foo: int = pydantic.Field(4)
             ```
         """
         if 'annotation' in kwargs:
@@ -249,6 +249,7 @@ class FieldInfo(_repr.Representation):
 
             ```python
             import pydantic
+
             class MyModel(pydantic.BaseModel):
                 foo: int  # <-- like this
             ```
@@ -257,11 +258,15 @@ class FieldInfo(_repr.Representation):
             one of the (not first) arguments in `Annotated` are an instance of `FieldInfo`, e.g.:
 
             ```python
-            import pydantic, annotated_types, typing
+            import typing
+
+            import annotated_types
+
+            import pydantic
 
             class MyModel(pydantic.BaseModel):
                 foo: typing.Annotated[int, annotated_types.Gt(42)]
-                bar: typing.Annotated[int, Field(gt=42)]
+                bar: typing.Annotated[int, pydantic.Field(gt=42)]
             ```
 
         """
@@ -298,7 +303,11 @@ class FieldInfo(_repr.Representation):
 
         Example:
             ```python
-            import pydantic, annotated_types, typing
+            import typing
+
+            import annotated_types
+
+            import pydantic
 
             class MyModel(pydantic.BaseModel):
                 foo: int = 4  # <-- like this

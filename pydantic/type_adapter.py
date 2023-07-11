@@ -43,18 +43,21 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
 
     a.py
     ```python
-    from typing import List, Dict
+    from typing import Dict, List
+
     IntList = List[int]
     OuterDict = Dict[str, 'IntList']
     ```
 
     b.py
-    ```python
-    from pydantic import TypeAdapter
+    ```python test="skip"
     from a import OuterDict
+
+    from pydantic import TypeAdapter
+
     IntList = int  # replaces the symbol the forward reference is looking for
     v = TypeAdapter(OuterDict)
-    v({"x": 1})  # should fail but doesn't
+    v({'x': 1})  # should fail but doesn't
     ```
 
     If OuterDict were a `BaseModel`, this would work because it would resolve
