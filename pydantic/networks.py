@@ -178,7 +178,7 @@ else:
                 email: EmailStr
 
             print(Model(email='contact@mail.com'))
-            # > email='contact@mail.com'
+            #> email='contact@mail.com'
             ```
         """
 
