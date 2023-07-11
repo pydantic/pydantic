@@ -29,6 +29,7 @@ PydanticErrorCodes = Literal[
     'discriminator-alias-type',
     'discriminator-needs-literal',
     'discriminator-alias',
+    'discriminator-validator',
     'typed-dict-version',
     'model-field-overridden',
     'model-field-missing-annotation',

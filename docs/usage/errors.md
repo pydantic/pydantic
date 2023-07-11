@@ -288,6 +288,79 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'discriminator-alias'
 ```
 
+## Invalid discriminator validator {#discriminator-validator}
+
+This error is raised when you use a before, wrap, or plain validator on a discriminator field.
+
+This is disallowed because the discriminator field is used to determine the type of the model to use for validation,
+so you can't use a validator that might change its value.
+
+```py
+from typing import Union
+
+from typing_extensions import Literal
+
+from pydantic import BaseModel, Field, PydanticUserError, field_validator
+
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']
+
+    @field_validator('pet_type', mode='before')
+    @classmethod
+    def validate_pet_type(cls, v):
+        if v == 'kitten':
+            return 'cat'
+        return v
+
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']
+
+
+try:
+
+    class Model(BaseModel):
+        pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+        number: int
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'discriminator-validator'
+```
+
+This can be worked around by using a standard `Union`, dropping the discriminator:
+
+```py
+from typing import Union
+
+from typing_extensions import Literal
+
+from pydantic import BaseModel, field_validator
+
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']
+
+    @field_validator('pet_type', mode='before')
+    @classmethod
+    def validate_pet_type(cls, v):
+        if v == 'kitten':
+            return 'cat'
+        return v
+
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']
+
+
+class Model(BaseModel):
+    pet: Union[Cat, Dog]
+
+
+assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
+```
+
+
 ## `TypedDict` version {#typed-dict-version}
 
 This error is raised when you use `typing.TypedDict`
