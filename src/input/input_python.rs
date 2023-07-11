@@ -9,6 +9,7 @@ use pyo3::types::{
 #[cfg(not(PyPy))]
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{intern, AsPyPointer, PyTypeInfo};
+use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValResult};
 use crate::tools::{extract_i64, safe_repr};
@@ -546,7 +547,10 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_time(&self) -> ValResult<EitherTime> {
+    fn strict_time(
+        &self,
+        _microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTime> {
         if let Ok(time) = self.downcast::<PyTime>() {
             Ok(time.into())
         } else {
@@ -554,14 +558,14 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_time(&self) -> ValResult<EitherTime> {
+    fn lax_time(&self, microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior) -> ValResult<EitherTime> {
         if let Ok(time) = self.downcast::<PyTime>() {
             Ok(time.into())
         } else if let Ok(py_str) = self.downcast::<PyString>() {
             let str = py_string_str(py_str)?;
-            bytes_as_time(self, str.as_bytes())
+            bytes_as_time(self, str.as_bytes(), microseconds_overflow_behavior)
         } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            bytes_as_time(self, py_bytes.as_bytes())
+            bytes_as_time(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
         } else if PyBool::is_exact_type_of(self) {
             Err(ValError::new(ErrorType::TimeType, self))
         } else if let Ok(int) = extract_i64(self) {
@@ -573,7 +577,10 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_datetime(&self) -> ValResult<EitherDateTime> {
+    fn strict_datetime(
+        &self,
+        _microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherDateTime> {
         if let Ok(dt) = self.downcast::<PyDateTime>() {
             Ok(dt.into())
         } else {
@@ -581,14 +588,17 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_datetime(&self) -> ValResult<EitherDateTime> {
+    fn lax_datetime(
+        &self,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherDateTime> {
         if let Ok(dt) = self.downcast::<PyDateTime>() {
             Ok(dt.into())
         } else if let Ok(py_str) = self.downcast::<PyString>() {
             let str = py_string_str(py_str)?;
-            bytes_as_datetime(self, str.as_bytes())
+            bytes_as_datetime(self, str.as_bytes(), microseconds_overflow_behavior)
         } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            bytes_as_datetime(self, py_bytes.as_bytes())
+            bytes_as_datetime(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
         } else if PyBool::is_exact_type_of(self) {
             Err(ValError::new(ErrorType::DatetimeType, self))
         } else if let Ok(int) = extract_i64(self) {
@@ -602,7 +612,10 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_timedelta(&self) -> ValResult<EitherTimedelta> {
+    fn strict_timedelta(
+        &self,
+        _microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTimedelta> {
         if let Ok(dt) = self.downcast::<PyDelta>() {
             Ok(dt.into())
         } else {
@@ -610,14 +623,17 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_timedelta(&self) -> ValResult<EitherTimedelta> {
+    fn lax_timedelta(
+        &self,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTimedelta> {
         if let Ok(dt) = self.downcast::<PyDelta>() {
             Ok(dt.into())
         } else if let Ok(py_str) = self.downcast::<PyString>() {
             let str = py_string_str(py_str)?;
-            bytes_as_timedelta(self, str.as_bytes())
+            bytes_as_timedelta(self, str.as_bytes(), microseconds_overflow_behavior)
         } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            bytes_as_timedelta(self, py_bytes.as_bytes())
+            bytes_as_timedelta(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
         } else if let Ok(int) = extract_i64(self) {
             Ok(int_as_duration(self, int)?.into())
         } else if let Ok(float) = self.extract::<f64>() {

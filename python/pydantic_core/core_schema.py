@@ -848,6 +848,7 @@ class TimeSchema(TypedDict, total=False):
     lt: time
     gt: time
     tz_constraint: Union[Literal['aware', 'naive'], int]
+    microseconds_precision: Literal['truncate', 'error']
     ref: str
     metadata: Any
     serialization: SerSchema
@@ -861,6 +862,7 @@ def time_schema(
     lt: time | None = None,
     gt: time | None = None,
     tz_constraint: Literal['aware', 'naive'] | int | None = None,
+    microseconds_precision: Literal['truncate', 'error'] = 'truncate',
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
@@ -884,6 +886,7 @@ def time_schema(
         lt: The value must be strictly less than this time
         gt: The value must be strictly greater than this time
         tz_constraint: The value must be timezone aware or naive, or an int to indicate required tz offset
+        microseconds_precision: The behavior when seconds have more than 6 digits or microseconds is too large
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
@@ -896,6 +899,7 @@ def time_schema(
         lt=lt,
         gt=gt,
         tz_constraint=tz_constraint,
+        microseconds_precision=microseconds_precision,
         ref=ref,
         metadata=metadata,
         serialization=serialization,
@@ -914,6 +918,7 @@ class DatetimeSchema(TypedDict, total=False):
     # defaults to current local utc offset from `time.localtime().tm_gmtoff`
     # value is restricted to -86_400 < offset < 86_400 by bounds in generate_self_schema.py
     now_utc_offset: int
+    microseconds_precision: Literal['truncate', 'error'] = ('truncate',)
     ref: str
     metadata: Any
     serialization: SerSchema
@@ -929,6 +934,7 @@ def datetime_schema(
     now_op: Literal['past', 'future'] | None = None,
     tz_constraint: Literal['aware', 'naive'] | int | None = None,
     now_utc_offset: int | None = None,
+    microseconds_precision: Literal['truncate', 'error'] = 'truncate',
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
@@ -956,6 +962,7 @@ def datetime_schema(
         tz_constraint: The value must be timezone aware or naive, or an int to indicate required tz offset
             TODO: use of a tzinfo where offset changes based on the datetime is not yet supported
         now_utc_offset: The value must be in the past or future relative to the current datetime with this utc offset
+        microseconds_precision: The behavior when seconds have more than 6 digits or microseconds is too large
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
@@ -970,6 +977,7 @@ def datetime_schema(
         now_op=now_op,
         tz_constraint=tz_constraint,
         now_utc_offset=now_utc_offset,
+        microseconds_precision=microseconds_precision,
         ref=ref,
         metadata=metadata,
         serialization=serialization,
@@ -983,6 +991,7 @@ class TimedeltaSchema(TypedDict, total=False):
     ge: timedelta
     lt: timedelta
     gt: timedelta
+    microseconds_precision: Literal['truncate', 'error']
     ref: str
     metadata: Any
     serialization: SerSchema
@@ -995,6 +1004,7 @@ def timedelta_schema(
     ge: timedelta | None = None,
     lt: timedelta | None = None,
     gt: timedelta | None = None,
+    microseconds_precision: Literal['truncate', 'error'] = 'truncate',
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
@@ -1017,6 +1027,7 @@ def timedelta_schema(
         ge: The value must be greater than or equal to this timedelta
         lt: The value must be strictly less than this timedelta
         gt: The value must be strictly greater than this timedelta
+        microseconds_precision: The behavior when seconds have more than 6 digits or microseconds is too large
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
@@ -1028,6 +1039,7 @@ def timedelta_schema(
         ge=ge,
         lt=lt,
         gt=gt,
+        microseconds_precision=microseconds_precision,
         ref=ref,
         metadata=metadata,
         serialization=serialization,

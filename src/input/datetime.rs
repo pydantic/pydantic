@@ -1,7 +1,8 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyDeltaAccess, PyDict, PyTime, PyTzInfo};
-use speedate::{Date, DateTime, Duration, ParseError, Time};
+use speedate::MicrosecondsPrecisionOverflowBehavior;
+use speedate::{Date, DateTime, Duration, ParseError, Time, TimeConfig};
 use std::borrow::Cow;
 use strum::EnumMessage;
 
@@ -264,8 +265,17 @@ pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'
     }
 }
 
-pub fn bytes_as_time<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'a, EitherTime<'a>> {
-    match Time::parse_bytes(bytes) {
+pub fn bytes_as_time<'a>(
+    input: &'a impl Input<'a>,
+    bytes: &[u8],
+    microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+) -> ValResult<'a, EitherTime<'a>> {
+    match Time::parse_bytes_with_config(
+        bytes,
+        TimeConfig {
+            microseconds_precision_overflow_behavior: microseconds_overflow_behavior,
+        },
+    ) {
         Ok(date) => Ok(date.into()),
         Err(err) => Err(ValError::new(
             ErrorType::TimeParsing {
@@ -276,8 +286,17 @@ pub fn bytes_as_time<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'
     }
 }
 
-pub fn bytes_as_datetime<'a, 'b>(input: &'a impl Input<'a>, bytes: &'b [u8]) -> ValResult<'a, EitherDateTime<'a>> {
-    match DateTime::parse_bytes(bytes) {
+pub fn bytes_as_datetime<'a, 'b>(
+    input: &'a impl Input<'a>,
+    bytes: &'b [u8],
+    microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+) -> ValResult<'a, EitherDateTime<'a>> {
+    match DateTime::parse_bytes_with_config(
+        bytes,
+        TimeConfig {
+            microseconds_precision_overflow_behavior: microseconds_overflow_behavior,
+        },
+    ) {
         Ok(dt) => Ok(dt.into()),
         Err(err) => Err(ValError::new(
             ErrorType::DatetimeParsing {
@@ -389,8 +408,17 @@ fn map_timedelta_err<'a>(input: &'a impl Input<'a>, err: ParseError) -> ValError
     )
 }
 
-pub fn bytes_as_timedelta<'a, 'b>(input: &'a impl Input<'a>, bytes: &'b [u8]) -> ValResult<'a, EitherTimedelta<'a>> {
-    match Duration::parse_bytes(bytes) {
+pub fn bytes_as_timedelta<'a, 'b>(
+    input: &'a impl Input<'a>,
+    bytes: &'b [u8],
+    microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+) -> ValResult<'a, EitherTimedelta<'a>> {
+    match Duration::parse_bytes_with_config(
+        bytes,
+        TimeConfig {
+            microseconds_precision_overflow_behavior: microseconds_overflow_behavior,
+        },
+    ) {
         Ok(dt) => Ok(dt.into()),
         Err(err) => Err(map_timedelta_err(input, err)),
     }
