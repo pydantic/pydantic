@@ -95,7 +95,7 @@ class BeforeValidator:
 
     Example:
         ```py
-        from typing import Annotated
+        from typing_extensions import Annotated
 
         from pydantic import BaseModel, BeforeValidator
 
@@ -137,7 +137,7 @@ class PlainValidator:
 
     Example:
         ```py
-        from typing import Annotated
+        from typing_extensions import Annotated
 
         from pydantic import BaseModel, PlainValidator
 
@@ -172,7 +172,8 @@ class WrapValidator:
 
     ```py
     from datetime import datetime
-    from typing import Annotated
+
+    from typing_extensions import Annotated
 
     from pydantic import BaseModel, ValidationError, WrapValidator
 

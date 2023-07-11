@@ -258,15 +258,14 @@ class FieldInfo(_repr.Representation):
             one of the (not first) arguments in `Annotated` are an instance of `FieldInfo`, e.g.:
 
             ```python
-            import typing
-
             import annotated_types
+            from typing_extensions import Annotated
 
             import pydantic
 
             class MyModel(pydantic.BaseModel):
-                foo: typing.Annotated[int, annotated_types.Gt(42)]
-                bar: typing.Annotated[int, pydantic.Field(gt=42)]
+                foo: Annotated[int, annotated_types.Gt(42)]
+                bar: Annotated[int, pydantic.Field(gt=42)]
             ```
 
         """
@@ -303,16 +302,15 @@ class FieldInfo(_repr.Representation):
 
         Example:
             ```python
-            import typing
-
             import annotated_types
+            from typing_extensions import Annotated
 
             import pydantic
 
             class MyModel(pydantic.BaseModel):
                 foo: int = 4  # <-- like this
-                bar: typing.Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
-                spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
+                bar: Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
+                spam: Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
             ```
         """
         final = False
