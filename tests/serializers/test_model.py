@@ -141,6 +141,22 @@ def test_model_allow_extra():
         assert j == b'{"bar":"more","foo":1,"c":3}'
 
 
+def test_model_recursive_in_extra():
+    # See https://github.com/pydantic/pydantic/issues/6571
+
+    class Model(BasicModel):
+        __slots__ = '__pydantic_extra__'
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model, core_schema.model_fields_schema({}, extra_behavior='allow'), extra_behavior='allow'
+        )
+    )
+    Model.__pydantic_serializer__ = s
+
+    assert s.to_json(Model(__pydantic_extra__=dict(other=Model(__pydantic_extra__={})))) == b'{"other":{}}'
+
+
 @pytest.mark.parametrize(
     'params',
     [
