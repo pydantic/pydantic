@@ -130,11 +130,11 @@ def test_value_validation():
         Response[Dict[int, int]](data={1: 0})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('some value is zero')))},
+            'input': {1: 0},
             'loc': ('data',),
             'msg': 'Value error, some value is zero',
-            'input': {1: 0},
-            'ctx': {'error': 'some value is zero'},
+            'type': 'value_error',
         }
     ]
 
@@ -142,11 +142,11 @@ def test_value_validation():
         Response[Dict[int, int]](data={1: 3, 2: 6})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('sum too large')))},
+            'input': {'data': {1: 3, 2: 6}},
             'loc': (),
             'msg': 'Value error, sum too large',
-            'input': {'data': {1: 3, 2: 6}},
-            'ctx': {'error': 'sum too large'},
+            'type': 'value_error',
         }
     ]
 
@@ -515,11 +515,11 @@ def test_generic():
         Result[Data, Error](error=Error(message='error'), positive_number=-1)
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
-            'loc': ('positive_number',),
-            'msg': 'Value error, Unknown error',
+            'ctx': {'error': HasRepr(repr(ValueError()))},
             'input': -1,
-            'ctx': {'error': 'Unknown error'},
+            'loc': ('positive_number',),
+            'msg': 'Value error, ',
+            'type': 'value_error',
         }
     ]
 
@@ -527,11 +527,11 @@ def test_generic():
         Result[Data, Error](data=[Data(number=1, text='a')], error=Error(message='error'), positive_number=1)
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'value_error',
+            'ctx': {'error': HasRepr(repr(ValueError('Must not provide both data and error')))},
+            'input': Error(message='error'),
             'loc': ('error',),
             'msg': 'Value error, Must not provide both data and error',
-            'input': Error(message='error'),
-            'ctx': {'error': 'Must not provide both data and error'},
+            'type': 'value_error',
         }
     ]
 
