@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import decimal
 import sys
-from typing import Any, Callable, Generic, Type, TypeVar
+from typing import Any, Callable, Generic, Optional, Type, TypeVar
 
 from pydantic_core import ErrorDetails, ErrorTypeInfo, InitErrorDetails, MultiHostHost
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
@@ -191,6 +191,19 @@ class Url(SupportsAllComparisons):
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
     def __deepcopy__(self, memo: dict) -> str: ...
+    @classmethod
+    def build(
+        cls,
+        *,
+        scheme: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        host: str,
+        port: Optional[int] = None,
+        path: Optional[str] = None,
+        query: Optional[str] = None,
+        fragment: Optional[str] = None,
+    ) -> str: ...
 
 class MultiHostUrl(SupportsAllComparisons):
     def __new__(cls, url: str) -> Self: ...
@@ -208,6 +221,20 @@ class MultiHostUrl(SupportsAllComparisons):
     def __repr__(self) -> str: ...
     def __str__(self) -> str: ...
     def __deepcopy__(self, memo: dict) -> Self: ...
+    @classmethod
+    def build(
+        cls,
+        *,
+        scheme: str,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        host: Optional[str] = None,
+        hosts: Optional[list[MultiHostHost]] = None,
+        port: Optional[int] = None,
+        path: Optional[str] = None,
+        query: Optional[str] = None,
+        fragment: Optional[str] = None,
+    ) -> str: ...
 
 @final
 class SchemaError(Exception):
