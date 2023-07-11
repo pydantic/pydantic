@@ -627,9 +627,7 @@ def test_recursive_call():
         s.to_json(42)
     # insert_assert(str(exc_info.value))
     assert str(exc_info.value) == (
-        'Error serializing to JSON: '
-        'PydanticSerializationError: Error calling function `bad_recursive`: '
-        'RuntimeError: Already mutably borrowed'
+        'Error serializing to JSON: PydanticSerializationError: Error calling function `bad_recursive`: RecursionError'
     )
 
 

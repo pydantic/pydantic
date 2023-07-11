@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
@@ -26,11 +27,11 @@ mod shared;
 mod type_serializers;
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct SchemaSerializer {
     serializer: CombinedSerializer,
     definitions: Vec<CombinedSerializer>,
-    json_size: usize,
+    expected_json_size: AtomicUsize,
     config: SerializationConfig,
 }
 
@@ -80,7 +81,7 @@ impl SchemaSerializer {
         Ok(Self {
             serializer,
             definitions: definitions_builder.finish()?,
-            json_size: 1024,
+            expected_json_size: AtomicUsize::new(1024),
             config: SerializationConfig::from_config(config)?,
         })
     }
@@ -130,7 +131,7 @@ impl SchemaSerializer {
         exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = true,
         fallback = None))]
     pub fn to_json(
-        &mut self,
+        &self,
         py: Python,
         value: &PyAny,
         indent: Option<usize>,
@@ -166,12 +167,12 @@ impl SchemaSerializer {
             exclude,
             &extra,
             indent,
-            self.json_size,
+            self.expected_json_size.load(Ordering::Relaxed),
         )?;
 
         warnings.final_check(py)?;
 
-        self.json_size = bytes.len();
+        self.expected_json_size.store(bytes.len(), Ordering::Relaxed);
         let py_bytes = PyBytes::new(py, &bytes);
         Ok(py_bytes.into())
     }
