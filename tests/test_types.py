@@ -3123,6 +3123,25 @@ def test_deque_generic_success(cls, value, result):
     assert Model(v=value).v == result
 
 
+def test_deque_maxlen():
+    class DequeTypedModel(BaseModel):
+        field: Deque[int] = deque(maxlen=10)
+
+    assert DequeTypedModel(field=deque(maxlen=25)).field.maxlen == 25
+    assert DequeTypedModel().field.maxlen == 10
+
+    class DequeUnTypedModel(BaseModel):
+        field: deque = deque(maxlen=10)
+
+    assert DequeUnTypedModel(field=deque(maxlen=25)).field.maxlen == 25
+    assert DequeTypedModel().field.maxlen == 10
+
+    class DeuqueNoDefaultModel(BaseModel):
+        field: deque
+
+    assert DeuqueNoDefaultModel(field=deque(maxlen=25)).field.maxlen == 25
+
+
 @pytest.mark.parametrize(
     'cls,value,errors',
     (
