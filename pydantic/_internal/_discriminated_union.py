@@ -430,6 +430,18 @@ class _ApplyInferredDiscriminator:
             # This will happen if the field has a default value; we ignore it while extracting the discriminator values
             return self._infer_discriminator_values_for_inner_schema(schema['schema'], source)
 
+        elif schema['type'] == 'function-after':
+            # After validators don't affect the discriminator values
+            return self._infer_discriminator_values_for_inner_schema(schema['schema'], source)
+
+        elif schema['type'] in {'function-before', 'function-wrap', 'function-plain'}:
+            validator_type = repr(schema['type'].split('-')[1])
+            raise PydanticUserError(
+                f'Cannot use a mode={validator_type} validator in the'
+                f' discriminator field {self.discriminator!r} of {source}',
+                code='discriminator-validator',
+            )
+
         else:
             raise PydanticUserError(
                 f'{source} needs field {self.discriminator!r} to be of type `Literal`',

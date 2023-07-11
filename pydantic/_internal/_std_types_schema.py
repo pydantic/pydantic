@@ -136,19 +136,24 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
 
 @slots_dataclass
 class DecimalValidator:
-    gt: int | decimal.Decimal | None = None
-    ge: int | decimal.Decimal | None = None
-    lt: int | decimal.Decimal | None = None
-    le: int | decimal.Decimal | None = None
+    gt: decimal.Decimal | None = None
+    ge: decimal.Decimal | None = None
+    lt: decimal.Decimal | None = None
+    le: decimal.Decimal | None = None
     max_digits: int | None = None
     decimal_places: int | None = None
-    multiple_of: int | decimal.Decimal | None = None
+    multiple_of: decimal.Decimal | None = None
     allow_inf_nan: bool = False
     check_digits: bool = False
     strict: bool = False
 
     def __post_init__(self) -> None:
         self.check_digits = self.max_digits is not None or self.decimal_places is not None
+        self.gt = decimal.Decimal(self.gt) if self.gt is not None else None
+        self.ge = decimal.Decimal(self.ge) if self.ge is not None else None
+        self.lt = decimal.Decimal(self.lt) if self.lt is not None else None
+        self.le = decimal.Decimal(self.le) if self.le is not None else None
+        self.multiple_of = decimal.Decimal(self.multiple_of) if self.multiple_of is not None else None
         if self.check_digits and self.allow_inf_nan:
             raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
 
@@ -171,94 +176,120 @@ class DecimalValidator:
             return string_schema
 
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
-        return core_schema.general_after_validator_function(self.validate, core_schema.any_schema())
+        Decimal = decimal.Decimal
 
-    def validate(  # noqa: C901 (ignore complexity)
-        self, input_value: Any, info: core_schema.ValidationInfo
-    ) -> decimal.Decimal:
-        if isinstance(input_value, decimal.Decimal):
-            value = input_value
-        elif self.strict or (info.config or {}).get('strict', False) and info.mode == 'python':
-            raise PydanticCustomError(
-                'decimal_type', 'Input should be a valid Decimal instance or decimal string in JSON'
-            )
-        else:
+        def to_decimal(v: Any) -> decimal.Decimal:
             try:
-                value = decimal.Decimal(str(input_value))
-            except decimal.DecimalException:
-                raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
+                return Decimal(v)
+            except decimal.DecimalException as e:
+                raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal') from e
+
+        primitive_schema = core_schema.union_schema(
+            [
+                core_schema.float_schema(strict=True),
+                core_schema.int_schema(strict=True),
+                core_schema.str_schema(strict=True, strip_whitespace=True),
+            ],
+        )
+        json_schema = core_schema.no_info_after_validator_function(to_decimal, primitive_schema)
+        schema = core_schema.json_or_python_schema(
+            json_schema=json_schema,
+            python_schema=core_schema.lax_or_strict_schema(
+                lax_schema=core_schema.union_schema([core_schema.is_instance_schema(decimal.Decimal), json_schema]),
+                strict_schema=core_schema.is_instance_schema(decimal.Decimal),
+            ),
+            serialization=core_schema.to_string_ser_schema(when_used='json'),
+        )
 
         if not self.allow_inf_nan or self.check_digits:
-            try:
-                normalized_value = value.normalize()
-            except decimal.InvalidOperation:
-                normalized_value = value
-            _1, digit_tuple, exponent = normalized_value.as_tuple()
-            if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
-                raise PydanticKnownError('finite_number')
-
-            if self.check_digits:
-                if isinstance(exponent, str):
-                    raise PydanticKnownError('finite_number')
-                elif exponent >= 0:
-                    # A positive exponent adds that many trailing zeros.
-                    digits = len(digit_tuple) + exponent
-                    decimals = 0
-                else:
-                    # If the absolute value of the negative exponent is larger than the
-                    # number of digits, then it's the same as the number of digits,
-                    # because it'll consume all the digits in digit_tuple and then
-                    # add abs(exponent) - len(digit_tuple) leading zeros after the
-                    # decimal point.
-                    if abs(exponent) > len(digit_tuple):
-                        digits = decimals = abs(exponent)
-                    else:
-                        digits = len(digit_tuple)
-                        decimals = abs(exponent)
-
-                if self.max_digits is not None and digits > self.max_digits:
-                    raise PydanticCustomError(
-                        'decimal_max_digits',
-                        'ensure that there are no more than {max_digits} digits in total',
-                        {'max_digits': self.max_digits},
-                    )
-
-                if self.decimal_places is not None and decimals > self.decimal_places:
-                    raise PydanticCustomError(
-                        'decimal_max_places',
-                        'ensure that there are no more than {decimal_places} decimal places',
-                        {'decimal_places': self.decimal_places},
-                    )
-
-                if self.max_digits is not None and self.decimal_places is not None:
-                    whole_digits = digits - decimals
-                    expected = self.max_digits - self.decimal_places
-                    if whole_digits > expected:
-                        raise PydanticCustomError(
-                            'decimal_whole_digits',
-                            'ensure that there are no more than {whole_digits} digits before the decimal point',
-                            {'whole_digits': expected},
-                        )
+            schema = core_schema.no_info_after_validator_function(
+                self.check_digits_validator,
+                schema,
+            )
 
         if self.multiple_of is not None:
-            mod = value / self.multiple_of % 1
-            if mod != 0:
+            schema = core_schema.no_info_after_validator_function(
+                partial(_validators.multiple_of_validator, multiple_of=self.multiple_of),
+                schema,
+            )
+
+        if self.gt is not None:
+            schema = core_schema.no_info_after_validator_function(
+                partial(_validators.greater_than_validator, gt=self.gt),
+                schema,
+            )
+
+        if self.ge is not None:
+            schema = core_schema.no_info_after_validator_function(
+                partial(_validators.greater_than_or_equal_validator, ge=self.ge),
+                schema,
+            )
+
+        if self.lt is not None:
+            schema = core_schema.no_info_after_validator_function(
+                partial(_validators.less_than_validator, lt=self.lt),
+                schema,
+            )
+
+        if self.le is not None:
+            schema = core_schema.no_info_after_validator_function(
+                partial(_validators.less_than_or_equal_validator, le=self.le),
+                schema,
+            )
+
+        return schema
+
+    def check_digits_validator(self, value: decimal.Decimal) -> decimal.Decimal:
+        try:
+            normalized_value = value.normalize()
+        except decimal.InvalidOperation:
+            normalized_value = value
+        _1, digit_tuple, exponent = normalized_value.as_tuple()
+        if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
+            raise PydanticKnownError('finite_number')
+
+        if self.check_digits:
+            if isinstance(exponent, str):
+                raise PydanticKnownError('finite_number')
+            elif exponent >= 0:
+                # A positive exponent adds that many trailing zeros.
+                digits = len(digit_tuple) + exponent
+                decimals = 0
+            else:
+                # If the absolute value of the negative exponent is larger than the
+                # number of digits, then it's the same as the number of digits,
+                # because it'll consume all the digits in digit_tuple and then
+                # add abs(exponent) - len(digit_tuple) leading zeros after the
+                # decimal point.
+                if abs(exponent) > len(digit_tuple):
+                    digits = decimals = abs(exponent)
+                else:
+                    digits = len(digit_tuple)
+                    decimals = abs(exponent)
+
+            if self.max_digits is not None and digits > self.max_digits:
                 raise PydanticCustomError(
-                    'decimal_multiple_of',
-                    'Input should be a multiple of {multiple_of}',
-                    {'multiple_of': self.multiple_of},
+                    'decimal_max_digits',
+                    'ensure that there are no more than {max_digits} digits in total',
+                    {'max_digits': self.max_digits},
                 )
 
-        if self.gt is not None and not value > self.gt:  # type: ignore
-            raise PydanticKnownError('greater_than', {'gt': self.gt})
-        elif self.ge is not None and not value >= self.ge:  # type: ignore
-            raise PydanticKnownError('greater_than_equal', {'ge': self.ge})
+            if self.decimal_places is not None and decimals > self.decimal_places:
+                raise PydanticCustomError(
+                    'decimal_max_places',
+                    'ensure that there are no more than {decimal_places} decimal places',
+                    {'decimal_places': self.decimal_places},
+                )
 
-        if self.lt is not None and not value < self.lt:  # type: ignore
-            raise PydanticKnownError('less_than', {'lt': self.lt})
-        if self.le is not None and not value <= self.le:  # type: ignore
-            raise PydanticKnownError('less_than_equal', {'le': self.le})
-
+            if self.max_digits is not None and self.decimal_places is not None:
+                whole_digits = digits - decimals
+                expected = self.max_digits - self.decimal_places
+                if whole_digits > expected:
+                    raise PydanticCustomError(
+                        'decimal_whole_digits',
+                        'ensure that there are no more than {whole_digits} digits before the decimal point',
+                        {'whole_digits': expected},
+                    )
         return value
 
 

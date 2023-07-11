@@ -64,6 +64,10 @@ test-pyright: .pdm
 test: .pdm
 	pdm run coverage run -m pytest --durations=10
 
+.PHONY: benchmark  ## Run all benchmarks
+benchmark: .pdm
+	pdm run coverage run -m pytest --durations=10 --benchmark-enable tests/benchmarks
+
 .PHONY: testcov  ## Run tests and generate a coverage report, skipping the type-checker integration tests
 testcov: test
 	@echo "building coverage html"

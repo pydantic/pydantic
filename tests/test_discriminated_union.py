@@ -8,7 +8,7 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.errors import PydanticUserError
 
@@ -650,7 +650,7 @@ def test_nested_optional_unions() -> None:
         {
             'type': 'union_tag_invalid',
             'loc': ('pet',),
-            'msg': "Input tag 'None' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",  # noqa: E501
+            'msg': "Input tag 'None' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",
             'input': {'pet_type': None},
             'ctx': {'discriminator': "'pet_type'", 'tag': 'None', 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'"},
         }
@@ -663,7 +663,7 @@ def test_nested_optional_unions() -> None:
         {
             'type': 'union_tag_invalid',
             'loc': ('pet',),
-            'msg': "Input tag 'fox' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",  # noqa: E501
+            'msg': "Input tag 'fox' found using 'pet_type' does not match any of the expected tags: 'cat', 'dog', 'lizard', 'reptile'",
             'input': {'pet_type': 'fox'},
             'ctx': {'discriminator': "'pet_type'", 'tag': 'fox', 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'"},
         }
@@ -697,7 +697,7 @@ def test_nested_discriminated_union() -> None:
         {
             'type': 'union_tag_invalid',
             'loc': ('pet',),
-            'msg': "Input tag 'reptile' found using 'pet_type' does not match any of the expected tags: 'cat', 'CAT', 'dog', 'DOG', 'lizard', 'LIZARD'",  # noqa: E501
+            'msg': "Input tag 'reptile' found using 'pet_type' does not match any of the expected tags: 'cat', 'CAT', 'dog', 'DOG', 'lizard', 'LIZARD'",
             'input': {'pet_type': 'reptile'},
             'ctx': {
                 'discriminator': "'pet_type'",
@@ -751,7 +751,7 @@ def test_union_discriminator_literals() -> None:
         {
             'type': 'union_tag_invalid',
             'loc': ('pet',),
-            'msg': "Input tag 'Cat' found using 'pet_type' | 'typeOfPet' does not match any of the expected tags: 'cat', 'CAT', 'dog'",  # noqa: E501
+            'msg': "Input tag 'Cat' found using 'pet_type' | 'typeOfPet' does not match any of the expected tags: 'cat', 'CAT', 'dog'",
             'input': {'typeOfPet': 'Cat'},
             'ctx': {'discriminator': "'pet_type' | 'typeOfPet'", 'tag': 'Cat', 'expected_tags': "'cat', 'CAT', 'dog'"},
         }
@@ -1232,3 +1232,42 @@ def test_union_in_submodel() -> None:
         'title': 'TestModel',
         'type': 'object',
     }
+
+
+def test_function_after_discriminator():
+    class CatModel(BaseModel):
+        name: Literal['kitty', 'cat']
+
+        @field_validator('name', mode='after')
+        def replace_name(cls, v):
+            return 'cat'
+
+    class DogModel(BaseModel):
+        name: Literal['puppy', 'dog']
+
+        # comment out the 2 field validators and model will work!
+        @field_validator('name', mode='after')
+        def replace_name(cls, v):
+            return 'dog'
+
+    AllowedAnimal = Annotated[Union[CatModel, DogModel], Field(discriminator='name')]
+
+    class Model(BaseModel):
+        x: AllowedAnimal
+
+    m = Model(x={'name': 'kitty'})
+    assert m.x.name == 'cat'
+
+    # Ensure a discriminated union is actually being used during validation
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x={'name': 'invalid'})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'discriminator': "'name'", 'expected_tags': "'kitty', 'cat', 'puppy', 'dog'", 'tag': 'invalid'},
+            'input': {'name': 'invalid'},
+            'loc': ('x',),
+            'msg': "Input tag 'invalid' found using 'name' does not match any of the "
+            "expected tags: 'kitty', 'cat', 'puppy', 'dog'",
+            'type': 'union_tag_invalid',
+        }
+    ]

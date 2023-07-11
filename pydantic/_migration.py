@@ -25,23 +25,25 @@ DEPRECATED_MOVED_IN_V2 = {
     'pydantic.decorator:validate_arguments': 'pydantic.deprecated.decorator:validate_arguments',
     'pydantic.class_validators:validator': 'pydantic.deprecated.class_validators:validator',
     'pydantic.class_validators:root_validator': 'pydantic.deprecated.class_validators:root_validator',
-    **{
-        f'pydantic.utils:{obj}': f'pydantic.v1.utils:{obj}'
-        for obj in (
-            'deep_update',
-            'GetterDict',
-            'lenient_issubclass',
-            'lenient_isinstance',
-            'is_valid_field',
-            'update_not_none',
-            'import_string',
-            'Representation',
-            'ROOT_KEY',
-            'smart_deepcopy',
-            'sequence_like',
-        )
-    },
 }
+
+REDIRECT_TO_V1 = {
+    f'pydantic.utils:{obj}': f'pydantic.v1.utils:{obj}'
+    for obj in (
+        'deep_update',
+        'GetterDict',
+        'lenient_issubclass',
+        'lenient_isinstance',
+        'is_valid_field',
+        'update_not_none',
+        'import_string',
+        'Representation',
+        'ROOT_KEY',
+        'smart_deepcopy',
+        'sequence_like',
+    )
+}
+
 
 REMOVED_IN_V2 = {
     'pydantic:ConstrainedBytes',
@@ -272,9 +274,16 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
             new_location = MOVED_IN_V2[import_path]
             warnings.warn(f'`{import_path}` has been moved to `{new_location}`.')
             return import_string(MOVED_IN_V2[import_path])
-        if import_path in DEPRECATED_MOVED_IN_V2.keys():
+        if import_path in DEPRECATED_MOVED_IN_V2:
             # skip the warning here because a deprecation warning will be raised elsewhere
             return import_string(DEPRECATED_MOVED_IN_V2[import_path])
+        if import_path in REDIRECT_TO_V1:
+            new_location = REDIRECT_TO_V1[import_path]
+            warnings.warn(
+                f'`{import_path}` has been removed. We are importing from `{new_location}` instead.'
+                'See the migration guide for more details: https://docs.pydantic.dev/latest/migration/'
+            )
+            return import_string(REDIRECT_TO_V1[import_path])
         if import_path == 'pydantic:BaseSettings':
             raise PydanticImportError(
                 '`BaseSettings` has been moved to the `pydantic-settings` package. '
