@@ -266,7 +266,7 @@ StrictBytes = Annotated[bytes, Strict()]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STRING TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_dataclasses.dataclass
+@_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
     """Apply constraints to `str` types.
 
@@ -280,7 +280,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
         pattern: A regex pattern that the string must match.
 
     Returns:
-        A `StringConstraints` for use in `Annotated`
+        A `StringConstraints` for use in
     """
 
     strip_whitespace: bool | None = None
@@ -292,13 +292,18 @@ class StringConstraints(annotated_types.GroupedMetadata):
     pattern: str | None = None
 
     def __iter__(self) -> Iterator[BaseMetadata]:
-        if self.min_length:
+        if self.min_length is not None:
             yield MinLen(self.min_length)
-        if self.max_length:
+        if self.max_length is not None:
             yield MaxLen(self.max_length)
-        if self.strict:
+        if self.strict is not None:
             yield Strict()
-        if self.strip_whitespace or self.pattern or self.to_lower or self.to_upper:
+        if (
+            self.strip_whitespace is not None
+            or self.pattern is not None
+            or self.to_lower is not None
+            or self.to_upper is not None
+        ):
             yield _fields.PydanticGeneralMetadata(
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,

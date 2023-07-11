@@ -133,6 +133,7 @@ __all__ = [
     'conset',
     'confrozenset',
     'constr',
+    'StringConstraints',
     'ImportString',
     'conint',
     'PositiveInt',
