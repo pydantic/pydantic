@@ -2668,10 +2668,10 @@ class NestedModel(BaseModel):
     )
     model_names = set(schema['$defs'].keys())
     expected_model_names = {
-        'ModelOneInput',
-        'ModelOneOutput',
-        'ModelTwoInput',
-        'ModelTwoOutput',
+        'ModelOne__Input',
+        'ModelOne__Output',
+        'ModelTwo__Input',
+        'ModelTwo__Output',
         f'{module.__name__}__ModelOne__NestedModel__Input',
         f'{module.__name__}__ModelOne__NestedModel__Output',
         f'{module.__name__}__ModelTwo__NestedModel__Input',
