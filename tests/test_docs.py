@@ -233,7 +233,6 @@ def test_error_codes():
     assert code_error_codes == documented_error_codes, 'Error codes in code and docs do not match'
 
 
-@pytest.mark.xfail(reason='`enum` is not documented')
 def test_validation_error_codes():
     error_text = (DOCS_ROOT / 'usage/validation_errors.md').read_text()
 
