@@ -495,7 +495,14 @@
       
         <li class="md-nav__item">
   <a href="#code-transformation-tool" class="md-nav__link">
-    Code Transformation Tool
+    Code transformation tool
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continue-using-pydantic-v1-features" class="md-nav__link">
+    Continue using Pydantic V1 features
   </a>
   
 </li>
@@ -2327,7 +2334,14 @@
       
         <li class="md-nav__item">
   <a href="#code-transformation-tool" class="md-nav__link">
-    Code Transformation Tool
+    Code transformation tool
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#continue-using-pydantic-v1-features" class="md-nav__link">
+    Continue using Pydantic V1 features
   </a>
   
 </li>
@@ -2571,10 +2585,8 @@ You can install Pydantic V2 from PyPI:</p>
 <p>If you encounter any issues, please <a href="https://github.com/pydantic/pydantic/issues">create an issue in GitHub</a> using
 the <code>bug V2</code> label. This will help us to actively monitor and track errors, and to continue to improve the library's
 performance.</p>
-<p>If you need to use latest Pydantic V1 for any reason, you can install it with:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;pydantic==1.*&quot;</span>
-</code></pre></div>
-<h2 id="code-transformation-tool">Code Transformation Tool<a class="headerlink" href="#code-transformation-tool" title="Permanent link">&para;</a></h2>
+<p>If you need to use latest Pydantic V1 for any reason, see the <a href="#continue-using-pydantic-v1-features">Continue using Pydantic V1 features</a> section below for details on installation and imports from <code>pydantic.v1</code>.</p>
+<h2 id="code-transformation-tool">Code transformation tool<a class="headerlink" href="#code-transformation-tool" title="Permanent link">&para;</a></h2>
 <p>We have created a tool to help you migrate your code. This tool is still in beta, but we hope it will help you to
 migrate your code more quickly.</p>
 <p>You can install the tool from PyPI:</p>
@@ -2590,7 +2602,21 @@ migrate your code more quickly.</p>
 bump-pydantic my_package
 </code></pre></div>
 <p>See more about it on the <a href="https://github.com/pydantic/bump-pydantic">Bump Pydantic</a> repository.</p>
+<h2 id="continue-using-pydantic-v1-features">Continue using Pydantic V1 features<a class="headerlink" href="#continue-using-pydantic-v1-features" title="Permanent link">&para;</a></h2>
+<p>Pydantic V1 is still available when you need it, though we recommend migrating to Pydantic V2 for its improvements and new features.</p>
+<p>If you need to use latest Pydantic V1, you can install it with:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;pydantic==1.*&quot;</span>
+</code></pre></div>
+<p>The Pydantic V2 package also continues to provide access to the Pydantic V1 API by importing through <code>pydantic.v1</code>.
+For example, you can use the <code>BaseModel</code> class from Pydantic V1 instead of the Pydantic V2 <code>pydantic.BaseModel</code> class:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic.v1</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+</code></pre></div>
+<p>You can also import functions that have been removed from Pydantic V2, such as <code>lenient_isinstance</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic.v1.utils</span> <span class="kn">import</span> <span class="n">lenient_isinstance</span>
+</code></pre></div>
+<p>Pydantic V1 documentation is available at <a href="https://docs.pydantic.dev/1.10/">https://docs.pydantic.dev/1.10/</a>.</p>
 <h2 id="migration-guide">Migration guide<a class="headerlink" href="#migration-guide" title="Permanent link">&para;</a></h2>
+<p>The following sections provide details on the most important changes in Pydantic V2.</p>
 <h3 id="changes-to-pydanticbasemodel">Changes to <code>pydantic.BaseModel</code><a class="headerlink" href="#changes-to-pydanticbasemodel" title="Permanent link">&para;</a></h3>
 <p>Various method names have been changed; all non-deprecated <code>BaseModel</code> methods now have names matching either the
 format <code>model_.*</code> or <code>__.*pydantic.*__</code>. Where possible, we have retained the deprecated methods with their old names
