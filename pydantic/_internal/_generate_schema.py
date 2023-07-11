@@ -1289,6 +1289,13 @@ class GenerateSchema:
     ) -> tuple[Any, list[Any]] | None:
         from ._std_types_schema import PREPARE_METHODS
 
+        # This check for hashability is only necessary for python 3.7
+        try:
+            hash(obj)
+        except TypeError:
+            # obj is definitely not a known type if this fails
+            return None
+
         for gen in PREPARE_METHODS:
             res = gen(obj, annotations, self.config_wrapper.config_dict)
             if res is not None:
