@@ -36,9 +36,6 @@ jobs:
         with:
           extra_args: --all-files --verbose
 
-      - name: make history
-        run: pdm run python3 ./changes/make_history.py
-
   docs-build:
     runs-on: ubuntu-latest
     steps:
