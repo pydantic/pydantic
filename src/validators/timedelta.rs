@@ -9,12 +9,14 @@ use crate::input::{duration_as_pytimedelta, pytimedelta_as_duration, Input};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
+use super::datetime::extract_microseconds_precision;
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct TimeDeltaValidator {
     strict: bool,
     constraints: Option<TimedeltaConstraints>,
+    microseconds_precision: speedate::MicrosecondsPrecisionOverflowBehavior,
 }
 
 #[derive(Debug, Clone)]
@@ -56,6 +58,7 @@ impl BuildValidator for TimeDeltaValidator {
                 || constraints.ge.is_some()
                 || constraints.gt.is_some())
             .then_some(constraints),
+            microseconds_precision: extract_microseconds_precision(schema, config)?,
         }
         .into())
     }
@@ -70,7 +73,7 @@ impl Validator for TimeDeltaValidator {
         _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let timedelta = input.validate_timedelta(extra.strict.unwrap_or(self.strict))?;
+        let timedelta = input.validate_timedelta(extra.strict.unwrap_or(self.strict), self.microseconds_precision)?;
         let py_timedelta = timedelta.try_into_py(py)?;
         if let Some(constraints) = &self.constraints {
             let raw_timedelta = timedelta.as_raw();

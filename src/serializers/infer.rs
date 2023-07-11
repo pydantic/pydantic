@@ -258,7 +258,7 @@ pub(crate) fn infer_to_python_known(
             ObType::Generator => {
                 let iter = super::type_serializers::generator::SerializationIterator::new(
                     value.downcast()?,
-                    super::type_serializers::any::AnySerializer::default().into(),
+                    super::type_serializers::any::AnySerializer.into(),
                     SchemaFilter::default(),
                     include,
                     exclude,

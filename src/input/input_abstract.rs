@@ -238,42 +238,72 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.strict_date()
     }
 
-    fn validate_time(&self, strict: bool) -> ValResult<EitherTime> {
+    fn validate_time(
+        &self,
+        strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTime> {
         if strict {
-            self.strict_time()
+            self.strict_time(microseconds_overflow_behavior)
         } else {
-            self.lax_time()
+            self.lax_time(microseconds_overflow_behavior)
         }
     }
-    fn strict_time(&self) -> ValResult<EitherTime>;
+    fn strict_time(
+        &self,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTime>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_time(&self) -> ValResult<EitherTime> {
-        self.strict_time()
+    fn lax_time(
+        &self,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTime> {
+        self.strict_time(microseconds_overflow_behavior)
     }
 
-    fn validate_datetime(&self, strict: bool) -> ValResult<EitherDateTime> {
+    fn validate_datetime(
+        &self,
+        strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherDateTime> {
         if strict {
-            self.strict_datetime()
+            self.strict_datetime(microseconds_overflow_behavior)
         } else {
-            self.lax_datetime()
+            self.lax_datetime(microseconds_overflow_behavior)
         }
     }
-    fn strict_datetime(&self) -> ValResult<EitherDateTime>;
+    fn strict_datetime(
+        &self,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherDateTime>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_datetime(&self) -> ValResult<EitherDateTime> {
-        self.strict_datetime()
+    fn lax_datetime(
+        &self,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherDateTime> {
+        self.strict_datetime(microseconds_overflow_behavior)
     }
 
-    fn validate_timedelta(&self, strict: bool) -> ValResult<EitherTimedelta> {
+    fn validate_timedelta(
+        &self,
+        strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTimedelta> {
         if strict {
-            self.strict_timedelta()
+            self.strict_timedelta(microseconds_overflow_behavior)
         } else {
-            self.lax_timedelta()
+            self.lax_timedelta(microseconds_overflow_behavior)
         }
     }
-    fn strict_timedelta(&self) -> ValResult<EitherTimedelta>;
+    fn strict_timedelta(
+        &self,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTimedelta>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_timedelta(&self) -> ValResult<EitherTimedelta> {
-        self.strict_timedelta()
+    fn lax_timedelta(
+        &self,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<EitherTimedelta> {
+        self.strict_timedelta(microseconds_overflow_behavior)
     }
 }

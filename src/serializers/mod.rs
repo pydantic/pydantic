@@ -229,7 +229,7 @@ pub fn to_json(
         serialize_unknown,
         fallback,
     );
-    let serializer = type_serializers::any::AnySerializer::default().into();
+    let serializer = type_serializers::any::AnySerializer.into();
     let bytes = to_json_bytes(value, &serializer, include, exclude, &extra, indent, 1024)?;
     state.final_check(py)?;
     let py_bytes = PyBytes::new(py, &bytes);
