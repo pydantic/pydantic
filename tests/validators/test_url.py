@@ -1216,3 +1216,86 @@ def test_url_hash() -> None:
 
 def test_url_deepcopy() -> None:
     assert deepcopy(Url('http://example.com')) == Url('http://example.com/')
+
+
+def test_multi_url_build() -> None:
+    url = MultiHostUrl.build(
+        scheme='postgresql',
+        username='testuser',
+        password='testpassword',
+        host='127.0.0.1',
+        port=5432,
+        path='database',
+        query='sslmode=require',
+        fragment='test',
+    )
+    assert url == MultiHostUrl('postgresql://testuser:testpassword@127.0.0.1:5432/database?sslmode=require#test')
+    assert str(url) == 'postgresql://testuser:testpassword@127.0.0.1:5432/database?sslmode=require#test'
+
+
+@pytest.mark.parametrize('field', ['host', 'password', 'username', 'port'])
+def test_multi_url_build_hosts_set_with_single_value(field) -> None:
+    """Hosts can't be provided with any single url values."""
+    hosts = [
+        {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5432},
+        {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5432},
+    ]
+    kwargs = dict(scheme='postgresql', hosts=hosts, path='database', query='sslmode=require', fragment='test')
+    if field == 'port':
+        kwargs[field] = 5432
+    else:
+        kwargs[field] = 'test'
+    with pytest.raises(ValueError):
+        MultiHostUrl.build(**kwargs)
+
+
+def test_multi_url_build_hosts_empty_host() -> None:
+    """Hosts can't be provided with any single url values."""
+    hosts = [{}]
+    with pytest.raises(ValueError):
+        MultiHostUrl.build(scheme='postgresql', hosts=hosts, path='database', query='sslmode=require', fragment='test')
+
+
+def test_multi_url_build_hosts() -> None:
+    """Hosts can't be provided with any single url values."""
+    hosts = [
+        {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5431},
+        {'host': '127.0.0.1', 'password': 'testpassword', 'username': 'testuser', 'port': 5433},
+    ]
+    kwargs = dict(scheme='postgresql', hosts=hosts, path='database', query='sslmode=require', fragment='test')
+    url = MultiHostUrl.build(**kwargs)
+    assert url == MultiHostUrl(
+        'postgresql://testuser:testpassword@127.0.0.1:5431,testuser:testpassword@127.0.0.1:5433/database?sslmode=require#test'
+    )
+    assert (
+        str(url)
+        == 'postgresql://testuser:testpassword@127.0.0.1:5431,testuser:testpassword@127.0.0.1:5433/database?sslmode=require#test'
+    )
+
+
+def test_multi_url_build_neither_host_and_hosts_set() -> None:
+    with pytest.raises(ValueError):
+        MultiHostUrl.build(
+            scheme='postgresql',
+            username='testuser',
+            password='testpassword',
+            port=5432,
+            path='database',
+            query='sslmode=require',
+            fragment='test',
+        )
+
+
+def test_url_build() -> None:
+    url = Url.build(
+        scheme='postgresql',
+        username='testuser',
+        password='testpassword',
+        host='127.0.0.1',
+        port=5432,
+        path='database',
+        query='sslmode=require',
+        fragment='test',
+    )
+    assert url == Url('postgresql://testuser:testpassword@127.0.0.1:5432/database?sslmode=require#test')
+    assert str(url) == 'postgresql://testuser:testpassword@127.0.0.1:5432/database?sslmode=require#test'
