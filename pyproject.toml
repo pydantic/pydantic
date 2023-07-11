@@ -106,6 +106,8 @@ testing = [
     "pytest-mock",
     "pytest-pretty",
     "pytest-examples",
+    "faker>=18.13.0",
+    "pytest-benchmark>=4.0.0",
 ]
 mypy = [
     "mypy",
@@ -150,6 +152,12 @@ filterwarnings = [
     'ignore:path is deprecated.*:DeprecationWarning:',
     # Work around https://github.com/pytest-dev/pytest/issues/10977 for Python 3.12
     'ignore:(ast\.Str|ast\.NameConstant|ast\.Num|Attribute s) is deprecated and will be removed.*:DeprecationWarning:',
+]
+addopts = [
+    '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
+    '--benchmark-group-by', 'group',
+    '--benchmark-warmup', 'on',
+    '--benchmark-disable',  # this is enable by `make benchmark` when you actually want to run benchmarks
 ]
 
 # configuring https://github.com/pydantic/hooky
