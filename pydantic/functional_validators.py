@@ -419,7 +419,7 @@ ModelAfterValidator = Callable[[_ModelType, _core_schema.ValidationInfo], _Model
 
 _AnyModelWrapValidator = Union[ModelWrapValidator, ModelWrapValidatorWithoutInfo]
 _AnyModeBeforeValidator = Union[ModelBeforeValidator, ModelBeforeValidatorWithoutInfo]
-_AnyModeAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
+_AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
 
 
 @overload
@@ -443,7 +443,7 @@ def model_validator(
     *,
     mode: Literal['after'],
 ) -> Callable[
-    [_AnyModeAfterValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+    [_AnyModelAfterValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
 ]:
     ...
 
