@@ -2721,6 +2721,8 @@ In Pydantic V2, this behavior has changed to return <code>None</code> when no al
 </li>
 </ul>
 <h3 id="changes-to-dataclasses">Changes to dataclasses<a class="headerlink" href="#changes-to-dataclasses" title="Permanent link">&para;</a></h3>
+<p>Pydantic <a href="../usage/dataclasses/">dataclasses</a> continue to be useful for enabling the data validation on standard
+dataclasses without having to subclass <code>BaseModel</code>. Pydantic V2 introduces the following changes to this dataclass behavior:</p>
 <ul>
 <li>When used as fields, dataclasses (Pydantic or vanilla) no longer accept tuples as validation inputs; dicts should be
   used instead.</li>
@@ -2728,20 +2730,22 @@ In Pydantic V2, this behavior has changed to return <code>None</code> when no al
 <li>As a result, the <code>__post_init_post_parse__</code> method would have become redundant, so has been removed.</li>
 </ul>
 </li>
-<li>We no longer support <code>extra='allow'</code> for Pydantic dataclasses, where extra fields passed to the initializer would be
-  stored as extra attributes on the dataclass. <code>extra='ignore'</code> is still supported for the purpose of ignoring
-  unexpected fields while parsing data, they just won't be stored on the instance.</li>
+<li>Pydantic no longer supports <code>extra='allow'</code> for Pydantic dataclasses, where extra fields passed to the initializer would be
+    stored as extra attributes on the dataclass. <code>extra='ignore'</code> is still supported for the purpose of ignoring
+    unexpected fields while parsing data, they just won't be stored on the instance.</li>
 <li>Pydantic dataclasses no longer have an attribute <code>__pydantic_model__</code>, and no longer use an underlying <code>BaseModel</code>
-  to perform validation or provide other functionality.<ul>
+    to perform validation or provide other functionality.<ul>
 <li>To perform validation, generate a JSON schema, or make use of
-  any other functionality that may have required <code>__pydantic_model__</code> in V1, you should now wrap the dataclass
-  with a <code>TypeAdapter</code> (discussed more below) and make use of its methods.</li>
-<li>[TODO: Add link to TypeAdapter documentation. You can find example usage in <code>tests/test_type_adapter.py</code>.]</li>
+    any other functionality that may have required <code>__pydantic_model__</code> in V1, you should now wrap the dataclass
+    with a <a href="../usage/models/#typeadapter"><code>TypeAdapter</code></a> (<a href="#introduction-of-typeadapter">discussed more below</a>) and
+    make use of its methods.</li>
 </ul>
 </li>
 <li>In Pydantic V1, if you used a vanilla (i.e., non-Pydantic) dataclass as a field, the config of the parent type would
-  be used as though it was the config for the dataclass itself as well. In Pydantic V2, this is no longer the case.<ul>
-<li>[TODO: Need to specify how to override the config used for vanilla dataclass; possibly need to add functionality?]</li>
+    be used as though it was the config for the dataclass itself as well. In Pydantic V2, this is no longer the case.<ul>
+<li>In Pydantic V2, to override the config (like you would with <code>model_config</code> on a <code>BaseModel</code>),
+    you can use the <code>config</code> parameter on the <code>@dataclass</code> decorator.
+    See <a href="../usage/dataclasses/#dataclass-config">Dataclass Config</a> for examples.</li>
 </ul>
 </li>
 </ul>
@@ -3359,10 +3363,11 @@ If you need those regex features you can create a custom validator that does the
 <p>Pydantic V1 had weak support for validating or serializing non-<code>BaseModel</code> types.</p>
 <p>To work with them, you had to either create a "root" model or use the utility functions in <code>pydantic.tools</code>
 (namely, <code>parse_obj_as</code> and <code>schema_of</code>).</p>
-<p>In Pydantic V2 this is <em>a lot</em> easier: the <code>TypeAdapter</code> class lets you create an object with methods for validating,
-serializing, and producing JSON schemas for arbitrary types. This serves as a complete replacement for <code>parse_obj_as</code>
-and <code>schema_of</code> (which are now deprecated), and also covers some of the use cases of "root" models
-(<code>RootModel</code>, discussed above, covers the others).</p>
+<p>In Pydantic V2 this is <em>a lot</em> easier: the <a href="../usage/models/#typeadapter"><code>TypeAdapter</code></a> class lets you create an object
+with methods for validating, serializing, and producing JSON schemas for arbitrary types.
+This serves as a complete replacement for <code>parse_obj_as</code> and <code>schema_of</code> (which are now deprecated),
+and also covers some of the use cases of "root" models. (<a href="../usage/models/#rootmodel-and-custom-root-types"><code>RootModel</code></a>,
+<a href="#changes-to-pydanticbasemodel">discussed above</a>, covers the others.)</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">

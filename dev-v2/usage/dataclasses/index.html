@@ -1165,7 +1165,7 @@
       
         <li class="md-nav__item">
   <a href="#dataclass-config" class="md-nav__link">
-    Dataclass Config
+    Dataclass config
   </a>
   
 </li>
@@ -1179,10 +1179,10 @@
       
         <li class="md-nav__item">
   <a href="#stdlib-dataclasses-and-pydantic-dataclasses" class="md-nav__link">
-    Stdlib dataclasses and pydantic dataclasses
+    Stdlib dataclasses and Pydantic dataclasses
   </a>
   
-    <nav class="md-nav" aria-label="Stdlib dataclasses and pydantic dataclasses">
+    <nav class="md-nav" aria-label="Stdlib dataclasses and Pydantic dataclasses">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1212,11 +1212,11 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#initialize-hooks" class="md-nav__link">
-    Initialize hooks
+  <a href="#initialization-hooks" class="md-nav__link">
+    Initialization hooks
   </a>
   
-    <nav class="md-nav" aria-label="Initialize hooks">
+    <nav class="md-nav" aria-label="Initialization hooks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2174,7 +2174,7 @@
       
         <li class="md-nav__item">
   <a href="#dataclass-config" class="md-nav__link">
-    Dataclass Config
+    Dataclass config
   </a>
   
 </li>
@@ -2188,10 +2188,10 @@
       
         <li class="md-nav__item">
   <a href="#stdlib-dataclasses-and-pydantic-dataclasses" class="md-nav__link">
-    Stdlib dataclasses and pydantic dataclasses
+    Stdlib dataclasses and Pydantic dataclasses
   </a>
   
-    <nav class="md-nav" aria-label="Stdlib dataclasses and pydantic dataclasses">
+    <nav class="md-nav" aria-label="Stdlib dataclasses and Pydantic dataclasses">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2221,11 +2221,11 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#initialize-hooks" class="md-nav__link">
-    Initialize hooks
+  <a href="#initialization-hooks" class="md-nav__link">
+    Initialization hooks
   </a>
   
-    <nav class="md-nav" aria-label="Initialize hooks">
+    <nav class="md-nav" aria-label="Initialization hooks">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -2268,11 +2268,7 @@
 
   <h1>Dataclasses</h1>
 
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This page still needs to be updated for v2.0.</p>
-</div>
-<p>If you don't want to use <em>pydantic</em>'s <code>BaseModel</code> you can instead get the same data validation on standard
+<p>If you don't want to use Pydantic's <code>BaseModel</code> you can instead get the same data validation on standard
 <a href="https://docs.python.org/3/library/dataclasses.html">dataclasses</a> (introduced in Python 3.7).</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
@@ -2294,16 +2290,23 @@
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Keep in mind that <code>pydantic.dataclasses.dataclass</code> is <strong>not</strong> a replacement for <code>pydantic.BaseModel</code> (with a small
-difference in how <a href="#initialize-hooks">initialization hooks</a> work). <code>pydantic.dataclasses.dataclass</code> provides a
-similar functionality to <code>dataclasses.dataclass</code> with the addition of Pydantic validation. There are cases where
-subclassing <code>pydantic.BaseModel</code> is the better choice.</p>
+<p>Keep in mind that <code>pydantic.dataclasses.dataclass</code> is <strong>not</strong> a replacement for <code>pydantic.BaseModel</code>.
+<code>pydantic.dataclasses.dataclass</code> provides a similar functionality to <code>dataclasses.dataclass</code> with the addition of
+Pydantic validation.
+There are cases where subclassing <code>pydantic.BaseModel</code> is the better choice.</p>
 <p>For more information and discussion see
 <a href="https://github.com/pydantic/pydantic/issues/710">pydantic/pydantic#710</a>.</p>
 </div>
-<p>You can use all the standard <em>pydantic</em> field types. Note, however, that arguments passed to constructor will be copied in order to perform validation and, where necessary coercion.</p>
-<p>The schema can be accessed by <a href="../models/#typeadapter">TypeAdapter</a>.
-Also, fields that require a <code>default_factory</code> can be specified by either a <code>pydantic.Field</code> or a <code>dataclasses.field</code>.</p>
+<p>Some differences between Pydantic dataclasses and <code>BaseModel</code> include:</p>
+<ul>
+<li>How <a href="#initialization-hooks">initialization hooks</a> work</li>
+<li><a href="#json-dumping">JSON dumping</a></li>
+</ul>
+<p>You can use all the standard Pydantic field types. Note, however, that arguments passed to constructor will be copied in
+order to perform validation and, where necessary coercion.</p>
+<p>To perform validation or generate a JSON schema on a Pydantic dataclass, you should now wrap the dataclass
+with a <a href="../models/#typeadapter"><code>TypeAdapter</code></a> and make use of its methods.</p>
+<p>Fields that require a <code>default_factory</code> can be specified by either a <code>pydantic.Field</code> or a <code>dataclasses.field</code>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2477,8 +2480,12 @@ keyword argument <code>config</code> which has the same meaning as <a href="../m
 </div>
 <p>For more information about combining validators with dataclasses, see
 <a href="../validators/#dataclass-validators">dataclass validators</a>.</p>
-<h2 id="dataclass-config">Dataclass Config<a class="headerlink" href="#dataclass-config" title="Permanent link">&para;</a></h2>
+<h2 id="dataclass-config">Dataclass config<a class="headerlink" href="#dataclass-config" title="Permanent link">&para;</a></h2>
 <p>If you want to modify the <code>config</code> like you would with a <code>BaseModel</code>, you have two options:</p>
+<ul>
+<li>Apply config to the dataclass decorator as a dict</li>
+<li>Use <code>ConfigDict</code> as the config</li>
+</ul>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
@@ -2499,12 +2506,12 @@ keyword argument <code>config</code> which has the same meaning as <a href="../m
 <ol>
 <li>You can read more about <code>validate_assignment</code> in <a href="../model_config/#validate-assignment">model_config</a>.</li>
 </ol>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>After v1.10, <em>pydantic</em> dataclasses support <code>Config.extra</code> but some default behaviour of stdlib dataclasses
-may prevail. For example, when <code>print</code>ing a <em>pydantic</em> dataclass with allowed extra fields, it will still
-use the <code>__str__</code> method of stdlib dataclass and show only the required fields.
-This may be improved further in the future.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Pydantic dataclasses do not support <a href="model_config/#extra-attributes"><code>extra='allow'</code></a>, where extra fields passed
+to the initializer would be stored as extra attributes on the dataclass.</p>
+<p><code>extra='ignore'</code> is still supported for the purpose of ignoring
+unexpected fields while parsing data; they just won't be stored on the instance.</p>
 </div>
 <h2 id="nested-dataclasses">Nested dataclasses<a class="headerlink" href="#nested-dataclasses" title="Permanent link">&para;</a></h2>
 <p>Nested dataclasses are supported both in dataclasses and normal models.</p>
@@ -2526,10 +2533,10 @@ This may be improved further in the future.</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">navbar</span><span class="p">)</span>
 <span class="c1">#&gt; Navbar(button=NavbarButton(href=Url(&#39;https://example.com/&#39;)))</span>
 </code></pre></div>
-<p>Dataclasses attributes can be populated by tuples, dictionaries or instances of the dataclass itself.</p>
-<h2 id="stdlib-dataclasses-and-pydantic-dataclasses">Stdlib dataclasses and <em>pydantic</em> dataclasses<a class="headerlink" href="#stdlib-dataclasses-and-pydantic-dataclasses" title="Permanent link">&para;</a></h2>
+<p>When used as fields, dataclasses (Pydantic or vanilla) should use dicts as validation inputs.</p>
+<h2 id="stdlib-dataclasses-and-pydantic-dataclasses">Stdlib dataclasses and Pydantic dataclasses<a class="headerlink" href="#stdlib-dataclasses-and-pydantic-dataclasses" title="Permanent link">&para;</a></h2>
 <h3 id="inherit-from-stdlib-dataclasses">Inherit from stdlib dataclasses<a class="headerlink" href="#inherit-from-stdlib-dataclasses" title="Permanent link">&para;</a></h3>
-<p>Stdlib dataclasses (nested or not) can also be inherited and <em>pydantic</em> will automatically validate
+<p>Stdlib dataclasses (nested or not) can also be inherited and Pydantic will automatically validate
 all the inherited fields.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
@@ -2566,8 +2573,8 @@ all the inherited fields.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h3 id="use-of-stdlib-dataclasses-with-basemodel">Use of stdlib dataclasses with <code>BaseModel</code><a class="headerlink" href="#use-of-stdlib-dataclasses-with-basemodel" title="Permanent link">&para;</a></h3>
-<p>Bear in mind that stdlib dataclasses (nested or not) are <strong>automatically converted</strong> into <em>pydantic</em>
-dataclasses when mixed with <code>BaseModel</code>! Furthermore the generated <em>pydantic</em> dataclass will have
+<p>Bear in mind that stdlib dataclasses (nested or not) are <strong>automatically converted</strong> into Pydantic
+dataclasses when mixed with <code>BaseModel</code>! Furthermore the generated Pydantic dataclass will have
 the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen</code>, ...) as the original one.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
@@ -2675,8 +2682,8 @@ the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen<
 </div>
 </div>
 <h3 id="use-custom-types">Use custom types<a class="headerlink" href="#use-custom-types" title="Permanent link">&para;</a></h3>
-<p>Since stdlib dataclasses are automatically converted to add validation using
-custom types may cause some unexpected behaviour.
+<p>Since stdlib dataclasses are automatically converted to add validation, using
+custom types may cause some unexpected behavior.
 In this case you can simply add <code>arbitrary_types_allowed</code> in the config!</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
@@ -2729,10 +2736,10 @@ In this case you can simply add <code>arbitrary_types_allowed</code> in the conf
 <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="p">))</span>
 <span class="c1">#&gt; Model(dc=DC(a=ArbitraryType(value=3), b=&#39;qwe&#39;), other=&#39;other&#39;)</span>
 </code></pre></div>
-<h2 id="initialize-hooks">Initialize hooks<a class="headerlink" href="#initialize-hooks" title="Permanent link">&para;</a></h2>
+<h2 id="initialization-hooks">Initialization hooks<a class="headerlink" href="#initialization-hooks" title="Permanent link">&para;</a></h2>
 <p>When you initialize a dataclass, it is possible to execute code <em>before</em> or <em>after</em> validation
-with the help of <code>model_validator</code> decorator.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:4"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><input id="__tabbed_3_4" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label><label for="__tabbed_3_3">Python 3.8 and above</label><label for="__tabbed_3_4">Python 3.10 and above</label></div>
+with the help of the <a href="../validators/#model-validators"><code>@model_validator</code></a> decorator <code>mode</code> parameter.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
@@ -2810,6 +2817,11 @@ with the help of <code>model_validator</code> decorator.</p>
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;birth&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="mi">1995</span><span class="p">,</span> <span class="s1">&#39;month&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}})</span>
 </code></pre></div>
 </div>
+</div>
+</div>
+<p>The <code>__post_init__</code> in Pydantic dataclasses is called <em>after</em> validation, rather than before.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.10 and above</label></div>
+<div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">InitVar</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
@@ -2866,9 +2878,9 @@ with the help of <code>model_validator</code> decorator.</p>
 <p>When substituting usage of <code>dataclasses.dataclass</code> with <code>pydantic.dataclasses.dataclass</code>, it is recommended to move the code executed in the <code>__post_init__</code> to
 methods decorated with <code>model_validator</code>.</p>
 <h2 id="json-dumping">JSON dumping<a class="headerlink" href="#json-dumping" title="Permanent link">&para;</a></h2>
-<p><em>Pydantic</em> dataclasses do not feature a <code>.model_dump_json()</code> function. To dump them as JSON, you will need to
+<p>Pydantic dataclasses do not feature a <code>.model_dump_json()</code> function. To dump them as JSON, you will need to
 make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</a> as follows:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
