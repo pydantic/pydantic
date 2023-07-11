@@ -210,7 +210,6 @@ class NameEmail(_repr.Representation):
         ```py
         from pydantic import BaseModel, NameEmail
 
-
         class User(BaseModel):
             email: NameEmail
 
