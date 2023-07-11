@@ -134,7 +134,7 @@ def test_value_validation():
             'loc': ('data',),
             'msg': 'Value error, some value is zero',
             'input': {1: 0},
-            'ctx': {'error': 'some value is zero'},
+            'ctx': {'error': HasRepr(repr(ValueError('some value is zero')))},
         }
     ]
 
@@ -146,7 +146,7 @@ def test_value_validation():
             'loc': (),
             'msg': 'Value error, sum too large',
             'input': {'data': {1: 3, 2: 6}},
-            'ctx': {'error': 'sum too large'},
+            'ctx': {'error': HasRepr(repr(ValueError('sum too large')))},
         }
     ]
 
@@ -517,9 +517,9 @@ def test_generic():
         {
             'type': 'value_error',
             'loc': ('positive_number',),
-            'msg': 'Value error, Unknown error',
+            'msg': 'Value error, ',
             'input': -1,
-            'ctx': {'error': 'Unknown error'},
+            'ctx': {'error': HasRepr(repr(ValueError()))},
         }
     ]
 
@@ -531,7 +531,7 @@ def test_generic():
             'loc': ('error',),
             'msg': 'Value error, Must not provide both data and error',
             'input': Error(message='error'),
-            'ctx': {'error': 'Must not provide both data and error'},
+            'ctx': {'error': HasRepr(repr(ValueError('Must not provide both data and error')))},
         }
     ]
 

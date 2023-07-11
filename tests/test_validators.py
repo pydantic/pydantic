@@ -10,6 +10,7 @@ from typing import Any, Callable, Deque, Dict, FrozenSet, List, Optional, Tuple,
 from unittest.mock import MagicMock
 
 import pytest
+from dirty_equals import HasRepr
 from typing_extensions import Annotated, Literal
 
 from pydantic import (
@@ -94,7 +95,7 @@ def test_annotated_validator_wrap() -> None:
             'loc': ('x',),
             'msg': 'Value error, 1970-04-17 is not in the sixties!',
             'input': date(1970, 4, 17),
-            'ctx': {'error': '1970-04-17 is not in the sixties!'},
+            'ctx': {'error': HasRepr(repr(ValueError('1970-04-17 is not in the sixties!')))},
         }
     ]
 
@@ -121,7 +122,7 @@ def test_annotated_validator_nested() -> None:
             'loc': ('x',),
             'msg': 'Assertion failed, assert -2 >= 0',
             'input': [0, -1, -2],
-            'ctx': {'error': 'assert -2 >= 0'},
+            'ctx': {'error': HasRepr(repr(AssertionError('assert -2 >= 0')))},
         }
     ]
 
@@ -181,7 +182,7 @@ def test_simple():
             'loc': ('a',),
             'msg': 'Value error, "foobar" not found in a',
             'input': 'snap',
-            'ctx': {'error': '"foobar" not found in a'},
+            'ctx': {'error': HasRepr(repr(ValueError('"foobar" not found in a')))},
         }
     ]
 
@@ -335,7 +336,7 @@ def test_validate_pre_error():
             'loc': ('a',),
             'msg': 'Value error, a1 broken',
             'input': [1, 3],
-            'ctx': {'error': 'a1 broken'},
+            'ctx': {'error': HasRepr(repr(ValueError('a1 broken')))},
         }
     ]
     assert calls == ['check_a1 [1, 3]']
@@ -349,7 +350,7 @@ def test_validate_pre_error():
             'loc': ('a',),
             'msg': 'Value error, a2 broken',
             'input': [6, 10],
-            'ctx': {'error': 'a2 broken'},
+            'ctx': {'error': HasRepr(repr(ValueError('a2 broken')))},
         }
     ]
     assert calls == ['check_a1 [5, 10]', 'check_a2 [6, 10]']
@@ -475,14 +476,14 @@ def test_validate_multiple():
             'loc': ('a',),
             'msg': 'Assertion failed, a is too short',
             'input': 'x',
-            'ctx': {'error': 'a is too short'},
+            'ctx': {'error': HasRepr(repr(AssertionError('a is too short')))},
         },
         {
             'type': 'assertion_error',
             'loc': ('b',),
             'msg': 'Assertion failed, b is too short',
             'input': 'x',
-            'ctx': {'error': 'b is too short'},
+            'ctx': {'error': HasRepr(repr(AssertionError('b is too short')))},
         },
     ]
 
@@ -759,7 +760,7 @@ def test_wildcard_validator_error(decorator, pytest_warns):
             'loc': ('a',),
             'msg': 'Value error, "foobar" not found in a',
             'input': 'snap',
-            'ctx': {'error': '"foobar" not found in a'},
+            'ctx': {'error': HasRepr(repr(ValueError('"foobar" not found in a')))},
         },
         {'type': 'missing', 'loc': ('b',), 'msg': 'Field required', 'input': {'a': 'snap'}},
     ]
@@ -1290,7 +1291,7 @@ def test_assert_raises_validation_error():
             'loc': ('a',),
             'msg': f'Assertion failed, invalid a\n{injected_by_pytest}',
             'input': 'snap',
-            'ctx': {'error': "invalid a\nassert 'snap' == 'a'\n  - a\n  + snap"},
+            'ctx': {'error': HasRepr(repr(AssertionError("invalid a\nassert 'snap' == 'a'\n  - a\n  + snap")))},
         }
     ]
 
@@ -1334,7 +1335,7 @@ def test_root_validator():
             'loc': (),
             'msg': 'Value error, foobar',
             'input': {'b': 'snap dragon', 'c': 'snap dragon2'},
-            'ctx': {'error': 'foobar'},
+            'ctx': {'error': HasRepr(repr(ValueError('foobar')))},
         }
     ]
 
@@ -1431,7 +1432,7 @@ def test_root_validator_pre():
             'loc': (),
             'msg': 'Value error, foobar',
             'input': {'b': 'snap dragon'},
-            'ctx': {'error': 'foobar'},
+            'ctx': {'error': HasRepr(repr(ValueError('foobar')))},
         }
     ]
 
@@ -1541,7 +1542,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
             'loc': (),
             'msg': 'Value error, foobar',
             'input': {'b': 'snap dragon'},
-            'ctx': {'error': 'foobar'},
+            'ctx': {'error': HasRepr(repr(ValueError('foobar')))},
         }
     ]
 
@@ -1774,7 +1775,7 @@ def test_validating_assignment_pre_root_validator_fail():
             'loc': (),
             'msg': 'Value error, values cannot be a string',
             'input': {'current_value': '100', 'max_value': 200.0},
-            'ctx': {'error': 'values cannot be a string'},
+            'ctx': {'error': HasRepr(repr(ValueError('values cannot be a string')))},
         }
     ]
 
@@ -1802,7 +1803,7 @@ def test_validating_assignment_model_validator_before_fail():
             'loc': (),
             'msg': 'Value error, values cannot be a string',
             'input': {'current_value': '100', 'max_value': 200.0},
-            'ctx': {'error': 'values cannot be a string'},
+            'ctx': {'error': HasRepr(repr(ValueError('values cannot be a string')))},
         }
     ]
 
@@ -2110,7 +2111,7 @@ def test_model_config_validate_default():
         ValidatingModel()
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'error': 'assert -1 > 0'},
+            'ctx': {'error': HasRepr(repr(AssertionError('assert -1 > 0')))},
             'input': -1,
             'loc': ('x',),
             'msg': 'Assertion failed, assert -1 > 0',
@@ -2412,7 +2413,7 @@ def test_validator_allow_reuse_same_field():
                 return v + 1
 
             @field_validator('x')
-            def val_x(cls, v: int) -> int:  # noqa: F811
+            def val_x(cls, v: int) -> int:
                 return v + 2
 
         assert Model(x=1).model_dump() == {'x': 3}
@@ -2430,7 +2431,7 @@ def test_validator_allow_reuse_different_field_1():
                 return v + 1
 
             @field_validator('y')
-            def val(cls, v: int) -> int:  # noqa: F811
+            def val(cls, v: int) -> int:
                 return v + 2
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 4}
@@ -2450,7 +2451,7 @@ def test_validator_allow_reuse_different_field_2():
             def val_x(cls, v: int) -> int:
                 return v + 1
 
-            val_x = field_validator('y')(val)  # noqa: F811
+            val_x = field_validator('y')(val)
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 4}
 
@@ -2500,7 +2501,7 @@ def test_root_validator_allow_reuse_same_field():
                 return v
 
             @root_validator(skip_on_failure=True)
-            def root_val(cls, v: Dict[str, Any]) -> Dict[str, Any]:  # noqa: F811
+            def root_val(cls, v: Dict[str, Any]) -> Dict[str, Any]:
                 v['x'] += 2
                 return v
 

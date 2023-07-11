@@ -2,6 +2,7 @@
 PYTEST_DONT_REWRITE
 """
 import pytest
+from dirty_equals import HasRepr
 
 from pydantic import BaseModel, ValidationError, field_validator
 
@@ -27,9 +28,10 @@ def test_assert_raises_validation_error():
             'loc': ('a',),
             'msg': 'Assertion failed, invalid a',
             'input': 'snap',
-            'ctx': {'error': 'invalid a'},
+            'ctx': {'error': HasRepr(repr(AssertionError('invalid a')))},
         }
     ]
     actual_errors = exc_info.value.errors(include_url=False)
-    if expected_errors != actual_errors:
+    # HasRepr doesn't handle != correctly
+    if not (expected_errors == actual_errors):
         pytest.fail(f'Actual errors: {actual_errors}\nExpected errors: {expected_errors}')
