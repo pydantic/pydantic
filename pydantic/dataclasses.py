@@ -107,31 +107,31 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,
+    """A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
 
     This function should be used similarly to `dataclasses.dataclass`.
 
     Args:
-        _cls: The target dataclass.
+        _cls: The target `dataclass`.
         init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to
             `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its
             own  `__init__` function.
-        repr: A boolean indicating whether or not to include the field in the __repr__ output.
+        repr: A boolean indicating whether or not to include the field in the `__repr__` output.
         eq: Determines if a `__eq__` should be generated for the class.
-        order: Determines if comparison magic methods should be generated, such as` __lt__`, but not `__eq__`.
+        order: Determines if comparison magic methods should be generated, such as `__lt__`, but not `__eq__`.
         unsafe_hash: Determines if an unsafe hashing function should be included in the class.
-        frozen: Determines if the generated class should be a 'frozen' dataclass, which does not allow its
+        frozen: Determines if the generated class should be a 'frozen' `dataclass`, which does not allow its
             attributes to be modified from its constructor.
-        config: A configuration for the dataclass generation.
-        validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all pydantic dataclasses
+        config: A configuration for the `dataclass` generation.
+        validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all Pydantic dataclasses
             are validated on init.
         kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.
-        slots: Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of
+        slots: Determines if the generated class should be a 'slots' `dataclass`, which does not allow the addition of
             new attributes after instantiation.
 
     Returns:
-        A decorator that accepts a class as its argument and returns a Pydantic dataclass.
+        A decorator that accepts a class as its argument and returns a Pydantic `dataclass`.
 
     Raises:
         AssertionError: Raised if `init` is not `False` or `validate_on_init` is `False`.
