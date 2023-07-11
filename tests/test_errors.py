@@ -1,5 +1,6 @@
 import re
 from decimal import Decimal
+from typing import Any
 
 import pytest
 from dirty_equals import HasRepr, IsInstance, IsJson, IsStr
@@ -237,8 +238,8 @@ all_errors = [
     ('bytes_type', 'Input should be a valid bytes', None),
     ('bytes_too_short', 'Data should have at least 42 bytes', {'min_length': 42}),
     ('bytes_too_long', 'Data should have at most 42 bytes', {'max_length': 42}),
-    ('value_error', 'Value error, foobar', {'error': 'foobar'}),
-    ('assertion_error', 'Assertion failed, foobar', {'error': 'foobar'}),
+    ('value_error', 'Value error, foobar', {'error': ValueError('foobar')}),
+    ('assertion_error', 'Assertion failed, foobar', {'error': AssertionError('foobar')}),
     ('literal_error', 'Input should be foo', {'expected': 'foo'}),
     ('literal_error', 'Input should be foo or bar', {'expected': 'foo or bar'}),
     ('date_type', 'Input should be a valid date', None),
@@ -470,6 +471,50 @@ def test_error_json(pydantic_version):
     )
     assert exc_info.value.json().startswith('[{"type":"string_too_short",')
     assert exc_info.value.json(indent=2).startswith('[\n  {\n    "type": "string_too_short",')
+
+
+def test_error_json_python_error(pydantic_version: str):
+    def raise_py_error(v: Any) -> Any:
+        try:
+            assert False
+        except AssertionError as e:
+            raise ValueError('Oh no!') from e
+
+    s = SchemaValidator(core_schema.no_info_plain_validator_function(raise_py_error))
+    with pytest.raises(ValidationError) as exc_info:
+        s.validate_python('anything')
+
+    exc = exc_info.value.errors()[0]['ctx']['error']  # type: ignore
+    assert isinstance(exc, ValueError)
+    assert isinstance(exc.__context__, AssertionError)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'value_error',
+            'loc': (),
+            'msg': 'Value error, Oh no!',
+            'input': 'anything',
+            'ctx': {'error': HasRepr(repr(ValueError('Oh no!')))},
+        }
+    ]
+    assert exc_info.value.json() == IsJson(
+        [
+            {
+                'type': 'value_error',
+                'loc': [],
+                'msg': 'Value error, Oh no!',
+                'input': 'anything',
+                'ctx': {'error': 'Oh no!'},
+                'url': f'https://errors.pydantic.dev/{pydantic_version}/v/value_error',
+            }
+        ]
+    )
+    assert exc_info.value.json(include_url=False, include_context=False) == IsJson(
+        [{'type': 'value_error', 'loc': [], 'msg': 'Value error, Oh no!', 'input': 'anything'}]
+    )
+    assert exc_info.value.json().startswith('[{"type":"value_error",')
+    assert exc_info.value.json(indent=2).startswith('[\n  {\n    "type": "value_error",')
 
 
 def test_error_json_cycle():

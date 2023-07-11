@@ -477,13 +477,12 @@ macro_rules! py_err_string {
     ($error_value:expr, $type_member:ident, $input:ident) => {
         match $error_value.str() {
             Ok(py_string) => match py_string.to_str() {
-                Ok(s) => {
-                    let error = match s.is_empty() {
-                        true => "Unknown error".to_string(),
-                        false => s.to_string(),
-                    };
-                    ValError::new(ErrorType::$type_member { error }, $input)
-                }
+                Ok(_) => ValError::new(
+                    ErrorType::$type_member {
+                        error: Some($error_value.into()),
+                    },
+                    $input,
+                ),
                 Err(e) => ValError::InternalErr(e),
             },
             Err(e) => ValError::InternalErr(e),
