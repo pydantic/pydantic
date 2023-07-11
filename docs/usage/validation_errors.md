@@ -520,7 +520,7 @@ try:
     Model(x='other_option')
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
-    # > 'enum'
+    #> 'enum'
 ```
 
 ## `extra_forbidden`
