@@ -94,7 +94,7 @@ def test_double_parameterize_error():
 
 
 def test_value_validation():
-    T = TypeVar('T')
+    T = TypeVar('T', bound=Dict[Any, Any])
 
     class Response(BaseModel, Generic[T]):
         data: T
@@ -107,12 +107,11 @@ def test_value_validation():
             return v
 
         @model_validator(mode='after')
-        @classmethod
-        def validate_sum(cls, m):
-            data = m.data
+        def validate_sum(self) -> 'Response[T]':
+            data = self.data
             if sum(data.values()) > 5:
                 raise ValueError('sum too large')
-            return m
+            return self
 
     assert Response[Dict[int, int]](data={1: '4'}).model_dump() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:

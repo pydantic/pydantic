@@ -356,10 +356,10 @@ class User:
         return values
 
     @model_validator(mode='after')
-    def post_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        print(values)
+    def post_root(self) -> 'User':
+        print(self)
         #> User(birth=Birth(year=1995, month=3, day=2))
-        return values
+        return self
 
     def __post_init__(self):
         print(self.birth)
