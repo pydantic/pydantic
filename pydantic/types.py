@@ -270,7 +270,7 @@ StrictBytes = Annotated[bytes, Strict()]
 class StringConstraints(annotated_types.GroupedMetadata):
     """Apply constraints to `str` types.
 
-    Args:
+    Attributes:
         strip_whitespace: Whether to strip whitespace from the string.
         to_upper: Whether to convert the string to uppercase.
         to_lower: Whether to convert the string to lowercase.
