@@ -191,8 +191,8 @@ class _DefinitionsRemapping:
             return [self.remap_json_schema(item) for item in schema]
         elif isinstance(schema, dict):
             for key, value in schema.items():
-                if key == '$ref':
-                    schema['$ref'] = self.remap_json_ref(JsonRef(schema['$ref']))
+                if key == '$ref' and isinstance(value, str):
+                    schema['$ref'] = self.remap_json_ref(JsonRef(value))
                 elif key == '$defs':
                     schema['$defs'] = {
                         self.remap_defs_ref(DefsRef(key)): self.remap_json_schema(value)
@@ -1959,6 +1959,8 @@ class GenerateJsonSchema:
             if isinstance(schema, dict):
                 if '$ref' in schema:
                     json_ref = JsonRef(schema['$ref'])
+                    if not isinstance(json_ref, str):
+                        return  # in this case, '$ref' might have been the name of a property
                     already_visited = json_ref in json_refs
                     json_refs[json_ref] += 1
                     if already_visited:
@@ -2213,7 +2215,8 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
     refs: set[JsonRef] = set()
     if isinstance(item, dict):
         for key, value in item.items():
-            if key == '$ref':
+            if key == '$ref' and isinstance(value, str):
+                # the isinstance check ensures that '$ref' isn't the name of a property, etc.
                 refs.add(JsonRef(value))
             elif isinstance(value, dict):
                 refs.update(_get_all_json_refs(value))
