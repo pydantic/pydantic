@@ -278,9 +278,6 @@ class StringConstraints(annotated_types.GroupedMetadata):
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
         pattern: A regex pattern that the string must match.
-
-    Returns:
-        A `StringConstraints` for use in
     """
 
     strip_whitespace: bool | None = None
