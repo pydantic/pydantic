@@ -1261,7 +1261,7 @@ class GenerateJsonSchema:
             if json_schema_extra and root_json_schema_extra:
                 raise ValueError(
                     '"model_config[\'json_schema_extra\']" and "Field.json_schema_extra" on "RootModel.root"'
-                    ' field could not be set simultaneously'
+                    ' field must not be set simultaneously'
                 )
             if root_json_schema_extra:
                 json_schema_extra = root_json_schema_extra

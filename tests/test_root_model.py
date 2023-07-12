@@ -591,5 +591,5 @@ def test_json_schema_extra_on_model_and_on_field():
         model_config = ConfigDict(json_schema_extra={'schema key on model': 'schema value on model'})
         root: str = Field(json_schema_extra={'schema key on field': 'schema value on field'})
 
-    with pytest.raises(ValueError, match=r'json_schema_extra.*?could not be set simultaneously'):
+    with pytest.raises(ValueError, match=r'json_schema_extra.*?must not be set simultaneously'):
         Model.model_json_schema()
