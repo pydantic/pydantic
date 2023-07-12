@@ -480,7 +480,7 @@ def condecimal(
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_internal_dataclass.slots_dataclass
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
@@ -673,7 +673,7 @@ def _secret_display(value: str | bytes) -> str:
     return '**********' if value else ''
 
 
-@_internal_dataclass.slots_dataclass
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class _SecretFieldValidator:
     field_type: type[_SecretField[Any]]
     min_length: int | None = None
@@ -1242,7 +1242,7 @@ class Base64Encoder(EncoderProtocol):
         return 'base64'
 
 
-@_internal_dataclass.slots_dataclass
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class EncodedBytes:
     """A bytes type that is encoded and decoded using the specified encoder."""
 
@@ -1332,7 +1332,7 @@ Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 __getattr__ = getattr_migration(__name__)
 
 
-@_internal_dataclass.slots_dataclass
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
     """A convenience class for creating an annotation that provides pydantic custom type hooks.
 

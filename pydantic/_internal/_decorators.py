@@ -14,7 +14,7 @@ from typing_extensions import Literal, TypeAlias, is_typeddict
 from ..errors import PydanticUserError
 from ..fields import ComputedFieldInfo
 from ._core_utils import get_type_ref
-from ._internal_dataclass import slots_dataclass
+from ._internal_dataclass import slots_true
 from ._typing_extra import get_function_type_hints
 
 if TYPE_CHECKING:
@@ -27,7 +27,7 @@ except ImportError:
     cached_property = None
 
 
-@slots_dataclass
+@dataclass(**slots_true)
 class ValidatorDecoratorInfo:
     """A container for data from `@validator` so that we can access it
     while building the pydantic-core schema.
@@ -51,7 +51,7 @@ class ValidatorDecoratorInfo:
     check_fields: bool | None
 
 
-@slots_dataclass
+@dataclass(**slots_true)
 class FieldValidatorDecoratorInfo:
     """A container for data from `@field_validator` so that we can access it
     while building the pydantic-core schema.
@@ -70,7 +70,7 @@ class FieldValidatorDecoratorInfo:
     check_fields: bool | None
 
 
-@slots_dataclass
+@dataclass(**slots_true)
 class RootValidatorDecoratorInfo:
     """A container for data from `@root_validator` so that we can access it
     while building the pydantic-core schema.
@@ -84,7 +84,7 @@ class RootValidatorDecoratorInfo:
     mode: Literal['before', 'after']
 
 
-@slots_dataclass
+@dataclass(**slots_true)
 class FieldSerializerDecoratorInfo:
     """A container for data from `@field_serializer` so that we can access it
     while building the pydantic-core schema.
@@ -107,7 +107,7 @@ class FieldSerializerDecoratorInfo:
     check_fields: bool | None
 
 
-@slots_dataclass
+@dataclass(**slots_true)
 class ModelSerializerDecoratorInfo:
     """A container for data from `@model_serializer` so that we can access it
     while building the pydantic-core schema.
@@ -126,7 +126,7 @@ class ModelSerializerDecoratorInfo:
     when_used: core_schema.WhenUsed
 
 
-@slots_dataclass
+@dataclass(**slots_true)
 class ModelValidatorDecoratorInfo:
     """A container for data from `@model_validator` so that we can access it
     while building the pydantic-core schema.
@@ -204,7 +204,7 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
 
 
-@slots_dataclass
+@dataclass(**slots_true)
 class Decorator(Generic[DecoratorInfoType]):
     """A generic container class to join together the decorator metadata
     (metadata from decorator itself, which we have when the
@@ -388,7 +388,7 @@ def get_attribute_from_base_dicts(tp: type[Any], name: str) -> Any:
     return tp.__dict__[name]  # raise the error
 
 
-@slots_dataclass
+@dataclass(**slots_true)
 class DecoratorInfos:
     """Mapping of name in the class namespace to decorator info.
 

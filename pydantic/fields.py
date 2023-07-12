@@ -543,7 +543,7 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
-@_internal_dataclass.slots_dataclass
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasPath:
     """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields#aliaspath-and-aliaschoices
 
@@ -567,7 +567,7 @@ class AliasPath:
         return self.path
 
 
-@_internal_dataclass.slots_dataclass
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasChoices:
     """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields#aliaspath-and-aliaschoices
 
@@ -895,7 +895,7 @@ def PrivateAttr(
     )
 
 
-@_internal_dataclass.slots_dataclass
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class ComputedFieldInfo:
     """A container for data from `@computed_field` so that we can access it while building the pydantic-core schema.
 
