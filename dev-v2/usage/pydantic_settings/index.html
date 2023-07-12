@@ -2810,8 +2810,8 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
         <span class="n">file_content_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
             <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;tests/example_test_config.json&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="p">)</span>
         <span class="p">)</span>
-        <span class="n">fiel_value</span> <span class="o">=</span> <span class="n">file_content_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">fiel_value</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="kc">False</span>
+        <span class="n">field_value</span> <span class="o">=</span> <span class="n">file_content_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">field_value</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="nf">prepare_field_value</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value_is_complex</span><span class="p">:</span> <span class="nb">bool</span>
