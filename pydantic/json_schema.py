@@ -1256,6 +1256,16 @@ class GenerateJsonSchema:
         title = config.get('title')
 
         json_schema_extra = config.get('json_schema_extra')
+        if cls.__pydantic_root_model__:
+            root_json_schema_extra = cls.model_fields['root'].json_schema_extra
+            if json_schema_extra and root_json_schema_extra:
+                raise ValueError(
+                    '"model_config[\'json_schema_extra\']" and "Field.json_schema_extra" on "RootModel.root"'
+                    ' field must not be set simultaneously'
+                )
+            if root_json_schema_extra:
+                json_schema_extra = root_json_schema_extra
+
         json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
 
         return json_schema

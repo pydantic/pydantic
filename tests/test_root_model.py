@@ -561,3 +561,35 @@ def test_pickle_root_model(create_module):
 
     MyRootModel = module.MyRootModel
     assert MyRootModel(root='abc') == pickle.loads(pickle.dumps(MyRootModel(root='abc')))
+
+
+def test_json_schema_extra_on_model():
+    class Model(RootModel):
+        model_config = ConfigDict(json_schema_extra={'schema key': 'schema value'})
+        root: str
+
+    assert Model.model_json_schema() == {
+        'schema key': 'schema value',
+        'title': 'Model',
+        'type': 'string',
+    }
+
+
+def test_json_schema_extra_on_field():
+    class Model(RootModel):
+        root: str = Field(json_schema_extra={'schema key': 'schema value'})
+
+    assert Model.model_json_schema() == {
+        'schema key': 'schema value',
+        'title': 'Model',
+        'type': 'string',
+    }
+
+
+def test_json_schema_extra_on_model_and_on_field():
+    class Model(RootModel):
+        model_config = ConfigDict(json_schema_extra={'schema key on model': 'schema value on model'})
+        root: str = Field(json_schema_extra={'schema key on field': 'schema value on field'})
+
+    with pytest.raises(ValueError, match=r'json_schema_extra.*?must not be set simultaneously'):
+        Model.model_json_schema()
