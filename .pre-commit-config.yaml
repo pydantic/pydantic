@@ -2,6 +2,7 @@ repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.3.0
   hooks:
+  - id: no-commit-to-branch  # prevent direct commits to main branch
   - id: check-yaml
     args: ['--unsafe']
   - id: check-toml

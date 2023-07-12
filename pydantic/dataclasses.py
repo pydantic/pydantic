@@ -185,7 +185,8 @@ def dataclass(
 
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
-            init=init,
+            # the value of init here doesn't affect anything except that it makes it easier to generate a signature
+            init=True,
             repr=repr,
             eq=eq,
             order=order,
