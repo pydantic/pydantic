@@ -25,6 +25,7 @@ from ._mock_validator import MockValidator, set_basemodel_mock_validator
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_types_namespace, is_classvar, parent_frame_namespace
 from ._utils import ClassAttribute, is_valid_identifier
+from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -43,6 +44,7 @@ IGNORED_TYPES: tuple[Any, ...] = (
     staticmethod,
     PydanticDescriptorProxy,
     ComputedFieldInfo,
+    ValidateCallWrapper,
 )
 object_setattr = object.__setattr__
 

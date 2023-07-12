@@ -107,9 +107,9 @@ class ValidateCallWrapper:
         result = self.__class__(bound_function, self._config, self._validate_return)
         if self._name is not None:
             if obj is not None:
-                setattr(obj, self._name, result)
+                object.__setattr__(obj, self._name, result)
             else:
-                setattr(objtype, self._name, result)
+                object.__setattr__(objtype, self._name, result)
         return result
 
     def __set_name__(self, owner: Any, name: str) -> None:
