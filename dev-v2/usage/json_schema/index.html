@@ -1171,7 +1171,7 @@
       
         <li class="md-nav__item">
   <a href="#json-schema-types" class="md-nav__link">
-    JSON Schema types
+    JSON schema types
   </a>
   
 </li>
@@ -2216,7 +2216,7 @@
       
         <li class="md-nav__item">
   <a href="#json-schema-types" class="md-nav__link">
-    JSON Schema types
+    JSON schema types
   </a>
   
 </li>
@@ -2256,8 +2256,8 @@
 
   <h1>JSON Schema</h1>
 
-<p>Pydantic allows auto creation of JSON schemas from models.</p>
-<p>Pydantic provides several ways to generate JSON schemas or JSON representations from fields or models:</p>
+<p>Pydantic allows automatic creation of JSON schemas from models.</p>
+<p>Using Pydantic, there are several ways to generate JSON schemas or JSON representations from fields or models:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../api/main/#pydantic.main.BaseModel.model_json_schema"><code>BaseModel.model_json_schema</code></a> returns a dict of the schema.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/main/#pydantic.main.BaseModel.model_dump_json"><code>BaseModel.model_dump_json</code></a> returns a JSON string representation of the
@@ -2624,7 +2624,7 @@
 <li>The JSON schema for <code>Optional</code> fields indicates that the value <code>null</code> is allowed.</li>
 <li>The <code>Decimal</code> type is exposed in JSON schema (and serialized) as a string.</li>
 <li>The JSON schema does not preserve <code>namedtuple</code>s as <code>namedtuple</code>s.</li>
-<li>When they differ, you can specify if you want the JSON schema representing the inputs to validation
+<li>When they differ, you can specify whether you want the JSON schema to represent the inputs to validation
     or the outputs from serialization.</li>
 <li>Sub-models used are added to the <code>$defs</code> JSON attribute and referenced, as per the spec.</li>
 <li>Sub-models with modifications (via the <code>Field</code> class) like a custom title, description, or default value,
@@ -2667,7 +2667,7 @@ deprecated).</p>
 <p>Optionally, the <a class="autorefs autorefs-internal" href="../../api/fields/#pydantic.fields.Field"><code>Field</code></a> function can be used to provide extra information about the field
 and validations.</p>
 <p>See <a href="../fields/#customizing-json-schema">Customizing JSON Schema</a> for details on field parameters that are used
-exclusively to customise the generated JSON Schema.</p>
+exclusively to customize the generated JSON schema.</p>
 <p>You can also use <a href="../model_config/">model config</a> to customize JSON serialization and extra schema properties on a model.
 Specifically, the following config options are relevant:</p>
 <ul>
@@ -2678,15 +2678,15 @@ Specifically, the following config options are relevant:</p>
 <li><code>ser_json_bytes</code></li>
 </ul>
 <p>See <a class="autorefs autorefs-internal" href="../../api/config/#pydantic.config.ConfigDict"><code>ConfigDict</code></a> for details on these options.</p>
-<h3 id="unenforced-field-constraints">Unenforced Field constraints<a class="headerlink" href="#unenforced-field-constraints" title="Permanent link">&para;</a></h3>
+<h3 id="unenforced-field-constraints">Unenforced <code>Field</code> constraints<a class="headerlink" href="#unenforced-field-constraints" title="Permanent link">&para;</a></h3>
 <p>If Pydantic finds constraints which are not being enforced, an error will be raised. If you want to force the
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
-to <code>Field()</code> with the raw schema attribute name:</p>
+to <code>Field</code> with the raw schema attribute name:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PositiveInt</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="c1"># this won&#39;t work since PositiveInt takes precedence over the</span>
-    <span class="c1"># constraints defined in Field meaning they&#39;re ignored</span>
+    <span class="c1"># this won&#39;t work since `PositiveInt` takes precedence over the</span>
+    <span class="c1"># constraints defined in `Field`, meaning they&#39;re ignored</span>
     <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">foo</span><span class="p">:</span> <span class="n">PositiveInt</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
@@ -2695,7 +2695,7 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 
 
 <span class="c1"># if you find yourself needing this, an alternative is to declare</span>
-<span class="c1"># the constraints in Field (or you could use conint())</span>
+<span class="c1"># the constraints in `Field` (or you could use `conint()`)</span>
 <span class="c1"># here both constraints will be enforced:</span>
 <span class="k">class</span> <span class="nc">ModelB</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="c1"># Here both constraints will be applied and the schema</span>
@@ -2754,9 +2754,10 @@ to <code>Field()</code> with the raw schema attribute name:</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code>Field</code> can only be supplied once per field; an error will be raised if used in <code>Annotated</code> and as the assigned value.</p>
-<p>Defaults can be set outside <code>Annotated</code> as the assigned value or with <code>Field.default_factory</code> inside <code>Annotated</code>. The
-<code>Field.default</code> argument is not supported inside <code>Annotated</code>.</p>
+<p><code>Field</code> can only be supplied once per field;
+an error will be raised if used in <code>Annotated</code> and as the assigned value.</p>
+<p>Defaults can be set outside <code>Annotated</code> as the assigned value or with <code>Field.default_factory</code> inside <code>Annotated</code>.
+The <code>Field.default</code> argument is not supported inside <code>Annotated</code>.</p>
 </div>
 <p>For versions of Python prior to 3.9, <code>typing_extensions.Annotated</code> can be used.</p>
 <h2 id="modifying-the-schema">Modifying the schema<a class="headerlink" href="#modifying-the-schema" title="Permanent link">&para;</a></h2>
@@ -3056,7 +3057,7 @@ Pydantic handle generating the schema.</p>
 </div>
 </div>
 <p>So far we have been wrapping the schema, but if you just want to <em>modify</em> it or <em>ignore</em> it you can as well.</p>
-<p>To modify the schema first call the handler and then mutate the result:</p>
+<p>To modify the schema, first call the handler, then mutate the result:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3239,7 +3240,7 @@ Pydantic handle generating the schema.</p>
 </div>
 </div>
 </div>
-<h2 id="json-schema-types">JSON Schema types<a class="headerlink" href="#json-schema-types" title="Permanent link">&para;</a></h2>
+<h2 id="json-schema-types">JSON schema types<a class="headerlink" href="#json-schema-types" title="Permanent link">&para;</a></h2>
 <p>Types, custom field types, and constraints (like <code>max_length</code>) are mapped to the corresponding spec formats in the
 following priority order (when there is an equivalent available):</p>
 <ol>
