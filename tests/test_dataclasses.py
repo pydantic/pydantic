@@ -1,4 +1,5 @@
 import dataclasses
+import inspect
 import pickle
 import re
 import sys
@@ -2408,3 +2409,18 @@ def test_dataclass_field_default_factory_with_init():
         x: int = dataclasses.field(default_factory=lambda: 3, init=False)
 
     assert Model().x == 3
+
+
+def test_signature():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int
+        y: str = 'y'
+        z: float = dataclasses.field(default=1.0)
+        a: float = dataclasses.field(default_factory=float)
+        b: float = Field(default=1.0)
+        c: float = Field(default_factory=float)
+
+    assert str(inspect.signature(Model)) == (
+        "(x: int, y: str = 'y', z: float = 1.0, a: float = <factory>, b: float = 1.0, c: float = <factory>) -> None"
+    )

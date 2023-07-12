@@ -2,12 +2,14 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
+import inspect
 import typing
 import warnings
 from functools import partial, wraps
+from inspect import Parameter, Signature, signature
 from typing import Any, Callable, ClassVar
 
-from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import ArgsKwargs, PydanticUndefined, SchemaSerializer, SchemaValidator, core_schema
 from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
@@ -122,7 +124,9 @@ def complete_dataclass(
         s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
 
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
+    sig = generate_dataclass_signature(cls)
     cls.__init__ = __init__  # type: ignore
+    cls.__signature__ = sig  # type: ignore
     cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
     get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
@@ -170,6 +174,54 @@ def complete_dataclass(
         cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
     return True
+
+
+def generate_dataclass_signature(cls: type[StandardDataclass]) -> Signature:
+    """Generate signature for a pydantic dataclass.
+
+    This implementation assumes we do not support custom `__init__`, which is currently true for pydantic dataclasses.
+    If we change this eventually, we should make this function's logic more closely mirror that from
+    `pydantic._internal._model_construction.generate_model_signature`.
+
+    Args:
+        cls: The dataclass.
+
+    Returns:
+        The signature.
+    """
+    sig = signature(cls)
+    final_params: dict[str, Parameter] = {}
+
+    for param in sig.parameters.values():
+        param_default = param.default
+        if isinstance(param_default, FieldInfo):
+            annotation = param.annotation
+            # Replace the annotation if appropriate
+            # inspect does "clever" things to show annotations as strings because we have
+            # `from __future__ import annotations` in main, we don't want that
+            if annotation == 'Any':
+                annotation = Any
+
+            # Replace the field name with the alias if present
+            name = param.name
+            if param_default.validation_alias is None and isinstance(param_default.alias, str):
+                name = param_default.alias
+            elif isinstance(param_default.validation_alias, str):
+                name = param_default.validation_alias
+
+            # Replace the field default
+            default = param_default.default
+            if default is PydanticUndefined:
+                if param_default.default_factory is PydanticUndefined:
+                    default = inspect.Signature.empty
+                else:
+                    # this is used by dataclasses to indicate a factory exists:
+                    default = dataclasses._HAS_DEFAULT_FACTORY  # type: ignore
+
+            param = param.replace(annotation=annotation, name=name, default=default)
+        final_params[param.name] = param
+
+    return Signature(parameters=list(final_params.values()), return_annotation=None)
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
