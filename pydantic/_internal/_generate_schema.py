@@ -702,8 +702,6 @@ class GenerateSchema:
         )
 
     def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
-        assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
-
         source_type, annotations = field_info.annotation, field_info.metadata
 
         def set_discriminator(schema: CoreSchema) -> CoreSchema:

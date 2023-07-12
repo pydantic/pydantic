@@ -2477,3 +2477,13 @@ def test_generic_namedtuple():
         Model(f_value=(1, 'abc'))
     with pytest.raises(ValidationError):
         Model(f_value=('abc', True))
+
+
+def test_generic_none():
+    T = TypeVar('T')
+
+    class Container(BaseModel, Generic[T]):
+        value: T
+
+    assert Container[type(None)](value=None).value is None
+    assert Container[None](value=None).value is None
