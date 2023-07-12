@@ -2616,10 +2616,20 @@ def test_strict_int():
         Model(v=True)
 
 
-def test_int_parsing_size():
-    i64_max = 9_223_372_036_854_775_807
+@pytest.mark.parametrize(
+    ('input', 'expected_json'),
+    (
+        (9_223_372_036_854_775_807, b'9223372036854775807'),
+        (-9_223_372_036_854_775_807, b'-9223372036854775807'),
+        (1433352099889938534014333520998899385340, b'1433352099889938534014333520998899385340'),
+        (-1433352099889938534014333520998899385340, b'-1433352099889938534014333520998899385340'),
+    ),
+)
+def test_big_int_json(input, expected_json):
     v = TypeAdapter(int)
-    assert v.validate_json(json.dumps(-i64_max * 2)) == -18_446_744_073_709_551_614
+    dumped = v.dump_json(input)
+    assert dumped == expected_json
+    assert v.validate_json(dumped) == input
 
 
 def test_strict_float():
