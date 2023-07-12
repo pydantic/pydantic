@@ -744,6 +744,15 @@ which may be installed separately if needed.
 * [Color Types](usage/types/extra_types/color_types.md)
 * [Payment Card Numbers](usage/types/extra_types/payment_cards.md)
 
+### Url and Dsn types in `pydantic.networks` no longer inherit from `str`
+
+In Pydantic V1 the [`AnyUrl`](api/networks.md#pydantic.networks.AnyUrl) type inherited from `str`, and all the other
+`Url` and `Dsn` types inherited from these. In Pydantic V2 these types are built on two new `Url` and `MultiHostUrl`
+classes using `Annotated`.
+
+Inheriting from `str` had upsides and downsides, and for V2 we decided it would be better to remove this. To use these
+types in APIs which expect `str` you'll now need to convert them (with `str(url)`).
+
 ## Moved in Pydantic V2
 
 | Pydantic V1 | Pydantic V2 |
