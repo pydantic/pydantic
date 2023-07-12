@@ -2,56 +2,50 @@
 
 For URI/URL validation the following types are available:
 
-- `AnyUrl`: any scheme allowed, TLD not required, host required
-- `AnyHttpUrl`: scheme `http` or `https`, TLD not required, host required
-- `HttpUrl`: scheme `http` or `https`, TLD required, host required, max length 2083
-- `FileUrl`: scheme `file`, host not required
-- `PostgresDsn`: user info required, TLD not required, host required,
-  as of V.10 `PostgresDsn` supports multiple hosts. The following schemes are supported:
-  - `postgres`
-  - `postgresql`
-  - `postgresql+asyncpg`
-  - `postgresql+pg8000`
-  - `postgresql+psycopg`
-  - `postgresql+psycopg2`
-  - `postgresql+psycopg2cffi`
-  - `postgresql+py-postgresql`
-  - `postgresql+pygresql`
-- `MySQLDsn`: scheme `mysql`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
-  - `mysql`
-  - `mysql+mysqlconnector`
-  - `mysql+aiomysql`
-  - `mysql+asyncmy`
-  - `mysql+mysqldb`
-  - `mysql+pymysql`
-  - `mysql+cymysql`
-  - `mysql+pyodbc`
-- `MariaDBDsn`: scheme `mariadb`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
-  - `mariadb`
-  - `mariadb+mariadbconnector`
-  - `mariadb+pymysql`
-- `CockroachDsn`: scheme `cockroachdb`, user info required, TLD not required, host required. Also, its supported DBAPI dialects:
-  - `cockroachdb+asyncpg`
-  - `cockroachdb+psycopg2`
-- `AmqpDsn`: schema `amqp` or `amqps`, user info not required, TLD not required, host not required
-- `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info) (e.g., `rediss://:pass@localhost`)
-- `MongoDsn` : scheme `mongodb`, user info not required, database name not required, port
-  not required from **v1.6** onwards), user info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`)
-- `stricturl`: method with the following keyword arguments:
-    - `strip_whitespace: bool = True`
-    - `min_length: int = 1`
-    - `max_length: int = 2 ** 16`
-    - `tld_required: bool = True`
-    - `host_required: bool = True`
-    - `allowed_schemes: Optional[Set[str]] = None`
+- [`AnyUrl`][pydantic.networks.AnyUrl]: any scheme allowed, top-level domain (TLD) not required, host required.
+- [`AnyHttpUrl`][pydantic.networks.AnyHttpUrl]: scheme `http` or `https`, TLD not required, host required.
+- [`HttpUrl`][pydantic.networks.HttpUrl]: scheme `http` or `https`, TLD required, host required, max length 2083.
+- [`FileUrl`][pydantic.networks.FileUrl]: scheme `file`, host not required.
+- [`PostgresDsn`][pydantic.networks.PostgresDsn]: user info required, TLD not required, host required.
+    `PostgresDsn` supports multiple hosts. The following schemes are supported:
+    - `postgres`
+    - `postgresql`
+    - `postgresql+asyncpg`
+    - `postgresql+pg8000`
+    - `postgresql+psycopg`
+    - `postgresql+psycopg2`
+    - `postgresql+psycopg2cffi`
+    - `postgresql+py-postgresql`
+    - `postgresql+pygresql`
+- [`MySQLDsn`][pydantic.networks.MySQLDsn]: scheme `mysql`, user info required, TLD not required, host required.
+    Also, its supported DBAPI dialects:
+    - `mysql`
+    - `mysql+mysqlconnector`
+    - `mysql+aiomysql`
+    - `mysql+asyncmy`
+    - `mysql+mysqldb`
+    - `mysql+pymysql`
+    - `mysql+cymysql`
+    - `mysql+pyodbc`
+- [`MariaDBDsn`][pydantic.networks.MariaDBDsn]: scheme `mariadb`, user info required, TLD not required, host required.
+    Also, its supported DBAPI dialects:
+    - `mariadb`
+    - `mariadb+mariadbconnector`
+    - `mariadb+pymysql`
+- [`CockroachDsn`][pydantic.networks.CockroachDsn]: scheme `cockroachdb`, user info required, TLD not required,
+    host required. Also, its supported DBAPI dialects:
+    - `cockroachdb+asyncpg`
+    - `cockroachdb+psycopg2`
+- [`AmqpDsn`][pydantic.networks.AmqpDsn]: schema `amqp` or `amqps`, user info not required, TLD not required,
+    host not required.
+- [`RedisDsn`][pydantic.networks.RedisDsn]: scheme `redis` or `rediss`, user info not required, TLD not required,
+    host not required (e.g., `rediss://:pass@localhost`).
+- [`MongoDsn`][pydantic.networks.MongoDsn]: scheme `mongodb`, user info not required, database name not required, port
+    not required, user info may be passed without user part
+    (e.g., `mongodb://mongodb0.example.com:27017`).
 
-!!! warning
-    In V1.10.0 and v1.10.1 `stricturl` also took an optional `quote_plus` argument and URL components were percent
-    encoded in some cases. This feature was removed in v1.10.2, see
-    [#4470](https://github.com/pydantic/pydantic/pull/4470) for explanation and more details.
-
-The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are
-provided:
+The above types (which all inherit from [`AnyUrl`][pydantic.networks.AnyUrl]) will attempt to give descriptive
+errors when invalid URLs are provided:
 
 ```py
 from pydantic import BaseModel, HttpUrl, ValidationError
@@ -93,24 +87,14 @@ If you require a custom URI/URL type, it can be created in a similar way to the 
 Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
 the above types export the following properties:
 
-- `scheme`: always set - the url scheme (`http` above)
-- `host`: always set - the url host (`example.com` above)
-- `host_type`: always set - describes the type of host, either:
-
-  - `domain`: e.g. `example.com`,
-  - `int_domain`: international domain, see [below](#international-domains), e.g. `exampl£e.org`,
-  - `ipv4`: an IP V4 address, e.g. `127.0.0.1`, or
-  - `ipv6`: an IP V6 address, e.g. `2001:db8:ff00:42`
-
-- `user`: optional - the username if included (`samuel` above)
-- `password`: optional - the password if included (`pass` above)
-- `tld`: optional - the top level domain (`com` above),
-  **Note: this will be wrong for any two-level domain, e.g. "co.uk".** You'll need to implement your own list of TLDs
-  if you require full TLD validation
-- `port`: optional - the port (`8000` above)
-- `path`: optional - the path (`/the/path/` above)
-- `query`: optional - the URL query (aka GET arguments or "search string") (`query=here` above)
-- `fragment`: optional - the fragment (`fragment=is;this=bit` above)
+- `scheme`: the URL scheme (`http`), always set.
+- `host`: the URL host (`example.com`), always set.
+- `username`: optional username if included (`samuel`).
+- `password`: optional password if included (`pass`).
+- `port`: optional port (`8000`).
+- `path`: optional path (`/the/path/`).
+- `query`: optional URL query (for example, `GET` arguments or "search string", such as `query=here`).
+- `fragment`: optional fragment (`fragment=is;this=bit`).
 
 If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
@@ -156,13 +140,18 @@ print(m.db)
 
 try:
     MyDatabaseModel(db='postgres://user:pass@localhost:5432')
-except ValidationError:
-    pass
-    # TODO the error output here is wrong!
-    # print(e)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for MyDatabaseModel
+    db
+      Assertion failed, database must be provided
+    assert (None)
+     +  where None = MultiHostUrl('postgres://user:pass@localhost:5432').path [type=assertion_error, input_value='postgres://user:pass@localhost:5432', input_type=str]
+    """
 ```
 
-#### International Domains
+#### International domains
 
 "International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
@@ -189,13 +178,13 @@ print(m3.url)
 
 
 !!! warning "Underscores in Hostnames"
-    In Pydantic underscores are allowed in all parts of a domain except the tld.
+    In Pydantic, underscores are allowed in all parts of a domain except the TLD.
     Technically this might be wrong - in theory the hostname cannot have underscores, but subdomains can.
 
     To explain this; consider the following two cases:
 
-    - `exam_ple.co.uk`: the hostname is `exam_ple`, which should not be allowed since it contains an underscore
-    - `foo_bar.example.com` the hostname is `example`, which should be allowed since the underscore is in the subdomain
+    - `exam_ple.co.uk`: the hostname is `exam_ple`, which should not be allowed since it contains an underscore.
+    - `foo_bar.example.com` the hostname is `example`, which should be allowed since the underscore is in the subdomain.
 
     Without having an exhaustive list of TLDs, it would be impossible to differentiate between these two. Therefore
     underscores are allowed, but you can always do further validation in a validator if desired.
@@ -205,11 +194,32 @@ print(m3.url)
 
 ## IP Addresses
 
-`IPvAnyAddress`
-: allows either an `IPv4Address` or an `IPv6Address`
+Pydantic provides types for IP addresses and networks, which support the standard library
+IP address, interface, and network types.
 
-`IPvAnyInterface`
-: allows either an `IPv4Interface` or an `IPv6Interface`
+- [`IPvAnyAddress`][pydantic.networks.IPvAnyAddress]: allows either an `IPv4Address` or an `IPv6Address`.
+- [`IPvAnyInterface`][pydantic.networks.IPvAnyInterface]: allows either an `IPv4Interface` or an `IPv6Interface`.
+- [`IPvAnyNetwork`][pydantic.networks.IPvAnyNetwork]: allows either an `IPv4Network` or an `IPv6Network`.
 
-`IPvAnyNetwork`
-: allows either an `IPv4Network` or an `IPv6Network`
+```py
+from pydantic import BaseModel
+from pydantic.networks import IPvAnyAddress
+
+
+class IpModel(BaseModel):
+    ip: IPvAnyAddress
+
+
+print(IpModel(ip='127.0.0.1'))
+#> ip=IPv4Address('127.0.0.1')
+
+try:
+    IpModel(ip='http://www.example.com')
+except ValueError as e:
+    print(e)
+    """
+    1 validation error for IpModel
+    ip
+      value is not a valid IPv4 or IPv6 address [type=ip_any_address, input_value='http://www.example.com', input_type=str]
+    """
+```
