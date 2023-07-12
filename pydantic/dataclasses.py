@@ -185,7 +185,7 @@ def dataclass(
 
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
-            init=init,
+            init=True,
             repr=repr,
             eq=eq,
             order=order,
