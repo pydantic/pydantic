@@ -746,7 +746,7 @@ which may be installed separately if needed.
 
 ### Url and Dsn types in `pydantic.networks` no longer inherit from `str`
 
-In Pydantic V1 the [`AnyUrl`](api/networks.md#pydantic.networks.AnyUrl) type inherited from `str`, and all the other
+In Pydantic V1 the [`AnyUrl`][pydantic.networks.AnyUrl] type inherited from `str`, and all the other
 `Url` and `Dsn` types inherited from these. In Pydantic V2 these types are built on two new `Url` and `MultiHostUrl`
 classes using `Annotated`.
 
