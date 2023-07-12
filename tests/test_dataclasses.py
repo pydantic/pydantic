@@ -2400,3 +2400,11 @@ def test_combined_field_annotations():
             'type': 'greater_than',
         }
     ]
+
+
+def test_dataclass_field_default_factory_with_init():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int = dataclasses.field(default_factory=lambda: 3, init=False)
+
+    assert Model().x == 3
