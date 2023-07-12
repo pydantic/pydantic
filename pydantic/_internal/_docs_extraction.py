@@ -3,38 +3,34 @@ from __future__ import annotations
 
 import ast
 import inspect
-from typing import Any, Iterable
+import textwrap
+from typing import Any
 
 
-def _get_assign_targets(node: ast.Assign | ast.AnnAssign) -> Iterable[str]:
-    if isinstance(node, ast.Assign):
-        for target in node.targets:
-            if isinstance(target, ast.Tuple):
-                yield from (el.id for el in target.elts)
-            else:
-                yield target.id
-    else:
-        # `target` can only be `ast.Name` in the context of a `BaseModel` subclass definition
-        yield node.target.id
+class DocstringVisitor(ast.NodeVisitor):
+    def __init__(self) -> None:
+        super().__init__()
 
+        self.target: str | None = None
+        self.attrs: dict[str, str] = {}
+        self.previous_node_type: type[ast.AST] | None = None
 
-def _extract_docs(cls_def: ast.ClassDef) -> dict[str, str]:
+    def visit(self, node: ast.AST) -> Any:
+        node_result = super().visit(node)
+        self.previous_node_type = type(node)
+        return node_result
 
-    nodes_docs_pairs = [
-        (node, inspect.cleandoc(next_node.value.s))
-        for node, next_node in zip(cls_def.body, cls_def.body[1:])
-        if isinstance(node, (ast.Assign, ast.AnnAssign))  # e.g. a: int / a = 1...
-        if isinstance(next_node, ast.Expr)  # ...with next_node being a docstring
-        if isinstance(next_node.value, ast.Str)
-    ]
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> Any:
+        if isinstance(node.target, ast.Name):
+            self.target = node.target.id
 
-    doc_mapping: dict[str, str] = {}
+    def visit_Expr(self, node: ast.Expr) -> Any:
+        if isinstance(node.value, ast.Str) and self.previous_node_type is ast.AnnAssign:
+            docstring = inspect.cleandoc(node.value.s)
+            if self.target:
+                self.attrs[self.target] = docstring
+            self.target = None
 
-    for node, docs in nodes_docs_pairs:
-        for target in _get_assign_targets(node):
-            doc_mapping[target] = docs
-
-    return doc_mapping
 
 
 def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
@@ -53,5 +49,9 @@ def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
         # we don't want to error here.
         return {}
 
-    tree = ast.parse(source).body[0]
-    return _extract_docs(tree)
+    # Required for nested class definitions, e.g. in a function block
+    dedent_source = textwrap.dedent(source)
+
+    visitor = DocstringVisitor()
+    visitor.visit(ast.parse(dedent_source))
+    return visitor.attrs
