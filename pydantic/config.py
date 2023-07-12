@@ -244,7 +244,7 @@ class ConfigDict(TypedDict, total=False):
         1 validation error for User
         name
           Input should be a valid string [type=string_type, input_value=123, input_type=int]
-        '''
+            '''
     ```
 
     1. You can either use class keyword arguments, or `model_config` to set `validate_assignment=True`.
@@ -866,6 +866,13 @@ class ConfigDict(TypedDict, total=False):
 
     Note:
         The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.
+    """
+
+    use_attributes_docstring: bool
+    """
+    Whether attributes docstring should be used for `FieldInfo.description`.
+
+    Defaults to `False`.
     """
 
 

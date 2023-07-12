@@ -32,7 +32,6 @@ class DocstringVisitor(ast.NodeVisitor):
             self.target = None
 
 
-
 def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
     """Map model attributes and their corresponding docstring.
 

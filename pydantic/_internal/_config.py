@@ -80,6 +80,7 @@ class ConfigWrapper:
     coerce_numbers_to_str: bool
     regex_engine: Literal['rust-regex', 'python-re']
     validation_error_cause: bool
+    use_attributes_docstring: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -249,6 +250,7 @@ config_defaults = ConfigDict(
     coerce_numbers_to_str=False,
     regex_engine='rust-regex',
     validation_error_cause=False,
+    use_attributes_docstring=False,
 )
 
 

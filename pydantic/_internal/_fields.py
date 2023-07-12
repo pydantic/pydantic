@@ -236,8 +236,9 @@ def collect_model_fields(  # noqa: C901
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
 
-    fields_docs = extract_docstrings_from_cls(cls)
-    _update_fields_from_docstrings(fields, fields_docs)
+    if config_wrapper.use_attributes_docstring:
+        fields_docs = extract_docstrings_from_cls(cls)
+        _update_fields_from_docstrings(fields, fields_docs)
 
     return fields, class_vars
 
@@ -256,7 +257,11 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 
 
 def collect_dataclass_fields(
-    cls: type[StandardDataclass], types_namespace: dict[str, Any] | None, *, typevars_map: dict[Any, Any] | None = None
+    cls: type[StandardDataclass],
+    types_namespace: dict[str, Any] | None,
+    *,
+    typevars_map: dict[Any, Any] | None = None,
+    config_wrapper: ConfigWrapper | None = None,
 ) -> dict[str, FieldInfo]:
     """Collect the fields of a dataclass.
 
@@ -264,6 +269,7 @@ def collect_dataclass_fields(
         cls: dataclass.
         types_namespace: Optional extra namespace to look for types in.
         typevars_map: A dictionary mapping type variables to their concrete types.
+        config_wrapper: The config wrapper instance.
 
     Returns:
         The dataclass fields.
@@ -305,8 +311,9 @@ def collect_dataclass_fields(
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
 
-    fields_docs = extract_docstrings_from_cls(cls)
-    _update_fields_from_docstrings(fields, fields_docs)
+    if config_wrapper is not None and config_wrapper.use_attributes_docstring:
+        fields_docs = extract_docstrings_from_cls(cls)
+        _update_fields_from_docstrings(fields, fields_docs)
 
     return fields
 
