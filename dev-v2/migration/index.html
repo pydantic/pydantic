@@ -688,6 +688,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#url-and-dsn-types-in-pydanticnetworks-no-longer-inherit-from-str" class="md-nav__link">
+    Url and Dsn types in pydantic.networks no longer inherit from str
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2527,6 +2534,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#url-and-dsn-types-in-pydanticnetworks-no-longer-inherit-from-str" class="md-nav__link">
+    Url and Dsn types in pydantic.networks no longer inherit from str
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3484,6 +3498,12 @@ which may be installed separately if needed.</p>
 <li><a href="../usage/types/extra_types/color_types/">Color Types</a></li>
 <li><a href="../usage/types/extra_types/payment_cards/">Payment Card Numbers</a></li>
 </ul>
+<h3 id="url-and-dsn-types-in-pydanticnetworks-no-longer-inherit-from-str">Url and Dsn types in <code>pydantic.networks</code> no longer inherit from <code>str</code><a class="headerlink" href="#url-and-dsn-types-in-pydanticnetworks-no-longer-inherit-from-str" title="Permanent link">&para;</a></h3>
+<p>In Pydantic V1 the <a class="autorefs autorefs-internal" href="../api/networks/#pydantic.networks.AnyUrl"><code>AnyUrl</code></a> type inherited from <code>str</code>, and all the other
+<code>Url</code> and <code>Dsn</code> types inherited from these. In Pydantic V2 these types are built on two new <code>Url</code> and <code>MultiHostUrl</code>
+classes using <code>Annotated</code>.</p>
+<p>Inheriting from <code>str</code> had upsides and downsides, and for V2 we decided it would be better to remove this. To use these
+types in APIs which expect <code>str</code> you'll now need to convert them (with <code>str(url)</code>).</p>
 <h2 id="moved-in-pydantic-v2">Moved in Pydantic V2<a class="headerlink" href="#moved-in-pydantic-v2" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
