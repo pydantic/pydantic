@@ -30,7 +30,9 @@ jobs:
           version: 2.7.0
 
       - name: install
-        run: pdm install -G linting -G email
+        run: |
+          pdm use -f $PYTHON
+          pdm install -G linting -G email
 
       - uses: pre-commit/action@v3.0.0
         with:
@@ -49,7 +51,9 @@ jobs:
         version: 2.7.0
 
     - name: install dependencies
-      run: pdm install -G docs
+      run: |
+        pdm use -f $PYTHON
+        pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
     - run: pdm run mkdocs build
@@ -68,6 +72,7 @@ jobs:
 
       - name: install deps
         run: |
+          pdm use -f $PYTHON
           pdm install -G testing -G testing-extra -G email -G memray
           pdm add pytest-memray
 
@@ -109,7 +114,9 @@ jobs:
         version: 2.7.0
 
     - name: install deps
-      run: pdm install -G testing
+      run: |
+        pdm use -f $PYTHON
+        pdm install -G testing
 
     - run: pdm info && pdm list
 
@@ -171,6 +178,7 @@ jobs:
 
     - name: install deps
       run: |
+        pdm use -f $PYTHON
         pdm install -G testing -G mypy
 
     - name: install mypy
@@ -263,6 +271,7 @@ jobs:
 
     - name: install deps
       run: |
+        pdm use -f $PYTHON
         pdm install -G testing -G email
 
     - name: install typing-extensions
