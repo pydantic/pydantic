@@ -24,7 +24,7 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
-from typing_extensions import Annotated, TypedDict, get_args
+from typing_extensions import Annotated, Literal, TypedDict, get_args
 
 from pydantic import (
     BaseModel,
@@ -2563,3 +2563,24 @@ def test_multiple_enums():
         b: Optional[MyEnum]
 
     TypeAdapter(MyModel)
+
+
+@pytest.mark.parametrize(
+    ('literal_type', 'other_type', 'data', 'json_value', 'data_reversed', 'json_value_reversed'),
+    [
+        (Literal[False], str, False, 'false', False, 'false'),
+        (Literal[True], str, True, 'true', True, 'true'),
+        (Literal[False], str, 'abc', '"abc"', 'abc', '"abc"'),
+        (Literal[False], int, False, 'false', 0, '0'),
+        (Literal[True], int, True, 'true', 1, '1'),
+        (Literal[False], int, 42, '42', 42, '42'),
+    ],
+)
+def test_union_literal_with_other_type(literal_type, other_type, data, json_value, data_reversed, json_value_reversed):
+    class Model(BaseModel):
+        value: Union[literal_type, other_type]
+        value_types_reversed: Union[other_type, literal_type]
+
+    m = Model(value=data, value_types_reversed=data)
+    assert m.model_dump() == {'value': data, 'value_types_reversed': data_reversed}
+    assert m.model_dump_json() == f'{{"value":{json_value},"value_types_reversed":{json_value_reversed}}}'
