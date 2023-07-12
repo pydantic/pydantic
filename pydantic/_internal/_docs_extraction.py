@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import ast
 import inspect
-import textwrap
 from typing import Any, Iterable
 
 
@@ -39,24 +38,20 @@ def _extract_docs(cls_def: ast.ClassDef) -> dict[str, str]:
 
 
 def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
-    """Returns a mapping of the model attributes and their corresponding docstring.
+    """Map model attributes and their corresponding docstring.
 
     Args:
         cls: The class of the Pydantic model to inspect.
+
     Returns:
         A mapping containing attribute names and their corresponding docstring.
     """
     try:
         source = inspect.getsource(cls)
     except OSError:
-        # Source can't be parsed (maybe because running in an interactive terminal)
-        # TODO should we issue a UserWarning to indicate that docstrings won't be
-        # taken into account?
+        # Source can't be parsed (maybe because running in an interactive terminal),
+        # we don't want to error here.
         return {}
 
-    text = textwrap.dedent(source)
-
-    tree = ast.parse(text).body[0]
-    if not isinstance(tree, ast.ClassDef):
-        raise TypeError(f"Expected '{ast.ClassDef.__name__}', but received '{cls}' instead")
+    tree = ast.parse(source).body[0]
     return _extract_docs(tree)
