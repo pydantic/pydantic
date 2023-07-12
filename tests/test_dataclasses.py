@@ -2408,3 +2408,18 @@ def test_dataclass_field_default_factory_with_init():
         x: int = dataclasses.field(default_factory=lambda: 3, init=False)
 
     assert Model().x == 3
+
+
+def test_metadata():
+    @dataclasses.dataclass
+    class Test:
+        value: int = dataclasses.field(metadata={'info': 'Some int value', 'json_schema_extra': {'a': 'b'}})
+
+    PydanticTest = pydantic.dataclasses.dataclass(Test)
+
+    assert TypeAdapter(PydanticTest).json_schema() == {
+        'properties': {'value': {'a': 'b', 'title': 'Value', 'type': 'integer'}},
+        'required': ['value'],
+        'title': 'Test',
+        'type': 'object',
+    }

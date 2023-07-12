@@ -388,7 +388,8 @@ class FieldInfo(_repr.Representation):
             default_factory = dc_field.default_factory
 
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
-        field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field.metadata)
+        dc_field_metadata = {k: v for k, v in dc_field.metadata.items() if k in _FIELD_ARG_NAMES}
+        field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)
 
         field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type)
         field.metadata += annotation_metadata
@@ -806,6 +807,10 @@ def Field(  # noqa: C901
         max_digits=max_digits,
         decimal_places=decimal_places,
     )
+
+
+_FIELD_ARG_NAMES = set(inspect.signature(Field).parameters)
+_FIELD_ARG_NAMES.remove('extra')  # do not include the varkwargs parameter
 
 
 class ModelPrivateAttr(_repr.Representation):
