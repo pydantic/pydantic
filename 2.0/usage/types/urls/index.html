@@ -909,7 +909,7 @@
       
         <li class="md-nav__item">
   <a href="#international-domains" class="md-nav__link">
-    International Domains
+    International domains
   </a>
   
 </li>
@@ -2129,7 +2129,7 @@
       
         <li class="md-nav__item">
   <a href="#international-domains" class="md-nav__link">
-    International Domains
+    International domains
   </a>
   
 </li>
@@ -2164,12 +2164,12 @@
 
 <p>For URI/URL validation the following types are available:</p>
 <ul>
-<li><code>AnyUrl</code>: any scheme allowed, TLD not required, host required</li>
-<li><code>AnyHttpUrl</code>: scheme <code>http</code> or <code>https</code>, TLD not required, host required</li>
-<li><code>HttpUrl</code>: scheme <code>http</code> or <code>https</code>, TLD required, host required, max length 2083</li>
-<li><code>FileUrl</code>: scheme <code>file</code>, host not required</li>
-<li><code>PostgresDsn</code>: user info required, TLD not required, host required,
-  as of V.10 <code>PostgresDsn</code> supports multiple hosts. The following schemes are supported:</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.AnyUrl"><code>AnyUrl</code></a>: any scheme allowed, top-level domain (TLD) not required, host required.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.AnyHttpUrl"><code>AnyHttpUrl</code></a>: scheme <code>http</code> or <code>https</code>, TLD not required, host required.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.HttpUrl"><code>HttpUrl</code></a>: scheme <code>http</code> or <code>https</code>, TLD required, host required, max length 2083.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.FileUrl"><code>FileUrl</code></a>: scheme <code>file</code>, host not required.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.PostgresDsn"><code>PostgresDsn</code></a>: user info required, TLD not required, host required.
+    <code>PostgresDsn</code> supports multiple hosts. The following schemes are supported:<ul>
 <li><code>postgres</code></li>
 <li><code>postgresql</code></li>
 <li><code>postgresql+asyncpg</code></li>
@@ -2179,7 +2179,10 @@
 <li><code>postgresql+psycopg2cffi</code></li>
 <li><code>postgresql+py-postgresql</code></li>
 <li><code>postgresql+pygresql</code></li>
-<li><code>MySQLDsn</code>: scheme <code>mysql</code>, user info required, TLD not required, host required. Also, its supported DBAPI dialects:</li>
+</ul>
+</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.MySQLDsn"><code>MySQLDsn</code></a>: scheme <code>mysql</code>, user info required, TLD not required, host required.
+    Also, its supported DBAPI dialects:<ul>
 <li><code>mysql</code></li>
 <li><code>mysql+mysqlconnector</code></li>
 <li><code>mysql+aiomysql</code></li>
@@ -2188,35 +2191,31 @@
 <li><code>mysql+pymysql</code></li>
 <li><code>mysql+cymysql</code></li>
 <li><code>mysql+pyodbc</code></li>
-<li><code>MariaDBDsn</code>: scheme <code>mariadb</code>, user info required, TLD not required, host required. Also, its supported DBAPI dialects:</li>
+</ul>
+</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.MariaDBDsn"><code>MariaDBDsn</code></a>: scheme <code>mariadb</code>, user info required, TLD not required, host required.
+    Also, its supported DBAPI dialects:<ul>
 <li><code>mariadb</code></li>
 <li><code>mariadb+mariadbconnector</code></li>
 <li><code>mariadb+pymysql</code></li>
-<li><code>CockroachDsn</code>: scheme <code>cockroachdb</code>, user info required, TLD not required, host required. Also, its supported DBAPI dialects:</li>
-<li><code>cockroachdb+asyncpg</code></li>
-<li><code>cockroachdb+psycopg2</code></li>
-<li><code>AmqpDsn</code>: schema <code>amqp</code> or <code>amqps</code>, user info not required, TLD not required, host not required</li>
-<li><code>RedisDsn</code>: scheme <code>redis</code> or <code>rediss</code>, user info not required, tld not required, host not required (CHANGED: user info) (e.g., <code>rediss://:pass@localhost</code>)</li>
-<li><code>MongoDsn</code> : scheme <code>mongodb</code>, user info not required, database name not required, port
-  not required from <strong>v1.6</strong> onwards), user info may be passed without user part (e.g., <code>mongodb://mongodb0.example.com:27017</code>)</li>
-<li><code>stricturl</code>: method with the following keyword arguments:<ul>
-<li><code>strip_whitespace: bool = True</code></li>
-<li><code>min_length: int = 1</code></li>
-<li><code>max_length: int = 2 ** 16</code></li>
-<li><code>tld_required: bool = True</code></li>
-<li><code>host_required: bool = True</code></li>
-<li><code>allowed_schemes: Optional[Set[str]] = None</code></li>
 </ul>
 </li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.CockroachDsn"><code>CockroachDsn</code></a>: scheme <code>cockroachdb</code>, user info required, TLD not required,
+    host required. Also, its supported DBAPI dialects:<ul>
+<li><code>cockroachdb+asyncpg</code></li>
+<li><code>cockroachdb+psycopg2</code></li>
 </ul>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>In V1.10.0 and v1.10.1 <code>stricturl</code> also took an optional <code>quote_plus</code> argument and URL components were percent
-encoded in some cases. This feature was removed in v1.10.2, see
-<a href="https://github.com/pydantic/pydantic/pull/4470">#4470</a> for explanation and more details.</p>
-</div>
-<p>The above types (which all inherit from <code>AnyUrl</code>) will attempt to give descriptive errors when invalid URLs are
-provided:</p>
+</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.AmqpDsn"><code>AmqpDsn</code></a>: schema <code>amqp</code> or <code>amqps</code>, user info not required, TLD not required,
+    host not required.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.RedisDsn"><code>RedisDsn</code></a>: scheme <code>redis</code> or <code>rediss</code>, user info not required, TLD not required,
+    host not required (e.g., <code>rediss://:pass@localhost</code>).</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.MongoDsn"><code>MongoDsn</code></a>: scheme <code>mongodb</code>, user info not required, database name not required, port
+    not required, user info may be passed without user part
+    (e.g., <code>mongodb://mongodb0.example.com:27017</code>).</li>
+</ul>
+<p>The above types (which all inherit from <a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.AnyUrl"><code>AnyUrl</code></a>) will attempt to give descriptive
+errors when invalid URLs are provided:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -2253,30 +2252,14 @@ provided:</p>
 <p>Assuming an input URL of <code>http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit</code>,
 the above types export the following properties:</p>
 <ul>
-<li><code>scheme</code>: always set - the url scheme (<code>http</code> above)</li>
-<li><code>host</code>: always set - the url host (<code>example.com</code> above)</li>
-<li>
-<p><code>host_type</code>: always set - describes the type of host, either:</p>
-</li>
-<li>
-<p><code>domain</code>: e.g. <code>example.com</code>,</p>
-</li>
-<li><code>int_domain</code>: international domain, see <a href="#international-domains">below</a>, e.g. <code>exampl£e.org</code>,</li>
-<li><code>ipv4</code>: an IP V4 address, e.g. <code>127.0.0.1</code>, or</li>
-<li>
-<p><code>ipv6</code>: an IP V6 address, e.g. <code>2001:db8:ff00:42</code></p>
-</li>
-<li>
-<p><code>user</code>: optional - the username if included (<code>samuel</code> above)</p>
-</li>
-<li><code>password</code>: optional - the password if included (<code>pass</code> above)</li>
-<li><code>tld</code>: optional - the top level domain (<code>com</code> above),
-  <strong>Note: this will be wrong for any two-level domain, e.g. "co.uk".</strong> You'll need to implement your own list of TLDs
-  if you require full TLD validation</li>
-<li><code>port</code>: optional - the port (<code>8000</code> above)</li>
-<li><code>path</code>: optional - the path (<code>/the/path/</code> above)</li>
-<li><code>query</code>: optional - the URL query (aka GET arguments or "search string") (<code>query=here</code> above)</li>
-<li><code>fragment</code>: optional - the fragment (<code>fragment=is;this=bit</code> above)</li>
+<li><code>scheme</code>: the URL scheme (<code>http</code>), always set.</li>
+<li><code>host</code>: the URL host (<code>example.com</code>), always set.</li>
+<li><code>username</code>: optional username if included (<code>samuel</code>).</li>
+<li><code>password</code>: optional password if included (<code>pass</code>).</li>
+<li><code>port</code>: optional port (<code>8000</code>).</li>
+<li><code>path</code>: optional path (<code>/the/path/</code>).</li>
+<li><code>query</code>: optional URL query (for example, <code>GET</code> arguments or "search string", such as <code>query=here</code>).</li>
+<li><code>fragment</code>: optional fragment (<code>fragment=is;this=bit</code>).</li>
 </ul>
 <p>If further validation is required, these properties can be used by validators to enforce specific behaviour:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
@@ -2320,12 +2303,17 @@ the above types export the following properties:</p>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">MyDatabaseModel</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="s1">&#39;postgres://user:pass@localhost:5432&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
-    <span class="k">pass</span>
-    <span class="c1"># TODO the error output here is wrong!</span>
-    <span class="c1"># print(e)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for MyDatabaseModel</span>
+<span class="sd">    db</span>
+<span class="sd">      Assertion failed, database must be provided</span>
+<span class="sd">    assert (None)</span>
+<span class="sd">     +  where None = MultiHostUrl(&#39;postgres://user:pass@localhost:5432&#39;).path [type=assertion_error, input_value=&#39;postgres://user:pass@localhost:5432&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h4 id="international-domains">International Domains<a class="headerlink" href="#international-domains" title="Permanent link">&para;</a></h4>
+<h4 id="international-domains">International domains<a class="headerlink" href="#international-domains" title="Permanent link">&para;</a></h4>
 <p>"International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
 <a href="https://en.wikipedia.org/wiki/Punycode">punycode</a> (see
 <a href="https://www.xudongz.com/blog/2017/idn-phishing/">this article</a> for a good description of why this is important):</p>
@@ -2348,12 +2336,12 @@ the above types export the following properties:</p>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Underscores in Hostnames</p>
-<p>In Pydantic underscores are allowed in all parts of a domain except the tld.
+<p>In Pydantic, underscores are allowed in all parts of a domain except the TLD.
 Technically this might be wrong - in theory the hostname cannot have underscores, but subdomains can.</p>
 <p>To explain this; consider the following two cases:</p>
 <ul>
-<li><code>exam_ple.co.uk</code>: the hostname is <code>exam_ple</code>, which should not be allowed since it contains an underscore</li>
-<li><code>foo_bar.example.com</code> the hostname is <code>example</code>, which should be allowed since the underscore is in the subdomain</li>
+<li><code>exam_ple.co.uk</code>: the hostname is <code>exam_ple</code>, which should not be allowed since it contains an underscore.</li>
+<li><code>foo_bar.example.com</code> the hostname is <code>example</code>, which should be allowed since the underscore is in the subdomain.</li>
 </ul>
 <p>Without having an exhaustive list of TLDs, it would be impossible to differentiate between these two. Therefore
 underscores are allowed, but you can always do further validation in a validator if desired.</p>
@@ -2361,14 +2349,34 @@ underscores are allowed, but you can always do further validation in a validator
 (or at least big) company.</p>
 </div>
 <h2 id="ip-addresses">IP Addresses<a class="headerlink" href="#ip-addresses" title="Permanent link">&para;</a></h2>
-<dl>
-<dt><code>IPvAnyAddress</code></dt>
-<dd>allows either an <code>IPv4Address</code> or an <code>IPv6Address</code></dd>
-<dt><code>IPvAnyInterface</code></dt>
-<dd>allows either an <code>IPv4Interface</code> or an <code>IPv6Interface</code></dd>
-<dt><code>IPvAnyNetwork</code></dt>
-<dd>allows either an <code>IPv4Network</code> or an <code>IPv6Network</code></dd>
-</dl>
+<p>Pydantic provides types for IP addresses and networks, which support the standard library
+IP address, interface, and network types.</p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.IPvAnyAddress"><code>IPvAnyAddress</code></a>: allows either an <code>IPv4Address</code> or an <code>IPv6Address</code>.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.IPvAnyInterface"><code>IPvAnyInterface</code></a>: allows either an <code>IPv4Interface</code> or an <code>IPv6Interface</code>.</li>
+<li><a class="autorefs autorefs-internal" href="../../../api/networks/#pydantic.networks.IPvAnyNetwork"><code>IPvAnyNetwork</code></a>: allows either an <code>IPv4Network</code> or an <code>IPv6Network</code>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic.networks</span> <span class="kn">import</span> <span class="n">IPvAnyAddress</span>
+
+
+<span class="k">class</span> <span class="nc">IpModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">ip</span><span class="p">:</span> <span class="n">IPvAnyAddress</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">IpModel</span><span class="p">(</span><span class="n">ip</span><span class="o">=</span><span class="s1">&#39;127.0.0.1&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; ip=IPv4Address(&#39;127.0.0.1&#39;)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">IpModel</span><span class="p">(</span><span class="n">ip</span><span class="o">=</span><span class="s1">&#39;http://www.example.com&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for IpModel</span>
+<span class="sd">    ip</span>
+<span class="sd">      value is not a valid IPv4 or IPv6 address [type=ip_any_address, input_value=&#39;http://www.example.com&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
 
 
 

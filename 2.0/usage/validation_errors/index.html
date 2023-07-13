@@ -1451,6 +1451,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#enum" class="md-nav__link">
+    enum
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#extra_forbidden" class="md-nav__link">
     extra_forbidden
   </a>
@@ -2847,6 +2854,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#enum" class="md-nav__link">
+    enum
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#extra_forbidden" class="md-nav__link">
     extra_forbidden
   </a>
@@ -3740,6 +3754,27 @@ For a timestamp to parse into a field of type <code>date</code>, the time compon
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;dict_type&#39;</span>
+</code></pre></div>
+<h2 id="enum"><code>enum</code><a class="headerlink" href="#enum" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the input value does not exist in an <code>enum</code> field members:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">MyEnum</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">option</span> <span class="o">=</span> <span class="s1">&#39;option&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">MyEnum</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;other_option&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
+    <span class="c1">#&gt; &#39;enum&#39;</span>
 </code></pre></div>
 <h2 id="extra_forbidden"><code>extra_forbidden</code><a class="headerlink" href="#extra_forbidden" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the input value contains extra fields, but <code>model_config['extra'] == 'forbid'</code>:</p>
