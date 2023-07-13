@@ -1757,9 +1757,7 @@ class GenerateJsonSchema:
         Returns:
             The normalized name.
         """
-        normalized = re.sub(r'[^a-zA-Z0-9.\-_]', '_', name)
-        normalized = re.sub('(__+)', r'_\1', normalized)  # convert any double-or-more underscores to be triple-or-more
-        return normalized.replace('.', '__')  # use double underscores where periods would have been
+        return re.sub(r'[^a-zA-Z0-9.\-_]', '_', name).replace('.', '__')
 
     def get_defs_ref(self, core_mode_ref: CoreModeRef) -> DefsRef:
         """Override this method to change the way that definitions keys are generated from a core reference.
@@ -1786,9 +1784,9 @@ class GenerateJsonSchema:
         # be generated for any other core_ref. Currently, this should be the case because we include
         # the id of the source type in the core_ref
         name = DefsRef(self.normalize_name(short_ref))
-        name_mode = DefsRef(self.normalize_name(short_ref) + f'__{mode_title}')
+        name_mode = DefsRef(self.normalize_name(short_ref) + f'-{mode_title}')
         module_qualname = DefsRef(self.normalize_name(core_ref_no_id))
-        module_qualname_mode = DefsRef(f'{module_qualname}__{mode_title}')
+        module_qualname_mode = DefsRef(f'{module_qualname}-{mode_title}')
         module_qualname_id = DefsRef(self.normalize_name(core_ref))
         occurrence_index = self._collision_index.get(module_qualname_id)
         if occurrence_index is None:

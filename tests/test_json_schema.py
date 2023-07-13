@@ -2668,16 +2668,16 @@ class NestedModel(BaseModel):
     )
     model_names = set(schema['$defs'].keys())
     expected_model_names = {
-        'ModelOne__Input',
-        'ModelOne__Output',
-        'ModelTwo__Input',
-        'ModelTwo__Output',
-        f'{module.__name__}__ModelOne__NestedModel__Input',
-        f'{module.__name__}__ModelOne__NestedModel__Output',
-        f'{module.__name__}__ModelTwo__NestedModel__Input',
-        f'{module.__name__}__ModelTwo__NestedModel__Output',
-        f'{module.__name__}__NestedModel__Input',
-        f'{module.__name__}__NestedModel__Output',
+        'ModelOne-Input',
+        'ModelOne-Output',
+        'ModelTwo-Input',
+        'ModelTwo-Output',
+        f'{module.__name__}__ModelOne__NestedModel-Input',
+        f'{module.__name__}__ModelOne__NestedModel-Output',
+        f'{module.__name__}__ModelTwo__NestedModel-Input',
+        f'{module.__name__}__ModelTwo__NestedModel-Output',
+        f'{module.__name__}__NestedModel-Input',
+        f'{module.__name__}__NestedModel-Output',
     }
     assert model_names == expected_model_names
 
@@ -2832,20 +2832,20 @@ def test_ref_conflict_resolution_with_mode_difference():
         ]
     )
     assert schema_with_defs == {
-        (Organization, 'serialization'): {'$ref': '#/$defs/Organization__Output'},
-        (Organization, 'validation'): {'$ref': '#/$defs/Organization__Input'},
+        (Organization, 'serialization'): {'$ref': '#/$defs/Organization-Output'},
+        (Organization, 'validation'): {'$ref': '#/$defs/Organization-Input'},
         (OrganizationInput, 'validation'): {'$ref': '#/$defs/OrganizationInput'},
     }
 
     assert defs == {
         'OrganizationInput': {'properties': {}, 'title': 'OrganizationInput', 'type': 'object'},
-        'Organization__Input': {
+        'Organization-Input': {
             'properties': {'x': {'title': 'X', 'type': 'integer'}},
             'required': ['x'],
             'title': 'Organization',
             'type': 'object',
         },
-        'Organization__Output': {
+        'Organization-Output': {
             'properties': {'x': {'title': 'X', 'type': 'string'}},
             'required': ['x'],
             'title': 'Organization',
@@ -2873,20 +2873,20 @@ def test_conflicting_names():
         ]
     )
     assert schema_with_defs == {
-        (Organization, 'serialization'): {'$ref': '#/$defs/Organization__Output'},
-        (Organization, 'validation'): {'$ref': '#/$defs/Organization__Input'},
-        (Organization__Input, 'validation'): {'$ref': '#/$defs/Organization___Input'},
+        (Organization, 'serialization'): {'$ref': '#/$defs/Organization-Output'},
+        (Organization, 'validation'): {'$ref': '#/$defs/Organization-Input'},
+        (Organization__Input, 'validation'): {'$ref': '#/$defs/Organization__Input'},
     }
 
     assert defs == {
-        'Organization___Input': {'properties': {}, 'title': 'Organization__Input', 'type': 'object'},
-        'Organization__Input': {
+        'Organization__Input': {'properties': {}, 'title': 'Organization__Input', 'type': 'object'},
+        'Organization-Input': {
             'properties': {'x': {'title': 'X', 'type': 'integer'}},
             'required': ['x'],
             'title': 'Organization',
             'type': 'object',
         },
-        'Organization__Output': {
+        'Organization-Output': {
             'properties': {'x': {'title': 'X', 'type': 'string'}},
             'required': ['x'],
             'title': 'Organization',
@@ -4505,26 +4505,26 @@ def test_serialization_validation_interaction():
     _, vs_schema = models_json_schema([(Outer, 'validation'), (Outer, 'serialization')])
     assert vs_schema == {
         '$defs': {
-            'Inner__Input': {
+            'Inner-Input': {
                 'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
                 'required': ['x'],
                 'title': 'Inner',
                 'type': 'object',
             },
-            'Inner__Output': {
+            'Inner-Output': {
                 'properties': {'x': {'title': 'X', 'type': 'integer'}},
                 'required': ['x'],
                 'title': 'Inner',
                 'type': 'object',
             },
-            'Outer__Input': {
-                'properties': {'inner': {'$ref': '#/$defs/Inner__Input'}},
+            'Outer-Input': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner-Input'}},
                 'required': ['inner'],
                 'title': 'Outer',
                 'type': 'object',
             },
-            'Outer__Output': {
-                'properties': {'inner': {'$ref': '#/$defs/Inner__Output'}},
+            'Outer-Output': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner-Output'}},
                 'required': ['inner'],
                 'title': 'Outer',
                 'type': 'object',
