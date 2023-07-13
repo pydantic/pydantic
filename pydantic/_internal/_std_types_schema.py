@@ -6,6 +6,7 @@ from __future__ import annotations as _annotations
 
 import collections
 import collections.abc
+import dataclasses
 import decimal
 import inspect
 import os
@@ -33,7 +34,7 @@ from ..config import ConfigDict
 from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _known_annotated_metadata, _typing_extra, _validators
 from ._core_utils import get_type_ref
-from ._internal_dataclass import slots_dataclass
+from ._internal_dataclass import slots_true
 from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
 
 if typing.TYPE_CHECKING:
@@ -42,7 +43,7 @@ if typing.TYPE_CHECKING:
     StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
 
 
-@slots_dataclass
+@dataclasses.dataclass(**slots_true)
 class SchemaTransformer:
     get_core_schema: Callable[[Any, GetCoreSchemaHandler], CoreSchema]
     get_json_schema: Callable[[CoreSchema, GetJsonSchemaHandler], JsonSchemaValue]
@@ -134,7 +135,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
     )
 
 
-@slots_dataclass
+@dataclasses.dataclass(**slots_true)
 class DecimalValidator:
     gt: decimal.Decimal | None = None
     ge: decimal.Decimal | None = None
@@ -311,7 +312,7 @@ def decimal_prepare_pydantic_annotations(
     return source, [DecimalValidator(**metadata), *remaining_annotations]
 
 
-@slots_dataclass
+@dataclasses.dataclass(**slots_true)
 class InnerSchemaValidator:
     """Use a fixed CoreSchema, avoiding interference from outward annotations."""
 
@@ -477,7 +478,7 @@ def dequeue_validator(
         return collections.deque(handler(input_value), maxlen=maxlen)
 
 
-@slots_dataclass
+@dataclasses.dataclass(**slots_true)
 class SequenceValidator:
     mapped_origin: type[Any]
     item_source_type: type[Any]
@@ -690,7 +691,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
     return default_default_factory
 
 
-@slots_dataclass
+@dataclasses.dataclass(**slots_true)
 class MappingValidator:
     mapped_origin: type[Any]
     keys_source_type: type[Any]
