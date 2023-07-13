@@ -422,6 +422,7 @@ class PydanticModelTransformer:
         """Configures the BaseModel subclass according to the plugin settings.
 
         In particular:
+
         * determines the model config and fields,
         * adds a fields-aware signature for the initializer and construct methods
         * freezes the class if frozen = True
