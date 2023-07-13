@@ -1300,9 +1300,9 @@ class GenerateJsonSchema:
             schema_to_update.update(json_schema_extra)
         elif callable(json_schema_extra):
             if len(inspect.signature(json_schema_extra).parameters) > 1:
-                json_schema_extra(schema_to_update, cls)
+                json_schema_extra(schema_to_update, cls)  # type: ignore
             else:
-                json_schema_extra(schema_to_update)
+                json_schema_extra(schema_to_update)  # type: ignore
         elif json_schema_extra is not None:
             raise ValueError(
                 f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
