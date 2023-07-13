@@ -839,8 +839,11 @@ class GenerateSchema:
         (https://github.com/miss-islington/cpython/blob/1e9939657dd1f8eb9f596f77c1084d2d351172fc/Doc/library/typing.rst?plain=1#L1546-L1548)
         however it is buggy
         (https://github.com/python/typing_extensions/blob/ac52ac5f2cb0e00e7988bae1e2a1b8257ac88d6d/src/typing_extensions.py#L657-L666).
+
+        On 3.11 but < 3.12 TypedDict does not preserve inheritance information.
+
         Hence to avoid creating validators that do not do what users expect we only
-        support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
+        support typing.TypedDict on Python >= 3.12 or typing_extension.TypedDict on all versions
         """
         with self.defs.get_schema_or_ref(typed_dict_cls) as (typed_dict_ref, maybe_schema):
             if maybe_schema is not None:
