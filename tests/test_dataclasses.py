@@ -2411,6 +2411,21 @@ def test_dataclass_field_default_factory_with_init():
     assert Model().x == 3
 
 
+def test_metadata():
+    @dataclasses.dataclass
+    class Test:
+        value: int = dataclasses.field(metadata={'info': 'Some int value', 'json_schema_extra': {'a': 'b'}})
+
+    PydanticTest = pydantic.dataclasses.dataclass(Test)
+
+    assert TypeAdapter(PydanticTest).json_schema() == {
+        'properties': {'value': {'a': 'b', 'title': 'Value', 'type': 'integer'}},
+        'required': ['value'],
+        'title': 'Test',
+        'type': 'object',
+    }
+
+
 def test_signature():
     @pydantic.dataclasses.dataclass
     class Model:
