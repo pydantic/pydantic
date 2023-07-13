@@ -1156,8 +1156,6 @@ class GenerateJsonSchema:
             if self.by_alias:
                 name = self._get_alias_name(field, name)
             try:
-                if name == 'data1':
-                    print(1)
                 field_json_schema = self.generate_inner(field).copy()
             except PydanticOmit:
                 continue
@@ -1979,10 +1977,7 @@ class GenerateJsonSchema:
                     defs_ref = self.json_to_defs_refs[json_ref]
                     if defs_ref in self._core_defs_invalid_for_json_schema:
                         raise self._core_defs_invalid_for_json_schema[defs_ref]
-                    try:
-                        _add_json_refs(self.definitions[defs_ref])
-                    except KeyError as exc:
-                        print(exc)
+                    _add_json_refs(self.definitions[defs_ref])
 
                 for v in schema.values():
                     _add_json_refs(v)
