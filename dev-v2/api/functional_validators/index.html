@@ -2421,6 +2421,10 @@ have info argument.</p>
 <h2 id="pydantic.functional_validators.AfterValidator" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">AfterValidator</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 <a href="#pydantic.functional_validators.AfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -2521,6 +2525,10 @@ have info argument.</p>
 <h2 id="pydantic.functional_validators.BeforeValidator" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">BeforeValidator</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 <a href="#pydantic.functional_validators.BeforeValidator" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -2608,6 +2616,10 @@ have info argument.</p>
 <h2 id="pydantic.functional_validators.InstanceOf" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">InstanceOf</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 <a href="#pydantic.functional_validators.InstanceOf" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -2877,6 +2889,10 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 <h2 id="pydantic.functional_validators.PlainValidator" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">PlainValidator</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 <a href="#pydantic.functional_validators.PlainValidator" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -2958,6 +2974,10 @@ This is used when <code>mode='wrap'</code> and the function does not have info a
 <h2 id="pydantic.functional_validators.SkipValidation" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">SkipValidation</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 <a href="#pydantic.functional_validators.SkipValidation" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -3002,6 +3022,10 @@ annotation applied to a type.</p>
 <h2 id="pydantic.functional_validators.WrapValidator" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">WrapValidator</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 <a href="#pydantic.functional_validators.WrapValidator" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -3231,8 +3255,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">279</span>
-<span class="normal">280</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">280</span>
 <span class="normal">281</span>
 <span class="normal">282</span>
 <span class="normal">283</span>
@@ -3285,7 +3308,8 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 <span class="normal">330</span>
 <span class="normal">331</span>
 <span class="normal">332</span>
-<span class="normal">333</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_validator</span><span class="p">(</span>
+<span class="normal">333</span>
+<span class="normal">334</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_validator</span><span class="p">(</span>
     <span class="n">__field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">FieldValidatorModes</span> <span class="o">=</span> <span class="s1">&#39;after&#39;</span><span class="p">,</span>
@@ -3415,8 +3439,7 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">452</span>
-<span class="normal">453</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">453</span>
 <span class="normal">454</span>
 <span class="normal">455</span>
 <span class="normal">456</span>
@@ -3435,7 +3458,8 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">469</span>
 <span class="normal">470</span>
 <span class="normal">471</span>
-<span class="normal">472</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">472</span>
+<span class="normal">473</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
