@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v202-2023-07-05" class="md-skip">
+        <a href="#v203-2023-07-05" class="md-skip">
           Skip to content
         </a>
       
@@ -513,6 +513,13 @@
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v203-2023-07-05" class="md-nav__link">
+    v2.0.3 (2023-07-05)
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v202-2023-07-05" class="md-nav__link">
@@ -2886,6 +2893,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v203-2023-07-05" class="md-nav__link">
+    v2.0.3 (2023-07-05)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v202-2023-07-05" class="md-nav__link">
     v2.0.2 (2023-07-05)
   </a>
@@ -3694,6 +3708,67 @@
 
   <h1>Changelog</h1>
 
+<h2 id="v203-2023-07-05">v2.0.3 (2023-07-05)<a class="headerlink" href="#v203-2023-07-05" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Mention PyObject (v1) moving to ImportString (v2) in migration doc by <a href="https://github.com/slafs">@slafs</a> in https://github.com/pydantic/pydantic/pull/6456</li>
+<li>Fix release-tweet CI by <a href="https://github.com/Kludex">@Kludex</a> in https://github.com/pydantic/pydantic/pull/6461</li>
+<li>Revise the section on required / optional / nullable fields. by <a href="https://github.com/ybressler">@ybressler</a> in https://github.com/pydantic/pydantic/pull/6468</li>
+<li>Warn if a type hint is not in fact a type by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6479</li>
+<li>Replace TransformSchema with GetPydanticSchema by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6484</li>
+<li>Fix the un-hashability of various annotation types, for use in caching generic containers by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6480</li>
+<li>PYD-164: Rework custom types docs by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6490</li>
+<li>Fix ci by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6507</li>
+<li>Fix forward ref in generic by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6511</li>
+<li>Fix generation of serialization JSON schemas for core_schema.ChainSchema by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6515</li>
+<li>Document the change in <code>Field.alias</code> behavior in Pydantic V2 by <a href="https://github.com/hramezani">@hramezani</a> in https://github.com/pydantic/pydantic/pull/6508</li>
+<li>Give better error message attempting to compute the json schema of a model with undefined fields by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6519</li>
+<li>Document <code>alias_priority</code> by <a href="https://github.com/tpdorsey">@tpdorsey</a> in https://github.com/pydantic/pydantic/pull/6520</li>
+<li>Add redirect for types documentation by <a href="https://github.com/tpdorsey">@tpdorsey</a> in https://github.com/pydantic/pydantic/pull/6513</li>
+<li>Allow updating docs without release by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in https://github.com/pydantic/pydantic/pull/6551</li>
+<li>Ensure docs tests always run in the right folder by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6487</li>
+<li>Defer evaluation of return type hints for serializer functions by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6516</li>
+<li>Disable E501 from Ruff and rely on just Black by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6552</li>
+<li>Update JSON Schema documentation for V2 by <a href="https://github.com/tpdorsey">@tpdorsey</a> in https://github.com/pydantic/pydantic/pull/6492</li>
+<li>Add documentation of cyclic reference handling by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6493</li>
+<li>Remove the need for change files by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in https://github.com/pydantic/pydantic/pull/6556</li>
+<li>add "north star" benchmark by <a href="https://github.com/davidhewitt">@davidhewitt</a> in https://github.com/pydantic/pydantic/pull/6547</li>
+<li>Update Dataclasses docs by <a href="https://github.com/tpdorsey">@tpdorsey</a> in https://github.com/pydantic/pydantic/pull/6470</li>
+<li>♻️ Use different error message on v1 redirects by <a href="https://github.com/Kludex">@Kludex</a> in https://github.com/pydantic/pydantic/pull/6595</li>
+<li>⬆ Upgrade <code>pydantic-core</code> to v2.2.0 by <a href="https://github.com/lig">@lig</a> in https://github.com/pydantic/pydantic/pull/6589</li>
+<li>Fix serialization for IPvAny by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6572</li>
+<li>Improve CI by using PDM instead of pip to install typing-extensions by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6602</li>
+<li>Add <code>enum</code> error type docs  by <a href="https://github.com/lig">@lig</a> in https://github.com/pydantic/pydantic/pull/6603</li>
+<li>🐛 Fix <code>max_length</code> for unicode strings by <a href="https://github.com/lig">@lig</a> in https://github.com/pydantic/pydantic/pull/6559</li>
+<li>Add documentation for accessing features via <code>pydantic.v1</code> by <a href="https://github.com/tpdorsey">@tpdorsey</a> in https://github.com/pydantic/pydantic/pull/6604</li>
+<li>Include extra when iterating over a model by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6562</li>
+<li>Fix typing of model_validator by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6514</li>
+<li>Touch up Decimal validator by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6327</li>
+<li>Fix various docstrings using fixed pytest-examples by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6607</li>
+<li>Handle function validators in a discriminated union by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6570</li>
+<li>Review json_schema.md by <a href="https://github.com/tpdorsey">@tpdorsey</a> in https://github.com/pydantic/pydantic/pull/6608</li>
+<li>Make validate_call work on basemodel methods by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6569</li>
+<li>add test for big int json serde by <a href="https://github.com/davidhewitt">@davidhewitt</a> in https://github.com/pydantic/pydantic/pull/6614</li>
+<li>Fix pydantic dataclass problem with dataclasses.field default_factory by <a href="https://github.com/hramezani">@hramezani</a> in https://github.com/pydantic/pydantic/pull/6616</li>
+<li>Fixed mypy type inference for TypeAdapter by <a href="https://github.com/zakstucke">@zakstucke</a> in https://github.com/pydantic/pydantic/pull/6617</li>
+<li>Make it work to use None as a generic parameter by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6609</li>
+<li>Make it work to use <code>$ref</code> as an alias by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6568</li>
+<li>add note to migration guide about changes to <code>AnyUrl</code> etc by <a href="https://github.com/davidhewitt">@davidhewitt</a> in https://github.com/pydantic/pydantic/pull/6618</li>
+<li>🐛 Support defining <code>json_schema_extra</code> on <code>RootModel</code> using <code>Field</code> by <a href="https://github.com/lig">@lig</a> in https://github.com/pydantic/pydantic/pull/6622</li>
+<li>Update pre-commit to prevent commits to main branch on accident by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6636</li>
+<li>Fix PDM CI for python 3.7 on MacOS/windows by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6627</li>
+<li>Produce more accurate signatures for pydantic dataclasses by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6633</li>
+<li>Updates to Url types for Pydantic V2 by <a href="https://github.com/tpdorsey">@tpdorsey</a> in https://github.com/pydantic/pydantic/pull/6638</li>
+<li>Fix list markdown in <code>transform</code> docstring by <a href="https://github.com/StefanBRas">@StefanBRas</a> in https://github.com/pydantic/pydantic/pull/6649</li>
+<li>simplify slots_dataclass construction to appease mypy by <a href="https://github.com/davidhewitt">@davidhewitt</a> in https://github.com/pydantic/pydantic/pull/6639</li>
+<li>Update TypedDict schema generation docstring by <a href="https://github.com/adriangb">@adriangb</a> in https://github.com/pydantic/pydantic/pull/6651</li>
+<li>Detect and lint-error for prints by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6655</li>
+<li>Add xfailing test for pydantic-core PR 766 by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6641</li>
+<li>Ignore unrecognized fields from dataclasses metadata by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6634</li>
+<li>Make non-existent class getattr a mypy error by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6658</li>
+<li>Update pydantic-core to 2.3.0 by <a href="https://github.com/hramezani">@hramezani</a> in https://github.com/pydantic/pydantic/pull/6648</li>
+<li>Use OrderedDict from typing_extensions by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6664</li>
+<li>Fix typehint for JSON schema extra callable by <a href="https://github.com/dmontagu">@dmontagu</a> in https://github.com/pydantic/pydantic/pull/6659</li>
+</ul>
 <h2 id="v202-2023-07-05">v2.0.2 (2023-07-05)<a class="headerlink" href="#v202-2023-07-05" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Fix bug where round-trip pickling/unpickling a <code>RootModel</code> would change the value of <code>__dict__</code>, <a href="https://github.com/pydantic/pydantic/issues/6457">#6457</a> by <a href="https://github.com/dmontagu">@dmontagu</a></li>
