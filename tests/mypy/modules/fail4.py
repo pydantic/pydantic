@@ -44,3 +44,6 @@ class Model(BaseModel):
     @classmethod
     def validate_3(cls, values: Any) -> Any:
         return values
+
+
+Model.non_existent_attribute

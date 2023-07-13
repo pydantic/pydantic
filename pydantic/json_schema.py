@@ -1,6 +1,7 @@
 """The `json_schema` module contains classes and functions for generating JSON schemas."""
 from __future__ import annotations as _annotations
 
+import dataclasses
 import inspect
 import math
 import re
@@ -122,7 +123,7 @@ CoreModeRef = Tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
 
-@_internal_dataclass.slots_dataclass
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class _DefinitionsRemapping:
     defs_remapping: dict[DefsRef, DefsRef]
     json_remapping: dict[JsonRef, JsonRef]
@@ -191,8 +192,8 @@ class _DefinitionsRemapping:
             return [self.remap_json_schema(item) for item in schema]
         elif isinstance(schema, dict):
             for key, value in schema.items():
-                if key == '$ref':
-                    schema['$ref'] = self.remap_json_ref(JsonRef(schema['$ref']))
+                if key == '$ref' and isinstance(value, str):
+                    schema['$ref'] = self.remap_json_ref(JsonRef(value))
                 elif key == '$defs':
                     schema['$defs'] = {
                         self.remap_defs_ref(DefsRef(key)): self.remap_json_schema(value)
@@ -1155,8 +1156,6 @@ class GenerateJsonSchema:
             if self.by_alias:
                 name = self._get_alias_name(field, name)
             try:
-                if name == 'data1':
-                    print(1)
                 field_json_schema = self.generate_inner(field).copy()
             except PydanticOmit:
                 continue
@@ -1256,6 +1255,16 @@ class GenerateJsonSchema:
         title = config.get('title')
 
         json_schema_extra = config.get('json_schema_extra')
+        if cls.__pydantic_root_model__:
+            root_json_schema_extra = cls.model_fields['root'].json_schema_extra
+            if json_schema_extra and root_json_schema_extra:
+                raise ValueError(
+                    '"model_config[\'json_schema_extra\']" and "Field.json_schema_extra" on "RootModel.root"'
+                    ' field must not be set simultaneously'
+                )
+            if root_json_schema_extra:
+                json_schema_extra = root_json_schema_extra
+
         json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
 
         return json_schema
@@ -1961,6 +1970,8 @@ class GenerateJsonSchema:
             if isinstance(schema, dict):
                 if '$ref' in schema:
                     json_ref = JsonRef(schema['$ref'])
+                    if not isinstance(json_ref, str):
+                        return  # in this case, '$ref' might have been the name of a property
                     already_visited = json_ref in json_refs
                     json_refs[json_ref] += 1
                     if already_visited:
@@ -1968,10 +1979,7 @@ class GenerateJsonSchema:
                     defs_ref = self.json_to_defs_refs[json_ref]
                     if defs_ref in self._core_defs_invalid_for_json_schema:
                         raise self._core_defs_invalid_for_json_schema[defs_ref]
-                    try:
-                        _add_json_refs(self.definitions[defs_ref])
-                    except KeyError as exc:
-                        print(exc)
+                    _add_json_refs(self.definitions[defs_ref])
 
                 for v in schema.values():
                     _add_json_refs(v)
@@ -2148,7 +2156,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
         return value
 
 
-@_internal_dataclass.slots_dataclass
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class WithJsonSchema:
     """Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
@@ -2180,7 +2188,7 @@ class WithJsonSchema:
         return hash(type(self.mode))
 
 
-@_internal_dataclass.slots_dataclass
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class Examples:
     """Add examples to a JSON schema.
 
@@ -2215,7 +2223,8 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
     refs: set[JsonRef] = set()
     if isinstance(item, dict):
         for key, value in item.items():
-            if key == '$ref':
+            if key == '$ref' and isinstance(value, str):
+                # the isinstance check ensures that '$ref' isn't the name of a property, etc.
                 refs.add(JsonRef(value))
             elif isinstance(value, dict):
                 refs.update(_get_all_json_refs(value))

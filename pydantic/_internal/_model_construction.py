@@ -25,6 +25,7 @@ from ._mock_validator import MockValidator, set_basemodel_mock_validator
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_types_namespace, is_classvar, parent_frame_namespace
 from ._utils import ClassAttribute, is_valid_identifier
+from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -43,6 +44,7 @@ IGNORED_TYPES: tuple[Any, ...] = (
     staticmethod,
     PydanticDescriptorProxy,
     ComputedFieldInfo,
+    ValidateCallWrapper,
 )
 object_setattr = object.__setattr__
 
@@ -185,18 +187,21 @@ class ModelMetaclass(ABCMeta):
             # this is the BaseModel class itself being created, no logic required
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    def __getattr__(self, item: str) -> Any:
-        """This is necessary to keep attribute access working for class attribute access."""
-        private_attributes = self.__dict__.get('__private_attributes__')
-        if private_attributes and item in private_attributes:
-            return private_attributes[item]
-        if item == '__pydantic_core_schema__':
-            # This means the class didn't get a schema generated for it, likely because there was an undefined reference
-            maybe_mock_validator = getattr(self, '__pydantic_validator__', None)
-            if isinstance(maybe_mock_validator, MockValidator):
-                maybe_mock_validator.force_rebuild()
-                return getattr(self, '__pydantic_core_schema__')
-        raise AttributeError(item)
+    if not typing.TYPE_CHECKING:
+        # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
+
+        def __getattr__(self, item: str) -> Any:
+            """This is necessary to keep attribute access working for class attribute access."""
+            private_attributes = self.__dict__.get('__private_attributes__')
+            if private_attributes and item in private_attributes:
+                return private_attributes[item]
+            if item == '__pydantic_core_schema__':
+                # This means the class didn't get a schema generated for it, likely because there was an undefined reference
+                maybe_mock_validator = getattr(self, '__pydantic_validator__', None)
+                if isinstance(maybe_mock_validator, MockValidator):
+                    maybe_mock_validator.force_rebuild()
+                    return getattr(self, '__pydantic_core_schema__')
+            raise AttributeError(item)
 
     @classmethod
     def __prepare__(cls, *args: Any, **kwargs: Any) -> Mapping[str, object]:
@@ -230,7 +235,7 @@ class ModelMetaclass(ABCMeta):
     )
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
-        return self.model_fields
+        return self.model_fields  # type: ignore
 
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:

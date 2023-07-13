@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 from typing import List, Tuple
 
@@ -566,8 +566,8 @@ def test_validate_all():
     def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
         return dt
 
-    assert foo() == datetime(2000, 1, 1)
-    assert foo(0) == datetime(1970, 1, 1)
+    assert foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 @skip_pre_38
@@ -584,8 +584,8 @@ def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
     return dt
 """
     )
-    assert module.foo() == datetime(2000, 1, 1)
-    assert module.foo(0) == datetime(1970, 1, 1)
+    assert module.foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 def test_partial():
@@ -669,3 +669,21 @@ def test_methods_are_not_rebound():
     # Ensure validation is still happening
     assert Thing.c(thing, '2') == 3
     assert Thing(2).c('3') == 5
+
+
+def test_basemodel_method():
+    class Foo(BaseModel):
+        @classmethod
+        @validate_call
+        def test(cls, x: int):
+            return cls, x
+
+    assert Foo.test('1') == (Foo, 1)
+
+    class Bar(BaseModel):
+        @validate_call
+        def test(self, x: int):
+            return self, x
+
+    bar = Bar()
+    assert bar.test('1') == (bar, 1)

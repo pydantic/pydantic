@@ -702,8 +702,6 @@ class GenerateSchema:
         )
 
     def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
-        assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
-
         source_type, annotations = field_info.annotation, field_info.metadata
 
         def set_discriminator(schema: CoreSchema) -> CoreSchema:
@@ -841,8 +839,11 @@ class GenerateSchema:
         (https://github.com/miss-islington/cpython/blob/1e9939657dd1f8eb9f596f77c1084d2d351172fc/Doc/library/typing.rst?plain=1#L1546-L1548)
         however it is buggy
         (https://github.com/python/typing_extensions/blob/ac52ac5f2cb0e00e7988bae1e2a1b8257ac88d6d/src/typing_extensions.py#L657-L666).
+
+        On 3.11 but < 3.12 TypedDict does not preserve inheritance information.
+
         Hence to avoid creating validators that do not do what users expect we only
-        support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
+        support typing.TypedDict on Python >= 3.12 or typing_extension.TypedDict on all versions
         """
         with self.defs.get_schema_or_ref(typed_dict_cls) as (typed_dict_ref, maybe_schema):
             if maybe_schema is not None:
@@ -1288,6 +1289,13 @@ class GenerateSchema:
         self, obj: Any, annotations: tuple[Any, ...]
     ) -> tuple[Any, list[Any]] | None:
         from ._std_types_schema import PREPARE_METHODS
+
+        # This check for hashability is only necessary for python 3.7
+        try:
+            hash(obj)
+        except TypeError:
+            # obj is definitely not a known type if this fails
+            return None
 
         for gen in PREPARE_METHODS:
             res = gen(obj, annotations, self.config_wrapper.config_dict)

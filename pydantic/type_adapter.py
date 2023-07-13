@@ -128,6 +128,17 @@ class TypeAdapter(Generic[T]):
             """A class representing the type adapter."""
             raise NotImplementedError
 
+        @overload
+        def __init__(self, type: type[T], *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
+            ...
+
+        # this overload is for non-type things like Union[int, str]
+        # Pyright currently handles this "correctly", but MyPy understands this as TypeAdapter[object]
+        # so an explicit type cast is needed
+        @overload
+        def __init__(self, type: T, *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
+            ...
+
     def __init__(self, type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
         """Initializes the TypeAdapter object."""
         config_wrapper = _config.ConfigWrapper(config)

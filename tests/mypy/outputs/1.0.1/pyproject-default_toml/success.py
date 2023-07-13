@@ -45,6 +45,7 @@ from pydantic import (
     validate_call,
 )
 from pydantic.fields import Field, PrivateAttr
+from pydantic.json_schema import Examples
 from pydantic.networks import AnyUrl
 
 
@@ -294,3 +295,5 @@ class CustomPath(PurePath):
 
 
 DynamicModel = create_model('DynamicModel')
+
+examples = Examples({})

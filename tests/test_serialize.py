@@ -700,7 +700,7 @@ def test_serializer_allow_reuse_same_field():
                 return 'ser_1'
 
             @field_serializer('x')
-            def ser_x(self, _v: int) -> str:  # noqa: F811
+            def ser_x(self, _v: int) -> str:
                 return 'ser_2'
 
         assert Model(x=1).model_dump() == {'x': 'ser_2'}
@@ -718,7 +718,7 @@ def test_serializer_allow_reuse_different_field_1():
                 return 'x'
 
             @field_serializer('y')
-            def ser(self, _v: int) -> str:  # noqa: F811
+            def ser(self, _v: int) -> str:
                 return 'y'
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 'y'}
@@ -738,7 +738,7 @@ def test_serializer_allow_reuse_different_field_2():
             def ser_x(self, _v: int) -> str:
                 return 'ser_x'
 
-            ser_x = field_serializer('y')(ser)  # noqa: F811
+            ser_x = field_serializer('y')(ser)
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 'ser'}
 

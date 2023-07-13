@@ -30,6 +30,8 @@ jobs:
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files --verbose
+        env:
+          SKIP: no-commit-to-branch
 
   test:
     runs-on: ubuntu-latest

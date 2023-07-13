@@ -1,4 +1,5 @@
 import dataclasses
+import inspect
 import pickle
 import re
 import sys
@@ -2400,3 +2401,41 @@ def test_combined_field_annotations():
             'type': 'greater_than',
         }
     ]
+
+
+def test_dataclass_field_default_factory_with_init():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int = dataclasses.field(default_factory=lambda: 3, init=False)
+
+    assert Model().x == 3
+
+
+def test_metadata():
+    @dataclasses.dataclass
+    class Test:
+        value: int = dataclasses.field(metadata={'info': 'Some int value', 'json_schema_extra': {'a': 'b'}})
+
+    PydanticTest = pydantic.dataclasses.dataclass(Test)
+
+    assert TypeAdapter(PydanticTest).json_schema() == {
+        'properties': {'value': {'a': 'b', 'title': 'Value', 'type': 'integer'}},
+        'required': ['value'],
+        'title': 'Test',
+        'type': 'object',
+    }
+
+
+def test_signature():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int
+        y: str = 'y'
+        z: float = dataclasses.field(default=1.0)
+        a: float = dataclasses.field(default_factory=float)
+        b: float = Field(default=1.0)
+        c: float = Field(default_factory=float)
+
+    assert str(inspect.signature(Model)) == (
+        "(x: int, y: str = 'y', z: float = 1.0, a: float = <factory>, b: float = 1.0, c: float = <factory>) -> None"
+    )

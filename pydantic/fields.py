@@ -388,7 +388,8 @@ class FieldInfo(_repr.Representation):
             default_factory = dc_field.default_factory
 
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
-        field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field.metadata)
+        dc_field_metadata = {k: v for k, v in dc_field.metadata.items() if k in _FIELD_ARG_NAMES}
+        field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)
 
         field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type)
         field.metadata += annotation_metadata
@@ -543,7 +544,7 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
-@_internal_dataclass.slots_dataclass
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasPath:
     """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields#aliaspath-and-aliaschoices
 
@@ -567,7 +568,7 @@ class AliasPath:
         return self.path
 
 
-@_internal_dataclass.slots_dataclass
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasChoices:
     """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields#aliaspath-and-aliaschoices
 
@@ -808,6 +809,10 @@ def Field(  # noqa: C901
     )
 
 
+_FIELD_ARG_NAMES = set(inspect.signature(Field).parameters)
+_FIELD_ARG_NAMES.remove('extra')  # do not include the varkwargs parameter
+
+
 class ModelPrivateAttr(_repr.Representation):
     """A descriptor for private attributes in class models.
 
@@ -825,14 +830,17 @@ class ModelPrivateAttr(_repr.Representation):
         self.default = default
         self.default_factory = default_factory
 
-    def __getattr__(self, item: str) -> Any:
-        """This function improves compatibility with custom descriptors by ensuring delegation happens
-        as expected when the default value of a private attribute is a descriptor.
-        """
-        if item in {'__get__', '__set__', '__delete__'}:
-            if hasattr(self.default, item):
-                return getattr(self.default, item)
-        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+    if not typing.TYPE_CHECKING:
+        # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
+
+        def __getattr__(self, item: str) -> Any:
+            """This function improves compatibility with custom descriptors by ensuring delegation happens
+            as expected when the default value of a private attribute is a descriptor.
+            """
+            if item in {'__get__', '__set__', '__delete__'}:
+                if hasattr(self.default, item):
+                    return getattr(self.default, item)
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
 
     def __set_name__(self, cls: type[Any], name: str) -> None:
         """Preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487."""
@@ -895,7 +903,7 @@ def PrivateAttr(
     )
 
 
-@_internal_dataclass.slots_dataclass
+@dataclasses.dataclass(**_internal_dataclass.slots_true)
 class ComputedFieldInfo:
     """A container for data from `@computed_field` so that we can access it while building the pydantic-core schema.
 

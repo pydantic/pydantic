@@ -5222,3 +5222,15 @@ def test_deferred_json_schema():
         'title': 'Foo',
         'type': 'object',
     }
+
+
+def test_dollar_ref_alias():
+    class MyModel(BaseModel):
+        my_field: str = Field(alias='$ref')
+
+    assert MyModel.model_json_schema() == {
+        'properties': {'$ref': {'title': '$Ref', 'type': 'string'}},
+        'required': ['$ref'],
+        'title': 'MyModel',
+        'type': 'object',
+    }

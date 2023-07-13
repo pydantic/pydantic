@@ -1,6 +1,6 @@
-Pydantic allows auto creation of JSON schemas from models.
+Pydantic allows automatic creation of JSON schemas from models.
 
-Pydantic provides several ways to generate JSON schemas or JSON representations from fields or models:
+Using Pydantic, there are several ways to generate JSON schemas or JSON representations from fields or models:
 
 * [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a dict of the schema.
 * [`BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json] returns a JSON string representation of the
@@ -134,7 +134,7 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
 * The JSON schema for `Optional` fields indicates that the value `null` is allowed.
 * The `Decimal` type is exposed in JSON schema (and serialized) as a string.
 * The JSON schema does not preserve `namedtuple`s as `namedtuple`s.
-* When they differ, you can specify if you want the JSON schema representing the inputs to validation
+* When they differ, you can specify whether you want the JSON schema to represent the inputs to validation
     or the outputs from serialization.
 * Sub-models used are added to the `$defs` JSON attribute and referenced, as per the spec.
 * Sub-models with modifications (via the `Field` class) like a custom title, description, or default value,
@@ -169,7 +169,7 @@ Optionally, the [`Field`][pydantic.fields.Field] function can be used to provide
 and validations.
 
 See [Customizing JSON Schema](fields.md#customizing-json-schema) for details on field parameters that are used
-exclusively to customise the generated JSON Schema.
+exclusively to customize the generated JSON schema.
 
 You can also use [model config](model_config.md) to customize JSON serialization and extra schema properties on a model.
 Specifically, the following config options are relevant:
@@ -182,18 +182,18 @@ Specifically, the following config options are relevant:
 
 See [`ConfigDict`][pydantic.config.ConfigDict] for details on these options.
 
-### Unenforced Field constraints
+### Unenforced `Field` constraints
 
 If Pydantic finds constraints which are not being enforced, an error will be raised. If you want to force the
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
-to `Field()` with the raw schema attribute name:
+to `Field` with the raw schema attribute name:
 
 ```py
 from pydantic import BaseModel, Field, PositiveInt
 
 try:
-    # this won't work since PositiveInt takes precedence over the
-    # constraints defined in Field meaning they're ignored
+    # this won't work since `PositiveInt` takes precedence over the
+    # constraints defined in `Field`, meaning they're ignored
     class Model(BaseModel):
         foo: PositiveInt = Field(..., lt=10)
 
@@ -202,7 +202,7 @@ except ValueError as e:
 
 
 # if you find yourself needing this, an alternative is to declare
-# the constraints in Field (or you could use conint())
+# the constraints in `Field` (or you could use `conint()`)
 # here both constraints will be enforced:
 class ModelB(BaseModel):
     # Here both constraints will be applied and the schema
@@ -246,10 +246,11 @@ class Foo(BaseModel):
 ```
 
 !!! note
-    `Field` can only be supplied once per field; an error will be raised if used in `Annotated` and as the assigned value.
+    `Field` can only be supplied once per field;
+    an error will be raised if used in `Annotated` and as the assigned value.
 
-    Defaults can be set outside `Annotated` as the assigned value or with `Field.default_factory` inside `Annotated`. The
-    `Field.default` argument is not supported inside `Annotated`.
+    Defaults can be set outside `Annotated` as the assigned value or with `Field.default_factory` inside `Annotated`.
+    The `Field.default` argument is not supported inside `Annotated`.
 
 For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 
@@ -412,7 +413,7 @@ except ValidationError as e:
 
 So far we have been wrapping the schema, but if you just want to *modify* it or *ignore* it you can as well.
 
-To modify the schema first call the handler and then mutate the result:
+To modify the schema, first call the handler, then mutate the result:
 
 ```py
 from typing import Any, Type
@@ -503,7 +504,7 @@ except ValidationError as e:
     """
 ```
 
-## JSON Schema types
+## JSON schema types
 
 Types, custom field types, and constraints (like `max_length`) are mapped to the corresponding spec formats in the
 following priority order (when there is an equivalent available):

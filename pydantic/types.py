@@ -480,7 +480,7 @@ def condecimal(
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_internal_dataclass.slots_dataclass
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
@@ -673,7 +673,7 @@ def _secret_display(value: str | bytes) -> str:
     return '**********' if value else ''
 
 
-@_internal_dataclass.slots_dataclass
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class _SecretFieldValidator:
     field_type: type[_SecretField[Any]]
     min_length: int | None = None
@@ -1242,7 +1242,7 @@ class Base64Encoder(EncoderProtocol):
         return 'base64'
 
 
-@_internal_dataclass.slots_dataclass
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class EncodedBytes:
     """A bytes type that is encoded and decoded using the specified encoder."""
 
@@ -1332,7 +1332,7 @@ Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 __getattr__ = getattr_migration(__name__)
 
 
-@_internal_dataclass.slots_dataclass
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
     """A convenience class for creating an annotation that provides pydantic custom type hooks.
 
@@ -1367,13 +1367,16 @@ class GetPydanticSchema:
     # Note: we may want to consider adding a convenience staticmethod `def for_type(type_: Any) -> GetPydanticSchema:`
     #   which returns `GetPydanticSchema(lambda _s, h: h(type_))`
 
-    def __getattr__(self, item: str) -> Any:
-        """Use this rather than defining `__get_pydantic_core_schema__` etc. to reduce the number of nested calls."""
-        if item == '__get_pydantic_core_schema__' and self.get_pydantic_core_schema:
-            return self.get_pydantic_core_schema
-        elif item == '__get_pydantic_json_schema__' and self.get_pydantic_json_schema:
-            return self.get_pydantic_json_schema
-        else:
-            return object.__getattribute__(self, item)
+    if not TYPE_CHECKING:
+        # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
+
+        def __getattr__(self, item: str) -> Any:
+            """Use this rather than defining `__get_pydantic_core_schema__` etc. to reduce the number of nested calls."""
+            if item == '__get_pydantic_core_schema__' and self.get_pydantic_core_schema:
+                return self.get_pydantic_core_schema
+            elif item == '__get_pydantic_json_schema__' and self.get_pydantic_json_schema:
+                return self.get_pydantic_json_schema
+            else:
+                return object.__getattribute__(self, item)
 
     __hash__ = object.__hash__
