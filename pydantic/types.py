@@ -1367,13 +1367,16 @@ class GetPydanticSchema:
     # Note: we may want to consider adding a convenience staticmethod `def for_type(type_: Any) -> GetPydanticSchema:`
     #   which returns `GetPydanticSchema(lambda _s, h: h(type_))`
 
-    def __getattr__(self, item: str) -> Any:
-        """Use this rather than defining `__get_pydantic_core_schema__` etc. to reduce the number of nested calls."""
-        if item == '__get_pydantic_core_schema__' and self.get_pydantic_core_schema:
-            return self.get_pydantic_core_schema
-        elif item == '__get_pydantic_json_schema__' and self.get_pydantic_json_schema:
-            return self.get_pydantic_json_schema
-        else:
-            return object.__getattribute__(self, item)
+    if not TYPE_CHECKING:
+        # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
+
+        def __getattr__(self, item: str) -> Any:
+            """Use this rather than defining `__get_pydantic_core_schema__` etc. to reduce the number of nested calls."""
+            if item == '__get_pydantic_core_schema__' and self.get_pydantic_core_schema:
+                return self.get_pydantic_core_schema
+            elif item == '__get_pydantic_json_schema__' and self.get_pydantic_json_schema:
+                return self.get_pydantic_json_schema
+            else:
+                return object.__getattribute__(self, item)
 
     __hash__ = object.__hash__

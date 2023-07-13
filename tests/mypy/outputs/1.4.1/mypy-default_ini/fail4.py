@@ -70,4 +70,4 @@ class Model(BaseModel):
 
 
 Model.non_existent_attribute
-# MYPY: error: "Type[Model]" has no attribute "non_existent_attribute"  [attr-defined]
+# MYPY: error: "type[Model]" has no attribute "non_existent_attribute"  [attr-defined]
