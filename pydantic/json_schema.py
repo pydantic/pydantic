@@ -2085,7 +2085,7 @@ def models_json_schema(
     description: str | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], JsonSchemaValue,], JsonSchemaValue]:
+) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], JsonSchemaValue], JsonSchemaValue]:
     """Utility function to generate a JSON Schema for multiple models.
 
     Args:
@@ -2245,7 +2245,7 @@ if TYPE_CHECKING:
     SkipJsonSchema = Annotated[AnyType, ...]
 else:
 
-    @_internal_dataclass.slots_dataclass
+    @dataclasses.dataclass(**_internal_dataclass.slots_true)
     class SkipJsonSchema:
         """Add this as an annotation on a field to skip generating a JSON schema for that field.
 
