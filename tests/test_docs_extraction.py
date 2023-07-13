@@ -5,7 +5,7 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 
 def test_model_no_docs_extraction():
-    class Model(BaseModel):
+    class ModelNoDocs(BaseModel):
         a: int = 1
         """A docs"""
 
@@ -13,12 +13,12 @@ def test_model_no_docs_extraction():
 
         """B docs"""
 
-    assert Model.model_fields['a'].description is None
-    assert Model.model_fields['b'].description is None
+    assert ModelNoDocs.model_fields['a'].description is None
+    assert ModelNoDocs.model_fields['b'].description is None
 
 
 def test_model_docs_extraction():
-    class Model(BaseModel):
+    class ModelDocs(BaseModel):
         a: int
         """A docs"""
         b: int = 1
@@ -33,7 +33,7 @@ def test_model_docs_extraction():
             """Docs for dummy that wont be used for d"""
 
         e: Annotated[int, Field(description='Real description')]
-        """Won't be used"""
+        """Wont be used"""
 
         f: int
         """F docs"""
@@ -47,17 +47,17 @@ def test_model_docs_extraction():
             use_attributes_docstring=True,
         )
 
-    assert Model.model_fields['a'].description == 'A docs'
-    assert Model.model_fields['b'].description == 'B docs'
-    assert Model.model_fields['c'].description is None
-    assert Model.model_fields['d'].description is None
-    assert Model.model_fields['e'].description == 'Real description'
-    assert Model.model_fields['g'].description == 'G docs'
+    assert ModelDocs.model_fields['a'].description == 'A docs'
+    assert ModelDocs.model_fields['b'].description == 'B docs'
+    assert ModelDocs.model_fields['c'].description is None
+    assert ModelDocs.model_fields['d'].description is None
+    assert ModelDocs.model_fields['e'].description == 'Real description'
+    assert ModelDocs.model_fields['g'].description == 'G docs'
 
 
 def test_dataclass_no_docs_extraction():
     @pydantic_dataclass
-    class Model:
+    class ModelDCNoDocs:
         a: int = 1
         """A docs"""
 
@@ -65,13 +65,13 @@ def test_dataclass_no_docs_extraction():
 
         """B docs"""
 
-    assert Model.__pydantic_fields__['a'].description is None
-    assert Model.__pydantic_fields__['b'].description is None
+    assert ModelDCNoDocs.__pydantic_fields__['a'].description is None
+    assert ModelDCNoDocs.__pydantic_fields__['b'].description is None
 
 
 def test_dataclass_docs_extraction():
     @pydantic_dataclass(config=ConfigDict(use_attributes_docstring=True))
-    class Model:
+    class ModelDCDocs:
         a: int
         """A docs"""
         b: int = 1
@@ -86,7 +86,7 @@ def test_dataclass_docs_extraction():
             """Docs for dummy that wont be used for d"""
 
         e: int = Field(1, description='Real description')
-        """Won't be used"""
+        """Wont be used"""
 
         f: int
         """F docs"""
@@ -100,24 +100,24 @@ def test_dataclass_docs_extraction():
         """H docs"""
 
         i: Annotated[int, Field(description='Real description')]
-        """Won't be used"""
+        """Wont be used"""
 
-    assert Model.__pydantic_fields__['a'].description == 'A docs'
-    assert Model.__pydantic_fields__['b'].description == 'B docs'
-    assert Model.__pydantic_fields__['c'].description is None
-    assert Model.__pydantic_fields__['d'].description is None
-    assert Model.__pydantic_fields__['e'].description == 'Real description'
-    assert Model.__pydantic_fields__['g'].description == 'G docs'
-    assert Model.__pydantic_fields__['i'].description == 'Real description'  # TODO What is happening here?
+    assert ModelDCDocs.__pydantic_fields__['a'].description == 'A docs'
+    assert ModelDCDocs.__pydantic_fields__['b'].description == 'B docs'
+    assert ModelDCDocs.__pydantic_fields__['c'].description is None
+    assert ModelDCDocs.__pydantic_fields__['d'].description is None
+    assert ModelDCDocs.__pydantic_fields__['e'].description == 'Real description'
+    assert ModelDCDocs.__pydantic_fields__['g'].description == 'G docs'
+    assert ModelDCDocs.__pydantic_fields__['i'].description == 'Real description'  # TODO What is happening here?
     # Annotated[..., Field(...)] doesn't seem to work for dataclasses
 
 
 def test_typeddict():
-    class Model(TypedDict):
+    class ModelTD(TypedDict):
         a: int
         """A docs"""
 
-    ta = TypeAdapter(Model)
+    ta = TypeAdapter(ModelTD)
     assert ta.json_schema() == {
         'properties': {'a': {'title': 'A', 'type': 'integer'}},
         'required': ['a'],
