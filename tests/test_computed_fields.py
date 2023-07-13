@@ -279,6 +279,27 @@ def test_include_exclude():
     assert m.model_dump(exclude={'x': ..., 'y_list': {2}}) == {'y': 2, 'x_list': [1, 2], 'y_list': [2, 3]}
 
 
+@pytest.mark.xfail(reason='requires https://github.com/pydantic/pydantic-core/pull/768')
+def test_exclude_none():
+    class Model(BaseModel):
+        x: int
+        y: int
+
+        @computed_field
+        def sum(self) -> int:
+            return self.x + self.y
+
+        @computed_field
+        def none(self) -> None:
+            return None
+
+    m = Model(x=1, y=2)
+    assert m.model_dump(exclude_none=False) == {'x': 1, 'y': 2, 'sum': 3, 'none': None}
+    assert m.model_dump(exclude_none=True) == {'x': 1, 'y': 2, 'sum': 3}
+    assert m.model_dump(mode='json', exclude_none=False) == {'x': 1, 'y': 2, 'sum': 3, 'none': None}
+    assert m.model_dump(mode='json', exclude_none=True) == {'x': 1, 'y': 2, 'sum': 3, 'none': None}
+
+
 def test_expected_type():
     class Model(BaseModel):
         x: int
