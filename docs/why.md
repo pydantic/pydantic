@@ -112,7 +112,7 @@ As a result Pydantic is among the fastest data validation libraries for Python.
     #> Pydantic 3.45x faster
     ```
 
-Unlike other performance centric libraries written in compiled languages, Pydantic also has excellent support for customising validation via [functional validators](#TODO).
+Unlike other performance centric libraries written in compiled languages, Pydantic also has excellent support for customising validation via [functional validators](#customisation).
 
 ## Serialization
 
@@ -178,74 +178,81 @@ TODO proper list with stars auto collected
 
 Some notable companies and organisations using Pydantic:
 
-TODO
 ### Adobe {#org-adobe}
 
-TODO
+Traffic to the Pydantic docs from their internal wiki and git hosting under the `adobe.com` domain.
 
 ### AMD {#org-amd}
 
-TODO
+?
 
 ### Amazon {#org-amazon}
 
-TODO
+[powertools-lambda-python](https://github.com/aws-powertools/powertools-lambda-python) uses Pydantic, AWS sponsored Samuel Colvin $5,000 to work on Pydantic in 2022.
 
 ### Apple {#org-apple}
 
-TODO
+Traffic to the Pydantic docs from multiple enterprise GitHub instances under the `apple.com` domain.
 
 ### ASML {#org-asml}
 
-TODO
+Traffic to the Pydantic docs from enterprise bitbucket and jira instances under the `asml.com` domain.
 
 ### AstraZeneca {#org-astrazeneca}
 
-TODO
+Traffic to the Pydantic docs from a sub-domain of `astrazeneca.com` domain.
+
+[Multiple repos](https://github.com/search?q=org%3AAstraZeneca+pydantic&type=code) in the `AstraZeneca` GitHub org depend on Pydantic.
 
 ### Broadcom {#org-broadcom}
 
-TODO
+?
 
 ### Cisco Systems {#org-cisco}
 
-TODO
+Pydantic is listed in their report of [Open Source Used In RADKit](https://www.cisco.com/c/dam/en_us/about/doing_business/open_source/docs/RADKit-149-1687424532.pdf).
+
+[`cisco/webex-assistant-sdk`](https://github.com/cisco/webex-assistant-sdk) repo depends on Pydantic.
 
 ### Comcast {#org-comcast}
 
-TODO
+Traffic to the Pydantic docs from an internal wiki and enterprise GitHub instance under the `comcast.com` domain.
 
 ### Datadog {#org-datadog}
 
-TODO
+Extensive use of Pydantic in [`DataDog/integrations-core`](https://github.com/DataDog/integrations-core) and other repos.
+
+Communication with engineers from Datadog about how they use Pydantic.
 
 ### Facebook {#org-facebook}
 
-TODO
+[Multiple repos](https://github.com/search?q=org%3Afacebookresearch+pydantic&type=code) in the `facebookresearch` GitHub org depend on Pydantic.
 
 ### Google {#org-google}
 
-TODO
+Extensive use of Pydantic in [`google/turbinia`](https://github.com/google/turbinia) and other repos.
 
 ### IBM {#org-ibm}
 
-TODO
+[Multiple repos](https://github.com/search?q=org%3AIBM+pydantic&type=code) in the `IBM` GitHub org depend on Pydantic.
+
+Traffic to the Pydantic docs from an enterprise GitHub instance under the `ibm.com` domain.
 
 ### Intel {#org-intel}
 
-TODO
+Traffic to the Pydantic docs from wikis and jira instances under the `intel.com` domain.
 
 ### Intuit {#org-intuit}
 
-TODO
+Traffic to the Pydantic docs from an enterprise GitHub instance under the `ntuit.com` domain.
 
-### IPCC {#org-ipcc}
+### Intergovernmental Panel on Climate Change {#org-ipcc}
 
-TODO
+[Tweet](https://twitter.com/daniel_huppmann/status/1563461797973110785) explaining how the IPCC use Pydantic.
 
 ### JPMorgan {#org-jpmorgan}
 
-TODO
+Traffic to the Pydantic docs from an enterprise bitbucket instances under the `jpmchase.net` domain.
 
 ### Jupyter {#org-jupyter}
 
