@@ -37,10 +37,10 @@ extra:
     provider: mike
 
 extra_css:
-- 'extra/terminal.css'
-- 'extra/tweaks.css'
+  - 'extra/terminal.css'
+  - 'extra/tweaks.css'
 extra_javascript:
-- 'extra/redirects.js'
+  - 'extra/fluff.js'
 
 nav:
 - Get Started:

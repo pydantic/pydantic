@@ -1,6 +1,6 @@
 # Why use Pydantic?
 
-Today Pydantic is downloaded 70m times month, and used by some of the largest and most recognisable organisations in the world.
+Today Pydantic is downloaded <span id="download-count">many</span> times a month, and used by some of the largest and most recognisable organisations in the world.
 
 It's hard to know why so many people have adopted Pydantic since its inception six years ago, but here are a few guesses.
 
@@ -124,6 +124,8 @@ Pydantic provide functionality to serialize model in three ways:
 
 In all three modes the output can be customised by excluding fields, exclude default values, excluding `None` values and more.
 
+TODO example of serialization 3 ways
+
 ## JSON Schema
 
 [JSON Schema](https://json-schema.org/) (2020-12) can be generated for any Pydantic model &mdash; allowing self documenting APIs and integration with a wide variety of tools which support JSON Schema.
@@ -163,16 +165,147 @@ TODO links and example of wrap validator
 
 Some notable libraries that depend on Pydantic:
 
-* [FastAPI](https://github.com/tiangolo/fastapi),
-* [huggingface/transformers](https://github.com/huggingface/transformers),
-* [Django Ninja](https://github.com/vitalik/django-ninja),
-* [SQLModel](https://github.com/tiangolo/sqlmodel),
-* [LangChain](https://github.com/hwchase17/langchain),
+TODO proper list with stars auto collected
+
+* [FastAPI](https://github.com/tiangolo/fastapi)
+* [huggingface/transformers](https://github.com/huggingface/transformers)
+* [Django Ninja](https://github.com/vitalik/django-ninja)
+* [SQLModel](https://github.com/tiangolo/sqlmodel)
+* [LangChain](https://github.com/hwchase17/langchain)
 
 {% raw %}
 ## Organisations using Pydantic {#using-pydantic}
-{% endraw %}
 
 Some notable companies and organisations using Pydantic:
 
 TODO
+### Adobe {#org-adobe}
+
+TODO
+
+### AMD {#org-amd}
+
+TODO
+
+### Amazon {#org-amazon}
+
+TODO
+
+### Apple {#org-apple}
+
+TODO
+
+### ASML {#org-asml}
+
+TODO
+
+### AstraZeneca {#org-astrazeneca}
+
+TODO
+
+### Broadcom {#org-broadcom}
+
+TODO
+
+### Cisco Systems {#org-cisco}
+
+TODO
+
+### Comcast {#org-comcast}
+
+TODO
+
+### Datadog {#org-datadog}
+
+TODO
+
+### Facebook {#org-facebook}
+
+TODO
+
+### Google {#org-google}
+
+TODO
+
+### IBM {#org-ibm}
+
+TODO
+
+### Intel {#org-intel}
+
+TODO
+
+### Intuit {#org-intuit}
+
+TODO
+
+### IPCC {#org-ipcc}
+
+TODO
+
+### JPMorgan {#org-jpmorgan}
+
+TODO
+
+### Jupyter {#org-jupyter}
+
+TODO
+
+### Microsoft {#org-microsoft}
+
+TODO
+
+### Molssi {#org-molssi}
+
+TODO
+
+### NASA {#org-nasa}
+
+TODO
+
+### Netflix {#org-netflix}
+
+TODO
+
+### NSA {#org-nsa}
+
+TODO
+
+### NVIDIA {#org-nvidia}
+
+TODO
+
+### Qualcomm {#org-qualcomm}
+
+TODO
+
+### Red Hat {#org-redhat}
+
+TODO
+
+### Robusta {#org-robusta}
+
+TODO
+
+### Salesforce {#org-salesforce}
+
+TODO
+
+### Starbucks {#org-starbucks}
+
+TODO
+
+### Texas Instruments {#org-ti}
+
+TODO
+
+### Twilio {#org-twilio}
+
+TODO
+
+### Twitter {#org-twitter}
+
+TODO
+
+### UK Home Office {#org-ukhomeoffice}
+{% endraw %}
