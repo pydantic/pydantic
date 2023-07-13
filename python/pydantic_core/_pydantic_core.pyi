@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import decimal
 import sys
 from typing import Any, Callable, Generic, Optional, Type, TypeVar
@@ -43,6 +44,7 @@ __all__ = [
     'to_json',
     'to_jsonable_python',
     'list_all_errors',
+    'TzInfo',
 ]
 __version__: str
 build_profile: str
@@ -323,3 +325,10 @@ def list_all_errors() -> list[ErrorTypeInfo]:
     """
     Get information about all built-in errors.
     """
+
+@final
+class TzInfo(datetime.tzinfo):
+    def tzname(self, _dt: datetime.datetime | None) -> str | None: ...
+    def utcoffset(self, _dt: datetime.datetime | None) -> datetime.timedelta: ...
+    def dst(self, _dt: datetime.datetime | None) -> datetime.timedelta: ...
+    def __deepcopy__(self, _memo: dict[Any, Any]) -> 'TzInfo': ...

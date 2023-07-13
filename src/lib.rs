@@ -24,6 +24,7 @@ mod url;
 mod validators;
 
 // required for benchmarks
+pub use self::input::TzInfo;
 pub use self::url::{PyMultiHostUrl, PyUrl};
 pub use argument_markers::{ArgsKwargs, PydanticUndefinedType};
 pub use build_tools::SchemaError;
@@ -93,6 +94,7 @@ fn _pydantic_core(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyMultiHostUrl>()?;
     m.add_class::<ArgsKwargs>()?;
     m.add_class::<SchemaSerializer>()?;
+    m.add_class::<TzInfo>()?;
     m.add_function(wrap_pyfunction!(to_json, m)?)?;
     m.add_function(wrap_pyfunction!(to_jsonable_python, m)?)?;
     m.add_function(wrap_pyfunction!(list_all_errors, m)?)?;
