@@ -687,7 +687,7 @@ similarly to how it treats built-in generic types like `List` and `Dict`:
 Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
 
 !!! note
-    For serialization this means: When a `TypeVar` is constrained or bound using a parent model `ParentModel`
+    For serialization this means: when a `TypeVar` is constrained or bound using a parent model `ParentModel`
     and a child model `ChildModel` is used as a concrete value, Pydantic will serialize `ChildModel` as `ParentModel`.
     `TypeVar` needs to be wrapped inside [`SerializeAsAny`](serialization.md#serializing-with-duck-typing)
     for Pydantic to serialize `ChildModel` as `ChildModel`.
