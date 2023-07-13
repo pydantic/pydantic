@@ -686,6 +686,12 @@ similarly to how it treats built-in generic types like `List` and `Dict`:
 
 Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
 
+!!! note
+    For serialization this means: when a `TypeVar` is constrained or bound using a parent model `ParentModel`
+    and a child model `ChildModel` is used as a concrete value, Pydantic will serialize `ChildModel` as `ParentModel`.
+    `TypeVar` needs to be wrapped inside [`SerializeAsAny`](serialization.md#serializing-with-duck-typing)
+    for Pydantic to serialize `ChildModel` as `ChildModel`.
+
 ```py
 from typing import Generic, TypeVar
 
@@ -722,6 +728,45 @@ except ValidationError as exc:
 concrete_model = typevar_model[int]
 print(concrete_model(a=1, b=1))
 #> a=1 b=1
+```
+
+If a Pydantic model is used in a `TypeVar` constraint, [`SerializeAsAny`](serialization.md#serializing-with-duck-typing) can be used to
+serialize it using the concrete model instead of the model `TypeVar` is bound to.
+
+```py
+from typing import Generic, TypeVar
+
+from pydantic import BaseModel, SerializeAsAny
+
+
+class Model(BaseModel):
+    a: int = 42
+
+
+class DataModel(Model):
+    b: int = 2
+    c: int = 3
+
+
+BoundT = TypeVar('BoundT', bound=Model)
+
+
+class GenericModel(BaseModel, Generic[BoundT]):
+    data: BoundT
+
+
+class SerializeAsAnyModel(BaseModel, Generic[BoundT]):
+    data: SerializeAsAny[BoundT]
+
+
+data_model = DataModel()
+
+print(GenericModel(data=data_model).model_dump())
+#> {'data': {'a': 42}}
+
+
+print(SerializeAsAnyModel(data=data_model).model_dump())
+#> {'data': {'a': 42, 'b': 2, 'c': 3}}
 ```
 
 ## Dynamic model creation
