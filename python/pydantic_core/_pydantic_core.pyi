@@ -102,7 +102,10 @@ class SchemaValidator:
         strict: bool | None = None,
         from_attributes: bool | None = None,
         context: 'dict[str, Any] | None' = None,
-    ) -> dict[str, Any]: ...
+    ) -> dict[str, Any] | tuple[dict[str, Any], dict[str, Any] | None, set[str]]:
+        """
+        ModelValidator and ModelFieldsValidator will return a tuple of (fields data, extra data, fields set)
+        """
     def get_default_value(self, *, strict: bool | None = None, context: Any = None) -> Some | None: ...
 
 _IncEx: TypeAlias = set[int] | set[str] | dict[int, _IncEx] | dict[str, _IncEx] | None

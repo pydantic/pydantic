@@ -347,8 +347,8 @@ def test_validate_assignment_allow_extra():
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {}, {'field_a'})
 
     assert v.validate_assignment({'field_a': 'test'}, 'other_field', 456) == (
-        {'field_a': 'test', 'other_field': 456},
-        None,
+        {'field_a': 'test'},
+        {'other_field': 456},
         {'other_field'},
     )
 
@@ -364,8 +364,8 @@ def test_validate_assignment_allow_extra_validate():
     )
 
     assert v.validate_assignment({'field_a': 'test'}, 'other_field', '456') == (
-        {'field_a': 'test', 'other_field': 456},
-        None,
+        {'field_a': 'test'},
+        {'other_field': 456},
         {'other_field'},
     )
 
@@ -1682,10 +1682,12 @@ def test_extra_behavior_allow(
     assert fields_set == {'f', 'extra_field'}
 
     v.validate_assignment(m, 'f', 'y')
-    assert m['f'] == 'y'
+    assert m == {'f': 'y'}
 
-    v.validate_assignment(m, 'not_f', '123')
-    assert m['not_f'] == expected_extra_value
+    new_m, new_model_extra, new_fields_set = v.validate_assignment({**m, **model_extra}, 'not_f', '123')
+    assert new_m == {'f': 'y'}
+    assert new_model_extra == {'extra_field': expected_extra_value, 'not_f': expected_extra_value}
+    assert new_fields_set == {'not_f'}
 
 
 @pytest.mark.parametrize(
