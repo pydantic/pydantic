@@ -3599,6 +3599,13 @@ similarly to how it treats built-in generic types like <code>List</code> and <co
 <li>If the <code>TypeVar</code>s involved have no bounds, they are treated as <code>Any</code>.</li>
 </ul>
 <p>Also, like <code>List</code> and <code>Dict</code>, any parameters specified using a <code>TypeVar</code> can later be substituted with concrete types.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For serialization this means: when a <code>TypeVar</code> is constrained or bound using a parent model <code>ParentModel</code>
+and a child model <code>ChildModel</code> is used as a concrete value, Pydantic will serialize <code>ChildModel</code> as <code>ParentModel</code>.
+<code>TypeVar</code> needs to be wrapped inside <a href="../serialization/#serializing-with-duck-typing"><code>SerializeAsAny</code></a>
+for Pydantic to serialize <code>ChildModel</code> as <code>ChildModel</code>.</p>
+</div>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3634,6 +3641,42 @@ similarly to how it treats built-in generic types like <code>List</code> and <co
 <span class="n">concrete_model</span> <span class="o">=</span> <span class="n">typevar_model</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">concrete_model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 <span class="c1">#&gt; a=1 b=1</span>
+</code></pre></div>
+<p>If a Pydantic model is used in a <code>TypeVar</code> constraint, <a href="../serialization/#serializing-with-duck-typing"><code>SerializeAsAny</code></a> can be used to
+serialize it using the concrete model instead of the model <code>TypeVar</code> is bound to.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializeAsAny</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span>
+
+
+<span class="k">class</span> <span class="nc">DataModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+
+
+<span class="n">BoundT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;BoundT&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Model</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">GenericModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">BoundT</span><span class="p">]):</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">BoundT</span>
+
+
+<span class="k">class</span> <span class="nc">SerializeAsAnyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">BoundT</span><span class="p">]):</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">SerializeAsAny</span><span class="p">[</span><span class="n">BoundT</span><span class="p">]</span>
+
+
+<span class="n">data_model</span> <span class="o">=</span> <span class="n">DataModel</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">GenericModel</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data_model</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;data&#39;: {&#39;a&#39;: 42}}</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">SerializeAsAnyModel</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data_model</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;data&#39;: {&#39;a&#39;: 42, &#39;b&#39;: 2, &#39;c&#39;: 3}}</span>
 </code></pre></div>
 <h2 id="dynamic-model-creation">Dynamic model creation<a class="headerlink" href="#dynamic-model-creation" title="Permanent link">&para;</a></h2>
 <p>There are some occasions where it is desirable to create a model using runtime information to specify the fields.
