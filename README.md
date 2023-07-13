@@ -7,6 +7,7 @@
 [![downloads](https://pepy.tech/badge/pydantic/month)](https://pepy.tech/project/pydantic)
 [![versions](https://img.shields.io/pypi/pyversions/pydantic.svg)](https://github.com/pydantic/pydantic)
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
+[![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json)](https://docs.pydantic.dev/latest/contributing/#badges)
 
 Data validation using Python type hints.
 
