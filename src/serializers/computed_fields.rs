@@ -135,6 +135,9 @@ impl ComputedField {
             let value = self
                 .serializer
                 .to_python(next_value, next_include, next_exclude, extra)?;
+            if extra.exclude_none && value.is_none(py) {
+                return Ok(());
+            }
             let key = match extra.by_alias {
                 true => self.alias_py.as_ref(py),
                 false => property_name_py,

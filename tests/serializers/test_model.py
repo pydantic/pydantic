@@ -605,6 +605,46 @@ def test_property_alias():
     assert s.to_json(Model(3, 4)) == b'{"width":3,"height":4,"Area":12,"volume":48}'
 
 
+def test_computed_field_to_python_exclude_none():
+    @dataclasses.dataclass
+    class Model:
+        width: int
+        height: int
+
+        @property
+        def area(self) -> int:
+            return self.width * self.height
+
+        @property
+        def volume(self) -> None:
+            return None
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema(
+                {
+                    'width': core_schema.model_field(core_schema.int_schema()),
+                    'height': core_schema.model_field(core_schema.int_schema()),
+                },
+                computed_fields=[
+                    core_schema.computed_field('area', core_schema.int_schema(), alias='Area'),
+                    core_schema.computed_field('volume', core_schema.int_schema()),
+                ],
+            ),
+        )
+    )
+    assert s.to_python(Model(3, 4), exclude_none=False) == {'width': 3, 'height': 4, 'Area': 12, 'volume': None}
+    assert s.to_python(Model(3, 4), exclude_none=True) == {'width': 3, 'height': 4, 'Area': 12}
+    assert s.to_python(Model(3, 4), mode='json', exclude_none=False) == {
+        'width': 3,
+        'height': 4,
+        'Area': 12,
+        'volume': None,
+    }
+    assert s.to_python(Model(3, 4), mode='json', exclude_none=True) == {'width': 3, 'height': 4, 'Area': 12}
+
+
 @pytest.mark.skipif(cached_property is None, reason='cached_property is not available')
 def test_cached_property_alias():
     @dataclasses.dataclass
