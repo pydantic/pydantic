@@ -1,5 +1,7 @@
-!!! warning
-    This page still needs to be updated for v2.0.
+Pydantic provides a number of ways to create custom validators for your fields and models.
+
+At a high level, `@field_validator` is the most flexible way to create a validator for individual fields,
+and `@model_validator` is the most flexible way to create a validator for a model as a whole.
 
 ## Field validators
 
@@ -69,28 +71,32 @@ except ValidationError as e:
 
 A few things to note on validators:
 
-* validators are "class methods", so the first argument value they receive is the `UserModel` class, not an instance
-    of `UserModel`.
-* the second argument is the field value to validate; it can be named as you please
-* the third argument is an instance of `pydantic.FieldValidationInfo`
-* validators should either return the parsed value or raise a `ValueError` or `AssertionError`
-    (``assert`` statements may be used).
+* Validators are class methods, so the first argument value they receive is the class itself (in this example,
+    `UserModel`), not an instance of the class.
+* The second argument is the field value to validate; it can be named as you please.
+* The third argument is an instance of `pydantic.FieldValidationInfo`.
+    This provides access to the field's properties.
+* Validators should either return the parsed value or raise a `TypeError`, `ValueError`, or `AssertionError`
+    (`assert` statements may be used).
 
 !!! warning
     If you make use of `assert` statements, keep in mind that running
     Python with the [`-O` optimization flag](https://docs.python.org/3/using/cmdline.html#cmdoption-o)
     disables `assert` statements, and **validators will stop working**.
 
-* where validators rely on other values, you should be aware that:
+* Where validators rely on other values, you should be aware that:
     * Validation is done in the order fields are defined.
         E.g. in the example above, `password2` has access to `password1` (and `name`),
         but `password1` does not have access to `password2`. See [Field Ordering](models.md#field-ordering)
-        for more information on how fields are ordered
+        for more information on how fields are ordered.
 
-    * If validation fails on another field (or that field is missing) it will not be included in `values`, hence
-        `if 'password1' in values and ...` in this example.
+    * If validation fails on another field (or that field is missing), it will not be included in values
+        passed to the function, hence `if 'password1' in info.data and ...` in this example.
 
-## Annotated Validators
+## Annotated validators
+
+Annotated validators are a way to apply validators to fields without using `@field_validator`.
+Instead, you can specify the validator directly in an `Annotated` field's type annotation.
 
 ??? api "API Documentation"
     [`pydantic.functional_validators.WrapValidator`][pydantic.functional_validators.WrapValidator]<br>
@@ -102,7 +108,7 @@ Pydantic also provides a way to apply validators via use of `Annotated`.
 
 !!! note
     You can use multiple before, after, or wrap validators, but only one `PlainValidator` since a plain validator
-    will not call any inner validators.
+    will not call any inner validators. See [Wrap validators](#wrap-validators) for more information.
 
 ```py
 from typing import List
@@ -184,6 +190,8 @@ except ValidationError as e:
     MyVal = Annotated[int, AfterValidator(func1), BeforeValidator(func2)]
     ```
 
+    See [Wrap validators](#wrap-validators) for more information about before and after validators.
+
 A few more things to note:
 
 * A single validator can be applied to multiple fields by passing it multiple field names.
@@ -191,11 +199,23 @@ A few more things to note:
 * The keyword argument `mode='before'` will cause the validator to be called prior to other validation.
 * Using validator annotations inside of `Annotated` allows applying validators to items of collections.
 
-## Special Types
+## Validation field checks
+
+During class creation, field validators are checked to confirm that the fields they specify actually exist on the model.
+
+This may be undesirable if, for example, you want to define a validator to validate fields that will only be present
+on subclasses of the model where the validator is defined.
+
+If you want to disable these checks during class creation, you can pass `check_fields=False` as a keyword argument to
+`@field_validator`. This option is not available for model validators.
+
+## Special types
 
 Pydantic provides a few special types that can be used to customize validation.
 
-- [`InstanceOf`][pydantic.functional_validators.InstanceOf] is a type that can be used to validate that a value is an instance of a given class.
+### `InstanceOf`
+
+[`InstanceOf`][pydantic.functional_validators.InstanceOf] can be used to validate that a value is an instance of a given class.
 
 ```py
 from typing import List
@@ -233,7 +253,9 @@ except ValidationError as e:
     """
 ```
 
-- [`SkipValidation`][pydantic.functional_validators.SkipValidation] is a type that can be used to skip validation on a field.
+### `SkipValidation`
+
+[`SkipValidation`][pydantic.functional_validators.SkipValidation] can be used to skip validation on a field.
 
 ```py
 from typing import List
@@ -258,8 +280,10 @@ print(m)
 
 ### Generic validated collections
 
-To validate individual items of a collection (list, dict, etc.) field you can use `Annotated` to apply validators to the inner items.
-In this example we also use type aliases to create a generic validated collection to demonstrate how this approach leads to composability and coda re-use.
+To validate individual items of a collection (list, dict, etc.) field, you can use `Annotated` to apply validators
+to the inner items.
+In this example we also use type aliases to create a generic validated collection to demonstrate how this approach
+leads to composability and coda re-use.
 
 ```py
 from typing import List, TypeVar
@@ -321,13 +345,18 @@ print(Model(a='invalid').a)
 #> 2000-01-01 00:00:00
 ```
 
-## Validate always
+### Before and after validators
 
-**TODO this content is wrong!**
+In addition, you can execute code *before* or *after* field validation
+with the help of the `@field_validator` decorator `mode` parameter.
 
-For performance reasons, by default validators are not called for fields when a value is not supplied.
-However there are situations where it may be useful or required to always call the validator, e.g.
-to set a dynamic default value.
+`@field_validator`s can have `mode='before'`, in which case they're called before regular
+validation occurs (and are provided with the raw input data), or `mode='after'` (the default), in which case
+they're called after validation.
+
+Field validation will not occur if `mode='before'` validation raise an error. As with field validators,
+"post" (i.e. `mode='after'`) validators by default will be called even if prior validators fail.
+
 
 ```py
 from datetime import datetime
@@ -349,16 +378,13 @@ print(DemoModel(ts='2017-11-08T14:00'))
 #> ts=datetime.datetime(2017, 11, 8, 14, 0)
 ```
 
-You'll often want to use this together with `pre`, since otherwise with `always=True`
-Pydantic would try to validate the default `None` which would cause an error.
-
 ## Reuse validators
 
-Occasionally, you will want to use the same validator on multiple fields/models (e.g. to
-normalize some input data). The "naive" approach would be to write a separate function,
-then call it from multiple decorators.  Obviously, this entails a lot of repetition and
-boiler plate code. To circumvent this, the `allow_reuse` parameter has been added to
-`pydantic.validator` in **v1.2** (`False` by default):
+Occasionally, you will want to use the same validator on multiple fields or models (e.g. to
+normalize some input data).
+
+In Pydantic V2, you can simply define a validation function once, then reuse it with the
+`field_validator` function, specifying the field and validation function.
 
 ```py
 from pydantic import BaseModel, field_validator
@@ -388,88 +414,6 @@ assert jane_doe.name == 'Jane Doe'
 assert john_doe.name == 'John Doe'
 ```
 
-As it is obvious, repetition has been reduced and the models become again almost
-declarative.
-
-!!! tip
-    If you have a lot of fields that you want to validate, it usually makes sense to
-    define a help function with which you will avoid setting `allow_reuse=True` over and
-    over again.
-
-## Model validators
-
-Validation can also be performed on the entire model's data.
-
-```py
-from pydantic import BaseModel, ValidationError, model_validator
-
-
-class UserModel(BaseModel):
-    username: str
-    password1: str
-    password2: str
-
-    @model_validator(mode='before')
-    def check_card_number_omitted(cls, data):
-        assert 'card_number' not in data, 'card_number should not be included'
-        return data
-
-    @model_validator(mode='after')
-    def check_passwords_match(self) -> 'UserModel':
-        pw1 = self.password1
-        pw2 = self.password2
-        if pw1 is not None and pw2 is not None and pw1 != pw2:
-            raise ValueError('passwords do not match')
-        return self
-
-
-print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))
-#> username='scolvin' password1='zxcvbn' password2='zxcvbn'
-try:
-    UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn2')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for UserModel
-      Value error, passwords do not match [type=value_error, input_value={'username': 'scolvin', '... 'password2': 'zxcvbn2'}, input_type=dict]
-    """
-
-try:
-    UserModel(
-        username='scolvin',
-        password1='zxcvbn',
-        password2='zxcvbn',
-        card_number='1234',
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for UserModel
-      Assertion failed, card_number should not be included
-    assert 'card_number' not in {'card_number': '1234', 'password1': 'zxcvbn', 'password2': 'zxcvbn', 'username': 'scolvin'} [type=assertion_error, input_value={'username': 'scolvin', '..., 'card_number': '1234'}, input_type=dict]
-    """
-```
-
-As with field validators, root validators can have `pre=True`, in which case they're called before field
-validation occurs (and are provided with the raw input data), or `pre=False` (the default), in which case
-they're called after field validation.
-
-Field validation will not occur if `pre=True` root validators raise an error. As with field validators,
-"post" (i.e. `pre=False`) root validators by default will be called even if prior validators fail; this
-behaviour can be changed by setting the `skip_on_failure=True` keyword argument to the validator.
-The `values` argument will be a dict containing the values which passed field validation and
-field defaults where applicable.
-
-## Field checks
-
-During class creation, validators are checked to confirm that the fields they specify actually exist on the model.
-
-This may be undesirable if, for example, you want to define a validator to validate fields that will only be present
-on subclasses of the model where the validator is defined.
-
-If you want to disable these checks during class creation, you can pass `check_fields=False` as a keyword argument to
-the validator.
-
 ## Dataclass validators
 
 Validators also work with Pydantic dataclasses.
@@ -497,7 +441,7 @@ print(DemoDataclass(product_id=2468))
 #> DemoDataclass(product_id='02468')
 ```
 
-## Validation Context
+## Validation context
 
 You can pass a context object to the validation methods which can be accessed from the `info`
 argument to decorated validator functions:
@@ -593,6 +537,7 @@ except ValidationError as exc:
 ```
 
 ### Using validation context with `BaseModel` initialization
+
 Although there is no way to specify a context in the standard `BaseModel` initializer, you can work around this through
 the use of `contextvars.ContextVar` and a custom `__init__` method:
 
@@ -646,3 +591,62 @@ with init_context({'multiplier': 3}):
 print(Model(my_number=2))
 #> my_number=2
 ```
+
+## Model validators
+
+Validation can also be performed on the entire model's data.
+
+```py
+from pydantic import BaseModel, ValidationError, model_validator
+
+
+class UserModel(BaseModel):
+    username: str
+    password1: str
+    password2: str
+
+    @model_validator(mode='before')
+    def check_card_number_omitted(cls, data):
+        assert 'card_number' not in data, 'card_number should not be included'
+        return data
+
+    @model_validator(mode='after')
+    def check_passwords_match(self) -> 'UserModel':
+        pw1 = self.password1
+        pw2 = self.password2
+        if pw1 is not None and pw2 is not None and pw1 != pw2:
+            raise ValueError('passwords do not match')
+        return self
+
+
+print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))
+#> username='scolvin' password1='zxcvbn' password2='zxcvbn'
+try:
+    UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn2')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for UserModel
+      Value error, passwords do not match [type=value_error, input_value={'username': 'scolvin', '... 'password2': 'zxcvbn2'}, input_type=dict]
+    """
+
+try:
+    UserModel(
+        username='scolvin',
+        password1='zxcvbn',
+        password2='zxcvbn',
+        card_number='1234',
+    )
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for UserModel
+      Assertion failed, card_number should not be included
+    assert 'card_number' not in {'card_number': '1234', 'password1': 'zxcvbn', 'password2': 'zxcvbn', 'username': 'scolvin'} [type=assertion_error, input_value={'username': 'scolvin', '..., 'card_number': '1234'}, input_type=dict]
+    """
+```
+
+As with field validators, model validators can have wrap validators as well as before and after validators:
+`mode='before'`, in which case they're called before regular
+validation occurs (and are provided with the raw input data), or `mode='after'` (the default), in which case
+they're called after validation.
