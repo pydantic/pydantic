@@ -90,6 +90,9 @@ def upgrade_python(markdown: str) -> str:
             min_minor_version = MIN_MINOR_VERSION
 
         py_code = match.group(2)
+        numbers = match.group(3)
+        # import devtools
+        # devtools.debug(numbers)
         output = []
         last_code = py_code
         for minor_version in range(min_minor_version, MAX_MINOR_VERSION + 1):
@@ -101,7 +104,7 @@ def upgrade_python(markdown: str) -> str:
                     continue
                 last_code = tab_code
 
-            content = indent(f'{prefix}\n{tab_code}```', ' ' * 4)
+            content = indent(f'{prefix}\n{tab_code}```{numbers}', ' ' * 4)
             output.append(f'=== "Python 3.{minor_version} and above"\n\n{content}')
 
         if len(output) == 1:
@@ -109,7 +112,7 @@ def upgrade_python(markdown: str) -> str:
         else:
             return '\n\n'.join(output)
 
-    return re.sub(r'^(``` *py.*?)\n(.+?)^```', add_tabs, markdown, flags=re.M | re.S)
+    return re.sub(r'^(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. .+?\n)+)', add_tabs, markdown, flags=re.M | re.S)
 
 
 def _upgrade_code(code: str, min_version: int) -> str:

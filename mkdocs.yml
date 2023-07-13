@@ -45,6 +45,7 @@ extra_javascript:
 nav:
 - Get Started:
   - Welcome to Pydantic: index.md
+  - Why use Pydantic: why.md
   - Installation: install.md
   - Migration Guide: migration.md
   - Version Compatibility: version-compatibility.md
