@@ -461,6 +461,9 @@ def test_validate_assignment():
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
 
+        def __init__(self):
+            self.__pydantic_extra__ = None  # this attribute must be present for validate_assignment
+
     v = SchemaValidator(
         core_schema.no_info_after_validator_function(
             f,
@@ -474,6 +477,7 @@ def test_validate_assignment():
     assert m.field_a == 'test'
     assert m.__pydantic_fields_set__ == {'field_a'}
     assert m.__dict__ == {'field_a': 'test', 'more': 'foobar'}
+    assert m.__pydantic_extra__ is None
 
     m2 = Model()
     m2.field_a = 'test'

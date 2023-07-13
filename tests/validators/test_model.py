@@ -943,6 +943,9 @@ def test_validate_assignment():
         field_a: str
         field_b: int
 
+        def __init__(self):
+            self.__pydantic_extra__ = None
+
     v = SchemaValidator(
         {
             'type': 'model',
@@ -1019,7 +1022,10 @@ def test_validate_assignment_function():
 
 def test_validate_assignment_no_fields_set():
     class MyModel:
-        __slots__ = ('__dict__',)
+        __slots__ = ('__dict__', '__pydantic_extra__')
+
+        def __init__(self):
+            self.__pydantic_extra__ = None
 
     v = SchemaValidator(
         {
