@@ -403,8 +403,10 @@ def test_validating_assignment_value_change(ValidateAssignmentModel):
     assert p.c == 0
     p.c = 3
     assert p.c == 6
+    assert p.model_dump()['c'] == 6
 
 
+@pytest.mark.xfail(reason='requires https://github.com/pydantic/pydantic-core/pull/766')
 def test_validating_assignment_extra(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', extra_field=1.23)
     assert p.extra_field == 1.23
@@ -414,6 +416,7 @@ def test_validating_assignment_extra(ValidateAssignmentModel):
     assert p.extra_field == 1.23
     p.extra_field = 'bye'
     assert p.extra_field == 'bye'
+    assert p.model_dump()['extra_field'] == 'bye'
 
 
 def test_validating_assignment_dict(ValidateAssignmentModel):
