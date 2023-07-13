@@ -112,7 +112,6 @@ jobs:
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
-        cache: true
         version: 2.7.0
 
     - name: install deps
