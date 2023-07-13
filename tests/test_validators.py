@@ -406,7 +406,6 @@ def test_validating_assignment_value_change(ValidateAssignmentModel):
     assert p.model_dump()['c'] == 6
 
 
-@pytest.mark.xfail(reason='requires https://github.com/pydantic/pydantic-core/pull/766')
 def test_validating_assignment_extra(ValidateAssignmentModel):
     p = ValidateAssignmentModel(b='hello', extra_field=1.23)
     assert p.extra_field == 1.23
@@ -2416,7 +2415,7 @@ def test_validator_allow_reuse_same_field():
                 return v + 1
 
             @field_validator('x')
-            def val_x(cls, v: int) -> int:  # noqa: F811
+            def val_x(cls, v: int) -> int:
                 return v + 2
 
         assert Model(x=1).model_dump() == {'x': 3}
@@ -2434,7 +2433,7 @@ def test_validator_allow_reuse_different_field_1():
                 return v + 1
 
             @field_validator('y')
-            def val(cls, v: int) -> int:  # noqa: F811
+            def val(cls, v: int) -> int:
                 return v + 2
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 4}
@@ -2454,7 +2453,7 @@ def test_validator_allow_reuse_different_field_2():
             def val_x(cls, v: int) -> int:
                 return v + 1
 
-            val_x = field_validator('y')(val)  # noqa: F811
+            val_x = field_validator('y')(val)
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 4}
 
@@ -2504,7 +2503,7 @@ def test_root_validator_allow_reuse_same_field():
                 return v
 
             @root_validator(skip_on_failure=True)
-            def root_val(cls, v: Dict[str, Any]) -> Dict[str, Any]:  # noqa: F811
+            def root_val(cls, v: Dict[str, Any]) -> Dict[str, Any]:
                 v['x'] += 2
                 return v
 
