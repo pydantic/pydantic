@@ -302,13 +302,13 @@ impl Validator for ModelFieldsValidator {
     ) -> ValResult<'data, PyObject> {
         let dict: &PyDict = obj.downcast()?;
 
-        let ok = |output: PyObject| {
+        let get_updated_dict = |output: PyObject| {
             dict.set_item(field_name, output)?;
-            Ok(dict.to_object(py))
+            Ok(dict)
         };
 
         let prepare_result = |result: ValResult<'data, PyObject>| match result {
-            Ok(output) => ok(output),
+            Ok(output) => get_updated_dict(output),
             Err(ValError::LineErrors(line_errors)) => {
                 let errors = line_errors
                     .into_iter()
@@ -358,7 +358,7 @@ impl Validator for ModelFieldsValidator {
                     Some(ref validator) => {
                         prepare_result(validator.validate(py, field_value, &extra, definitions, recursion_guard))
                     }
-                    None => ok(field_value.to_object(py)),
+                    None => get_updated_dict(field_value.to_object(py)),
                 },
                 ExtraBehavior::Forbid | ExtraBehavior::Ignore => {
                     return Err(ValError::new_with_loc(
@@ -372,8 +372,24 @@ impl Validator for ModelFieldsValidator {
             }
         }?;
 
+        let new_extra = match &self.extra_behavior {
+            ExtraBehavior::Allow => {
+                let non_extra_data = PyDict::new(py);
+                self.fields.iter().for_each(|f| {
+                    let popped_value = PyAny::get_item(new_data, &f.name).unwrap();
+                    new_data.del_item(&f.name).unwrap();
+                    non_extra_data.set_item(&f.name, popped_value).unwrap();
+                });
+                let new_extra = new_data.copy()?;
+                new_data.clear();
+                new_data.update(non_extra_data.as_mapping())?;
+                new_extra.to_object(py)
+            }
+            _ => py.None(),
+        };
+
         let fields_set: &PySet = PySet::new(py, &[field_name.to_string()])?;
-        Ok((new_data, py.None(), fields_set.to_object(py)).to_object(py))
+        Ok((new_data.to_object(py), new_extra, fields_set.to_object(py)).to_object(py))
     }
 
     fn different_strict_behavior(

@@ -183,14 +183,18 @@ impl Validator for ModelValidator {
                 Ok(model.into_py(py))
             };
         }
-        let dict: &PyDict = model.getattr(intern!(py, DUNDER_DICT))?.downcast()?;
+        let old_dict: &PyDict = model.getattr(intern!(py, DUNDER_DICT))?.downcast()?;
 
-        let new_dict = dict.copy()?;
-        new_dict.set_item(field_name, field_value)?;
+        let input_dict = old_dict.copy()?;
+        let old_extra: Option<&PyDict> = model.getattr(intern!(py, DUNDER_MODEL_EXTRA_KEY))?.downcast().ok();
+        if let Some(old_extra) = old_extra {
+            input_dict.update(old_extra.as_mapping())?;
+        }
+        input_dict.set_item(field_name, field_value)?;
 
         let output = self.validator.validate_assignment(
             py,
-            new_dict,
+            input_dict,
             field_name,
             field_value,
             extra,
@@ -198,17 +202,22 @@ impl Validator for ModelValidator {
             recursion_guard,
         )?;
 
-        let (output, _, updated_fields_set): (&PyDict, &PyAny, &PySet) = output.extract(py)?;
+        let (validated_dict, validated_extra, validated_fields_set): (&PyDict, &PyAny, &PySet) = output.extract(py)?;
 
         if let Ok(fields_set) = model.getattr(intern!(py, DUNDER_FIELDS_SET_KEY)) {
             let fields_set: &PySet = fields_set.downcast()?;
-            for field_name in updated_fields_set {
+            for field_name in validated_fields_set {
                 fields_set.add(field_name)?;
             }
         }
-        let output = output.to_object(py);
 
-        force_setattr(py, model, intern!(py, DUNDER_DICT), output)?;
+        force_setattr(py, model, intern!(py, DUNDER_DICT), validated_dict.to_object(py))?;
+        force_setattr(
+            py,
+            model,
+            intern!(py, DUNDER_MODEL_EXTRA_KEY),
+            validated_extra.to_object(py),
+        )?;
         Ok(model.into_py(py))
     }
 
