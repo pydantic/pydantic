@@ -30,7 +30,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreConfig, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Literal, assert_never
+from typing_extensions import Annotated, Literal, assert_never
 
 from pydantic._internal import _annotated_handlers, _internal_dataclass
 
@@ -971,6 +971,8 @@ class GenerateJsonSchema:
         for s in choices:
             try:
                 generated.append(self.generate_inner(s))
+            except PydanticOmit:
+                continue
             except PydanticInvalidForJsonSchema as exc:
                 self.emit_warning('skipped-choice', exc.message)
         if len(generated) == 1:
@@ -997,6 +999,8 @@ class GenerateJsonSchema:
                     # Use str(k) since keys must be strings for json; while not technically correct,
                     # it's the closest that can be represented in valid JSON
                     generated[str(k)] = self.generate_inner(v).copy()
+                except PydanticOmit:
+                    continue
                 except PydanticInvalidForJsonSchema as exc:
                     self.emit_warning('skipped-choice', exc.message)
 
@@ -2081,7 +2085,7 @@ def models_json_schema(
     description: str | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], JsonSchemaValue], JsonSchemaValue]:
+) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], JsonSchemaValue,], JsonSchemaValue]:
     """Utility function to generate a JSON Schema for multiple models.
 
     Args:
@@ -2233,3 +2237,39 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
         for item in item:
             refs.update(_get_all_json_refs(item))
     return refs
+
+
+AnyType = TypeVar('AnyType')
+
+if TYPE_CHECKING:
+    SkipJsonSchema = Annotated[AnyType, ...]
+else:
+
+    @_internal_dataclass.slots_dataclass
+    class SkipJsonSchema:
+        """Add this as an annotation on a field to skip generating a JSON schema for that field.
+
+        Example:
+            ```py
+            from pydantic import BaseModel
+            from pydantic.json_schema import SkipJsonSchema
+
+            class Model(BaseModel):
+                a: int | SkipJsonSchema[None] = None
+
+
+            print(Model.model_json_schema())
+            #> {'properties': {'a': {'default': None, 'title': 'A', 'type': 'integer'}}, 'title': 'Model', 'type': 'object'}
+            ```
+        """
+
+        def __class_getitem__(cls, item: AnyType) -> AnyType:
+            return Annotated[item, cls()]
+
+        def __get_pydantic_json_schema__(
+            self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            raise PydanticOmit
+
+        def __hash__(self) -> int:
+            return hash(type(self))
