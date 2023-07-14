@@ -7,6 +7,7 @@ import warnings
 from copy import copy
 from typing import TYPE_CHECKING, Any
 
+from annotated_types import BaseMetadata
 from pydantic_core import PydanticUndefined
 
 from . import _typing_extra
@@ -55,7 +56,7 @@ class PydanticMetadata(Representation):
     __slots__ = ()
 
 
-class PydanticGeneralMetadata(PydanticMetadata):
+class PydanticGeneralMetadata(PydanticMetadata, BaseMetadata):
     """Pydantic general metada like `max_digits`."""
 
     def __init__(self, **metadata: Any):

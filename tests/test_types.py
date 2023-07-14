@@ -102,7 +102,7 @@ from pydantic import (
 )
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
-from pydantic.types import AllowInfNan, GetPydanticSchema, ImportString, Strict
+from pydantic.types import AllowInfNan, GetPydanticSchema, ImportString, Strict, StringConstraints
 
 try:
     import email_validator
@@ -5565,3 +5565,10 @@ def test_get_pydantic_core_schema_marker_unrelated_type() -> None:
     ta = TypeAdapter(Annotated[int, Marker(2), Marker(3)])
 
     assert ta.validate_python('1') == 3
+
+
+def test_string_constraints() -> None:
+    ta = TypeAdapter(
+        Annotated[str, StringConstraints(strip_whitespace=True, to_lower=True), AfterValidator(lambda x: x * 2)]
+    )
+    assert ta.validate_python(' ABC ') == 'abcabc'

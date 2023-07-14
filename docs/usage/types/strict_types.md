@@ -62,3 +62,34 @@ m = Model(finite=1.0)
 print(m)
 #> finite=1.0
 ```
+
+You can also use `pydantic.StringConstraints` in `Annotated` instead of `constr` for better compatibility with type checkers and more flexibility in nesting within other types:
+
+```py
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, StringConstraints, ValidationError
+
+FirstName = Annotated[
+    str,
+    StringConstraints(to_upper=True, pattern=r'[A-Z0-9]{3}-[A-Z0-9]{3}'),
+]
+
+
+class Model(BaseModel):
+    license_plate: FirstName
+
+
+try:
+    Model(license_plate='XYZ')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    license_plate
+      String should match pattern '[A-Z0-9]{3}-[A-Z0-9]{3}' [type=string_pattern_mismatch, input_value='XYZ', input_type=str]
+    """
+m = Model(license_plate='ABC-123')
+print(m)
+#> license_plate='ABC-123'
+```
