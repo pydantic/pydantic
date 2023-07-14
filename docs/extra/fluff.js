@@ -9,6 +9,7 @@ const companies = [
   {name: 'Datadog', key: 'datadog'},
   {name: 'Facebook', key: 'facebook'},
   {name: 'Google', key: 'google'},
+  {name: 'HSBC', key: 'hsbc'},
   {name: 'IBM', key: 'ibm'},
   {name: 'Intel', key: 'intel'},
   {name: 'Intuit', key: 'intuit'},
@@ -21,8 +22,11 @@ const companies = [
   {name: 'Netflix', key: 'netflix'},
   {name: 'NSA', key: 'nsa'},
   {name: 'NVIDIA', key: 'nvidia'},
+  {name: 'Oracle', key: 'oracle'},
+  {name: 'Palantir', key: 'palantir'},
   {name: 'Qualcomm', key: 'qualcomm'},
   {name: 'Red Hat', key: 'redhat'},
+  {name: 'Revolut', key: 'revolut'},
   {name: 'Robusta', key: 'robusta'},
   {name: 'Salesforce', key: 'salesforce'},
   {name: 'Starbucks', key: 'starbucks'},
@@ -39,7 +43,7 @@ if (grid) {
     div.classList.add('tile');
     const {key, name} = company;
     div.innerHTML = `
-      <a href="why/#org-${key}">
+      <a href="why/#org-${key}" title="${name}">
         <img src="logos/${key}_logo.png" alt="${name}" />
       </a>
     `;

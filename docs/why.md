@@ -388,7 +388,7 @@ Traffic to the Pydantic docs from enterprise bitbucket and jira instances under 
 
 ### AstraZeneca {#org-astrazeneca}
 
-Traffic to the Pydantic docs from a sub-domain of `astrazeneca.com` domain.
+Traffic to the Pydantic docs from a subdomain of `astrazeneca.com` domain.
 
 [Multiple repos](https://github.com/search?q=org%3AAstraZeneca+pydantic&type=code) in the `AstraZeneca` GitHub org depend on Pydantic.
 
@@ -415,6 +415,10 @@ Communication with engineers from Datadog about how they use Pydantic.
 ### Google {#org-google}
 
 Extensive use of Pydantic in [`google/turbinia`](https://github.com/google/turbinia) and other repos.
+
+### HSBC {#org-hsbc}
+
+Lots of traffic to the Pydantic docs from internal enterprise Jira, Confluence and GitHub instances under the `hsbc` domain.
 
 ### IBM {#org-ibm}
 
@@ -476,6 +480,14 @@ Their "Omniverse Services" depends on Pydantic according to [their documentation
 
 Also, traffic to the Pydantic docs from enterprise Confluence and Jira instances under the `nvidia.com` domain.
 
+### Oracle {#org-oracle}
+
+Traffic to the Pydantic docs from internal enterprise Jira, Confluence and GitHub instances under the `oraclecorp.com` domain.
+
+### Palantir {#org-palantir}
+
+Traffic to the Pydantic docs from an enterprise GitHub instance under the `palantir.build` domain.
+
 ### Qualcomm {#org-qualcomm}
 
 Traffic to the Pydantic docs from an enterprise GitHub instance under the `qualcomm.com` domain.
@@ -483,6 +495,12 @@ Traffic to the Pydantic docs from an enterprise GitHub instance under the `qualc
 ### Red Hat {#org-redhat}
 
 Traffic to the Pydantic docs from bugzilla and jira instances under the `redhat.com` domain.
+
+### Revolut {#org-revolut}
+
+Traffic to the Pydantic docs from a Revolut subdomain of `atlassian.net` domain.
+
+Anecdotally, all internal services at Revolut are built with FastAPI and therefore Pydantic.
 
 ### Robusta {#org-robusta}
 
@@ -494,7 +512,7 @@ Salesforce sponsored Samuel Colvin $10,000 to work on Pydantic in 2022.
 
 ### Starbucks {#org-starbucks}
 
-Traffic to the Pydantic docs from version control sub-domains under the `starbucks.com` domain.
+Traffic to the Pydantic docs from version control subdomains under the `starbucks.com` domain.
 
 ### Texas Instruments {#org-ti}
 
@@ -502,7 +520,7 @@ Traffic to the Pydantic docs from an enterprise bitbucket instance under the `ti
 
 ### Twilio {#org-twilio}
 
-Traffic to the Pydantic docs from version control sub-domains under the `twilio.com` domain.
+Traffic to the Pydantic docs from version control subdomains under the `twilio.com` domain.
 
 ### Twitter {#org-twitter}
 
