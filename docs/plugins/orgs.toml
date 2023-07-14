@@ -221,7 +221,7 @@ Traffic to the Pydantic docs from an enterprise GitHub instance under the `qualc
 key = "redhat"
 name = "Red Hat"
 description = """
-Traffic to the Pydantic docs from bugzilla and Jira instances under the `redhat.com` domain.
+Traffic to the Pydantic docs from Bugzilla and Jira instances under the `redhat.com` domain.
 """
 
 [[orgs]]

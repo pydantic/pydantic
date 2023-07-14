@@ -356,15 +356,11 @@ Functional validators and serializers, as well as a powerful protocol for custom
 
 ## Ecosystem
 
+At the time of writing there are 214,100 repositories on GitHub and 8,119 packages on PyPI that depend on Pydantic.
+
 Some notable libraries that depend on Pydantic:
 
-TODO proper list with stars auto collected
-
-* [FastAPI](https://github.com/tiangolo/fastapi)
-* [huggingface/transformers](https://github.com/huggingface/transformers)
-* [Django Ninja](https://github.com/vitalik/django-ninja)
-* [SQLModel](https://github.com/tiangolo/sqlmodel)
-* [LangChain](https://github.com/hwchase17/langchain)
+{{ libraries }}
 
 {% raw %}
 ## Organisations using Pydantic {#using-pydantic}

@@ -203,7 +203,7 @@ def render_index(markdown: str, page: Page) -> str | None:
         version_str = f'Documentation for development version: [{sha}]({url})'
     else:
         version_str = 'Documentation for development version'
-    print(f'Setting version prefix: {version_str!r}')
+    logger.info('Setting version prefix: %r', version_str)
     markdown = re.sub(r'{{ *version *}}', version_str, markdown)
 
     elements = [tile_template.format(**org) for org in get_orgs_data()]
@@ -215,6 +215,12 @@ def render_index(markdown: str, page: Page) -> str | None:
 def render_why(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'why.md':
         return None
+
+    with (THIS_DIR / 'using.toml').open('rb') as f:
+        using = tomli.load(f)['libs']
+
+    libraries = '\n'.join('* [`{repo}`](https://github.com/{repo}) {stars:,} stars'.format(**lib) for lib in using)
+    markdown = re.sub(r'{{ *libraries *}}', libraries, markdown)
 
     elements = ['### {name} {{#org-{key}}}\n\n{description}'.format(**org) for org in get_orgs_data()]
     return re.sub(r'{{ *organisations *}}', '\n\n'.join(elements), markdown)
