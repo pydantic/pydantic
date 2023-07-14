@@ -167,6 +167,31 @@ print(navbar)
 
 When used as fields, dataclasses (Pydantic or vanilla) should use dicts as validation inputs.
 
+## Generic dataclasses
+
+Pydantic supports generic dataclasses, including those with type variables.
+
+```py
+from typing import Generic, TypeVar
+
+from pydantic import TypeAdapter
+from pydantic.dataclasses import dataclass
+
+T = TypeVar('T')
+
+
+@dataclass
+class GenericDataclass(Generic[T]):
+    x: T
+
+
+validator = TypeAdapter(GenericDataclass)
+
+assert validator.validate_python({'x': None}).x is None
+assert validator.validate_python({'x': 1}).x == 1
+assert validator.validate_python({'x': 'a'}).x == 'a'
+```
+
 ## Stdlib dataclasses and Pydantic dataclasses
 
 ### Inherit from stdlib dataclasses
