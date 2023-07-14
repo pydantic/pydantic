@@ -18,6 +18,7 @@ from typing import (
     Generic,
     Hashable,
     Iterable,
+    Iterator,
     List,
     Set,
     TypeVar,
@@ -26,6 +27,7 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
+from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, deprecated
 
@@ -95,11 +97,12 @@ __all__ = (
     'Base64Bytes',
     'Base64Str',
     'GetPydanticSchema',
+    'StringConstraints',
 )
 
 
 @_dataclasses.dataclass
-class Strict(_fields.PydanticMetadata):
+class Strict(_fields.PydanticMetadata, BaseMetadata):
     """A field metadata class to indicate that a field should be validated in strict mode.
 
     Attributes:
@@ -263,6 +266,49 @@ StrictBytes = Annotated[bytes, Strict()]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STRING TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
+@_dataclasses.dataclass(frozen=True)
+class StringConstraints(annotated_types.GroupedMetadata):
+    """Apply constraints to `str` types.
+
+    Attributes:
+        strip_whitespace: Whether to strip whitespace from the string.
+        to_upper: Whether to convert the string to uppercase.
+        to_lower: Whether to convert the string to lowercase.
+        strict: Whether to validate the string in strict mode.
+        min_length: The minimum length of the string.
+        max_length: The maximum length of the string.
+        pattern: A regex pattern that the string must match.
+    """
+
+    strip_whitespace: bool | None = None
+    to_upper: bool | None = None
+    to_lower: bool | None = None
+    strict: bool | None = None
+    min_length: int | None = None
+    max_length: int | None = None
+    pattern: str | None = None
+
+    def __iter__(self) -> Iterator[BaseMetadata]:
+        if self.min_length is not None:
+            yield MinLen(self.min_length)
+        if self.max_length is not None:
+            yield MaxLen(self.max_length)
+        if self.strict is not None:
+            yield Strict()
+        if (
+            self.strip_whitespace is not None
+            or self.pattern is not None
+            or self.to_lower is not None
+            or self.to_upper is not None
+        ):
+            yield _fields.PydanticGeneralMetadata(
+                strip_whitespace=self.strip_whitespace,
+                to_upper=self.to_upper,
+                to_lower=self.to_lower,
+                pattern=self.pattern,
+            )
+
+
 def constr(
     *,
     strip_whitespace: bool | None = None,
@@ -289,12 +335,13 @@ def constr(
     """
     return Annotated[  # type: ignore[return-value]
         str,
-        Strict(strict) if strict is not None else None,
-        annotated_types.Len(min_length or 0, max_length),
-        _fields.PydanticGeneralMetadata(
+        StringConstraints(
             strip_whitespace=strip_whitespace,
             to_upper=to_upper,
             to_lower=to_lower,
+            strict=strict,
+            min_length=min_length,
+            max_length=max_length,
             pattern=pattern,
         ),
     ]
