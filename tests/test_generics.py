@@ -405,6 +405,7 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
     assert len(_GENERIC_TYPES_CACHE) < types_cache_size + _LIMITED_DICT_SIZE
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
 def test_circular_generic_refs_get_cleaned_up():
     initial_cache_size = len(_GENERIC_TYPES_CACHE)
 
@@ -420,7 +421,7 @@ def test_circular_generic_refs_get_cleaned_up():
             c: Inner[int, C]
 
         klass = Outer[str]
-        assert len(_GENERIC_TYPES_CACHE) > 0
+        assert len(_GENERIC_TYPES_CACHE) > initial_cache_size
         assert klass in _GENERIC_TYPES_CACHE.values()
 
     fn()
