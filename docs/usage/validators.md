@@ -378,6 +378,8 @@ print(DemoModel(ts='2017-11-08T14:00'))
 #> ts=datetime.datetime(2017, 11, 8, 14, 0)
 ```
 
+See [Annotated validators](#annotated-validators) for details about additional wrap and plain validators that can be used with `Annotated`.
+
 ## Reuse validators
 
 Occasionally, you will want to use the same validator on multiple fields or models (e.g. to
@@ -412,6 +414,32 @@ jane_doe = Producer(name='JaNe DOE')
 john_doe = Consumer(name='joHN dOe')
 assert jane_doe.name == 'Jane Doe'
 assert john_doe.name == 'John Doe'
+```
+
+You may also use the [before and after validators](#before-and-after-validators) when reusing validators.
+
+```py
+from typing import Optional
+
+from pydantic import BaseModel, field_validator
+
+
+def first_char(v) -> Optional[str]:
+    if isinstance(v, str) and len(v) > 1:
+        return v[0]
+    return v
+
+
+class ModelA(BaseModel):
+    a: str
+
+    validate_a = field_validator('a', mode='before')(first_char)
+
+
+class ModelB(BaseModel):
+    b: str = 'B'
+
+    validate_b = field_validator('b', mode='after')(first_char)
 ```
 
 ## Dataclass validators
