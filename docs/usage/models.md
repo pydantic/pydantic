@@ -199,6 +199,9 @@ print(Foo.model_json_schema())
 """
 ```
 
+Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
+call `model_rebuild()` proactively when dealing with recursive models or generics.
+
 ## Arbitrary class instances
 
 (Formerly known as "ORM Mode"/`from_orm`.)

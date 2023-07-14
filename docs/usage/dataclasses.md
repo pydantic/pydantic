@@ -192,6 +192,8 @@ assert validator.validate_python({'x': 1}).x == 1
 assert validator.validate_python({'x': 'a'}).x == 'a'
 ```
 
+Note that, if you use the dataclass as a field of a `BaseModel` or via FastAPI you don't need a `TypeAdapter`.
+
 ## Stdlib dataclasses and Pydantic dataclasses
 
 ### Inherit from stdlib dataclasses
