@@ -325,3 +325,9 @@ def test_non_finite_constrained_float_values(input_value, allow_inf_nan, expecte
             v.validate_python(input_value)
     else:
         assert v.validate_python(input_value) == expected
+
+
+def test_validate_scientific_notation_from_json():
+    v = SchemaValidator({'type': 'float'})
+    assert v.validate_json('1.0e-12') == 1e-12
+    assert v.validate_json('1e-12') == 1e-12
