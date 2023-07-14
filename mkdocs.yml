@@ -92,6 +92,7 @@ nav:
   - 'Serialization': usage/serialization.md
   - 'Computed Fields': usage/computed_fields.md
   - 'Dataclasses': usage/dataclasses.md
+  - 'TypeAdapter': usage/type_adapter.md
   - 'Validation Decorator': usage/validation_decorator.md
   - 'Postponed Annotations': usage/postponed_annotations.md
   - 'Strict Mode': usage/strict_mode.md

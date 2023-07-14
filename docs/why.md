@@ -14,11 +14,11 @@ Type hints are great for this since if you're writing modern Python, you already
 Using type hints also means that Pydantic integrates well with static typing tools like mypy and pyright and IDEs like pycharm and vscode.
 
 ??? example "Example - just type hints"
-    ```py
-    from typing import Dict, List, Literal, Tuple
+    _(This example requires Python 3.9+)_
+    ```py requires="3.9"
+    from typing import Annotated, Dict, List, Literal, Tuple
 
     from annotated_types import Gt
-    from typing_extensions import Annotated
 
     from pydantic import BaseModel
 
@@ -45,6 +45,9 @@ Using type hints also means that Pydantic integrates well with static typing too
     2. The [`Literal`](https://docs.python.org/3/library/typing.html#typing.Literal) type is used to enforce that `color` is either `'red'` or `'green'`.
     3. Even when we want to apply constraints not encapsulated in python types, we can use [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Literal) and [`annotated-types`](https://github.com/annotated-types/annotated-types) to enforce constraints without breaking type hints.
     4. I'm not claiming "bazam" is really an attribute of fruit, but rather to show that arbitrarily complex types can easily be validated.
+
+!!! tip "Learn more"
+    See the [documentation on supported types](usage/types/types.md).
 
 ## Performance
 
@@ -116,6 +119,9 @@ As a result Pydantic is among the fastest data validation libraries for Python.
 
 Unlike other performance centric libraries written in compiled languages, Pydantic also has excellent support for customising validation via [functional validators](#customisation).
 
+!!! tip "Learn more"
+    Samuel Colvin's [talk at PyCon 2023](https://youtu.be/pWZw7hYoRVU) explains how `pydantic-core` works and how
+
 ## Serialization
 
 Pydantic provide functionality to serialize model in three ways:
@@ -147,6 +153,9 @@ In all three modes the output can be customised by excluding specific fields, ex
     print(m.model_dump_json(exclude_defaults=True))
     #> {"when":"2020-01-01T12:00:00","where":"home"}
     ```
+
+!!! tip "Learn more"
+    See the [documentation on serialization](usage/serialization.md).
 
 ## JSON Schema
 
@@ -200,6 +209,9 @@ In all three modes the output can be customised by excluding specific fields, ex
 
 Pydantic generates [JSON Schema version 2020-12](https://json-schema.org/draft/2020-12/release-notes.html), the latest version of the standard which is compatible with [OpenAPI 3.1](https://www.openapis.org/blog/2021/02/18/openapi-specification-3-1-released).
 
+!!! tip "Learn more"
+    See the [documentation on JSON Schema](usage/json_schema.md).
+
 {% raw %}
 ## Strict mode and data coercion {#strict-lax}
 {% endraw %}
@@ -248,16 +260,19 @@ To solve this, Pydantic can parse and validate JSON in one step, this allows sen
     #> when=datetime.datetime(2020, 1, 1, 12, 0) where=b'home'
     ```
 
+!!! tip "Learn more"
+    See the [documentation on strict mode](usage/strict_mode.md).
+
 {% raw %}
 ## Dataclasses, TypedDicts and more {#typeddict}
 {% endraw %}
 
 Pydantic provides four ways to create schemas and perform validation and serialization:
 
-1. `BaseModel` &mdash; Pydantic own super class with many common utilities available via instance methods
-2. `pydantic.dataclasses.dataclass` &mdash; a wrapper around standard dataclasses which performs validation when a dataclass is initialised
-3. `TypeAdapter` &mdash; general way to adapt any type for validation and serialization, this allows types like [`TypedDict`](https://docs.python.org/3/library/typing.html#typing.TypedDict) and [`NampedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple) to be validated as well as simple scalar values like `int` or `timedelta`
-4. `validate_call` &mdash; decorator to perform validation when calling a function
+1. [`BaseModel`](usage/models.md) &mdash; Pydantic own super class with many common utilities available via instance methods
+2. [`pydantic.dataclasses.dataclass`](usage/dataclasses.md) &mdash; a wrapper around standard dataclasses which performs validation when a dataclass is initialised
+3. [`TypeAdapter`](usage/type_adapter.md) &mdash; general way to adapt any type for validation and serialization, this allows types like [`TypedDict`](usage/types/dicts_mapping.md#typeddict) and [`NampedTuple`](usage/types/list_types.md#namedtuple) to be validated as well as simple scalar values like `int` or `timedelta` - [all types](usage/types/types.md) supported can be used with `TypeAdapter`
+4. [`validate_call`](usage/validation_decorator.md) &mdash; decorator to perform validation when calling a function
 
 ??? example "Example - schema based on TypedDict"
     ```py
@@ -335,6 +350,8 @@ Functional validators and serializers as well as a powerful protocol for custom 
     #> when=datetime.datetime(2020, 1, 1, 12, 0, tzinfo=datetime.timezone.utc)
     ```
 
+!!! tip "Learn more"
+    See the documentation on [validators](usage/validators.md), [custom serializes](usage/serialization.md#custom-serializers) and [custom types](usage/types/custom.md).
 
 ## Ecosystem
 
@@ -351,7 +368,7 @@ TODO proper list with stars auto collected
 {% raw %}
 ## Organisations using Pydantic {#using-pydantic}
 
-Some notable companies and organisations using Pydantic:
+Some notable companies and organisations using Pydantic together with comments on why/how we know they're using Pydantic.
 
 ### Adobe {#org-adobe}
 
