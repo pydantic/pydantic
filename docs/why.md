@@ -13,7 +13,7 @@ The schema that Pydantic validates against is generally defined by Python type h
 Type hints are great for this since, if you're writing modern Python, you already know how to use them.
 Using type hints also means that Pydantic integrates well with static typing tools like mypy and pyright and IDEs like pycharm and vscode.
 
-??? example "Example - just type hints"
+???+ example "Example - just type hints"
     _(This example requires Python 3.9+)_
     ```py requires="3.9"
     from typing import Annotated, Dict, List, Literal, Tuple
@@ -121,6 +121,7 @@ Unlike other performance-centric libraries written in compiled languages, Pydant
 
 !!! tip "Learn more"
     Samuel Colvin's [talk at PyCon 2023](https://youtu.be/pWZw7hYoRVU) explains how `pydantic-core` works and how
+    it integrates with Pydantic.
 
 ## Serialization
 

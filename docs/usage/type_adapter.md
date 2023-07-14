@@ -43,7 +43,7 @@ except ValidationError as e:
 
 ## Parsing data into a specified type
 
-`TypeAdapter` can be used to apply the parsing logic to populate pydantic models in a more ad-hoc way.
+`TypeAdapter` can be used to apply the parsing logic to populate Pydantic models in a more ad-hoc way.
 This function behaves similarly to `BaseModel.model_validate`, but works with arbitrary Pydantic-compatible types.
 
 This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
@@ -69,4 +69,4 @@ print(items)
 #> [Item(id=1, name='My Item')]
 ```
 
-`TypeAdapter` is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
+`TypeAdapter` is capable of parsing data into any of the types Pydantic can handle as fields of a `BaseModel`.

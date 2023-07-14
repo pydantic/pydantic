@@ -24,7 +24,7 @@ Traffic to the Pydantic docs from multiple enterprise GitHub instances under the
 key = "asml"
 name = "ASML"
 description = """
-Traffic to the Pydantic docs from enterprise bitbucket and jira instances under the `asml.com` domain.
+Traffic to the Pydantic docs from enterprise Bitbucket and Jira instances under the `asml.com` domain.
 """
 
 [[orgs]]
@@ -82,7 +82,7 @@ Extensive use of Pydantic in [`google/turbinia`](https://github.com/google/turbi
 key = "hsbc"
 name = "HSBC"
 description = """
-Lots of traffic to the Pydantic docs from internal enterprise Jira, Confluence and GitHub
+Lots of traffic to the Pydantic docs from internal enterprise Jira, Confluence, and GitHub
 instances under the `hsbc` domain.
 """
 
@@ -99,7 +99,7 @@ Traffic to the Pydantic docs from an enterprise GitHub instance under the `ibm.c
 key = "intel"
 name = "Intel"
 description = """
-Traffic to the Pydantic docs from wikis and jira instances under the `intel.com` domain.
+Traffic to the Pydantic docs from wikis and Jira instances under the `intel.com` domain.
 """
 
 [[orgs]]
@@ -120,7 +120,7 @@ description = """
 key = "jpmorgan"
 name = "JPMorgan"
 description = """
-Traffic to the Pydantic docs from an enterprise bitbucket instances under the `jpmchase.net` domain.
+Traffic to the Pydantic docs from an enterprise Bitbucket instances under the `jpmchase.net` domain.
 """
 
 [[orgs]]
@@ -199,7 +199,7 @@ Also, traffic to the Pydantic docs from enterprise Confluence and Jira instances
 key = "oracle"
 name = "Oracle"
 description = """
-Traffic to the Pydantic docs from internal enterprise Jira, Confluence and GitHub instances under the
+Traffic to the Pydantic docs from internal enterprise Jira, Confluence, and GitHub instances under the
 `oraclecorp.com` domain.
 """
 
@@ -221,7 +221,7 @@ Traffic to the Pydantic docs from an enterprise GitHub instance under the `qualc
 key = "redhat"
 name = "Red Hat"
 description = """
-Traffic to the Pydantic docs from bugzilla and jira instances under the `redhat.com` domain.
+Traffic to the Pydantic docs from bugzilla and Jira instances under the `redhat.com` domain.
 """
 
 [[orgs]]
@@ -258,7 +258,7 @@ Traffic to the Pydantic docs from version control subdomains under the `starbuck
 key = "ti"
 name = "Texas Instruments"
 description = """
-Traffic to the Pydantic docs from an enterprise bitbucket instance under the `ti.com` domain.
+Traffic to the Pydantic docs from an enterprise Bitbucket instance under the `ti.com` domain.
 """
 
 [[orgs]]
