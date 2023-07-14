@@ -1,6 +1,6 @@
 # Why use Pydantic?
 
-Today Pydantic is downloaded <span id="download-count">many</span> times a month, and used by some of the largest and most recognisable organisations in the world.
+Today, Pydantic is downloaded <span id="download-count">many</span> times a month and used by some of the largest and most recognisable organisations in the world.
 
 It's hard to know why so many people have adopted Pydantic since its inception six years ago, but here are a few guesses.
 
@@ -10,7 +10,7 @@ It's hard to know why so many people have adopted Pydantic since its inception s
 
 The schema that Pydantic validates against is generally defined by Python type hints.
 
-Type hints are great for this since if you're writing modern Python, you already know how to use them.
+Type hints are great for this since, if you're writing modern Python, you already know how to use them.
 Using type hints also means that Pydantic integrates well with static typing tools like mypy and pyright and IDEs like pycharm and vscode.
 
 ??? example "Example - just type hints"
@@ -51,12 +51,12 @@ Using type hints also means that Pydantic integrates well with static typing too
 
 ## Performance
 
-Pydantic's core validation logic is implemented in separate package [`pydantic-core`](https://github.com/pydantic/pydantic-core) where validation for most types is implemented in Rust.
+Pydantic's core validation logic is implemented in separate package [`pydantic-core`](https://github.com/pydantic/pydantic-core), where validation for most types is implemented in Rust.
 
 As a result Pydantic is among the fastest data validation libraries for Python.
 
 ??? example "Performance Example - Pydantic vs. dedicated code"
-    In general, dedicate code should be much faster that a general purpose validator, but in this example
+    In general, dedicated code should be much faster that a general-purpose validator, but in this example
     Pydantic is >300% faster than dedicated code when parsing JSON and validating URLs.
 
     ```py title="Performance Example" test="skip"
@@ -117,20 +117,20 @@ As a result Pydantic is among the fastest data validation libraries for Python.
     #> Pydantic 3.45x faster
     ```
 
-Unlike other performance centric libraries written in compiled languages, Pydantic also has excellent support for customising validation via [functional validators](#customisation).
+Unlike other performance-centric libraries written in compiled languages, Pydantic also has excellent support for customizing validation via [functional validators](#customisation).
 
 !!! tip "Learn more"
     Samuel Colvin's [talk at PyCon 2023](https://youtu.be/pWZw7hYoRVU) explains how `pydantic-core` works and how
 
 ## Serialization
 
-Pydantic provide functionality to serialize model in three ways:
+Pydantic provides functionality to serialize model in three ways:
 
 1. To a Python `dict` made up of the associated Python objects
 2. To a Python `dict` made up only of "jsonable" types
 3. To a JSON string
 
-In all three modes the output can be customised by excluding specific fields, exclude unset fields, exclude default values, and excluding `None` values
+In all three modes, the output can be customized by excluding specific fields, excluding unset fields, excluding default values, and excluding `None` values
 
 ??? example "Example - Serialization 3 ways"
     ```py
@@ -159,7 +159,7 @@ In all three modes the output can be customised by excluding specific fields, ex
 
 ## JSON Schema
 
-[JSON Schema](https://json-schema.org/) can be generated for any Pydantic schema &mdash; allowing self documenting APIs and integration with a wide variety of tools which support JSON Schema.
+[JSON Schema](https://json-schema.org/) can be generated for any Pydantic schema &mdash; allowing self-documenting APIs and integration with a wide variety of tools which support JSON Schema.
 
 ??? example "Example - JSON Schema"
     ```py
@@ -216,15 +216,15 @@ Pydantic generates [JSON Schema version 2020-12](https://json-schema.org/draft/2
 ## Strict mode and data coercion {#strict-lax}
 {% endraw %}
 
-By default, Pydantic is tolerant to common incorrect types and coerces data to the right type - e.g. a numeric string passed to an `int` field will be parsed as an `int`.
+By default, Pydantic is tolerant to common incorrect types and coerces data to the right type &mdash; e.g. a numeric string passed to an `int` field will be parsed as an `int`.
 
-Pydantic also has `strict=True` mode, where types are not coerced and a validation error is raised unless the input data exactly matches the schema or type hint.
+Pydantic also has `strict=True` mode &mdash; also known as "Strict mode" &mdash; where types are not coerced and a validation error is raised unless the input data exactly matches the schema or type hint.
 
 But strict mode would be pretty useless when validating JSON data since JSON doesn't have types matching many common python types like `datetime`, `UUID` or `bytes`.
 
-To solve this, Pydantic can parse and validate JSON in one step, this allows sensible data conversion like RFC3339 (aka ISO8601) strings to `datetime` objects. Since the JSON parsing is implemented in Rust, it's also very performant.
+To solve this, Pydantic can parse and validate JSON in one step. This allows sensible data conversion like RFC3339 (aka ISO8601) strings to `datetime` objects. Since the JSON parsing is implemented in Rust, it's also very performant.
 
-??? example "Example - Strict mode that's actual useful"
+??? example "Example - Strict mode that's actually useful"
     ```py
     from datetime import datetime
 
@@ -264,15 +264,15 @@ To solve this, Pydantic can parse and validate JSON in one step, this allows sen
     See the [documentation on strict mode](usage/strict_mode.md).
 
 {% raw %}
-## Dataclasses, TypedDicts and more {#typeddict}
+## Dataclasses, TypedDicts, and more {#typeddict}
 {% endraw %}
 
 Pydantic provides four ways to create schemas and perform validation and serialization:
 
-1. [`BaseModel`](usage/models.md) &mdash; Pydantic own super class with many common utilities available via instance methods
-2. [`pydantic.dataclasses.dataclass`](usage/dataclasses.md) &mdash; a wrapper around standard dataclasses which performs validation when a dataclass is initialised
-3. [`TypeAdapter`](usage/type_adapter.md) &mdash; general way to adapt any type for validation and serialization, this allows types like [`TypedDict`](usage/types/dicts_mapping.md#typeddict) and [`NampedTuple`](usage/types/list_types.md#namedtuple) to be validated as well as simple scalar values like `int` or `timedelta` - [all types](usage/types/types.md) supported can be used with `TypeAdapter`
-4. [`validate_call`](usage/validation_decorator.md) &mdash; decorator to perform validation when calling a function
+1. [`BaseModel`](usage/models.md) &mdash; Pydantic's own super class with many common utilities available via instance methods.
+2. [`pydantic.dataclasses.dataclass`](usage/dataclasses.md) &mdash; a wrapper around standard dataclasses which performs validation when a dataclass is initialized.
+3. [`TypeAdapter`](usage/type_adapter.md) &mdash; a general way to adapt any type for validation and serialization. This allows types like [`TypedDict`](usage/types/dicts_mapping.md#typeddict) and [`NampedTuple`](usage/types/list_types.md#namedtuple) to be validated as well as simple scalar values like `int` or `timedelta` &mdash; [all types](usage/types/types.md) supported can be used with `TypeAdapter`.
+4. [`validate_call`](usage/validation_decorator.md) &mdash; a decorator to perform validation when calling a function.
 
 ??? example "Example - schema based on TypedDict"
     ```py
@@ -318,10 +318,10 @@ Pydantic provides four ways to create schemas and perform validation and seriali
 
 ## Customisation
 
-Functional validators and serializers as well as a powerful protocol for custom types means the way Pydantic operates can be customised on a per field or per type basis.
+Functional validators and serializers, as well as a powerful protocol for custom types, means the way Pydantic operates can be customized on a per-field or per-type basis.
 
 ??? example "Customisation Example - wrap validators"
-    "wrap validators" are new in Pydantic V2 and are one of the most powerful ways to customise Pydantic validation.
+    "wrap validators" are new in Pydantic V2 and are one of the most powerful ways to customize Pydantic validation.
     ```py
     from datetime import datetime, timezone
 
@@ -351,7 +351,7 @@ Functional validators and serializers as well as a powerful protocol for custom 
     ```
 
 !!! tip "Learn more"
-    See the documentation on [validators](usage/validators.md), [custom serializes](usage/serialization.md#custom-serializers) and [custom types](usage/types/custom.md).
+    See the documentation on [validators](usage/validators.md), [custom serializers](usage/serialization.md#custom-serializers), and [custom types](usage/types/custom.md).
 
 ## Ecosystem
 

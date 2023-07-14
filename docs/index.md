@@ -37,15 +37,15 @@ print(m.dimensions)
 
 ## Why use Pydantic?
 
-- **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write and integration with your IDE and static analysis tools, [learn more…](why.md#type-hints)
-- **Speed** &mdash; Pydantic's core validation logic is written in Rust, as a result Pydantic is among the fastest data validation libraries for Python, [learn more…](why.md#performance)
-- **JSON Schema** &mdash; Pydantic models can emit JSON Schema allowing for easy integration with other tools, [learn more…](why.md#json-schema)
-- **Strict** and **Lax** mode &mdash; Pydantic can run in either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate, [learn more…](why.md#strict-lax)
-- **Dataclasses**, **TypedDicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`, [learn more…](why.md#typeddict)
-- **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways, [learn more…](why.md#customisation)
+- **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
+- **Speed** &mdash; Pydantic's core validation logic is written in Rust. As a result, Pydantic is among the fastest data validation libraries for Python. [Learn more…](why.md#performance)
+- **JSON Schema** &mdash; Pydantic models can emit JSON Schema, allowing for easy integration with other tools. [Learn more…](why.md#json-schema)
+- **Strict** and **Lax** mode &mdash; Pydantic can run in either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate. [Learn more…](why.md#strict-lax)
+- **Dataclasses**, **TypedDicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`. [Learn more…](why.md#typeddict)
+- **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways. [Learn more…](why.md#customisation)
 - **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
-  _FastAPI_, _huggingface_, _Django Ninja_, _SQLModel_, & _LangChain_, [learn more…](why.md#ecosystem)
-- **Battle tested** &mdash; Pydantic is downloaded >70m times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ &mdash; if you're trying to do something with Pydantic, someone else has probably already done it, [learn more…](why.md#using-pydantic)
+  _FastAPI_, _huggingface_, _Django Ninja_, _SQLModel_, & _LangChain_. [Learn more…](why.md#ecosystem)
+- **Battle tested** &mdash; Pydantic is downloaded over 70M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
 
 [Installing Pydantic](install.md) is as simple as: `pip install pydantic`
 
