@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
@@ -687,3 +688,18 @@ def test_basemodel_method():
 
     bar = Bar()
     assert bar.test('1') == (bar, 1)
+
+
+@pytest.mark.parametrize('decorator', [staticmethod, classmethod])
+def test_classmethod_order_error(decorator):
+    name = decorator.__name__
+    with pytest.raises(
+        TypeError,
+        match=re.escape(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)'),
+    ):
+
+        class A:
+            @validate_call
+            @decorator
+            def method(self, x: int):
+                pass
