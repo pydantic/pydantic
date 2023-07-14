@@ -10,7 +10,8 @@ on:
 
 env:
   COLUMNS: 150
-  PDM_DEPS: 'urllib3<2'
+  PDM_DEPS: 'urllib3<2,git+https://github.com/adriangb/findpython.git@version-timeout-env'
+  FINDPYTHON_GET_VERSION_TIMEOUT: 30
 
 jobs:
   lint:
@@ -112,7 +113,6 @@ jobs:
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
-        cache: true
         version: 2.7.0
 
     - name: install deps

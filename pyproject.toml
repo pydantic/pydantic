@@ -61,7 +61,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.2.0",
+    "pydantic-core==2.3.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -168,7 +168,7 @@ require_change_file = false
 
 [tool.ruff]
 line-length = 120
-extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D']
+extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D', 'T']
 # E501 is handled by black
 extend-ignore = ['D105', 'D107', 'D205', 'D415', 'E501']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
@@ -176,6 +176,10 @@ mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
 target-version = "py37"
 exclude=['pydantic/v1', 'tests/mypy/outputs']
+
+[tool.ruff.extend-per-file-ignores]
+"docs/**/*.py" = ['T']
+"tests/**/*.py" = ['T']
 
 [tool.ruff.pydocstyle]
 convention = "google"

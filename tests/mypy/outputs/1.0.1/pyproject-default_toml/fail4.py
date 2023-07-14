@@ -67,3 +67,7 @@ class Model(BaseModel):
     @classmethod
     def validate_3(cls, values: Any) -> Any:
         return values
+
+
+Model.non_existent_attribute
+# MYPY: error: "Type[Model]" has no attribute "non_existent_attribute"  [attr-defined]

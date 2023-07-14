@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import partial
 from typing import List, Tuple
 
@@ -566,8 +566,8 @@ def test_validate_all():
     def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
         return dt
 
-    assert foo() == datetime(2000, 1, 1)
-    assert foo(0) == datetime(1970, 1, 1)
+    assert foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 @skip_pre_38
@@ -584,8 +584,8 @@ def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
     return dt
 """
     )
-    assert module.foo() == datetime(2000, 1, 1)
-    assert module.foo(0) == datetime(1970, 1, 1)
+    assert module.foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
 def test_partial():

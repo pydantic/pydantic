@@ -102,7 +102,7 @@ from pydantic import (
 )
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
-from pydantic.types import AllowInfNan, GetPydanticSchema, ImportString, Strict
+from pydantic.types import AllowInfNan, GetPydanticSchema, ImportString, Strict, StringConstraints
 
 try:
     import email_validator
@@ -1319,18 +1319,18 @@ class BoolCastable:
         ('datetime_check', '2017-05-05 10:10:10', datetime(2017, 5, 5, 10, 10, 10)),
         ('datetime_check', '2017-05-05 10:10:10+00:00', datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
         ('datetime_check', b'2017-05-05T10:10:10.0002', datetime(2017, 5, 5, 10, 10, 10, microsecond=200)),
-        ('datetime_check', 1493979010000, datetime(2017, 5, 5, 10, 10, 10)),
-        ('datetime_check', 1493979010, datetime(2017, 5, 5, 10, 10, 10)),
-        ('datetime_check', 1493979010000.0, datetime(2017, 5, 5, 10, 10, 10)),
-        ('datetime_check', Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', 1493979010000, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
+        ('datetime_check', 1493979010, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
+        ('datetime_check', 1493979010000.0, datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
+        ('datetime_check', Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
         ('datetime_check', '2017-5-5T10:10:10', ValidationError),
         ('datetime_check', b'2017-5-5T10:10:10', ValidationError),
         ('time_check', time(10, 10, 10), time(10, 10, 10)),
         ('time_check', '10:10:10.0002', time(10, 10, 10, microsecond=200)),
         ('time_check', b'10:10:10.0002', time(10, 10, 10, microsecond=200)),
-        ('time_check', 3720, time(1, 2)),
-        ('time_check', 3720.0002, time(1, 2, microsecond=200)),
-        ('time_check', Decimal(3720.0002), time(1, 2, microsecond=200)),
+        ('time_check', 3720, time(1, 2, tzinfo=timezone.utc)),
+        ('time_check', 3720.0002, time(1, 2, microsecond=200, tzinfo=timezone.utc)),
+        ('time_check', Decimal(3720.0002), time(1, 2, microsecond=200, tzinfo=timezone.utc)),
         ('time_check', '1:1:1', ValidationError),
         ('time_check', b'1:1:1', ValidationError),
         ('time_check', -1, ValidationError),
@@ -5565,3 +5565,10 @@ def test_get_pydantic_core_schema_marker_unrelated_type() -> None:
     ta = TypeAdapter(Annotated[int, Marker(2), Marker(3)])
 
     assert ta.validate_python('1') == 3
+
+
+def test_string_constraints() -> None:
+    ta = TypeAdapter(
+        Annotated[str, StringConstraints(strip_whitespace=True, to_lower=True), AfterValidator(lambda x: x * 2)]
+    )
+    assert ta.validate_python(' ABC ') == 'abcabc'

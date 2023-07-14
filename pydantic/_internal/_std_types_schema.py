@@ -16,6 +16,7 @@ from functools import partial
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, Callable, Iterable, TypeVar
 
+import typing_extensions
 from pydantic_core import (
     CoreSchema,
     MultiHostUrl,
@@ -611,7 +612,7 @@ MAPPING_ORIGIN_MAP: dict[Any, Any] = {
     typing.DefaultDict: collections.defaultdict,
     collections.defaultdict: collections.defaultdict,
     collections.OrderedDict: collections.OrderedDict,
-    typing.OrderedDict: collections.OrderedDict,
+    typing_extensions.OrderedDict: collections.OrderedDict,
     dict: dict,
     typing.Dict: dict,
     collections.Counter: collections.Counter,
