@@ -44,7 +44,9 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     markdown = upgrade_python(markdown)
     markdown = insert_json_output(markdown)
     markdown = remove_code_fence_attributes(markdown)
-    if md := add_version(markdown, page):
+    if md := render_index(markdown, page):
+        return md
+    if md := render_why(markdown, page):
         return md
     elif md := build_schema_mappings(markdown, page):
         return md
@@ -165,7 +167,26 @@ def remove_code_fence_attributes(markdown: str) -> str:
     return re.sub(r'^( *``` *py)(.*)', remove_attrs, markdown, flags=re.M)
 
 
-def add_version(markdown: str, page: Page) -> str | None:
+orgs_data = None
+
+
+def get_orgs_data() -> list[dict[str, str]]:
+    global orgs_data
+    if orgs_data is None:
+        with (THIS_DIR / 'orgs.toml').open('rb') as f:
+            orgs_data = tomli.load(f)
+    return orgs_data['orgs']
+
+
+tile_template = """
+<div class="tile">
+  <a href="why/#org-{key}" title="{name}">
+    <img src="logos/{key}_logo.png" alt="{name}" />
+  </a>
+</div>"""
+
+
+def render_index(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'index.md':
         return None
 
@@ -184,7 +205,19 @@ def add_version(markdown: str, page: Page) -> str | None:
         version_str = 'Documentation for development version'
     print(f'Setting version prefix: {version_str!r}')
     markdown = re.sub(r'{{ *version *}}', version_str, markdown)
-    return markdown
+
+    elements = [tile_template.format(**org) for org in get_orgs_data()]
+
+    orgs_grid = f'<div id="grid-container"><div id="company-grid" class="grid">{"".join(elements)}</div></div>'
+    return re.sub(r'{{ *organisations *}}', orgs_grid, markdown)
+
+
+def render_why(markdown: str, page: Page) -> str | None:
+    if page.file.src_uri != 'why.md':
+        return None
+
+    elements = ['### {name} {{#org-{key}}}\n\n{description}'.format(**org) for org in get_orgs_data()]
+    return re.sub(r'{{ *organisations *}}', '\n\n'.join(elements), markdown)
 
 
 def _generate_table_row(col_values: list[str]) -> str:

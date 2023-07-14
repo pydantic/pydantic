@@ -152,9 +152,7 @@ except ValidationError as e:
 
 Hundreds of organisations and packages are using Pydantic. Some of the prominent companies and organizations around the world who are using Pydantic include:
 
-<div id="grid-container">
-  <div id="company-grid" class="grid"></div>
-</div>
+{{ organisations }}
 
 For a more comprehensive list of open-source projects using Pydantic see the
 [list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), or you can find some awesome projects using Pydantic in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
