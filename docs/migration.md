@@ -513,16 +513,14 @@ behavior of `dataclasses`. Similarly, fields annotated as `Any` no longer have a
 
 The following table describes the behavior of field annotations in V2:
 
-| State                                                 | Field Definition            |
-|-------------------------------------------------------|-----------------------------|
-| Required, cannot be `None`                            | `f1: str`                   |
-| Not required, cannot be `None`, is `'abc'` by default | `f3: str = 'abc'`           |
-| Required, can be `None`                               | `f2: Optional[str]`         |
-| Not required, can be `None`, is `None` by default     | `f3: Optional[str] = None`  |
-| Not required, can be `None`, is `'abc'` by default    | `f3: Optional[str] = 'abc'` |
-| Not required, cannot be `None`                        | `f4: str = 'Foobar'`        |
-| Required, can be any type (including `None`)          | `f5: Any`                   |
-| Not required, can be any type (including `None`)      | `f6: Any = None`            |
+| State                                                  | Field Definition            |
+|--------------------------------------------------------|-----------------------------|
+| Required, cannot be `None`                             | `f1: str`                   |
+| Required, can be `None`                                | `f2: Optional[str]`         |
+| Not required, can be `None`, is `None` by default      | `f3: Optional[str] = None`  |
+| Not required, cannot be `None`, is 'Foobar' by default | `f4: str = 'Foobar'`        |
+| Required, can be any type (including `None`)           | `f5: Any`                   |
+| Not required, can be any type (including `None`)       | `f6: Any = None`            |
 
 
 !!! note
