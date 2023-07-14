@@ -1,11 +1,9 @@
 const companies = [
   {name: 'Adobe', key: 'adobe'},
-  {name: 'AMD', key: 'amd'},
   {name: 'Amazon', key: 'amazon'},
   {name: 'Apple', key: 'apple'},
   {name: 'ASML', key: 'asml'},
   {name: 'AstraZeneca', key: 'astrazeneca'},
-  {name: 'Broadcom', key: 'broadcom'},
   {name: 'Cisco Systems', key: 'cisco'},
   {name: 'Comcast', key: 'comcast'},
   {name: 'Datadog', key: 'datadog'},

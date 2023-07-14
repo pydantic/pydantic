@@ -374,10 +374,6 @@ Some notable companies and organisations using Pydantic together with comments o
 
 Traffic to the Pydantic docs from their internal wiki and git hosting under the `adobe.com` domain.
 
-### AMD {#org-amd}
-
-?
-
 ### Amazon {#org-amazon}
 
 [powertools-lambda-python](https://github.com/aws-powertools/powertools-lambda-python) uses Pydantic, AWS sponsored Samuel Colvin $5,000 to work on Pydantic in 2022.
@@ -395,10 +391,6 @@ Traffic to the Pydantic docs from enterprise bitbucket and jira instances under 
 Traffic to the Pydantic docs from a sub-domain of `astrazeneca.com` domain.
 
 [Multiple repos](https://github.com/search?q=org%3AAstraZeneca+pydantic&type=code) in the `AstraZeneca` GitHub org depend on Pydantic.
-
-### Broadcom {#org-broadcom}
-
-?
 
 ### Cisco Systems {#org-cisco}
 
@@ -448,63 +440,76 @@ Traffic to the Pydantic docs from an enterprise bitbucket instances under the `j
 
 ### Jupyter {#org-jupyter}
 
-TODO
+The developers of the Jupyter notebook are using Pydantic [for subprojects](https://github.com/pydantic/pydantic/issues/773), through the FastAPI-based Jupyter server [Jupyverse](https://github.com/jupyter-server/jupyverse), and for [FPS](https://github.com/jupyter-server/fps)'s configuration management.
 
 ### Microsoft {#org-microsoft}
 
-TODO
+[Multiple repos](https://github.com/search?q=org%3Amicrosoft%20pydantic&type=code) in the `microsoft` GitHub org depend on Pydantic, in particular their [DeepSpeed](https://github.com/microsoft/DeepSpeed) deep learning optimisation library uses Pydantic extensively.
 
-### Molssi {#org-molssi}
+Pydantic is also [used](https://github.com/search?q=org%3AAzure%20pydantic&type=code) in the `Azure` GitHub org.
 
-TODO
+[Comments](https://github.com/tiangolo/fastapi/pull/26) on GitHub show Microsoft engineers using Pydantic as part of Windows and Office.
+
+### Molecular Science Software Institute {#org-molssi}
+
+[Multiple repos](https://github.com/search?q=org%3AMolSSI%20pydantic&type=code) in the `MolSSI` GitHub org depend on Pydantic.
 
 ### NASA {#org-nasa}
 
-TODO
+[Multiple repos](https://github.com/search?q=org%3Anasa%20pydantic&type=code) in the `NASA` GitHub org depend on Pydantic.
+
+NASA are also using Pydantic via FastAPI in their JWST project to process images from the James Webb Space Telescope, see [this tweet](https://twitter.com/benjamin_falk/status/1546947039363305472).
 
 ### Netflix {#org-netflix}
 
-TODO
+[Multiple repos](https://github.com/search?q=org%3Anetflix%20pydantic&type=code) in the `Netflix` GitHub org depend on Pydantic.
 
 ### NSA {#org-nsa}
 
-TODO
+The [`nsacyber/WALKOFF`](https://github.com/nsacyber/WALKOFF) repo depends on Pydantic.
 
 ### NVIDIA {#org-nvidia}
 
-TODO
+[Mupltiple repos](https://github.com/search?q=org%3ANVIDIA%20pydantic&type=code) in the `NVIDIA` GitHub org depend on Pydantic.
+
+Their "Omniverse Services" depends on Pydantic according to [their documentation](https://web.archive.org/web/20220628161919/https://docs.omniverse.nvidia.com/prod_services/prod_services/core/index.html).
+
+Also, traffic to the Pydantic docs from enterprise Confluence and Jira instances under the `nvidia.com` domain.
 
 ### Qualcomm {#org-qualcomm}
 
-TODO
+Traffic to the Pydantic docs from an enterprise GitHub instance under the `qualcomm.com` domain.
 
 ### Red Hat {#org-redhat}
 
-TODO
+Traffic to the Pydantic docs from bugzilla and jira instances under the `redhat.com` domain.
 
 ### Robusta {#org-robusta}
 
-TODO
+The [`robusta-dev/robusta`](https://github.com/robusta-dev/robusta) repo depends on Pydantic.
 
 ### Salesforce {#org-salesforce}
 
-TODO
+Salesforce sponsored Samuel Colvin $10,000 to work on Pydantic in 2022.
 
 ### Starbucks {#org-starbucks}
 
-TODO
+Traffic to the Pydantic docs from version control sub-domains under the `starbucks.com` domain.
 
 ### Texas Instruments {#org-ti}
 
-TODO
+Traffic to the Pydantic docs from an enterprise bitbucket instance under the `ti.com` domain.
 
 ### Twilio {#org-twilio}
 
-TODO
+Traffic to the Pydantic docs from version control sub-domains under the `twilio.com` domain.
 
 ### Twitter {#org-twitter}
 
-TODO
+Twitter's [`the-algorithm`](https://github.com/twitter/the-algorithm) repo where they [open sourced](https://blog.twitter.com/engineering/en_us/topics/open-source/2023/twitter-recommendation-algorithm) their recommendation engine uses Pydantic.
 
 ### UK Home Office {#org-ukhomeoffice}
+
+Traffic to the Pydantic docs from an enterprise Confluence instance under the `homeoffice.gov.uk` domain.
+
 {% endraw %}
