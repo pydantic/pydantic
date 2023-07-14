@@ -2676,9 +2676,16 @@ the <code>model_config</code> class) by passing <code>None</code> as the instant
 <p>Because python-dotenv is used to parse the file, bash-like semantics such as <code>export</code> can be used which
 (depending on your OS and environment) may allow your dotenv file to also be used with <code>source</code>,
 see <a href="https://saurabh-kumar.com/python-dotenv/#usages">python-dotenv's documentation</a> for more details.</p>
-<p>Pydantic settings consider <code>extra</code> config in case of dotenv file. It means if you set the <code>extra=forbid</code>
+<p>Pydantic settings consider <code>extra</code> config in case of dotenv file. It means if you set the <code>extra=forbid</code> (<em>default</em>)
 on <code>model_config</code> and your dotenv file contains an entry for a field that is not defined in settings model,
 it will raise <code>ValidationError</code> in settings construction.</p>
+<p>For compatibility with pydantic 1.x BaseSettings you should use <code>extra=ignore</code>:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>
+</code></pre></div></p>
 <h2 id="secrets">Secrets<a class="headerlink" href="#secrets" title="Permanent link">&para;</a></h2>
 <p>Placing secret values in files is a common pattern to provide sensitive configuration to an application.</p>
 <p>A secret file follows the same principal as a dotenv file except it only contains a single value and the file name

@@ -1547,56 +1547,9 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#documentation-pull-requests" class="md-nav__link">
-    Documentation Pull Requests
-  </a>
-  
-    <nav class="md-nav" aria-label="Documentation Pull Requests">
-      <ul class="md-nav__list">
-        
           <li class="md-nav__item">
-  <a href="#documentation-style_1" class="md-nav__link">
-    Documentation Style
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#badges" class="md-nav__link">
-    Badges
-  </a>
-  
-    <nav class="md-nav" aria-label="Badges">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#with-markdown" class="md-nav__link">
-    With Markdown
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-restructuredtext" class="md-nav__link">
-    With reStructuredText
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-html" class="md-nav__link">
-    With HTML
+  <a href="#guide-documentation" class="md-nav__link">
+    Guide documentation
   </a>
   
 </li>
@@ -2322,56 +2275,9 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#documentation-pull-requests" class="md-nav__link">
-    Documentation Pull Requests
-  </a>
-  
-    <nav class="md-nav" aria-label="Documentation Pull Requests">
-      <ul class="md-nav__list">
-        
           <li class="md-nav__item">
-  <a href="#documentation-style_1" class="md-nav__link">
-    Documentation Style
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#badges" class="md-nav__link">
-    Badges
-  </a>
-  
-    <nav class="md-nav" aria-label="Badges">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#with-markdown" class="md-nav__link">
-    With Markdown
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-restructuredtext" class="md-nav__link">
-    With reStructuredText
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#with-html" class="md-nav__link">
-    With HTML
+  <a href="#guide-documentation" class="md-nav__link">
+    Guide documentation
   </a>
   
 </li>
@@ -2534,37 +2440,12 @@ make<span class="w"> </span>docs
 <p>Class attributes should be documented in the class docstring.</p>
 <p>Instance attributes should be documented as "Args" in the <code>__init__</code> docstring.</p>
 </div>
-<h2 id="documentation-pull-requests">Documentation Pull Requests<a class="headerlink" href="#documentation-pull-requests" title="Permanent link">&para;</a></h2>
-<p>If you wish to submit a pure-documentation pull request, please set the target branch to <code>docs-update</code> instead of <code>main</code>. This will mean that your changes will go live in the docs as soon as the pull request is merged.</p>
-<h3 id="documentation-style_1">Documentation Style<a class="headerlink" href="#documentation-style_1" title="Permanent link">&para;</a></h3>
+<h3 id="guide-documentation">Guide documentation<a class="headerlink" href="#guide-documentation" title="Permanent link">&para;</a></h3>
 <p>In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.</p>
 <p>Code examples are encouraged, but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.</p>
-<p>Pydantic's unit test will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use the following to test examples and update their formatting and output:</p>
+<p>Pydantic's test coverage will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use <code>pytest --update-examples</code> to update the output and create Python version-specific examples when appropriate.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Run tests and update code examples</span>
-pytest<span class="w"> </span>tests/docs/<span class="w"> </span>--update-examples
-</code></pre></div>
-<h2 id="badges">Badges<a class="headerlink" href="#badges" title="Permanent link">&para;</a></h2>
-<p><a href="https://pydantic.dev"><img alt="Pydantic v1" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json" /></a>
-<a href="https://pydantic.dev"><img alt="Pydantic v2" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json" /></a></p>
-<p>Pydantic has a badge that you can use to show that your project uses Pydantic. You can use this badge in your <code>README.md</code>:</p>
-<h3 id="with-markdown">With Markdown<a class="headerlink" href="#with-markdown" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>[<span class="nt">![Pydantic v1</span>](<span class="na">https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json</span>)](https://pydantic.dev)
-
-[<span class="nt">![Pydantic v2</span>](<span class="na">https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json</span>)](https://pydantic.dev)
-</code></pre></div>
-<h3 id="with-restructuredtext">With reStructuredText<a class="headerlink" href="#with-restructuredtext" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="p">..</span> <span class="ow">image</span><span class="p">::</span> https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json
-    <span class="nc">:target:</span> https://pydantic.dev
-    <span class="nc">:alt:</span> Pydantic
-
-<span class="p">..</span> <span class="ow">image</span><span class="p">::</span> https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json
-    <span class="nc">:target:</span> https://pydantic.dev
-    <span class="nc">:alt:</span> Pydantic
-</code></pre></div>
-<h3 id="with-html">With HTML<a class="headerlink" href="#with-html" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://pydantic.dev&quot;</span><span class="p">&gt;&lt;</span><span class="nt">img</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json&quot;</span> <span class="na">alt</span><span class="o">=</span><span class="s">&quot;Pydantic Version 1&quot;</span> <span class="na">style</span><span class="o">=</span><span class="s">&quot;max-width:100%;&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
-
-<span class="p">&lt;</span><span class="nt">a</span> <span class="na">href</span><span class="o">=</span><span class="s">&quot;https://pydantic.dev&quot;</span><span class="p">&gt;&lt;</span><span class="nt">img</span> <span class="na">src</span><span class="o">=</span><span class="s">&quot;https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json&quot;</span> <span class="na">alt</span><span class="o">=</span><span class="s">&quot;Pydantic Version 2&quot;</span> <span class="na">style</span><span class="o">=</span><span class="s">&quot;max-width:100%;&quot;</span><span class="p">&gt;&lt;/</span><span class="nt">a</span><span class="p">&gt;</span>
+pytest<span class="w"> </span>--update-examples
 </code></pre></div>
 
 
