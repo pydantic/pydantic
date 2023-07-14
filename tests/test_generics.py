@@ -429,9 +429,6 @@ def test_circular_generic_refs_get_cleaned_up():
     gc.collect(1)
     gc.collect(2)
 
-    # Fails in V2 but succeeds in V1!:
-    # AssertionError: [<class 'tests.test.Inner[int, ~C]'>, <class 'tests.test.Inner[int, ~C]'>]
-    # assert 2 == 0
     assert len(_GENERIC_TYPES_CACHE) == initial_cache_size
 
 
