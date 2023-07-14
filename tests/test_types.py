@@ -2145,7 +2145,6 @@ def test_infinite_iterable_validate_first():
         b: int
 
         @field_validator('it')
-        @classmethod
         def infinite_first_int(cls, it):
             return itertools.chain([next(it)], it)
 
@@ -3706,7 +3705,6 @@ def test_json_before_validator():
         json_obj: Json[str]
 
         @field_validator('json_obj', mode='before')
-        @classmethod
         def check(cls, v):
             assert v == '"foobar"'
             nonlocal call_count

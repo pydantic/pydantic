@@ -152,7 +152,6 @@ def test_custom_config_extras():
 def test_inheritance_validators():
     class BarModel(BaseModel):
         @field_validator('a', check_fields=False)
-        @classmethod
         def check_a(cls, v):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
@@ -168,7 +167,6 @@ def test_inheritance_validators():
 def test_inheritance_validators_always():
     class BarModel(BaseModel):
         @field_validator('a', check_fields=False)
-        @classmethod
         def check_a(cls, v):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')

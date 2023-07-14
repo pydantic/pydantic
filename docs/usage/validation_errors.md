@@ -40,7 +40,6 @@ class Model(BaseModel):
     x: int
 
     @field_validator('x')
-    @classmethod
     def force_x_positive(cls, v):
         assert v > 0
         return v
@@ -1904,7 +1903,6 @@ class Model(BaseModel):
     x: str
 
     @field_validator('x')
-    @classmethod
     def repeat_b(cls, v):
         raise ValueError()
 

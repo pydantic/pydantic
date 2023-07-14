@@ -741,38 +741,32 @@ def test_typeddict_field_validator(TypedDict: Any) -> None:
         a: List[str]
 
         @field_validator('a')
-        @classmethod
         def parent_val_before(cls, v: List[str]):
             v.append('parent before')
             return v
 
         @field_validator('a')
-        @classmethod
         def val(cls, v: List[str]):
             v.append('parent')
             return v
 
         @field_validator('a')
-        @classmethod
         def parent_val_after(cls, v: List[str]):
             v.append('parent after')
             return v
 
     class Child(Parent):
         @field_validator('a')
-        @classmethod
         def child_val_before(cls, v: List[str]):
             v.append('child before')
             return v
 
         @field_validator('a')
-        @classmethod
         def val(cls, v: List[str]):
             v.append('child')
             return v
 
         @field_validator('a')
-        @classmethod
         def child_val_after(cls, v: List[str]):
             v.append('child after')
             return v
@@ -796,7 +790,6 @@ def test_typeddict_model_validator(TypedDict) -> None:
         y: float
 
         @model_validator(mode='before')
-        @classmethod
         def val_model_before(cls, value: Dict[str, Any]) -> Dict[str, Any]:
             return dict(x=value['x'] + 1, y=value['y'] + 2)
 

@@ -142,7 +142,6 @@ def test_validate_assignment_value_change():
         a: int
 
         @field_validator('a')
-        @classmethod
         def double_a(cls, v: int) -> int:
             return v * 2
 
@@ -1717,7 +1716,6 @@ def test_field_validator():
         b: float
 
         @field_validator('b')
-        @classmethod
         def double_b(cls, v):
             return v * 2
 
@@ -1778,7 +1776,6 @@ def test_parent_post_init():
     @pydantic.dataclasses.dataclass
     class B(A):
         @field_validator('a')
-        @classmethod
         def validate_a(cls, value, _):
             value += 3
             return value
@@ -1797,7 +1794,6 @@ def test_subclass_post_init_order():
             self.a *= 2
 
         @field_validator('a')
-        @classmethod
         def validate_a(cls, value):
             value += 3
             return value
@@ -1816,7 +1812,6 @@ def test_subclass_post_init_inheritance():
             self.a *= 2
 
         @field_validator('a')
-        @classmethod
         def validate_a(cls, value):
             value += 3
             return value
@@ -1857,7 +1852,6 @@ def test_validator_info_field_name_data_before():
         b: str
 
         @field_validator('b', mode='before')
-        @classmethod
         def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
@@ -1890,19 +1884,16 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
         a: List[str]
 
         @field_validator('a')
-        @classmethod
         def parent_val_before(cls, v: List[str]):
             v.append('parent before')
             return v
 
         @field_validator('a')
-        @classmethod
         def val(cls, v: List[str]):
             v.append('parent')
             return v
 
         @field_validator('a')
-        @classmethod
         def parent_val_after(cls, v: List[str]):
             v.append('parent after')
             return v
@@ -1910,19 +1901,16 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
     @pydantic.dataclasses.dataclass
     class Child(Parent):
         @field_validator('a')
-        @classmethod
         def child_val_before(cls, v: List[str]):
             v.append('child before')
             return v
 
         @field_validator('a')
-        @classmethod
         def val(cls, v: List[str]):
             v.append('child')
             return v
 
         @field_validator('a')
-        @classmethod
         def child_val_after(cls, v: List[str]):
             v.append('child after')
             return v
@@ -1971,7 +1959,6 @@ def test_dataclass_config_validate_default():
         x: int = -1
 
         @field_validator('x')
-        @classmethod
         def force_x_positive(cls, v):
             assert v > 0
             return v

@@ -154,7 +154,6 @@ class Node(BaseModel):
     children: List['Node'] = field(default_factory=list)
 
     @field_validator('children', mode='wrap')
-    @classmethod
     def drop_cyclic_references(cls, children, h):
         try:
             return h(children)

@@ -100,7 +100,6 @@ def test_value_validation():
         data: T
 
         @field_validator('data')
-        @classmethod
         def validate_value_nonzero(cls, v: Any):
             if any(x == 0 for x in v.values()):
                 raise ValueError('some value is zero')
@@ -474,7 +473,6 @@ def test_generic():
         positive_number: int
 
         @field_validator('error')
-        @classmethod
         def validate_error(cls, v: Optional[error_type], info: ValidationInfo) -> Optional[error_type]:
             values = info.data
             if values.get('data', None) is None and v is None:
@@ -484,7 +482,6 @@ def test_generic():
             return v
 
         @field_validator('positive_number')
-        @classmethod
         def validate_positive_number(cls, v: int) -> int:
             if v < 0:
                 raise ValueError

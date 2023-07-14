@@ -291,7 +291,6 @@ def foo() -> None:
         custom_validator = get_my_custom_validator('number')  # type: ignore[pydantic-field]
 
         @model_validator(mode='before')
-        @classmethod
         def validate_values(cls, values: Any) -> Any:
             return values
 

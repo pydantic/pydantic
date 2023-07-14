@@ -24,7 +24,6 @@ def test_assert_raises_validation_error():
         a: str
 
         @field_validator('a')
-        @classmethod
         def check_a(cls, v):
             assert v == 'a', 'invalid a'
             return v

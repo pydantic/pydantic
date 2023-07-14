@@ -166,7 +166,6 @@ def test_simple():
         a: str
 
         @field_validator('a')
-        @classmethod
         def check_a(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
@@ -287,13 +286,11 @@ def test_validate_whole():
         a: List[int]
 
         @field_validator('a', mode='before')
-        @classmethod
         def check_a1(cls, v: List[Any]) -> List[Any]:
             v.append('123')
             return v
 
         @field_validator('a')
-        @classmethod
         def check_a2(cls, v: List[int]) -> List[Any]:
             v.append(456)
             return v
@@ -308,7 +305,6 @@ def test_validate_pre_error():
         a: List[int]
 
         @field_validator('a', mode='before')
-        @classmethod
         def check_a1(cls, v: Any):
             calls.append(f'check_a1 {v}')
             if 1 in v:
@@ -317,7 +313,6 @@ def test_validate_pre_error():
             return v
 
         @field_validator('a')
-        @classmethod
         def check_a2(cls, v: Any):
             calls.append(f'check_a2 {v}')
             if 10 in v:
@@ -364,7 +359,6 @@ def validate_assignment_model_fixture():
         c: int = 0
 
         @field_validator('b')
-        @classmethod
         def b_length(cls, v, info):
             values = info.data
             if 'a' in values and len(v) < values['a']:
@@ -372,7 +366,6 @@ def validate_assignment_model_fixture():
             return v
 
         @field_validator('c')
-        @classmethod
         def double_c(cls, v: Any):
             return v * 2
 
@@ -440,7 +433,6 @@ def test_validating_assignment_values_dict():
         b: int
 
         @field_validator('b')
-        @classmethod
         def validate_b(cls, b, info: FieldValidationInfo):
             if 'm' in info.data:
                 return b + info.data['m'].a  # this fails if info.data['m'] is a dict
@@ -461,7 +453,6 @@ def test_validate_multiple():
         b: str
 
         @field_validator('a', 'b')
-        @classmethod
         def check_a_and_b(cls, v: Any, info: FieldValidationInfo) -> Any:
             if len(v) < 4:
                 field = cls.model_fields[info.field_name]
@@ -495,7 +486,6 @@ def test_classmethod():
         a: str
 
         @field_validator('a')
-        @classmethod
         def check_a(cls, v: Any):
             assert cls is Model
             return v
@@ -617,7 +607,6 @@ def test_field_validator_validate_default():
         a: str = Field(None, validate_default=True)
 
         @field_validator('a', mode='before')
-        @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
@@ -659,7 +648,6 @@ def test_field_validator_validate_default_on_inheritance():
 
     class Model(ParentModel):
         @field_validator('a', mode='before')
-        @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
@@ -678,7 +666,6 @@ def test_validate_not_always():
         a: Optional[str] = None
 
         @field_validator('a', mode='before')
-        @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
@@ -790,7 +777,6 @@ def test_validate_child():
 
     class Child(Parent):
         @field_validator('a')
-        @classmethod
         def check_a(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
@@ -807,7 +793,6 @@ def test_validate_child_extra():
         a: str
 
         @field_validator('a')
-        @classmethod
         def check_a_one(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
@@ -815,7 +800,6 @@ def test_validate_child_extra():
 
     class Child(Parent):
         @field_validator('a')
-        @classmethod
         def check_a_two(cls, v: Any):
             return v.upper()
 
@@ -850,7 +834,6 @@ def test_validate_parent():
         a: str
 
         @field_validator('a')
-        @classmethod
         def check_a(cls, v: Any):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
@@ -896,7 +879,6 @@ def test_inheritance_keep():
         a: int
 
         @field_validator('a')
-        @classmethod
         def add_to_a(cls, v: Any):
             return v + 1
 
@@ -916,38 +898,32 @@ def test_inheritance_replace():
         a: List[str]
 
         @field_validator('a')
-        @classmethod
         def parent_val_before(cls, v: List[str]):
             v.append('parent before')
             return v
 
         @field_validator('a')
-        @classmethod
         def val(cls, v: List[str]):
             v.append('parent')
             return v
 
         @field_validator('a')
-        @classmethod
         def parent_val_after(cls, v: List[str]):
             v.append('parent after')
             return v
 
     class Child(Parent):
         @field_validator('a')
-        @classmethod
         def child_val_before(cls, v: List[str]):
             v.append('child before')
             return v
 
         @field_validator('a')
-        @classmethod
         def val(cls, v: List[str]):
             v.append('child')
             return v
 
         @field_validator('a')
-        @classmethod
         def child_val_after(cls, v: List[str]):
             v.append('child after')
             return v
@@ -1067,7 +1043,6 @@ def test_key_validation():
         foobar: Dict[int, int]
 
         @field_validator('foobar')
-        @classmethod
         def check_foobar(cls, value):
             return {k + 1: v + 1 for k, v in value.items()}
 
@@ -1102,7 +1077,6 @@ def test_field_validator_validate_default_optional():
         a: Optional[str] = Field(None, validate_default=True)
 
         @field_validator('a', mode='before')
-        @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
@@ -1141,7 +1115,6 @@ def test_field_validator_validate_default_pre():
         a: str = Field(None, validate_default=True)
 
         @field_validator('a', mode='before')
-        @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
@@ -1175,7 +1148,6 @@ def test_field_validator_validate_default_post():
         a: str = Field('', validate_default=True)
 
         @field_validator('a')
-        @classmethod
         def check_a(cls, v: Any):
             return v or 'default value'
 
@@ -1203,7 +1175,6 @@ def test_field_validator_validate_default_post_optional():
         a: Optional[str] = Field(None, validate_default=True)
 
         @field_validator('a', mode='before')
-        @classmethod
         def check_a(cls, v: Any):
             return v or 'default value'
 
@@ -1241,7 +1212,6 @@ def test_datetime_field_validator():
         d: datetime = Field(None, validate_default=True)
 
         @field_validator('d', mode='before')
-        @classmethod
         def check_d(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
@@ -1262,7 +1232,6 @@ def test_pre_called_once():
         a: Tuple[int, int, int]
 
         @field_validator('a', mode='before')
-        @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
             check_calls += 1
@@ -1277,7 +1246,6 @@ def test_assert_raises_validation_error():
         a: str
 
         @field_validator('a')
-        @classmethod
         def check_a(cls, v: Any):
             assert v == 'a', 'invalid a'
             return v
@@ -1307,7 +1275,6 @@ def test_root_validator():
         c: str
 
         @field_validator('b')
-        @classmethod
         def repeat_b(cls, v: Any):
             return v * 2
 
@@ -1409,7 +1376,6 @@ def test_root_validator_pre():
         b: str
 
         @field_validator('b')
-        @classmethod
         def repeat_b(cls, v: Any):
             return v * 2
 
@@ -1571,7 +1537,6 @@ def test_assignment_validator_cls():
         model_config = ConfigDict(validate_assignment=True)
 
         @field_validator('name')
-        @classmethod
         def check_foo(cls, value):
             nonlocal validator_calls
             validator_calls += 1
@@ -1672,13 +1637,11 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values():
         model_config = ConfigDict(validate_assignment=True)
 
         @field_validator('foo')
-        @classmethod
         def validate_foo(cls, v: Any, info: FieldValidationInfo) -> Any:
             check_values({**info.data})
             return v
 
         @field_validator('bar')
-        @classmethod
         def validate_bar(cls, v: Any, info: FieldValidationInfo) -> Any:
             check_values({**info.data})
             return v
@@ -1706,7 +1669,6 @@ def test_exceptions_in_field_validators_restore_original_field_value():
         model_config = ConfigDict(validate_assignment=True)
 
         @field_validator('foo')
-        @classmethod
         def validate_foo(cls, v: Any):
             if v == 'raise_exception':
                 raise RuntimeError('test error')
@@ -1917,7 +1879,6 @@ def test_info_field_name_data_before():
         b: str
 
         @field_validator('b', mode='before')
-        @classmethod
         def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
@@ -1945,7 +1906,6 @@ def test_decorator_proxy():
             return v + 1
 
         @field_validator('x')
-        @classmethod
         def val2(cls, v: int) -> int:
             return v + 1
 
@@ -2099,7 +2059,6 @@ def test_model_config_validate_default():
         x: int = -1
 
         @field_validator('x')
-        @classmethod
         def force_x_positive(cls, v):
             assert v > 0
             return v
@@ -2590,7 +2549,6 @@ def test_validator_function_error_hide_input(mode, config, input_str):
         model_config = ConfigDict(**config)
 
         @field_validator('x', mode=mode)
-        @classmethod
         def check_a1(cls, v: str) -> str:
             raise ValueError('foo')
 

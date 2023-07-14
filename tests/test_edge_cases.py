@@ -1469,7 +1469,6 @@ def test_validated_optional_subfields():
         a: Optional[int]
 
         @field_validator('a')
-        @classmethod
         def check_a(cls, v):
             return v
 
@@ -1685,7 +1684,6 @@ def test_modify_fields():
         foo: List[List[int]]
 
         @field_validator('foo')
-        @classmethod
         def check_something(cls, value):
             return value
 
@@ -1791,7 +1789,6 @@ def test_optional_validator():
         something: Optional[str]
 
         @field_validator('something')
-        @classmethod
         def check_something(cls, v):
             val_calls.append(v)
             return v
@@ -2154,7 +2151,6 @@ def test_default_factory_validator_child():
         foo: List[str] = Field(default_factory=list)
 
         @field_validator('foo', mode='before')
-        @classmethod
         def mutate_foo(cls, v):
             return [f'{x}-1' for x in v]
 
@@ -2344,13 +2340,11 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         side: float
 
         @field_validator('side')
-        @classmethod
         @abstractmethod
         def my_field_validator(cls, v):
             raise NotImplementedError
 
         @model_validator(mode='wrap')
-        @classmethod
         @abstractmethod
         def my_model_validator(cls, values, handler, info):
             raise NotImplementedError

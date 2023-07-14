@@ -77,7 +77,6 @@ def test_model_validate_root():
         # I couldn't see a nice way to create a decorator that reduces the boilerplate,
         # but if we want to discourage this pattern, perhaps that's okay?
         @model_validator(mode='before')
-        @classmethod
         def populate_root(cls, values):
             return {'root': values}
 
@@ -114,7 +113,6 @@ def test_parse_root_list():
         root: List[str]
 
         @model_validator(mode='before')
-        @classmethod
         def populate_root(cls, values):
             return {'root': values}
 
@@ -144,7 +142,6 @@ def test_parse_nested_root_list():
         root: List[NestedData]
 
         @model_validator(mode='before')
-        @classmethod
         def populate_root(cls, values):
             return {'root': values}
 
@@ -177,7 +174,6 @@ def test_parse_nested_root_tuple():
         root: Tuple[int, NestedData]
 
         @model_validator(mode='before')
-        @classmethod
         def populate_root(cls, values):
             return {'root': values}
 
@@ -210,7 +206,6 @@ def test_parse_nested_custom_root():
         root: List[str]
 
         @model_validator(mode='before')
-        @classmethod
         def populate_root(cls, values):
             return {'root': values}
 
@@ -230,7 +225,6 @@ def test_parse_nested_custom_root():
         root: NestedModel
 
         @model_validator(mode='before')
-        @classmethod
         def populate_root(cls, values):
             return {'root': values}
 

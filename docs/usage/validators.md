@@ -484,7 +484,6 @@ class DemoDataclass:
     product_id: str  # should be a five-digit string, may have leading zeros
 
     @field_validator('product_id', mode='before')
-    @classmethod
     def convert_int_serial(cls, v):
         if isinstance(v, int):
             v = str(v).zfill(5)
@@ -510,7 +509,6 @@ class Model(BaseModel):
     text: str
 
     @field_validator('text')
-    @classmethod
     def remove_stopwords(cls, v: str, info: FieldValidationInfo):
         context = info.context
         if context:
@@ -558,7 +556,6 @@ class Model(BaseModel):
     choice: str
 
     @field_validator('choice')
-    @classmethod
     def validate_choice(cls, v: str, info: FieldValidationInfo):
         allowed_choices = info.context.get('allowed_choices')
         if allowed_choices and v not in allowed_choices:
@@ -626,7 +623,6 @@ class Model(BaseModel):
         )
 
     @field_validator('my_number')
-    @classmethod
     def multiply_with_context(
         cls, value: int, info: FieldValidationInfo
     ) -> int:

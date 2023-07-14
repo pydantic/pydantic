@@ -14,7 +14,6 @@ def test_simple():
         a: str
 
         @field_validator('a')
-        @classmethod
         def change_a(cls, v):
             return v + ' changed'
 
@@ -27,13 +26,11 @@ def test_validate_before():
         a: List[int]
 
         @field_validator('a', mode='before')
-        @classmethod
         def check_a1(cls, v: List[Any]) -> List[Any]:
             v.append('123')
             return v
 
         @field_validator('a')
-        @classmethod
         def check_a2(cls, v: List[int]) -> List[int]:
             v.append(456)
             return v
@@ -48,7 +45,6 @@ def test_validate_multiple():
         b: str
 
         @field_validator('a', 'b')
-        @classmethod
         def check_a_and_b(cls, v, info):
             if len(v) < 4:
                 raise ValueError(f'{info.field_name} is too short')
@@ -83,7 +79,6 @@ def test_type_error():
         b: str
 
         @field_validator('a', 'b')
-        @classmethod
         def check_a_and_b(cls, v, info):
             if len(v) < 4:
                 raise TypeError(f'{info.field_name} is too short')
@@ -101,7 +96,6 @@ def test_classmethod():
         a: str
 
         @field_validator('a')
-        @classmethod
         def check_a(cls, v):
             assert cls is MyDataclass and is_dataclass(MyDataclass)
             return v
@@ -117,7 +111,6 @@ def test_validate_parent():
         a: str
 
         @field_validator('a')
-        @classmethod
         def change_a(cls, v):
             return v + ' changed'
 
@@ -135,14 +128,12 @@ def test_inheritance_replace():
         a: int
 
         @field_validator('a')
-        @classmethod
         def add_to_a(cls, v):
             return v + 1
 
     @dataclass
     class Child(Parent):
         @field_validator('a')
-        @classmethod
         def add_to_a(cls, v):
             return v + 5
 
@@ -158,7 +149,6 @@ def test_model_validator():
         b: str
 
         @field_validator('b')
-        @classmethod
         def repeat_b(cls, v: str) -> str:
             return v * 2
 

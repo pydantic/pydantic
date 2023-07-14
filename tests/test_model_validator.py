@@ -13,7 +13,6 @@ def test_model_validator_wrap() -> None:
         y: int
 
         @model_validator(mode='wrap')
-        @classmethod
         def val_model(cls, values: dict[str, Any] | Model, handler: ValidatorFunctionWrapHandler) -> Model:
             if isinstance(values, dict):
                 assert values == {'x': 1, 'y': 2}
@@ -101,7 +100,6 @@ def test_model_validator_after() -> None:
 def test_subclass() -> None:
     class Human(BaseModel):
         @model_validator(mode='before')
-        @classmethod
         def run_model_validator(cls, values: dict[str, Any]) -> dict[str, Any]:
             values['age'] *= 2
             return values
@@ -119,7 +117,6 @@ def test_nested_models() -> None:
         inner: Union[Model, None]  # noqa
 
         @model_validator(mode='before')
-        @classmethod
         def validate_model_before(cls, values: dict[str, Any]) -> dict[str, Any]:
             calls.append('before')
             return values

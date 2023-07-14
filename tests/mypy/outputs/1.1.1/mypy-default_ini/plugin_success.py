@@ -296,7 +296,6 @@ def foo() -> None:
 # MYPY: error: Unused "type: ignore" comment
 
         @model_validator(mode='before')
-        @classmethod
         def validate_values(cls, values: Any) -> Any:
             return values
 

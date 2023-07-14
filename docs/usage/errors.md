@@ -307,7 +307,6 @@ class Cat(BaseModel):
     pet_type: Literal['cat']
 
     @field_validator('pet_type', mode='before')
-    @classmethod
     def validate_pet_type(cls, v):
         if v == 'kitten':
             return 'cat'
@@ -342,7 +341,6 @@ class Cat(BaseModel):
     pet_type: Literal['cat']
 
     @field_validator('pet_type', mode='before')
-    @classmethod
     def validate_pet_type(cls, v):
         if v == 'kitten':
             return 'cat'
@@ -771,7 +769,6 @@ try:
         a: str
 
         @field_validator('a')
-        @classmethod
         def check_a(cls):
             return 'a'
 
