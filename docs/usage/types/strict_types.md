@@ -87,8 +87,7 @@ except ValidationError as e:
     """
     1 validation error for Model
     license_plate
-    String should match pattern '[A-Z0-9]{3}-[A-Z0-9]{3}' [type=string_pattern_mismatch, input_value='XYZ', input_type=str]
-        For further information visit https://errors.pydantic.dev/2.0.2/v/string_pattern_mismatch
+      String should match pattern '[A-Z0-9]{3}-[A-Z0-9]{3}' [type=string_pattern_mismatch, input_value='XYZ', input_type=str]
     """
 m = Model(license_plate='ABC-123')
 print(m)
