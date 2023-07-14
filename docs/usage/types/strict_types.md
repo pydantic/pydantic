@@ -66,7 +66,7 @@ print(m)
 You can also use `pydantic.StringConstraints` in `Annotated` instead of `constr` for better compatibility with type checkers and more flexibility in nesting within other types:
 
 ```py
-from typing import Annotated
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, StringConstraints, ValidationError
 
