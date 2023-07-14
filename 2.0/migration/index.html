@@ -3170,31 +3170,27 @@ behavior of <code>dataclasses</code>. Similarly, fields annotated as <code>Any</
 </tr>
 <tr>
 <td>Not required, cannot be <code>None</code>, is <code>'abc'</code> by default</td>
-<td><code>f3: str = 'abc'</code></td>
+<td><code>f2: str = 'abc'</code></td>
 </tr>
 <tr>
 <td>Required, can be <code>None</code></td>
-<td><code>f2: Optional[str]</code></td>
+<td><code>f3: Optional[str]</code></td>
 </tr>
 <tr>
 <td>Not required, can be <code>None</code>, is <code>None</code> by default</td>
-<td><code>f3: Optional[str] = None</code></td>
+<td><code>f4: Optional[str] = None</code></td>
 </tr>
 <tr>
 <td>Not required, can be <code>None</code>, is <code>'abc'</code> by default</td>
-<td><code>f3: Optional[str] = 'abc'</code></td>
-</tr>
-<tr>
-<td>Not required, cannot be <code>None</code></td>
-<td><code>f4: str = 'Foobar'</code></td>
+<td><code>f5: Optional[str] = 'abc'</code></td>
 </tr>
 <tr>
 <td>Required, can be any type (including <code>None</code>)</td>
-<td><code>f5: Any</code></td>
+<td><code>f6: Any</code></td>
 </tr>
 <tr>
 <td>Not required, can be any type (including <code>None</code>)</td>
-<td><code>f6: Any = None</code></td>
+<td><code>f7: Any = None</code></td>
 </tr>
 </tbody>
 </table>
