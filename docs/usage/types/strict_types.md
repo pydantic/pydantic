@@ -71,7 +71,8 @@ from typing import Annotated
 from pydantic import BaseModel, StringConstraints, ValidationError
 
 FirstName = Annotated[
-    str, StringConstraints(to_upper=True, pattern=r'[A-Z0-9]{3}-[A-Z0-9]{3}'),
+    str,
+    StringConstraints(to_upper=True, pattern=r'[A-Z0-9]{3}-[A-Z0-9]{3}'),
 ]
 
 
