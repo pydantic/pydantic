@@ -46,6 +46,7 @@ nav:
 - Get Started:
   - Welcome to Pydantic: index.md
   - Why use Pydantic: why.md
+  - Help with Pydantic: help_with_pydantic.md
   - Installation: install.md
   - Migration Guide: migration.md
   - Version Compatibility: version-compatibility.md

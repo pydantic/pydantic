@@ -362,6 +362,8 @@ Some notable libraries that depend on Pydantic:
 
 {{ libraries }}
 
+More libraries using Pydantic can be found at [`Kludex/awesome-pydantic`](https://github.com/Kludex/awesome-pydantic).
+
 {% raw %}
 ## Organisations using Pydantic {#using-pydantic}
 
