@@ -439,6 +439,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../why/" class="md-nav__link">
+        Why use Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help_with_pydantic/" class="md-nav__link">
+        Help with Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../install/" class="md-nav__link">
         Installation
       </a>
@@ -1132,6 +1160,20 @@
     <li class="md-nav__item">
       <a href="../../usage/dataclasses/" class="md-nav__link">
         Dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/type_adapter/" class="md-nav__link">
+        TypeAdapter
       </a>
     </li>
   
@@ -2492,9 +2534,6 @@ a full migration guide, but for now the following pointers should be some help w
 <p>Pydantic V1 didn't have good support for validation or serializing non-<code>BaseModel</code>.
 To work with them you had to create a "root" model or use the utility functions in <code>pydantic.tools</code> (<code>parse_obj_as</code> and <code>schema_of</code>).
 In Pydantic V2 this is <em>a lot</em> easier: the <code>TypeAdapter</code> class lets you build an object that behaves almost like a <code>BaseModel</code> class which you can use for a lot of the use cases of root models and as a complete replacement for <code>parse_obj_as</code> and <code>schema_of</code>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
@@ -2504,18 +2543,6 @@ In Pydantic V2 this is <em>a lot</em> easier: the <code>TypeAdapter</code> class
 <span class="nb">print</span><span class="p">(</span><span class="n">validator</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}, &#39;type&#39;: &#39;array&#39;}</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
-
-<span class="n">validator</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
-<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">validator</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}, &#39;type&#39;: &#39;array&#39;}</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <p>Note that this API is provisional and may change before the final release of Pydantic V2.</p>
 
 
@@ -2564,7 +2591,7 @@ In Pydantic V2 this is <em>a lot</em> easier: the <code>TypeAdapter</code> class
       <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
-          <script src="../../extra/redirects.js"></script>
+          <script src="../../extra/fluff.js"></script>
         
       
     
