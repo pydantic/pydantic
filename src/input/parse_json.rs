@@ -146,7 +146,7 @@ impl<'de> Deserialize<'de> for JsonInput {
 
                                 if let JsonInput::String(s) = &first_value {
                                     // Normalize the string to either an int or float
-                                    let normalized = if s.contains('.') || s.contains('e') {
+                                    let normalized = if s.chars().any(|c| c == '.' || c == 'E' || c == 'e') {
                                         JsonInput::Float(
                                             s.parse()
                                                 .map_err(|e| V::Error::custom(format!("expected a float: {e}")))?,

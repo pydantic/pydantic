@@ -327,7 +327,35 @@ def test_non_finite_constrained_float_values(input_value, allow_inf_nan, expecte
         assert v.validate_python(input_value) == expected
 
 
-def test_validate_scientific_notation_from_json():
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        # lower e, minus
+        ('1.0e-12', 1e-12),
+        ('1e-12', 1e-12),
+        ('12e-1', 12e-1),
+        # upper E, minus
+        ('1.0E-12', 1e-12),
+        ('1E-12', 1e-12),
+        ('12E-1', 12e-1),
+        # lower E, plus
+        ('1.0e+12', 1e12),
+        ('1e+12', 1e12),
+        ('12e+1', 12e1),
+        # upper E, plus
+        ('1.0E+12', 1e12),
+        ('1E+12', 1e12),
+        ('12E+1', 12e1),
+        # lower E, unsigned
+        ('1.0e12', 1e12),
+        ('1e12', 1e12),
+        ('12e1', 12e1),
+        # upper E, unsigned
+        ('1.0E12', 1e12),
+        ('1E12', 1e12),
+        ('12E1', 12e1),
+    ],
+)
+def test_validate_scientific_notation_from_json(input_value, expected):
     v = SchemaValidator({'type': 'float'})
-    assert v.validate_json('1.0e-12') == 1e-12
-    assert v.validate_json('1e-12') == 1e-12
+    assert v.validate_json(input_value) == expected
