@@ -167,14 +167,9 @@ def remove_code_fence_attributes(markdown: str) -> str:
     return re.sub(r'^( *``` *py)(.*)', remove_attrs, markdown, flags=re.M)
 
 
-orgs_data = None
-
-
 def get_orgs_data() -> list[dict[str, str]]:
-    global orgs_data
-    if orgs_data is None:
-        with (THIS_DIR / 'orgs.toml').open('rb') as f:
-            orgs_data = tomli.load(f)
+    with (THIS_DIR / 'orgs.toml').open('rb') as f:
+        orgs_data = tomli.load(f)
     return orgs_data['orgs']
 
 
@@ -221,8 +216,12 @@ def render_why(markdown: str, page: Page) -> str | None:
 
     libraries = '\n'.join('* [`{repo}`](https://github.com/{repo}) {stars:,} stars'.format(**lib) for lib in using)
     markdown = re.sub(r'{{ *libraries *}}', libraries, markdown)
+    default_description = '_(Based on the criteria described above)_'
 
-    elements = ['### {name} {{#org-{key}}}\n\n{description}'.format(**org) for org in get_orgs_data()]
+    elements = [
+        f'### {org["name"]} {{#org-{org["key"]}}}\n\n{org.get("description") or default_description}'
+        for org in get_orgs_data()
+    ]
     return re.sub(r'{{ *organisations *}}', '\n\n'.join(elements), markdown)
 
 
