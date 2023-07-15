@@ -15,6 +15,13 @@ description = """
 """
 
 [[orgs]]
+key = "anthropic"
+name = "Anthropic"
+description = """
+[`anthropics/anthropic-sdk-python`](https://github.com/anthropics/anthropic-sdk-python) uses Pydantic.
+"""
+
+[[orgs]]
 key = "apple"
 name = "Apple"
 
@@ -56,6 +63,14 @@ name = "Facebook"
 description = """
 [Multiple repos](https://github.com/search?q=org%3Afacebookresearch+pydantic&type=code) in the `facebookresearch`
 GitHub org depend on Pydantic.
+"""
+
+
+[[orgs]]
+key = "github"
+name = "GitHub"
+description = """
+GitHub sponsored Pydantic $750 in 2022
 """
 
 [[orgs]]
@@ -112,7 +127,6 @@ description = """
 * [Multiple repos](https://github.com/search?q=org%3Amicrosoft%20pydantic&type=code) in the `microsoft` GitHub org depend on Pydantic, in particular their
 * Pydantic is also [used](https://github.com/search?q=org%3AAzure%20pydantic&type=code) in the `Azure` GitHub org
 * [Comments](https://github.com/tiangolo/fastapi/pull/26) on GitHub show Microsoft engineers using Pydantic as part of Windows and Office
-* GitHub sponsored Pydantic $750 in 2022
 """
 
 [[orgs]]
@@ -158,6 +172,15 @@ GitHub org depend on Pydantic.
 
 Their "Omniverse Services" depends on Pydantic according to
 [their documentation](https://web.archive.org/web/20220628161919/https://docs.omniverse.nvidia.com/prod_services/prod_services/core/index.html).
+"""
+
+[[orgs]]
+key = "openai"
+name = "OpenAI"
+description = """
+OpenAI use Pydantic for their ChatCompletions API, as per [this](https://github.com/pydantic/pydantic/discussions/6372) discussion on GitHub.
+
+Anecdotally, OpenAI use Pydantic extensively for their internal services.
 """
 
 [[orgs]]
