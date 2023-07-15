@@ -37,14 +37,16 @@ extra:
     provider: mike
 
 extra_css:
-- 'extra/terminal.css'
-- 'extra/tweaks.css'
+  - 'extra/terminal.css'
+  - 'extra/tweaks.css'
 extra_javascript:
-- 'extra/redirects.js'
+  - 'extra/fluff.js'
 
 nav:
 - Get Started:
   - Welcome to Pydantic: index.md
+  - Why use Pydantic: why.md
+  - Help with Pydantic: help_with_pydantic.md
   - Installation: install.md
   - Migration Guide: migration.md
   - Version Compatibility: version-compatibility.md
@@ -91,6 +93,7 @@ nav:
   - 'Serialization': usage/serialization.md
   - 'Computed Fields': usage/computed_fields.md
   - 'Dataclasses': usage/dataclasses.md
+  - 'TypeAdapter': usage/type_adapter.md
   - 'Validation Decorator': usage/validation_decorator.md
   - 'Postponed Annotations': usage/postponed_annotations.md
   - 'Strict Mode': usage/strict_mode.md

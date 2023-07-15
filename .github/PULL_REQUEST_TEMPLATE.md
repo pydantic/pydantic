@@ -1,6 +1,5 @@
 <!-- Thank you for your contribution! -->
 <!-- Unless your change is trivial, please create an issue to discuss the change before creating a PR -->
-<!-- **Note:** if you're making a pure-documentation pull request, please make it against the `docs-update` branch. -->
 
 ## Change Summary
 

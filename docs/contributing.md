@@ -175,10 +175,6 @@ You may include example code in docstrings. This code should be complete, self-c
 
     Instance attributes should be documented as "Args" in the `__init__` docstring.
 
-## Documentation Pull Requests
-
-If you wish to submit a pure-documentation pull request, please set the target branch to `docs-update` instead of `main`. This will mean that your changes will go live in the docs as soon as the pull request is merged.
-
 ### Documentation Style
 
 In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.
@@ -189,7 +185,7 @@ Pydantic's unit test will test all code examples in the documentation, so it's i
 
 ```bash
 # Run tests and update code examples
-pytest tests/docs/ --update-examples
+pytest tests/test_docs.py --update-examples
 ```
 
 ## Badges
