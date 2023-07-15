@@ -686,6 +686,12 @@ similarly to how it treats built-in generic types like `List` and `Dict`:
 
 Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
 
+!!! note
+    For serialization this means: when a `TypeVar` is constrained or bound using a parent model `ParentModel`
+    and a child model `ChildModel` is used as a concrete value, Pydantic will serialize `ChildModel` as `ParentModel`.
+    `TypeVar` needs to be wrapped inside [`SerializeAsAny`](serialization.md#serializing-with-duck-typing)
+    for Pydantic to serialize `ChildModel` as `ChildModel`.
+
 ```py
 from typing import Generic, TypeVar
 
@@ -722,6 +728,45 @@ except ValidationError as exc:
 concrete_model = typevar_model[int]
 print(concrete_model(a=1, b=1))
 #> a=1 b=1
+```
+
+If a Pydantic model is used in a `TypeVar` constraint, [`SerializeAsAny`](serialization.md#serializing-with-duck-typing) can be used to
+serialize it using the concrete model instead of the model `TypeVar` is bound to.
+
+```py
+from typing import Generic, TypeVar
+
+from pydantic import BaseModel, SerializeAsAny
+
+
+class Model(BaseModel):
+    a: int = 42
+
+
+class DataModel(Model):
+    b: int = 2
+    c: int = 3
+
+
+BoundT = TypeVar('BoundT', bound=Model)
+
+
+class GenericModel(BaseModel, Generic[BoundT]):
+    data: BoundT
+
+
+class SerializeAsAnyModel(BaseModel, Generic[BoundT]):
+    data: SerializeAsAny[BoundT]
+
+
+data_model = DataModel()
+
+print(GenericModel(data=data_model).model_dump())
+#> {'data': {'a': 42}}
+
+
+print(SerializeAsAnyModel(data=data_model).model_dump())
+#> {'data': {'a': 42, 'b': 2, 'c': 3}}
 ```
 
 ## Dynamic model creation
@@ -808,81 +853,6 @@ except ValidationError as e:
 
     - the model must be defined globally
     - it must provide `__module__`
-
-## `TypeAdapter`
-
-You may have types that are not `BaseModel`s that you want to validate data against.
-Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
-
-For use cases like this, Pydantic provides `TypeAdapter`, which can be used for type validation, serialization, and
-JSON schema generation without creating a `BaseModel`.
-
-A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
-for types that do not have such methods (such as dataclasses, primitive types, and more):
-
-```py
-from typing import List
-
-from typing_extensions import TypedDict
-
-from pydantic import TypeAdapter, ValidationError
-
-
-class User(TypedDict):
-    name: str
-    id: int
-
-
-UserListValidator = TypeAdapter(List[User])
-print(repr(UserListValidator.validate_python([{'name': 'Fred', 'id': '3'}])))
-#> [{'name': 'Fred', 'id': 3}]
-
-try:
-    UserListValidator.validate_python(
-        [{'name': 'Fred', 'id': 'wrong', 'other': 'no'}]
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for list[typed-dict]
-    0.id
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
-    """
-```
-
-!!! note
-    Despite some overlap in use cases with [`RootModel`](models.md#rootmodel-and-custom-root-types),
-    `TypeAdapter` should not be used as a type annotation for specifying fields of a `BaseModel`, etc.
-
-### Parsing data into a specified type
-
-`TypeAdapter` can be used to apply the parsing logic to populate pydantic models in a more ad-hoc way.
-This function behaves similarly to `BaseModel.model_validate`, but works with arbitrary Pydantic-compatible types.
-
-This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
-For example:
-
-```py
-from typing import List
-
-from pydantic import BaseModel, TypeAdapter
-
-
-class Item(BaseModel):
-    id: int
-    name: str
-
-
-# `item_data` could come from an API call, eg., via something like:
-# item_data = requests.get('https://my-api.com/items').json()
-item_data = [{'id': 1, 'name': 'My Item'}]
-
-items = TypeAdapter(List[Item]).validate_python(item_data)
-print(items)
-#> [Item(id=1, name='My Item')]
-```
-
-`TypeAdapter` is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
 
 ## `RootModel` and custom root types
 
