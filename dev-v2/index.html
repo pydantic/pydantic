@@ -14,7 +14,7 @@
       
       
       
-        <link rel="next" href="install/">
+        <link rel="next" href="why/">
       
       <link rel="icon" href="favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#why-use-pydantic" class="md-skip">
+        <a href="#pydantic" class="md-skip">
           Skip to content
         </a>
       
@@ -431,6 +431,8 @@
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           Welcome to Pydantic
@@ -448,6 +450,8 @@
 <nav class="md-nav md-nav--secondary" aria-label="Page contents">
   
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">
@@ -481,6 +485,34 @@
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="why/" class="md-nav__link">
+        Why use Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="help_with_pydantic/" class="md-nav__link">
+        Help with Pydantic
+      </a>
     </li>
   
 
@@ -1185,6 +1217,20 @@
     <li class="md-nav__item">
       <a href="usage/dataclasses/" class="md-nav__link">
         Dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/type_adapter/" class="md-nav__link">
+        TypeAdapter
       </a>
     </li>
   
@@ -2109,6 +2155,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -2156,47 +2204,50 @@
   
 
 
-  <h1>Welcome to Pydantic</h1>
-
+<h1 id="pydantic">Pydantic<a class="headerlink" href="#pydantic" title="Permanent link">&para;</a></h1>
 <p><a href="https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI"><img alt="CI" src="https://github.com/pydantic/pydantic/workflows/CI/badge.svg?event=push" /></a>
 <a href="https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI"><img alt="Coverage" src="https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg" /></a><br>
 <a href="https://pypi.python.org/pypi/pydantic"><img alt="pypi" src="https://img.shields.io/pypi/v/pydantic.svg" /></a>
 <a href="https://anaconda.org/conda-forge/pydantic"><img alt="CondaForge" src="https://img.shields.io/conda/v/conda-forge/pydantic.svg" /></a>
 <a href="https://pepy.tech/project/pydantic"><img alt="downloads" src="https://pepy.tech/badge/pydantic/month" /></a><br>
 <a href="https://github.com/pydantic/pydantic/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/pydantic/pydantic.svg" /></a></p>
-<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/ea37c7892844f41f306bcb3d2bf97b64264b6ce9">ea37c78</a>.</p>
+<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/d9bf7f70f6f853e799eeffb3dbfadb06527993b9">d9bf7f7</a>.</p>
 <p>Pydantic is the most widely used data validation library for Python.</p>
+<p>Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.7+; validate it with Pydantic.</p>
 <div class="admonition success">
 <p class="admonition-title">Migrating to Pydantic V2</p>
-<p>Already using Pydantic V1? See the <a href="migration/">Migration Guide</a> for notes on upgrading to Pydantic V2 in your applications!</p>
+<p>Using Pydantic V1? See the <a href="migration/">Migration Guide</a> for notes on upgrading to Pydantic V2 in your applications!</p>
 </div>
-<div class="highlight"><span class="filename">Pydantic Example</span><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><span class="filename">Pydantic Example</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">b</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;a&#39;: 123, &#39;b&#39;: [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;]}</span>
+
+<span class="k">class</span> <span class="nc">Delivery</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">timestamp</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">dimensions</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Delivery</span><span class="p">(</span><span class="n">timestamp</span><span class="o">=</span><span class="s1">&#39;2020-01-02T03:04:05Z&#39;</span><span class="p">,</span> <span class="n">dimensions</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;10&#39;</span><span class="p">,</span> <span class="s1">&#39;20&#39;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">timestamp</span><span class="p">))</span>
+<span class="c1">#&gt; datetime.datetime(2020, 1, 2, 3, 4, 5, tzinfo=TzInfo(UTC))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">dimensions</span><span class="p">)</span>
+<span class="c1">#&gt; (10, 20)</span>
 </code></pre></div>
 <h2 id="why-use-pydantic">Why use Pydantic?<a class="headerlink" href="#why-use-pydantic" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Powered by type hints</strong> &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write and integration with your IDE and static analysis tools.</li>
-<li><strong>Speed</strong> &mdash; Pydantic's core validation logic is written in Rust, as a result Pydantic is among the fastest data validation libraries for Python.</li>
-<li><strong>JSON Schema</strong> &mdash; Pydantic models can emit JSON Schema allowing for easy integration with other tools.</li>
-<li><strong>Strict</strong> and <strong>Lax</strong> mode &mdash; Pydantic can run in either <code>strict=True</code> mode (where data is not converted) or <code>strict=False</code> mode where Pydantic tries to coerce data to the correct type where appropriate.</li>
-<li><strong>Dataclasses</strong>, <strong>TypedDicts</strong> and more &mdash; Pydantic supports validation of many standard library types including <code>dataclass</code> and <code>TypedDict</code>.</li>
-<li><strong>Customisation</strong> &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways.</li>
+<li><strong>Powered by type hints</strong> &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. <a href="why/#type-hints">Learn more…</a></li>
+<li><strong>Speed</strong> &mdash; Pydantic's core validation logic is written in Rust. As a result, Pydantic is among the fastest data validation libraries for Python. <a href="why/#performance">Learn more…</a></li>
+<li><strong>JSON Schema</strong> &mdash; Pydantic models can emit JSON Schema, allowing for easy integration with other tools. <a href="why/#json-schema">Learn more…</a></li>
+<li><strong>Strict</strong> and <strong>Lax</strong> mode &mdash; Pydantic can run in either <code>strict=True</code> mode (where data is not converted) or <code>strict=False</code> mode where Pydantic tries to coerce data to the correct type where appropriate. <a href="why/#strict-lax">Learn more…</a></li>
+<li><strong>Dataclasses</strong>, <strong>TypedDicts</strong> and more &mdash; Pydantic supports validation of many standard library types including <code>dataclass</code> and <code>TypedDict</code>. <a href="why/#typeddict">Learn more…</a></li>
+<li><strong>Customisation</strong> &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways. <a href="why/#customisation">Learn more…</a></li>
 <li><strong>Ecosystem</strong> &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
-  <a href="https://github.com/tiangolo/fastapi">FastAPI</a>,
-  <a href="https://github.com/huggingface/transformers">huggingface/transformers</a>,
-  <a href="https://github.com/vitalik/django-ninja">Django Ninja</a>,
-  <a href="https://github.com/tiangolo/sqlmodel">SQLModel</a>,
-  and <a href="https://github.com/hwchase17/langchain">LangChain</a>.</li>
-<li><strong>Battle tested</strong> &mdash; Pydantic is downloaded &gt;70m times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ &mdash; if you're trying to do something with Pydantic, someone else has probably already done it.</li>
+  <em>FastAPI</em>, <em>huggingface</em>, <em>Django Ninja</em>, <em>SQLModel</em>, &amp; <em>LangChain</em>. <a href="why/#ecosystem">Learn more…</a></li>
+<li><strong>Battle tested</strong> &mdash; Pydantic is downloaded over 70M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. <a href="why/#using-pydantic">Learn more…</a></li>
 </ul>
-<p><a href="install/">Installing Pydantic</a> is as simple as: <a href="install/"><code>pip install pydantic</code></a></p>
+<p><a href="install/">Installing Pydantic</a> is as simple as: <code>pip install pydantic</code></p>
 <h2 id="pydantic-examples">Pydantic examples<a class="headerlink" href="#pydantic-examples" title="Permanent link">&para;</a></h2>
 <p>To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from <code>BaseModel</code>:</p>
 <div class="highlight"><span class="filename">Validation Successful</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
@@ -2250,9 +2301,9 @@
 <li>We can convert the model to a dictionary with <code>model_dump()</code></li>
 </ol>
 <p>If validation fails, Pydantic will raise an error with a breakdown of what was wrong:</p>
-<div class="highlight"><span class="filename">Validation Error</span><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="highlight"><span class="filename">Validation Error</span><pre><span></span><code><span class="c1"># continuing the above example...</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PositiveInt</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -2293,183 +2344,200 @@
 </ol>
 <h2 id="who-is-using-pydantic">Who is using Pydantic?<a class="headerlink" href="#who-is-using-pydantic" title="Permanent link">&para;</a></h2>
 <p>Hundreds of organisations and packages are using Pydantic. Some of the prominent companies and organizations around the world who are using Pydantic include:</p>
-<div id="grid-container">
-<div id="company-grid" class="grid"></div>
+<div id="grid-container"><div id="company-grid" class="grid">
+<div class="tile">
+  <a href="why/#org-adobe" title="Adobe">
+    <img src="logos/adobe_logo.png" alt="Adobe" />
+  </a>
 </div>
+<div class="tile">
+  <a href="why/#org-amazon" title="Amazon and AWS">
+    <img src="logos/amazon_logo.png" alt="Amazon and AWS" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-anthropic" title="Anthropic">
+    <img src="logos/anthropic_logo.png" alt="Anthropic" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-apple" title="Apple">
+    <img src="logos/apple_logo.png" alt="Apple" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-asml" title="ASML">
+    <img src="logos/asml_logo.png" alt="ASML" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-astrazeneca" title="AstraZeneca">
+    <img src="logos/astrazeneca_logo.png" alt="AstraZeneca" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-cisco" title="Cisco Systems">
+    <img src="logos/cisco_logo.png" alt="Cisco Systems" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-comcast" title="Comcast">
+    <img src="logos/comcast_logo.png" alt="Comcast" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-datadog" title="Datadog">
+    <img src="logos/datadog_logo.png" alt="Datadog" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-facebook" title="Facebook">
+    <img src="logos/facebook_logo.png" alt="Facebook" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-github" title="GitHub">
+    <img src="logos/github_logo.png" alt="GitHub" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-google" title="Google">
+    <img src="logos/google_logo.png" alt="Google" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-hsbc" title="HSBC">
+    <img src="logos/hsbc_logo.png" alt="HSBC" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-ibm" title="IBM">
+    <img src="logos/ibm_logo.png" alt="IBM" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-intel" title="Intel">
+    <img src="logos/intel_logo.png" alt="Intel" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-intuit" title="Intuit">
+    <img src="logos/intuit_logo.png" alt="Intuit" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-ipcc" title="Intergovernmental Panel on Climate Change">
+    <img src="logos/ipcc_logo.png" alt="Intergovernmental Panel on Climate Change" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-jpmorgan" title="JPMorgan">
+    <img src="logos/jpmorgan_logo.png" alt="JPMorgan" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-jupyter" title="Jupyter">
+    <img src="logos/jupyter_logo.png" alt="Jupyter" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-microsoft" title="Microsoft">
+    <img src="logos/microsoft_logo.png" alt="Microsoft" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-molssi" title="Molecular Science Software Institute">
+    <img src="logos/molssi_logo.png" alt="Molecular Science Software Institute" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-nasa" title="NASA">
+    <img src="logos/nasa_logo.png" alt="NASA" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-netflix" title="Netflix">
+    <img src="logos/netflix_logo.png" alt="Netflix" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-nsa" title="NSA">
+    <img src="logos/nsa_logo.png" alt="NSA" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-nvidia" title="NVIDIA">
+    <img src="logos/nvidia_logo.png" alt="NVIDIA" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-openai" title="OpenAI">
+    <img src="logos/openai_logo.png" alt="OpenAI" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-oracle" title="Oracle">
+    <img src="logos/oracle_logo.png" alt="Oracle" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-palantir" title="Palantir">
+    <img src="logos/palantir_logo.png" alt="Palantir" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-qualcomm" title="Qualcomm">
+    <img src="logos/qualcomm_logo.png" alt="Qualcomm" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-redhat" title="Red Hat">
+    <img src="logos/redhat_logo.png" alt="Red Hat" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-revolut" title="Revolut">
+    <img src="logos/revolut_logo.png" alt="Revolut" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-robusta" title="Robusta">
+    <img src="logos/robusta_logo.png" alt="Robusta" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-salesforce" title="Salesforce">
+    <img src="logos/salesforce_logo.png" alt="Salesforce" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-starbucks" title="Starbucks">
+    <img src="logos/starbucks_logo.png" alt="Starbucks" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-ti" title="Texas Instruments">
+    <img src="logos/ti_logo.png" alt="Texas Instruments" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-twilio" title="Twilio">
+    <img src="logos/twilio_logo.png" alt="Twilio" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-twitter" title="Twitter">
+    <img src="logos/twitter_logo.png" alt="Twitter" />
+  </a>
+</div>
+<div class="tile">
+  <a href="why/#org-ukhomeoffice" title="UK Home Office">
+    <img src="logos/ukhomeoffice_logo.png" alt="UK Home Office" />
+  </a>
+</div></div></div>
 
 <p>For a more comprehensive list of open-source projects using Pydantic see the
 <a href="https://github.com/pydantic/pydantic/network/dependents">list of dependents on github</a>, or you can find some awesome projects using Pydantic in <a href="https://github.com/Kludex/awesome-pydantic">awesome-pydantic</a>.</p>
-<!-- ## Discussion of Pydantic
-
-Podcasts and videos discussing Pydantic.
-
-[Talk Python To Me](https://talkpython.fm/episodes/show/313/automate-your-data-exchange-with-pydantic){target=_blank}
-: Michael Kennedy and Samuel Colvin, the creator of Pydantic, dive into the history of Pydantic and its many uses and benefits.
-
-[Podcast.\_\_init\_\_](https://www.pythonpodcast.com/pydantic-data-validation-episode-263/){target=_blank}
-: Discussion about where Pydantic came from and ideas for where it might go next with
-  Samuel Colvin the creator of Pydantic.
-
-[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand){target=_blank}
-: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management
-  using Python type annotations, and it's the Python type annotations that makes me really extra happy... It works
-  automatically with all the IDE's you already have.*" --Michael Kennedy
-
-[Python Pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
-: A talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to Pydantic and walking
-  through the core features of Pydantic. -->
-
-<script>
-const companies = [
-  {
-    name: 'Adobe',
-    logoUrl: 'logos/adobe_logo.png'
-  },
-  {
-    name: 'AMD',
-    logoUrl: 'logos/amd_logo.png'
-  },
-  {
-    name: 'Amazon',
-    logoUrl: 'logos/amazon_logo.png'
-  },
-  {
-    name: 'Apple',
-    logoUrl: 'logos/apple_logo.png'
-  },
-  {
-    name: 'ASML',
-    logoUrl: 'logos/asml_logo.png'
-  },
-  {
-    name: 'AstraZeneca',
-    logoUrl: 'logos/astrazeneca_logo.png'
-  },
-  {
-    name: 'Broadcom',
-    logoUrl: 'logos/broadcom_logo.png'
-  },
-  {
-    name: 'Cisco Systems',
-    logoUrl: 'logos/cisco_logo.png'
-  },
-  {
-    name: 'Comcast',
-    logoUrl: 'logos/comcast_logo.png'
-  },
-  {
-    name: 'Datadog',
-    logoUrl: 'logos/datadog_logo.png'
-  },
-  {
-    name: 'Facebook',
-    logoUrl: 'logos/facebook_logo.png'
-  },
-  {
-    name: 'FastAPI',
-    logoUrl: 'logos/fastapi_logo.png'
-  },
-  {
-    name: 'Google',
-    logoUrl: 'logos/google_logo.png'
-  },
-  {
-    name: 'IBM',
-    logoUrl: 'logos/ibm_logo.png'
-  },
-  {
-    name: 'Intel',
-    logoUrl: 'logos/intel_logo.png'
-  },
-  {
-    name: 'Intuit',
-    logoUrl: 'logos/intuit_logo.png'
-  },
-  {
-    name: 'IPCC',
-    logoUrl: 'logos/ipcc_logo.png'
-  },
-  {
-    name: 'JPMorgan',
-    logoUrl: 'logos/jpmorgan_logo.png'
-  },
-  {
-    name: 'Jupyter',
-    logoUrl: 'logos/jupyter_logo.png'
-  },
-  {
-    name: 'Microsoft',
-    logoUrl: 'logos/microsoft_logo.png'
-  },
-  {
-    name: 'Molssi',
-    logoUrl: 'logos/molssi_logo.png'
-  },
-  {
-    name: 'NASA',
-    logoUrl: 'logos/nasa_logo.png'
-  },
-  {
-    name: 'Netflix',
-    logoUrl: 'logos/netflix_logo.png'
-  },
-  {
-    name: 'NSA',
-    logoUrl: 'logos/nsa_logo.png'
-  },
-  {
-    name: 'NVIDIA',
-    logoUrl: 'logos/nvidia_logo.png'
-  },
-  {
-    name: 'Qualcomm',
-    logoUrl: 'logos/qualcomm_logo.png'
-  },
-  {
-    name: 'Red Hat',
-    logoUrl: 'logos/redhat_logo.png'
-  },
-  {
-    name: 'Robusta',
-    logoUrl: 'logos/robusta_logo.png'
-  },
-  {
-    name: 'Salesforce',
-    logoUrl: 'logos/salesforce_logo.png'
-  },
-  {
-    name: 'Starbucks',
-    logoUrl: 'logos/starbucks_logo.png'
-  },
-  {
-    name: 'Texas Instruments',
-    logoUrl: 'logos/ti_logo.png'
-  },
-  {
-    name: 'Twilio',
-    logoUrl: 'logos/twilio_logo.png'
-  },
-  {
-    name: 'Twitter',
-    logoUrl: 'logos/twitter_logo.png'
-  },
-  {
-    name: 'UK Home Office',
-    logoUrl: 'logos/ukhomeoffice_logo.png'
-  }
-];
-
-const grid = document.getElementById('company-grid');
-
-for (const company of companies) {
-  const tile = document.createElement('div');
-  tile.classList.add('tile');
-  tile.innerHTML = `
-    <img src="${company.logoUrl}" alt="${company.name}" />
-  `;
-  grid.appendChild(tile);
-}
-</script>
 
 
 
@@ -2517,7 +2585,7 @@ for (const company of companies) {
       <script src="assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
-          <script src="extra/redirects.js"></script>
+          <script src="extra/fluff.js"></script>
         
       
     

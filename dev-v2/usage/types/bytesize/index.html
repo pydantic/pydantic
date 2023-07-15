@@ -439,6 +439,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../why/" class="md-nav__link">
+        Why use Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../help_with_pydantic/" class="md-nav__link">
+        Help with Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../install/" class="md-nav__link">
         Installation
       </a>
@@ -1186,6 +1214,20 @@
     <li class="md-nav__item">
       <a href="../../dataclasses/" class="md-nav__link">
         Dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../type_adapter/" class="md-nav__link">
+        TypeAdapter
       </a>
     </li>
   
@@ -2173,9 +2215,6 @@
 <p>However, for the sake of improved integration with type checkers, we now discourage the use of <code>conbytes</code> and other
 function calls used to return constrained types. Instead, you can use <code>pydantic.types.Strict</code> and <code>annotated_types.Len</code>
 as annotations to achieve these constraints:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
@@ -2186,21 +2225,6 @@ as annotations to achieve these constraints:</p>
     <span class="c1"># Instead of `my_bytes: conbytes(strict=True, min_length=10, max_length=20)`, use:</span>
     <span class="n">my_bytes</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Strict</span><span class="p">(),</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Strict</span>
-
-
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="c1"># Instead of `my_bytes: conbytes(strict=True, min_length=10, max_length=20)`, use:</span>
-    <span class="n">my_bytes</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Strict</span><span class="p">(),</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="using-bytesize">Using ByteSize<a class="headerlink" href="#using-bytesize" title="Permanent link">&para;</a></h2>
 <p>You can use the <code>ByteSize</code> data type to (case-insensitively) convert a string representation of a number of bytes into
 an integer, and also to print out human-readable strings representing a number of bytes.</p>
@@ -2279,7 +2303,7 @@ will cause the unit to be interpreted as a power of 2, rather than a power of 10
       <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
-          <script src="../../../extra/redirects.js"></script>
+          <script src="../../../extra/fluff.js"></script>
         
       
     

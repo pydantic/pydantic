@@ -16,7 +16,7 @@
         <link rel="prev" href="../computed_fields/">
       
       
-        <link rel="next" href="../validation_decorator/">
+        <link rel="next" href="../type_adapter/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
@@ -427,6 +427,34 @@
     <li class="md-nav__item">
       <a href="../.." class="md-nav__link">
         Welcome to Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why/" class="md-nav__link">
+        Why use Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help_with_pydantic/" class="md-nav__link">
+        Help with Pydantic
       </a>
     </li>
   
@@ -1242,6 +1270,20 @@
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../type_adapter/" class="md-nav__link">
+        TypeAdapter
+      </a>
     </li>
   
 
@@ -2305,11 +2347,8 @@ There are cases where subclassing <code>pydantic.BaseModel</code> is the better 
 <p>You can use all the standard Pydantic field types. Note, however, that arguments passed to constructor will be copied in
 order to perform validation and, where necessary coercion.</p>
 <p>To perform validation or generate a JSON schema on a Pydantic dataclass, you should now wrap the dataclass
-with a <a href="../models/#typeadapter"><code>TypeAdapter</code></a> and make use of its methods.</p>
+with a <a href="../type_adapter/"><code>TypeAdapter</code></a> and make use of its methods.</p>
 <p>Fields that require a <code>default_factory</code> can be specified by either a <code>pydantic.Field</code> or a <code>dataclasses.field</code>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
@@ -2362,116 +2401,6 @@ with a <a href="../models/#typeadapter"><code>TypeAdapter</code></a> and make us
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
-<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">age</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;The age of the user&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;do not lie!&#39;</span><span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">height</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The height in cm&#39;</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;id&#39;: {&#39;title&#39;: &#39;Id&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">        &#39;name&#39;: {&#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;friends&#39;: {</span>
-<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
-<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;age&#39;: {</span>
-<span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
-<span class="sd">            &#39;default&#39;: None,</span>
-<span class="sd">            &#39;description&#39;: &#39;do not lie!&#39;,</span>
-<span class="sd">            &#39;title&#39;: &#39;The age of the user&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;height&#39;: {</span>
-<span class="sd">            &#39;anyOf&#39;: [</span>
-<span class="sd">                {&#39;maximum&#39;: 300, &#39;minimum&#39;: 50, &#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">                {&#39;type&#39;: &#39;null&#39;},</span>
-<span class="sd">            ],</span>
-<span class="sd">            &#39;default&#39;: None,</span>
-<span class="sd">            &#39;title&#39;: &#39;The height in cm&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">    },</span>
-<span class="sd">    &#39;required&#39;: [&#39;id&#39;],</span>
-<span class="sd">    &#39;title&#39;: &#39;User&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
-<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span>
-        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-        <span class="n">metadata</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;The age of the user&#39;</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="s1">&#39;do not lie!&#39;</span><span class="p">),</span>
-    <span class="p">)</span>
-    <span class="n">height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;The height in cm&#39;</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;id&#39;: {&#39;title&#39;: &#39;Id&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">        &#39;name&#39;: {&#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;friends&#39;: {</span>
-<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
-<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;age&#39;: {</span>
-<span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
-<span class="sd">            &#39;default&#39;: None,</span>
-<span class="sd">            &#39;description&#39;: &#39;do not lie!&#39;,</span>
-<span class="sd">            &#39;title&#39;: &#39;The age of the user&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        &#39;height&#39;: {</span>
-<span class="sd">            &#39;anyOf&#39;: [</span>
-<span class="sd">                {&#39;maximum&#39;: 300, &#39;minimum&#39;: 50, &#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">                {&#39;type&#39;: &#39;null&#39;},</span>
-<span class="sd">            ],</span>
-<span class="sd">            &#39;default&#39;: None,</span>
-<span class="sd">            &#39;title&#39;: &#39;The height in cm&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">    },</span>
-<span class="sd">    &#39;required&#39;: [&#39;id&#39;],</span>
-<span class="sd">    &#39;title&#39;: &#39;User&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <p><code>pydantic.dataclasses.dataclass</code>'s arguments are the same as the standard decorator, except one extra
 keyword argument <code>config</code> which has the same meaning as <a href="../model_config/">model_config</a>.</p>
 <div class="admonition warning">
@@ -2576,9 +2505,6 @@ all the inherited fields.</p>
 <p>Bear in mind that stdlib dataclasses (nested or not) are <strong>automatically converted</strong> into Pydantic
 dataclasses when mixed with <code>BaseModel</code>! Furthermore the generated Pydantic dataclass will have
 the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen</code>, ...) as the original one.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
@@ -2628,59 +2554,6 @@ the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen<
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
     <span class="c1">#&gt; cannot assign to field &#39;name&#39;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="nd">@dataclasses</span><span class="o">.</span><span class="n">dataclass</span>
-<span class="k">class</span> <span class="nc">File</span><span class="p">:</span>
-    <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">last_modification_time</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">file</span><span class="p">:</span> <span class="n">File</span>
-    <span class="n">user</span><span class="p">:</span> <span class="n">User</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="n">file</span> <span class="o">=</span> <span class="n">File</span><span class="p">(</span>
-    <span class="n">filename</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;not&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;string&#39;</span><span class="p">],</span>
-    <span class="n">last_modification_time</span><span class="o">=</span><span class="s1">&#39;2020-01-01T00:00&#39;</span><span class="p">,</span>
-<span class="p">)</span>  <span class="c1"># nothing is validated as expected</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">File(filename=[&#39;not&#39;, &#39;a&#39;, &#39;string&#39;], last_modification_time=&#39;2020-01-01T00:00&#39;)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Foo</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Foo</span>
-<span class="sd">    file.filename</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value=[&#39;not&#39;, &#39;a&#39;, &#39;string&#39;], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;myfile&#39;</span><span class="p">),</span> <span class="n">user</span><span class="o">=</span><span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;pika&#39;</span><span class="p">))</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">foo</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;bulbi&#39;</span>
-<span class="k">except</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">FrozenInstanceError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-    <span class="c1">#&gt; cannot assign to field &#39;name&#39;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h3 id="use-custom-types">Use custom types<a class="headerlink" href="#use-custom-types" title="Permanent link">&para;</a></h3>
 <p>Since stdlib dataclasses are automatically converted to add validation, using
 custom types may cause some unexpected behavior.
@@ -2739,9 +2612,6 @@ In this case you can simply add <code>arbitrary_types_allowed</code> in the conf
 <h2 id="initialization-hooks">Initialization hooks<a class="headerlink" href="#initialization-hooks" title="Permanent link">&para;</a></h2>
 <p>When you initialize a dataclass, it is possible to execute code <em>before</em> or <em>after</em> validation
 with the help of the <a href="../validators/#model-validators"><code>@model_validator</code></a> decorator <code>mode</code> parameter.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">model_validator</span>
@@ -2778,51 +2648,7 @@ with the help of the <a href="../validators/#model-validators"><code>@model_vali
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;birth&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="mi">1995</span><span class="p">,</span> <span class="s1">&#39;month&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}})</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">model_validator</span>
-<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">Birth</span><span class="p">:</span>
-    <span class="n">year</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">month</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">day</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
-    <span class="n">birth</span><span class="p">:</span> <span class="n">Birth</span>
-
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">pre_root</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-        <span class="c1">#&gt; ArgsKwargs((), {&#39;birth&#39;: {&#39;year&#39;: 1995, &#39;month&#39;: 3, &#39;day&#39;: 2}})</span>
-        <span class="k">return</span> <span class="n">values</span>
-
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">post_root</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;User&#39;</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="c1">#&gt; User(birth=Birth(year=1995, month=3, day=2))</span>
-        <span class="k">return</span> <span class="bp">self</span>
-
-    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">birth</span><span class="p">)</span>
-        <span class="c1">#&gt; Birth(year=1995, month=3, day=2)</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;birth&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="mi">1995</span><span class="p">,</span> <span class="s1">&#39;month&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}})</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <p>The <code>__post_init__</code> in Pydantic dataclasses is called <em>after</em> validation, rather than before.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.8 and above</label><label for="__tabbed_4_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">InitVar</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
@@ -2846,33 +2672,6 @@ with the help of the <a href="../validators/#model-validators"><code>@model_vali
 <span class="c1"># Received path=&#39;world&#39;, base_path=&#39;/hello&#39;</span>
 <span class="k">assert</span> <span class="n">path_data</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;/hello/world&#39;</span><span class="p">)</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">InitVar</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-
-<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">PathData</span><span class="p">:</span>
-    <span class="n">path</span><span class="p">:</span> <span class="n">Path</span>
-    <span class="n">base_path</span><span class="p">:</span> <span class="n">InitVar</span><span class="p">[</span><span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_path</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Received path=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">!r}</span><span class="s1">, base_path=</span><span class="si">{</span><span class="n">base_path</span><span class="si">!r}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="c1">#&gt; Received path=PosixPath(&#39;world&#39;), base_path=PosixPath(&#39;/hello&#39;)</span>
-        <span class="k">if</span> <span class="n">base_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">base_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span>
-
-
-<span class="n">path_data</span> <span class="o">=</span> <span class="n">PathData</span><span class="p">(</span><span class="s1">&#39;world&#39;</span><span class="p">,</span> <span class="n">base_path</span><span class="o">=</span><span class="s1">&#39;/hello&#39;</span><span class="p">)</span>
-<span class="c1"># Received path=&#39;world&#39;, base_path=&#39;/hello&#39;</span>
-<span class="k">assert</span> <span class="n">path_data</span><span class="o">.</span><span class="n">path</span> <span class="o">==</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;/hello/world&#39;</span><span class="p">)</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h3 id="difference-with-stdlib-dataclasses">Difference with stdlib dataclasses<a class="headerlink" href="#difference-with-stdlib-dataclasses" title="Permanent link">&para;</a></h3>
 <p>Note that the <code>dataclasses.dataclass</code> from Python stdlib implements only the <code>__post_init__</code> method since it doesn't run a validation step.</p>
 <p>When substituting usage of <code>dataclasses.dataclass</code> with <code>pydantic.dataclasses.dataclass</code>, it is recommended to move the code executed in the <code>__post_init__</code> to
@@ -2880,9 +2679,6 @@ methods decorated with <code>model_validator</code>.</p>
 <h2 id="json-dumping">JSON dumping<a class="headerlink" href="#json-dumping" title="Permanent link">&para;</a></h2>
 <p>Pydantic dataclasses do not feature a <code>.model_dump_json()</code> function. To dump them as JSON, you will need to
 make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</a> as follows:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
@@ -2909,36 +2705,6 @@ make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">RootModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">RootModel</span><span class="p">[</span><span class="n">User</span><span class="p">](</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
-</code></pre></div>
-<p>JSON output:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
-<span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John Doe&quot;</span><span class="p">,</span>
-<span class="w">  </span><span class="nt">&quot;friends&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="mi">0</span>
-<span class="w">  </span><span class="p">]</span>
-<span class="p">}</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 
 
 
@@ -2986,7 +2752,7 @@ make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</
       <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
-          <script src="../../extra/redirects.js"></script>
+          <script src="../../extra/fluff.js"></script>
         
       
     

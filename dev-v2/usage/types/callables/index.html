@@ -434,6 +434,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../why/" class="md-nav__link">
+        Why use Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../help_with_pydantic/" class="md-nav__link">
+        Help with Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../install/" class="md-nav__link">
         Installation
       </a>
@@ -1139,6 +1167,20 @@
     <li class="md-nav__item">
       <a href="../../dataclasses/" class="md-nav__link">
         Dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../type_adapter/" class="md-nav__link">
+        TypeAdapter
       </a>
     </li>
   
@@ -2088,9 +2130,6 @@
 <dd>see below for more detail on parsing and validation</dd>
 </dl>
 <p>Fields can also be of type <code>Callable</code>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -2104,24 +2143,6 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 <span class="c1">#&gt; callback=&lt;function &lt;lambda&gt; at 0x0123456789ab&gt;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Callable</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">int</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; callback=&lt;function &lt;lambda&gt; at 0x0123456789ab&gt;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Callable fields only perform a simple check that the argument is
@@ -2175,7 +2196,7 @@ type is performed.</p>
       <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
-          <script src="../../../extra/redirects.js"></script>
+          <script src="../../../extra/fluff.js"></script>
         
       
     

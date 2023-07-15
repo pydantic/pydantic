@@ -439,6 +439,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../why/" class="md-nav__link">
+        Why use Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../help_with_pydantic/" class="md-nav__link">
+        Help with Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../install/" class="md-nav__link">
         Installation
       </a>
@@ -1179,6 +1207,20 @@
     <li class="md-nav__item">
       <a href="../../dataclasses/" class="md-nav__link">
         Dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../type_adapter/" class="md-nav__link">
+        TypeAdapter
       </a>
     </li>
   
@@ -2166,9 +2208,6 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p><code>typing.Dict</code></p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -2192,32 +2231,6 @@
 <span class="sd">      Input should be a valid dictionary [type=dict_type, input_value=&#39;test&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;x&#39;: {&#39;foo&#39;: 1}}</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    x</span>
-<span class="sd">      Input should be a valid dictionary [type=dict_type, input_value=&#39;test&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h3 id="typeddict">TypedDict<a class="headerlink" href="#typeddict" title="Permanent link">&para;</a></h3>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -2229,9 +2242,6 @@ We therefore recommend using <a href="https://pypi.org/project/typing-extensions
 <p><a href="https://docs.python.org/3/library/typing.html#typing.TypedDict">TypedDict</a> declares a dictionary type that expects all of
 its instances to have a certain set of keys, where each key is associated with a value of a consistent type.</p>
 <p>It is same as <code>dict</code> but Pydantic will validate the dictionary since keys are annotated.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.11 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -2257,41 +2267,8 @@ its instances to have a certain set of keys, where each key is associated with a
 <span class="sd">      Field required [type=missing, input_value={&#39;name&#39;: &#39;foo&#39;}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypedDict</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}))</span>
-<span class="c1">#&gt; {&#39;name&#39;: &#39;foo&#39;, &#39;id&#39;: 1}</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;foo&#39;</span><span class="p">})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for typed-dict</span>
-<span class="sd">    id</span>
-<span class="sd">      Field required [type=missing, input_value={&#39;name&#39;: &#39;foo&#39;}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <p>You can define <code>__pydantic_config__</code> to change the model inherited from <code>TypedDict</code>.
 See <a href="../../model_config/">Model Config</a> for more details.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.10 and above</label><label for="__tabbed_3_3">Python 3.11 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
@@ -2360,145 +2337,6 @@ See <a href="../../model_config/">Model Config</a> for more details.</p>
 <span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;john.smith@me.com&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="c1"># `total=False` means keys are non-required</span>
-<span class="k">class</span> <span class="nc">UserIdentity</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">surname</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
-    <span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
-
-    <span class="n">identity</span><span class="p">:</span> <span class="n">UserIdentity</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
-    <span class="p">)</span>
-<span class="p">)</span>
-<span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: &#39;Smith&#39;, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
-
-<span class="nb">print</span><span class="p">(</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
-    <span class="p">)</span>
-<span class="p">)</span>
-<span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: None, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
-<span class="c1">#&gt; {&#39;identity&#39;: {}, &#39;age&#39;: 37}</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Smith&#39;</span><span class="p">],</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">}</span>
-    <span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for typed-dict</span>
-<span class="sd">    identity.name</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value=[&#39;Smith&#39;], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span>
-            <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="s1">&#39;37&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="s1">&#39;john.smith@me.com&#39;</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for typed-dict</span>
-<span class="sd">    email</span>
-<span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;john.smith@me.com&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypedDict</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="c1"># `total=False` means keys are non-required</span>
-<span class="k">class</span> <span class="nc">UserIdentity</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
-    <span class="n">surname</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
-    <span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
-
-    <span class="n">identity</span><span class="p">:</span> <span class="n">UserIdentity</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
-    <span class="p">)</span>
-<span class="p">)</span>
-<span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: &#39;Smith&#39;, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
-
-<span class="nb">print</span><span class="p">(</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}</span>
-    <span class="p">)</span>
-<span class="p">)</span>
-<span class="c1">#&gt; {&#39;identity&#39;: {&#39;name&#39;: None, &#39;surname&#39;: &#39;John&#39;}, &#39;age&#39;: 37}</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">37</span><span class="p">}))</span>
-<span class="c1">#&gt; {&#39;identity&#39;: {}, &#39;age&#39;: 37}</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-        <span class="p">{</span><span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Smith&#39;</span><span class="p">],</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">24</span><span class="p">}</span>
-    <span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for typed-dict</span>
-<span class="sd">    identity.name</span>
-<span class="sd">      Input should be a valid string [type=string_type, input_value=[&#39;Smith&#39;], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;identity&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Smith&#39;</span><span class="p">,</span> <span class="s1">&#39;surname&#39;</span><span class="p">:</span> <span class="s1">&#39;John&#39;</span><span class="p">},</span>
-            <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="s1">&#39;37&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;email&#39;</span><span class="p">:</span> <span class="s1">&#39;john.smith@me.com&#39;</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for typed-dict</span>
-<span class="sd">    email</span>
-<span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;john.smith@me.com&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 
 
 
@@ -2546,7 +2384,7 @@ See <a href="../../model_config/">Model Config</a> for more details.</p>
       <script src="../../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
-          <script src="../../../extra/redirects.js"></script>
+          <script src="../../../extra/fluff.js"></script>
         
       
     

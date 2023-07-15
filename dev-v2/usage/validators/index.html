@@ -439,6 +439,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../why/" class="md-nav__link">
+        Why use Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help_with_pydantic/" class="md-nav__link">
+        Help with Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../install/" class="md-nav__link">
         Installation
       </a>
@@ -1262,6 +1290,20 @@
     <li class="md-nav__item">
       <a href="../dataclasses/" class="md-nav__link">
         Dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../type_adapter/" class="md-nav__link">
+        TypeAdapter
       </a>
     </li>
   
@@ -2423,9 +2465,6 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
 <p>You can use multiple before, after, or wrap validators, but only one <code>PlainValidator</code> since a plain validator
 will not call any inner validators.</p>
 </div>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -2494,77 +2533,6 @@ will not call any inner validators.</p>
 <span class="sd">      Value error, sum of numbers greater than 42 [type=value_error, input_value=[27, 27], input_type=list]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
-<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
-
-
-<span class="k">def</span> <span class="nf">check_squares</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">v</span><span class="o">**</span><span class="mf">0.5</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a square number&#39;</span>
-    <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="k">def</span> <span class="nf">check_cubes</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-    <span class="c1"># 64 ** (1 / 3) == 3.9999999999999996 (!)</span>
-    <span class="c1"># this is not a good way of checking cubes</span>
-    <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a cubed number&#39;</span>
-    <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="n">SquaredNumber</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">check_squares</span><span class="p">)]</span>
-<span class="n">CubedNumberNumber</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">check_cubes</span><span class="p">)]</span>
-
-
-<span class="k">class</span> <span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">square_numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">SquaredNumber</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">cube_numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CubedNumberNumber</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;square_numbers&#39;</span><span class="p">,</span> <span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">split_str</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="s1">&#39;square_numbers&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_sum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">42</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;sum of numbers greater than 42&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">]))</span>
-<span class="c1">#&gt; square_numbers=[1, 4, 9] cube_numbers=[]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="s1">&#39;1|4|16&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; square_numbers=[1, 4, 16] cube_numbers=[]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">16</span><span class="p">],</span> <span class="n">cube_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">27</span><span class="p">]))</span>
-<span class="c1">#&gt; square_numbers=[16] cube_numbers=[8, 27]</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for DemoModel</span>
-<span class="sd">    square_numbers.2</span>
-<span class="sd">      Assertion failed, 2 is not a square number</span>
-<span class="sd">    assert ((2 ** 0.5) % 1) == 0 [type=assertion_error, input_value=2, input_type=int]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">DemoModel</span><span class="p">(</span><span class="n">cube_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">27</span><span class="p">,</span> <span class="mi">27</span><span class="p">])</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for DemoModel</span>
-<span class="sd">    cube_numbers</span>
-<span class="sd">      Value error, sum of numbers greater than 42 [type=value_error, input_value=[27, 27], input_type=list]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <div class="admonition note">
 <p class="admonition-title">Validation order</p>
 <p>Validation order matters. Within a given type, validation goes from right to left and back. That is, it goes
@@ -2585,9 +2553,6 @@ from right to left running all "before" validators (or calling into "wrap" valid
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.InstanceOf"><code>InstanceOf</code></a> is a type that can be used to validate that a value is an instance of a given class.</li>
 </ul>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">InstanceOf</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -2622,49 +2587,9 @@ from right to left running all "before" validators (or calling into "wrap" valid
 <span class="sd">      Input should be an instance of Fruit [type=is_instance_of, input_value=&#39;Apple&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">InstanceOf</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">Fruit</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
-
-
-<span class="k">class</span> <span class="nc">Banana</span><span class="p">(</span><span class="n">Fruit</span><span class="p">):</span>
-    <span class="o">...</span>
-
-
-<span class="k">class</span> <span class="nc">Apple</span><span class="p">(</span><span class="n">Fruit</span><span class="p">):</span>
-    <span class="o">...</span>
-
-
-<span class="k">class</span> <span class="nc">Basket</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">fruits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">InstanceOf</span><span class="p">[</span><span class="n">Fruit</span><span class="p">]]</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Basket</span><span class="p">(</span><span class="n">fruits</span><span class="o">=</span><span class="p">[</span><span class="n">Banana</span><span class="p">(),</span> <span class="n">Apple</span><span class="p">()]))</span>
-<span class="c1">#&gt; fruits=[Banana, Apple]</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Basket</span><span class="p">(</span><span class="n">fruits</span><span class="o">=</span><span class="p">[</span><span class="n">Banana</span><span class="p">(),</span> <span class="s1">&#39;Apple&#39;</span><span class="p">])</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Basket</span>
-<span class="sd">    fruits.1</span>
-<span class="sd">      Input should be an instance of Fruit [type=is_instance_of, input_value=&#39;Apple&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.SkipValidation"><code>SkipValidation</code></a> is a type that can be used to skip validation on a field.</li>
 </ul>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SkipValidation</span>
@@ -2682,35 +2607,12 @@ from right to left running all "before" validators (or calling into "wrap" valid
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 <span class="c1">#&gt; names=[&#39;foo&#39;, 123]</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SkipValidation</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">names</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">SkipValidation</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; names=[&#39;foo&#39;, &#39;bar&#39;]</span>
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="mi">123</span><span class="p">])</span>  <span class="c1"># (1)!</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; names=[&#39;foo&#39;, 123]</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <ol>
 <li>Note that the validation of the second item is skipped.</li>
 </ol>
 <h3 id="generic-validated-collections">Generic validated collections<a class="headerlink" href="#generic-validated-collections" title="Permanent link">&para;</a></h3>
 <p>To validate individual items of a collection (list, dict, etc.) field you can use <code>Annotated</code> to apply validators to the inner items.
 In this example we also use type aliases to create a generic validated collection to demonstrate how this approach leads to composability and coda re-use.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -2733,38 +2635,8 @@ In this example we also use type aliases to create a generic validated collectio
 <span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">int_list</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">name_list</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;adrian g&#39;</span><span class="p">,</span> <span class="s1">&#39;David&#39;</span><span class="p">]))</span>
 <span class="c1">#&gt; int_list=[1, 2, 3] name_list=[&#39;Adrian G&#39;, &#39;David&#39;]</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">TypeVar</span>
-
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
-
-<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
-
-<span class="n">SortedList</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="p">))]</span>
-
-<span class="n">Name</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">title</span><span class="p">())]</span>
-
-
-<span class="k">class</span> <span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">int_list</span><span class="p">:</span> <span class="n">SortedList</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
-    <span class="n">name_list</span><span class="p">:</span> <span class="n">SortedList</span><span class="p">[</span><span class="n">Name</span><span class="p">]</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">int_list</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">name_list</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;adrian g&#39;</span><span class="p">,</span> <span class="s1">&#39;David&#39;</span><span class="p">]))</span>
-<span class="c1">#&gt; int_list=[1, 2, 3] name_list=[&#39;Adrian G&#39;, &#39;David&#39;]</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h3 id="wrap-validators">Wrap validators<a class="headerlink" href="#wrap-validators" title="Permanent link">&para;</a></h3>
 <p>Wrap validators are useful for cases where you want to validate a value, but also want to return a default value if validation fails.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -2795,41 +2667,6 @@ In this example we also use type aliases to create a generic validated collectio
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;invalid&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
 <span class="c1">#&gt; 2000-01-01 00:00:00</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">WrapValidator</span>
-
-
-<span class="k">def</span> <span class="nf">validate_timestamp</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s1">&#39;now&#39;</span><span class="p">:</span>
-        <span class="c1"># we don&#39;t want to bother with further validation, just return the new value</span>
-        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-    <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
-        <span class="c1"># validation failed, in this case we want to return a default value</span>
-        <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-
-<span class="n">MyTimestamp</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="n">WrapValidator</span><span class="p">(</span><span class="n">validate_timestamp</span><span class="p">)]</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="n">MyTimestamp</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;now&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
-<span class="c1">#&gt; 2032-01-02 03:04:05.000006</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;invalid&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
-<span class="c1">#&gt; 2000-01-01 00:00:00</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="validate-always">Validate always<a class="headerlink" href="#validate-always" title="Permanent link">&para;</a></h2>
 <p><strong>TODO this content is wrong!</strong></p>
 <p>For performance reasons, by default validators are not called for fields when a value is not supplied.
@@ -3012,9 +2849,6 @@ argument to decorated validator functions:</p>
 <p>This is useful when you need to dynamically update the validation behavior during runtime. For example, if you wanted
 a field to have a dynamically controllable set of allowed values, this could be done by passing the allowed values
 by context, and having a separate mechanism for updating what is allowed:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
@@ -3073,75 +2907,9 @@ by context, and having a separate mechanism for updating what is allowed:</p>
 <span class="sd">      Value error, choice must be one of [&#39;b&#39;, &#39;c&#39;] [type=value_error, input_value=&#39;a&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">BaseModel</span><span class="p">,</span>
-    <span class="n">FieldValidationInfo</span><span class="p">,</span>
-    <span class="n">ValidationError</span><span class="p">,</span>
-    <span class="n">field_validator</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="n">_allowed_choices</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">]</span>
-
-
-<span class="k">def</span> <span class="nf">set_allowed_choices</span><span class="p">(</span><span class="n">allowed_choices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">global</span> <span class="n">_allowed_choices</span>
-    <span class="n">_allowed_choices</span> <span class="o">=</span> <span class="n">allowed_choices</span>
-
-
-<span class="k">def</span> <span class="nf">get_context</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;allowed_choices&#39;</span><span class="p">:</span> <span class="n">_allowed_choices</span><span class="p">}</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">choice</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;choice&#39;</span><span class="p">)</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">validate_choice</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span><span class="p">):</span>
-        <span class="n">allowed_choices</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;allowed_choices&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">allowed_choices</span> <span class="ow">and</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_choices</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;choice must be one of </span><span class="si">{</span><span class="n">allowed_choices</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;choice&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">},</span> <span class="n">context</span><span class="o">=</span><span class="n">get_context</span><span class="p">()))</span>
-<span class="c1">#&gt; choice=&#39;a&#39;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;choice&#39;</span><span class="p">:</span> <span class="s1">&#39;d&#39;</span><span class="p">},</span> <span class="n">context</span><span class="o">=</span><span class="n">get_context</span><span class="p">()))</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    choice</span>
-<span class="sd">      Value error, choice must be one of [&#39;a&#39;, &#39;b&#39;, &#39;c&#39;] [type=value_error, input_value=&#39;d&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="n">set_allowed_choices</span><span class="p">([</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;c&#39;</span><span class="p">])</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;choice&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">},</span> <span class="n">context</span><span class="o">=</span><span class="n">get_context</span><span class="p">()))</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    choice</span>
-<span class="sd">      Value error, choice must be one of [&#39;b&#39;, &#39;c&#39;] [type=value_error, input_value=&#39;a&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h3 id="using-validation-context-with-basemodel-initialization">Using validation context with <code>BaseModel</code> initialization<a class="headerlink" href="#using-validation-context-with-basemodel-initialization" title="Permanent link">&para;</a></h3>
 <p>Although there is no way to specify a context in the standard <code>BaseModel</code> initializer, you can work around this through
 the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code> method:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
 <span class="kn">from</span> <span class="nn">contextvars</span> <span class="kn">import</span> <span class="n">ContextVar</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span>
@@ -3191,61 +2959,6 @@ the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">my_number</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 <span class="c1">#&gt; my_number=2</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
-<span class="kn">from</span> <span class="nn">contextvars</span> <span class="kn">import</span> <span class="n">ContextVar</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterator</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FieldValidationInfo</span><span class="p">,</span> <span class="n">field_validator</span>
-
-<span class="n">_init_context_var</span> <span class="o">=</span> <span class="n">ContextVar</span><span class="p">(</span><span class="s1">&#39;_init_context_var&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-
-
-<span class="nd">@contextmanager</span>
-<span class="k">def</span> <span class="nf">init_context</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
-    <span class="n">token</span> <span class="o">=</span> <span class="n">_init_context_var</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">yield</span>
-    <span class="k">finally</span><span class="p">:</span>
-        <span class="n">_init_context_var</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">my_number</span><span class="p">:</span> <span class="nb">int</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">__pydantic_self__</span><span class="o">.</span><span class="n">__pydantic_validator__</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
-            <span class="n">data</span><span class="p">,</span>
-            <span class="n">self_instance</span><span class="o">=</span><span class="n">__pydantic_self__</span><span class="p">,</span>
-            <span class="n">context</span><span class="o">=</span><span class="n">_init_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
-        <span class="p">)</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;my_number&#39;</span><span class="p">)</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">multiply_with_context</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">:</span>
-            <span class="n">multiplier</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;multiplier&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="n">multiplier</span>
-        <span class="k">return</span> <span class="n">value</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">my_number</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="c1">#&gt; my_number=2</span>
-
-<span class="k">with</span> <span class="n">init_context</span><span class="p">({</span><span class="s1">&#39;multiplier&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">}):</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">my_number</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-    <span class="c1">#&gt; my_number=6</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">my_number</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
-<span class="c1">#&gt; my_number=2</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 
 
 
@@ -3293,7 +3006,7 @@ the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code
       <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
-          <script src="../../extra/redirects.js"></script>
+          <script src="../../extra/fluff.js"></script>
         
       
     

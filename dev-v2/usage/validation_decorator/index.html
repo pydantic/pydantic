@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.pydantic.dev/latest/usage/validation_decorator/">
       
       
-        <link rel="prev" href="../dataclasses/">
+        <link rel="prev" href="../type_adapter/">
       
       
         <link rel="next" href="../postponed_annotations/">
@@ -427,6 +427,34 @@
     <li class="md-nav__item">
       <a href="../.." class="md-nav__link">
         Welcome to Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why/" class="md-nav__link">
+        Why use Pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help_with_pydantic/" class="md-nav__link">
+        Help with Pydantic
       </a>
     </li>
   
@@ -1134,6 +1162,20 @@
     <li class="md-nav__item">
       <a href="../dataclasses/" class="md-nav__link">
         Dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../type_adapter/" class="md-nav__link">
+        TypeAdapter
       </a>
     </li>
   
@@ -2350,9 +2392,6 @@ to your code with minimal boilerplate.</p>
 as <code>Any</code>. All types listed in <a href="../types/types/">types</a> can be validated, including Pydantic models and
 <a href="../types/types/#custom-data-types">custom types</a>.
 As with the rest of Pydantic, types can be coerced by the decorator before they're passed to the actual function:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="c1"># TODO replace find_file with something that isn&#39;t affected the filesystem</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
@@ -2376,60 +2415,6 @@ As with the rest of Pydantic, types can be coerced by the decorator before they'
 <span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^validation.*&#39;</span><span class="p">))</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^foobar.*&#39;</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="c1"># TODO replace find_file with something that isn&#39;t affected the filesystem</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-<span class="kn">from</span> <span class="nn">re</span> <span class="kn">import</span> <span class="n">Pattern</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">DirectoryPath</span><span class="p">,</span> <span class="n">validate_call</span>
-
-
-<span class="nd">@validate_call</span>
-<span class="k">def</span> <span class="nf">find_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">DirectoryPath</span><span class="p">,</span> <span class="n">regex</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*&#39;</span><span class="p">)):</span>
-        <span class="k">if</span> <span class="nb">max</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">:</span>
-            <span class="k">return</span>
-        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">regex</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">path</span><span class="p">))):</span>
-            <span class="k">return</span> <span class="n">f</span>
-
-
-<span class="c1"># note: this_dir is a string here</span>
-<span class="n">this_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^validation.*&#39;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^foobar.*&#39;</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="c1"># TODO replace find_file with something that isn&#39;t affected the filesystem</span>
-<span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">re</span> <span class="kn">import</span> <span class="n">Pattern</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">DirectoryPath</span><span class="p">,</span> <span class="n">validate_call</span>
-
-
-<span class="nd">@validate_call</span>
-<span class="k">def</span> <span class="nf">find_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">DirectoryPath</span><span class="p">,</span> <span class="n">regex</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;**/*&#39;</span><span class="p">)):</span>
-        <span class="k">if</span> <span class="nb">max</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">:</span>
-            <span class="k">return</span>
-        <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">and</span> <span class="n">regex</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">path</span><span class="p">))):</span>
-            <span class="k">return</span> <span class="n">f</span>
-
-
-<span class="c1"># note: this_dir is a string here</span>
-<span class="n">this_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^validation.*&#39;</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">find_file</span><span class="p">(</span><span class="n">this_dir</span><span class="p">,</span> <span class="s1">&#39;^foobar.*&#39;</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <p>A few notes:</p>
 <ul>
 <li>Though they're passed as strings, <code>path</code> and <code>regex</code> are converted to a <code>Path</code> object and regex respectively
@@ -2537,9 +2522,6 @@ all possible combinations of these:</p>
 the field and validations. In general it should be used in a type hint with
 <a href="../json_schema/#typingannotated-fields">Annotated</a>, unless <code>default_factory</code> is specified, in which case it should be
 used as the default value of the field:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -2571,46 +2553,7 @@ used as the default value of the field:</p>
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">when</span><span class="p">()))</span>
 <span class="c1">#&gt; &lt;class &#39;datetime.datetime&#39;&gt;</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">validate_call</span>
-
-
-<span class="nd">@validate_call</span>
-<span class="k">def</span> <span class="nf">how_many</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">10</span><span class="p">)]):</span>
-    <span class="k">return</span> <span class="n">num</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">how_many</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for how_many</span>
-<span class="sd">    0</span>
-<span class="sd">      Input should be greater than 10 [type=greater_than, input_value=1, input_type=int]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-
-<span class="nd">@validate_call</span>
-<span class="k">def</span> <span class="nf">when</span><span class="p">(</span><span class="n">dt</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">)):</span>
-    <span class="k">return</span> <span class="n">dt</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">when</span><span class="p">()))</span>
-<span class="c1">#&gt; &lt;class &#39;datetime.datetime&#39;&gt;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <p>The <a href="../fields/#field-aliases"><code>alias</code></a> can be used with the decorator as normal.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">validate_call</span>
@@ -2623,23 +2566,6 @@ used as the default value of the field:</p>
 
 <span class="n">how_many</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">validate_call</span>
-
-
-<span class="nd">@validate_call</span>
-<span class="k">def</span> <span class="nf">how_many</span><span class="p">(</span><span class="n">num</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;number&#39;</span><span class="p">)]):</span>
-    <span class="k">return</span> <span class="n">num</span>
-
-
-<span class="n">how_many</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="usage-with-mypy">Usage with mypy<a class="headerlink" href="#usage-with-mypy" title="Permanent link">&para;</a></h2>
 <p>The <code>validate_call</code> decorator should work "out of the box" with <a href="http://mypy-lang.org/">mypy</a> since it's
 defined to return a function with the same signature as the function it decorates. The only limitation is that
@@ -2835,7 +2761,7 @@ fields on the internal Pydantic model accessible via <code>.model</code> thus th
       <script src="../../assets/javascripts/bundle.220ee61c.min.js"></script>
       
         
-          <script src="../../extra/redirects.js"></script>
+          <script src="../../extra/fluff.js"></script>
         
       
     
