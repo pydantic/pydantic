@@ -4,15 +4,15 @@ If you need help getting started with Pydantic or with advanced usage, the follo
 
 ## :material-help: Usage Documentation
 
-The [usage Documentation](usage/models.md) is the most complete guide on how to use Pydantic.
+The [usage documentation](usage/models.md) is the most complete guide on how to use Pydantic.
 
 ## :material-api: API Documentation
 
-The [API Documentation](api/main.md) give reference docs for all public Pydantic APIs.
+The [API documentation](api/main.md) give reference docs for all public Pydantic APIs.
 
 ## :simple-github: GitHub Discussions
 
-[GitHub Discussions](https://github.com/pydantic/pydantic/discussions) are useful for asking questions, your question and the answer will help everyone.
+[GitHub discussions](https://github.com/pydantic/pydantic/discussions) are useful for asking questions, your question and the answer will help everyone.
 
 ## :simple-discord: Discord
 
@@ -26,4 +26,4 @@ Use the [`pydantic`](https://stackoverflow.com/questions/tagged/pydantic) tag on
 
 Youtube as lots of useful [videos on Pydantic](https://www.youtube.com/results?search_query=pydantic).
 
-In particular Marcelo Trylesinski's video [Pydantic V1 to V2 - The Migration](https://youtu.be/sD_xpYl4fPU) has helped people a lot when migrating from Pydantic V1 to V2.
+In particular Marcelo Trylesinski's video ["Pydantic V1 to V2 - The Migration"](https://youtu.be/sD_xpYl4fPU) has helped people a lot when migrating from Pydantic V1 to V2.
