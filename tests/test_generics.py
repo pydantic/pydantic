@@ -2062,7 +2062,22 @@ def test_parse_generic_json():
 
     validation_schema = record.model_json_schema(mode='validation')
     assert validation_schema == {
-        'properties': {'message': {'format': 'json-string', 'title': 'Message', 'type': 'string'}},
+        '$defs': {
+            'Payload': {
+                'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
+                'required': ['payload_field'],
+                'title': 'Payload',
+                'type': 'object',
+            }
+        },
+        'properties': {
+            'message': {
+                'contentMediaType': 'application/json',
+                'contentSchema': {'$ref': '#/$defs/Payload'},
+                'title': 'Message',
+                'type': 'string',
+            }
+        },
         'required': ['message'],
         'title': 'MessageWrapper[test_parse_generic_json.<locals>.Payload]',
         'type': 'object',
