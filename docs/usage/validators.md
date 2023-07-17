@@ -134,10 +134,162 @@ Order of validation metadata within `Annotated` matters.
 Validation goes from right to left and back.
 That is, it goes from right to left running all "before" validators (or calling into "wrap" validators), then left to right back out calling all "after" validators.
 
-In the following example, `func2` will be called before `func1`.
+```py
+from typing import Annotated, Any, Callable, TypedDict, cast
 
-```py test="skip" lint="skip" upgrade="skip"
-MyVal = Annotated[int, AfterValidator(func1), BeforeValidator(func2)]
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    BeforeValidator,
+    PlainValidator,
+    ValidationInfo,
+    ValidatorFunctionWrapHandler,
+    WrapValidator,
+)
+from pydantic.functional_validators import field_validator
+
+
+class Context(TypedDict):
+    logs: list[str]
+
+
+def make_validator(label: str) -> Callable[[str, ValidationInfo], str]:
+    def validator(v: Any, info: ValidationInfo) -> Any:
+        context = cast(Context, info.context)
+        context['logs'].append(label)
+        return v
+
+    return validator
+
+
+def make_wrap_validator(
+    label: str,
+) -> Callable[[str, ValidatorFunctionWrapHandler, ValidationInfo], str]:
+    def validator(
+        v: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo
+    ) -> Any:
+        context = cast(Context, info.context)
+        context['logs'].append(f'{label}: pre')
+        result = handler(v)
+        context['logs'].append(f'{label}: post')
+        return result
+
+    return validator
+
+
+class A(BaseModel):
+    x: Annotated[
+        str,
+        BeforeValidator(make_validator('before-1')),
+        AfterValidator(make_validator('after-1')),
+        WrapValidator(make_wrap_validator('wrap-1')),
+        BeforeValidator(make_validator('before-2')),
+        AfterValidator(make_validator('after-2')),
+        WrapValidator(make_wrap_validator('wrap-2')),
+        BeforeValidator(make_validator('before-3')),
+        AfterValidator(make_validator('after-3')),
+        WrapValidator(make_wrap_validator('wrap-3')),
+        BeforeValidator(make_validator('before-4')),
+        AfterValidator(make_validator('after-4')),
+        WrapValidator(make_wrap_validator('wrap-4')),
+    ]
+    y: Annotated[
+        str,
+        BeforeValidator(make_validator('before-1')),
+        AfterValidator(make_validator('after-1')),
+        WrapValidator(make_wrap_validator('wrap-1')),
+        BeforeValidator(make_validator('before-2')),
+        AfterValidator(make_validator('after-2')),
+        WrapValidator(make_wrap_validator('wrap-2')),
+        PlainValidator(make_validator('plain')),
+        BeforeValidator(make_validator('before-3')),
+        AfterValidator(make_validator('after-3')),
+        WrapValidator(make_wrap_validator('wrap-3')),
+        BeforeValidator(make_validator('before-4')),
+        AfterValidator(make_validator('after-4')),
+        WrapValidator(make_wrap_validator('wrap-4')),
+    ]
+
+    val_x_before = field_validator('x', mode='before')(
+        make_validator('val_x before')
+    )
+    val_x_after = field_validator('x', mode='after')(
+        make_validator('val_x after')
+    )
+    val_y_wrap = field_validator('y', mode='wrap')(
+        make_wrap_validator('val_y wrap')
+    )
+
+
+context = Context(logs=[])
+
+A.model_validate({'x': 'abc', 'y': 'def'}, context=context)
+print(context['logs'])
+"""
+[
+    'val_x before',
+    'wrap-4: pre',
+    'before-4',
+    'wrap-3: pre',
+    'before-3',
+    'wrap-2: pre',
+    'before-2',
+    'wrap-1: pre',
+    'before-1',
+    'after-1',
+    'wrap-1: post',
+    'after-2',
+    'wrap-2: post',
+    'after-3',
+    'wrap-3: post',
+    'after-4',
+    'wrap-4: post',
+    'val_x after',
+    'val_y wrap: pre',
+    'wrap-4: pre',
+    'before-4',
+    'wrap-3: pre',
+    'before-3',
+    'plain',
+    'after-3',
+    'wrap-3: post',
+    'after-4',
+    'wrap-4: post',
+    'val_y wrap: post',
+]
+"""
+```
+
+## Validation of default values
+
+Validators won't run when the default value is used.
+This applies both to `@field_validator` validators and `Annotated` validators.
+You can force them to run with `Field(validate_defaults=True)`, but you are generally better off using a `@model_validator(mode='before')`.
+
+```py
+from typing import Annotated
+
+from pydantic import BaseModel, Field, field_validator
+
+
+class Model(BaseModel):
+    x: str = 'abc'
+    y: Annotated[str, Field(validate_default=True)] = 'xyz'
+
+    @field_validator('x', 'y')
+    @classmethod
+    def double(cls, v: str) -> str:
+        return v * 2
+
+
+print(Model())
+#> x='abc' y='xyzxyz'
+print(Model(x='foo'))
+#> x='foofoo' y='xyzxyz'
+print(Model(x='abc'))
+#> x='abcabc' y='xyzxyz'
+print(Model(x='foo', y='bar'))
+#> x='foofoo' y='barbar'
 ```
 
 ## Field validators
