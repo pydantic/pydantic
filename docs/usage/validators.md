@@ -386,7 +386,7 @@ However, in most cases where you want to perform validation using multiple field
 
 ## Model validators
 
-Validation can also be performed on the entire model's data.
+Validation can also be performed on the entire model's data using `@model_validator`.
 
 ```py
 from typing import Any
