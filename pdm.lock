@@ -8,6 +8,7 @@ static_urls = false
 lock_version = "4.3"
 content_hash = "sha256:20f82b6294579c665738f04da3cce152d3cf130923f4f6af35dc4e155cfc349e"
 
+
 [[package]]
 name = "annotated-types"
 version = "0.5.0"
@@ -1027,6 +1028,9 @@ files = [
 name = "pydantic-core"
 version = "2.3.1"
 requires_python = ">=3.7"
+git = "https://github.com/JeanArhancet/pydantic-core.git"
+ref = "feat/add-uuid-validator"
+revision = "8947e3c51a74bed0501c1c2aacad3e676f6067d9"
 summary = ""
 dependencies = [
     "typing-extensions!=4.7.0,>=4.6.0",
@@ -1149,7 +1153,7 @@ dependencies = [
 
 [[package]]
 name = "pydantic-settings"
-version = "2.0.1"
+version = "2.0.2"
 requires_python = ">=3.7"
 summary = "Settings management using Pydantic"
 dependencies = [
