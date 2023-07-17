@@ -145,14 +145,14 @@ def test_field_function():
     m = v.validate_python('foobar', context='call 1')
     assert isinstance(m, RootModel)
     assert m.root == 'foobar validated'
-    assert call_infos == ["ValidationInfo(config=None, context='call 1', field_name='root')"]
+    assert call_infos == ["FieldValidationInfo(config=None, context='call 1', field_name='root')"]
 
     m2 = v.validate_assignment(m, 'root', 'baz', context='assignment call')
     assert m2 is m
     assert m.root == 'baz validated'
     assert call_infos == [
-        "ValidationInfo(config=None, context='call 1', field_name='root')",
-        "ValidationInfo(config=None, context='assignment call', field_name='root')",
+        "FieldValidationInfo(config=None, context='call 1', field_name='root')",
+        "FieldValidationInfo(config=None, context='assignment call', field_name='root')",
     ]
 
 
