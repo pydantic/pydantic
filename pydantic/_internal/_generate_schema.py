@@ -305,7 +305,9 @@ class GenerateSchema:
             metadata_schema = resolve_original_schema(schema, self.defs.definitions)
             if metadata_schema:
                 metadata = CoreMetadataHandler(metadata_schema).metadata
-                metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
+                pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
+                if metadata_js_function not in pydantic_js_functions:
+                    pydantic_js_functions.append(metadata_js_function)
 
         return schema
 
