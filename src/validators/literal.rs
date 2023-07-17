@@ -16,11 +16,18 @@ use crate::tools::SchemaDict;
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
+struct BoolLiteral {
+    pub true_id: Option<usize>,
+    pub false_id: Option<usize>,
+}
+
+#[derive(Debug, Clone)]
 pub struct LiteralLookup<T: Clone + Debug> {
-    // Specialized lookups for ints and strings because they
+    // Specialized lookups for ints, bools and strings because they
     // (1) are easy to convert between Rust and Python
     // (2) hashing them in Rust is very fast
     // (3) are the most commonly used things in Literal[...]
+    expected_bool: Option<BoolLiteral>,
     expected_int: Option<AHashMap<i64, usize>>,
     expected_str: Option<AHashMap<String, usize>>,
     // Catch all for Enum and bytes (the latter only because it is seldom used)
@@ -31,12 +38,23 @@ pub struct LiteralLookup<T: Clone + Debug> {
 impl<T: Clone + Debug> LiteralLookup<T> {
     pub fn new<'py>(py: Python<'py>, expected: impl Iterator<Item = (&'py PyAny, T)>) -> PyResult<Self> {
         let mut expected_int = AHashMap::new();
-        let mut expected_str = AHashMap::new();
+        let mut expected_str: AHashMap<String, usize> = AHashMap::new();
+        let mut expected_bool = BoolLiteral {
+            true_id: None,
+            false_id: None,
+        };
         let expected_py = PyDict::new(py);
         let mut values = Vec::new();
         for (k, v) in expected {
             let id = values.len();
             values.push(v);
+            if let Ok(bool) = k.strict_bool() {
+                if bool {
+                    expected_bool.true_id = Some(id);
+                } else {
+                    expected_bool.false_id = Some(id);
+                }
+            }
             if let Ok(either_int) = k.exact_int() {
                 let int = either_int
                     .into_i64(py)
@@ -53,6 +71,10 @@ impl<T: Clone + Debug> LiteralLookup<T> {
         }
 
         Ok(Self {
+            expected_bool: match expected_bool.true_id.is_some() || expected_bool.false_id.is_some() {
+                true => Some(expected_bool),
+                false => None,
+            },
             expected_int: match expected_int.is_empty() {
                 true => None,
                 false => Some(expected_int),
@@ -74,7 +96,17 @@ impl<T: Clone + Debug> LiteralLookup<T> {
         py: Python<'data>,
         input: &'data I,
     ) -> ValResult<'data, Option<(&'data I, &T)>> {
-        // dbg!(input.to_object(py).as_ref(py).repr().unwrap());
+        if let Some(expected_bool) = &self.expected_bool {
+            if let Ok(bool_value) = input.strict_bool() {
+                if bool_value {
+                    if let Some(true_value) = &expected_bool.true_id {
+                        return Ok(Some((input, &self.values[*true_value])));
+                    }
+                } else if let Some(false_value) = &expected_bool.false_id {
+                    return Ok(Some((input, &self.values[*false_value])));
+                }
+            }
+        }
         if let Some(expected_ints) = &self.expected_int {
             if let Ok(either_int) = input.exact_int() {
                 let int = either_int.into_i64(py)?;
