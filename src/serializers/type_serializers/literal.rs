@@ -44,7 +44,9 @@ impl BuildSerializer for LiteralSerializer {
         let mut repr_args: Vec<String> = Vec::new();
         for item in expected {
             repr_args.push(item.repr()?.extract()?);
-            if let Ok(int) = extract_i64(item) {
+            if let Ok(bool) = item.downcast::<PyBool>() {
+                expected_py.append(bool)?;
+            } else if let Ok(int) = extract_i64(item) {
                 expected_int.insert(int);
             } else if let Ok(py_str) = item.downcast::<PyString>() {
                 expected_str.insert(py_str.to_str()?.to_string());
