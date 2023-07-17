@@ -880,14 +880,14 @@ def test_validate_assignment_function():
     assert m.field_a == 'x'
     assert m.field_b == 246
     assert m.field_c == 456
-    assert calls == ["ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')"]
+    assert calls == ["FieldValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')"]
 
     v.validate_assignment(m, 'field_b', '111')
 
     assert m.field_b == 222
     assert calls == [
-        "ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')",
-        "ValidationInfo(config=None, context=None, data={'field_a': 'x', 'field_c': 456}, field_name='field_b')",
+        "FieldValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')",
+        "FieldValidationInfo(config=None, context=None, data={'field_a': 'x', 'field_c': 456}, field_name='field_b')",
     ]
 
 
