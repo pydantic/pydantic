@@ -117,6 +117,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
       - name: cache rust
         uses: Swatinem/rust-cache@v2
         with:
@@ -157,6 +160,14 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: install rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: test-debug
 
       - run: pip install -r tests/requirements.txt
       - run: make build-dev
