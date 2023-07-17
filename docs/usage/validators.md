@@ -135,7 +135,9 @@ Validation goes from right to left and back.
 That is, it goes from right to left running all "before" validators (or calling into "wrap" validators), then left to right back out calling all "after" validators.
 
 ```py
-from typing import Annotated, Any, Callable, TypedDict, cast
+from typing import Any, Callable, TypedDict, cast
+
+from typing_extensions import Annotated
 
 from pydantic import (
     AfterValidator,
