@@ -57,7 +57,7 @@ The same approach can be used for dict keys, etc.
 Pydantic provides multiple types of validator functions.
 * `After` validators run after Pydantic's internal parsing. They are generally more type safe and thus easier to implement.
 * `Before` validators run before Pydantic's internal parsing and validation (e.g. coercion of a `str` to an `int`). These are more flexible than `After` validators since they can modify the raw input, but they also have to deal with the raw input, which in theory could be any arbitrary object.
-* `Plain` validators are like a Before validator but they terminate validation immediately, no further validators are called and Pydantic does not do any of it's internal validation.
+* `Plain` validators are like a `mode='before'` validator but they terminate validation immediately, no further validators are called and Pydantic does not do any of it's internal validation.
 * `Wrap` validators are the most flexible of all. You can run code before or after Pydantic and other validators do their thing or you can terminate validation immediately, both with a successful value or an error.
 
 ??? api "API Documentation"
@@ -66,10 +66,10 @@ Pydantic provides multiple types of validator functions.
     [`pydantic.functional_validators.BeforeValidator`][pydantic.functional_validators.BeforeValidator]<br>
     [`pydantic.functional_validators.AfterValidator`][pydantic.functional_validators.AfterValidator]<br>
 
-You can use multiple before, after, or wrap validators, but only one `PlainValidator` since a plain validator
+You can use multiple before, after, or `mode='wrap'` validators, but only one `PlainValidator` since a plain validator
 will not call any inner validators.
 
-Here's an example of a Wrap validator:
+Here's an example of a `mode='wrap'` validator:
 
 ```python
 import json
@@ -369,7 +369,7 @@ except ValidationError as e:
 
 A few things to note on validators:
 
-* validators are "class methods", so the first argument value they receive is the `UserModel` class, not an instance of `UserModel`. We recommend you use the `@classmethod` decorator on them below the `@field_validator` decorator to get proper type checking.
+* `@field_validator`s are "class methods", so the first argument value they receive is the `UserModel` class, not an instance of `UserModel`. We recommend you use the `@classmethod` decorator on them below the `@field_validator` decorator to get proper type checking.
 * the second argument is the field value to validate; it can be named as you please
 * the third argument, if present, is an instance of `pydantic.FieldValidationInfo`
 * validators should either return the parsed value or raise a `ValueError` or `AssertionError` (``assert`` statements may be used).
@@ -445,16 +445,16 @@ except ValidationError as e:
     """
 ```
 
-Model validators can be `mode='before'` or `mode='after'` and `mode='wrap'`.
+Model validators can be `mode='before'`, `mode='after'` or `mode='wrap'`.
 
 Before model validators are passed the raw input which is often a `dict[str, Any]` but could also be an instance of the model itself (e.g. if `UserModel.model_validate(UserModel.construct(...))` is called) or anything else since you can pass arbitrary objects into `model_validate`.
-Because of this before validators are extremely flexible and powerful but can be cumbersome and error prone to implement.
+Because of this `mode='before'` validators are extremely flexible and powerful but can be cumbersome and error prone to implement.
 Before model validators should be class methods.
 The first argument should be `cls` (and we also recommend you use `@classmethod` below `@model_validator` for proper type checking), the second argument will be the input (you should generally type it as `Any` and use `isinstance` to narrow the type) and the third argument (if present) will be a `pydantic.ValidationInfo`.
 
-After validators are instance methods and always receive an instance of the model as the first argument.
+`mode='after'` validators are instance methods and always receive an instance of the model as the first argument.
 You should not use `(cls, ModelType)` as the signature, instead just use `(self)` and let type checkers infer the type of `self` for you.
-Since these are fully type safe they are often easier to implement than before validators.
+Since these are fully type safe they are often easier to implement than `mode='before'` validators.
 If any field fails to validate, `mode='after'` validators for that field will not be called.
 
 ## Handling errors in validators
@@ -558,7 +558,7 @@ print(m)
 #> names=['foo', 123]
 ```
 
-1. Note that the validation of the second item is skipped.
+1. Note that the validation of the second item is skipped. If it has the wrong type it will emit a warning during serialization.
 
 ## Field checks
 
