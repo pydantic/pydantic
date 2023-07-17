@@ -208,7 +208,7 @@ class Url(SupportsAllComparisons):
         path: Optional[str] = None,
         query: Optional[str] = None,
         fragment: Optional[str] = None,
-    ) -> str: ...
+    ) -> Self: ...
 
 class MultiHostUrl(SupportsAllComparisons):
     def __new__(cls, url: str) -> Self: ...
@@ -239,7 +239,7 @@ class MultiHostUrl(SupportsAllComparisons):
         path: Optional[str] = None,
         query: Optional[str] = None,
         fragment: Optional[str] = None,
-    ) -> str: ...
+    ) -> Self: ...
 
 @final
 class SchemaError(Exception):
