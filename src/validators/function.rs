@@ -562,11 +562,15 @@ impl ValidationInfo {
             None => "None",
         };
         let config = self.config.as_ref(py).repr()?;
-        let mut s = format!("ValidationInfo(config={config}, context={context}");
-        if let Some(ref data) = self.data {
+        let mut s = if self.field_name.is_some() {
+            format!("FieldValidationInfo(config={config}, context={context}")
+        } else {
+            format!("ValidationInfo(config={config}, context={context}")
+        };
+        if let Ok(data) = self.get_data(py) {
             s += &format!(", data={}", data.as_ref(py).repr()?);
         }
-        if let Some(ref field_name) = self.field_name {
+        if let Ok(field_name) = self.get_field_name() {
             s += &format!(", field_name='{field_name}'");
         }
         s += ")";

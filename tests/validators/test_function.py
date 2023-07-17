@@ -1,7 +1,7 @@
 import platform
 import re
 from copy import deepcopy
-from typing import Any, Dict, Type, Union
+from typing import Any, Dict, List, Type, Union
 
 import pytest
 from dirty_equals import HasRepr
@@ -619,8 +619,8 @@ def test_model_field_before_validator() -> None:
     def f(input_value: Any, info: core_schema.FieldValidationInfo) -> Any:
         assert info.field_name == 'x'
         assert info.data == {}
-        assert repr(info) == "ValidationInfo(config=None, context=None, data={}, field_name='x')"
-        assert str(info) == "ValidationInfo(config=None, context=None, data={}, field_name='x')"
+        assert repr(info) == "FieldValidationInfo(config=None, context=None, data={}, field_name='x')"
+        assert str(info) == "FieldValidationInfo(config=None, context=None, data={}, field_name='x')"
         assert isinstance(input_value, bytes)
         return f'input: {input_value.decode()}'
 
@@ -942,3 +942,32 @@ def test_function_validation_info_mode():
     assert v.validate_json('1') == 1
     assert calls == ['json']
     calls.clear()
+
+
+def test_reprs() -> None:
+    reprs: List[str] = []
+
+    def sample_repr(v: Any, info: core_schema.ValidationInfo) -> Any:
+        reprs.append(repr(info))
+        return v
+
+    v = SchemaValidator(
+        core_schema.chain_schema(
+            [
+                core_schema.general_plain_validator_function(sample_repr),
+                core_schema.field_plain_validator_function(sample_repr, field_name='x'),
+            ]
+        )
+    )
+
+    class Foo:
+        def __repr__(self) -> str:
+            return 'This is Foo!'
+
+    v.validate_python(Foo())
+
+    # insert_assert(reprs)
+    assert reprs == [
+        'ValidationInfo(config=None, context=None)',
+        "FieldValidationInfo(config=None, context=None, field_name='x')",
+    ]
