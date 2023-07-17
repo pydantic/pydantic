@@ -1,10 +1,18 @@
 import dataclasses
 import json
 import re
+from typing import Union
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic_core import PydanticSerializationUnexpectedValue, SchemaSerializer, core_schema
+
+
+class BaseModel:
+    def __init__(self, **kwargs) -> None:
+        for name, value in kwargs.items():
+            setattr(self, name, value)
 
 
 @pytest.mark.parametrize('input_value,expected_value', [(True, True), (False, False), (1, 1), (123, 123), (-42, -42)])
@@ -360,3 +368,31 @@ def test_model_union():
     assert s.to_python(User(name='foo', surname='bar')) == {'name': 'foo', 'surname': 'bar'}
     assert s.to_python(DBUser(name='foo', surname='bar', password_hash='x')) == {'name': 'foo', 'surname': 'bar'}
     assert s.to_json(DBUser(name='foo', surname='bar', password_hash='x')) == b'{"name":"foo","surname":"bar"}'
+
+
+@pytest.mark.parametrize(('data', 'json_value'), [(False, 'false'), ('abc', '"abc"')])
+def test_union_literal_with_other_type(data, json_value):
+    class Model(BaseModel):
+        value: Union[Literal[False], str]
+        value_types_reversed: Union[str, Literal[False]]
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema(
+                {
+                    'value': core_schema.model_field(
+                        core_schema.union_schema([core_schema.literal_schema([False]), core_schema.str_schema()])
+                    ),
+                    'value_types_reversed': core_schema.model_field(
+                        core_schema.union_schema([core_schema.str_schema(), core_schema.literal_schema([False])])
+                    ),
+                }
+            ),
+        )
+    )
+
+    m = Model(value=data, value_types_reversed=data)
+
+    assert s.to_python(m) == {'value': data, 'value_types_reversed': data}
+    assert s.to_json(m) == f'{{"value":{json_value},"value_types_reversed":{json_value}}}'.encode()

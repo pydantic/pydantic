@@ -61,3 +61,13 @@ def test_other_literal():
 def test_empty_literal():
     with pytest.raises(SchemaError, match='`expected` should have length > 0'):
         SchemaSerializer(core_schema.literal_schema([]))
+
+
+def test_bool_literal():
+    s = SchemaSerializer(core_schema.literal_schema([False]))
+    assert 'expected_int:{},expected_str:{},expected_py:Some(Py(' in plain_repr(s)
+
+    assert s.to_python(False) is False
+    assert s.to_python(False, mode='json') is False
+    assert s.to_python(True) is True
+    assert s.to_json(False) == b'false'
