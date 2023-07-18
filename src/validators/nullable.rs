@@ -30,6 +30,8 @@ impl BuildValidator for NullableValidator {
     }
 }
 
+impl_py_gc_traverse!(NullableValidator { validator });
+
 impl Validator for NullableValidator {
     fn validate<'s, 'data>(
         &'s self,

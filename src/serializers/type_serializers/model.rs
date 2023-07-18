@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet, PyString, PyType};
-use pyo3::{intern, PyTraverseError, PyVisit};
 
 use ahash::AHashMap;
 
@@ -144,13 +144,9 @@ impl ModelSerializer {
     }
 }
 
-impl TypeSerializer for ModelSerializer {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        visit.call(&self.class)?;
-        self.serializer.py_gc_traverse(visit)?;
-        Ok(())
-    }
+impl_py_gc_traverse!(ModelSerializer { class, serializer });
 
+impl TypeSerializer for ModelSerializer {
     fn to_python(
         &self,
         value: &PyAny,

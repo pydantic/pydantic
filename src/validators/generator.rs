@@ -48,6 +48,8 @@ impl BuildValidator for GeneratorValidator {
     }
 }
 
+impl_py_gc_traverse!(GeneratorValidator { item_validator });
+
 impl Validator for GeneratorValidator {
     fn validate<'s, 'data>(
         &'s self,
@@ -326,3 +328,11 @@ impl InternalValidator {
             })
     }
 }
+
+impl_py_gc_traverse!(InternalValidator {
+    validator,
+    definitions,
+    data,
+    context,
+    self_instance
+});

@@ -25,6 +25,8 @@ impl BuildSerializer for TimeDeltaSerializer {
     }
 }
 
+impl_py_gc_traverse!(TimeDeltaSerializer {});
+
 impl TypeSerializer for TimeDeltaSerializer {
     fn to_python(
         &self,

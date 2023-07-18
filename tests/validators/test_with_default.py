@@ -1,4 +1,7 @@
+import gc
+import platform
 import sys
+import weakref
 from collections import deque
 from typing import Any, Callable, Dict, List, Union, cast
 
@@ -618,3 +621,36 @@ def test_use_default_error() -> None:
     validator = SchemaValidator(core_schema.no_info_wrap_validator_function(val_func, core_schema.int_schema()))
     with pytest.raises(SchemaError, match='Uncaught UseDefault error, please check your usage of `default` validators'):
         validator.validate_python('')
+
+
+@pytest.mark.xfail(
+    condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
+)
+def test_leak_with_default():
+    def fn():
+        class Defaulted(int):
+            @classmethod
+            def _validator(cls, v, info):
+                return Defaulted(v)
+
+        schema = core_schema.general_plain_validator_function(Defaulted._validator)
+        schema = core_schema.with_default_schema(schema, default=Defaulted(0))
+
+        # If any of the Rust validators don't implement traversal properly,
+        # there will be an undetectable cycle created by this assignment
+        # which will keep Defaulted alive
+        Defaulted.__pydantic_validator__ = SchemaValidator(schema)
+
+        return Defaulted
+
+    klass = fn()
+    ref = weakref.ref(klass)
+    assert ref() is not None
+
+    del klass
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+    gc.collect()
+
+    assert ref() is None

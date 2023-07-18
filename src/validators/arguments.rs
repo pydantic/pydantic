@@ -9,6 +9,7 @@ use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
+
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -150,6 +151,14 @@ macro_rules! json_slice {
     };
 }
 pub(super) use json_slice;
+
+impl_py_gc_traverse!(Parameter { validator });
+
+impl_py_gc_traverse!(ArgumentsValidator {
+    parameters,
+    var_args_validator,
+    var_kwargs_validator
+});
 
 impl Validator for ArgumentsValidator {
     fn validate<'s, 'data>(

@@ -38,6 +38,8 @@ impl BuildValidator for TimeValidator {
     }
 }
 
+impl_py_gc_traverse!(TimeValidator {});
+
 impl Validator for TimeValidator {
     fn validate<'s, 'data>(
         &'s self,

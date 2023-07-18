@@ -25,6 +25,8 @@ impl BuildSerializer for BytesSerializer {
     }
 }
 
+impl_py_gc_traverse!(BytesSerializer {});
+
 impl TypeSerializer for BytesSerializer {
     fn to_python(
         &self,

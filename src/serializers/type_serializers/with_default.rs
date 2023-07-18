@@ -34,6 +34,8 @@ impl BuildSerializer for WithDefaultSerializer {
     }
 }
 
+impl_py_gc_traverse!(WithDefaultSerializer { default, serializer });
+
 impl TypeSerializer for WithDefaultSerializer {
     fn to_python(
         &self,

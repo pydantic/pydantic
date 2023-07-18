@@ -49,6 +49,11 @@ impl BuildValidator for LaxOrStrictValidator {
     }
 }
 
+impl_py_gc_traverse!(LaxOrStrictValidator {
+    lax_validator,
+    strict_validator
+});
+
 impl Validator for LaxOrStrictValidator {
     fn validate<'s, 'data>(
         &'s self,

@@ -37,6 +37,8 @@ impl BuildValidator for StrValidator {
     }
 }
 
+impl_py_gc_traverse!(StrValidator {});
+
 impl Validator for StrValidator {
     fn validate<'s, 'data>(
         &'s self,
@@ -77,6 +79,8 @@ pub struct StrConstrainedValidator {
     to_lower: bool,
     to_upper: bool,
 }
+
+impl_py_gc_traverse!(StrConstrainedValidator {});
 
 impl Validator for StrConstrainedValidator {
     fn validate<'s, 'data>(

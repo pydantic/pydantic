@@ -123,6 +123,10 @@ impl BuildValidator for DataclassArgsValidator {
     }
 }
 
+impl_py_gc_traverse!(Field { validator });
+
+impl_py_gc_traverse!(DataclassArgsValidator { fields });
+
 impl Validator for DataclassArgsValidator {
     fn validate<'s, 'data>(
         &'s self,
@@ -466,6 +470,8 @@ impl BuildValidator for DataclassValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(DataclassValidator { class, validator });
 
 impl Validator for DataclassValidator {
     fn validate<'s, 'data>(

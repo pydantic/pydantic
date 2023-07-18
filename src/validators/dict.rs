@@ -7,6 +7,7 @@ use crate::errors::{ValError, ValLineError, ValResult};
 use crate::input::{
     DictGenericIterator, GenericMapping, Input, JsonObject, JsonObjectGenericIterator, MappingGenericIterator,
 };
+
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -58,6 +59,11 @@ impl BuildValidator for DictValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(DictValidator {
+    key_validator,
+    value_validator
+});
 
 impl Validator for DictValidator {
     fn validate<'s, 'data>(

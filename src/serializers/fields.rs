@@ -28,6 +28,8 @@ pub(super) struct SerField {
     pub required: bool,
 }
 
+impl_py_gc_traverse!(SerField { serializer });
+
 impl SerField {
     pub fn new(
         py: Python,
@@ -141,6 +143,11 @@ macro_rules! option_length {
         }
     };
 }
+
+impl_py_gc_traverse!(GeneralFieldsSerializer {
+    fields,
+    computed_fields
+});
 
 impl TypeSerializer for GeneralFieldsSerializer {
     fn to_python(

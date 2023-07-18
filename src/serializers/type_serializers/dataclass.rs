@@ -1,6 +1,6 @@
+use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyType};
-use pyo3::{intern, PyTraverseError, PyVisit};
 use std::borrow::Cow;
 
 use ahash::AHashMap;
@@ -121,13 +121,9 @@ impl DataclassSerializer {
     }
 }
 
-impl TypeSerializer for DataclassSerializer {
-    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        visit.call(&self.class)?;
-        self.serializer.py_gc_traverse(visit)?;
-        Ok(())
-    }
+impl_py_gc_traverse!(DataclassSerializer { class, serializer });
 
+impl TypeSerializer for DataclassSerializer {
     fn to_python(
         &self,
         value: &PyAny,

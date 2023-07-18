@@ -67,6 +67,8 @@ fn build_validator_steps<'a>(
     }
 }
 
+impl_py_gc_traverse!(ChainValidator { steps });
+
 impl Validator for ChainValidator {
     fn validate<'s, 'data>(
         &'s self,

@@ -5,6 +5,7 @@ use pyo3::types::PyDict;
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
+
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -36,6 +37,8 @@ impl BuildValidator for BytesValidator {
         }
     }
 }
+
+impl_py_gc_traverse!(BytesValidator {});
 
 impl Validator for BytesValidator {
     fn validate<'s, 'data>(
@@ -73,6 +76,8 @@ pub struct BytesConstrainedValidator {
     max_length: Option<usize>,
     min_length: Option<usize>,
 }
+
+impl_py_gc_traverse!(BytesConstrainedValidator {});
 
 impl Validator for BytesConstrainedValidator {
     fn validate<'s, 'data>(

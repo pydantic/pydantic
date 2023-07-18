@@ -47,6 +47,8 @@ impl BuildSerializer for TupleVariableSerializer {
     }
 }
 
+impl_py_gc_traverse!(TupleVariableSerializer { item_serializer });
+
 impl TypeSerializer for TupleVariableSerializer {
     fn to_python(
         &self,
@@ -180,6 +182,11 @@ impl BuildSerializer for TuplePositionalSerializer {
         .into())
     }
 }
+
+impl_py_gc_traverse!(TuplePositionalSerializer {
+    items_serializers,
+    extra_serializer
+});
 
 impl TypeSerializer for TuplePositionalSerializer {
     fn to_python(

@@ -1,12 +1,13 @@
 use pyo3::exceptions::{PyAssertionError, PyAttributeError, PyTypeError, PyValueError};
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
+use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::errors::{
     ErrorType, LocItem, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
 };
 use crate::input::Input;
+use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::{function_name, py_err, SchemaDict};
 use crate::PydanticUseDefault;
@@ -68,13 +69,13 @@ macro_rules! impl_build {
                 );
                 Ok(Self {
                     validator: Box::new(validator),
-                    func: func_info.function.clone(),
+                    func: func_info.function,
                     config: match config {
                         Some(c) => c.into(),
                         None => py.None(),
                     },
                     name,
-                    field_name: func_info.field_name.clone(),
+                    field_name: func_info.field_name,
                     info_arg: func_info.info_arg,
                 }
                 .into())
@@ -85,6 +86,12 @@ macro_rules! impl_build {
 
 macro_rules! impl_validator {
     ($name:ident) => {
+        impl_py_gc_traverse!($name {
+            validator,
+            func,
+            config
+        });
+
         impl Validator for $name {
             fn validate<'s, 'data>(
                 &'s self,
@@ -241,6 +248,8 @@ impl BuildValidator for FunctionPlainValidator {
     }
 }
 
+impl_py_gc_traverse!(FunctionPlainValidator { func, config });
+
 impl Validator for FunctionPlainValidator {
     fn validate<'s, 'data>(
         &'s self,
@@ -333,6 +342,12 @@ impl FunctionWrapValidator {
         r.map_err(|e| convert_err(py, e, input))
     }
 }
+
+impl_py_gc_traverse!(FunctionWrapValidator {
+    validator,
+    func,
+    config
+});
 
 impl Validator for FunctionWrapValidator {
     fn validate<'s, 'data>(
@@ -434,6 +449,10 @@ impl ValidatorCallable {
 
     fn __str__(&self) -> String {
         self.__repr__()
+    }
+
+    fn __traverse__(&self, visit: PyVisit) -> Result<(), PyTraverseError> {
+        self.validator.py_gc_traverse(&visit)
     }
 }
 
