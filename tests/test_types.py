@@ -3894,6 +3894,39 @@ def test_secretstr():
     assert f.empty_password.get_secret_value() == ''
 
 
+def test_secretstr_subclass():
+    class DecryptableStr(SecretStr):
+        """
+        Simulate a SecretStr with decryption capabilities.
+        """
+
+        def decrypt_value(self) -> str:
+            return f'MOCK DECRYPTED {self.get_secret_value()}'
+
+    class Foobar(BaseModel):
+        password: DecryptableStr
+        empty_password: SecretStr
+
+    # Initialize the model.
+    f = Foobar(password='1234', empty_password='')
+
+    # Assert correct types.
+    assert f.password.__class__.__name__ == 'DecryptableStr'
+    assert f.empty_password.__class__.__name__ == 'SecretStr'
+
+    # Assert str and repr are correct.
+    assert str(f.password) == '**********'
+    assert str(f.empty_password) == ''
+    assert repr(f.password) == "DecryptableStr('**********')"
+    assert repr(f.empty_password) == "SecretStr('')"
+    assert len(f.password) == 4
+    assert len(f.empty_password) == 0
+
+    # Assert retrieval of secret value is correct
+    assert f.password.get_secret_value() == '1234'
+    assert f.empty_password.get_secret_value() == ''
+
+
 def test_secretstr_equality():
     assert SecretStr('abc') == SecretStr('abc')
     assert SecretStr('123') != SecretStr('321')
