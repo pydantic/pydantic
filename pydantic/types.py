@@ -728,7 +728,7 @@ class _SecretFieldValidator:
     inner_schema: CoreSchema = _dataclasses.field(init=False)
 
     def validate(self, value: _SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
-        error_prefix: Literal['string', 'bytes'] = 'string' if self.field_type is SecretStr else 'bytes'
+        error_prefix: Literal['string', 'bytes'] = 'string' if issubclass(self.field_type, SecretStr) else 'bytes'
         if self.min_length is not None and len(value) < self.min_length:
             short_kind: core_schema.ErrorType = f'{error_prefix}_too_short'  # type: ignore[assignment]
             raise PydanticKnownError(short_kind, {'min_length': self.min_length})
@@ -771,8 +771,8 @@ class _SecretFieldValidator:
     def __get_pydantic_core_schema__(
         self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        self.inner_schema = handler(str if self.field_type is SecretStr else bytes)
-        error_kind = 'string_type' if self.field_type is SecretStr else 'bytes_type'
+        self.inner_schema = handler(str if issubclass(self.field_type, SecretStr) else bytes)
+        error_kind = 'string_type' if issubclass(self.field_type, SecretStr) else 'bytes_type'
         return core_schema.general_after_validator_function(
             self.validate,
             core_schema.union_schema(
