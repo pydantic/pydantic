@@ -4838,9 +4838,9 @@ def test_examples_annotation() -> None:
 
 def test_skip_json_schema_annotation() -> None:
     class Model(BaseModel):
-        x: int | SkipJsonSchema[None] = None
-        y: int | SkipJsonSchema[None] = 1
-        z: int | SkipJsonSchema[str] = 'foo'
+        x: Union[int, SkipJsonSchema[None]] = None
+        y: Union[int, SkipJsonSchema[None]] = 1
+        z: Union[int, SkipJsonSchema[str]] = 'foo'
 
     assert Model(y=None).y is None
     # insert_assert(Model.model_json_schema())
