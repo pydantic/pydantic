@@ -5072,3 +5072,41 @@ def test_dollar_ref_alias():
         'title': 'MyModel',
         'type': 'object',
     }
+
+
+def test_multiple_parametrization_of_generic_model() -> None:
+    """https://github.com/pydantic/pydantic/issues/6708"""
+    T = TypeVar('T')
+
+    calls = 0
+
+    class Inner(BaseModel):
+        a: int
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            nonlocal calls
+            calls += 1
+            json_schema = handler(core_schema)
+            return json_schema
+
+    class Outer(BaseModel, Generic[T]):
+        b: Optional[T]
+
+    class ModelTest(BaseModel):
+        c: Outer[Inner]
+
+    for _ in range(sys.getrecursionlimit() + 1):
+
+        class ModelTest(BaseModel):  # noqa: F811
+            c: Outer[Inner]
+
+    ModelTest.model_json_schema()
+
+    # this is not necessarily a promise we make
+    # (in fact, we've had bugs in the past where this was not the case and we'd
+    # call the __get_pydantic_json_schema__ method multiple times)
+    # but it's much easier to test for than absence of a recursion limit
+    assert calls == 1
