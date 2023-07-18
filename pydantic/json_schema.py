@@ -1630,6 +1630,17 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
         return json_schema
 
+    def uuid_schema(self, schema: core_schema.UuidSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a schema that defines a UUID.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return {'type': 'string', 'format': 'uuid'}
+
     def multi_host_url_schema(self, schema: core_schema.MultiHostUrlSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a URL that can be used with multiple hosts.
 
@@ -1946,6 +1957,9 @@ class GenerateJsonSchema:
             'ge': 'minimum',
             'lt': 'exclusiveMaximum',
             'gt': 'exclusiveMinimum',
+        }
+        uuid = {
+            'version': 'version',
         }
 
     def get_flattened_anyof(self, schemas: list[JsonSchemaValue]) -> JsonSchemaValue:

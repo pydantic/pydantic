@@ -363,56 +363,17 @@ def uuid_prepare_pydantic_annotations(
     source_type: Any, annotations: Iterable[Any], _config: ConfigDict
 ) -> tuple[Any, list[Any]] | None:
     # UUIDs have no constraints - they are fixed length, constructing a UUID instance checks the length
-
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
     from uuid import UUID
 
     if source_type is not UUID:
         return None
 
-    def uuid_validator(input_value: str | bytes | UUID) -> UUID:
-        if isinstance(input_value, UUID):
-            return input_value
-        try:
-            if isinstance(input_value, str):
-                return UUID(input_value)
-            else:
-                try:
-                    return UUID(input_value.decode())
-                except ValueError:
-                    # 16 bytes in big-endian order as the bytes argument fail
-                    # the above check
-                    return UUID(bytes=input_value)
-        except ValueError:
-            raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
 
-    from_primitive_type_schema = core_schema.no_info_after_validator_function(
-        uuid_validator, core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()])
-    )
-    lax = core_schema.json_or_python_schema(
-        json_schema=from_primitive_type_schema,
-        python_schema=core_schema.union_schema(
-            [core_schema.is_instance_schema(UUID), from_primitive_type_schema],
-        ),
-    )
+    sv = InnerSchemaValidator(core_schema.uuid_schema(**metadata))
 
-    strict = core_schema.json_or_python_schema(
-        json_schema=from_primitive_type_schema,
-        python_schema=core_schema.is_instance_schema(UUID),
-    )
-
-    schema = core_schema.lax_or_strict_schema(
-        lax_schema=lax,
-        strict_schema=strict,
-        serialization=core_schema.to_string_ser_schema(),
-    )
-
-    return (
-        source_type,
-        [
-            InnerSchemaValidator(schema, js_core_schema=core_schema.str_schema(), js_schema_update={'format': 'uuid'}),
-            *annotations,
-        ],
-    )
+    return (source_type, [sv, *remaining_annotations])
 
 
 def path_schema_prepare_pydantic_annotations(

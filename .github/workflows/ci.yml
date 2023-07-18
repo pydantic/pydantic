@@ -124,6 +124,8 @@ jobs:
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
+        cache: true
+
 
     - name: install deps
       run: |
@@ -273,7 +275,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-  
+
     - name: install rust stable
       uses: dtolnay/rust-toolchain@stable
 

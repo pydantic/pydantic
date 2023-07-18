@@ -109,6 +109,7 @@ try:
 except ImportError:
     email_validator = None
 
+
 # TODO add back tests for Iterator
 
 
@@ -2671,18 +2672,12 @@ def test_uuid_error():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'is_instance_of',
-            'loc': ('is-instance[UUID]',),
-            'msg': 'Input should be an instance of UUID',
+            'loc': (),
+            'msg': 'Input should be a valid UUID, invalid group length in group 4: expected 12, found 5',
             'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
-            'ctx': {'class': 'UUID'},
-        },
-        {
+            'ctx': {'error': 'invalid group length in group 4: expected 12, found 5'},
             'type': 'uuid_parsing',
-            'loc': ('function-after[uuid_validator(), union[str,bytes]]',),
-            'msg': 'Input should be a valid UUID, unable to parse string as an UUID',
-            'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
-        },
+        }
     ]
 
     not_a_valid_input_type = object()
@@ -2691,23 +2686,10 @@ def test_uuid_error():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'is_instance_of',
-            'loc': ('is-instance[UUID]',),
-            'msg': 'Input should be an instance of UUID',
             'input': not_a_valid_input_type,
-            'ctx': {'class': 'UUID'},
-        },
-        {
-            'type': 'string_type',
-            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'str'),
-            'msg': 'Input should be a valid string',
-            'input': not_a_valid_input_type,
-        },
-        {
-            'type': 'bytes_type',
-            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'bytes'),
-            'msg': 'Input should be a valid bytes',
-            'input': not_a_valid_input_type,
+            'loc': (),
+            'msg': 'UUID input should be a string, bytes or UUID object',
+            'type': 'uuid_type',
         },
     ]
 
@@ -2760,30 +2742,30 @@ def test_uuid_validation():
         {
             'type': 'uuid_version',
             'loc': ('a',),
-            'msg': 'uuid version 1 expected',
+            'msg': 'UUID version 1 expected',
             'input': d,
-            'ctx': {'required_version': 1},
+            'ctx': {'expected_version': 1},
         },
         {
             'type': 'uuid_version',
             'loc': ('b',),
-            'msg': 'uuid version 3 expected',
+            'msg': 'UUID version 3 expected',
             'input': c,
-            'ctx': {'required_version': 3},
+            'ctx': {'expected_version': 3},
         },
         {
             'type': 'uuid_version',
             'loc': ('c',),
-            'msg': 'uuid version 4 expected',
+            'msg': 'UUID version 4 expected',
             'input': b,
-            'ctx': {'required_version': 4},
+            'ctx': {'expected_version': 4},
         },
         {
             'type': 'uuid_version',
             'loc': ('d',),
-            'msg': 'uuid version 5 expected',
+            'msg': 'UUID version 5 expected',
             'input': a,
-            'ctx': {'required_version': 5},
+            'ctx': {'expected_version': 5},
         },
     ]
 
