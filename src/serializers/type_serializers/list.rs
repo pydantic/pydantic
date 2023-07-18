@@ -45,6 +45,8 @@ impl BuildSerializer for ListSerializer {
     }
 }
 
+impl_py_gc_traverse!(ListSerializer { item_serializer });
+
 impl TypeSerializer for ListSerializer {
     fn to_python(
         &self,

@@ -22,6 +22,8 @@ impl BuildValidator for NoneValidator {
     }
 }
 
+impl_py_gc_traverse!(NoneValidator {});
+
 impl Validator for NoneValidator {
     fn validate<'s, 'data>(
         &'s self,

@@ -106,6 +106,8 @@ impl LiteralSerializer {
     }
 }
 
+impl_py_gc_traverse!(LiteralSerializer { expected_py });
+
 impl TypeSerializer for LiteralSerializer {
     fn to_python(
         &self,

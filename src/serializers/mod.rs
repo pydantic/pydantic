@@ -6,6 +6,7 @@ use pyo3::types::{PyBytes, PyDict};
 use pyo3::{PyTraverseError, PyVisit};
 
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::validators::SelfValidator;
 
 use config::SerializationConfig;
@@ -190,13 +191,6 @@ impl SchemaSerializer {
             slot.py_gc_traverse(&visit)?;
         }
         Ok(())
-    }
-
-    fn __clear__(&mut self) {
-        self.serializer.py_gc_clear();
-        for slot in &mut self.definitions {
-            slot.py_gc_clear();
-        }
     }
 }
 

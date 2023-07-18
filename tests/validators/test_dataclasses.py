@@ -1,6 +1,9 @@
 import dataclasses
+import gc
+import platform
 import re
 import sys
+import weakref
 from typing import Any, ClassVar, Dict, List, Optional, Union
 
 import pytest
@@ -1490,3 +1493,58 @@ def test_dataclass_json():
             'type': 'dataclass_type',
         }
     ]
+
+
+@pytest.mark.xfail(
+    condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
+)
+@pytest.mark.parametrize('validator', [None, 'field', 'dataclass'])
+def test_leak_dataclass(validator):
+    def fn():
+        @dataclasses.dataclass
+        class Dataclass:
+            a: int
+
+            @classmethod
+            def _validator(cls, v, info):
+                return v
+
+            @classmethod
+            def _wrap_validator(cls, v, validator, info):
+                return validator(v)
+
+        field_schema = core_schema.int_schema()
+        if validator == 'field':
+            field_schema = core_schema.field_before_validator_function(Dataclass._validator, 'a', field_schema)
+            field_schema = core_schema.field_wrap_validator_function(Dataclass._wrap_validator, 'a', field_schema)
+            field_schema = core_schema.field_after_validator_function(Dataclass._validator, 'a', field_schema)
+
+        dataclass_schema = core_schema.dataclass_schema(
+            Dataclass,
+            core_schema.dataclass_args_schema('Dataclass', [core_schema.dataclass_field('a', field_schema)]),
+            ['a'],
+        )
+
+        if validator == 'dataclass':
+            dataclass_schema = core_schema.general_before_validator_function(Dataclass._validator, dataclass_schema)
+            dataclass_schema = core_schema.general_wrap_validator_function(Dataclass._wrap_validator, dataclass_schema)
+            dataclass_schema = core_schema.general_after_validator_function(Dataclass._validator, dataclass_schema)
+
+        # If any of the Rust validators don't implement traversal properly,
+        # there will be an undetectable cycle created by this assignment
+        # which will keep Dataclass alive
+        Dataclass.__pydantic_validator__ = SchemaValidator(dataclass_schema)
+
+        return Dataclass
+
+    klass = fn()
+    ref = weakref.ref(klass)
+    assert ref() is not None
+
+    del klass
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+    gc.collect()
+
+    assert ref() is None

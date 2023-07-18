@@ -10,6 +10,7 @@ use crate::build_tools::{is_strict, py_schema_error_type};
 use crate::build_tools::{py_schema_err, schema_or_config_same};
 use crate::errors::{py_err_string, ErrorType, ValError, ValResult};
 use crate::input::{EitherDateTime, Input};
+
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -54,6 +55,8 @@ impl BuildValidator for DateTimeValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(DateTimeValidator {});
 
 impl Validator for DateTimeValidator {
     fn validate<'s, 'data>(

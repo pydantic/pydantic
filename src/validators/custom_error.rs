@@ -85,6 +85,8 @@ impl BuildValidator for CustomErrorValidator {
     }
 }
 
+impl_py_gc_traverse!(CustomErrorValidator { validator });
+
 impl Validator for CustomErrorValidator {
     fn validate<'s, 'data>(
         &'s self,

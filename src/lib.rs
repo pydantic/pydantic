@@ -10,6 +10,10 @@ use pyo3::{prelude::*, sync::GILOnceCell};
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+// parse this first to get access to the contained macro
+#[macro_use]
+mod py_gc;
+
 mod argument_markers;
 mod build_tools;
 mod definitions;

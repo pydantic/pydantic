@@ -55,6 +55,8 @@ impl BuildValidator for SetValidator {
     set_build!();
 }
 
+impl_py_gc_traverse!(SetValidator { item_validator });
+
 impl Validator for SetValidator {
     fn validate<'s, 'data>(
         &'s self,

@@ -14,6 +14,7 @@ use serde_json::ser::PrettyFormatter;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::tools::{py_err, SchemaDict};
 
 use super::errors::se_err_py_err;
@@ -215,12 +216,50 @@ impl BuildSerializer for CombinedSerializer {
     }
 }
 
+// Implemented by hand because `enum_dispatch` fails with a proc macro compile error =/
+impl PyGcTraverse for CombinedSerializer {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        match self {
+            CombinedSerializer::Function(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::FunctionWrap(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Fields(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::None(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Nullable(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Int(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Bool(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Float(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Str(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Bytes(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Datetime(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::TimeDelta(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Date(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Time(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::List(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Set(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::FrozenSet(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Generator(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Dict(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Model(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Dataclass(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Url(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::MultiHostUrl(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Any(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Format(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::ToString(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::WithDefault(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Json(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::JsonOrPython(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Union(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Literal(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Recursive(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::TuplePositional(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::TupleVariable(inner) => inner.py_gc_traverse(visit),
+        }
+    }
+}
+
 #[enum_dispatch(CombinedSerializer)]
 pub(crate) trait TypeSerializer: Send + Sync + Clone + Debug {
-    fn py_gc_traverse(&self, _visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        Ok(())
-    }
-    fn py_gc_clear(&mut self) {}
     fn to_python(
         &self,
         value: &PyAny,

@@ -42,6 +42,8 @@ impl BuildValidator for TupleVariableValidator {
     }
 }
 
+impl_py_gc_traverse!(TupleVariableValidator { item_validator });
+
 impl Validator for TupleVariableValidator {
     fn validate<'s, 'data>(
         &'s self,
@@ -203,6 +205,11 @@ fn validate_tuple_positional<'s, 'data, T: Iterator<Item = PyResult<&'data I>>, 
     }
     Ok(())
 }
+
+impl_py_gc_traverse!(TuplePositionalValidator {
+    items_validators,
+    extra_validator
+});
 
 impl Validator for TuplePositionalValidator {
     fn validate<'s, 'data>(

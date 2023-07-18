@@ -99,13 +99,9 @@ impl BuildValidator for ModelValidator {
     }
 }
 
-impl Validator for ModelValidator {
-    fn py_gc_traverse(&self, visit: &pyo3::PyVisit<'_>) -> Result<(), pyo3::PyTraverseError> {
-        visit.call(&self.class)?;
-        self.validator.py_gc_traverse(visit)?;
-        Ok(())
-    }
+impl_py_gc_traverse!(ModelValidator { class, validator });
 
+impl Validator for ModelValidator {
     fn validate<'s, 'data>(
         &'s self,
         py: Python<'data>,

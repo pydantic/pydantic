@@ -27,6 +27,8 @@ struct Field {
     frozen: bool,
 }
 
+impl_py_gc_traverse!(Field { validator });
+
 #[derive(Debug, Clone)]
 pub struct ModelFieldsValidator {
     fields: Vec<Field>,
@@ -106,6 +108,11 @@ impl BuildValidator for ModelFieldsValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(ModelFieldsValidator {
+    fields,
+    extra_validator
+});
 
 impl Validator for ModelFieldsValidator {
     fn validate<'s, 'data>(

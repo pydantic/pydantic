@@ -64,6 +64,8 @@ impl BuildValidator for TimeDeltaValidator {
     }
 }
 
+impl_py_gc_traverse!(TimeDeltaValidator {});
+
 impl Validator for TimeDeltaValidator {
     fn validate<'s, 'data>(
         &'s self,

@@ -65,6 +65,11 @@ impl BuildSerializer for DictSerializer {
     }
 }
 
+impl_py_gc_traverse!(DictSerializer {
+    key_serializer,
+    value_serializer
+});
+
 impl TypeSerializer for DictSerializer {
     fn to_python(
         &self,

@@ -2,12 +2,15 @@ use pyo3::intern;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+use pyo3::PyTraverseError;
+use pyo3::PyVisit;
 
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{LocItem, ValError, ValResult};
 use crate::input::Input;
+use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 use crate::PydanticUndefinedType;
@@ -45,6 +48,15 @@ impl DefaultType {
             Self::DefaultFactory(ref default_factory) => Ok(Some(default_factory.call0(py)?)),
             Self::None => Ok(None),
         }
+    }
+}
+
+impl PyGcTraverse for DefaultType {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        if let Self::Default(obj) | Self::DefaultFactory(obj) = self {
+            visit.call(obj)?;
+        }
+        Ok(())
     }
 }
 
@@ -111,6 +123,8 @@ impl BuildValidator for WithDefaultValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(WithDefaultValidator { default, validator });
 
 impl Validator for WithDefaultValidator {
     fn validate<'s, 'data>(

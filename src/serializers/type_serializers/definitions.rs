@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
 use crate::definitions::DefinitionsBuilder;
+
 use crate::tools::SchemaDict;
 
 use super::{py_err_se_err, BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
@@ -58,6 +59,8 @@ impl BuildSerializer for DefinitionRefSerializer {
         Ok(Self { serializer_id }.into())
     }
 }
+
+impl_py_gc_traverse!(DefinitionRefSerializer {});
 
 impl TypeSerializer for DefinitionRefSerializer {
     fn to_python(

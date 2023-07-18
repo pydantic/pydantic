@@ -1,11 +1,12 @@
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
+use pyo3::{intern, PyTraverseError, PyVisit};
 use serde::ser::SerializeMap;
 use serde::Serialize;
 
 use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
+use crate::py_gc::PyGcTraverse;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{BuildSerializer, CombinedSerializer, PydanticSerializer, TypeSerializer};
 use crate::tools::SchemaDict;
@@ -155,6 +156,16 @@ pub(crate) struct ComputedFieldSerializer<'py> {
     exclude: Option<&'py PyAny>,
     extra: &'py Extra<'py>,
 }
+
+impl_py_gc_traverse!(ComputedField { serializer });
+
+impl PyGcTraverse for ComputedFields {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.0.py_gc_traverse(visit)
+    }
+}
+
+impl_py_gc_traverse!(ComputedFieldSerializer<'_> { computed_field });
 
 impl<'py> Serialize for ComputedFieldSerializer<'py> {
     fn serialize<S: serde::ser::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {

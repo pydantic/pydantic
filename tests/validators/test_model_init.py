@@ -1,3 +1,8 @@
+import gc
+import platform
+import weakref
+
+import pytest
 from dirty_equals import IsInstance
 
 from pydantic_core import CoreConfig, SchemaValidator, core_schema
@@ -416,3 +421,55 @@ def test_model_custom_init_revalidate():
     assert m2.__dict__ == {'a': '1', 'x': 4}
     assert m2.__pydantic_fields_set__ == {'custom'}
     assert calls == ["{'a': '1'}", "{'a': '1', 'x': 4}"]
+
+
+@pytest.mark.xfail(
+    condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
+)
+@pytest.mark.parametrize('validator', [None, 'field', 'model'])
+def test_leak_model(validator):
+    def fn():
+        class Model:
+            a: int
+
+            @classmethod
+            def _validator(cls, v, info):
+                return v
+
+            @classmethod
+            def _wrap_validator(cls, v, validator, info):
+                return validator(v)
+
+        field_schema = core_schema.int_schema()
+        if validator == 'field':
+            field_schema = core_schema.field_before_validator_function(Model._validator, 'a', field_schema)
+            field_schema = core_schema.field_wrap_validator_function(Model._wrap_validator, 'a', field_schema)
+            field_schema = core_schema.field_after_validator_function(Model._validator, 'a', field_schema)
+
+        model_schema = core_schema.model_schema(
+            Model, core_schema.model_fields_schema({'a': core_schema.model_field(field_schema)})
+        )
+
+        if validator == 'model':
+            model_schema = core_schema.general_before_validator_function(Model._validator, model_schema)
+            model_schema = core_schema.general_wrap_validator_function(Model._wrap_validator, model_schema)
+            model_schema = core_schema.general_after_validator_function(Model._validator, model_schema)
+
+        # If any of the Rust validators don't implement traversal properly,
+        # there will be an undetectable cycle created by this assignment
+        # which will keep Model alive
+        Model.__pydantic_validator__ = SchemaValidator(model_schema)
+
+        return Model
+
+    klass = fn()
+    ref = weakref.ref(klass)
+    assert ref() is not None
+
+    del klass
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+    gc.collect()
+
+    assert ref() is None

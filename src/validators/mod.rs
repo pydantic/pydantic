@@ -12,6 +12,7 @@ use crate::build_tools::{py_schema_err, py_schema_error_type, SchemaError};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{ErrorMode, LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType};
+use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -278,13 +279,6 @@ impl SchemaValidator {
             slot.py_gc_traverse(&visit)?;
         }
         Ok(())
-    }
-
-    fn __clear__(&mut self) {
-        self.validator.py_gc_clear();
-        for slot in &mut self.definitions {
-            slot.py_gc_clear();
-        }
     }
 }
 
@@ -574,7 +568,7 @@ impl<'a> Extra<'a> {
 }
 
 #[derive(Debug, Clone)]
-#[enum_dispatch]
+#[enum_dispatch(PyGcTraverse)]
 pub enum CombinedValidator {
     // typed dict e.g. heterogeneous dicts or simply a model
     TypedDict(typed_dict::TypedDictValidator),
@@ -666,11 +660,6 @@ pub enum CombinedValidator {
 /// validators defined in `build_validator` also need `EXPECTED_TYPE` as a const, but that can't be part of the trait
 #[enum_dispatch(CombinedValidator)]
 pub trait Validator: Send + Sync + Clone + Debug {
-    fn py_gc_traverse(&self, _visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
-        Ok(())
-    }
-    fn py_gc_clear(&mut self) {}
-
     /// Do the actual validation for this schema/type
     fn validate<'s, 'data>(
         &'s self,
