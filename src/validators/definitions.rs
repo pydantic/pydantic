@@ -4,6 +4,7 @@ use pyo3::types::{PyDict, PyList};
 
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
+
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -69,6 +70,8 @@ impl BuildValidator for DefinitionRefValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(DefinitionRefValidator {});
 
 impl Validator for DefinitionRefValidator {
     fn validate<'s, 'data>(

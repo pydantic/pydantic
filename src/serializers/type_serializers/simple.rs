@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
+
 use std::borrow::Cow;
 
 use serde::Serialize;
@@ -29,6 +30,8 @@ impl BuildSerializer for NoneSerializer {
 pub(crate) fn none_json_key() -> PyResult<Cow<'static, str>> {
     Ok(Cow::Borrowed("None"))
 }
+
+impl_py_gc_traverse!(NoneSerializer {});
 
 impl TypeSerializer for NoneSerializer {
     fn to_python(
@@ -97,6 +100,8 @@ macro_rules! build_simple_serializer {
                 Ok(Self {}.into())
             }
         }
+
+        impl_py_gc_traverse!($struct_name {});
 
         impl TypeSerializer for $struct_name {
             fn to_python(

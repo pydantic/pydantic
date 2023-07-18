@@ -269,6 +269,12 @@ macro_rules! function_type_serializer {
     };
 }
 
+impl_py_gc_traverse!(FunctionPlainSerializer {
+    func,
+    return_serializer,
+    fallback_serializer
+});
+
 function_type_serializer!(FunctionPlainSerializer);
 
 fn copy_outer_schema(schema: &PyDict) -> PyResult<&PyDict> {
@@ -398,6 +404,12 @@ impl FunctionWrapSerializer {
         self.serializer.as_ref()
     }
 }
+
+impl_py_gc_traverse!(FunctionWrapSerializer {
+    serializer,
+    func,
+    return_serializer
+});
 
 function_type_serializer!(FunctionWrapSerializer);
 

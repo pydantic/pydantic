@@ -5,6 +5,7 @@ use pyo3::types::{PyDict, PyTuple};
 
 use crate::errors::ValResult;
 use crate::input::Input;
+
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -64,6 +65,11 @@ impl BuildValidator for CallValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(CallValidator {
+    arguments_validator,
+    return_validator
+});
 
 impl Validator for CallValidator {
     fn validate<'s, 'data>(

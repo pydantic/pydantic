@@ -30,6 +30,8 @@ impl BuildSerializer for NullableSerializer {
     }
 }
 
+impl_py_gc_traverse!(NullableSerializer { serializer });
+
 impl TypeSerializer for NullableSerializer {
     fn to_python(
         &self,

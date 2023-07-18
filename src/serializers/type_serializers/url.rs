@@ -4,6 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::definitions::DefinitionsBuilder;
+
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 use super::{
@@ -27,6 +28,8 @@ macro_rules! build_serializer {
                 Ok(Self {}.into())
             }
         }
+
+        impl_py_gc_traverse!($struct_name {});
 
         impl TypeSerializer for $struct_name {
             fn to_python(

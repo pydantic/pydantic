@@ -4,6 +4,7 @@ use pyo3::types::PyDict;
 use crate::build_tools::is_strict;
 use crate::errors::ValResult;
 use crate::input::Input;
+
 use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
@@ -27,6 +28,8 @@ impl BuildValidator for BoolValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(BoolValidator {});
 
 impl Validator for BoolValidator {
     fn validate<'s, 'data>(

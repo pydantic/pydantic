@@ -42,6 +42,8 @@ impl BuildSerializer for JsonSerializer {
     }
 }
 
+impl_py_gc_traverse!(JsonSerializer { serializer });
+
 impl TypeSerializer for JsonSerializer {
     fn to_python(
         &self,

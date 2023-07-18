@@ -41,6 +41,8 @@ impl BuildValidator for IntValidator {
     }
 }
 
+impl_py_gc_traverse!(IntValidator {});
+
 impl Validator for IntValidator {
     fn validate<'s, 'data>(
         &'s self,
@@ -79,6 +81,8 @@ pub struct ConstrainedIntValidator {
     ge: Option<Int>,
     gt: Option<Int>,
 }
+
+impl_py_gc_traverse!(ConstrainedIntValidator {});
 
 impl Validator for ConstrainedIntValidator {
     fn validate<'s, 'data>(

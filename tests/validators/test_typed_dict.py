@@ -1,5 +1,8 @@
+import gc
 import math
+import platform
 import re
+import weakref
 from typing import Any, Dict, Mapping, Union
 
 import pytest
@@ -1158,3 +1161,36 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
 
     m: Dict[str, Any] = v.validate_python({'f': 'x', 'extra_field': 123})
     assert m == {'f': 'x'}
+
+
+@pytest.mark.xfail(
+    condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
+)
+def test_leak_typed_dict():
+    def fn():
+        def validate(v, info):
+            return v
+
+        schema = core_schema.general_plain_validator_function(validate)
+        schema = core_schema.typed_dict_schema(
+            {'f': core_schema.typed_dict_field(schema)}, extra_behavior='allow', extra_validator=schema
+        )
+
+        # If any of the Rust validators don't implement traversal properly,
+        # there will be an undetectable cycle created by this assignment
+        # which will keep Defaulted alive
+        validate.__pydantic_validator__ = SchemaValidator(schema)
+
+        return validate
+
+    cycle = fn()
+    ref = weakref.ref(cycle)
+    assert ref() is not None
+
+    del cycle
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+    gc.collect()
+
+    assert ref() is None

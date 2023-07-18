@@ -3,6 +3,7 @@ use pyo3::types::PyDict;
 
 use crate::errors::ValResult;
 use crate::input::Input;
+
 use crate::recursion_guard::RecursionGuard;
 
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
@@ -22,6 +23,8 @@ impl BuildValidator for AnyValidator {
         Ok(Self.into())
     }
 }
+
+impl_py_gc_traverse!(AnyValidator {});
 
 impl Validator for AnyValidator {
     fn validate<'s, 'data>(

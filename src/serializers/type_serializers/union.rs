@@ -59,6 +59,8 @@ impl UnionSerializer {
     }
 }
 
+impl_py_gc_traverse!(UnionSerializer { choices });
+
 impl TypeSerializer for UnionSerializer {
     fn to_python(
         &self,

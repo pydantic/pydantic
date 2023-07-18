@@ -26,6 +26,8 @@ struct TypedDictField {
     validator: CombinedValidator,
 }
 
+impl_py_gc_traverse!(TypedDictField { validator });
+
 #[derive(Debug, Clone)]
 pub struct TypedDictValidator {
     fields: Vec<TypedDictField>,
@@ -131,6 +133,11 @@ impl BuildValidator for TypedDictValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(TypedDictValidator {
+    fields,
+    extra_validator
+});
 
 impl Validator for TypedDictValidator {
     fn validate<'s, 'data>(

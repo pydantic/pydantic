@@ -3,13 +3,14 @@
 use core::fmt::Debug;
 
 use ahash::AHashMap;
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
+use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::build_tools::{py_schema_err, py_schema_error_type};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
+use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -135,6 +136,14 @@ impl<T: Clone + Debug> LiteralLookup<T> {
     }
 }
 
+impl<T: PyGcTraverse + Clone + Debug> PyGcTraverse for LiteralLookup<T> {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        self.expected_py.py_gc_traverse(visit)?;
+        self.values.py_gc_traverse(visit)?;
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct LiteralValidator {
     lookup: LiteralLookup<PyObject>,
@@ -168,6 +177,8 @@ impl BuildValidator for LiteralValidator {
         }))
     }
 }
+
+impl_py_gc_traverse!(LiteralValidator { lookup });
 
 impl Validator for LiteralValidator {
     fn validate<'s, 'data>(

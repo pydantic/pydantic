@@ -60,6 +60,8 @@ impl BuildValidator for FloatValidator {
     }
 }
 
+impl_py_gc_traverse!(FloatValidator {});
+
 impl Validator for FloatValidator {
     fn validate<'s, 'data>(
         &'s self,
@@ -104,6 +106,8 @@ pub struct ConstrainedFloatValidator {
     ge: Option<f64>,
     gt: Option<f64>,
 }
+
+impl_py_gc_traverse!(ConstrainedFloatValidator {});
 
 impl Validator for ConstrainedFloatValidator {
     fn validate<'s, 'data>(

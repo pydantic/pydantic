@@ -42,6 +42,8 @@ impl BuildSerializer for GeneratorSerializer {
     }
 }
 
+impl_py_gc_traverse!(GeneratorSerializer { item_serializer });
+
 impl TypeSerializer for GeneratorSerializer {
     fn to_python(
         &self,

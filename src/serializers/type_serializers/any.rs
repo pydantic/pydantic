@@ -26,6 +26,8 @@ impl BuildSerializer for AnySerializer {
     }
 }
 
+impl_py_gc_traverse!(AnySerializer {});
+
 impl TypeSerializer for AnySerializer {
     fn to_python(
         &self,

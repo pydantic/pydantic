@@ -40,6 +40,8 @@ macro_rules! build_serializer {
             }
         }
 
+        impl_py_gc_traverse!($struct_name {});
+
         impl TypeSerializer for $struct_name {
             fn to_python(
                 &self,

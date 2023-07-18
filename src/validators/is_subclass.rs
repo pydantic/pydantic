@@ -41,6 +41,8 @@ impl BuildValidator for IsSubclassValidator {
     }
 }
 
+impl_py_gc_traverse!(IsSubclassValidator { class });
+
 impl Validator for IsSubclassValidator {
     fn validate<'s, 'data>(
         &'s self,

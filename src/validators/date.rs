@@ -7,6 +7,7 @@ use strum::EnumMessage;
 use crate::build_tools::{is_strict, py_schema_error_type};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{EitherDate, Input};
+
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 use crate::validators::datetime::{NowConstraint, NowOp};
@@ -34,6 +35,8 @@ impl BuildValidator for DateValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(DateValidator {});
 
 impl Validator for DateValidator {
     fn validate<'s, 'data>(

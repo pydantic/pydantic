@@ -54,6 +54,8 @@ impl BuildValidator for IsInstanceValidator {
     }
 }
 
+impl_py_gc_traverse!(IsInstanceValidator { class });
+
 impl Validator for IsInstanceValidator {
     fn validate<'s, 'data>(
         &'s self,

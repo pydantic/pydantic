@@ -42,6 +42,8 @@ impl BuildValidator for JsonValidator {
     }
 }
 
+impl_py_gc_traverse!(JsonValidator { validator });
+
 impl Validator for JsonValidator {
     fn validate<'s, 'data>(
         &'s self,

@@ -1,14 +1,15 @@
 use std::fmt::Write;
 
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
+use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config};
 use crate::errors::{ErrorType, LocItem, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
+use crate::py_gc::PyGcTraverse;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
@@ -75,6 +76,8 @@ impl UnionValidator {
         }
     }
 }
+
+impl_py_gc_traverse!(UnionValidator { choices });
 
 impl Validator for UnionValidator {
     fn validate<'s, 'data>(
@@ -216,6 +219,16 @@ impl Discriminator {
     }
 }
 
+impl PyGcTraverse for Discriminator {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
+        match self {
+            Self::Function(obj) => visit.call(obj)?,
+            Self::LookupKey(_) | Self::SelfSchema => {}
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct TaggedUnionValidator {
     discriminator: Discriminator,
@@ -286,6 +299,8 @@ impl BuildValidator for TaggedUnionValidator {
         .into())
     }
 }
+
+impl_py_gc_traverse!(TaggedUnionValidator { discriminator, lookup });
 
 impl Validator for TaggedUnionValidator {
     fn validate<'s, 'data>(

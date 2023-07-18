@@ -104,6 +104,8 @@ impl FormatSerializer {
     }
 }
 
+impl_py_gc_traverse!(FormatSerializer { format_func });
+
 impl TypeSerializer for FormatSerializer {
     fn to_python(
         &self,
@@ -174,6 +176,8 @@ impl BuildSerializer for ToStringSerializer {
         .into())
     }
 }
+
+impl_py_gc_traverse!(ToStringSerializer {});
 
 impl TypeSerializer for ToStringSerializer {
     fn to_python(
