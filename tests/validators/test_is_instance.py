@@ -164,3 +164,28 @@ def test_class_repr():
     assert v.validate_python(1) == 1
     with pytest.raises(ValidationError, match=r'Input should be an instance of Foobar \[type=is_instance_of,'):
         v.validate_python('1')
+
+
+def test_is_instance_json_type_before_validator():
+    # See https://github.com/pydantic/pydantic/issues/6573 - when using a
+    # "before" validator to coerce JSON to valid Python input it should be
+    # possible to use isinstance validation. This gives a way for things
+    # such as type to have a valid input from JSON.
+
+    schema = core_schema.is_instance_schema(type)
+    v = SchemaValidator(schema)
+
+    with pytest.raises(
+        NotImplementedError,
+        match='Cannot check isinstance when validating from json, use a JsonOrPython validator instead.',
+    ):
+        v.validate_json('null')
+
+    # now wrap in a before validator
+    def set_type_to_int(input: None) -> type:
+        return int
+
+    schema = core_schema.no_info_before_validator_function(set_type_to_int, schema)
+    v = SchemaValidator(schema)
+
+    assert v.validate_json('null') == int

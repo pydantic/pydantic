@@ -9,7 +9,6 @@ use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::InputType;
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -60,27 +59,26 @@ impl Validator for IsInstanceValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
+        _extra: &Extra,
         _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        match extra.mode {
-            InputType::Json => Err(ValError::InternalErr(PyNotImplementedError::new_err(
-                "Cannot check isinstance when validating from json,\
+        if !input.is_python() {
+            return Err(ValError::InternalErr(PyNotImplementedError::new_err(
+                "Cannot check isinstance when validating from json, \
                             use a JsonOrPython validator instead.",
-            ))),
-            InputType::Python => {
-                let ob = input.to_object(py);
-                match ob.as_ref(py).is_instance(self.class.as_ref(py))? {
-                    true => Ok(ob),
-                    false => Err(ValError::new(
-                        ErrorType::IsInstanceOf {
-                            class: self.class_repr.clone(),
-                        },
-                        input,
-                    )),
-                }
-            }
+            )));
+        }
+
+        let ob = input.to_object(py);
+        match ob.as_ref(py).is_instance(self.class.as_ref(py))? {
+            true => Ok(ob),
+            false => Err(ValError::new(
+                ErrorType::IsInstanceOf {
+                    class: self.class_repr.clone(),
+                },
+                input,
+            )),
         }
     }
 
