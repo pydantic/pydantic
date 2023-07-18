@@ -118,6 +118,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: install rust stable
+      uses: dtolnay/rust-toolchain@stable
+
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
@@ -270,6 +273,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+  
+    - name: install rust stable
+      uses: dtolnay/rust-toolchain@stable
 
     - uses: pdm-project/setup-pdm@v3
       with:
