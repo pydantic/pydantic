@@ -39,6 +39,7 @@ from .functional_validators import (
 from .json_schema import WithJsonSchema
 from .main import *
 from .networks import *
+from .plugin import PluginManager
 from .type_adapter import TypeAdapter
 from .types import *
 from .validate_call import validate_call
@@ -46,6 +47,9 @@ from .version import VERSION
 from .warnings import *
 
 __version__ = VERSION
+
+
+PluginManager().load_plugins()
 
 # this encourages pycharm to import `ValidationError` from here, not pydantic_core
 ValidationError = pydantic_core.ValidationError
