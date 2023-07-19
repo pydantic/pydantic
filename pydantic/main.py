@@ -31,7 +31,7 @@ from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
-from .plugin import call_plugins
+from .plugin.loader import plug
 from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
@@ -478,7 +478,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
 
     @classmethod
-    @call_plugins
+    @plug
     def model_validate(
         cls: type[Model],
         obj: Any,
