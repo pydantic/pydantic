@@ -791,17 +791,17 @@ class PydanticModelTransformer:
                 is_settings=is_settings,
             )
             if is_settings:
-                str_type_info = self._api.lookup_fully_qualified('builtins.str').node
-                str_type = Instance(str_type_info, [])
-                var = Var('_env_file', str_type)
-                arg = Argument(
-                    variable=var,
-                    type_annotation=str_type,
-                    initializer=None,
-                    kind=ARG_NAMED_OPT,
+                base_settings_init_arguments = (
+                    self._api.lookup_fully_qualified('pydantic_settings.BaseSettings')
+                    .node.defn.info.names['__init__']
+                    .node.arguments
                 )
-                args.append(arg)
-                ...
+                base_settings_init_arguments = [
+                    x
+                    for x in base_settings_init_arguments
+                    if x.variable.name.startswith('_') and not x.variable.name.startswith('__')
+                ]
+                args.extend(base_settings_init_arguments)
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
             args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
