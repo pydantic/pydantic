@@ -1609,7 +1609,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        content_core_schema = schema['schema'] if 'schema' in schema else core_schema.any_schema()
+        content_core_schema = schema.get('schema') or core_schema.any_schema()
         content_json_schema = self.generate_inner(content_core_schema)
         if self.mode == 'validation':
             return {'type': 'string', 'contentMediaType': 'application/json', 'contentSchema': content_json_schema}
