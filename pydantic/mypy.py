@@ -791,10 +791,12 @@ class PydanticModelTransformer:
                 is_settings=is_settings,
             )
             if is_settings:
-                var = Var('_env_file', AnyType(TypeOfAny.explicit))
+                str_type_info = self._api.lookup_fully_qualified('builtins.str').node
+                str_type = Instance(str_type_info, [])
+                var = Var('_env_file', str_type)
                 arg = Argument(
                     variable=var,
-                    type_annotation=AnyType(TypeOfAny.explicit),
+                    type_annotation=str_type,
                     initializer=None,
                     kind=ARG_NAMED_OPT,
                 )
