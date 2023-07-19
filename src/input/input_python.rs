@@ -187,8 +187,12 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
-        if let Ok(py_str) = <PyString as PyTryFrom>::try_from(self) {
+        if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
             Ok(py_str.into())
+        } else if let Ok(py_str) = self.downcast::<PyString>() {
+            // force to a rust string to make sure behavior is consistent whether or not we go via a
+            // rust string in StrConstrainedValidator - e.g. to_lower
+            Ok(py_string_str(py_str)?.into())
         } else {
             Err(ValError::new(ErrorType::StringType, self))
         }
