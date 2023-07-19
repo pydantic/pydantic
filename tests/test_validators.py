@@ -58,6 +58,16 @@ def test_annotated_validator_before() -> None:
     assert Model(x='1.0').x == 1.0
 
 
+def test_annotated_validator_builtin() -> None:
+    """https://github.com/pydantic/pydantic/issues/6752"""
+    TruncatedFloat = Annotated[float, BeforeValidator(int)]
+
+    class Model(BaseModel):
+        x: TruncatedFloat
+
+    assert Model(x=1.234).x == 1
+
+
 def test_annotated_validator_plain() -> None:
     MyInt = Annotated[int, PlainValidator(lambda x, _info: x if x != -1 else 0)]
 
