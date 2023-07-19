@@ -1,5 +1,7 @@
 from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
 
+from typing_extensions import Self
+
 from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator, model_validator, validator
 from pydantic.dataclasses import dataclass
 
@@ -290,7 +292,11 @@ def foo() -> None:
 
         @model_validator(mode='before')
         @classmethod
-        def validate_values(cls, values: Any) -> Any:
+        def validate_before(cls, values: Any) -> Any:
             return values
+
+        @model_validator(mode='after')
+        def validate_after(self) -> Self:
+            return self
 
     MyModel(number=2)

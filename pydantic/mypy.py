@@ -92,6 +92,7 @@ BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
+MODEL_VALIDATOR_FULLNAME = 'pydantic.functional_validators.model_validator'
 DECORATOR_FULLNAMES = {
     'pydantic.functional_validators.field_validator',
     'pydantic.functional_validators.model_validator',
@@ -467,6 +468,14 @@ class PydanticModelTransformer:
                     isinstance(first_dec, CallExpr)
                     and isinstance(first_dec.callee, NameExpr)
                     and first_dec.callee.fullname in DECORATOR_FULLNAMES
+                    # @model_validator(mode="after") is an exception, it expects a regular method
+                    and not (
+                        first_dec.callee.fullname == MODEL_VALIDATOR_FULLNAME
+                        and any(
+                            first_dec.arg_names[i] == 'mode' and isinstance(arg, StrExpr) and arg.value == 'after'
+                            for i, arg in enumerate(first_dec.args)
+                        )
+                    )
                 ):
                     # TODO: Only do this if the first argument of the decorated function is `cls`
                     sym.node.func.is_class = True
