@@ -33,6 +33,7 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     PrivateAttr,
+    PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
@@ -2723,3 +2724,23 @@ def test_deferred_core_schema() -> None:
         pass
 
     assert Foo.__pydantic_core_schema__
+
+
+def test_help(create_module):
+    with pytest.warns(PydanticDeprecatedSince20):
+        module = create_module(
+            # language=Python
+            """
+import pydoc
+
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    x: int
+
+
+help_result_string = pydoc.render_doc(Model)
+"""
+        )
+
+    assert 'class Model' in module.help_result_string
