@@ -791,17 +791,18 @@ class PydanticModelTransformer:
                 is_settings=is_settings,
             )
             if is_settings:
-                base_settings_init_arguments = (
-                    self._api.lookup_fully_qualified('pydantic_settings.BaseSettings')
-                    .node.defn.info.names['__init__']
-                    .node.arguments
-                )
-                base_settings_init_arguments = [
-                    x
-                    for x in base_settings_init_arguments
-                    if x.variable.name.startswith('_') and not x.variable.name.startswith('__')
-                ]
-                args.extend(base_settings_init_arguments)
+                base_settings_info = self._api.lookup_fully_qualified(BASESETTINGS_FULLNAME).node.defn.info
+                base_settings_init_arguments = base_settings_info.names['__init__'].node.arguments
+                settings_init_arguments = []
+                a: Argument
+                for a in base_settings_init_arguments:
+                    if a.variable.name.startswith('__') or not a.variable.name.startswith('_'):
+                        continue
+                    analyzed_variable_type = self._api.anal_type(a.variable.type)
+                    variable = Var(a.variable.name, analyzed_variable_type)
+                    settings_init_arguments.append(Argument(variable, analyzed_variable_type, None, ARG_OPT))
+                args.extend(settings_init_arguments)
+
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
             args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
