@@ -1609,13 +1609,13 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        content_core_schema = schema.get('schema') or core_schema.any_schema()
+        content_json_schema = self.generate_inner(content_core_schema)
         if self.mode == 'validation':
-            return {'type': 'string', 'format': 'json-string'}
-        elif 'schema' in schema:
-            return self.generate_inner(schema['schema'])
+            return {'type': 'string', 'contentMediaType': 'application/json', 'contentSchema': content_json_schema}
         else:
-            # No wrapped schema, so return the same thing we would for an Any schema
-            return self.generate_inner(core_schema.any_schema())
+            # self.mode == 'serialization'
+            return content_json_schema
 
     def url_schema(self, schema: core_schema.UrlSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a URL.

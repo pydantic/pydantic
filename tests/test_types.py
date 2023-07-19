@@ -4575,7 +4575,12 @@ def test_none(value_type):
             'my_none': {'type': 'null', 'title': 'My None'},
             'my_none_list': {'type': 'array', 'items': {'type': 'null'}, 'title': 'My None List'},
             'my_none_dict': {'type': 'object', 'additionalProperties': {'type': 'null'}, 'title': 'My None Dict'},
-            'my_json_none': {'type': 'string', 'format': 'json-string', 'title': 'My Json None'},
+            'my_json_none': {
+                'contentMediaType': 'application/json',
+                'contentSchema': {'type': 'null'},
+                'title': 'My Json None',
+                'type': 'string',
+            },
         },
         'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
     }
@@ -4628,7 +4633,12 @@ def test_none_literal():
             'my_none': {'const': None, 'title': 'My None'},
             'my_none_list': {'type': 'array', 'items': {'const': None}, 'title': 'My None List'},
             'my_none_dict': {'type': 'object', 'additionalProperties': {'const': None}, 'title': 'My None Dict'},
-            'my_json_none': {'type': 'string', 'format': 'json-string', 'title': 'My Json None'},
+            'my_json_none': {
+                'contentMediaType': 'application/json',
+                'contentSchema': {'const': None},
+                'title': 'My Json None',
+                'type': 'string',
+            },
         },
         'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
     }

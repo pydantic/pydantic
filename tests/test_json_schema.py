@@ -1078,14 +1078,19 @@ def test_json_type():
         c: Json[Any]
 
     assert Model.model_json_schema() == {
-        'title': 'Model',
-        'type': 'object',
         'properties': {
-            'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
-            'b': {'title': 'B', 'type': 'string', 'format': 'json-string'},
-            'c': {'title': 'C', 'type': 'string', 'format': 'json-string'},
+            'a': {'contentMediaType': 'application/json', 'contentSchema': {}, 'title': 'A', 'type': 'string'},
+            'b': {
+                'contentMediaType': 'application/json',
+                'contentSchema': {'type': 'integer'},
+                'title': 'B',
+                'type': 'string',
+            },
+            'c': {'contentMediaType': 'application/json', 'contentSchema': {}, 'title': 'C', 'type': 'string'},
         },
         'required': ['a', 'b', 'c'],
+        'title': 'Model',
+        'type': 'object',
     }
     assert Model.model_json_schema(mode='serialization') == {
         'properties': {'a': {'title': 'A'}, 'b': {'title': 'B', 'type': 'integer'}, 'c': {'title': 'C'}},
@@ -4308,7 +4313,14 @@ def test_serialization_validation_interaction():
     assert v_schema == {
         '$defs': {
             'Inner': {
-                'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
+                'properties': {
+                    'x': {
+                        'contentMediaType': 'application/json',
+                        'contentSchema': {'type': 'integer'},
+                        'title': 'X',
+                        'type': 'string',
+                    }
+                },
                 'required': ['x'],
                 'title': 'Inner',
                 'type': 'object',
@@ -4344,7 +4356,14 @@ def test_serialization_validation_interaction():
     assert vs_schema == {
         '$defs': {
             'InnerInput': {
-                'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
+                'properties': {
+                    'x': {
+                        'contentMediaType': 'application/json',
+                        'contentSchema': {'type': 'integer'},
+                        'title': 'X',
+                        'type': 'string',
+                    }
+                },
                 'required': ['x'],
                 'title': 'Inner',
                 'type': 'object',
