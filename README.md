@@ -98,3 +98,16 @@ If you want to contribute to pydantic-core, you'll want to use some other make c
 * `make lint` to run the linter
 * `make format` to format python and rust code
 * `make` to run `format build-dev lint test`
+
+## Releasing
+
+1. Bump package version locally. Do not just edit `Cargo.toml` on Github, you need both `Cargo.toml` and `Cargo.lock` to be updated.
+2. Make a PR for the version bump and merge it.
+3. Go to https://github.com/pydantic/pydantic-core/releases and click "Draft a new release"
+4. In the "Choose a tag" dropdown enter the new tag `v<the.new.version>` and select "Create new tag on publish" when the option appears.
+5. Enter the release title in the form "v<the.new.version> <YYYY-MM-DD>"
+6. Click Generate release notes button
+7. Click Publish release
+8. Go to https://github.com/pydantic/pydantic-core/actions and ensure that all build for release are done successfully.
+9. Go to https://pypi.org/project/pydantic-core/ and ensure that the latest release is published.
+10. Done 🎉
