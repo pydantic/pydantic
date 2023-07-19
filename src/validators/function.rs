@@ -390,7 +390,7 @@ impl Validator for FunctionWrapValidator {
         let handler = AssignmentValidatorCallable {
             validator: InternalValidator::new(
                 py,
-                "ValidatorCallable",
+                "AssignmentValidatorCallable",
                 &self.validator,
                 definitions,
                 extra,
