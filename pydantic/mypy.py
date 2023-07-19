@@ -440,7 +440,7 @@ class PydanticModelTransformer:
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings)
-        self.add_model_construct_method(fields, config)
+        self.add_model_construct_method(fields, config, is_settings)
         self.set_frozen(fields, frozen=config.frozen is True)
 
         self.adjust_decorator_signatures()
@@ -781,18 +781,34 @@ class PydanticModelTransformer:
 
         typed = self.plugin_config.init_typed
         use_alias = config.populate_by_name is not True
-        force_all_optional = is_settings or bool(config.has_alias_generator and not config.populate_by_name)
+        requires_dynamic_aliases = bool(config.has_alias_generator and not config.populate_by_name)
         with state.strict_optional_set(self._api.options.strict_optional):
             args = self.get_field_arguments(
-                fields, typed=typed, force_all_optional=force_all_optional, use_alias=use_alias
+                fields,
+                typed=typed,
+                requires_dynamic_aliases=requires_dynamic_aliases,
+                use_alias=use_alias,
+                is_settings=is_settings,
             )
+            if is_settings:
+                var = Var('_env_file', AnyType(TypeOfAny.explicit))
+                arg = Argument(
+                    variable=var,
+                    type_annotation=AnyType(TypeOfAny.explicit),
+                    initializer=None,
+                    kind=ARG_NAMED_OPT,
+                )
+                args.append(arg)
+                ...
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
             args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
 
         add_method(self._api, self._cls, '__init__', args=args, return_type=NoneType())
 
-    def add_model_construct_method(self, fields: list[PydanticModelField], config: ModelConfigData) -> None:
+    def add_model_construct_method(
+        self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool
+    ) -> None:
         """Adds a fully typed `model_construct` classmethod to the class.
 
         Similar to the fields-aware __init__ method, but always uses the field names (not aliases),
@@ -802,7 +818,9 @@ class PydanticModelTransformer:
         optional_set_str = UnionType([set_str, NoneType()])
         fields_set_argument = Argument(Var('_fields_set', optional_set_str), optional_set_str, None, ARG_OPT)
         with state.strict_optional_set(self._api.options.strict_optional):
-            args = self.get_field_arguments(fields, typed=True, force_all_optional=False, use_alias=False)
+            args = self.get_field_arguments(
+                fields, typed=True, requires_dynamic_aliases=False, use_alias=False, is_settings=is_settings
+            )
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
             args.append(Argument(var, AnyType(TypeOfAny.explicit), None, ARG_STAR2))
@@ -926,7 +944,12 @@ class PydanticModelTransformer:
         return None, False
 
     def get_field_arguments(
-        self, fields: list[PydanticModelField], typed: bool, force_all_optional: bool, use_alias: bool
+        self,
+        fields: list[PydanticModelField],
+        typed: bool,
+        use_alias: bool,
+        requires_dynamic_aliases: bool,
+        is_settings: bool,
     ) -> list[Argument]:
         """Helper function used during the construction of the `__init__` and `model_construct` method signatures.
 
@@ -934,7 +957,9 @@ class PydanticModelTransformer:
         """
         info = self._cls.info
         arguments = [
-            field.to_argument(info, typed=typed, force_optional=force_all_optional, use_alias=use_alias)
+            field.to_argument(
+                info, typed=typed, force_optional=requires_dynamic_aliases or is_settings, use_alias=use_alias
+            )
             for field in fields
             if not (use_alias and field.has_dynamic_alias)
         ]
