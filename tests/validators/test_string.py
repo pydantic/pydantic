@@ -235,3 +235,21 @@ def test_lax_subclass(FruitEnum, kwargs):
     assert p == 'pear'
     assert type(p) is str
     assert repr(p) == "'pear'"
+
+
+def test_subclass_preserved() -> None:
+    class StrSubclass(str):
+        pass
+
+    v = SchemaValidator(core_schema.str_schema())
+
+    assert not isinstance(v.validate_python(StrSubclass('')), StrSubclass)
+    assert not isinstance(v.validate_python(StrSubclass(''), strict=True), StrSubclass)
+
+    # unions do a first pass in strict mode
+    # so verify that they don't match the str schema in strict mode
+    # and preserve the type
+    v = SchemaValidator(core_schema.union_schema([core_schema.str_schema(), core_schema.int_schema()]))
+
+    assert not isinstance(v.validate_python(StrSubclass('')), StrSubclass)
+    assert not isinstance(v.validate_python(StrSubclass(''), strict=True), StrSubclass)
