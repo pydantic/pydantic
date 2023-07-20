@@ -9041,13 +9041,13 @@ this method.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The generated JSON schema.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">content_core_schema</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;schema&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">any_schema</span><span class="p">()</span>
+    <span class="n">content_json_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">content_core_schema</span><span class="p">)</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;json-string&#39;</span><span class="p">}</span>
-    <span class="k">elif</span> <span class="s1">&#39;schema&#39;</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="s1">&#39;contentMediaType&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">,</span> <span class="s1">&#39;contentSchema&#39;</span><span class="p">:</span> <span class="n">content_json_schema</span><span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># No wrapped schema, so return the same thing we would for an Any schema</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">core_schema</span><span class="o">.</span><span class="n">any_schema</span><span class="p">())</span>
+        <span class="c1"># self.mode == &#39;serialization&#39;</span>
+        <span class="k">return</span> <span class="n">content_json_schema</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>

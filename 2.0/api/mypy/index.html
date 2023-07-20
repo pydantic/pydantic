@@ -2911,19 +2911,19 @@
 
           <details class="quote">
             <summary>Source code in <code>pydantic/mypy.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">974</span>
-<span class="normal">975</span>
-<span class="normal">976</span>
-<span class="normal">977</span>
-<span class="normal">978</span>
-<span class="normal">979</span>
-<span class="normal">980</span>
-<span class="normal">981</span>
-<span class="normal">982</span>
-<span class="normal">983</span>
-<span class="normal">984</span>
-<span class="normal">985</span>
-<span class="normal">986</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1011</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span>
+<span class="normal">1018</span>
+<span class="normal">1019</span>
+<span class="normal">1020</span>
+<span class="normal">1021</span>
+<span class="normal">1022</span>
+<span class="normal">1023</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">forbid_extra</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">frozen</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2970,12 +2970,12 @@
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">988</span>
-<span class="normal">989</span>
-<span class="normal">990</span>
-<span class="normal">991</span>
-<span class="normal">992</span>
-<span class="normal">993</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_values_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1025</span>
+<span class="normal">1026</span>
+<span class="normal">1027</span>
+<span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_values_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dict of Pydantic model config names to their values.</span>
 
 <span class="sd">    It includes the config if config value is not `None`.</span>
@@ -3005,10 +3005,10 @@
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1002</span>
-<span class="normal">1003</span>
-<span class="normal">1004</span>
-<span class="normal">1005</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Set default value for Pydantic model config if config value is `None`.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -3036,12 +3036,12 @@
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 995</span>
-<span class="normal"> 996</span>
-<span class="normal"> 997</span>
-<span class="normal"> 998</span>
-<span class="normal"> 999</span>
-<span class="normal">1000</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelConfigData</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1032</span>
+<span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelConfigData</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update Pydantic model config values.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span>
@@ -3090,8 +3090,7 @@
 
           <details class="quote">
             <summary>Source code in <code>pydantic/mypy.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">317</span>
-<span class="normal">318</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">318</span>
 <span class="normal">319</span>
 <span class="normal">320</span>
 <span class="normal">321</span>
@@ -3108,7 +3107,8 @@
 <span class="normal">332</span>
 <span class="normal">333</span>
 <span class="normal">334</span>
-<span class="normal">335</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">335</span>
+<span class="normal">336</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
@@ -3164,12 +3164,12 @@
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">378</span>
-<span class="normal">379</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">379</span>
 <span class="normal">380</span>
 <span class="normal">381</span>
 <span class="normal">382</span>
-<span class="normal">383</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">383</span>
+<span class="normal">384</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">deserialize</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">TypeInfo</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">JsonDict</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="n">SemanticAnalyzerPluginInterface</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PydanticModelField</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Based on mypy.plugins.dataclasses.DataclassAttribute.deserialize.&quot;&quot;&quot;</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
@@ -3199,15 +3199,15 @@
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">346</span>
-<span class="normal">347</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">347</span>
 <span class="normal">348</span>
 <span class="normal">349</span>
 <span class="normal">350</span>
 <span class="normal">351</span>
 <span class="normal">352</span>
 <span class="normal">353</span>
-<span class="normal">354</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">expand_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_info</span><span class="p">:</span> <span class="n">TypeInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">354</span>
+<span class="normal">355</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">expand_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_info</span><span class="p">:</span> <span class="n">TypeInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Based on mypy.plugins.dataclasses.DataclassAttribute.expand_type.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">self_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># In general, it is not safe to call `expand_type()` during semantic analyzis,</span>
@@ -3241,12 +3241,12 @@ from a generic super type.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">385</span>
-<span class="normal">386</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">386</span>
 <span class="normal">387</span>
 <span class="normal">388</span>
 <span class="normal">389</span>
-<span class="normal">390</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">expand_typevar_from_subtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_type</span><span class="p">:</span> <span class="n">TypeInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">390</span>
+<span class="normal">391</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">expand_typevar_from_subtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub_type</span><span class="p">:</span> <span class="n">TypeInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Expands type vars in the context of a subtype when an attribute is inherited</span>
 <span class="sd">    from a generic super type.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3276,8 +3276,7 @@ from a generic super type.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">365</span>
-<span class="normal">366</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">366</span>
 <span class="normal">367</span>
 <span class="normal">368</span>
 <span class="normal">369</span>
@@ -3287,7 +3286,8 @@ from a generic super type.</p>
 <span class="normal">373</span>
 <span class="normal">374</span>
 <span class="normal">375</span>
-<span class="normal">376</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
+<span class="normal">376</span>
+<span class="normal">377</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonDict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Based on mypy.plugins.dataclasses.DataclassAttribute.serialize.&quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">type</span>
     <span class="k">return</span> <span class="p">{</span>
@@ -3323,14 +3323,14 @@ from a generic super type.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">337</span>
-<span class="normal">338</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">338</span>
 <span class="normal">339</span>
 <span class="normal">340</span>
 <span class="normal">341</span>
 <span class="normal">342</span>
 <span class="normal">343</span>
-<span class="normal">344</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_argument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_info</span><span class="p">:</span> <span class="n">TypeInfo</span><span class="p">,</span> <span class="n">typed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">force_optional</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">use_alias</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Argument</span><span class="p">:</span>
+<span class="normal">344</span>
+<span class="normal">345</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_argument</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_info</span><span class="p">:</span> <span class="n">TypeInfo</span><span class="p">,</span> <span class="n">typed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">force_optional</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">use_alias</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Argument</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Based on mypy.plugins.dataclasses.DataclassAttribute.to_argument.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">Argument</span><span class="p">(</span>
         <span class="n">variable</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">to_var</span><span class="p">(</span><span class="n">current_info</span><span class="p">,</span> <span class="n">use_alias</span><span class="p">),</span>
@@ -3362,14 +3362,14 @@ from a generic super type.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">356</span>
-<span class="normal">357</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">357</span>
 <span class="normal">358</span>
 <span class="normal">359</span>
 <span class="normal">360</span>
 <span class="normal">361</span>
 <span class="normal">362</span>
-<span class="normal">363</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_info</span><span class="p">:</span> <span class="n">TypeInfo</span><span class="p">,</span> <span class="n">use_alias</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Var</span><span class="p">:</span>
+<span class="normal">363</span>
+<span class="normal">364</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_info</span><span class="p">:</span> <span class="n">TypeInfo</span><span class="p">,</span> <span class="n">use_alias</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Var</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Based on mypy.plugins.dataclasses.DataclassAttribute.to_var.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">use_alias</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">alias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alias</span>
@@ -3435,8 +3435,7 @@ from a generic super type.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/mypy.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">408</span>
-<span class="normal">409</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">409</span>
 <span class="normal">410</span>
 <span class="normal">411</span>
 <span class="normal">412</span>
@@ -3446,7 +3445,8 @@ from a generic super type.</p>
 <span class="normal">416</span>
 <span class="normal">417</span>
 <span class="normal">418</span>
-<span class="normal">419</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">419</span>
+<span class="normal">420</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="n">ClassDef</span><span class="p">,</span>
     <span class="n">reason</span><span class="p">:</span> <span class="n">Expression</span> <span class="o">|</span> <span class="n">Statement</span><span class="p">,</span>
@@ -3492,16 +3492,7 @@ from a generic super type.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">774</span>
-<span class="normal">775</span>
-<span class="normal">776</span>
-<span class="normal">777</span>
-<span class="normal">778</span>
-<span class="normal">779</span>
-<span class="normal">780</span>
-<span class="normal">781</span>
-<span class="normal">782</span>
-<span class="normal">783</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">783</span>
 <span class="normal">784</span>
 <span class="normal">785</span>
 <span class="normal">786</span>
@@ -3511,53 +3502,9 @@ from a generic super type.</p>
 <span class="normal">790</span>
 <span class="normal">791</span>
 <span class="normal">792</span>
-<span class="normal">793</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_initializer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelConfigData</span><span class="p">,</span> <span class="n">is_settings</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds a fields-aware `__init__` method to the class.</span>
-
-<span class="sd">    The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="s1">&#39;__init__&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cls</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">names</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cls</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="s1">&#39;__init__&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plugin_generated</span><span class="p">:</span>
-        <span class="k">return</span>  <span class="c1"># Don&#39;t generate an __init__ if one already exists</span>
-
-    <span class="n">typed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plugin_config</span><span class="o">.</span><span class="n">init_typed</span>
-    <span class="n">use_alias</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">populate_by_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span>
-    <span class="n">force_all_optional</span> <span class="o">=</span> <span class="n">is_settings</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">has_alias_generator</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">populate_by_name</span><span class="p">)</span>
-    <span class="k">with</span> <span class="n">state</span><span class="o">.</span><span class="n">strict_optional_set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">strict_optional</span><span class="p">):</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_field_arguments</span><span class="p">(</span>
-            <span class="n">fields</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="n">typed</span><span class="p">,</span> <span class="n">force_all_optional</span><span class="o">=</span><span class="n">force_all_optional</span><span class="p">,</span> <span class="n">use_alias</span><span class="o">=</span><span class="n">use_alias</span>
-        <span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">should_init_forbid_extra</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
-        <span class="n">var</span> <span class="o">=</span> <span class="n">Var</span><span class="p">(</span><span class="s1">&#39;kwargs&#39;</span><span class="p">)</span>
-        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Argument</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">AnyType</span><span class="p">(</span><span class="n">TypeOfAny</span><span class="o">.</span><span class="n">explicit</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ARG_STAR2</span><span class="p">))</span>
-
-    <span class="n">add_method</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cls</span><span class="p">,</span> <span class="s1">&#39;__init__&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="n">NoneType</span><span class="p">())</span>
-</code></pre></div></td></tr></table></div>
-      </details>
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-
-<h3 id="pydantic.mypy.PydanticModelTransformer.add_model_construct_method" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">add_model_construct_method</span>
-
-
-<a href="#pydantic.mypy.PydanticModelTransformer.add_model_construct_method" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">add_model_construct_method</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Adds a fully typed <code>model_construct</code> classmethod to the class.</p>
-<p>Similar to the fields-aware <strong>init</strong> method, but always uses the field names (not aliases),
-and does not treat settings fields as optional.</p>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">795</span>
+<span class="normal">793</span>
+<span class="normal">794</span>
+<span class="normal">795</span>
 <span class="normal">796</span>
 <span class="normal">797</span>
 <span class="normal">798</span>
@@ -3581,7 +3528,100 @@ and does not treat settings fields as optional.</p>
 <span class="normal">816</span>
 <span class="normal">817</span>
 <span class="normal">818</span>
-<span class="normal">819</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_model_construct_method</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelConfigData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">819</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_initializer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelConfigData</span><span class="p">,</span> <span class="n">is_settings</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds a fields-aware `__init__` method to the class.</span>
+
+<span class="sd">    The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;__init__&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cls</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">names</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cls</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="s1">&#39;__init__&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">plugin_generated</span><span class="p">:</span>
+        <span class="k">return</span>  <span class="c1"># Don&#39;t generate an __init__ if one already exists</span>
+
+    <span class="n">typed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plugin_config</span><span class="o">.</span><span class="n">init_typed</span>
+    <span class="n">use_alias</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">populate_by_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">True</span>
+    <span class="n">requires_dynamic_aliases</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">has_alias_generator</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">populate_by_name</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">state</span><span class="o">.</span><span class="n">strict_optional_set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">strict_optional</span><span class="p">):</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_field_arguments</span><span class="p">(</span>
+            <span class="n">fields</span><span class="p">,</span>
+            <span class="n">typed</span><span class="o">=</span><span class="n">typed</span><span class="p">,</span>
+            <span class="n">requires_dynamic_aliases</span><span class="o">=</span><span class="n">requires_dynamic_aliases</span><span class="p">,</span>
+            <span class="n">use_alias</span><span class="o">=</span><span class="n">use_alias</span><span class="p">,</span>
+            <span class="n">is_settings</span><span class="o">=</span><span class="n">is_settings</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_settings</span><span class="p">:</span>
+            <span class="n">base_settings_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="o">.</span><span class="n">lookup_fully_qualified</span><span class="p">(</span><span class="n">BASESETTINGS_FULLNAME</span><span class="p">)</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">defn</span><span class="o">.</span><span class="n">info</span>
+            <span class="n">base_settings_init_arguments</span> <span class="o">=</span> <span class="n">base_settings_info</span><span class="o">.</span><span class="n">names</span><span class="p">[</span><span class="s1">&#39;__init__&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">arguments</span>
+            <span class="n">settings_init_arguments</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">a</span><span class="p">:</span> <span class="n">Argument</span>
+            <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">base_settings_init_arguments</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">variable</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">a</span><span class="o">.</span><span class="n">variable</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="n">analyzed_variable_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="o">.</span><span class="n">anal_type</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">variable</span><span class="o">.</span><span class="n">type</span><span class="p">)</span>
+                <span class="n">variable</span> <span class="o">=</span> <span class="n">Var</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">variable</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">analyzed_variable_type</span><span class="p">)</span>
+                <span class="n">settings_init_arguments</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Argument</span><span class="p">(</span><span class="n">variable</span><span class="p">,</span> <span class="n">analyzed_variable_type</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ARG_OPT</span><span class="p">))</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">settings_init_arguments</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">should_init_forbid_extra</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="n">var</span> <span class="o">=</span> <span class="n">Var</span><span class="p">(</span><span class="s1">&#39;kwargs&#39;</span><span class="p">)</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Argument</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">AnyType</span><span class="p">(</span><span class="n">TypeOfAny</span><span class="o">.</span><span class="n">explicit</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ARG_STAR2</span><span class="p">))</span>
+
+    <span class="n">add_method</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cls</span><span class="p">,</span> <span class="s1">&#39;__init__&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="n">NoneType</span><span class="p">())</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic.mypy.PydanticModelTransformer.add_model_construct_method" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">add_model_construct_method</span>
+
+
+<a href="#pydantic.mypy.PydanticModelTransformer.add_model_construct_method" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">add_model_construct_method</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">is_settings</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Adds a fully typed <code>model_construct</code> classmethod to the class.</p>
+<p>Similar to the fields-aware <strong>init</strong> method, but always uses the field names (not aliases),
+and does not treat settings fields as optional.</p>
+
+      <details class="quote">
+        <summary>Source code in <code>pydantic/mypy.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">821</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span>
+<span class="normal">827</span>
+<span class="normal">828</span>
+<span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span>
+<span class="normal">846</span>
+<span class="normal">847</span>
+<span class="normal">848</span>
+<span class="normal">849</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_model_construct_method</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelConfigData</span><span class="p">,</span> <span class="n">is_settings</span><span class="p">:</span> <span class="nb">bool</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adds a fully typed `model_construct` classmethod to the class.</span>
 
 <span class="sd">    Similar to the fields-aware __init__ method, but always uses the field names (not aliases),</span>
@@ -3591,7 +3631,9 @@ and does not treat settings fields as optional.</p>
     <span class="n">optional_set_str</span> <span class="o">=</span> <span class="n">UnionType</span><span class="p">([</span><span class="n">set_str</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">()])</span>
     <span class="n">fields_set_argument</span> <span class="o">=</span> <span class="n">Argument</span><span class="p">(</span><span class="n">Var</span><span class="p">(</span><span class="s1">&#39;_fields_set&#39;</span><span class="p">,</span> <span class="n">optional_set_str</span><span class="p">),</span> <span class="n">optional_set_str</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ARG_OPT</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">state</span><span class="o">.</span><span class="n">strict_optional_set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_api</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">strict_optional</span><span class="p">):</span>
-        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_field_arguments</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">force_all_optional</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_field_arguments</span><span class="p">(</span>
+            <span class="n">fields</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">requires_dynamic_aliases</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_settings</span><span class="o">=</span><span class="n">is_settings</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">should_init_forbid_extra</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
         <span class="n">var</span> <span class="o">=</span> <span class="n">Var</span><span class="p">(</span><span class="s1">&#39;kwargs&#39;</span><span class="p">)</span>
         <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Argument</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="n">AnyType</span><span class="p">(</span><span class="n">TypeOfAny</span><span class="o">.</span><span class="n">explicit</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ARG_STAR2</span><span class="p">))</span>
@@ -3634,8 +3676,7 @@ even though pydantic internally wraps <code>f</code> with <code>classmethod</cod
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">455</span>
-<span class="normal">456</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">456</span>
 <span class="normal">457</span>
 <span class="normal">458</span>
 <span class="normal">459</span>
@@ -3651,7 +3692,16 @@ even though pydantic internally wraps <code>f</code> with <code>classmethod</cod
 <span class="normal">469</span>
 <span class="normal">470</span>
 <span class="normal">471</span>
-<span class="normal">472</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">adjust_decorator_signatures</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">adjust_decorator_signatures</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;When we decorate a function `f` with `pydantic.validator(...)`, `pydantic.field_validator`</span>
 <span class="sd">    or `pydantic.serializer(...)`, mypy sees `f` as a regular method taking a `self` instance,</span>
 <span class="sd">    even though pydantic internally wraps `f` with `classmethod` if necessary.</span>
@@ -3666,6 +3716,14 @@ even though pydantic internally wraps <code>f</code> with <code>classmethod</cod
                 <span class="nb">isinstance</span><span class="p">(</span><span class="n">first_dec</span><span class="p">,</span> <span class="n">CallExpr</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">first_dec</span><span class="o">.</span><span class="n">callee</span><span class="p">,</span> <span class="n">NameExpr</span><span class="p">)</span>
                 <span class="ow">and</span> <span class="n">first_dec</span><span class="o">.</span><span class="n">callee</span><span class="o">.</span><span class="n">fullname</span> <span class="ow">in</span> <span class="n">DECORATOR_FULLNAMES</span>
+                <span class="c1"># @model_validator(mode=&quot;after&quot;) is an exception, it expects a regular method</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+                    <span class="n">first_dec</span><span class="o">.</span><span class="n">callee</span><span class="o">.</span><span class="n">fullname</span> <span class="o">==</span> <span class="n">MODEL_VALIDATOR_FULLNAME</span>
+                    <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span>
+                        <span class="n">first_dec</span><span class="o">.</span><span class="n">arg_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;mode&#39;</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">StrExpr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">arg</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;after&#39;</span>
+                        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">arg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">first_dec</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
             <span class="p">):</span>
                 <span class="c1"># TODO: Only do this if the first argument of the decorated function is `cls`</span>
                 <span class="n">sym</span><span class="o">.</span><span class="n">node</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">is_class</span> <span class="o">=</span> <span class="kc">True</span>
@@ -3693,16 +3751,7 @@ even though pydantic internally wraps <code>f</code> with <code>classmethod</cod
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">474</span>
-<span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span>
-<span class="normal">478</span>
-<span class="normal">479</span>
-<span class="normal">480</span>
-<span class="normal">481</span>
-<span class="normal">482</span>
-<span class="normal">483</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">483</span>
 <span class="normal">484</span>
 <span class="normal">485</span>
 <span class="normal">486</span>
@@ -3767,7 +3816,16 @@ even though pydantic internally wraps <code>f</code> with <code>classmethod</cod
 <span class="normal">545</span>
 <span class="normal">546</span>
 <span class="normal">547</span>
-<span class="normal">548</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">collect_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelConfigData</span><span class="p">:</span>  <span class="c1"># noqa: C901 (ignore complexity)</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">collect_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelConfigData</span><span class="p">:</span>  <span class="c1"># noqa: C901 (ignore complexity)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Collects the values of the config attributes that are used by the plugin, accounting for parent classes.&quot;&quot;&quot;</span>
     <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cls</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">ModelConfigData</span><span class="p">()</span>
@@ -3930,16 +3988,7 @@ even though pydantic internally wraps <code>f</code> with <code>classmethod</cod
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">616</span>
-<span class="normal">617</span>
-<span class="normal">618</span>
-<span class="normal">619</span>
-<span class="normal">620</span>
-<span class="normal">621</span>
-<span class="normal">622</span>
-<span class="normal">623</span>
-<span class="normal">624</span>
-<span class="normal">625</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">625</span>
 <span class="normal">626</span>
 <span class="normal">627</span>
 <span class="normal">628</span>
@@ -4048,7 +4097,16 @@ even though pydantic internally wraps <code>f</code> with <code>classmethod</cod
 <span class="normal">731</span>
 <span class="normal">732</span>
 <span class="normal">733</span>
-<span class="normal">734</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">collect_field_from_stmt</span><span class="p">(</span>  <span class="c1"># noqa C901</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span>
+<span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">collect_field_from_stmt</span><span class="p">(</span>  <span class="c1"># noqa C901</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">stmt</span><span class="p">:</span> <span class="n">AssignmentStmt</span><span class="p">,</span> <span class="n">model_config</span><span class="p">:</span> <span class="n">ModelConfigData</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PydanticModelField</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get pydantic model field from statement.</span>
@@ -4191,16 +4249,7 @@ even though pydantic internally wraps <code>f</code> with <code>classmethod</cod
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">550</span>
-<span class="normal">551</span>
-<span class="normal">552</span>
-<span class="normal">553</span>
-<span class="normal">554</span>
-<span class="normal">555</span>
-<span class="normal">556</span>
-<span class="normal">557</span>
-<span class="normal">558</span>
-<span class="normal">559</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">559</span>
 <span class="normal">560</span>
 <span class="normal">561</span>
 <span class="normal">562</span>
@@ -4241,7 +4290,16 @@ even though pydantic internally wraps <code>f</code> with <code>classmethod</cod
 <span class="normal">597</span>
 <span class="normal">598</span>
 <span class="normal">599</span>
-<span class="normal">600</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">collect_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_config</span><span class="p">:</span> <span class="n">ModelConfigData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">collect_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_config</span><span class="p">:</span> <span class="n">ModelConfigData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Collects the fields for the model, accounting for parent classes.&quot;&quot;&quot;</span>
     <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cls</span>
 
@@ -4322,33 +4380,33 @@ If <code>has_dynamic_alias</code> is True, <code>alias</code> will be None.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">900</span>
-<span class="normal">901</span>
-<span class="normal">902</span>
-<span class="normal">903</span>
-<span class="normal">904</span>
-<span class="normal">905</span>
-<span class="normal">906</span>
-<span class="normal">907</span>
-<span class="normal">908</span>
-<span class="normal">909</span>
-<span class="normal">910</span>
-<span class="normal">911</span>
-<span class="normal">912</span>
-<span class="normal">913</span>
-<span class="normal">914</span>
-<span class="normal">915</span>
-<span class="normal">916</span>
-<span class="normal">917</span>
-<span class="normal">918</span>
-<span class="normal">919</span>
-<span class="normal">920</span>
-<span class="normal">921</span>
-<span class="normal">922</span>
-<span class="normal">923</span>
-<span class="normal">924</span>
-<span class="normal">925</span>
-<span class="normal">926</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">930</span>
+<span class="normal">931</span>
+<span class="normal">932</span>
+<span class="normal">933</span>
+<span class="normal">934</span>
+<span class="normal">935</span>
+<span class="normal">936</span>
+<span class="normal">937</span>
+<span class="normal">938</span>
+<span class="normal">939</span>
+<span class="normal">940</span>
+<span class="normal">941</span>
+<span class="normal">942</span>
+<span class="normal">943</span>
+<span class="normal">944</span>
+<span class="normal">945</span>
+<span class="normal">946</span>
+<span class="normal">947</span>
+<span class="normal">948</span>
+<span class="normal">949</span>
+<span class="normal">950</span>
+<span class="normal">951</span>
+<span class="normal">952</span>
+<span class="normal">953</span>
+<span class="normal">954</span>
+<span class="normal">955</span>
+<span class="normal">956</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">get_alias_info</span><span class="p">(</span><span class="n">stmt</span><span class="p">:</span> <span class="n">AssignmentStmt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a pair (alias, has_dynamic_alias), extracted from the declaration of the field defined in `stmt`.</span>
 
@@ -4400,31 +4458,31 @@ If <code>has_dynamic_alias</code> is True, <code>alias</code> will be None.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">852</span>
-<span class="normal">853</span>
-<span class="normal">854</span>
-<span class="normal">855</span>
-<span class="normal">856</span>
-<span class="normal">857</span>
-<span class="normal">858</span>
-<span class="normal">859</span>
-<span class="normal">860</span>
-<span class="normal">861</span>
-<span class="normal">862</span>
-<span class="normal">863</span>
-<span class="normal">864</span>
-<span class="normal">865</span>
-<span class="normal">866</span>
-<span class="normal">867</span>
-<span class="normal">868</span>
-<span class="normal">869</span>
-<span class="normal">870</span>
-<span class="normal">871</span>
-<span class="normal">872</span>
-<span class="normal">873</span>
-<span class="normal">874</span>
-<span class="normal">875</span>
-<span class="normal">876</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_config_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">arg</span><span class="p">:</span> <span class="n">Expression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelConfigData</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">882</span>
+<span class="normal">883</span>
+<span class="normal">884</span>
+<span class="normal">885</span>
+<span class="normal">886</span>
+<span class="normal">887</span>
+<span class="normal">888</span>
+<span class="normal">889</span>
+<span class="normal">890</span>
+<span class="normal">891</span>
+<span class="normal">892</span>
+<span class="normal">893</span>
+<span class="normal">894</span>
+<span class="normal">895</span>
+<span class="normal">896</span>
+<span class="normal">897</span>
+<span class="normal">898</span>
+<span class="normal">899</span>
+<span class="normal">900</span>
+<span class="normal">901</span>
+<span class="normal">902</span>
+<span class="normal">903</span>
+<span class="normal">904</span>
+<span class="normal">905</span>
+<span class="normal">906</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_config_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">arg</span><span class="p">:</span> <span class="n">Expression</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelConfigData</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Determines the config update due to a single kwarg in the ConfigDict definition.</span>
 
 <span class="sd">    Warns if a tracked config attribute is set to a value the plugin doesn&#39;t know how to interpret (e.g., an int)</span>
@@ -4465,7 +4523,11 @@ If <code>has_dynamic_alias</code> is True, <code>alias</code> will be None.</p>
 
 <a href="#pydantic.mypy.PydanticModelTransformer.get_field_arguments" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">get_field_arguments</span><span class="p">(</span>
-    <span class="n">fields</span><span class="p">,</span> <span class="n">typed</span><span class="p">,</span> <span class="n">force_all_optional</span><span class="p">,</span> <span class="n">use_alias</span>
+    <span class="n">fields</span><span class="p">,</span>
+    <span class="n">typed</span><span class="p">,</span>
+    <span class="n">use_alias</span><span class="p">,</span>
+    <span class="n">requires_dynamic_aliases</span><span class="p">,</span>
+    <span class="n">is_settings</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -4476,21 +4538,33 @@ If <code>has_dynamic_alias</code> is True, <code>alias</code> will be None.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">928</span>
-<span class="normal">929</span>
-<span class="normal">930</span>
-<span class="normal">931</span>
-<span class="normal">932</span>
-<span class="normal">933</span>
-<span class="normal">934</span>
-<span class="normal">935</span>
-<span class="normal">936</span>
-<span class="normal">937</span>
-<span class="normal">938</span>
-<span class="normal">939</span>
-<span class="normal">940</span>
-<span class="normal">941</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_field_arguments</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">typed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">force_all_optional</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">use_alias</span><span class="p">:</span> <span class="nb">bool</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">958</span>
+<span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span>
+<span class="normal">963</span>
+<span class="normal">964</span>
+<span class="normal">965</span>
+<span class="normal">966</span>
+<span class="normal">967</span>
+<span class="normal">968</span>
+<span class="normal">969</span>
+<span class="normal">970</span>
+<span class="normal">971</span>
+<span class="normal">972</span>
+<span class="normal">973</span>
+<span class="normal">974</span>
+<span class="normal">975</span>
+<span class="normal">976</span>
+<span class="normal">977</span>
+<span class="normal">978</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_field_arguments</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span>
+    <span class="n">typed</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">use_alias</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">requires_dynamic_aliases</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">is_settings</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Argument</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function used during the construction of the `__init__` and `model_construct` method signatures.</span>
 
@@ -4498,7 +4572,9 @@ If <code>has_dynamic_alias</code> is True, <code>alias</code> will be None.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cls</span><span class="o">.</span><span class="n">info</span>
     <span class="n">arguments</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">field</span><span class="o">.</span><span class="n">to_argument</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="n">typed</span><span class="p">,</span> <span class="n">force_optional</span><span class="o">=</span><span class="n">force_all_optional</span><span class="p">,</span> <span class="n">use_alias</span><span class="o">=</span><span class="n">use_alias</span><span class="p">)</span>
+        <span class="n">field</span><span class="o">.</span><span class="n">to_argument</span><span class="p">(</span>
+            <span class="n">info</span><span class="p">,</span> <span class="n">typed</span><span class="o">=</span><span class="n">typed</span><span class="p">,</span> <span class="n">force_optional</span><span class="o">=</span><span class="n">requires_dynamic_aliases</span> <span class="ow">or</span> <span class="n">is_settings</span><span class="p">,</span> <span class="n">use_alias</span><span class="o">=</span><span class="n">use_alias</span>
+        <span class="p">)</span>
         <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">use_alias</span> <span class="ow">and</span> <span class="n">field</span><span class="o">.</span><span class="n">has_dynamic_alias</span><span class="p">)</span>
     <span class="p">]</span>
@@ -4531,27 +4607,27 @@ If <code>has_dynamic_alias</code> is True, <code>alias</code> will be None.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">878</span>
-<span class="normal">879</span>
-<span class="normal">880</span>
-<span class="normal">881</span>
-<span class="normal">882</span>
-<span class="normal">883</span>
-<span class="normal">884</span>
-<span class="normal">885</span>
-<span class="normal">886</span>
-<span class="normal">887</span>
-<span class="normal">888</span>
-<span class="normal">889</span>
-<span class="normal">890</span>
-<span class="normal">891</span>
-<span class="normal">892</span>
-<span class="normal">893</span>
-<span class="normal">894</span>
-<span class="normal">895</span>
-<span class="normal">896</span>
-<span class="normal">897</span>
-<span class="normal">898</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">908</span>
+<span class="normal">909</span>
+<span class="normal">910</span>
+<span class="normal">911</span>
+<span class="normal">912</span>
+<span class="normal">913</span>
+<span class="normal">914</span>
+<span class="normal">915</span>
+<span class="normal">916</span>
+<span class="normal">917</span>
+<span class="normal">918</span>
+<span class="normal">919</span>
+<span class="normal">920</span>
+<span class="normal">921</span>
+<span class="normal">922</span>
+<span class="normal">923</span>
+<span class="normal">924</span>
+<span class="normal">925</span>
+<span class="normal">926</span>
+<span class="normal">927</span>
+<span class="normal">928</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">get_has_default</span><span class="p">(</span><span class="n">stmt</span><span class="p">:</span> <span class="n">AssignmentStmt</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a boolean indicating whether the field defined in `stmt` is a required field.&quot;&quot;&quot;</span>
     <span class="n">expr</span> <span class="o">=</span> <span class="n">stmt</span><span class="o">.</span><span class="n">rvalue</span>
@@ -4601,19 +4677,19 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">956</span>
-<span class="normal">957</span>
-<span class="normal">958</span>
-<span class="normal">959</span>
-<span class="normal">960</span>
-<span class="normal">961</span>
-<span class="normal">962</span>
-<span class="normal">963</span>
-<span class="normal">964</span>
-<span class="normal">965</span>
-<span class="normal">966</span>
-<span class="normal">967</span>
-<span class="normal">968</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 993</span>
+<span class="normal"> 994</span>
+<span class="normal"> 995</span>
+<span class="normal"> 996</span>
+<span class="normal"> 997</span>
+<span class="normal"> 998</span>
+<span class="normal"> 999</span>
+<span class="normal">1000</span>
+<span class="normal">1001</span>
+<span class="normal">1002</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">is_dynamic_alias_present</span><span class="p">(</span><span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">has_alias_generator</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns whether any fields on the model have a &quot;dynamic alias&quot;, i.e., an alias that cannot be</span>
 <span class="sd">    determined during static analysis.</span>
@@ -4651,36 +4727,36 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">821</span>
-<span class="normal">822</span>
-<span class="normal">823</span>
-<span class="normal">824</span>
-<span class="normal">825</span>
-<span class="normal">826</span>
-<span class="normal">827</span>
-<span class="normal">828</span>
-<span class="normal">829</span>
-<span class="normal">830</span>
-<span class="normal">831</span>
-<span class="normal">832</span>
-<span class="normal">833</span>
-<span class="normal">834</span>
-<span class="normal">835</span>
-<span class="normal">836</span>
-<span class="normal">837</span>
-<span class="normal">838</span>
-<span class="normal">839</span>
-<span class="normal">840</span>
-<span class="normal">841</span>
-<span class="normal">842</span>
-<span class="normal">843</span>
-<span class="normal">844</span>
-<span class="normal">845</span>
-<span class="normal">846</span>
-<span class="normal">847</span>
-<span class="normal">848</span>
-<span class="normal">849</span>
-<span class="normal">850</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_frozen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">frozen</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">851</span>
+<span class="normal">852</span>
+<span class="normal">853</span>
+<span class="normal">854</span>
+<span class="normal">855</span>
+<span class="normal">856</span>
+<span class="normal">857</span>
+<span class="normal">858</span>
+<span class="normal">859</span>
+<span class="normal">860</span>
+<span class="normal">861</span>
+<span class="normal">862</span>
+<span class="normal">863</span>
+<span class="normal">864</span>
+<span class="normal">865</span>
+<span class="normal">866</span>
+<span class="normal">867</span>
+<span class="normal">868</span>
+<span class="normal">869</span>
+<span class="normal">870</span>
+<span class="normal">871</span>
+<span class="normal">872</span>
+<span class="normal">873</span>
+<span class="normal">874</span>
+<span class="normal">875</span>
+<span class="normal">876</span>
+<span class="normal">877</span>
+<span class="normal">878</span>
+<span class="normal">879</span>
+<span class="normal">880</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_frozen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">frozen</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Marks all fields as properties so that attempts to set them trigger mypy errors.</span>
 
 <span class="sd">    This is the same approach used by the attrs and dataclasses plugins.</span>
@@ -4736,18 +4812,18 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">943</span>
-<span class="normal">944</span>
-<span class="normal">945</span>
-<span class="normal">946</span>
-<span class="normal">947</span>
-<span class="normal">948</span>
-<span class="normal">949</span>
-<span class="normal">950</span>
-<span class="normal">951</span>
-<span class="normal">952</span>
-<span class="normal">953</span>
-<span class="normal">954</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">should_init_forbid_extra</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelConfigData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">980</span>
+<span class="normal">981</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span>
+<span class="normal">985</span>
+<span class="normal">986</span>
+<span class="normal">987</span>
+<span class="normal">988</span>
+<span class="normal">989</span>
+<span class="normal">990</span>
+<span class="normal">991</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">should_init_forbid_extra</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PydanticModelField</span><span class="p">],</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelConfigData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Indicates whether the generated `__init__` should get a `**kwargs` at the end of its signature.</span>
 
 <span class="sd">    We disallow arbitrary kwargs if the extra config setting is &quot;forbid&quot;, or if the plugin config says to,</span>
@@ -4790,8 +4866,7 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">421</span>
-<span class="normal">422</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">422</span>
 <span class="normal">423</span>
 <span class="normal">424</span>
 <span class="normal">425</span>
@@ -4822,7 +4897,8 @@ determined during static analysis.</p>
 <span class="normal">450</span>
 <span class="normal">451</span>
 <span class="normal">452</span>
-<span class="normal">453</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="normal">453</span>
+<span class="normal">454</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configures the BaseModel subclass according to the plugin settings.</span>
 
 <span class="sd">    In particular:</span>
@@ -4844,7 +4920,7 @@ determined during static analysis.</p>
 
     <span class="n">is_settings</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">base</span><span class="o">.</span><span class="n">fullname</span> <span class="o">==</span> <span class="n">BASESETTINGS_FULLNAME</span> <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">mro</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">add_initializer</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">is_settings</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">add_model_construct_method</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">add_model_construct_method</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">is_settings</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">set_frozen</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">frozen</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">adjust_decorator_signatures</span><span class="p">()</span>
@@ -4891,10 +4967,10 @@ determined during static analysis.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/mypy.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">130</span>
-<span class="normal">131</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
 <span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Options</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">133</span>
+<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Options</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">plugin_config</span> <span class="o">=</span> <span class="n">PydanticPluginConfig</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_plugin_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plugin_config</span><span class="o">.</span><span class="n">to_data</span><span class="p">()</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
@@ -4931,14 +5007,14 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
-<span class="normal">136</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
 <span class="normal">139</span>
 <span class="normal">140</span>
 <span class="normal">141</span>
-<span class="normal">142</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_base_class_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClassDefContext</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">142</span>
+<span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_base_class_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClassDefContext</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update Pydantic model class.&quot;&quot;&quot;</span>
     <span class="n">sym</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookup_fully_qualified</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">sym</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sym</span><span class="o">.</span><span class="n">node</span><span class="p">,</span> <span class="n">TypeInfo</span><span class="p">):</span>  <span class="c1"># pragma: no branch</span>
@@ -4971,14 +5047,14 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">163</span>
-<span class="normal">164</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">164</span>
 <span class="normal">165</span>
 <span class="normal">166</span>
 <span class="normal">167</span>
 <span class="normal">168</span>
 <span class="normal">169</span>
-<span class="normal">170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_class_decorator_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClassDefContext</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">170</span>
+<span class="normal">171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_class_decorator_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClassDefContext</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Mark pydantic.dataclasses as dataclass.</span>
 
 <span class="sd">    Mypy version 1.1.1 added support for `@dataclass_transform` decorator.</span>
@@ -5010,12 +5086,12 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">150</span>
-<span class="normal">151</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">151</span>
 <span class="normal">152</span>
 <span class="normal">153</span>
 <span class="normal">154</span>
-<span class="normal">155</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_function_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">FunctionContext</span><span class="p">],</span> <span class="n">Type</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">155</span>
+<span class="normal">156</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_function_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">FunctionContext</span><span class="p">],</span> <span class="n">Type</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust the return type of the `Field` function.&quot;&quot;&quot;</span>
     <span class="n">sym</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookup_fully_qualified</span><span class="p">(</span><span class="n">fullname</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">sym</span> <span class="ow">and</span> <span class="n">sym</span><span class="o">.</span><span class="n">fullname</span> <span class="o">==</span> <span class="n">FIELD_FULLNAME</span><span class="p">:</span>
@@ -5045,11 +5121,11 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">144</span>
-<span class="normal">145</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">145</span>
 <span class="normal">146</span>
 <span class="normal">147</span>
-<span class="normal">148</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_metaclass_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClassDefContext</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">148</span>
+<span class="normal">149</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_metaclass_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClassDefContext</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Update Pydantic `ModelMetaclass` definition.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">fullname</span> <span class="o">==</span> <span class="n">MODEL_METACLASS_FULLNAME</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pydantic_model_metaclass_marker_callback</span>
@@ -5078,11 +5154,11 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">157</span>
-<span class="normal">158</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">158</span>
 <span class="normal">159</span>
 <span class="normal">160</span>
-<span class="normal">161</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_method_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">MethodContext</span><span class="p">],</span> <span class="n">Type</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">161</span>
+<span class="normal">162</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_method_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fullname</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">MethodContext</span><span class="p">],</span> <span class="n">Type</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Adjust return type of `from_orm` method call.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">fullname</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.from_orm&#39;</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">from_attributes_callback</span>
@@ -5112,12 +5188,12 @@ determined during static analysis.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">172</span>
-<span class="normal">173</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">173</span>
 <span class="normal">174</span>
 <span class="normal">175</span>
 <span class="normal">176</span>
-<span class="normal">177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">report_config_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">ReportConfigContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="normal">177</span>
+<span class="normal">178</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">report_config_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">ReportConfigContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return all plugin config data.</span>
 
 <span class="sd">    Used by mypy to determine if cache needs to be discarded.</span>
@@ -5215,8 +5291,7 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
           <details class="quote">
             <summary>Source code in <code>pydantic/mypy.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">267</span>
-<span class="normal">268</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">268</span>
 <span class="normal">269</span>
 <span class="normal">270</span>
 <span class="normal">271</span>
@@ -5232,7 +5307,8 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 <span class="normal">281</span>
 <span class="normal">282</span>
 <span class="normal">283</span>
-<span class="normal">284</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Options</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">284</span>
+<span class="normal">285</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="n">Options</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">config_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
         <span class="k">return</span>
 
@@ -5283,9 +5359,9 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dict of config names to their values.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__slots__</span><span class="p">}</span>
 </code></pre></div></td></tr></table></div>
@@ -5330,44 +5406,7 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1055</span>
-<span class="normal">1056</span>
-<span class="normal">1057</span>
-<span class="normal">1058</span>
-<span class="normal">1059</span>
-<span class="normal">1060</span>
-<span class="normal">1061</span>
-<span class="normal">1062</span>
-<span class="normal">1063</span>
-<span class="normal">1064</span>
-<span class="normal">1065</span>
-<span class="normal">1066</span>
-<span class="normal">1067</span>
-<span class="normal">1068</span>
-<span class="normal">1069</span>
-<span class="normal">1070</span>
-<span class="normal">1071</span>
-<span class="normal">1072</span>
-<span class="normal">1073</span>
-<span class="normal">1074</span>
-<span class="normal">1075</span>
-<span class="normal">1076</span>
-<span class="normal">1077</span>
-<span class="normal">1078</span>
-<span class="normal">1079</span>
-<span class="normal">1080</span>
-<span class="normal">1081</span>
-<span class="normal">1082</span>
-<span class="normal">1083</span>
-<span class="normal">1084</span>
-<span class="normal">1085</span>
-<span class="normal">1086</span>
-<span class="normal">1087</span>
-<span class="normal">1088</span>
-<span class="normal">1089</span>
-<span class="normal">1090</span>
-<span class="normal">1091</span>
-<span class="normal">1092</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1092</span>
 <span class="normal">1093</span>
 <span class="normal">1094</span>
 <span class="normal">1095</span>
@@ -5405,7 +5444,44 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 <span class="normal">1127</span>
 <span class="normal">1128</span>
 <span class="normal">1129</span>
-<span class="normal">1130</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_method</span><span class="p">(</span>
+<span class="normal">1130</span>
+<span class="normal">1131</span>
+<span class="normal">1132</span>
+<span class="normal">1133</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span>
+<span class="normal">1137</span>
+<span class="normal">1138</span>
+<span class="normal">1139</span>
+<span class="normal">1140</span>
+<span class="normal">1141</span>
+<span class="normal">1142</span>
+<span class="normal">1143</span>
+<span class="normal">1144</span>
+<span class="normal">1145</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span>
+<span class="normal">1150</span>
+<span class="normal">1151</span>
+<span class="normal">1152</span>
+<span class="normal">1153</span>
+<span class="normal">1154</span>
+<span class="normal">1155</span>
+<span class="normal">1156</span>
+<span class="normal">1157</span>
+<span class="normal">1158</span>
+<span class="normal">1159</span>
+<span class="normal">1160</span>
+<span class="normal">1161</span>
+<span class="normal">1162</span>
+<span class="normal">1163</span>
+<span class="normal">1164</span>
+<span class="normal">1165</span>
+<span class="normal">1166</span>
+<span class="normal">1167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">add_method</span><span class="p">(</span>
     <span class="n">api</span><span class="p">:</span> <span class="n">SemanticAnalyzerPluginInterface</span> <span class="o">|</span> <span class="n">CheckerPluginInterface</span><span class="p">,</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="n">ClassDef</span><span class="p">,</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -5505,9 +5581,9 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1050</span>
-<span class="normal">1051</span>
-<span class="normal">1052</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_default_and_default_factory_specified</span><span class="p">(</span><span class="n">api</span><span class="p">:</span> <span class="n">CheckerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1087</span>
+<span class="normal">1088</span>
+<span class="normal">1089</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_default_and_default_factory_specified</span><span class="p">(</span><span class="n">api</span><span class="p">:</span> <span class="n">CheckerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Emits an error when `Field` has both `default` and `default_factory` together.&quot;&quot;&quot;</span>
     <span class="n">api</span><span class="o">.</span><span class="n">fail</span><span class="p">(</span><span class="s1">&#39;Field default and default_factory cannot be specified together&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">ERROR_FIELD_DEFAULTS</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -5534,9 +5610,9 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1016</span>
-<span class="normal">1017</span>
-<span class="normal">1018</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_from_attributes</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="n">CheckerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1053</span>
+<span class="normal">1054</span>
+<span class="normal">1055</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_from_attributes</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="n">CheckerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Emits an error when the model does not have `from_attributes=True`.&quot;&quot;&quot;</span>
     <span class="n">api</span><span class="o">.</span><span class="n">fail</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s1">&quot; does not have from_attributes=True&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">ERROR_ORM</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -5563,9 +5639,9 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1021</span>
-<span class="normal">1022</span>
-<span class="normal">1023</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_invalid_config_value</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="n">SemanticAnalyzerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1058</span>
+<span class="normal">1059</span>
+<span class="normal">1060</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_invalid_config_value</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="n">SemanticAnalyzerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Emits an error when the config value is invalid.&quot;&quot;&quot;</span>
     <span class="n">api</span><span class="o">.</span><span class="n">fail</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid value for &quot;Config.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">ERROR_CONFIG</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -5593,12 +5669,12 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1026</span>
-<span class="normal">1027</span>
-<span class="normal">1028</span>
-<span class="normal">1029</span>
-<span class="normal">1030</span>
-<span class="normal">1031</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_required_dynamic_aliases</span><span class="p">(</span><span class="n">api</span><span class="p">:</span> <span class="n">SemanticAnalyzerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1063</span>
+<span class="normal">1064</span>
+<span class="normal">1065</span>
+<span class="normal">1066</span>
+<span class="normal">1067</span>
+<span class="normal">1068</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_required_dynamic_aliases</span><span class="p">(</span><span class="n">api</span><span class="p">:</span> <span class="n">SemanticAnalyzerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Emits required dynamic aliases error.</span>
 
 <span class="sd">    This will be called when `warn_required_dynamic_aliases=True`.</span>
@@ -5628,15 +5704,15 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1034</span>
-<span class="normal">1035</span>
-<span class="normal">1036</span>
-<span class="normal">1037</span>
-<span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span>
-<span class="normal">1042</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_unexpected_behavior</span><span class="p">(</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1071</span>
+<span class="normal">1072</span>
+<span class="normal">1073</span>
+<span class="normal">1074</span>
+<span class="normal">1075</span>
+<span class="normal">1076</span>
+<span class="normal">1077</span>
+<span class="normal">1078</span>
+<span class="normal">1079</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_unexpected_behavior</span><span class="p">(</span>
     <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="n">CheckerPluginInterface</span> <span class="o">|</span> <span class="n">SemanticAnalyzerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># pragma: no cover</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Emits unexpected behavior error.&quot;&quot;&quot;</span>
@@ -5669,9 +5745,9 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1045</span>
-<span class="normal">1046</span>
-<span class="normal">1047</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_untyped_fields</span><span class="p">(</span><span class="n">api</span><span class="p">:</span> <span class="n">SemanticAnalyzerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1082</span>
+<span class="normal">1083</span>
+<span class="normal">1084</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">error_untyped_fields</span><span class="p">(</span><span class="n">api</span><span class="p">:</span> <span class="n">SemanticAnalyzerPluginInterface</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Context</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Emits an error when there is an untyped field in the model.&quot;&quot;&quot;</span>
     <span class="n">api</span><span class="o">.</span><span class="n">fail</span><span class="p">(</span><span class="s1">&#39;Untyped fields disallowed&#39;</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="n">ERROR_UNTYPED</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -5698,8 +5774,7 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">291</span>
-<span class="normal">292</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">292</span>
 <span class="normal">293</span>
 <span class="normal">294</span>
 <span class="normal">295</span>
@@ -5718,7 +5793,8 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 <span class="normal">308</span>
 <span class="normal">309</span>
 <span class="normal">310</span>
-<span class="normal">311</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">from_attributes_callback</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">MethodContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">:</span>
+<span class="normal">311</span>
+<span class="normal">312</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">from_attributes_callback</span><span class="p">(</span><span class="n">ctx</span><span class="p">:</span> <span class="n">MethodContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Raise an error if from_attributes is not enabled.&quot;&quot;&quot;</span>
     <span class="n">model_type</span><span class="p">:</span> <span class="n">Instance</span>
     <span class="n">ctx_type</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">type</span>
@@ -5764,27 +5840,27 @@ of <code>ModelMetaclass</code> for testing purposes.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1133</span>
-<span class="normal">1134</span>
-<span class="normal">1135</span>
-<span class="normal">1136</span>
-<span class="normal">1137</span>
-<span class="normal">1138</span>
-<span class="normal">1139</span>
-<span class="normal">1140</span>
-<span class="normal">1141</span>
-<span class="normal">1142</span>
-<span class="normal">1143</span>
-<span class="normal">1144</span>
-<span class="normal">1145</span>
-<span class="normal">1146</span>
-<span class="normal">1147</span>
-<span class="normal">1148</span>
-<span class="normal">1149</span>
-<span class="normal">1150</span>
-<span class="normal">1151</span>
-<span class="normal">1152</span>
-<span class="normal">1153</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_toml</span><span class="p">(</span><span class="n">config_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1170</span>
+<span class="normal">1171</span>
+<span class="normal">1172</span>
+<span class="normal">1173</span>
+<span class="normal">1174</span>
+<span class="normal">1175</span>
+<span class="normal">1176</span>
+<span class="normal">1177</span>
+<span class="normal">1178</span>
+<span class="normal">1179</span>
+<span class="normal">1180</span>
+<span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_toml</span><span class="p">(</span><span class="n">config_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dict of config keys to values.</span>
 
 <span class="sd">    It reads configs from toml file and returns `None` if the file is not a toml file.</span>
@@ -5863,8 +5939,7 @@ newer, or especially older, than we expect (or need).</p>
 </details>
       <details class="quote">
         <summary>Source code in <code>pydantic/mypy.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">112</span>
-<span class="normal">113</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">113</span>
 <span class="normal">114</span>
 <span class="normal">115</span>
 <span class="normal">116</span>
@@ -5875,7 +5950,8 @@ newer, or especially older, than we expect (or need).</p>
 <span class="normal">121</span>
 <span class="normal">122</span>
 <span class="normal">123</span>
-<span class="normal">124</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">plugin</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Plugin</span><span class="p">]:</span>
+<span class="normal">124</span>
+<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">plugin</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">Plugin</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;`version` is the mypy version string.</span>
 
 <span class="sd">    We might want to use this to print a warning if the mypy version being used is</span>
