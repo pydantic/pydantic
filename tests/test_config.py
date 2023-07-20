@@ -3,10 +3,11 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
+from typing import Any, ContextManager, Dict, Iterable, NamedTuple, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr, IsPartialDict
 from pydantic_core import SchemaError
+from typing_extensions import TypedDict
 
 from pydantic import (
     AfterValidator,
@@ -17,6 +18,7 @@ from pydantic import (
     PrivateAttr,
     PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
+    TypeAdapter,
     ValidationError,
     create_model,
     validate_call,
@@ -642,16 +644,34 @@ def test_replace_types():
     LaxStr = Annotated[str, BeforeValidator(str_validator)]
 
     class LaxStrBase(BaseModel):
-        model_config: ConfigDict = {'replace_types': {str: LaxStr}}
+        model_config = ConfigDict(replace_types={str: LaxStr, Dict[str, str]: Dict[str, int]})
+
+    LaxStrBase.model_json_schema(mode='serialization')
 
     class Data(LaxStrBase):
         f: str
         i: str
-        d: str
+        d: Dict[str, str]
 
-    user = Data(f=1.1, i=1, d=Decimal('1.1'))
+    user = Data(f=1.1, i=1, d={'a': 42})
 
-    assert user.model_dump() == {'f': '1.1', 'i': '1', 'd': '1.1'}
+    assert user.model_dump() == {'f': '1.1', 'i': '1', 'd': {'a': 42}}
+
+
+def test_replace_types_typeddict():
+    LaxStr = Annotated[str, BeforeValidator(str_validator)]
+
+    class Data(TypedDict):
+        __pydantic_config__ = ConfigDict(replace_types={str: LaxStr, Dict[str, str]: Dict[str, int]})  # type: ignore
+        f: str
+        i: str
+        d: Dict[str, str]
+
+    Data = TypeAdapter(Data)
+
+    user = Data.validate_python({'f': 1.1, 'i': 1, 'd': {'a': 42}})
+
+    assert user.dump_python() == {'f': '1.1', 'i': '1', 'd': {'a': 42}}
 
 
 def test_replace_types_nested():

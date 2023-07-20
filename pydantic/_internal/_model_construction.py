@@ -373,11 +373,11 @@ def set_model_fields(
     typevars_map = get_model_typevars_map(cls)
     fields, class_vars = collect_model_fields(cls, bases, config_wrapper, types_namespace, typevars_map=typevars_map)
 
-    if config_wrapper.replace_types:
-        replace_types = config_wrapper.replace_types
-        for fld in fields.values():
-            if fld.annotation in replace_types:
-                fld.annotation = replace_types[fld.annotation]  # type: ignore
+    # if config_wrapper.replace_types:
+    #     replace_types = config_wrapper.replace_types
+    #     for fld in fields.values():
+    #         if fld.annotation in replace_types:
+    #             fld.annotation = replace_types[fld.annotation]  # type: ignore
 
     cls.model_fields = fields
     cls.__class_vars__.update(class_vars)
@@ -424,9 +424,10 @@ def complete_model_class(
     """
     typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
-        config_wrapper,
-        types_namespace,
-        typevars_map,
+        config_wrapper=config_wrapper,
+        types_namespace=types_namespace,
+        typevars_map=typevars_map,
+        types_replace_map=config_wrapper.replace_types,
     )
 
     handler = CallbackGetCoreSchemaHandler(
@@ -443,13 +444,13 @@ def complete_model_class(
         set_basemodel_mock_validator(cls, cls_name, f'`{e.name}`')
         return False
 
-    core_config = config_wrapper.core_config(cls)
-
     schema = gen_schema.collect_definitions(schema)
     schema = apply_discriminators(flatten_schema_defs(schema))
     if collect_invalid_schemas(schema):
         set_basemodel_mock_validator(cls, cls_name, 'all referenced types')
         return False
+
+    core_config = config_wrapper.core_config(cls)
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema

@@ -213,20 +213,32 @@ def modify_model_json_schema(
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datatime`, ... ."""
 
-    __slots__ = '_config_wrapper_stack', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions', 'defs'
+    __slots__ = (
+        '_config_wrapper_stack',
+        'types_namespace',
+        'typevars_map',
+        'types_replace_map',
+        'defs',
+        '_recursion_depth',
+        '_replaced_type',
+    )
 
     def __init__(
         self,
         config_wrapper: ConfigWrapper,
-        types_namespace: dict[str, Any] | None,
+        types_namespace: dict[Any, Any] | None,
         typevars_map: dict[Any, Any] | None = None,
+        types_replace_map: dict[Any, Any] | None = None,
     ):
         # we need a stack for recursing into child models
         self._config_wrapper_stack: list[ConfigWrapper] = [config_wrapper]
         self.types_namespace = types_namespace
         self.typevars_map = typevars_map
+        self.types_replace_map = types_replace_map or {}
 
         self.defs = _Definitions()
+        self._recursion_depth: int = 0
+        self._replaced_type: bool = False
 
     @property
     def config_wrapper(self) -> ConfigWrapper:
@@ -275,11 +287,15 @@ class GenerateSchema:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
                 - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
         """
+        self._recursion_depth += 1
         if isinstance(obj, type(Annotated[int, 123])):
-            return self._annotated_schema(obj)
-        return self._generate_schema_for_type(
-            obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
-        )
+            schema = self._annotated_schema(obj)
+        else:
+            schema = self._generate_schema_for_type(
+                obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
+            )
+        self._recursion_depth -= 1
+        return schema
 
     def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
         metadata = CoreMetadataHandler(metadata_schema).metadata
@@ -513,6 +529,13 @@ class GenerateSchema:
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
         """Recursively generate a pydantic-core schema for any supported python type."""
+        if self._replaced_type:
+            self._replaced_type = False
+        elif obj in self.types_replace_map:
+            obj = self.types_replace_map[obj]
+            self._replaced_type = True
+            return self.generate_schema(obj)
+
         if isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
