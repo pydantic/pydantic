@@ -969,12 +969,12 @@ def computed_field(
     repr: bool = True,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Decorator to include `property` and `cached_property` when serializing models.
+    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/computed_fields/
+
+    Decorator to include `property` and `cached_property` when serializing models.
 
     If applied to functions not yet decorated with `@property` or `@cached_property`, the function is
     automatically wrapped with `property`.
-
-    See [Computed Fields](../usage/computed_fields.md) for more details.
 
     Args:
         __f: the function to wrap.

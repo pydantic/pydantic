@@ -102,8 +102,8 @@ nav:
   - 'Settings Management': usage/pydantic_settings.md
 - Error Messages:
   - Error Handling: errors/errors.md
-  - Validation Errors: usage/validation_errors.md
-  - Usage Errors: usage/errors.md
+  - Validation Errors: errors/validation_errors.md
+  - Usage Errors: errors/usage_errors.md
 - Integrations:
   - 'Mypy': integrations/mypy.md
   - 'PyCharm': integrations/pycharm.md
@@ -205,4 +205,6 @@ plugins:
       'api/main.md': 'api/base_model.md'
       'api/color.md': 'api/pydantic_extra_types_color.md'
       'api/alias_generators.md': 'api/config.md'
+      'usage/validation_errors.md': 'errors/validation_errors.md'
+      'usage/errors.md': 'errors/usage_errors.md'
 - external-markdown:

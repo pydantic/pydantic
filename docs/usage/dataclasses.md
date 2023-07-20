@@ -1,3 +1,6 @@
+??? api "API Documentation"
+    [`pydantic.dataclasses.dataclass`][pydantic.dataclasses.dataclass]<br>
+
 If you don't want to use Pydantic's `BaseModel` you can instead get the same data validation on standard
 [dataclasses](https://docs.python.org/3/library/dataclasses.html) (introduced in Python 3.7).
 
