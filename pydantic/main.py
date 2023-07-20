@@ -581,7 +581,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             **kwargs: Any keyword arguments passed to the class definition that aren't used internally
-            by pydantic.
+                by pydantic.
         """
         pass
 
@@ -1072,7 +1072,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> Model:  # pragma: no cover
         """Returns a copy of the model.
 
-        This method is now deprecated; use `model_copy` instead. If you need `include` or `exclude`, use:
+        !!! warning "Deprecated"
+            This method is now deprecated; use `model_copy` instead.
+
+        If you need `include` or `exclude`, use:
 
         ```py
         data = self.model_dump(include=include, exclude=exclude, round_trip=True)
@@ -1264,7 +1267,8 @@ def create_model(
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
-    """Dynamically creates and returns a new Pydantic model.
+    """Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
+    subclass of [`BaseModel`][pydantic.BaseModel].
 
     Args:
         __model_name: The name of the newly created model.
@@ -1280,7 +1284,7 @@ def create_model(
             passed in the format: `<name>=<Field>` or `<name>=(<type>, <FieldInfo>)`.
 
     Returns:
-        The newly created model.
+        The new [model][pydantic.BaseModel].
 
     Raises:
         PydanticUserError: If `__base__` and `__config__` are both passed.

@@ -1,1 +1,0 @@
-::: pydantic.alias_generators

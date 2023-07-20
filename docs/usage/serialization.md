@@ -99,7 +99,7 @@ print(Model(x=['{"a": 1}', '[1, 2]']).model_dump(round_trip=True))
 The `.model_dump_json()` method serializes a model directly to a JSON-encoded string
 that is equivalent to the result produced by [`.model_dump()`](#modelmodeldump).
 
-See [arguments](../api/main.md#pydantic.main.BaseModel.model_dump_json) for more information.
+See [arguments][pydantic.main.BaseModel.model_dump_json] for more information.
 
 !!! note
     Pydantic can serialize many commonly used types to JSON that would otherwise be incompatible with a simple

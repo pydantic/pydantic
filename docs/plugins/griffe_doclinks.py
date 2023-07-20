@@ -31,14 +31,11 @@ def insert_at_top(path: str, api_link: str) -> str:
 
     if f'[{api_link}]' not in first_section:
         print(f'inserting API link "{api_link}" at the top of {file_path.relative_to(DOCS_PATH)}')
-        file_path.write_text(
-            '??? api "API Documentation"\n'
-            f'    [`{api_link}`][{api_link}]<br>\n\n'
-            f'{content}'
-        )
+        file_path.write_text('??? api "API Documentation"\n' f'    [`{api_link}`][{api_link}]<br>\n\n' f'{content}')
 
     heading = file_path.stem.replace('_', ' ').title()
     return f'!!! abstract "Usage Documentation"\n    [{heading}](../{rel_file})\n'
+
 
 def replace_links(m: re.Match, *, api_link: str) -> str:
     path_group = m.group(1)

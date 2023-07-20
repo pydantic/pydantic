@@ -6,7 +6,7 @@ groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "t
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:20f82b6294579c665738f04da3cce152d3cf130923f4f6af35dc4e155cfc349e"
+content_hash = "sha256:aca71531a831ff1d77e2170017628b6802598354e3ccea21067a2f5f9efc1fb9"
 
 [[package]]
 name = "annotated-types"
@@ -906,16 +906,16 @@ files = [
 
 [[package]]
 name = "mkdocstrings-python"
-version = "1.1.2"
-requires_python = ">=3.7"
+version = "1.2.0"
+requires_python = ">=3.8"
 summary = "A Python handler for mkdocstrings."
 dependencies = [
-    "griffe>=0.24",
+    "griffe>=0.30",
     "mkdocstrings>=0.20",
 ]
 files = [
-    {file = "mkdocstrings_python-1.1.2-py3-none-any.whl", hash = "sha256:c2b652a850fec8e85034a9cdb3b45f8ad1a558686edc20ed1f40b4e17e62070f"},
-    {file = "mkdocstrings_python-1.1.2.tar.gz", hash = "sha256:f28bdcacb9bcdb44b6942a5642c1ea8b36870614d33e29e3c923e204a8d8ed61"},
+    {file = "mkdocstrings_python-1.2.0-py3-none-any.whl", hash = "sha256:2924c9c4286fd236bdae64402b5cc5010dee13779b3edf1a65d97bc02303657b"},
+    {file = "mkdocstrings_python-1.2.0.tar.gz", hash = "sha256:e16bedc236a3a6aa04c916ae6b9d37d2299c80c6e7169fc481a30ed9f8f362a4"},
 ]
 
 [[package]]

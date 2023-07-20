@@ -675,7 +675,7 @@ def Field(  # noqa: C901
     max_length: int | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields
+    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/fields
 
     Create a field for objects that can be configured.
 
