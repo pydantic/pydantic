@@ -281,6 +281,17 @@ class GenerateSchema:
             obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
         )
 
+    def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
+        metadata = CoreMetadataHandler(metadata_schema).metadata
+        pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
+        # because of how we generate core schemas for nested generic models
+        # we can end up adding `BaseModel.__get_pydantic_json_schema__` multiple times
+        # this check may fail to catch duplicates if the function is a `functools.partial`
+        # or something like that
+        # but if it does it'll fail by inserting the duplicate
+        if js_function not in pydantic_js_functions:
+            pydantic_js_functions.append(js_function)
+
     def _generate_schema_for_type(
         self,
         obj: Any,
@@ -304,8 +315,7 @@ class GenerateSchema:
         if metadata_js_function is not None:
             metadata_schema = resolve_original_schema(schema, self.defs.definitions)
             if metadata_schema:
-                metadata = CoreMetadataHandler(metadata_schema).metadata
-                metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
+                self._add_js_function(metadata_schema, metadata_js_function)
 
         return schema
 
@@ -1370,10 +1380,7 @@ class GenerateSchema:
                 if metadata_js_function is not None:
                     metadata_schema = resolve_original_schema(schema, self.defs.definitions)
                     if metadata_schema is not None:
-                        metadata = CoreMetadataHandler(metadata_schema).metadata
-                        pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
-                        if metadata_js_function not in pydantic_js_functions:
-                            pydantic_js_functions.append(metadata_js_function)
+                        self._add_js_function(metadata_schema, metadata_js_function)
             return transform_inner_schema(schema)
 
         get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
