@@ -47,7 +47,6 @@ from .warnings import *
 
 __version__ = VERSION
 
-
 # this encourages pycharm to import `ValidationError` from here, not pydantic_core
 ValidationError = pydantic_core.ValidationError
 

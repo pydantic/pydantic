@@ -1,30 +1,42 @@
+"""Plugin interface for Pydantic plugins, and related types."""
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, Protocol, TypeVar
+from typing import Any, Callable, Generic, TypeVar
 
 from pydantic_core import ValidationError
+from typing_extensions import Protocol
 
 T = TypeVar('T', bound=Callable[..., None])
 
 
 class OnSuccess(Protocol):
-    def __call__(self, result: Any) -> None:
+    """Protocol for `on_success` callback."""
+
+    def __call__(self, result: Any) -> None:  # noqa: D102
         ...
 
 
 class OnError(Protocol):
-    def __call__(self, error: ValidationError) -> None:
+    """Protocol for `on_error` callback."""
+
+    def __call__(self, error: ValidationError) -> None:  # noqa: D102
         ...
 
 
 @dataclass
 class Step(Generic[T]):
+    """Step for plugin callbacks."""
+
     enter: T | None = None
     on_success: OnSuccess | None = None
     on_error: OnError | None = None
 
 
 class ValidatePythonEnter(Protocol):
-    def __call__(
+    """Protocol for `on_validate_python` callback."""
+
+    def __call__(  # noqa: D102
         self,
         cls: type[Any],  # type: ignore
         json_data: str | bytes | bytearray,
@@ -36,7 +48,9 @@ class ValidatePythonEnter(Protocol):
 
 
 class ValidateJsonEnter(Protocol):
-    def __call__(
+    """Protocol for `on_validate_json` callback."""
+
+    def __call__(  # noqa: D102
         self,
         cls: type[Any],  # type: ignore
         json_data: str | bytes | bytearray,
@@ -53,5 +67,7 @@ OnValidateJson = Step[ValidateJsonEnter]
 
 @dataclass
 class Plugin:
+    """Plugin interface for Pydantic plugins."""
+
     on_validate_python: OnValidatePython | None = None
     on_validate_json: OnValidateJson | None = None
