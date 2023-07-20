@@ -116,12 +116,8 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            if '__hash__' not in namespace and config_wrapper.frozen:
-
-                def hash_func(self: Any) -> int:
-                    return hash(self.__class__) + hash(tuple(self.__dict__.values()))
-
-                namespace['__hash__'] = hash_func
+            if config_wrapper.frozen:
+                set_default_hash_func(namespace, bases)
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
@@ -357,6 +353,26 @@ def inspect_namespace(  # noqa C901
             private_attributes[ann_name] = PrivateAttr()
 
     return private_attributes
+
+
+def set_default_hash_func(namespace: dict[str, Any], bases: tuple[type[Any], ...]) -> None:
+    if '__hash__' in namespace:
+        return
+
+    base_hash_func = None
+    for base in bases:
+        base_hash_func = getattr(base, '__hash__', PydanticUndefined)
+        if base_hash_func is not PydanticUndefined:
+            break
+
+    if base_hash_func is None:
+        # This will be the case for `BaseModel` since it defines `__eq__` but not `__hash__`.
+        # In this case, we generate a standard hash function, generally for use with frozen models.
+
+        def hash_func(self: Any) -> int:
+            return hash(self.__class__) + hash(tuple(self.__dict__.values()))
+
+        namespace['__hash__'] = hash_func
 
 
 def set_model_fields(

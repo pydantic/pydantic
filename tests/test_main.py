@@ -574,6 +574,31 @@ def test_hash_function_give_different_result_for_different_object():
     assert hash(m) != hash(m4)
 
 
+def test_hash_method_is_inherited_for_frozen_models():
+    from functools import cache
+
+    class MyBaseModel(BaseModel):
+        """A base model with sensible configurations."""
+
+        model_config = ConfigDict(frozen=True)
+
+        def __hash__(self):
+            return hash(id(self))
+
+    class MySubClass(MyBaseModel):
+        x: dict[str, int]
+
+        @cache
+        def cached_method(self):
+            return len(self.x)
+
+    my_instance = MySubClass(x={'a': 1, 'b': 2})
+    assert my_instance.cached_method() == 2
+
+    object.__setattr__(my_instance, 'x', {})  # can't change the "normal" way due to frozen
+    assert my_instance.cached_method() == 2
+
+
 @pytest.fixture(name='ValidateAssignmentModel', scope='session')
 def validate_assignment_fixture():
     class ValidateAssignmentModel(BaseModel):
