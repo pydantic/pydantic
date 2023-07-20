@@ -59,13 +59,11 @@ _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """A base model class for creating Pydantic models.
+    """usage docs: https://docs.pydantic.dev/dev-v2/usage/models/
+
+    A base class for creating Pydantic models.
 
     Attributes:
-        model_config: Configuration settings for the model.
-        model_fields: Metadata about the fields defined on the model.
-            This replaces `Model.__fields__` from Pydantic V1.
-
         __class_vars__: The names of classvars defined on the model.
         __private_attributes__: Metadata about the private attributes of the model.
         __signature__: The signature for instantiating the model.
@@ -97,7 +95,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         # Class attributes
         model_config: ClassVar[ConfigDict]
+        """
+        Configuration for the model, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
+        """
+
         model_fields: ClassVar[dict[str, FieldInfo]]
+        """
+        Metadata about the fields defined on the model,
+        mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo].
+
+        This replaces `Model.__fields__` from Pydantic V1.
+        """
 
         __class_vars__: ClassVar[set[str]]
         __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
@@ -140,9 +148,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
         """Create a new model by parsing and validating input data from keyword arguments.
 
-        Raises ValidationError if the input data cannot be parsed to form a valid model.
+        Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
+        validated to form a valid model.
 
-        Uses `__pydantic_self__` instead of the more common `self` for the first arg to
+        `__init__` uses `__pydantic_self__` instead of the more common `self` for the first arg to
         allow `self` as a field name.
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks

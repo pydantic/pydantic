@@ -75,7 +75,12 @@ class _FieldInfoInputs(_FromFieldInfoInputs, total=False):
 class FieldInfo(_repr.Representation):
     """This class holds information about a field.
 
-    `FieldInfo` is used for any field definition regardless of whether the `Field()` function is explicitly used.
+    `FieldInfo` is used for any field definition regardless of whether the [`Field()`][pydantic.fields.Field]
+    function is explicitly used.
+
+    !!! warning
+        You generally shouldn't be creating `FieldInfo` directly, you'll only need to use it when accessing
+        [`BaseModel`][pydantic.main.BaseModel] `.model_fields` internals.
 
     Attributes:
         annotation: The type annotation of the field.
@@ -670,7 +675,9 @@ def Field(  # noqa: C901
     max_length: int | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Create a field for objects that can be configured.
+    """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields
+
+    Create a field for objects that can be configured.
 
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (`int`, `float`, `Decimal`) and some apply only to `str`.
@@ -715,7 +722,8 @@ def Field(  # noqa: C901
                 The `extra` kwargs is deprecated. Use `json_schema_extra` instead.
 
     Returns:
-        The generated `FieldInfo` object
+        A new [`FieldInfo`][pydantic.fields.FieldInfo], the return annotation is `Any` so `Field` can be used on
+            type annotated fields without causing a typing error.
     """
     # Check deprecated and removed params from V1. This logic should eventually be removed.
     const = extra.pop('const', None)  # type: ignore
@@ -889,7 +897,7 @@ def PrivateAttr(
             If both `default` and `default_factory` are set, an error will be raised.
 
     Returns:
-        An instance of `ModelPrivateAttr` class.
+        An instance of [`ModelPrivateAttr`][pydantic.fields.ModelPrivateAttr] class.
 
     Raises:
         ValueError: If both `default` and `default_factory` are set.

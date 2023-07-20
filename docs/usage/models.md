@@ -1,5 +1,8 @@
+??? api "API Documentation"
+    [`pydantic.main.BaseModel`][pydantic.main.BaseModel]<br>
+
 The primary means of defining objects in Pydantic is via models. Models are simply classes which inherit from
-[`pydantic.BaseModel`][pydantic.BaseModel].
+[`pydantic.BaseModel`][pydantic.main.BaseModel].
 
 You can think of models as similar to structs in languages like C, or as the requirements of a single endpoint
 in an API.

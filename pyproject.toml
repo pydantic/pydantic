@@ -62,6 +62,7 @@ dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
     "pydantic-core==2.3.1",
+    "mkdocstrings-python>=1.1.2",
 ]
 dynamic = ['version', 'readme']
 

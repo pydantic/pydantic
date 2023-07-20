@@ -1,7 +1,7 @@
+??? api "API Documentation"
+    [`pydantic.fields.Field`][pydantic.fields.Field]<br>
 
 The `Field` function is used to customize and add metadata to fields of models.
-
-See the [`Field`][pydantic.fields.Field] API reference for additional details.
 
 ## Default values
 
