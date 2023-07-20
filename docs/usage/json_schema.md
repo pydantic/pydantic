@@ -150,8 +150,8 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
 ## Getting schema of a specified type
 
 The [`TypeAdapter`](type_adapter.md) class lets you create an object with methods for validating, serializing,
-and producing JSON schemas for arbitrary types. This serves as a complete replacement for `schema_of` (which is now
-deprecated).
+and producing JSON schemas for arbitrary types. This serves as a complete replacement for `schema_of` in
+Pydantic V1 (which is now deprecated).
 
 ```python
 from typing import List
@@ -242,13 +242,28 @@ from pydantic import BaseModel, Field
 
 class Foo(BaseModel):
     id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
-    name: Annotated[str, Field(max_length=256)] = 'Bar'
+    name: Annotated[str, Field(max_length=256)] = Field('Bar', title='te')
+
+
+print(Foo.model_json_schema())
+"""
+{
+    'properties': {
+        'id': {'title': 'Id', 'type': 'string'},
+        'name': {
+            'default': 'Bar',
+            'maxLength': 256,
+            'title': 'te',
+            'type': 'string',
+        },
+    },
+    'title': 'Foo',
+    'type': 'object',
+}
+"""
 ```
 
 !!! note
-    `Field` can only be supplied once per field;
-    an error will be raised if used in `Annotated` and as the assigned value.
-
     Defaults can be set outside `Annotated` as the assigned value or with `Field.default_factory` inside `Annotated`.
     The `Field.default` argument is not supported inside `Annotated`.
 
@@ -716,8 +731,6 @@ print(json.dumps(Person.model_json_schema(), indent=2))
 
 Note that you *must* return a schema, even if you are just mutating it in place.
 
-<!-- TODO: Commented pending further review of GenerateJsonSchema
-
 ## Customizing the JSON schema generation process
 
 If you need custom schema generation, you can use a `schema_generator`, modifying the
@@ -737,6 +750,7 @@ from pydantic.json_schema import GenerateJsonSchema
 class MyGenerateJsonSchema(GenerateJsonSchema):
     def generate(self, schema, mode='validation'):
         json_schema = super().generate(schema, mode=mode)
+        json_schema['title'] = 'Customize title'
         json_schema['$schema'] = self.schema_dialect
         return json_schema
 
@@ -745,5 +759,14 @@ class MyModel(BaseModel):
     x: int
 
 
-MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema)
-``` -->
+print(MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema))
+"""
+{
+    'properties': {'x': {'title': 'X', 'type': 'integer'}},
+    'required': ['x'],
+    'title': 'Customize title',
+    'type': 'object',
+    '$schema': 'https://json-schema.org/draft/2020-12/schema',
+}
+"""
+```
