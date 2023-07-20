@@ -242,18 +242,22 @@ class DecimalValidator:
         return schema
 
     def check_digits_validator(self, value: decimal.Decimal) -> decimal.Decimal:
-        try:
-            normalized_value = value.normalize()
-        except decimal.InvalidOperation:
-            normalized_value = value
-        _1, digit_tuple, exponent = normalized_value.as_tuple()
-        if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
+        if not value.is_finite():
+            # Either check_digits is true or allow_inf_nan is False,
+            # either way we cannot allow nan / infinity
             raise PydanticKnownError('finite_number')
 
         if self.check_digits:
-            if isinstance(exponent, str):
-                raise PydanticKnownError('finite_number')
-            elif exponent >= 0:
+            try:
+                normalized_value = value.normalize()
+            except decimal.InvalidOperation:
+                normalized_value = value
+            _1, digit_tuple, exponent = normalized_value.as_tuple()
+
+            # Already checked for finite value above
+            assert isinstance(exponent, int)
+
+            if exponent >= 0:
                 # A positive exponent adds that many trailing zeros.
                 digits = len(digit_tuple) + exponent
                 decimals = 0
