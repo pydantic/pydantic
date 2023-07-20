@@ -269,7 +269,7 @@ This applies both to `@field_validator` validators and `Annotated` validators.
 You can force them to run with `Field(validate_defaults=True)`, but you are generally better off using a `@model_validator(mode='before')`.
 
 ```py
-from typing import Annotated
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, field_validator
 
