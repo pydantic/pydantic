@@ -135,7 +135,7 @@ Validation goes from right to left and back.
 That is, it goes from right to left running all "before" validators (or calling into "wrap" validators), then left to right back out calling all "after" validators.
 
 ```py
-from typing import Any, Callable, cast
+from typing import Any, Callable, List, cast
 
 from typing_extensions import Annotated, TypedDict
 
@@ -152,7 +152,7 @@ from pydantic.functional_validators import field_validator
 
 
 class Context(TypedDict):
-    logs: list[str]
+    logs: List[str]
 
 
 def make_validator(label: str) -> Callable[[str, ValidationInfo], str]:
