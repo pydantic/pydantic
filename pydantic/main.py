@@ -365,14 +365,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> dict[str, Any]:
         """Generates a JSON schema for a model class.
 
-        To override the logic used to generate the JSON schema, you can create a subclass of `GenerateJsonSchema`
-        with your desired modifications, then override this method on a custom base class and set the default
-        value of `schema_generator` to be your subclass.
-
         Args:
             by_alias: Whether to use attribute aliases or not.
             ref_template: The reference template.
-            schema_generator: The JSON schema generator.
+            schema_generator: To override the logic used to generate the JSON schema, ass a subclass of
+                `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
 
         Returns:

@@ -50,6 +50,7 @@ nav:
   - Installation: install.md
   - Migration Guide: migration.md
   - Version Compatibility: version-compatibility.md
+  - Contributing: contributing.md
   - changelog.md
 - Usage:
   - usage/models.md
@@ -111,27 +112,26 @@ nav:
   - 'datamodel-code-generator': integrations/datamodel_code_generator.md
   - 'devtools': integrations/devtools.md
   - 'Rich': integrations/rich.md
-- Contribute: contributing.md
 - Blog:
   - blog/pydantic-v2-final.md
   - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
 - API Documentation:
   - Pydantic:
-    - 'BaseModel': api/base_model.md
-    - 'Fields': api/fields.md
-    - 'Config': api/config.md
-    - 'pydantic.dataclasses': api/dataclasses.md
-    - 'pydantic.errors': api/errors.md
-    - 'pydantic.functional_serializers': api/functional_serializers.md
-    - 'pydantic.functional_validators': api/functional_validators.md
-    - 'pydantic.json_schema': api/json_schema.md
-    - 'pydantic.networks': api/networks.md
-    - 'pydantic.root_model': api/root_model.md
-    - 'pydantic.type_adapter': api/type_adapter.md
-    - 'pydantic.types': api/types.md
-    - 'pydantic.validate_call': api/validate_call.md
-    - 'pydantic.version': api/version.md
+    - BaseModel: api/base_model.md
+    - RootModel: api/root_model.md
+    - 'Pydantic Dataclasses': api/dataclasses.md
+    - TypeAdapter: api/type_adapter.md
+    - validate_call: api/validate_call.md
+    - Fields: api/fields.md
+    - Config: api/config.md
+    - json_schema: api/json_schema.md
+    - Errors: api/errors.md
+    - 'Functional Validators': api/functional_validators.md
+    - 'Functional Serializers': api/functional_serializers.md
+    - 'Pydantic Types': api/types.md
+    - 'Network Types': api/networks.md
+    - 'Version Information': api/version.md
   - Pydantic Core:
     - 'pydantic_core': api/pydantic_core_init.md
     - 'pydantic_core.core_schema': api/pydantic_core_schema.md
