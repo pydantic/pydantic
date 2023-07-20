@@ -59,7 +59,7 @@ _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """usage docs: https://docs.pydantic.dev/dev-v2/usage/models/
+    """usage docs: https://docs.pydantic.dev/2.0/usage/models/
 
     A base class for creating Pydantic models.
 
