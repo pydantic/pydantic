@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#field-validators" class="md-skip">
+        <a href="#annotated-validators" class="md-skip">
           Skip to content
         </a>
       
@@ -1108,37 +1108,23 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#field-validators" class="md-nav__link">
-    Field validators
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#annotated-validators" class="md-nav__link">
     Annotated Validators
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#special-types" class="md-nav__link">
-    Special Types
-  </a>
-  
-    <nav class="md-nav" aria-label="Special Types">
+    <nav class="md-nav" aria-label="Annotated Validators">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#generic-validated-collections" class="md-nav__link">
-    Generic validated collections
+  <a href="#before-after-wrap-and-plain-validators" class="md-nav__link">
+    Before, After, Wrap and Plain validators
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#wrap-validators" class="md-nav__link">
-    Wrap validators
+  <a href="#ordering-of-validators-within-annotated" class="md-nav__link">
+    Ordering of validators within Annotated
   </a>
   
 </li>
@@ -1149,8 +1135,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reuse-validators" class="md-nav__link">
-    Reuse validators
+  <a href="#validation-of-default-values" class="md-nav__link">
+    Validation of default values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#field-validators" class="md-nav__link">
+    Field validators
   </a>
   
 </li>
@@ -1158,6 +1151,20 @@
         <li class="md-nav__item">
   <a href="#model-validators" class="md-nav__link">
     Model validators
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handling-errors-in-validators" class="md-nav__link">
+    Handling errors in validators
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#special-types" class="md-nav__link">
+    Special Types
   </a>
   
 </li>
@@ -2229,37 +2236,23 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#field-validators" class="md-nav__link">
-    Field validators
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#annotated-validators" class="md-nav__link">
     Annotated Validators
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#special-types" class="md-nav__link">
-    Special Types
-  </a>
-  
-    <nav class="md-nav" aria-label="Special Types">
+    <nav class="md-nav" aria-label="Annotated Validators">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#generic-validated-collections" class="md-nav__link">
-    Generic validated collections
+  <a href="#before-after-wrap-and-plain-validators" class="md-nav__link">
+    Before, After, Wrap and Plain validators
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#wrap-validators" class="md-nav__link">
-    Wrap validators
+  <a href="#ordering-of-validators-within-annotated" class="md-nav__link">
+    Ordering of validators within Annotated
   </a>
   
 </li>
@@ -2270,8 +2263,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#reuse-validators" class="md-nav__link">
-    Reuse validators
+  <a href="#validation-of-default-values" class="md-nav__link">
+    Validation of default values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#field-validators" class="md-nav__link">
+    Field validators
   </a>
   
 </li>
@@ -2279,6 +2279,20 @@
         <li class="md-nav__item">
   <a href="#model-validators" class="md-nav__link">
     Model validators
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handling-errors-in-validators" class="md-nav__link">
+    Handling errors in validators
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#special-types" class="md-nav__link">
+    Special Types
   </a>
   
 </li>
@@ -2338,124 +2352,30 @@
 
   <h1>Validators</h1>
 
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This page still needs to be updated for v2.0.</p>
-</div>
-<h2 id="field-validators">Field validators<a class="headerlink" href="#field-validators" title="Permanent link">&para;</a></h2>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>pydantic.functional_validators.field_validator</code></a><br></p>
-</details>
-<p>Custom validation and complex relationships between objects can be achieved using the <code>@field_validator</code> decorator.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core.core_schema</span> <span class="kn">import</span> <span class="n">FieldValidationInfo</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">class</span> <span class="nc">UserModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">password1</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">password2</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">name_must_contain_space</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s1">&#39; &#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;must contain a space&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;password2&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s1">&#39;password1&#39;</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">info</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;password1&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;passwords do not match&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">username_alphanumeric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">isalnum</span><span class="p">(),</span> <span class="s1">&#39;must be alphanumeric&#39;</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="n">user</span> <span class="o">=</span> <span class="n">UserModel</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;samuel colvin&#39;</span><span class="p">,</span>
-    <span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span>
-    <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
-    <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">name=&#39;Samuel Colvin&#39; username=&#39;scolvin&#39; password1=&#39;zxcvbn&#39; password2=&#39;zxcvbn&#39;</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">UserModel</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;samuel&#39;</span><span class="p">,</span>
-        <span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span>
-        <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
-        <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn2&#39;</span><span class="p">,</span>
-    <span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for UserModel</span>
-<span class="sd">    name</span>
-<span class="sd">      Value error, must contain a space [type=value_error, input_value=&#39;samuel&#39;, input_type=str]</span>
-<span class="sd">    password2</span>
-<span class="sd">      Value error, passwords do not match [type=value_error, input_value=&#39;zxcvbn2&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-<p>A few things to note on validators:</p>
-<ul>
-<li>validators are "class methods", so the first argument value they receive is the <code>UserModel</code> class, not an instance
-    of <code>UserModel</code>.</li>
-<li>the second argument is the field value to validate; it can be named as you please</li>
-<li>the third argument is an instance of <code>pydantic.FieldValidationInfo</code></li>
-<li>validators should either return the parsed value or raise a <code>ValueError</code> or <code>AssertionError</code>
-    (<code>assert</code> statements may be used).</li>
-</ul>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>If you make use of <code>assert</code> statements, keep in mind that running
-Python with the <a href="https://docs.python.org/3/using/cmdline.html#cmdoption-o"><code>-O</code> optimization flag</a>
-disables <code>assert</code> statements, and <strong>validators will stop working</strong>.</p>
-</div>
-<ul>
-<li>
-<p>where validators rely on other values, you should be aware that:</p>
-<ul>
-<li>
-<p>Validation is done in the order fields are defined.
-    E.g. in the example above, <code>password2</code> has access to <code>password1</code> (and <code>name</code>),
-    but <code>password1</code> does not have access to <code>password2</code>. See <a href="../models/#field-ordering">Field Ordering</a>
-    for more information on how fields are ordered</p>
-</li>
-<li>
-<p>If validation fails on another field (or that field is missing) it will not be included in <code>values</code>, hence
-    <code>if 'password1' in values and ...</code> in this example.</p>
-</li>
-</ul>
-</li>
-</ul>
 <h2 id="annotated-validators">Annotated Validators<a class="headerlink" href="#annotated-validators" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.WrapValidator"><code>pydantic.functional_validators.WrapValidator</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>pydantic.functional_validators.PlainValidator</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.BeforeValidator"><code>pydantic.functional_validators.BeforeValidator</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>pydantic.functional_validators.AfterValidator</code></a><br></p>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.WrapValidator"><code>pydantic.functional_validators.WrapValidator</code></a><br></p>
 </details>
-<p>Pydantic also provides a way to apply validators via use of <code>Annotated</code>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>You can use multiple before, after, or wrap validators, but only one <code>PlainValidator</code> since a plain validator
-will not call any inner validators.</p>
-</div>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>pydantic.functional_validators.PlainValidator</code></a><br></p>
+</details>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.BeforeValidator"><code>pydantic.functional_validators.BeforeValidator</code></a><br></p>
+</details>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>pydantic.functional_validators.AfterValidator</code></a><br></p>
+</details>
+<p>Pydantic provides a way to apply validators via use of <code>Annotated</code>.
+You should use this whenever you want to bind validation to a type instead of model or field.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 <span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
 
 
@@ -2464,76 +2384,452 @@ will not call any inner validators.</p>
     <span class="k">return</span> <span class="n">v</span>
 
 
-<span class="k">def</span> <span class="nf">check_cubes</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-    <span class="c1"># 64 ** (1 / 3) == 3.9999999999999996 (!)</span>
-    <span class="c1"># this is not a good way of checking cubes</span>
-    <span class="k">assert</span> <span class="n">v</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">3</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s1"> is not a cubed number&#39;</span>
-    <span class="k">return</span> <span class="n">v</span>
+<span class="k">def</span> <span class="nf">double</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">v</span> <span class="o">*</span> <span class="mi">2</span>
 
 
-<span class="n">SquaredNumber</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">check_squares</span><span class="p">)]</span>
-<span class="n">CubedNumberNumber</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">check_cubes</span><span class="p">)]</span>
+<span class="n">MyNumber</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">double</span><span class="p">),</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">check_squares</span><span class="p">)]</span>
 
 
 <span class="k">class</span> <span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">square_numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SquaredNumber</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">cube_numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">CubedNumberNumber</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">number</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">MyNumber</span><span class="p">]</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;square_numbers&#39;</span><span class="p">,</span> <span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">split_str</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">]))</span>
+<span class="c1">#&gt; number=[4, 16]</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">DemoModel</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for DemoModel</span>
+<span class="sd">    number.1</span>
+<span class="sd">      Assertion failed, 8 is not a square number</span>
+<span class="sd">    assert ((8 ** 0.5) % 1) == 0 [type=assertion_error, input_value=4, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>In this example we used some type aliases (<code>MyNumber = Annotated[...]</code>).
+While this can help with legibility of the code, it is not required, you can use <code>Annotated</code> directly in a model field type hint.
+These type aliases are also not actual types but you can use a similar approach with <code>TypeAliasType</code> to create actual types.
+See <a href="../types/custom/">Custom Types</a> for a more detailed explanation of custom types.</p>
+<p>It is also worth noting that you can nest <code>Annotated</code> inside other types.
+In this example we used that to apply validation to the inner items of a list.
+The same approach can be used for dict keys, etc.</p>
+<h3 id="before-after-wrap-and-plain-validators">Before, After, Wrap and Plain validators<a class="headerlink" href="#before-after-wrap-and-plain-validators" title="Permanent link">&para;</a></h3>
+<p>Pydantic provides multiple types of validator functions.
+* <code>After</code> validators run after Pydantic's internal parsing. They are generally more type safe and thus easier to implement.
+* <code>Before</code> validators run before Pydantic's internal parsing and validation (e.g. coercion of a <code>str</code> to an <code>int</code>). These are more flexible than <code>After</code> validators since they can modify the raw input, but they also have to deal with the raw input, which in theory could be any arbitrary object.
+* <code>Plain</code> validators are like a <code>mode='before'</code> validator but they terminate validation immediately, no further validators are called and Pydantic does not do any of it's internal validation.
+* <code>Wrap</code> validators are the most flexible of all. You can run code before or after Pydantic and other validators do their thing or you can terminate validation immediately, both with a successful value or an error.</p>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.WrapValidator"><code>pydantic.functional_validators.WrapValidator</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>pydantic.functional_validators.PlainValidator</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.BeforeValidator"><code>pydantic.functional_validators.BeforeValidator</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>pydantic.functional_validators.AfterValidator</code></a><br></p>
+</details>
+<p>You can use multiple before, after, or <code>mode='wrap'</code> validators, but only one <code>PlainValidator</code> since a plain validator
+will not call any inner validators.</p>
+<p>Here's an example of a <code>mode='wrap'</code> validator:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">ValidationInfo</span><span class="p">,</span>
+    <span class="n">ValidatorFunctionWrapHandler</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">WrapValidator</span>
+
+
+<span class="k">def</span> <span class="nf">maybe_strip_whitespace</span><span class="p">(</span>
+    <span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">ValidatorFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;json&#39;</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> <span class="s1">&#39;In JSON mode the input must be a string!&#39;</span>
+        <span class="c1"># you can call the handler multiple times</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="n">info</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;python&#39;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">),</span> <span class="s1">&#39;In Python mode the input must be an int!&#39;</span>
+    <span class="c1"># do no further validation</span>
+    <span class="k">return</span> <span class="n">v</span>
+
+
+<span class="n">MyNumber</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">WrapValidator</span><span class="p">(</span><span class="n">maybe_strip_whitespace</span><span class="p">)]</span>
+
+
+<span class="k">class</span> <span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">number</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">MyNumber</span><span class="p">]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">8</span><span class="p">]))</span>
+<span class="c1">#&gt; number=[2, 8]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;number&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39; 2 &#39;</span><span class="p">,</span> <span class="s1">&#39;8&#39;</span><span class="p">]})))</span>
+<span class="c1">#&gt; number=[2, 8]</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">DemoModel</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;2&#39;</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for DemoModel</span>
+<span class="sd">    number.0</span>
+<span class="sd">      Assertion failed, In Python mode the input must be an int!</span>
+<span class="sd">    assert False</span>
+<span class="sd">     +  where False = isinstance(&#39;2&#39;, int) [type=assertion_error, input_value=&#39;2&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>The same "modes" apply to <code>@field_validator</code>, which is discussed in the next section.</p>
+<h3 id="ordering-of-validators-within-annotated">Ordering of validators within <code>Annotated</code><a class="headerlink" href="#ordering-of-validators-within-annotated" title="Permanent link">&para;</a></h3>
+<p>Order of validation metadata within <code>Annotated</code> matters.
+Validation goes from right to left and back.
+That is, it goes from right to left running all "before" validators (or calling into "wrap" validators), then left to right back out calling all "after" validators.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">cast</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypedDict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AfterValidator</span><span class="p">,</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">BeforeValidator</span><span class="p">,</span>
+    <span class="n">PlainValidator</span><span class="p">,</span>
+    <span class="n">ValidationInfo</span><span class="p">,</span>
+    <span class="n">ValidatorFunctionWrapHandler</span><span class="p">,</span>
+    <span class="n">WrapValidator</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span> <span class="nc">Context</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+    <span class="n">logs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">make_validator</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ValidationInfo</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">validator</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+        <span class="n">context</span><span class="p">[</span><span class="s1">&#39;logs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+    <span class="k">return</span> <span class="n">validator</span>
+
+
+<span class="k">def</span> <span class="nf">make_wrap_validator</span><span class="p">(</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ValidatorFunctionWrapHandler</span><span class="p">,</span> <span class="n">ValidationInfo</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">validator</span><span class="p">(</span>
+        <span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">ValidatorFunctionWrapHandler</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">Context</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+        <span class="n">context</span><span class="p">[</span><span class="s1">&#39;logs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">: pre&#39;</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="n">context</span><span class="p">[</span><span class="s1">&#39;logs&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">: post&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">return</span> <span class="n">validator</span>
+
+
+<span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="nb">str</span><span class="p">,</span>
+        <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;before-1&#39;</span><span class="p">)),</span>
+        <span class="n">AfterValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;after-1&#39;</span><span class="p">)),</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">make_wrap_validator</span><span class="p">(</span><span class="s1">&#39;wrap-1&#39;</span><span class="p">)),</span>
+        <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;before-2&#39;</span><span class="p">)),</span>
+        <span class="n">AfterValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;after-2&#39;</span><span class="p">)),</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">make_wrap_validator</span><span class="p">(</span><span class="s1">&#39;wrap-2&#39;</span><span class="p">)),</span>
+        <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;before-3&#39;</span><span class="p">)),</span>
+        <span class="n">AfterValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;after-3&#39;</span><span class="p">)),</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">make_wrap_validator</span><span class="p">(</span><span class="s1">&#39;wrap-3&#39;</span><span class="p">)),</span>
+        <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;before-4&#39;</span><span class="p">)),</span>
+        <span class="n">AfterValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;after-4&#39;</span><span class="p">)),</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">make_wrap_validator</span><span class="p">(</span><span class="s1">&#39;wrap-4&#39;</span><span class="p">)),</span>
+    <span class="p">]</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="nb">str</span><span class="p">,</span>
+        <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;before-1&#39;</span><span class="p">)),</span>
+        <span class="n">AfterValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;after-1&#39;</span><span class="p">)),</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">make_wrap_validator</span><span class="p">(</span><span class="s1">&#39;wrap-1&#39;</span><span class="p">)),</span>
+        <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;before-2&#39;</span><span class="p">)),</span>
+        <span class="n">AfterValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;after-2&#39;</span><span class="p">)),</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">make_wrap_validator</span><span class="p">(</span><span class="s1">&#39;wrap-2&#39;</span><span class="p">)),</span>
+        <span class="n">PlainValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;plain&#39;</span><span class="p">)),</span>
+        <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;before-3&#39;</span><span class="p">)),</span>
+        <span class="n">AfterValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;after-3&#39;</span><span class="p">)),</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">make_wrap_validator</span><span class="p">(</span><span class="s1">&#39;wrap-3&#39;</span><span class="p">)),</span>
+        <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;before-4&#39;</span><span class="p">)),</span>
+        <span class="n">AfterValidator</span><span class="p">(</span><span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;after-4&#39;</span><span class="p">)),</span>
+        <span class="n">WrapValidator</span><span class="p">(</span><span class="n">make_wrap_validator</span><span class="p">(</span><span class="s1">&#39;wrap-4&#39;</span><span class="p">)),</span>
+    <span class="p">]</span>
+
+    <span class="n">val_x_before</span> <span class="o">=</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)(</span>
+        <span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;val_x before&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">val_x_after</span> <span class="o">=</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)(</span>
+        <span class="n">make_validator</span><span class="p">(</span><span class="s1">&#39;val_x after&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">val_y_wrap</span> <span class="o">=</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;wrap&#39;</span><span class="p">)(</span>
+        <span class="n">make_wrap_validator</span><span class="p">(</span><span class="s1">&#39;val_y wrap&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="p">(</span><span class="n">logs</span><span class="o">=</span><span class="p">[])</span>
+
+<span class="n">A</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;abc&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="s1">&#39;def&#39;</span><span class="p">},</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">context</span><span class="p">[</span><span class="s1">&#39;logs&#39;</span><span class="p">])</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">[</span>
+<span class="sd">    &#39;val_x before&#39;,</span>
+<span class="sd">    &#39;wrap-4: pre&#39;,</span>
+<span class="sd">    &#39;before-4&#39;,</span>
+<span class="sd">    &#39;wrap-3: pre&#39;,</span>
+<span class="sd">    &#39;before-3&#39;,</span>
+<span class="sd">    &#39;wrap-2: pre&#39;,</span>
+<span class="sd">    &#39;before-2&#39;,</span>
+<span class="sd">    &#39;wrap-1: pre&#39;,</span>
+<span class="sd">    &#39;before-1&#39;,</span>
+<span class="sd">    &#39;after-1&#39;,</span>
+<span class="sd">    &#39;wrap-1: post&#39;,</span>
+<span class="sd">    &#39;after-2&#39;,</span>
+<span class="sd">    &#39;wrap-2: post&#39;,</span>
+<span class="sd">    &#39;after-3&#39;,</span>
+<span class="sd">    &#39;wrap-3: post&#39;,</span>
+<span class="sd">    &#39;after-4&#39;,</span>
+<span class="sd">    &#39;wrap-4: post&#39;,</span>
+<span class="sd">    &#39;val_x after&#39;,</span>
+<span class="sd">    &#39;val_y wrap: pre&#39;,</span>
+<span class="sd">    &#39;wrap-4: pre&#39;,</span>
+<span class="sd">    &#39;before-4&#39;,</span>
+<span class="sd">    &#39;wrap-3: pre&#39;,</span>
+<span class="sd">    &#39;before-3&#39;,</span>
+<span class="sd">    &#39;plain&#39;,</span>
+<span class="sd">    &#39;after-3&#39;,</span>
+<span class="sd">    &#39;wrap-3: post&#39;,</span>
+<span class="sd">    &#39;after-4&#39;,</span>
+<span class="sd">    &#39;wrap-4: post&#39;,</span>
+<span class="sd">    &#39;val_y wrap: post&#39;,</span>
+<span class="sd">]</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h2 id="validation-of-default-values">Validation of default values<a class="headerlink" href="#validation-of-default-values" title="Permanent link">&para;</a></h2>
+<p>Validators won't run when the default value is used.
+This applies both to <code>@field_validator</code> validators and <code>Annotated</code> validators.
+You can force them to run with <code>Field(validate_defaults=True)</code>, but you are generally better off using a <code>@model_validator(mode='before')</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;abc&#39;</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">validate_default</span><span class="o">=</span><span class="kc">True</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;xyz&#39;</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">double</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">v</span> <span class="o">*</span> <span class="mi">2</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">())</span>
+<span class="c1">#&gt; x=&#39;abc&#39; y=&#39;xyzxyz&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; x=&#39;foofoo&#39; y=&#39;xyzxyz&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;abc&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; x=&#39;abcabc&#39; y=&#39;xyzxyz&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s1">&#39;bar&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; x=&#39;foofoo&#39; y=&#39;barbar&#39;</span>
+</code></pre></div>
+<h2 id="field-validators">Field validators<a class="headerlink" href="#field-validators" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.field_validator"><code>pydantic.functional_validators.field_validator</code></a><br></p>
+</details>
+<p>If you want to attach a validator to a specific field of a model you can use the <code>@field_validator</code> decorator.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">FieldValidationInfo</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">field_validator</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">UserModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">name_must_contain_space</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39; &#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;must contain a space&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+
+    <span class="c1"># you can select multiple fields, or use &#39;*&#39; to select all fields</span>
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">check_alphanumeric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;|&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;cube_numbers&#39;</span><span class="p">,</span> <span class="s1">&#39;square_numbers&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_sum</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">42</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;sum of numbers greater than 42&#39;</span><span class="p">)</span>
+            <span class="c1"># info.field_name is the name of the field being validated</span>
+            <span class="n">is_alphanumeric</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">isalnum</span><span class="p">()</span>
+            <span class="k">assert</span> <span class="n">is_alphanumeric</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">info</span><span class="o">.</span><span class="n">field_name</span><span class="si">}</span><span class="s1"> must be alphanumeric&#39;</span>
         <span class="k">return</span> <span class="n">v</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">9</span><span class="p">]))</span>
-<span class="c1">#&gt; square_numbers=[1, 4, 9] cube_numbers=[]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="s1">&#39;1|4|16&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; square_numbers=[1, 4, 16] cube_numbers=[]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">16</span><span class="p">],</span> <span class="n">cube_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">8</span><span class="p">,</span> <span class="mi">27</span><span class="p">]))</span>
-<span class="c1">#&gt; square_numbers=[16] cube_numbers=[8, 27]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">UserModel</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; id=1 name=&#39;John Doe&#39;</span>
+
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">DemoModel</span><span class="p">(</span><span class="n">square_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+    <span class="n">UserModel</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;samuel&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for DemoModel</span>
-<span class="sd">    square_numbers.2</span>
-<span class="sd">      Assertion failed, 2 is not a square number</span>
-<span class="sd">    assert ((2 ** 0.5) % 1) == 0 [type=assertion_error, input_value=2, input_type=int]</span>
+<span class="sd">    1 validation error for UserModel</span>
+<span class="sd">    name</span>
+<span class="sd">      Value error, must contain a space [type=value_error, input_value=&#39;samuel&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">DemoModel</span><span class="p">(</span><span class="n">cube_numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">27</span><span class="p">,</span> <span class="mi">27</span><span class="p">])</span>
+    <span class="n">UserModel</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;abc&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for DemoModel</span>
-<span class="sd">    cube_numbers</span>
-<span class="sd">      Value error, sum of numbers greater than 42 [type=value_error, input_value=[27, 27], input_type=list]</span>
+<span class="sd">    1 validation error for UserModel</span>
+<span class="sd">    id</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;abc&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">UserModel</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe!&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for UserModel</span>
+<span class="sd">    name</span>
+<span class="sd">      Assertion failed, name must be alphanumeric</span>
+<span class="sd">    assert False [type=assertion_error, input_value=&#39;John Doe!&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Validation order</p>
-<p>Validation order matters. Within a given type, validation goes from right to left and back. That is, it goes
-from right to left running all "before" validators (or calling into "wrap" validators), then left to right back out calling all "after" validators.</p>
-<p>In the following example, <code>func2</code> will be called before <code>func1</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="n">MyVal</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">func1</span><span class="p">),</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">func2</span><span class="p">)]</span>
-</code></pre></div>
-</div>
-<p>A few more things to note:</p>
+<p>A few things to note on validators:</p>
 <ul>
+<li><code>@field_validator</code>s are "class methods", so the first argument value they receive is the <code>UserModel</code> class, not an instance of <code>UserModel</code>. We recommend you use the <code>@classmethod</code> decorator on them below the <code>@field_validator</code> decorator to get proper type checking.</li>
+<li>the second argument is the field value to validate; it can be named as you please</li>
+<li>the third argument, if present, is an instance of <code>pydantic.FieldValidationInfo</code></li>
+<li>validators should either return the parsed value or raise a <code>ValueError</code> or <code>AssertionError</code> (<code>assert</code> statements may be used).</li>
 <li>A single validator can be applied to multiple fields by passing it multiple field names.</li>
 <li>A single validator can also be called on <em>all</em> fields by passing the special value <code>'*'</code>.</li>
-<li>The keyword argument <code>mode='before'</code> will cause the validator to be called prior to other validation.</li>
-<li>Using validator annotations inside of <code>Annotated</code> allows applying validators to items of collections.</li>
 </ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you make use of <code>assert</code> statements, keep in mind that running
+Python with the <a href="https://docs.python.org/3/using/cmdline.html#cmdoption-o"><code>-O</code> optimization flag</a>
+disables <code>assert</code> statements, and <strong>validators will stop working</strong>.</p>
+</div>
+<p>If you want to access values from another field inside a <code>@field_validator</code>, this may be possible using <code>FieldValidationInfo.data</code>, which is a dict of field name to field value.
+Validation is done in the order fields are defined, so you have to be careful when using <code>FieldValidationInfo.data</code> to not access a field that has not yet been validated/populated — in the code above, for example, you would not be able to access <code>info.data['id']</code> from within <code>name_must_contain_space</code>.
+However, in most cases where you want to perform validation using multiple field values, it is better to use <code>@model_validator</code> which is discussed in the section below.</p>
+<h2 id="model-validators">Model validators<a class="headerlink" href="#model-validators" title="Permanent link">&para;</a></h2>
+<p>Validation can also be performed on the entire model's data using <code>@model_validator</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">model_validator</span>
+
+
+<span class="k">class</span> <span class="nc">UserModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">password1</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">password2</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">check_card_number_omitted</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="s1">&#39;card_number&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span>
+            <span class="p">),</span> <span class="s1">&#39;card_number should not be included&#39;</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">check_passwords_match</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;UserModel&#39;</span><span class="p">:</span>
+        <span class="n">pw1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password1</span>
+        <span class="n">pw2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password2</span>
+        <span class="k">if</span> <span class="n">pw1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw1</span> <span class="o">!=</span> <span class="n">pw2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;passwords do not match&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; username=&#39;scolvin&#39; password1=&#39;zxcvbn&#39; password2=&#39;zxcvbn&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn2&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for UserModel</span>
+<span class="sd">      Value error, passwords do not match [type=value_error, input_value={&#39;username&#39;: &#39;scolvin&#39;, &#39;... &#39;password2&#39;: &#39;zxcvbn2&#39;}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">UserModel</span><span class="p">(</span>
+        <span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span>
+        <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
+        <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
+        <span class="n">card_number</span><span class="o">=</span><span class="s1">&#39;1234&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for UserModel</span>
+<span class="sd">      Assertion failed, card_number should not be included</span>
+<span class="sd">    assert &#39;card_number&#39; not in {&#39;card_number&#39;: &#39;1234&#39;, &#39;password1&#39;: &#39;zxcvbn&#39;, &#39;password2&#39;: &#39;zxcvbn&#39;, &#39;username&#39;: &#39;scolvin&#39;} [type=assertion_error, input_value={&#39;username&#39;: &#39;scolvin&#39;, &#39;..., &#39;card_number&#39;: &#39;1234&#39;}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>Model validators can be <code>mode='before'</code>, <code>mode='after'</code> or <code>mode='wrap'</code>.</p>
+<p>Before model validators are passed the raw input which is often a <code>dict[str, Any]</code> but could also be an instance of the model itself (e.g. if <code>UserModel.model_validate(UserModel.construct(...))</code> is called) or anything else since you can pass arbitrary objects into <code>model_validate</code>.
+Because of this <code>mode='before'</code> validators are extremely flexible and powerful but can be cumbersome and error prone to implement.
+Before model validators should be class methods.
+The first argument should be <code>cls</code> (and we also recommend you use <code>@classmethod</code> below <code>@model_validator</code> for proper type checking), the second argument will be the input (you should generally type it as <code>Any</code> and use <code>isinstance</code> to narrow the type) and the third argument (if present) will be a <code>pydantic.ValidationInfo</code>.</p>
+<p><code>mode='after'</code> validators are instance methods and always receive an instance of the model as the first argument.
+You should not use <code>(cls, ModelType)</code> as the signature, instead just use <code>(self)</code> and let type checkers infer the type of <code>self</code> for you.
+Since these are fully type safe they are often easier to implement than <code>mode='before'</code> validators.
+If any field fails to validate, <code>mode='after'</code> validators for that field will not be called.</p>
+<h2 id="handling-errors-in-validators">Handling errors in validators<a class="headerlink" href="#handling-errors-in-validators" title="Permanent link">&para;</a></h2>
+<p>As mentioned in the previous sections you can raise either a <code>ValueError</code> or <code>AssertionError</code> (including ones generated by <code>assert ...</code> statements) within a validator to indicate validation failed.
+You can also raise a <code>PydanticCustomError</code> which is a bit more verbose but gives you extra flexibility.
+Any other errors (including <code>TypeError</code>) are bubbled up and not wrapped in a <code>ValidationError</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">PydanticCustomError</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">validate_x</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="o">%</span> <span class="mi">42</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
+                <span class="s1">&#39;the_answer_error&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;</span><span class="si">{number}</span><span class="s1"> is the answer!&#39;</span><span class="p">,</span>
+                <span class="p">{</span><span class="s1">&#39;number&#39;</span><span class="p">:</span> <span class="n">v</span><span class="p">},</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">42</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    x</span>
+<span class="sd">      84 is the answer! [type=the_answer_error, input_value=84, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
 <h2 id="special-types">Special Types<a class="headerlink" href="#special-types" title="Permanent link">&para;</a></h2>
 <p>Pydantic provides a few special types that can be used to customize validation.</p>
 <ul>
@@ -2594,163 +2890,8 @@ from right to left running all "before" validators (or calling into "wrap" valid
 <span class="c1">#&gt; names=[&#39;foo&#39;, 123]</span>
 </code></pre></div>
 <ol>
-<li>Note that the validation of the second item is skipped.</li>
+<li>Note that the validation of the second item is skipped. If it has the wrong type it will emit a warning during serialization.</li>
 </ol>
-<h3 id="generic-validated-collections">Generic validated collections<a class="headerlink" href="#generic-validated-collections" title="Permanent link">&para;</a></h3>
-<p>To validate individual items of a collection (list, dict, etc.) field you can use <code>Annotated</code> to apply validators to the inner items.
-In this example we also use type aliases to create a generic validated collection to demonstrate how this approach leads to composability and coda re-use.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">TypeVar</span>
-
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
-
-<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
-
-<span class="n">SortedList</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="p">))]</span>
-
-<span class="n">Name</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">title</span><span class="p">())]</span>
-
-
-<span class="k">class</span> <span class="nc">DemoModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">int_list</span><span class="p">:</span> <span class="n">SortedList</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
-    <span class="n">name_list</span><span class="p">:</span> <span class="n">SortedList</span><span class="p">[</span><span class="n">Name</span><span class="p">]</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">DemoModel</span><span class="p">(</span><span class="n">int_list</span><span class="o">=</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">name_list</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;adrian g&#39;</span><span class="p">,</span> <span class="s1">&#39;David&#39;</span><span class="p">]))</span>
-<span class="c1">#&gt; int_list=[1, 2, 3] name_list=[&#39;Adrian G&#39;, &#39;David&#39;]</span>
-</code></pre></div>
-<h3 id="wrap-validators">Wrap validators<a class="headerlink" href="#wrap-validators" title="Permanent link">&para;</a></h3>
-<p>Wrap validators are useful for cases where you want to validate a value, but also want to return a default value if validation fails.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">WrapValidator</span>
-
-
-<span class="k">def</span> <span class="nf">validate_timestamp</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s1">&#39;now&#39;</span><span class="p">:</span>
-        <span class="c1"># we don&#39;t want to bother with further validation, just return the new value</span>
-        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-    <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
-        <span class="c1"># validation failed, in this case we want to return a default value</span>
-        <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-
-<span class="n">MyTimestamp</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="n">WrapValidator</span><span class="p">(</span><span class="n">validate_timestamp</span><span class="p">)]</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="n">MyTimestamp</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;now&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
-<span class="c1">#&gt; 2032-01-02 03:04:05.000006</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;invalid&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
-<span class="c1">#&gt; 2000-01-01 00:00:00</span>
-</code></pre></div>
-<h2 id="reuse-validators">Reuse validators<a class="headerlink" href="#reuse-validators" title="Permanent link">&para;</a></h2>
-<p>Occasionally, you will want to use the same validator on multiple fields/models (e.g. to
-normalize some input data). The "naive" approach would be to write a separate function,
-then call it from multiple decorators.  Obviously, this entails a lot of repetition and
-boiler plate code. To circumvent this, the <code>allow_reuse</code> parameter has been added to
-<code>pydantic.validator</code> in <strong>v1.2</strong> (<code>False</code> by default):</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">def</span> <span class="nf">normalize</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">())</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">))</span>
-
-
-<span class="k">class</span> <span class="nc">Producer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="c1"># validators</span>
-    <span class="n">normalize_name</span> <span class="o">=</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)(</span><span class="n">normalize</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">Consumer</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="c1"># validators</span>
-    <span class="n">normalize_name</span> <span class="o">=</span> <span class="n">field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)(</span><span class="n">normalize</span><span class="p">)</span>
-
-
-<span class="n">jane_doe</span> <span class="o">=</span> <span class="n">Producer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;JaNe DOE&#39;</span><span class="p">)</span>
-<span class="n">john_doe</span> <span class="o">=</span> <span class="n">Consumer</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;joHN dOe&#39;</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">jane_doe</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Jane Doe&#39;</span>
-<span class="k">assert</span> <span class="n">john_doe</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;John Doe&#39;</span>
-</code></pre></div>
-<p>As it is obvious, repetition has been reduced and the models become again almost
-declarative.</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>If you have a lot of fields that you want to validate, it usually makes sense to
-define a help function with which you will avoid setting <code>allow_reuse=True</code> over and
-over again.</p>
-</div>
-<h2 id="model-validators">Model validators<a class="headerlink" href="#model-validators" title="Permanent link">&para;</a></h2>
-<p>Validation can also be performed on the entire model's data.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">model_validator</span>
-
-
-<span class="k">class</span> <span class="nc">UserModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">password1</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">password2</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_card_number_omitted</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="s1">&#39;card_number&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;card_number should not be included&#39;</span>
-        <span class="k">return</span> <span class="n">data</span>
-
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_passwords_match</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;UserModel&#39;</span><span class="p">:</span>
-        <span class="n">pw1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password1</span>
-        <span class="n">pw2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">password2</span>
-        <span class="k">if</span> <span class="n">pw1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw1</span> <span class="o">!=</span> <span class="n">pw2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;passwords do not match&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; username=&#39;scolvin&#39; password1=&#39;zxcvbn&#39; password2=&#39;zxcvbn&#39;</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn2&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for UserModel</span>
-<span class="sd">      Value error, passwords do not match [type=value_error, input_value={&#39;username&#39;: &#39;scolvin&#39;, &#39;... &#39;password2&#39;: &#39;zxcvbn2&#39;}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">UserModel</span><span class="p">(</span>
-        <span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span>
-        <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
-        <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span>
-        <span class="n">card_number</span><span class="o">=</span><span class="s1">&#39;1234&#39;</span><span class="p">,</span>
-    <span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for UserModel</span>
-<span class="sd">      Assertion failed, card_number should not be included</span>
-<span class="sd">    assert &#39;card_number&#39; not in {&#39;card_number&#39;: &#39;1234&#39;, &#39;password1&#39;: &#39;zxcvbn&#39;, &#39;password2&#39;: &#39;zxcvbn&#39;, &#39;username&#39;: &#39;scolvin&#39;} [type=assertion_error, input_value={&#39;username&#39;: &#39;scolvin&#39;, &#39;..., &#39;card_number&#39;: &#39;1234&#39;}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-<p>As with field validators, root validators can have <code>pre=True</code>, in which case they're called before field
-validation occurs (and are provided with the raw input data), or <code>pre=False</code> (the default), in which case
-they're called after field validation.</p>
-<p>Field validation will not occur if <code>pre=True</code> root validators raise an error. As with field validators,
-"post" (i.e. <code>pre=False</code>) root validators by default will be called even if prior validators fail; this
-behaviour can be changed by setting the <code>skip_on_failure=True</code> keyword argument to the validator.
-The <code>values</code> argument will be a dict containing the values which passed field validation and
-field defaults where applicable.</p>
 <h2 id="field-checks">Field checks<a class="headerlink" href="#field-checks" title="Permanent link">&para;</a></h2>
 <p>During class creation, validators are checked to confirm that the fields they specify actually exist on the model.</p>
 <p>This may be undesirable if, for example, you want to define a validator to validate fields that will only be present

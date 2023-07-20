@@ -1218,6 +1218,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#customizing-the-json-schema-generation-process" class="md-nav__link">
+    Customizing the JSON schema generation process
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2277,6 +2284,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#customizing-the-json-schema-generation-process" class="md-nav__link">
+    Customizing the JSON schema generation process
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2446,8 +2460,8 @@
 </ul>
 <h2 id="getting-schema-of-a-specified-type">Getting schema of a specified type<a class="headerlink" href="#getting-schema-of-a-specified-type" title="Permanent link">&para;</a></h2>
 <p>The <a href="../type_adapter/"><code>TypeAdapter</code></a> class lets you create an object with methods for validating, serializing,
-and producing JSON schemas for arbitrary types. This serves as a complete replacement for <code>schema_of</code> (which is now
-deprecated).</p>
+and producing JSON schemas for arbitrary types. This serves as a complete replacement for <code>schema_of</code> in
+Pydantic V1 (which is now deprecated).</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
@@ -2524,12 +2538,28 @@ to <code>Field</code> with the raw schema attribute name:</p>
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
-    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)]</span> <span class="o">=</span> <span class="s1">&#39;Bar&#39;</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">256</span><span class="p">)]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="s1">&#39;Bar&#39;</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;te&#39;</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;id&#39;: {&#39;title&#39;: &#39;Id&#39;, &#39;type&#39;: &#39;string&#39;},</span>
+<span class="sd">        &#39;name&#39;: {</span>
+<span class="sd">            &#39;default&#39;: &#39;Bar&#39;,</span>
+<span class="sd">            &#39;maxLength&#39;: 256,</span>
+<span class="sd">            &#39;title&#39;: &#39;te&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;string&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;title&#39;: &#39;Foo&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><code>Field</code> can only be supplied once per field;
-an error will be raised if used in <code>Annotated</code> and as the assigned value.</p>
 <p>Defaults can be set outside <code>Annotated</code> as the assigned value or with <code>Field.default_factory</code> inside <code>Annotated</code>.
 The <code>Field.default</code> argument is not supported inside <code>Annotated</code>.</p>
 </div>
@@ -2962,37 +2992,40 @@ sub-models in its <code>$defs</code>:</p>
 <span class="p">}</span>
 </code></pre></div>
 <p>Note that you <em>must</em> return a schema, even if you are just mutating it in place.</p>
-<!-- TODO: Commented pending further review of GenerateJsonSchema
-
-## Customizing the JSON schema generation process
-
-If you need custom schema generation, you can use a `schema_generator`, modifying the
-[`GenerateJsonSchema`][pydantic.json_schema.GenerateJsonSchema] class as necessary for your application.
-
-The various methods that can be used to produce JSON schema accept a keyword argument `schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema`, and you can pass your custom subclass to these methods in order to use your own approach to generating JSON schema.
-
-`GenerateJsonSchema` implements the translation of a type's `pydantic-core` schema into a JSON schema.
+<h2 id="customizing-the-json-schema-generation-process">Customizing the JSON schema generation process<a class="headerlink" href="#customizing-the-json-schema-generation-process" title="Permanent link">&para;</a></h2>
+<p>If you need custom schema generation, you can use a <code>schema_generator</code>, modifying the
+<a class="autorefs autorefs-internal" href="../../api/json_schema/#pydantic.json_schema.GenerateJsonSchema"><code>GenerateJsonSchema</code></a> class as necessary for your application.</p>
+<p>The various methods that can be used to produce JSON schema accept a keyword argument <code>schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema</code>, and you can pass your custom subclass to these methods in order to use your own approach to generating JSON schema.</p>
+<p><code>GenerateJsonSchema</code> implements the translation of a type's <code>pydantic-core</code> schema into a JSON schema.
 By design, this class breaks the JSON schema generation process into smaller methods that can be easily overridden in
-subclasses to modify the "global" approach to generating JSON schema.
-
-```py
-from pydantic import BaseModel
-from pydantic.json_schema import GenerateJsonSchema
+subclasses to modify the "global" approach to generating JSON schema.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">GenerateJsonSchema</span>
 
 
-class MyGenerateJsonSchema(GenerateJsonSchema):
-    def generate(self, schema, mode='validation'):
-        json_schema = super().generate(schema, mode=mode)
-        json_schema['$schema'] = self.schema_dialect
-        return json_schema
+<span class="k">class</span> <span class="nc">MyGenerateJsonSchema</span><span class="p">(</span><span class="n">GenerateJsonSchema</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;validation&#39;</span><span class="p">):</span>
+        <span class="n">json_schema</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
+        <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Customize title&#39;</span>
+        <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;$schema&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">schema_dialect</span>
+        <span class="k">return</span> <span class="n">json_schema</span>
 
 
-class MyModel(BaseModel):
-    x: int
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
 
 
-MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema)
-``` -->
+<span class="nb">print</span><span class="p">(</span><span class="n">MyModel</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">schema_generator</span><span class="o">=</span><span class="n">MyGenerateJsonSchema</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {&#39;x&#39;: {&#39;title&#39;: &#39;X&#39;, &#39;type&#39;: &#39;integer&#39;}},</span>
+<span class="sd">    &#39;required&#39;: [&#39;x&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;Customize title&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">    &#39;$schema&#39;: &#39;https://json-schema.org/draft/2020-12/schema&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
 
 
 
