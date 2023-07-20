@@ -23,12 +23,18 @@ instance of `Foo`, the event name, and the validation result.
 from __future__ import annotations
 
 import functools
-import importlib.metadata
-from typing import Any, Callable, Final, Literal, ParamSpec, TypeVar
+import sys
+from typing import Any, Callable, TypeVar
 
 from pydantic_core import ValidationError
+from typing_extensions import Final, Literal, ParamSpec
 
 from .plugin import Plugin
+
+if sys.version_info >= (3, 8):
+    import importlib.metadata as importlib_metadata
+else:
+    import importlib_metadata
 
 P = ParamSpec('P')
 R = TypeVar('R')
@@ -44,11 +50,12 @@ def load_plugins() -> list[Plugin]:
     - https://github.com/pytest-dev/pytest/blob/5c0e5aa39916e6a49962e662002c23f578e897c9/src/pluggy/_manager.py#L352-L377
     """
     plugins: list[Plugin] = []
-    for dist in importlib.metadata.distributions():
+    for dist in importlib_metadata.distributions():
         for entry_point in dist.entry_points:
             if entry_point.group == GROUP:
                 plugins.append(entry_point.load())
     return plugins
+
 
 plugins = load_plugins()
 
@@ -61,6 +68,7 @@ def plug(func: Callable[P, R]) -> Callable[P, R]:
             for plugin in plugins:
                 if plugin.on_validate_python and getattr(plugin.on_validate_python, step):
                     getattr(plugin.on_validate_python, step)(*args, **kwargs)
+
         return call
 
     call_enter = call_step('enter')
