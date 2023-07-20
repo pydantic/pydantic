@@ -179,26 +179,31 @@ class DecimalValidator:
 
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         Decimal = decimal.Decimal
+        TUPLE_OR_LIST = (tuple, list)
 
-        def to_decimal(v: Any) -> decimal.Decimal:
-            try:
-                return Decimal(v)
-            except decimal.DecimalException as e:
-                raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal') from e
+        def accept_decimal(v: Any) -> decimal.Decimal:
+            if not isinstance(v, TUPLE_OR_LIST):
+                # don't allow tuples or lists, allow all other types supported
+                # by the Decimal constructor
+                try:
+                    return Decimal(v)
+                except (decimal.DecimalException, TypeError) as e:
+                    raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal') from e
+            raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
 
         primitive_schema = core_schema.union_schema(
             [
                 core_schema.float_schema(strict=True),
                 core_schema.int_schema(strict=True),
                 core_schema.str_schema(strict=True, strip_whitespace=True),
-            ],
+            ]
         )
-        json_schema = core_schema.no_info_after_validator_function(to_decimal, primitive_schema)
+        json_schema = core_schema.no_info_after_validator_function(accept_decimal, primitive_schema)
+        python_schema = core_schema.no_info_plain_validator_function(accept_decimal)
         schema = core_schema.json_or_python_schema(
             json_schema=json_schema,
             python_schema=core_schema.lax_or_strict_schema(
-                lax_schema=core_schema.union_schema([core_schema.is_instance_schema(decimal.Decimal), json_schema]),
-                strict_schema=core_schema.is_instance_schema(decimal.Decimal),
+                lax_schema=python_schema, strict_schema=core_schema.is_instance_schema(decimal.Decimal)
             ),
             serialization=core_schema.to_string_ser_schema(when_used='json'),
         )
