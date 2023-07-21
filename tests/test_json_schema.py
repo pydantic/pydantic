@@ -4874,6 +4874,21 @@ def test_skip_json_schema_annotation() -> None:
     }
 
 
+def test_skip_json_schema_exclude_default():
+    class Model(BaseModel):
+        x: Annotated[Union[int, SkipJsonSchema[None]], Field(json_schema_extra=lambda s: s.pop('default'))] = None
+
+    assert Model().x is None
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'properties': {
+            'x': {'title': 'X', 'type': 'integer'},
+        },
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_typeddict_field_required_missing() -> None:
     """https://github.com/pydantic/pydantic/issues/6192"""
 
