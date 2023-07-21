@@ -111,14 +111,18 @@ fn include_url_env(py: Python) -> bool {
 
 static URL_PREFIX: GILOnceCell<String> = GILOnceCell::new();
 
+fn get_formated_url(py: Python) -> &'static str {
+    let pydantic_version = match get_pydantic_version(py) {
+        // include major and minor version only
+        Some(value) => value.split('.').collect::<Vec<&str>>()[..2].join("."),
+        None => "latest".to_string(),
+    };
+    URL_PREFIX.get_or_init(py, || format!("https://errors.pydantic.dev/{pydantic_version}/v/"))
+}
+
 fn get_url_prefix(py: Python, include_url: bool) -> Option<&str> {
     if include_url {
-        Some(URL_PREFIX.get_or_init(py, || {
-            format!(
-                "https://errors.pydantic.dev/{}/v/",
-                get_pydantic_version(py).unwrap_or("latest")
-            )
-        }))
+        Some(get_formated_url(py))
     } else {
         None
     }
