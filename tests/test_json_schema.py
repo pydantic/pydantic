@@ -62,6 +62,7 @@ from pydantic.json_schema import (
     GenerateJsonSchema,
     JsonSchemaValue,
     PydanticJsonSchemaWarning,
+    SkipJsonSchema,
     model_json_schema,
     models_json_schema,
 )
@@ -4851,6 +4852,25 @@ def test_examples_annotation() -> None:
         'examples': {'Constants': [3.14, 2.71], 'Fibonacci': [1, 1, 2, 3, 5]},
         'items': {'type': 'number'},
         'type': 'array',
+    }
+
+
+def test_skip_json_schema_annotation() -> None:
+    class Model(BaseModel):
+        x: Union[int, SkipJsonSchema[None]] = None
+        y: Union[int, SkipJsonSchema[None]] = 1
+        z: Union[int, SkipJsonSchema[str]] = 'foo'
+
+    assert Model(y=None).y is None
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'properties': {
+            'x': {'default': None, 'title': 'X', 'type': 'integer'},
+            'y': {'default': 1, 'title': 'Y', 'type': 'integer'},
+            'z': {'default': 'foo', 'title': 'Z', 'type': 'integer'},
+        },
+        'title': 'Model',
+        'type': 'object',
     }
 
 
