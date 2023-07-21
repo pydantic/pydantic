@@ -619,6 +619,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rebuild-model-schema" class="md-nav__link">
+    Rebuild model schema
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#arbitrary-class-instances" class="md-nav__link">
     Arbitrary class instances
   </a>
@@ -2373,6 +2380,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#rebuild-model-schema" class="md-nav__link">
+    Rebuild model schema
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#arbitrary-class-instances" class="md-nav__link">
     Arbitrary class instances
   </a>
@@ -2650,7 +2664,8 @@ Models possess the following methods and attributes:</p>
     See <a href="../json_schema/">JSON Schema</a>.</li>
 <li><code>model_parametrized_name()</code>: compute the class name for parametrizations of generic classes.</li>
 <li><code>model_post_init()</code>: perform additional initialization after the model is initialized.</li>
-<li><code>model_rebuild()</code>: rebuild the model schema.</li>
+<li><code>model_rebuild()</code>: rebuild the model schema, which also supports building recursive generic models.
+    See <a href="#rebuild-model-schema">Rebuild model schema</a>.</li>
 <li><code>model_validate()</code>: a utility for loading any object into a model with error handling if the object is not a
     dictionary. See <a href="#helper-functions">Helper functions</a>.</li>
 <li><code>model_validate_json()</code>: a utility for validating the given JSON data against the Pydantic model. See
@@ -2701,6 +2716,44 @@ Models possess the following methods and attributes:</p>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <p>For self-referencing models, see <a href="../postponed_annotations/#self-referencing-or-recursive-models">postponed annotations</a>.</p>
+<h2 id="rebuild-model-schema">Rebuild model schema<a class="headerlink" href="#rebuild-model-schema" title="Permanent link">&para;</a></h2>
+<p>The model schema can be rebuilt using <code>model_rebuild()</code>. This is useful for building recursive generic models.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="s1">&#39;Bar&#39;</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Foo</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    `Foo` is not fully defined; you should define `Bar`, then call `Foo.model_rebuild()`.</span>
+
+<span class="sd">    For further information visit https://errors.pydantic.dev/2/u/class-not-fully-defined</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="n">Foo</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Foo</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;$defs&#39;: {&#39;Bar&#39;: {&#39;properties&#39;: {}, &#39;title&#39;: &#39;Bar&#39;, &#39;type&#39;: &#39;object&#39;}},</span>
+<span class="sd">    &#39;properties&#39;: {&#39;x&#39;: {&#39;$ref&#39;: &#39;#/$defs/Bar&#39;}},</span>
+<span class="sd">    &#39;required&#39;: [&#39;x&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;Foo&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
+call <code>model_rebuild()</code> proactively when dealing with recursive models or generics.</p>
 <h2 id="arbitrary-class-instances">Arbitrary class instances<a class="headerlink" href="#arbitrary-class-instances" title="Permanent link">&para;</a></h2>
 <p>(Formerly known as "ORM Mode"/<code>from_orm</code>.)</p>
 <p>Pydantic models can also be created from arbitrary class instances by reading the instance attributes corresponding
@@ -3224,6 +3277,12 @@ for Pydantic to serialize <code>ChildModel</code> as <code>ChildModel</code>.</p
 <span class="nb">print</span><span class="p">(</span><span class="n">concrete_model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 <span class="c1">#&gt; a=1 b=1</span>
 </code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>While it may not raise an error, we strongly advise against using parametrized generics in isinstance checks.</p>
+<p>For example, you should not do <code>isinstance(my_model, MyGenericModel[int])</code>. However, it is fine to do <code>isinstance(my_model, MyGenericModel)</code>. (Note that, for standard generics, it would raise an error to do a subclass check with a parameterized generic.)</p>
+<p>If you need to perform isinstance checks against parametrized generics, you can do this by subclassing the parametrized generic class. This looks like <code>class MyIntModel(MyGenericModel[int]): ...</code> and <code>isinstance(my_model, MyIntModel)</code>.</p>
+</div>
 <p>If a Pydantic model is used in a <code>TypeVar</code> constraint, <a href="../serialization/#serializing-with-duck-typing"><code>SerializeAsAny</code></a> can be used to
 serialize it using the concrete model instead of the model <code>TypeVar</code> is bound to.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>

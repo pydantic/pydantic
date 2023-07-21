@@ -1206,6 +1206,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#generic-dataclasses" class="md-nav__link">
+    Generic dataclasses
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#stdlib-dataclasses-and-pydantic-dataclasses" class="md-nav__link">
     Stdlib dataclasses and Pydantic dataclasses
   </a>
@@ -2229,6 +2236,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#generic-dataclasses" class="md-nav__link">
+    Generic dataclasses
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#stdlib-dataclasses-and-pydantic-dataclasses" class="md-nav__link">
     Stdlib dataclasses and Pydantic dataclasses
   </a>
@@ -2463,6 +2477,28 @@ unexpected fields while parsing data; they just won't be stored on the instance.
 <span class="c1">#&gt; Navbar(button=NavbarButton(href=Url(&#39;https://example.com/&#39;)))</span>
 </code></pre></div>
 <p>When used as fields, dataclasses (Pydantic or vanilla) should use dicts as validation inputs.</p>
+<h2 id="generic-dataclasses">Generic dataclasses<a class="headerlink" href="#generic-dataclasses" title="Permanent link">&para;</a></h2>
+<p>Pydantic supports generic dataclasses, including those with type variables.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
+<span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">GenericDataclass</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">T</span>
+
+
+<span class="n">validator</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">GenericDataclass</span><span class="p">)</span>
+
+<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">})</span><span class="o">.</span><span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span>
+<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span><span class="o">.</span><span class="n">x</span> <span class="o">==</span> <span class="mi">1</span>
+<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">x</span> <span class="o">==</span> <span class="s1">&#39;a&#39;</span>
+</code></pre></div>
+<p>Note that, if you use the dataclass as a field of a <code>BaseModel</code> or via FastAPI you don't need a <code>TypeAdapter</code>.</p>
 <h2 id="stdlib-dataclasses-and-pydantic-dataclasses">Stdlib dataclasses and Pydantic dataclasses<a class="headerlink" href="#stdlib-dataclasses-and-pydantic-dataclasses" title="Permanent link">&para;</a></h2>
 <h3 id="inherit-from-stdlib-dataclasses">Inherit from stdlib dataclasses<a class="headerlink" href="#inherit-from-stdlib-dataclasses" title="Permanent link">&para;</a></h3>
 <p>Stdlib dataclasses (nested or not) can also be inherited and Pydantic will automatically validate
