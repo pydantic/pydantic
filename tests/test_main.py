@@ -588,7 +588,7 @@ def test_hash_method_is_inherited_for_frozen_models():
     class MySubClass(MyBaseModel):
         x: Dict[str, int]
 
-        @lru_cache
+        @lru_cache(maxsize=None)
         def cached_method(self):
             return len(self.x)
 
