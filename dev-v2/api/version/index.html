@@ -2333,8 +2333,7 @@ like <code>0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty</code>.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/version.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">38</span>
-<span class="normal">39</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">39</span>
 <span class="normal">40</span>
 <span class="normal">41</span>
 <span class="normal">42</span>
@@ -2348,7 +2347,8 @@ like <code>0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty</code>.</p>
 <span class="normal">50</span>
 <span class="normal">51</span>
 <span class="normal">52</span>
-<span class="normal">53</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_mypy_version</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="normal">53</span>
+<span class="normal">54</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_mypy_version</span><span class="p">(</span><span class="n">version</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse mypy string version to tuple of ints.</span>
 
 <span class="sd">    This function is included here rather than the mypy plugin file because the mypy plugin file cannot be imported</span>
@@ -2413,7 +2413,8 @@ like <code>0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty</code>.</p>
 <span class="normal">32</span>
 <span class="normal">33</span>
 <span class="normal">34</span>
-<span class="normal">35</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">version_info</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">35</span>
+<span class="normal">36</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">version_info</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return complete version information for Pydantic and its dependencies.&quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">platform</span>
     <span class="kn">import</span> <span class="nn">sys</span>
@@ -2432,7 +2433,8 @@ like <code>0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty</code>.</p>
 
     <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;pydantic version&#39;</span><span class="p">:</span> <span class="n">VERSION</span><span class="p">,</span>
-        <span class="s1">&#39;pydantic-core version&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">pdc</span><span class="o">.</span><span class="n">__version__</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">pdc</span><span class="o">.</span><span class="n">build_profile</span><span class="si">}</span><span class="s1"> build profile&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;pydantic-core version&#39;</span><span class="p">:</span> <span class="n">pdc</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
+        <span class="s1">&#39;pydantic-core build&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">pdc</span><span class="p">,</span> <span class="s1">&#39;build_info&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pdc</span><span class="o">.</span><span class="n">build_profile</span><span class="p">,</span>
         <span class="s1">&#39;install path&#39;</span><span class="p">:</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="p">,</span>
         <span class="s1">&#39;python version&#39;</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
         <span class="s1">&#39;platform&#39;</span><span class="p">:</span> <span class="n">platform</span><span class="o">.</span><span class="n">platform</span><span class="p">(),</span>
