@@ -104,7 +104,8 @@ Models possess the following methods and attributes:
     See [JSON Schema](json_schema.md).
 * `model_parametrized_name()`: compute the class name for parametrizations of generic classes.
 * `model_post_init()`: perform additional initialization after the model is initialized.
-* `model_rebuild()`: rebuild the model schema.
+* `model_rebuild()`: rebuild the model schema, which also supports building recursive generic models.
+    See [Rebuild model schema](#rebuild-model-schema).
 * `model_validate()`: a utility for loading any object into a model with error handling if the object is not a
     dictionary. See [Helper functions](#helper-functions).
 * `model_validate_json()`: a utility for validating the given JSON data against the Pydantic model. See
@@ -157,6 +158,49 @@ print(m.model_dump())
 ```
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-or-recursive-models).
+
+## Rebuild model schema
+
+The model schema can be rebuilt using `model_rebuild()`. This is useful for building recursive generic models.
+
+```py
+from pydantic import BaseModel, PydanticUserError
+
+
+class Foo(BaseModel):
+    x: 'Bar'
+
+
+try:
+    Foo.model_json_schema()
+except PydanticUserError as e:
+    print(e)
+    """
+    `Foo` is not fully defined; you should define `Bar`, then call `Foo.model_rebuild()`.
+
+    For further information visit https://errors.pydantic.dev/2/u/class-not-fully-defined
+    """
+
+
+class Bar(BaseModel):
+    pass
+
+
+Foo.model_rebuild()
+print(Foo.model_json_schema())
+"""
+{
+    '$defs': {'Bar': {'properties': {}, 'title': 'Bar', 'type': 'object'}},
+    'properties': {'x': {'$ref': '#/$defs/Bar'}},
+    'required': ['x'],
+    'title': 'Foo',
+    'type': 'object',
+}
+"""
+```
+
+Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
+call `model_rebuild()` proactively when dealing with recursive models or generics.
 
 ## Arbitrary class instances
 
@@ -729,6 +773,13 @@ concrete_model = typevar_model[int]
 print(concrete_model(a=1, b=1))
 #> a=1 b=1
 ```
+
+!!! warning
+    While it may not raise an error, we strongly advise against using parametrized generics in isinstance checks.
+
+    For example, you should not do `isinstance(my_model, MyGenericModel[int])`. However, it is fine to do `isinstance(my_model, MyGenericModel)`. (Note that, for standard generics, it would raise an error to do a subclass check with a parameterized generic.)
+
+    If you need to perform isinstance checks against parametrized generics, you can do this by subclassing the parametrized generic class. This looks like `class MyIntModel(MyGenericModel[int]): ...` and `isinstance(my_model, MyIntModel)`.
 
 If a Pydantic model is used in a `TypeVar` constraint, [`SerializeAsAny`](serialization.md#serializing-with-duck-typing) can be used to
 serialize it using the concrete model instead of the model `TypeVar` is bound to.
