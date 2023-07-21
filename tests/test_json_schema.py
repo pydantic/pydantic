@@ -5129,3 +5129,23 @@ def test_multiple_parametrization_of_generic_model() -> None:
     # call the __get_pydantic_json_schema__ method multiple times)
     # but it's much easier to test for than absence of a recursion limit
     assert calls == 1
+
+
+def test_callable_json_schema_extra():
+    def pop_default(s):
+        s.pop('default')
+
+    class Model(BaseModel):
+        a: int = Field(default=1, json_schema_extra=pop_default)
+        b: Annotated[int, Field(json_schema_extra=pop_default)] = 2
+        c: Annotated[int, Field(json_schema_extra=pop_default), Field(default=3)]
+        d: Annotated[int, Field(default=4), Field(json_schema_extra=pop_default)]
+        # TODO: it doesn't work properly to have both annotation and assigned value of FieldInfo:
+        # e: Annotated[int, Field(json_schema_extra=pop_default)] = Field(default=5)
+        # f: Annotated[int, Field(default=6)] = Field(json_schema_extra=pop_default)
+
+    assert Model().model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+
+    json_schema = Model.model_json_schema()
+    for key in 'abcd':
+        assert json_schema['properties'][key] == {'title': key.upper(), 'type': 'integer'}  # default is not present
