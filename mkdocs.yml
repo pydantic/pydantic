@@ -133,7 +133,7 @@ nav:
     - 'Network Types': api/networks.md
     - 'Version Information': api/version.md
   - Pydantic Core:
-    - 'pydantic_core': api/pydantic_core_init.md
+    - 'pydantic_core': api/pydantic_core.md
     - 'pydantic_core.core_schema': api/pydantic_core_schema.md
   - Pydantic Settings:
     - 'pydantic_settings': api/pydantic_settings.md
@@ -205,6 +205,7 @@ plugins:
       'api/main.md': 'api/base_model.md'
       'api/color.md': 'api/pydantic_extra_types_color.md'
       'api/alias_generators.md': 'api/config.md'
+      'api/pydantic_core_init.md': 'api/pydantic_core.md'
       'usage/validation_errors.md': 'errors/validation_errors.md'
       'usage/errors.md': 'errors/usage_errors.md'
 - external-markdown:
