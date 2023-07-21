@@ -248,7 +248,7 @@ def collect_dataclass_fields(
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
         fields[ann_name] = field_info
 
-        if field_info.default is not PydanticUndefined:
+        if field_info.default is not PydanticUndefined and isinstance(getattr(cls, ann_name), FieldInfo):
             # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
             setattr(cls, ann_name, field_info.default)
 
