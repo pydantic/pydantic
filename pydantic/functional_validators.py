@@ -200,7 +200,11 @@ class WrapValidator:
     ```
     """
 
-    func: core_schema.GeneralWrapValidatorFunction | core_schema.FieldWrapValidatorFunction
+    func: (
+        core_schema.NoInfoWrapValidatorFunction
+        | core_schema.GeneralWrapValidatorFunction
+        | core_schema.FieldWrapValidatorFunction
+    )
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)

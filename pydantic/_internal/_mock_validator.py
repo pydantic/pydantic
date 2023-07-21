@@ -39,12 +39,14 @@ class MockValidator:
         getattr(SchemaValidator, item)
         raise PydanticUserError(self._error_message, code=self._code)
 
-    def force_rebuild(self) -> SchemaValidator:
+    def rebuild(self) -> SchemaValidator | None:
         if self._attempt_rebuild:
             validator = self._attempt_rebuild()
             if validator is not None:
                 return validator
-        raise PydanticUserError(self._error_message, code=self._code)
+            else:
+                raise PydanticUserError(self._error_message, code=self._code)
+        return None
 
 
 def set_basemodel_mock_validator(cls: type[BaseModel], cls_name: str, undefined_name: str) -> None:

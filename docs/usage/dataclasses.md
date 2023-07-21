@@ -39,7 +39,7 @@ You can use all the standard Pydantic field types. Note, however, that arguments
 order to perform validation and, where necessary coercion.
 
 To perform validation or generate a JSON schema on a Pydantic dataclass, you should now wrap the dataclass
-with a [`TypeAdapter`](models.md#typeadapter) and make use of its methods.
+with a [`TypeAdapter`](type_adapter.md) and make use of its methods.
 
 Fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
 
@@ -166,6 +166,33 @@ print(navbar)
 ```
 
 When used as fields, dataclasses (Pydantic or vanilla) should use dicts as validation inputs.
+
+## Generic dataclasses
+
+Pydantic supports generic dataclasses, including those with type variables.
+
+```py
+from typing import Generic, TypeVar
+
+from pydantic import TypeAdapter
+from pydantic.dataclasses import dataclass
+
+T = TypeVar('T')
+
+
+@dataclass
+class GenericDataclass(Generic[T]):
+    x: T
+
+
+validator = TypeAdapter(GenericDataclass)
+
+assert validator.validate_python({'x': None}).x is None
+assert validator.validate_python({'x': 1}).x == 1
+assert validator.validate_python({'x': 'a'}).x == 'a'
+```
+
+Note that, if you use the dataclass as a field of a `BaseModel` or via FastAPI you don't need a `TypeAdapter`.
 
 ## Stdlib dataclasses and Pydantic dataclasses
 

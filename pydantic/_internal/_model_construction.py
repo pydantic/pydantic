@@ -202,8 +202,10 @@ class ModelMetaclass(ABCMeta):
                 # This means the class didn't get a schema generated for it, likely because there was an undefined reference
                 maybe_mock_validator = getattr(self, '__pydantic_validator__', None)
                 if isinstance(maybe_mock_validator, MockValidator):
-                    maybe_mock_validator.force_rebuild()
-                    return getattr(self, '__pydantic_core_schema__')
+                    rebuilt_validator = maybe_mock_validator.rebuild()
+                    if rebuilt_validator is not None:
+                        # In this case, a validator was built, and so `__pydantic_core_schema__` should now be set
+                        return getattr(self, '__pydantic_core_schema__')
             raise AttributeError(item)
 
     @classmethod

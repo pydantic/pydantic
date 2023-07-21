@@ -44,7 +44,9 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     markdown = upgrade_python(markdown)
     markdown = insert_json_output(markdown)
     markdown = remove_code_fence_attributes(markdown)
-    if md := add_version(markdown, page):
+    if md := render_index(markdown, page):
+        return md
+    if md := render_why(markdown, page):
         return md
     elif md := build_schema_mappings(markdown, page):
         return md
@@ -90,6 +92,9 @@ def upgrade_python(markdown: str) -> str:
             min_minor_version = MIN_MINOR_VERSION
 
         py_code = match.group(2)
+        numbers = match.group(3)
+        # import devtools
+        # devtools.debug(numbers)
         output = []
         last_code = py_code
         for minor_version in range(min_minor_version, MAX_MINOR_VERSION + 1):
@@ -101,7 +106,7 @@ def upgrade_python(markdown: str) -> str:
                     continue
                 last_code = tab_code
 
-            content = indent(f'{prefix}\n{tab_code}```', ' ' * 4)
+            content = indent(f'{prefix}\n{tab_code}```{numbers}', ' ' * 4)
             output.append(f'=== "Python 3.{minor_version} and above"\n\n{content}')
 
         if len(output) == 1:
@@ -109,7 +114,7 @@ def upgrade_python(markdown: str) -> str:
         else:
             return '\n\n'.join(output)
 
-    return re.sub(r'^(``` *py.*?)\n(.+?)^```', add_tabs, markdown, flags=re.M | re.S)
+    return re.sub(r'^(``` *py.*?)\n(.+?)^```(\s+(?:^\d+\. .+?\n)+)', add_tabs, markdown, flags=re.M | re.S)
 
 
 def _upgrade_code(code: str, min_version: int) -> str:
@@ -162,7 +167,21 @@ def remove_code_fence_attributes(markdown: str) -> str:
     return re.sub(r'^( *``` *py)(.*)', remove_attrs, markdown, flags=re.M)
 
 
-def add_version(markdown: str, page: Page) -> str | None:
+def get_orgs_data() -> list[dict[str, str]]:
+    with (THIS_DIR / 'orgs.toml').open('rb') as f:
+        orgs_data = tomli.load(f)
+    return orgs_data['orgs']
+
+
+tile_template = """
+<div class="tile">
+  <a href="why/#org-{key}" title="{name}">
+    <img src="logos/{key}_logo.png" alt="{name}" />
+  </a>
+</div>"""
+
+
+def render_index(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'index.md':
         return None
 
@@ -179,9 +198,31 @@ def add_version(markdown: str, page: Page) -> str | None:
         version_str = f'Documentation for development version: [{sha}]({url})'
     else:
         version_str = 'Documentation for development version'
-    print(f'Setting version prefix: {version_str!r}')
+    logger.info('Setting version prefix: %r', version_str)
     markdown = re.sub(r'{{ *version *}}', version_str, markdown)
-    return markdown
+
+    elements = [tile_template.format(**org) for org in get_orgs_data()]
+
+    orgs_grid = f'<div id="grid-container"><div id="company-grid" class="grid">{"".join(elements)}</div></div>'
+    return re.sub(r'{{ *organisations *}}', orgs_grid, markdown)
+
+
+def render_why(markdown: str, page: Page) -> str | None:
+    if page.file.src_uri != 'why.md':
+        return None
+
+    with (THIS_DIR / 'using.toml').open('rb') as f:
+        using = tomli.load(f)['libs']
+
+    libraries = '\n'.join('* [`{repo}`](https://github.com/{repo}) {stars:,} stars'.format(**lib) for lib in using)
+    markdown = re.sub(r'{{ *libraries *}}', libraries, markdown)
+    default_description = '_(Based on the criteria described above)_'
+
+    elements = [
+        f'### {org["name"]} {{#org-{org["key"]}}}\n\n{org.get("description") or default_description}'
+        for org in get_orgs_data()
+    ]
+    return re.sub(r'{{ *organisations *}}', '\n\n'.join(elements), markdown)
 
 
 def _generate_table_row(col_values: list[str]) -> str:

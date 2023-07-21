@@ -504,6 +504,9 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
     Returns:
         Whether the validator takes an info argument.
     """
+    if getattr(validator, '__module__', None) == 'builtins':
+        # int, str, etc.
+        return False
     sig = signature(validator)
     n_positional = count_positional_params(sig)
     if mode == 'wrap':

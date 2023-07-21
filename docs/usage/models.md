@@ -104,7 +104,8 @@ Models possess the following methods and attributes:
     See [JSON Schema](json_schema.md).
 * `model_parametrized_name()`: compute the class name for parametrizations of generic classes.
 * `model_post_init()`: perform additional initialization after the model is initialized.
-* `model_rebuild()`: rebuild the model schema.
+* `model_rebuild()`: rebuild the model schema, which also supports building recursive generic models.
+    See [Rebuild model schema](#rebuild-model-schema).
 * `model_validate()`: a utility for loading any object into a model with error handling if the object is not a
     dictionary. See [Helper functions](#helper-functions).
 * `model_validate_json()`: a utility for validating the given JSON data against the Pydantic model. See
@@ -157,6 +158,49 @@ print(m.model_dump())
 ```
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-or-recursive-models).
+
+## Rebuild model schema
+
+The model schema can be rebuilt using `model_rebuild()`. This is useful for building recursive generic models.
+
+```py
+from pydantic import BaseModel, PydanticUserError
+
+
+class Foo(BaseModel):
+    x: 'Bar'
+
+
+try:
+    Foo.model_json_schema()
+except PydanticUserError as e:
+    print(e)
+    """
+    `Foo` is not fully defined; you should define `Bar`, then call `Foo.model_rebuild()`.
+
+    For further information visit https://errors.pydantic.dev/2/u/class-not-fully-defined
+    """
+
+
+class Bar(BaseModel):
+    pass
+
+
+Foo.model_rebuild()
+print(Foo.model_json_schema())
+"""
+{
+    '$defs': {'Bar': {'properties': {}, 'title': 'Bar', 'type': 'object'}},
+    'properties': {'x': {'$ref': '#/$defs/Bar'}},
+    'required': ['x'],
+    'title': 'Foo',
+    'type': 'object',
+}
+"""
+```
+
+Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
+call `model_rebuild()` proactively when dealing with recursive models or generics.
 
 ## Arbitrary class instances
 
@@ -686,6 +730,12 @@ similarly to how it treats built-in generic types like `List` and `Dict`:
 
 Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
 
+!!! note
+    For serialization this means: when a `TypeVar` is constrained or bound using a parent model `ParentModel`
+    and a child model `ChildModel` is used as a concrete value, Pydantic will serialize `ChildModel` as `ParentModel`.
+    `TypeVar` needs to be wrapped inside [`SerializeAsAny`](serialization.md#serializing-with-duck-typing)
+    for Pydantic to serialize `ChildModel` as `ChildModel`.
+
 ```py
 from typing import Generic, TypeVar
 
@@ -722,6 +772,52 @@ except ValidationError as exc:
 concrete_model = typevar_model[int]
 print(concrete_model(a=1, b=1))
 #> a=1 b=1
+```
+
+!!! warning
+    While it may not raise an error, we strongly advise against using parametrized generics in isinstance checks.
+
+    For example, you should not do `isinstance(my_model, MyGenericModel[int])`. However, it is fine to do `isinstance(my_model, MyGenericModel)`. (Note that, for standard generics, it would raise an error to do a subclass check with a parameterized generic.)
+
+    If you need to perform isinstance checks against parametrized generics, you can do this by subclassing the parametrized generic class. This looks like `class MyIntModel(MyGenericModel[int]): ...` and `isinstance(my_model, MyIntModel)`.
+
+If a Pydantic model is used in a `TypeVar` constraint, [`SerializeAsAny`](serialization.md#serializing-with-duck-typing) can be used to
+serialize it using the concrete model instead of the model `TypeVar` is bound to.
+
+```py
+from typing import Generic, TypeVar
+
+from pydantic import BaseModel, SerializeAsAny
+
+
+class Model(BaseModel):
+    a: int = 42
+
+
+class DataModel(Model):
+    b: int = 2
+    c: int = 3
+
+
+BoundT = TypeVar('BoundT', bound=Model)
+
+
+class GenericModel(BaseModel, Generic[BoundT]):
+    data: BoundT
+
+
+class SerializeAsAnyModel(BaseModel, Generic[BoundT]):
+    data: SerializeAsAny[BoundT]
+
+
+data_model = DataModel()
+
+print(GenericModel(data=data_model).model_dump())
+#> {'data': {'a': 42}}
+
+
+print(SerializeAsAnyModel(data=data_model).model_dump())
+#> {'data': {'a': 42, 'b': 2, 'c': 3}}
 ```
 
 ## Dynamic model creation
@@ -808,81 +904,6 @@ except ValidationError as e:
 
     - the model must be defined globally
     - it must provide `__module__`
-
-## `TypeAdapter`
-
-You may have types that are not `BaseModel`s that you want to validate data against.
-Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
-
-For use cases like this, Pydantic provides `TypeAdapter`, which can be used for type validation, serialization, and
-JSON schema generation without creating a `BaseModel`.
-
-A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
-for types that do not have such methods (such as dataclasses, primitive types, and more):
-
-```py
-from typing import List
-
-from typing_extensions import TypedDict
-
-from pydantic import TypeAdapter, ValidationError
-
-
-class User(TypedDict):
-    name: str
-    id: int
-
-
-UserListValidator = TypeAdapter(List[User])
-print(repr(UserListValidator.validate_python([{'name': 'Fred', 'id': '3'}])))
-#> [{'name': 'Fred', 'id': 3}]
-
-try:
-    UserListValidator.validate_python(
-        [{'name': 'Fred', 'id': 'wrong', 'other': 'no'}]
-    )
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for list[typed-dict]
-    0.id
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
-    """
-```
-
-!!! note
-    Despite some overlap in use cases with [`RootModel`](models.md#rootmodel-and-custom-root-types),
-    `TypeAdapter` should not be used as a type annotation for specifying fields of a `BaseModel`, etc.
-
-### Parsing data into a specified type
-
-`TypeAdapter` can be used to apply the parsing logic to populate pydantic models in a more ad-hoc way.
-This function behaves similarly to `BaseModel.model_validate`, but works with arbitrary Pydantic-compatible types.
-
-This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
-For example:
-
-```py
-from typing import List
-
-from pydantic import BaseModel, TypeAdapter
-
-
-class Item(BaseModel):
-    id: int
-    name: str
-
-
-# `item_data` could come from an API call, eg., via something like:
-# item_data = requests.get('https://my-api.com/items').json()
-item_data = [{'id': 1, 'name': 'My Item'}]
-
-items = TypeAdapter(List[Item]).validate_python(item_data)
-print(items)
-#> [Item(id=1, name='My Item')]
-```
-
-`TypeAdapter` is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
 
 ## `RootModel` and custom root types
 
