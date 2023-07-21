@@ -2746,3 +2746,26 @@ help_result_string = pydoc.render_doc(Model)
         )
 
     assert 'class Model' in module.help_result_string
+
+
+def test_cannot_use_leading_underscore_field_names():
+    with pytest.raises(
+        NameError, match="Fields must not use names with leading underscores; e.g., instead of '_x' use 'x'"
+    ):
+
+        class Model1(BaseModel):
+            _x: int = Field(alias='x')
+
+    with pytest.raises(
+        NameError, match="Fields must not use names with leading underscores; e.g., instead of '__x__' use 'x__'"
+    ):
+
+        class Model2(BaseModel):
+            __x__: int = Field()
+
+    with pytest.raises(
+        NameError, match="Fields must not use names with leading underscores; e.g., instead of '___' use 'my_field'"
+    ):
+
+        class Model3(BaseModel):
+            ___: int = Field(default=1)

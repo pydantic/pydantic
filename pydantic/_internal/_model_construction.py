@@ -308,16 +308,23 @@ def inspect_namespace(  # noqa C901
         elif isinstance(value, ModelPrivateAttr):
             if var_name.startswith('__'):
                 raise NameError(
-                    f'Private attributes "{var_name}" must not have dunder names; '
-                    'use a single underscore prefix instead.'
+                    'Private attributes must not use dunder names;'
+                    f' instead of {var_name!r} use a single underscore prefix instead.'
                 )
             elif is_valid_field_name(var_name):
                 raise NameError(
-                    f'Private attributes "{var_name}" must not be a valid field name; '
-                    f'use sunder names, e.g. "_{var_name}"'
+                    'Private attributes must not use valid field names;'
+                    f' instead of {var_name!r} use sunder names, e.g. {"_" + var_name!r}'
                 )
             private_attributes[var_name] = value
             del namespace[var_name]
+        elif isinstance(value, FieldInfo) and not is_valid_field_name(var_name):
+            suggested_name = var_name.lstrip('_') or 'my_field'  # don't suggest '' for all-underscore name
+            raise NameError(
+                f'Fields must not use names with leading underscores;'
+                f' e.g., instead of {var_name!r} use {suggested_name!r}'
+            )
+
         elif var_name.startswith('__'):
             continue
         elif is_valid_privateattr_name(var_name):
