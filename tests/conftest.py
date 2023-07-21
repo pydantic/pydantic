@@ -128,7 +128,8 @@ def pydantic_version():
     try:
         import pydantic
 
-        return pydantic.__version__
+        # include major and minor version only
+        return '.'.join(pydantic.__version__.split('.')[:2])
     except ImportError:
         return 'latest'
 
