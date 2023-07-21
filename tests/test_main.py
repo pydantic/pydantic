@@ -2750,21 +2750,21 @@ help_result_string = pydoc.render_doc(Model)
 
 def test_cannot_use_leading_underscore_field_names():
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., instead of '_x' use 'x'"
+        NameError, match="Fields must not use names with leading underscores; e.g., use 'x' instead of '_x'"
     ):
 
         class Model1(BaseModel):
             _x: int = Field(alias='x')
 
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., instead of '__x__' use 'x__'"
+        NameError, match="Fields must not use names with leading underscores; e.g., use 'x__' instead of '__x__'"
     ):
 
         class Model2(BaseModel):
             __x__: int = Field()
 
     with pytest.raises(
-        NameError, match="Fields must not use names with leading underscores; e.g., instead of '___' use 'my_field'"
+        NameError, match="Fields must not use names with leading underscores; e.g., use 'my_field' instead of '___'"
     ):
 
         class Model3(BaseModel):
