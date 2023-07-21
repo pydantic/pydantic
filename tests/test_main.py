@@ -575,7 +575,7 @@ def test_hash_function_give_different_result_for_different_object():
 
 
 def test_hash_method_is_inherited_for_frozen_models():
-    from functools import cache
+    from functools import lru_cache
 
     class MyBaseModel(BaseModel):
         """A base model with sensible configurations."""
@@ -588,7 +588,7 @@ def test_hash_method_is_inherited_for_frozen_models():
     class MySubClass(MyBaseModel):
         x: dict[str, int]
 
-        @cache
+        @lru_cache
         def cached_method(self):
             return len(self.x)
 
