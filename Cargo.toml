@@ -39,7 +39,7 @@ speedate = "0.11.0"
 ahash = "0.8.0"
 url = "2.3.1"
 # idna is already required by url, added here to be explicit
-idna = "0.3.0"
+idna = "0.4.0"
 base64 = "0.13.1"
 num-bigint = "0.4.3"
 python3-dll-a = "0.2.7"
