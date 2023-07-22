@@ -38,11 +38,12 @@ class ValidatePythonEnter(Protocol):
 
     def __call__(  # noqa: D102
         self,
-        cls: type[Any],  # type: ignore
-        json_data: str | bytes | bytearray,
+        input: Any,
         *,
         strict: bool | None = None,
+        from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
+        self_instance: Any | None = None,
     ) -> None:
         ...
 
@@ -52,11 +53,11 @@ class ValidateJsonEnter(Protocol):
 
     def __call__(  # noqa: D102
         self,
-        cls: type[Any],  # type: ignore
-        json_data: str | bytes | bytearray,
+        input: str | bytes | bytearray,
         *,
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
+        self_instance: Any | None = None,
     ) -> None:
         ...
 
