@@ -32,7 +32,7 @@ strum = { version = "0.25.0", features = ["derive"] }
 strum_macros = "0.25.1"
 serde_json = {version = "1.0.87", features = ["arbitrary_precision", "preserve_order"]}
 enum_dispatch = "0.3.8"
-serde = { version = "1.0.147", features = ["derive"] }
+serde = { version = "1.0.174", features = ["derive"] }
 # disabled for benchmarks since it makes microbenchmark performance more flakey
 mimalloc = { version = "0.1.30", optional = true, default-features = false, features = ["local_dynamic_tls"] }
 speedate = "0.11.0"
