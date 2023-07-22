@@ -7,4 +7,4 @@ pytest-speed==0.3.5
 pytest-mock==3.11.1
 pytest-pretty==1.1.1
 pytest-timeout==2.1.0
-pytz==2022.7.1
+pytz==2023.3
