@@ -22,12 +22,9 @@ instance of `Foo`, the event name, and the validation result.
 """
 from __future__ import annotations
 
-import functools
 import sys
-from typing import Any, Callable, TypeVar
 
-from pydantic_core import ValidationError
-from typing_extensions import Final, Literal, ParamSpec
+from typing_extensions import Final
 
 from .plugin import Plugin
 
@@ -35,9 +32,6 @@ if sys.version_info >= (3, 8):
     import importlib.metadata as importlib_metadata
 else:
     import importlib_metadata
-
-P = ParamSpec('P')
-R = TypeVar('R')
 
 
 GROUP: Final[str] = 'pydantic'
@@ -58,33 +52,3 @@ def load_plugins() -> list[Plugin]:
 
 
 plugins = load_plugins()
-
-
-def plug(func: Callable[P, R]) -> Callable[P, R]:
-    """Call plugins for pydantic."""
-
-    def call_step(step: Literal['enter', 'on_success', 'on_error']):
-        def call(*args: Any, **kwargs: Any) -> None:
-            for plugin in plugins:
-                if plugin.on_validate_python and getattr(plugin.on_validate_python, step):
-                    getattr(plugin.on_validate_python, step)(*args, **kwargs)
-
-        return call
-
-    call_enter = call_step('enter')
-    call_on_success = call_step('on_success')
-    call_on_error = call_step('on_success')
-
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        call_enter(*args, **kwargs)
-        try:
-            result = func(*args, **kwargs)
-        except ValidationError as error:
-            call_on_error(error)
-            raise error
-        else:
-            call_on_success(result)
-            return result
-
-    return wrapper
