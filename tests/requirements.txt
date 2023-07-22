@@ -1,5 +1,5 @@
 coverage==7.2.2
-dirty-equals==0.5.0
+dirty-equals==0.6.0
 hypothesis==6.63.0
 pytest==7.2.1
 pytest-examples==0.0.4
