@@ -89,7 +89,8 @@ if TYPE_CHECKING:
 default_prefix = '#/definitions/'
 default_ref_template = '#/definitions/{model}'
 
-TypeModelOrEnum = Union[Type['BaseModel'], Type[Enum]]
+T = TypeVar("T", bound="BaseModel")
+TypeModelOrEnum = Union[Type[T], Type[Enum]]
 TypeModelSet = Set[TypeModelOrEnum]
 
 
