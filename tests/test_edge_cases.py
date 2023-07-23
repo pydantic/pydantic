@@ -446,7 +446,7 @@ def test_tuple_value_error():
         },
         {
             'type': 'decimal_parsing',
-            'loc': ('v', 2, 'function-after[to_decimal(), union[float,int,constrained-str]]'),
+            'loc': ('v', 2, 'function-after[to_decimal(), union[int,constrained-str,function-plain[str()]]]'),
             'msg': 'Input should be a valid decimal',
             'input': 'x',
         },
@@ -1237,9 +1237,7 @@ def test_multiple_errors():
             'type': 'is_instance_of',
             'loc': (
                 'a',
-                'function-after[check_digits_validator(), json-or-python[json=function-after[to_decimal(), '
-                'union[float,int,constrained-str]],python=lax-or-strict[lax=union[is-instance[Decimal],'
-                'function-after[to_decimal(), union[float,int,constrained-str]]],strict=is-instance[Decimal]]]]',
+                'function-after[check_digits_validator(), json-or-python[json=function-after[to_decimal(), union[int,constrained-str,function-plain[str()]]],python=lax-or-strict[lax=union[is-instance[Decimal],function-after[to_decimal(), union[int,constrained-str,function-plain[str()]]]],strict=is-instance[Decimal]]]]',
                 'is-instance[Decimal]',
             ),
             'msg': 'Input should be an instance of Decimal',
@@ -1250,10 +1248,8 @@ def test_multiple_errors():
             'type': 'decimal_parsing',
             'loc': (
                 'a',
-                'function-after[check_digits_validator(), json-or-python[json=function-after[to_decimal(), '
-                'union[float,int,constrained-str]],python=lax-or-strict[lax=union[is-instance[Decimal],'
-                'function-after[to_decimal(), union[float,int,constrained-str]]],strict=is-instance[Decimal]]]]',
-                'function-after[to_decimal(), union[float,int,constrained-str]]',
+                'function-after[check_digits_validator(), json-or-python[json=function-after[to_decimal(), union[int,constrained-str,function-plain[str()]]],python=lax-or-strict[lax=union[is-instance[Decimal],function-after[to_decimal(), union[int,constrained-str,function-plain[str()]]]],strict=is-instance[Decimal]]]]',
+                'function-after[to_decimal(), union[int,constrained-str,function-plain[str()]]]',
             ),
             'msg': 'Input should be a valid decimal',
             'input': 'foobar',
