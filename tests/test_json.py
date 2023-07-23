@@ -445,3 +445,30 @@ def test_custom_iso_timedelta_annotated():
 
     m = Model(x=321, y=456)
     assert json.loads(m.model_dump_json()) == {'x': 'P0DT0H1M2.000000S', 'y': 'P0DT0H2M3.000000S'}
+
+
+def test_json_encoders_on_model() -> None:
+    """Make sure that applying json_encoders to a BaseModel
+    does not edit it's schema in place.
+    """
+
+    class Model(BaseModel):
+        x: int
+
+    class Outer1(BaseModel):
+        m: Model
+        model_config = ConfigDict(json_encoders={Model: lambda x: 'encoded!'})
+
+    class Outer2(BaseModel):
+        m: Model
+
+    class Outermost(BaseModel):
+        inner: Union[Outer1, Outer2]
+
+    m = Outermost(inner=Outer1(m=Model(x=1)))
+    # insert_assert(m.model_dump())
+    assert m.model_dump() == {'inner': {'m': 'encoded!'}}
+
+    m = Outermost(inner=Outer2(m=Model(x=1)))
+    # insert_assert(m.model_dump())
+    assert m.model_dump() == {'inner': {'m': {'x': 1}}}
