@@ -4,24 +4,16 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import Any, ContextManager, Iterable, NamedTuple, Optional, Type, Union, get_type_hints
+from typing import (Any, ContextManager, Iterable, NamedTuple, Optional, Type,
+                    Union, get_type_hints)
 
 from dirty_equals import HasRepr, IsPartialDict
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 
-from pydantic import (
-    BaseConfig,
-    BaseModel,
-    Field,
-    GenerateSchema,
-    PrivateAttr,
-    PydanticDeprecatedSince20,
-    PydanticSchemaGenerationError,
-    ValidationError,
-    create_model,
-    field_validator,
-    validate_call,
-)
+from pydantic import (BaseConfig, BaseModel, Field, GenerateSchema,
+                      PrivateAttr, PydanticDeprecatedSince20,
+                      PydanticSchemaGenerationError, ValidationError,
+                      create_model, field_validator, validate_call)
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.config import ConfigDict, JsonValue
@@ -29,6 +21,7 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import FieldInfo
 from pydantic.type_adapter import TypeAdapter
+from pydantic.v1.schema import get_model_name_map
 from pydantic.warnings import PydanticDeprecationWarning
 
 if sys.version_info < (3, 9):
@@ -490,6 +483,33 @@ def test_invalid_config_keys():
     @validate_call(config={'alias_generator': lambda x: x})
     def my_function():
         pass
+
+def test_config_model_name() -> None:
+    CLIENT_USER_MODEL_NAME = "ClientUser"
+    BUSINESS_USER_MODEL_NAME = "BusinessUser"
+
+
+    def _get_business_user_class():
+        class User(BaseModel):
+            model_config = ConfigDict(model_name=BUSINESS_USER_MODEL_NAME)
+
+        return User
+
+    def _get_client_user_class():
+        class User(BaseModel):
+            model_config = ConfigDict(model_name=CLIENT_USER_MODEL_NAME)
+
+        return User
+
+    BusinessUser = _get_business_user_class()
+    ClientUser = _get_client_user_class()
+
+    name_map = get_model_name_map({BusinessUser, ClientUser})
+    assert name_map[BusinessUser] == BUSINESS_USER_MODEL_NAME
+    assert name_map[ClientUser] == CLIENT_USER_MODEL_NAME
+
+    assert BusinessUser().model_json_schema()["title"] == BUSINESS_USER_MODEL_NAME
+    assert ClientUser().model_json_schema()["title"] == CLIENT_USER_MODEL_NAME
 
 
 def test_multiple_inheritance_config():

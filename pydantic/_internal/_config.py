@@ -41,6 +41,7 @@ class ConfigWrapper:
     # all annotations are copied directly from ConfigDict, and should be kept up to date, a test will fail if they
     # stop matching
     title: str | None
+    model_name: str | None
     str_to_lower: bool
     str_to_upper: bool
     str_strip_whitespace: bool
@@ -217,6 +218,7 @@ class ConfigWrapperStack:
 
 config_defaults = ConfigDict(
     title=None,
+    model_name=None,
     str_to_lower=False,
     str_to_upper=False,
     str_strip_whitespace=False,
