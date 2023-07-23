@@ -147,6 +147,7 @@ class ConfigDict(TypedDict, total=False):
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
     json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
+    json_encoders: dict[type, Callable[[Any], Any]] | None
 
     # new in V2
     strict: bool

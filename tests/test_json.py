@@ -12,8 +12,17 @@ from uuid import UUID
 
 import pytest
 from pydantic_core import CoreSchema, SchemaSerializer, core_schema
+from typing_extensions import Annotated
 
-from pydantic import BaseModel, ConfigDict, GetCoreSchemaHandler, GetJsonSchemaHandler, NameEmail
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+    NameEmail,
+    PlainSerializer,
+)
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
@@ -383,3 +392,56 @@ def test_resolve_ref_schema_recursive_model():
         },
         'allOf': [{'$ref': '#/$defs/Model'}],
     }
+
+
+def test_custom_json_encoder_config():
+    class Model(BaseModel):
+        x: timedelta
+        y: Decimal
+        z: date
+
+        model_config = ConfigDict(
+            json_encoders={timedelta: lambda v: f'{v.total_seconds():0.3f}s', Decimal: lambda v: 'a decimal'}
+        )
+
+    assert json.loads(Model(x=123, y=5, z='2032-06-01').model_dump_json()) == {
+        'x': '123.000s',
+        'y': 'a decimal',
+        'z': '2032-06-01',
+    }
+
+
+def test_custom_iso_timedelta():
+    class Model(BaseModel):
+        x: timedelta
+        model_config = ConfigDict(json_encoders={timedelta: lambda _: 'P0DT0H2M3.000000S'})
+
+    m = Model(x=321)
+    assert json.loads(m.model_dump_json()) == {'x': 'P0DT0H2M3.000000S'}
+
+
+def test_json_encoders_config_simple_inheritance():
+    """json_encoders is not "inheritable", this is different than v1 but much simpler"""
+
+    class Parent(BaseModel):
+        dt: datetime = datetime.now()
+        timedt: timedelta = timedelta(hours=100)
+
+        model_config = ConfigDict(json_encoders={timedelta: lambda _: 'parent_encoder'})
+
+    class Child(Parent):
+        model_config = ConfigDict(json_encoders={datetime: lambda _: 'child_encoder'})
+
+    # insert_assert(Child().model_dump())
+    assert Child().model_dump() == {'dt': 'child_encoder', 'timedt': timedelta(days=4, seconds=14400)}
+
+
+def test_custom_iso_timedelta_annotated():
+    class Model(BaseModel):
+        # the json_encoders config applies to the type but the annotation overrides it
+        y: timedelta
+        x: Annotated[timedelta, AfterValidator(lambda x: x), PlainSerializer(lambda _: 'P0DT0H1M2.000000S')]
+        model_config = ConfigDict(json_encoders={timedelta: lambda _: 'P0DT0H2M3.000000S'})
+
+    m = Model(x=321, y=456)
+    assert json.loads(m.model_dump_json()) == {'x': 'P0DT0H1M2.000000S', 'y': 'P0DT0H2M3.000000S'}
