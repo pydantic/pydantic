@@ -180,7 +180,7 @@ class DecimalValidator:
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         Decimal = decimal.Decimal
 
-        def to_decimal(v: Any) -> decimal.Decimal:
+        def to_decimal(v: str) -> decimal.Decimal:
             try:
                 return Decimal(v)
             except decimal.DecimalException as e:
@@ -188,9 +188,13 @@ class DecimalValidator:
 
         primitive_schema = core_schema.union_schema(
             [
-                core_schema.float_schema(strict=True),
+                # if it's an int keep it like that and pass it straight to Decimal
+                # but if it's not make it a string
+                # we don't use JSON -> float because parsing to any float will cause
+                # loss of precision
                 core_schema.int_schema(strict=True),
                 core_schema.str_schema(strict=True, strip_whitespace=True),
+                core_schema.no_info_plain_validator_function(str),
             ],
         )
         json_schema = core_schema.no_info_after_validator_function(to_decimal, primitive_schema)

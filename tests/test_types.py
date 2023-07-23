@@ -5615,3 +5615,14 @@ def test_string_constraints() -> None:
         Annotated[str, StringConstraints(strip_whitespace=True, to_lower=True), AfterValidator(lambda x: x * 2)]
     )
     assert ta.validate_python(' ABC ') == 'abcabc'
+
+
+def test_decimal_float_precision() -> None:
+    """https://github.com/pydantic/pydantic/issues/6807"""
+    ta = TypeAdapter(Decimal)
+    assert ta.validate_json('1.1') == Decimal('1.1')
+    assert ta.validate_python(1.1) == Decimal('1.1')
+    assert ta.validate_json('"1.1"') == Decimal('1.1')
+    assert ta.validate_python('1.1') == Decimal('1.1')
+    assert ta.validate_json('1') == Decimal('1')
+    assert ta.validate_python(1) == Decimal('1')
