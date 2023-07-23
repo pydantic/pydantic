@@ -1292,7 +1292,7 @@ class BoolCastable:
         ('uuid_check', b'\x12\x34\x56\x78' * 4, UUID('12345678-1234-5678-1234-567812345678')),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-', ValidationError),
         ('uuid_check', 123, ValidationError),
-        ('decimal_check', 42.24, Decimal(42.24)),
+        ('decimal_check', 42.24, Decimal('42.24')),
         ('decimal_check', '42.24', Decimal('42.24')),
         ('decimal_check', b'42.24', ValidationError),
         ('decimal_check', '  42.24  ', Decimal('42.24')),
@@ -5615,3 +5615,14 @@ def test_string_constraints() -> None:
         Annotated[str, StringConstraints(strip_whitespace=True, to_lower=True), AfterValidator(lambda x: x * 2)]
     )
     assert ta.validate_python(' ABC ') == 'abcabc'
+
+
+def test_decimal_float_precision() -> None:
+    """https://github.com/pydantic/pydantic/issues/6807"""
+    ta = TypeAdapter(Decimal)
+    assert ta.validate_json('1.1') == Decimal('1.1')
+    assert ta.validate_python(1.1) == Decimal('1.1')
+    assert ta.validate_json('"1.1"') == Decimal('1.1')
+    assert ta.validate_python('1.1') == Decimal('1.1')
+    assert ta.validate_json('1') == Decimal('1')
+    assert ta.validate_python(1) == Decimal('1')
