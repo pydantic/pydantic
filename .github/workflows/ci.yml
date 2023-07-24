@@ -177,6 +177,7 @@ jobs:
 
   test-pydantic-integration:
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v3
@@ -336,14 +337,14 @@ jobs:
   # https://github.com/marketplace/actions/alls-green#why used for branch protection checks
   check:
     if: always()
-    needs: [coverage, test-python, test-os, test-debug, test-pydantic-integration, lint, bench, build-wasm-emscripten]
+    needs: [coverage, test-python, test-os, test-debug, lint, bench, build-wasm-emscripten]
     runs-on: ubuntu-latest
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1
         with:
           jobs: ${{ toJSON(needs) }}
-          allowed-failures: coverage, test-pydantic-integration
+          allowed-failures: coverage
 
   build-sdist:
     name: build sdist
