@@ -9,7 +9,7 @@ class Foo:
 
 
 @dataclass(config=ConfigDict(title='Bar Title'))
-# MYPY: error: Expression type contains "Any" (has type "Type[ConfigDict]")  [misc]
+# MYPY: error: Expression type contains "Any" (has type "type[ConfigDict]")  [misc]
 # MYPY: error: Expression type contains "Any" (has type "ConfigDict")  [misc]
 class Bar:
     bar: str
