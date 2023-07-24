@@ -4730,7 +4730,7 @@ def test_union_subclass(max_length: Union[int, None]):
         x: Union[int, Annotated[str, Field(max_length=max_length)]]
 
     v = Model(x=MyStr('1')).x
-    assert type(v) is MyStr
+    assert type(v) is str
     assert v == '1'
 
 
