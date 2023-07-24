@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, cast
 from pydantic_core import core_schema
 from typing_extensions import Literal, Self
 
-from ..config import ConfigDict, ExtraValues, JsonSchemaExtraCallable
+from ..config import ConfigDict, ExtraValues, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20
 
@@ -47,7 +47,7 @@ class ConfigWrapper:
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
     json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
-    json_encoders: dict[type, Callable[[Any], Any]] | None
+    json_encoders: dict[type[object], JsonEncoder] | None
 
     # new in V2
     strict: bool

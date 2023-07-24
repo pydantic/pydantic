@@ -35,7 +35,7 @@ from warnings import warn
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
-from ..config import ConfigDict
+from ..config import ConfigDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import AliasChoices, AliasPath, FieldInfo
 from ..json_schema import JsonSchemaValue
@@ -211,7 +211,7 @@ def modify_model_json_schema(
     return json_schema
 
 
-JsonEncoders = Dict[Type[Any], Callable[[Any], Any]]
+JsonEncoders = Dict[Type[Any], JsonEncoder]
 
 
 def _add_custom_serialization_from_json_encoders(

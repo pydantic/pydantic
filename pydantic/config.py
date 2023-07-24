@@ -18,6 +18,8 @@ if not TYPE_CHECKING:
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 
 
+JsonEncoder = Callable[[Any], Any]
+
 JsonSchemaExtraCallable: TypeAlias = Union[
     Callable[[Dict[str, Any]], None],
     Callable[[Dict[str, Any], Type[Any]], None],
@@ -147,7 +149,7 @@ class ConfigDict(TypedDict, total=False):
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
     json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
-    json_encoders: dict[type, Callable[[Any], Any]] | None
+    json_encoders: dict[type[object], JsonEncoder] | None
 
     # new in V2
     strict: bool
