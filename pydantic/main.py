@@ -453,8 +453,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
                 types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
 
-            # manually override defer_model_build so complete_model_class doesn't skip building the model again
-            config = {**cls.model_config, 'defer_model_build': False}
+            # manually override defer_build so complete_model_class doesn't skip building the model again
+            config = {**cls.model_config, 'defer_build': False}
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,

@@ -135,7 +135,7 @@ class ConfigDict(TypedDict, total=False):
         hide_input_in_errors: Whether to hide inputs when printing errors. Defaults to `False`.
 
             See [Hide Input in Errors](../usage/model_config.md#hide-input-in-errors).
-        defer_model_build: Whether to defer model validator and serializer construction until the
+        defer_build: Whether to defer model validator and serializer construction until the
             first model validation. This can be useful to avoid the overhead of building models which are only
             used nested within other models, or when you want to manually define type namespace via
             [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
@@ -175,7 +175,7 @@ class ConfigDict(TypedDict, total=False):
     validate_return: bool
     protected_namespaces: tuple[str, ...]
     hide_input_in_errors: bool
-    defer_model_build: bool
+    defer_build: bool
 
 
 __getattr__ = getattr_migration(__name__)

@@ -452,7 +452,7 @@ def complete_model_class(
         ref_mode='unpack',
     )
 
-    if config_wrapper.defer_model_build:
+    if config_wrapper.defer_build:
         set_basemodel_mock_validator(cls, cls_name)
         return False
 

@@ -668,7 +668,7 @@ def test_json_encoders_type_adapter() -> None:
 
 
 def test_config_model_defer_build():
-    class MyModel(BaseModel, defer_model_build=True):
+    class MyModel(BaseModel, defer_build=True):
         x: int
 
     assert isinstance(MyModel.__pydantic_validator__, MockValidator)
@@ -680,7 +680,7 @@ def test_config_model_defer_build():
 
 
 def test_config_model_defer_build_nested():
-    class MyNestedModel(BaseModel, defer_model_build=True):
+    class MyNestedModel(BaseModel, defer_build=True):
         x: int
 
     class MyModel(BaseModel):
