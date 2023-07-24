@@ -14,9 +14,9 @@
         - PydanticOmit
         - PydanticSerializationError
         - PydanticSerializationUnexpectedValue
+        - Url
         - MultiHostUrl
         - MultiHostHost
-        - Url
         - ArgsKwargs
         - Some
         - TzInfo
