@@ -2,8 +2,10 @@
 
 Plugins are installed via Python entry points, for example in `pyproject.toml`:
 
-    [project.entry-points.pydantic]
-    pydantic_sdk = "pydantic_sdk:main"
+```toml
+[project.entry-points.pydantic]
+pydantic_sdk = "pydantic_sdk:main"
+```
 
 The entry point group is `pydantic` and the name of the entry point is the name of the plugin.
 
