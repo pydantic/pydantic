@@ -12,10 +12,12 @@ they are found, and the order they are found is not guaranteed.
 
 Consider that you have a plugin called `observer`, then you can use it like this:
 
-    from pydantic import BaseModel
+```py
+from pydantic import BaseModel
 
-    class Foo(BaseModel, observer='all'):
-        ...
+class Foo(BaseModel, observer='all'):
+    ...
+```
 
 On each validation call, a callable registered for the event `all` will be called with the
 instance of `Foo`, the event name, and the validation result.
