@@ -14,8 +14,7 @@ from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
-from ..plugin.loader import plugins
-from ..plugin.schema_validator import PluggableSchemaValidator
+from ..plugin.schema_validator import schema_validator_cls
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _discriminated_union, _typing_extra
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
@@ -165,11 +164,7 @@ def complete_dataclass(
     # debug(schema)
     cls.__pydantic_core_schema__ = schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
     simplified_core_schema = inline_schema_defs(schema)
-    if plugins:
-        validator = PluggableSchemaValidator(simplified_core_schema, core_config)
-    else:
-        validator = SchemaValidator(simplified_core_schema, core_config)
-    cls.__pydantic_validator__ = typing.cast(SchemaValidator, validator)
+    cls.__pydantic_validator__ = validator = schema_validator_cls()(simplified_core_schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
 
     if config_wrapper.validate_assignment:

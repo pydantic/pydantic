@@ -14,6 +14,16 @@ P = ParamSpec('P')
 R = TypeVar('R')
 
 
+def schema_validator_cls() -> type[SchemaValidator]:
+    """Get the schema validator class.
+
+    Returns:
+        type[SchemaValidator]: If plugins are installed then return `PluggableSchemaValidator`,
+            otherwise return `SchemaValidator`.
+    """
+    return PluggableSchemaValidator if plugins else SchemaValidator  # type: ignore
+
+
 def _plug(func: Callable[P, R]) -> Callable[P, R]:
     """Call plugins for pydantic."""
     caller = _StepCaller(func)
