@@ -52,6 +52,7 @@ def schema(*, strict: bool = False) -> dict:
                     'type': 'model-field',
                     'schema': {'type': 'datetime', 'ge': '2000-01-01T06:00:00', 'lt': '2020-01-02T12:13:14'},
                 },
+                'field_uuid': {'type': 'model-field', 'schema': {'type': 'uuid'}},
                 'field_list_any': {'type': 'model-field', 'schema': {'type': 'list'}},
                 'field_list_str': {'type': 'model-field', 'schema': {'type': 'list', 'items_schema': {'type': 'str'}}},
                 'field_list_str_con': {
@@ -226,6 +227,7 @@ def input_data_lax():
         'field_time_con': '12:00:00',
         'field_datetime': '2020-01-01T12:13:14',
         'field_datetime_con': '2020-01-01T00:00:00',
+        'field_uuid': '12345678-1234-5678-1234-567812345678',
         'field_list_any': ['a', b'b', True, 1.0, None] * 10,
         'field_list_str': ['a', 'b', 'c'] * 10,
         'field_list_str_con': ['a', 'b', 'c'] * 10,
@@ -263,6 +265,7 @@ def input_data_lax():
 
 def input_data_strict():
     from datetime import date, datetime, time
+    from uuid import UUID
 
     input_data = input_data_lax()
     input_data.update(
@@ -272,6 +275,7 @@ def input_data_strict():
         field_time_con=time(12, 0, 0),
         field_datetime=datetime(2020, 1, 1, 12, 13, 14),
         field_datetime_con=datetime(2020, 1, 1),
+        field_uuid=UUID('12345678-1234-5678-1234-567812345678'),
     )
     return input_data
 
@@ -293,6 +297,7 @@ def input_data_wrong():
         'field_time_con': '23:00:00',
         'field_datetime': b'smash',
         'field_datetime_con': '1900-01-01T00:00:00',
+        'field_uuid': '12345678-1234-5678-1234-567812345678',
         'field_list_any': {1: 2, 3: 4},
         'field_list_str': [(i,) for i in range(100)],
         'field_list_str_con': ['a', 'b'],

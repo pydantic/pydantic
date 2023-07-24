@@ -1,5 +1,6 @@
 import json
 from datetime import date, datetime
+from uuid import UUID
 
 import pytest
 
@@ -356,6 +357,17 @@ def test_datetime(benchmark):
     @benchmark
     def r():
         v.to_python(d, mode='json')
+
+
+@pytest.mark.benchmark(group='model-list-json')
+def test_uuid(benchmark):
+    v = SchemaSerializer(core_schema.uuid_schema())
+    u = UUID('12345678-1234-5678-1234-567812345678')
+    assert v.to_python(u, mode='json') == '12345678-1234-5678-1234-567812345678'
+
+    @benchmark
+    def r():
+        v.to_python(u, mode='json')
 
 
 @pytest.mark.benchmark(group='to-string')
