@@ -263,7 +263,7 @@ def min_length_validator(x: Any, min_length: Any) -> Any:
 
 
 def max_length_validator(x: Any, max_length: Any) -> Any:
-    if not (len(x) < max_length):
+    if len(x) > max_length:
         raise PydanticKnownError(
             'too_long',
             {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
