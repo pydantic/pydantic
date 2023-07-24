@@ -15,21 +15,11 @@ from uuid import UUID
 import pytest
 from typing_extensions import Annotated, Literal
 
-from pydantic.networks import EmailStr
-
-try:
-    import email_validator
-except ImportError:
-    email_validator = None
-
 
 @pytest.fixture(scope='module')
 def pydantic_type_adapter():
     from pydantic import BaseModel, Field, TypeAdapter
     from pydantic.networks import AnyHttpUrl
-
-    if not email_validator:
-        raise pytest.skip(reason='email_validator not installed')
 
     class Blog(BaseModel):
         type: Literal['blog']
@@ -64,7 +54,6 @@ def pydantic_type_adapter():
     class Person(BaseModel):
         id: UUID
         name: str
-        email: EmailStr
         height: Decimal
         entry_created_date: date
         entry_created_time: time
@@ -75,7 +64,7 @@ def pydantic_type_adapter():
 
 
 _NORTH_STAR_DATA_PATH = Path(__file__).parent / 'north_star_data.json'
-_EXPECTED_NORTH_STAR_DATA_MD5 = '40bd2ee46ddbcc07ee8c693dc666fa17'
+_EXPECTED_NORTH_STAR_DATA_MD5 = '0ff34599a0861026cf25b6cdbb4bbe81'
 
 
 @pytest.fixture(scope='module')
