@@ -1657,6 +1657,17 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
         return json_schema
 
+    def uuid_schema(self, schema: core_schema.UuidSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a UUID.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return {'type': 'string', 'format': 'uuid'}
+
     def definitions_schema(self, schema: core_schema.DefinitionsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a JSON object with definitions.
 

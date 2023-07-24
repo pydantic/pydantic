@@ -542,16 +542,7 @@ class UuidVersion:
     def __get_pydantic_core_schema__(
         self, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.general_after_validator_function(
-            cast(core_schema.GeneralValidatorFunction, self.validate), handler(source)
-        )
-
-    def validate(self, value: UUID, _: core_schema.ValidationInfo) -> UUID:
-        if value.version != self.uuid_version:
-            raise PydanticCustomError(
-                'uuid_version', 'uuid version {required_version} expected', {'required_version': self.uuid_version}
-            )
-        return value
+        return core_schema.uuid_schema(version=self.uuid_version)
 
     def __hash__(self) -> int:
         return hash(type(self.uuid_version))
