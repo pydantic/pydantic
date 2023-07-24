@@ -79,6 +79,7 @@ from pydantic import (
     PydanticInvalidForJsonSchema,
     SecretBytes,
     SecretStr,
+    SerializeAsAny,
     SkipValidation,
     StrictBool,
     StrictBytes,
@@ -5374,6 +5375,28 @@ def test_instanceof_invalid_core_schema():
         PydanticInvalidForJsonSchema, match='Cannot generate a JsonSchema for core_schema.IsInstanceSchema'
     ):
         MyModel.model_json_schema()
+
+
+def test_instanceof_serialization():
+    class Inner(BaseModel):
+        pass
+
+    class SubInner(Inner):
+        x: int
+
+    class OuterStandard(BaseModel):
+        inner: InstanceOf[Inner]
+
+    assert OuterStandard(inner=SubInner(x=1)).model_dump() == {'inner': {}}
+
+    class OuterAsAny(BaseModel):
+        inner1: SerializeAsAny[InstanceOf[Inner]]
+        inner2: InstanceOf[SerializeAsAny[Inner]]
+
+    assert OuterAsAny(inner1=SubInner(x=2), inner2=SubInner(x=3)).model_dump() == {
+        'inner1': {'x': 2},
+        'inner2': {'x': 3},
+    }
 
 
 def test_constraints_arbitrary_type() -> None:
