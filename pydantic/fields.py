@@ -323,6 +323,9 @@ class FieldInfo(_repr.Representation):
         if isinstance(default, cls):
             default.annotation, annotation_metadata = cls._extract_metadata(annotation)
             default.metadata += annotation_metadata
+            default = default.merge_field_infos(
+                *[x for x in annotation_metadata if isinstance(x, cls)], default, annotation=default.annotation
+            )
             default.frozen = final or default.frozen
             return default
         elif isinstance(default, dataclasses.Field):
@@ -339,6 +342,11 @@ class FieldInfo(_repr.Representation):
             pydantic_field = cls._from_dataclass_field(default)
             pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
             pydantic_field.metadata += annotation_metadata
+            pydantic_field = pydantic_field.merge_field_infos(
+                *[x for x in annotation_metadata if isinstance(x, cls)],
+                pydantic_field,
+                annotation=pydantic_field.annotation,
+            )
             pydantic_field.frozen = final or pydantic_field.frozen
             pydantic_field.init_var = init_var
             pydantic_field.kw_only = getattr(default, 'kw_only', None)

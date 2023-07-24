@@ -5175,12 +5175,51 @@ def test_callable_json_schema_extra():
         b: Annotated[int, Field(json_schema_extra=pop_default)] = 2
         c: Annotated[int, Field(json_schema_extra=pop_default), Field(default=3)]
         d: Annotated[int, Field(default=4), Field(json_schema_extra=pop_default)]
-        # TODO: it doesn't work properly to have both annotation and assigned value of FieldInfo:
-        # e: Annotated[int, Field(json_schema_extra=pop_default)] = Field(default=5)
-        # f: Annotated[int, Field(default=6)] = Field(json_schema_extra=pop_default)
+        e: Annotated[int, Field(json_schema_extra=pop_default)] = Field(default=5)
+        f: Annotated[int, Field(default=6)] = Field(json_schema_extra=pop_default)
 
-    assert Model().model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    assert Model().model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
+    assert Model(a=11, b=12, c=13, d=14, e=15, f=16).model_dump() == {
+        'a': 11,
+        'b': 12,
+        'c': 13,
+        'd': 14,
+        'e': 15,
+        'f': 16,
+    }
 
     json_schema = Model.model_json_schema()
-    for key in 'abcd':
+    for key in 'abcdef':
+        assert json_schema['properties'][key] == {'title': key.upper(), 'type': 'integer'}  # default is not present
+
+
+def test_callable_json_schema_extra_dataclass():
+    def pop_default(s):
+        s.pop('default')
+
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        # Note that a and b here have to come first since dataclasses requires annotation-only fields to come before
+        # fields with defaults (for similar reasons to why function arguments with defaults must come later)
+        # But otherwise, evnerything seems to work properly
+        a: Annotated[int, Field(json_schema_extra=pop_default), Field(default=1)]
+        b: Annotated[int, Field(default=2), Field(json_schema_extra=pop_default)]
+        c: int = Field(default=3, json_schema_extra=pop_default)
+        d: Annotated[int, Field(json_schema_extra=pop_default)] = 4
+        e: Annotated[int, Field(json_schema_extra=pop_default)] = Field(default=5)
+        f: Annotated[int, Field(default=6)] = Field(json_schema_extra=pop_default)
+
+    adapter = TypeAdapter(MyDataclass)
+    assert adapter.dump_python(MyDataclass()) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
+    assert adapter.dump_python(MyDataclass(a=11, b=12, c=13, d=14, e=15, f=16)) == {
+        'a': 11,
+        'b': 12,
+        'c': 13,
+        'd': 14,
+        'e': 15,
+        'f': 16,
+    }
+
+    json_schema = adapter.json_schema()
+    for key in 'abcdef':
         assert json_schema['properties'][key] == {'title': key.upper(), 'type': 'integer'}  # default is not present

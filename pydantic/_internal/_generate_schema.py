@@ -757,13 +757,15 @@ class GenerateSchema:
             'examples': field_info.examples,
         }
         json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
-        if isinstance(field_info.json_schema_extra, dict):
-            json_schema_updates.update(field_info.json_schema_extra)
+
+        json_schema_extra = field_info.json_schema_extra
 
         def json_schema_update_func(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = {**handler(schema), **json_schema_updates}
-            if callable(field_info.json_schema_extra):
-                field_info.json_schema_extra(json_schema)
+            if isinstance(json_schema_extra, dict):
+                json_schema.update(json_schema_extra)
+            elif callable(json_schema_extra):
+                json_schema_extra(json_schema)
             return json_schema
 
         metadata = build_metadata_dict(js_annotation_functions=[json_schema_update_func])
@@ -1471,21 +1473,23 @@ class GenerateSchema:
             json_schema_update: JsonSchemaValue = {}
             if metadata.title:
                 json_schema_update['title'] = metadata.title
-            if isinstance(metadata.json_schema_extra, dict):
-                json_schema_update.update(metadata.json_schema_extra)
             if metadata.description:
                 json_schema_update['description'] = metadata.description
             if metadata.examples:
                 json_schema_update['examples'] = metadata.examples
-            if json_schema_update:
+
+            json_schema_extra = metadata.json_schema_extra
+            if json_schema_update or json_schema_extra:
 
                 def json_schema_update_func(
                     core_schema: CoreSchemaOrField, handler: GetJsonSchemaHandler
                 ) -> JsonSchemaValue:
                     json_schema = handler(core_schema)
                     json_schema.update(json_schema_update)
-                    if callable(metadata.json_schema_extra):
-                        metadata.json_schema_extra(json_schema)
+                    if isinstance(json_schema_extra, dict):
+                        json_schema.update(json_schema_extra)
+                    elif callable(json_schema_extra):
+                        json_schema_extra(json_schema)
                     return json_schema
 
                 CoreMetadataHandler(schema).metadata.setdefault('pydantic_js_annotation_functions', []).append(
