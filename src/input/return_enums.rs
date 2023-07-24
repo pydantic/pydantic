@@ -809,6 +809,13 @@ impl<'a> From<&'a PyBytes> for EitherBytes<'a> {
 }
 
 impl<'a> EitherBytes<'a> {
+    pub fn as_slice(&'a self) -> &[u8] {
+        match self {
+            EitherBytes::Cow(bytes) => bytes,
+            EitherBytes::Py(py_bytes) => py_bytes.as_bytes(),
+        }
+    }
+
     pub fn len(&'a self) -> PyResult<usize> {
         match self {
             EitherBytes::Cow(bytes) => Ok(bytes.len()),

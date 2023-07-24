@@ -278,6 +278,7 @@ all_schema_functions = [
         args(MyDataclass, {'type': 'int'}, ['foobar'], slots=True),
         {'type': 'dataclass', 'schema': {'type': 'int'}, 'fields': ['foobar'], 'cls': MyDataclass, 'slots': True},
     ),
+    (core_schema.uuid_schema, args(), {'type': 'uuid'}),
 ]
 
 
