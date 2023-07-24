@@ -5,9 +5,7 @@ set -e
 
 cd fastapi
 git fetch --tags
-latest_tag_commit=$(git rev-list --tags --max-count=1)
-latest_tag=$(git describe --tags "${latest_tag_commit}")
-git checkout "${latest_tag}"
+git checkout 0.99.1
 
 pip install -r requirements.txt
 

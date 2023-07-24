@@ -1,3 +1,7 @@
+## v1.10.12 (2023-07-24)
+
+* Fixes the `maxlen` property being dropped on `deque` validation. Happened only if the deque item has been typed. Changes the `_validate_sequence_like` func, #6581 by @maciekglowka
+
 ## v1.10.11 (2023-07-04)
 
 * Importing create_model in tools.py through relative path instead of absolute path - so that it doesn't import V2 code when copied over to V2 branch, #6361 by @SharathHuddar
