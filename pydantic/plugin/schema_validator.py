@@ -75,12 +75,8 @@ class PluggableSchemaValidator:
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.schema_validator = SchemaValidator(*args, **kwargs)
 
-        self.instrumented_validate_json = _plug(self.schema_validator.validate_json)
-        self.instrumented_validate_python = _plug(self.schema_validator.validate_python)
+        self.validate_json = _plug(self.schema_validator.validate_json)
+        self.validate_python = _plug(self.schema_validator.validate_python)
 
     def __getattr__(self, name: str) -> Any:
-        if name == 'validate_json':
-            return self.instrumented_validate_json
-        elif name == 'validate_python':
-            return self.instrumented_validate_python
         return getattr(self.schema_validator, name)
