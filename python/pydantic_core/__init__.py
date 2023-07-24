@@ -66,30 +66,66 @@ __all__ = [
 
 class ErrorDetails(_TypedDict):
     type: str
+    """
+    The type of error that occurred, this is an identifier designed for
+    programmatic use that will change rarely or never.
+
+    `type` is unique for each error message, and can hence be used as an identifier to build custom error messages.
+    """
     loc: tuple[int | str, ...]
+    """Tuple of strings and ints identifying where in the schema the error occurred."""
     msg: str
+    """A human readable error message."""
     input: _Any
+    """The input data at this `loc` that caused the error."""
     ctx: _NotRequired[dict[str, str | int | float]]
+    """
+    Values which are required to render the error message, and could hence be useful in rendering custom error messages.
+    """
 
 
 class InitErrorDetails(_TypedDict):
     type: str | PydanticCustomError
+    """The type of error that occurred, this should a "slug" identifier that changes rarely or never."""
     loc: _NotRequired[tuple[int | str, ...]]
+    """Tuple of strings and ints identifying where in the schema the error occurred."""
     input: _Any
+    """The input data at this `loc` that caused the error."""
     ctx: _NotRequired[dict[str, str | int | float]]
+    """
+    Values which are required to render the error message, and could hence be useful in rendering custom error messages.
+    """
 
 
 class ErrorTypeInfo(_TypedDict):
+    """
+    Gives information about errors.
+    """
+
     type: ErrorType
+    """The type of error that occurred, this should a "slug" identifier that changes rarely or never."""
     message_template_python: str
+    """String template to render a human readable error message from using context, when the input is Python."""
     example_message_python: str
+    """Example of a human readable error message, when the input is Python."""
     message_template_json: _NotRequired[str]
+    """String template to render a human readable error message from using context, when the input is JSON data."""
     example_message_json: _NotRequired[str]
+    """Example of a human readable error message, when the input is JSON data."""
     example_context: dict[str, str | int | float] | None
+    """Example of context values."""
 
 
 class MultiHostHost(_TypedDict):
+    """
+    A host part of a multi-host URL.
+    """
+
     username: str | None
+    """The username part of this host, or `None`."""
     password: str | None
+    """The password part of this host, or `None`."""
     host: str | None
+    """The host part of this host, or `None`."""
     port: int | None
+    """The port part of this host, or `None`."""
