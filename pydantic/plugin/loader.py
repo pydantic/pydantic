@@ -12,7 +12,7 @@ they are found, and the order they are found is not guaranteed.
 
 Consider that you have a plugin called `observer`, then you can use it like this:
 
-```py
+```py test="skip"
 from pydantic import BaseModel
 
 class Foo(BaseModel, observer='all'):
