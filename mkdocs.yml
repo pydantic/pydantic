@@ -114,6 +114,7 @@ nav:
   - 'datamodel-code-generator': integrations/datamodel_code_generator.md
   - 'devtools': integrations/devtools.md
   - 'Rich': integrations/rich.md
+  - 'Pydantic Plugins': integrations/plugins.md
 - Blog:
   - blog/pydantic-v2-final.md
   - blog/pydantic-v2-alpha.md
