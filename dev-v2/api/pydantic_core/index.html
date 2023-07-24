@@ -10,20 +10,20 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/config/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/pydantic_core/">
       
       
-        <link rel="prev" href="../fields/">
+        <link rel="prev" href="../version/">
       
       
-        <link rel="next" href="../json_schema/">
+        <link rel="next" href="../pydantic_core_schema/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.18">
     
     
       
-        <title>Config - Pydantic</title>
+        <title>pydantic_core - Pydantic</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pydantic.config" class="md-skip">
+        <a href="#pydantic_core" class="md-skip">
           Skip to content
         </a>
       
@@ -135,7 +135,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Config
+              pydantic_core
             
           </span>
         </div>
@@ -1580,16 +1580,14 @@
               
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
       
       
       
@@ -1598,7 +1596,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_6_1">
           <span class="md-nav__icon md-icon"></span>
           Pydantic
@@ -1693,92 +1691,11 @@
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Config
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../config/" class="md-nav__link">
         Config
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.config" class="md-nav__link">
-    pydantic.config
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.config.ConfigDict" class="md-nav__link">
-    ConfigDict
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.config.BaseConfig" class="md-nav__link">
-    BaseConfig
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.alias_generators" class="md-nav__link">
-    pydantic.alias_generators
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.alias_generators.to_pascal" class="md-nav__link">
-    to_pascal()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.alias_generators.to_camel" class="md-nav__link">
-    to_camel()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.alias_generators.to_snake" class="md-nav__link">
-    to_snake()
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1893,14 +1810,16 @@
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" checked>
       
       
       
@@ -1909,7 +1828,7 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_6_2">
           <span class="md-nav__icon md-icon"></span>
           Pydantic Core
@@ -1920,11 +1839,216 @@
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../pydantic_core/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pydantic_core
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         pydantic_core
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core" class="md-nav__link">
+    pydantic_core
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.__version__" class="md-nav__link">
+    __version__
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaValidator" class="md-nav__link">
+    SchemaValidator
+  </a>
+  
+    <nav class="md-nav" aria-label="SchemaValidator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.SchemaValidator.validate_assignment" class="md-nav__link">
+    validate_assignment()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaSerializer" class="md-nav__link">
+    SchemaSerializer
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ValidationError" class="md-nav__link">
+    ValidationError
+  </a>
+  
+    <nav class="md-nav" aria-label="ValidationError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.ValidationError.from_exception_data" class="md-nav__link">
+    from_exception_data()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ErrorDetails" class="md-nav__link">
+    ErrorDetails
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.InitErrorDetails" class="md-nav__link">
+    InitErrorDetails
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaError" class="md-nav__link">
+    SchemaError
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticCustomError" class="md-nav__link">
+    PydanticCustomError
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticKnownError" class="md-nav__link">
+    PydanticKnownError
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticOmit" class="md-nav__link">
+    PydanticOmit
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticSerializationError" class="md-nav__link">
+    PydanticSerializationError
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticSerializationUnexpectedValue" class="md-nav__link">
+    PydanticSerializationUnexpectedValue
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.Url" class="md-nav__link">
+    Url
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.MultiHostUrl" class="md-nav__link">
+    MultiHostUrl
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.MultiHostHost" class="md-nav__link">
+    MultiHostHost
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ArgsKwargs" class="md-nav__link">
+    ArgsKwargs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.Some" class="md-nav__link">
+    Some
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ErrorTypeInfo" class="md-nav__link">
+    ErrorTypeInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.to_json" class="md-nav__link">
+    to_json()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.to_jsonable_python" class="md-nav__link">
+    to_jsonable_python()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2136,50 +2260,174 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pydantic.config" class="md-nav__link">
-    pydantic.config
+  <a href="#pydantic_core" class="md-nav__link">
+    pydantic_core
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.config.ConfigDict" class="md-nav__link">
-    ConfigDict
+  <a href="#pydantic_core.__version__" class="md-nav__link">
+    __version__
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.config.BaseConfig" class="md-nav__link">
-    BaseConfig
+  <a href="#pydantic_core.SchemaValidator" class="md-nav__link">
+    SchemaValidator
+  </a>
+  
+    <nav class="md-nav" aria-label="SchemaValidator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.SchemaValidator.validate_assignment" class="md-nav__link">
+    validate_assignment()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaSerializer" class="md-nav__link">
+    SchemaSerializer
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.alias_generators" class="md-nav__link">
-    pydantic.alias_generators
+  <a href="#pydantic_core.ValidationError" class="md-nav__link">
+    ValidationError
+  </a>
+  
+    <nav class="md-nav" aria-label="ValidationError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.ValidationError.from_exception_data" class="md-nav__link">
+    from_exception_data()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ErrorDetails" class="md-nav__link">
+    ErrorDetails
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.alias_generators.to_pascal" class="md-nav__link">
-    to_pascal()
+  <a href="#pydantic_core.InitErrorDetails" class="md-nav__link">
+    InitErrorDetails
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.alias_generators.to_camel" class="md-nav__link">
-    to_camel()
+  <a href="#pydantic_core.SchemaError" class="md-nav__link">
+    SchemaError
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.alias_generators.to_snake" class="md-nav__link">
-    to_snake()
+  <a href="#pydantic_core.PydanticCustomError" class="md-nav__link">
+    PydanticCustomError
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticKnownError" class="md-nav__link">
+    PydanticKnownError
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticOmit" class="md-nav__link">
+    PydanticOmit
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticSerializationError" class="md-nav__link">
+    PydanticSerializationError
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticSerializationUnexpectedValue" class="md-nav__link">
+    PydanticSerializationUnexpectedValue
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.Url" class="md-nav__link">
+    Url
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.MultiHostUrl" class="md-nav__link">
+    MultiHostUrl
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.MultiHostHost" class="md-nav__link">
+    MultiHostHost
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ArgsKwargs" class="md-nav__link">
+    ArgsKwargs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.Some" class="md-nav__link">
+    Some
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ErrorTypeInfo" class="md-nav__link">
+    ErrorTypeInfo
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.to_json" class="md-nav__link">
+    to_json()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.to_jsonable_python" class="md-nav__link">
+    to_jsonable_python()
   </a>
   
 </li>
@@ -2203,15 +2451,61 @@
   
 
 
-  <h1>Config</h1>
+  <h1>pydantic_core</h1>
 
 <div class="doc doc-object doc-module">
 
 
-<a id="pydantic.config"></a>
+<a id="pydantic_core"></a>
   <div class="doc doc-contents first">
+
   
-      <p>Configuration for Pydantic models.</p>
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pydantic_core.__version__" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">__version__</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic_core.__version__" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">__version__</span><span class="p">:</span> <span class="nb">str</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.SchemaValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">SchemaValidator</span>
+
+
+<a href="#pydantic_core.SchemaValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
 
   
 
@@ -2224,369 +2518,164 @@
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic_core._pydantic_core.SchemaValidator.validate_assignment" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">validate_assignment</span>
+
+
+<a href="#pydantic_core._pydantic_core.SchemaValidator.validate_assignment" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">validate_assignment</span><span class="p">(</span>
+    <span class="n">obj</span><span class="p">,</span>
+    <span class="n">field_name</span><span class="p">,</span>
+    <span class="n">field_value</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">from_attributes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">context</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>ModelValidator and ModelFieldsValidator will return a tuple of (fields data, extra data, fields set)</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
 <div class="doc doc-object doc-class">
 
 
 
-<h2 id="pydantic.config.ConfigDict" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">ConfigDict</span>
+<h2 id="pydantic_core.SchemaSerializer" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">SchemaSerializer</span>
 
 
-<a href="#pydantic.config.ConfigDict" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_core.SchemaSerializer" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.ValidationError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ValidationError</span>
+
+
+<a href="#pydantic_core.ValidationError" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
   <div class="doc doc-contents ">
       <p class="doc doc-class-bases">
-        Bases: <code><span title="typing_extensions.TypedDict">TypedDict</span></code></p>
+        Bases: <code>ValueError</code></p>
+
+
+
 
   
-      <div class="admonition abstract">
-<p class="admonition-title">Usage Documentation</p>
-<p><a href="../../usage/model_config/">Model Config</a></p>
-</div>
-<p>A dictionary-like class for configuring Pydantic models.</p>
 
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>title</code></td>
-          <td>
-                <code>str | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The title for the generated JSON schema. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>str_to_lower</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to convert all characters to lowercase for str &amp; bytes types. Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>str_to_upper</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to convert all characters to uppercase for str &amp; bytes types. Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>str_strip_whitespace</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to strip leading and trailing whitespace for str &amp; bytes types.
-Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>str_min_length</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The minimum length for str &amp; bytes types. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>str_max_length</code></td>
-          <td>
-                <code>int | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The maximum length for str &amp; bytes types. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>extra</code></td>
-          <td>
-                <code><span title="pydantic.config.ExtraValues">ExtraValues</span> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to ignore, allow, or forbid extra attributes during model initialization.
-Accepts the string values of <code>'ignore'</code>, <code>'allow'</code>, or <code>'forbid'</code>. Defaults to <code>'ignore'</code>.</p>
-<ul>
-<li><code>'forbid'</code> will cause validation to fail if extra attributes are included.</li>
-<li><code>'ignore'</code> will silently ignore any extra attributes.</li>
-<li><code>'allow'</code> will assign the attributes to the model.</li>
-</ul>
-<p>See <a href="../../usage/model_config/#extra-attributes">Extra Attributes</a> for details.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>frozen</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether or not models are faux-immutable, i.e. whether <code>__setattr__</code> is allowed, and also generates
-a <code>__hash__()</code> method for the model. This makes instances of the model potentially hashable if all the
-attributes are hashable. Defaults to <code>False</code>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>On V1, this setting was called <code>allow_mutation</code>, and was <code>True</code> by default.</p>
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic_core._pydantic_core.ValidationError.from_exception_data" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">from_exception_data</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+<a href="#pydantic_core._pydantic_core.ValidationError.from_exception_data" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">from_exception_data</span><span class="p">(</span>
+    <span class="n">title</span><span class="p">,</span>
+    <span class="n">line_errors</span><span class="p">,</span>
+    <span class="n">error_mode</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+    <span class="n">hide_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Provisory constructor for a Validation Error.
+This API will probably change and be deprecated in the the future; we will make it easier and more
+powerful to construct and use ValidationErrors, but we cannot do that before our initial Pydantic V2 release.
+So if you use this method please be aware that it may change or be removed before Pydantic V3.</p>
+
+  </div>
+
 </div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>populate_by_name</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether an aliased field may be populated by its name as given by the model
-attribute, as well as the alias. Defaults to <code>False</code>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The name of this configuration setting was changed in <strong>v2.0</strong> from
-<code>allow_population_by_alias</code> to <code>populate_by_name</code>.</p>
+
+
+
+  </div>
+
+  </div>
+
 </div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>use_enum_values</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to populate models with the <code>value</code> property of enums, rather than the raw enum.
-This may be useful if you want to serialize <code>model.model_dump()</code> later. Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>validate_assignment</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to perform validation on <em>assignment</em> to attributes. Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>arbitrary_types_allowed</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to allow arbitrary user types for fields (they are validated simply by
-checking if the value is an instance of the type). If <code>False</code>, <code>RuntimeError</code> will be raised on model
-declaration. Defaults to <code>False</code>.</p>
-<p>See <a href="../../usage/model_config/#arbitrary-types-allowed">Arbitrary Types Allowed</a> for details.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>from_attributes</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to allow model creation from object attributes. Defaults to <code>False</code>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The name of this configuration setting was changed in <strong>v2.0</strong> from <code>orm_mode</code> to <code>from_attributes</code>.</p>
-</div>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>loc_by_alias</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to use the alias for error <code>loc</code>s. Defaults to <code>True</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>alias_generator</code></td>
-          <td>
-                <code><span title="typing.Callable">Callable</span>[[str], str] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>a callable that takes a field name and returns an alias for it.</p>
-<p>See <a href="../../usage/model_config/#alias-generator">Alias Generator</a> for details.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>ignored_types</code></td>
-          <td>
-                <code>tuple[type, ...]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A tuple of types that may occur as values of class attributes without annotations. This is
-typically used for custom descriptors (classes that behave like <code>property</code>). If an attribute is set on a
-class without an annotation and has a type that is not in this tuple (or otherwise recognized by
-<em>pydantic</em>), an error will be raised. Defaults to <code>()</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>allow_inf_nan</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to allow infinity (<code>+inf</code> an <code>-inf</code>) and NaN values to float fields. Defaults to <code>True</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>json_schema_extra</code></td>
-          <td>
-                <code>dict[str, object] | <span title="pydantic.config.JsonSchemaExtraCallable">JsonSchemaExtraCallable</span> | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A dict or callable to provide extra JSON schema properties. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>strict</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If <code>True</code>, strict validation is applied to all fields on the model.
-See <a href="../../usage/strict_mode/">Strict Mode</a> for details.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>revalidate_instances</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;always&#39;, &#39;never&#39;, &#39;subclass-instances&#39;]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>When and how to revalidate models and dataclasses during validation. Accepts the string
-values of <code>'never'</code>, <code>'always'</code> and <code>'subclass-instances'</code>. Defaults to <code>'never'</code>.</p>
-<ul>
-<li><code>'never'</code> will not revalidate models and dataclasses during validation</li>
-<li><code>'always'</code> will revalidate models and dataclasses during validation</li>
-<li><code>'subclass-instances'</code> will revalidate models and dataclasses during validation if the instance is a
-    subclass of the model or dataclass</li>
-</ul>
-<p>See <a href="../../usage/model_config/#revalidate-instances">Revalidate Instances</a> for details.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>ser_json_timedelta</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;iso8601&#39;, &#39;float&#39;]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The format of JSON serialized timedeltas. Accepts the string values of <code>'iso8601'</code> and
-<code>'float'</code>. Defaults to <code>'iso8601'</code>.</p>
-<ul>
-<li><code>'iso8601'</code> will serialize timedeltas to ISO 8601 durations.</li>
-<li><code>'float'</code> will serialize timedeltas to the total number of seconds.</li>
-</ul>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>ser_json_bytes</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;utf8&#39;, &#39;base64&#39;]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The encoding of JSON serialized bytes. Accepts the string values of <code>'utf8'</code> and <code>'base64'</code>.
-Defaults to <code>'utf8'</code>.</p>
-<ul>
-<li><code>'utf8'</code> will serialize bytes to UTF-8 strings.</li>
-<li><code>'base64'</code> will serialize bytes to base64 strings.</li>
-</ul>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>validate_default</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to validate default values during validation. Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>protected_namespaces</code></td>
-          <td>
-                <code>tuple[str, ...]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A <code>tuple</code> of strings that prevent model to have field which conflict with them.
-Defaults to <code>('model_', )</code>).</p>
-<p>See <a href="../../usage/model_config/#protected-namespaces">Protected Namespaces</a> for details.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>hide_input_in_errors</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to hide inputs when printing errors. Defaults to <code>False</code>.</p>
-<p>See <a href="../../usage/model_config/#hide-input-in-errors">Hide Input in Errors</a>.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.ErrorDetails" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ErrorDetails</span>
+
+
+<a href="#pydantic_core.ErrorDetails" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.TypedDict">_TypedDict</span></code></p>
+
 
 
 
@@ -2614,21 +2703,471 @@ Defaults to <code>('model_', )</code>).</p>
 
 
 
-<h2 id="pydantic.config.BaseConfig" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">BaseConfig</span>
+<h2 id="pydantic_core.InitErrorDetails" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">InitErrorDetails</span>
 
 
-<a href="#pydantic.config.BaseConfig" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_core.InitErrorDetails" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.TypedDict">_TypedDict</span></code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.SchemaError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">SchemaError</span>
+
+
+<a href="#pydantic_core.SchemaError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>Exception</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticCustomError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticCustomError</span>
+
+
+<a href="#pydantic_core.PydanticCustomError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>ValueError</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticKnownError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticKnownError</span>
+
+
+<a href="#pydantic_core.PydanticKnownError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>ValueError</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticOmit" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticOmit</span>
+
+
+<a href="#pydantic_core.PydanticOmit" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>Exception</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticSerializationError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticSerializationError</span>
+
+
+<a href="#pydantic_core.PydanticSerializationError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>ValueError</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticSerializationUnexpectedValue" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticSerializationUnexpectedValue</span>
+
+
+<a href="#pydantic_core.PydanticSerializationUnexpectedValue" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>ValueError</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.Url" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">Url</span>
+
+
+<a href="#pydantic_core.Url" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="_typeshed.SupportsAllComparisons">SupportsAllComparisons</span></code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.MultiHostUrl" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">MultiHostUrl</span>
+
+
+<a href="#pydantic_core.MultiHostUrl" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="_typeshed.SupportsAllComparisons">SupportsAllComparisons</span></code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.MultiHostHost" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">MultiHostHost</span>
+
+
+<a href="#pydantic_core.MultiHostHost" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.TypedDict">_TypedDict</span></code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.ArgsKwargs" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ArgsKwargs</span>
+
+
+<a href="#pydantic_core.ArgsKwargs" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
   <div class="doc doc-contents ">
 
+
+
+
   
-      <p>This class is only retained for backwards compatibility.</p>
-<div class="admonition warning">
-<p class="admonition-title">Deprecated</p>
-<p>BaseConfig is deprecated. Use the <code>pydantic.ConfigDict</code> instead.</p>
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
 </div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.Some" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">Some</span>
+
+
+<a href="#pydantic_core.Some" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.Generic">Generic</span>[<span title="pydantic_core._pydantic_core._T">_T</span>]</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.ErrorTypeInfo" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ErrorTypeInfo</span>
+
+
+<a href="#pydantic_core.ErrorTypeInfo" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><span title="typing.TypedDict">_TypedDict</span></code></p>
+
 
 
 
@@ -2653,125 +3192,33 @@ Defaults to <code>('model_', )</code>).</p>
 </div>
 
 
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-module">
-
-
-<a id="pydantic.alias_generators"></a>
-  <div class="doc doc-contents first">
-  
-      <p>Alias generators for converting between different capitalization conventions.</p>
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
 <div class="doc doc-object doc-function">
 
 
 
-<h2 id="pydantic.alias_generators.to_pascal" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">to_pascal</span>
+<h2 id="pydantic_core.to_json" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">to_json</span>
 
 
-<a href="#pydantic.alias_generators.to_pascal" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">to_pascal</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
+<a href="#pydantic_core.to_json" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">to_json</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">timedelta_mode</span><span class="o">=</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
+    <span class="n">bytes_mode</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
+    <span class="n">serialize_unknown</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">fallback</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
-  
-      <p>Convert a snake_case string to PascalCase.</p>
 
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>snake</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The string to convert.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The PascalCase string.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic/alias_generators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_pascal</span><span class="p">(</span><span class="n">snake</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a snake_case string to PascalCase.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        snake: The string to convert.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        The PascalCase string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">camel</span> <span class="o">=</span> <span class="n">snake</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;([0-9A-Za-z])_(?=[0-9A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">camel</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-      </details>
   </div>
 
 </div>
@@ -2780,190 +3227,28 @@ Defaults to <code>('model_', )</code>).</p>
 
 
 
-<h2 id="pydantic.alias_generators.to_camel" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">to_camel</span>
+<h2 id="pydantic_core.to_jsonable_python" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">to_jsonable_python</span>
 
 
-<a href="#pydantic.alias_generators.to_camel" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">to_camel</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
+<a href="#pydantic_core.to_jsonable_python" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">to_jsonable_python</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">timedelta_mode</span><span class="o">=</span><span class="s2">&quot;iso8601&quot;</span><span class="p">,</span>
+    <span class="n">bytes_mode</span><span class="o">=</span><span class="s2">&quot;utf8&quot;</span><span class="p">,</span>
+    <span class="n">serialize_unknown</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">fallback</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
-  
-      <p>Convert a snake_case string to camelCase.</p>
 
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>snake</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The string to convert.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The converted camelCase string.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic/alias_generators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_camel</span><span class="p">(</span><span class="n">snake</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a snake_case string to camelCase.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        snake: The string to convert.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        The converted camelCase string.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">camel</span> <span class="o">=</span> <span class="n">to_pascal</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;(^_*[A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">camel</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-      </details>
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-
-<h2 id="pydantic.alias_generators.to_snake" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">to_snake</span>
-
-
-<a href="#pydantic.alias_generators.to_snake" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">to_snake</span><span class="p">(</span><span class="n">camel</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Convert a PascalCase or camelCase string to snake_case.</p>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>camel</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The string to convert.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The converted string in snake_case.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic/alias_generators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_snake</span><span class="p">(</span><span class="n">camel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a PascalCase or camelCase string to snake_case.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        camel: The string to convert.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        The converted string in snake_case.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-zA-Z])([0-9])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">camel</span><span class="p">)</span>
-    <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-z0-9])([A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">snake</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">snake</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-</code></pre></div></td></tr></table></div>
-      </details>
   </div>
 
 </div>

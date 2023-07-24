@@ -41,12 +41,7 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/api/alias_generators/</loc>
-         <lastmod>2023-07-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.pydantic.dev/latest/api/color/</loc>
+         <loc>https://docs.pydantic.dev/latest/api/base_model/</loc>
          <lastmod>2023-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -86,22 +81,12 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/api/main/</loc>
-         <lastmod>2023-07-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.pydantic.dev/latest/api/mypy/</loc>
-         <lastmod>2023-07-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.pydantic.dev/latest/api/networks/</loc>
          <lastmod>2023-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/api/pydantic_core_init/</loc>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_core/</loc>
          <lastmod>2023-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -186,6 +171,16 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/errors/usage_errors/</loc>
+         <lastmod>2023-07-24</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/errors/validation_errors/</loc>
+         <lastmod>2023-07-24</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/integrations/datamodel_code_generator/</loc>
          <lastmod>2023-07-24</lastmod>
          <changefreq>daily</changefreq>
@@ -236,11 +231,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/usage/errors/</loc>
-         <lastmod>2023-07-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.pydantic.dev/latest/usage/fields/</loc>
          <lastmod>2023-07-24</lastmod>
          <changefreq>daily</changefreq>
@@ -287,11 +277,6 @@
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/usage/validation_decorator/</loc>
-         <lastmod>2023-07-24</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.pydantic.dev/latest/usage/validation_errors/</loc>
          <lastmod>2023-07-24</lastmod>
          <changefreq>daily</changefreq>
     </url>
