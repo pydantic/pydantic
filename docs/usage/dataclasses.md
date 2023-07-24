@@ -401,12 +401,12 @@ user = User(**{'birth': {'year': 1995, 'month': 3, 'day': 2}})
 The `__post_init__` in Pydantic dataclasses is called in the _middle_ of validators.
 Here is the order:
 
-* Before model validator.
-* Before field validator.
-* After field validator.
-* Field type validators. e.g. validation for types like `int`, `str`, ... .
+* `model_validator(mode='before')`
+* `field_validator(mode='before')`
+* `field_validator(mode='after')`
+* Inner validators. e.g. validation for types like `int`, `str`, ...
 * `__post_init__`.
-* After model validator.
+* `model_validator(mode='after')`
 
 
 ```py requires="3.8"
