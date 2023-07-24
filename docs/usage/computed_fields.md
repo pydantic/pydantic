@@ -1,3 +1,6 @@
+??? api "API Documentation"
+    [`pydantic.fields.computed_field`][pydantic.fields.computed_field]<br>
+
 Computed fields allow `property` and `cached_property` to be included when serializing models or dataclasses. This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.
 
 ```py

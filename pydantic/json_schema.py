@@ -1,4 +1,11 @@
-"""The `json_schema` module contains classes and functions for generating JSON schemas."""
+"""
+The `json_schema` module contains classes and functions to allow the way [JSON Schema](https://json-schema.org/)
+is generated to be customized.
+
+In general you shouldn't need to use this module directly; instead, you can
+[`BaseModel.model_json_schema`][pydantic.BaseModel.model_json_schema] and
+[`TypeAdapter.json_schema`][pydantic.TypeAdapter.json_schema].
+"""
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -98,7 +105,8 @@ for more details.
 
 class PydanticJsonSchemaWarning(UserWarning):
     """This class is used to emit warnings produced during JSON schema generation.
-    See the `GenerateJsonSchema.emit_warning` and `GenerateJsonSchema.render_warning_message`
+    See the [`GenerateJsonSchema.emit_warning`][pydantic.json_schema.GenerateJsonSchema.emit_warning] and
+    [`GenerateJsonSchema.render_warning_message`][pydantic.json_schema.GenerateJsonSchema.render_warning_message]
     methods for more details; these can be overridden to control warning behavior.
     """
 
@@ -208,7 +216,8 @@ class GenerateJsonSchema:
     """A class for generating JSON schemas.
 
     This class generates JSON schemas based on configured parameters. The default schema dialect
-    is 'https://json-schema.org/draft/2020-12/schema'. The class uses `by_alias` to configure how fields with
+    is [https://json-schema.org/draft/2020-12/schema](https://json-schema.org/draft/2020-12/schema).
+    The class uses `by_alias` to configure how fields with
     multiple names are handled and `ref_template` to format reference names.
 
     Attributes:

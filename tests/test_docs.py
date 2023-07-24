@@ -224,7 +224,7 @@ def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, 
 
 
 def test_error_codes():
-    error_text = (DOCS_ROOT / 'usage/errors.md').read_text()
+    error_text = (DOCS_ROOT / 'errors/usage_errors.md').read_text()
 
     code_error_codes = PydanticErrorCodes.__args__
 
@@ -234,7 +234,7 @@ def test_error_codes():
 
 
 def test_validation_error_codes():
-    error_text = (DOCS_ROOT / 'usage/validation_errors.md').read_text()
+    error_text = (DOCS_ROOT / 'errors/validation_errors.md').read_text()
 
     expected_validation_error_codes = set(core_schema.ErrorType.__args__)
     # Remove codes that are not currently accessible from pydantic:

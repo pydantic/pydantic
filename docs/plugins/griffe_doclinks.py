@@ -21,9 +21,30 @@ def find_heading(content: str, slug: str, file_path: Path) -> Tuple[str, int]:
     raise ValueError(f'heading with slug {slug!r} not found in {file_path}')
 
 
+def insert_at_top(path: str, api_link: str) -> str:
+    rel_file = path.rstrip('/') + '.md'
+    file_path = DOCS_PATH / rel_file
+    content = file_path.read_text()
+    second_heading = re.search('^#+ ', content, flags=re.M)
+    assert second_heading, 'unable to find second heading in file'
+    first_section = content[: second_heading.start()]
+
+    if f'[{api_link}]' not in first_section:
+        print(f'inserting API link "{api_link}" at the top of {file_path.relative_to(DOCS_PATH)}')
+        file_path.write_text('??? api "API Documentation"\n' f'    [`{api_link}`][{api_link}]<br>\n\n' f'{content}')
+
+    heading = file_path.stem.replace('_', ' ').title()
+    return f'!!! abstract "Usage Documentation"\n    [{heading}](../{rel_file})\n'
+
+
 def replace_links(m: re.Match, *, api_link: str) -> str:
-    usage_path, slug = m.groups()
-    rel_file = f'{usage_path}.md'
+    path_group = m.group(1)
+    if '#' not in path_group:
+        # no heading id, put the content at the top of the page
+        return insert_at_top(path_group, api_link)
+
+    usage_path, slug = path_group.split('#', 1)
+    rel_file = usage_path.rstrip('/') + '.md'
     file_path = DOCS_PATH / rel_file
     content = file_path.read_text()
     heading, heading_end = find_heading(content, slug, file_path)
@@ -48,7 +69,7 @@ def replace_links(m: re.Match, *, api_link: str) -> str:
 
 def update_docstring(obj: GriffeObject) -> str:
     return re.sub(
-        r'usage[\- ]docs: ?https://docs\.pydantic\.dev/.+?/(.+?)/?#(\S+)',
+        r'usage[\- ]docs: ?https://docs\.pydantic\.dev/.+?/(\S+)',
         partial(replace_links, api_link=obj.path),
         obj.docstring.value,
         flags=re.I,

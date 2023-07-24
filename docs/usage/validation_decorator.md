@@ -1,3 +1,6 @@
+??? api "API Documentation"
+    [`pydantic.validate_call.validate_call`][pydantic.validate_call.validate_call]<br>
+
 The [`@validate_call`][pydantic.validate_call] decorator allows the arguments passed to a function to be parsed
 and validated using the function's annotations before the function is called.
 

@@ -8,7 +8,7 @@ The [usage documentation](usage/models.md) is the most complete guide on how to 
 
 ## :material-api: API Documentation
 
-The [API documentation](api/main.md) give reference docs for all public Pydantic APIs.
+The [API documentation](api/base_model.md) give reference docs for all public Pydantic APIs.
 
 ## :simple-github: GitHub Discussions
 

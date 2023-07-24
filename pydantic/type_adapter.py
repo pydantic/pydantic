@@ -98,7 +98,9 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
 
 
 class TypeAdapter(Generic[T]):
-    """A class representing the type adapter.
+    """usage docs: https://docs.pydantic.dev/2.0/usage/type_adapter/
+
+    Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
     A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
     for types that do not have such methods (such as dataclasses, primitive types, and more).
@@ -107,7 +109,7 @@ class TypeAdapter(Generic[T]):
 
     Attributes:
         core_schema: The core schema for the type.
-        validator: The schema validator for the type.
+        validator (SchemaValidator): The schema validator for the type.
         serializer: The schema serializer for the type.
     """
 
