@@ -169,7 +169,7 @@ def complete_dataclass(
         validator = PluggableSchemaValidator(simplified_core_schema, core_config)
     else:
         validator = SchemaValidator(simplified_core_schema, core_config)
-    cls.__pydantic_validator__ = validator
+    cls.__pydantic_validator__ = typing.cast(SchemaValidator, validator)
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
 
     if config_wrapper.validate_assignment:
