@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::str::{from_utf8, FromStr, Utf8Error};
 
+use base64::Engine;
 use pyo3::prelude::*;
 use pyo3::types::{PyDelta, PyDict};
 use pyo3::{intern, PyNativeType};
@@ -119,20 +120,21 @@ impl TimedeltaMode {
 }
 
 #[derive(Default, Debug, Clone)]
-pub(crate) struct BytesMode {
-    base64_config: Option<base64::Config>,
+pub(crate) enum BytesMode {
+    #[default]
+    Utf8,
+    Base64,
 }
 
 impl FromStr for BytesMode {
     type Err = PyErr;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let base64_config = match s {
-            "utf8" => None,
-            "base64" => Some(base64::Config::new(base64::CharacterSet::UrlSafe, true)),
-            s => return py_schema_err!("Invalid bytes serialization mode: `{}`, expected `utf8` or `base64`", s),
-        };
-        Ok(Self { base64_config })
+        match s {
+            "utf8" => Ok(Self::Utf8),
+            "base64" => Ok(Self::Base64),
+            s => py_schema_err!("Invalid bytes serialization mode: `{}`, expected `utf8` or `base64`", s),
+        }
     }
 }
 
@@ -146,23 +148,21 @@ impl BytesMode {
     }
 
     pub fn bytes_to_string<'py>(&self, py: Python, bytes: &'py [u8]) -> PyResult<Cow<'py, str>> {
-        if let Some(config) = self.base64_config {
-            Ok(Cow::Owned(base64::encode_config(bytes, config)))
-        } else {
-            from_utf8(bytes)
+        match self {
+            Self::Utf8 => from_utf8(bytes)
                 .map_err(|err| utf8_py_error(py, err, bytes))
-                .map(Cow::Borrowed)
+                .map(Cow::Borrowed),
+            Self::Base64 => Ok(Cow::Owned(base64::engine::general_purpose::URL_SAFE.encode(bytes))),
         }
     }
 
     pub fn serialize_bytes<S: serde::ser::Serializer>(&self, bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
-        if let Some(config) = self.base64_config {
-            serializer.serialize_str(&base64::encode_config(bytes, config))
-        } else {
-            match from_utf8(bytes) {
+        match self {
+            Self::Utf8 => match from_utf8(bytes) {
                 Ok(s) => serializer.serialize_str(s),
                 Err(e) => Err(Error::custom(e.to_string())),
-            }
+            },
+            Self::Base64 => serializer.serialize_str(&base64::engine::general_purpose::URL_SAFE.encode(bytes)),
         }
     }
 }
