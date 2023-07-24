@@ -44,6 +44,15 @@ else
 	pip install -v -e .
 endif
 
+.PHONY: build-profiling
+build-profiling:
+	@rm -f python/pydantic_core/*.so
+ifneq ($(USE_MATURIN),)
+	CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true maturin develop --release
+else
+	CARGO_PROFILE_RELEASE_STRIP=false CARGO_PROFILE_RELEASE_DEBUG=true pip install -v -e .
+endif
+
 .PHONY: build-coverage
 build-coverage:
 	@rm -f python/pydantic_core/*.so

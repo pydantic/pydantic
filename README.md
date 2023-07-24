@@ -99,6 +99,19 @@ If you want to contribute to pydantic-core, you'll want to use some other make c
 * `make format` to format python and rust code
 * `make` to run `format build-dev lint test`
 
+## Profiling
+
+It's possible to profile the code using the [`flamegraph` utility from `flamegraph-rs`](https://github.com/flamegraph-rs/flamegraph). (Tested on Linux.) You can install this with `cargo install flamegraph`.
+
+Run `make build-profiling` to install a release build with debugging symbols included (needed for profiling).
+
+Once that is built, you can profile pytest benchmarks with (e.g.):
+
+```bash
+flamegraph -- pytest tests/benchmarks/test_micro_benchmarks.py -k test_list_of_ints_core_py --benchmark-enable
+```
+The `flamegraph` command will produce an interactive SVG at `flamegraph.svg`.
+
 ## Releasing
 
 1. Bump package version locally. Do not just edit `Cargo.toml` on Github, you need both `Cargo.toml` and `Cargo.lock` to be updated.
