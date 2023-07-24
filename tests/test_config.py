@@ -7,7 +7,7 @@ from inspect import signature
 from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr, IsPartialDict
-from pydantic_core import SchemaError
+from pydantic_core import SchemaError, SchemaValidator
 
 from pydantic import (
     BaseConfig,
@@ -21,6 +21,7 @@ from pydantic import (
     validate_call,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
+from pydantic._internal._mock_validator import MockValidator
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
@@ -664,3 +665,30 @@ def test_json_encoders_type_adapter() -> None:
     ta = TypeAdapter(Union[Decimal, int], config=config)
     assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
     assert json.loads(ta.dump_json(1)) == '2'
+
+
+def test_config_model_defer_build():
+    class MyModel(BaseModel, defer_model_build=True):
+        x: int
+
+    assert isinstance(MyModel.__pydantic_validator__, MockValidator)
+
+    m = MyModel(x=1)
+    assert m.x == 1
+
+    assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
+
+
+def test_config_model_defer_build_nested():
+    class MyNestedModel(BaseModel, defer_model_build=True):
+        x: int
+
+    class MyModel(BaseModel):
+        y: MyNestedModel
+
+    assert isinstance(MyNestedModel.__pydantic_validator__, MockValidator)
+
+    m = MyModel(y={'x': 1})
+    assert m.model_dump() == {'y': {'x': 1}}
+
+    assert isinstance(MyNestedModel.__pydantic_validator__, MockValidator)
