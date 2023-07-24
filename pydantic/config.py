@@ -100,6 +100,12 @@ class ConfigDict(TypedDict, total=False):
             _pydantic_), an error will be raised. Defaults to `()`.
         allow_inf_nan: Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`.
         json_schema_extra: A dict or callable to provide extra JSON schema properties. Defaults to `None`.
+        json_encoders: A `dict` of custom JSON encoders for specific types. Defaults to `None`.
+
+            !!! note
+                This config option is a carryover from v1.
+                We originally planned to remove it in v2 but didn't have a 1:1 replacement so we are keeping it for now.
+                It is still deprecated and will likely be removed in the future.
         strict: If `True`, strict validation is applied to all fields on the model.
             See [Strict Mode](../usage/strict_mode.md) for details.
         revalidate_instances: When and how to revalidate models and dataclasses during validation. Accepts the string
@@ -129,12 +135,10 @@ class ConfigDict(TypedDict, total=False):
         hide_input_in_errors: Whether to hide inputs when printing errors. Defaults to `False`.
 
             See [Hide Input in Errors](../usage/model_config.md#hide-input-in-errors).
-        json_encoders: A `dict` of custom JSON encoders for specific types. Defaults to `None`.
-
-            !!! note
-                This config option is a carryover from v1.
-                We originally planned to remove it in v2 but didn't have a 1:1 replacement so we are keeping it for now.
-                It is still deprecated and will likely be removed in the future.
+        defer_model_build: Whether to defer model validator and serializer construction until the
+            first model validation. This can be useful to avoid the overhead of building models which are only
+            used nested within other models, or when you want to manually define type namespace via
+            [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
     """
 
     title: str | None
@@ -171,6 +175,7 @@ class ConfigDict(TypedDict, total=False):
     validate_return: bool
     protected_namespaces: tuple[str, ...]
     hide_input_in_errors: bool
+    defer_model_build: bool
 
 
 __getattr__ = getattr_migration(__name__)

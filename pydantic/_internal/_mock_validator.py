@@ -23,7 +23,7 @@ class MockValidator:
         code: PydanticErrorCodes,
         attempt_rebuild: Callable[[], SchemaValidator | None] | None = None,
     ) -> None:
-        """Attempt rebuild."""
+        # debug(attempt_rebuild, code)
         self._error_message = error_message
         self._code: PydanticErrorCodes = code
         self._attempt_rebuild = attempt_rebuild
@@ -49,7 +49,9 @@ class MockValidator:
         return None
 
 
-def set_basemodel_mock_validator(cls: type[BaseModel], cls_name: str, undefined_name: str) -> None:
+def set_basemodel_mock_validator(
+    cls: type[BaseModel], cls_name: str, undefined_name: str = 'all referenced types'
+) -> None:
     undefined_type_error_message = (
         f'`{cls_name}` is not fully defined; you should define {undefined_name},'
         f' then call `{cls_name}.model_rebuild()`.'
