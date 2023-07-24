@@ -187,6 +187,11 @@ pub(crate) fn infer_to_python_known(
                 let py_url: PyMultiHostUrl = value.extract()?;
                 py_url.__str__().into_py(py)
             }
+            ObType::Uuid => {
+                let py_uuid: &PyAny = value.downcast()?;
+                let uuid = super::type_serializers::uuid::uuid_to_string(py_uuid)?;
+                uuid.into_py(py)
+            }
             ObType::PydanticSerializable => serialize_with_serializer()?,
             ObType::Dataclass => serialize_dict(dataclass_to_dict(value)?)?,
             ObType::Enum => {
@@ -483,6 +488,11 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             pydantic_serializer.serialize(serializer)
         }
         ObType::Dataclass => serialize_dict!(dataclass_to_dict(value).map_err(py_err_se_err)?),
+        ObType::Uuid => {
+            let py_uuid: &PyAny = value.downcast().map_err(py_err_se_err)?;
+            let uuid = super::type_serializers::uuid::uuid_to_string(py_uuid).map_err(py_err_se_err)?;
+            serializer.serialize_str(&uuid)
+        }
         ObType::Enum => {
             let v = value.getattr(intern!(value.py(), "value")).map_err(py_err_se_err)?;
             infer_serialize(v, serializer, include, exclude, extra)
@@ -583,6 +593,11 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
             let py_time: &PyTime = key.downcast()?;
             let iso_time = super::type_serializers::datetime_etc::time_to_string(py_time)?;
             Ok(Cow::Owned(iso_time))
+        }
+        ObType::Uuid => {
+            let py_uuid: &PyAny = key.downcast()?;
+            let uuid = super::type_serializers::uuid::uuid_to_string(py_uuid)?;
+            Ok(Cow::Owned(uuid))
         }
         ObType::Timedelta => {
             let py_timedelta: &PyDelta = key.downcast()?;

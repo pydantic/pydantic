@@ -3,6 +3,7 @@ General benchmarks that attempt to cover all field types, through by no means al
 """
 import json
 from datetime import date, datetime, time
+from uuid import UUID
 
 import pytest
 
@@ -17,7 +18,7 @@ def test_complete_valid():
     lax_validator = SchemaValidator(lax_schema)
     output = lax_validator.validate_python(input_data_lax())
     assert isinstance(output, cls)
-    assert len(output.__pydantic_fields_set__) == 39
+    assert len(output.__pydantic_fields_set__) == 40
     output_dict = output.__dict__
     assert output_dict == {
         'field_str': 'fo',
@@ -35,6 +36,7 @@ def test_complete_valid():
         'field_time_con': time(12, 0),
         'field_datetime': datetime(2020, 1, 1, 12, 13, 14),
         'field_datetime_con': datetime(2020, 1, 1),
+        'field_uuid': UUID('12345678-1234-5678-1234-567812345678'),
         'field_list_any': ['a', b'b', True, 1.0, None] * 10,
         'field_list_str': ['a', 'b', 'c'] * 10,
         'field_list_str_con': ['a', 'b', 'c'] * 10,

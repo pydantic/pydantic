@@ -129,6 +129,7 @@ combined_serializer! {
         Dataclass: super::type_serializers::dataclass::DataclassSerializer;
         Url: super::type_serializers::url::UrlSerializer;
         MultiHostUrl: super::type_serializers::url::MultiHostUrlSerializer;
+        Uuid: super::type_serializers::uuid::UuidSerializer;
         Any: super::type_serializers::any::AnySerializer;
         Format: super::type_serializers::format::FormatSerializer;
         ToString: super::type_serializers::format::ToStringSerializer;
@@ -254,6 +255,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Recursive(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::TuplePositional(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::TupleVariable(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Uuid(inner) => inner.py_gc_traverse(visit),
         }
     }
 }

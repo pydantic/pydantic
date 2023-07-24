@@ -308,6 +308,14 @@ pub enum ErrorType {
     UrlScheme {
         expected_schemes: String,
     },
+    // UUID errors,
+    UuidType,
+    UuidParsing {
+        error: String,
+    },
+    UuidVersion {
+        expected_version: usize,
+    },
 }
 
 macro_rules! render {
@@ -451,6 +459,10 @@ impl ErrorType {
             Self::UrlSyntaxViolation { .. } => extract_context!(Cow::Owned, UrlSyntaxViolation, ctx, error: String),
             Self::UrlTooLong { .. } => extract_context!(UrlTooLong, ctx, max_length: usize),
             Self::UrlScheme { .. } => extract_context!(UrlScheme, ctx, expected_schemes: String),
+            Self::UuidParsing { .. } => extract_context!(UuidParsing, ctx, error: String),
+            Self::UuidVersion { .. } => {
+                extract_context!(UuidVersion, ctx, expected_version: usize)
+            }
             _ => {
                 if ctx.is_some() {
                     py_err!(PyTypeError; "'{}' errors do not require context", value)
@@ -555,6 +567,10 @@ impl ErrorType {
             Self::UrlSyntaxViolation {..} => "Input violated strict URL syntax rules, {error}",
             Self::UrlTooLong {..} => "URL should have at most {max_length} characters",
             Self::UrlScheme {..} => "URL scheme should be {expected_schemes}",
+            Self::UuidType => "UUID input should be a string, bytes or UUID object",
+            Self::UuidParsing { .. } => "Input should be a valid UUID, {error}",
+            Self::UuidVersion { .. } => "UUID version {expected_version} expected"
+
         }
     }
 
@@ -674,6 +690,8 @@ impl ErrorType {
             Self::UrlSyntaxViolation { error } => render!(tmpl, error),
             Self::UrlTooLong { max_length } => to_string_render!(tmpl, max_length),
             Self::UrlScheme { expected_schemes } => render!(tmpl, expected_schemes),
+            Self::UuidParsing { error } => render!(tmpl, error),
+            Self::UuidVersion { expected_version } => to_string_render!(tmpl, expected_version),
             _ => Ok(tmpl.to_string()),
         }
     }
@@ -734,6 +752,9 @@ impl ErrorType {
             Self::UrlSyntaxViolation { error } => py_dict!(py, error),
             Self::UrlTooLong { max_length } => py_dict!(py, max_length),
             Self::UrlScheme { expected_schemes } => py_dict!(py, expected_schemes),
+
+            Self::UuidParsing { error } => py_dict!(py, error),
+            Self::UuidVersion { expected_version } => py_dict!(py, expected_version),
             _ => Ok(None),
         }
     }

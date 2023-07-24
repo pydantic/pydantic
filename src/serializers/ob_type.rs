@@ -39,6 +39,8 @@ pub struct ObTypeLookup {
     // types from this package
     url: usize,
     multi_host_url: usize,
+    // uuid type
+    uuid: usize,
     // enum type
     enum_type: usize,
     // generator
@@ -83,6 +85,7 @@ impl ObTypeLookup {
             enum_type: py.import("enum").unwrap().getattr("Enum").unwrap().get_type_ptr() as usize,
             generator: py.import("types").unwrap().getattr("GeneratorType").unwrap().as_ptr() as usize,
             path: py.import("pathlib").unwrap().getattr("Path").unwrap().as_ptr() as usize,
+            uuid: py.import("uuid").unwrap().getattr("UUID").unwrap().as_ptr() as usize,
         }
     }
 
@@ -130,6 +133,7 @@ impl ObTypeLookup {
             ObType::Enum => self.enum_type == ob_type,
             ObType::Generator => self.generator == ob_type,
             ObType::Path => self.path == ob_type,
+            ObType::Uuid => is_uuid(op_value),
             ObType::Unknown => false,
         };
 
@@ -218,6 +222,8 @@ impl ObTypeLookup {
             ObType::Generator
         } else if ob_type == self.path {
             ObType::Path
+        } else if ob_type == self.uuid || is_uuid(op_value) {
+            ObType::Uuid
         } else {
             // this allows for subtypes of the supported class types,
             // if `ob_type` didn't match any member of self, we try again with the next base type pointer
@@ -256,6 +262,13 @@ fn is_dataclass(op_value: Option<&PyAny>) -> bool {
     }
 }
 
+fn is_uuid(op_value: Option<&PyAny>) -> bool {
+    if let Some(value) = op_value {
+        value.hasattr(intern!(value.py(), "int")).unwrap_or(false)
+    } else {
+        false
+    }
+}
 fn is_pydantic_serializable(op_value: Option<&PyAny>) -> bool {
     if let Some(value) = op_value {
         value
@@ -315,6 +328,8 @@ pub enum ObType {
     Generator,
     // Path
     Path,
+    // Uuid
+    Uuid,
     // unknown type
     Unknown,
 }
