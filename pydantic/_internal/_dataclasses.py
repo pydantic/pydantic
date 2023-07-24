@@ -167,7 +167,6 @@ def complete_dataclass(
     if plugins:
         validator = PluggableSchemaValidator(simplified_core_schema, core_config)
     else:
-        print('hi')
         validator = SchemaValidator(simplified_core_schema, core_config)
     cls.__pydantic_validator__ = validator
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
