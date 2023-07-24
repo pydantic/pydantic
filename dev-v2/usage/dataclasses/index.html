@@ -2667,24 +2667,35 @@ with the help of the <a href="../validators/#model-validators"><code>@model_vali
 
     <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">pre_root</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-        <span class="c1">#&gt; ArgsKwargs((), {&#39;birth&#39;: {&#39;year&#39;: 1995, &#39;month&#39;: 3, &#39;day&#39;: 2}})</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;First: </span><span class="si">{</span><span class="n">values</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        First: ArgsKwargs((), {&#39;birth&#39;: {&#39;year&#39;: 1995, &#39;month&#39;: 3, &#39;day&#39;: 2}})</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">values</span>
 
     <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">post_root</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;User&#39;</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="c1">#&gt; User(birth=Birth(year=1995, month=3, day=2))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Third: </span><span class="si">{</span><span class="bp">self</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1">#&gt; Third: User(birth=Birth(year=1995, month=3, day=2))</span>
         <span class="k">return</span> <span class="bp">self</span>
 
     <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">birth</span><span class="p">)</span>
-        <span class="c1">#&gt; Birth(year=1995, month=3, day=2)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Second: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">birth</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1">#&gt; Second: Birth(year=1995, month=3, day=2)</span>
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="s1">&#39;birth&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;year&#39;</span><span class="p">:</span> <span class="mi">1995</span><span class="p">,</span> <span class="s1">&#39;month&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}})</span>
 </code></pre></div>
-<p>The <code>__post_init__</code> in Pydantic dataclasses is called <em>after</em> validation, rather than before.</p>
+<p>The <code>__post_init__</code> in Pydantic dataclasses is called in the <em>middle</em> of validators.
+Here is the order:</p>
+<ul>
+<li><code>model_validator(mode='before')</code></li>
+<li><code>field_validator(mode='before')</code></li>
+<li><code>field_validator(mode='after')</code></li>
+<li>Inner validators. e.g. validation for types like <code>int</code>, <code>str</code>, ...</li>
+<li><code>__post_init__</code>.</li>
+<li><code>model_validator(mode='after')</code></li>
+</ul>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">InitVar</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
@@ -2710,8 +2721,6 @@ with the help of the <a href="../validators/#model-validators"><code>@model_vali
 </code></pre></div>
 <h3 id="difference-with-stdlib-dataclasses">Difference with stdlib dataclasses<a class="headerlink" href="#difference-with-stdlib-dataclasses" title="Permanent link">&para;</a></h3>
 <p>Note that the <code>dataclasses.dataclass</code> from Python stdlib implements only the <code>__post_init__</code> method since it doesn't run a validation step.</p>
-<p>When substituting usage of <code>dataclasses.dataclass</code> with <code>pydantic.dataclasses.dataclass</code>, it is recommended to move the code executed in the <code>__post_init__</code> to
-methods decorated with <code>model_validator</code>.</p>
 <h2 id="json-dumping">JSON dumping<a class="headerlink" href="#json-dumping" title="Permanent link">&para;</a></h2>
 <p>Pydantic dataclasses do not feature a <code>.model_dump_json()</code> function. To dump them as JSON, you will need to
 make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</a> as follows:</p>
