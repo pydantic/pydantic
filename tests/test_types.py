@@ -5423,7 +5423,7 @@ def test_constraints_arbitrary_type() -> None:
         lt=CustomType(-1),
         le=CustomType(0),
         min_length=CustomType([1, 2]),
-        max_length=CustomType([]),
+        max_length=CustomType([1]),
         multiple_of=CustomType(4),
         predicate=CustomType(1),
     )
