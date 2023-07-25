@@ -373,19 +373,7 @@ def uuid_prepare_pydantic_annotations(
     if source_type is not UUID:
         return None
 
-    schema = core_schema.uuid_schema(
-        # TODO: this shouldn't be necessary, but avoids a UserWarning emitted
-        # when serializing a string
-        serialization=core_schema.to_string_ser_schema(),
-    )
-
-    return (
-        source_type,
-        [
-            InnerSchemaValidator(schema, js_core_schema=core_schema.str_schema(), js_schema_update={'format': 'uuid'}),
-            *annotations,
-        ],
-    )
+    return (source_type, [InnerSchemaValidator(core_schema.uuid_schema()), *annotations])
 
 
 def path_schema_prepare_pydantic_annotations(

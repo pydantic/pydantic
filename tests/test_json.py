@@ -57,7 +57,7 @@ class MyModel(BaseModel):
 @pytest.mark.parametrize(
     'ser_type,gen_value,json_output',
     [
-        (UUID, lambda: 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', b'"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
+        (UUID, lambda: UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), b'"ebcdab58-6eb8-46fb-a190-d07a33e9eac8"'),
         (IPv4Address, lambda: '192.168.0.1', b'"192.168.0.1"'),
         (Color, lambda: Color('#000'), b'"black"'),
         (Color, lambda: Color((1, 12, 123)), b'"#010c7b"'),
