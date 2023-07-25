@@ -2,7 +2,7 @@
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.1.1)
 
-* Skip FieldInfo merging when unnecessary by @dmontagu in https://github.com/pydantic/pydantic/pull/6862
+* Skip FieldInfo merging when unnecessary by @dmontagu in [#6862](https://github.com/pydantic/pydantic/pull/6862)
 
 ## v2.1.0 (2023-07-25)
 
