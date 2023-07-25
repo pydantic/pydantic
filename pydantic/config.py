@@ -207,5 +207,11 @@ class ConfigDict(TypedDict, total=False):
     Defaults to `None`.
     """
 
+    plugin_settings: dict[str, Any] | None
+    """A `dict` of settings for plugins. Defaults to `None`.
+
+    See [Pydantic Plugins](../integrations/plugins.md) for details.
+    """
+
 
 __getattr__ = getattr_migration(__name__)

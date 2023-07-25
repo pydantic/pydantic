@@ -171,6 +171,7 @@ class ConfigWrapper:
                 str_max_length=self.config_dict.get('str_max_length'),
                 str_min_length=self.config_dict.get('str_min_length'),
                 hide_input_in_errors=self.config_dict.get('hide_input_in_errors'),
+                plugin_settings=self.config_dict.get('plugin_settings'),
             )
         )
         return core_config
@@ -239,6 +240,7 @@ config_defaults = ConfigDict(
     json_encoders=None,
     defer_build=False,
     schema_generator=None,
+    plugin_settings=None,
 )
 
 
