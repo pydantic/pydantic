@@ -405,6 +405,34 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
     assert len(_GENERIC_TYPES_CACHE) < types_cache_size + _LIMITED_DICT_SIZE
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
+def test_circular_generic_refs_get_cleaned_up():
+    initial_cache_size = len(_GENERIC_TYPES_CACHE)
+
+    def fn():
+        T = TypeVar('T')
+        C = TypeVar('C')
+
+        class Inner(BaseModel, Generic[T, C]):
+            a: T
+            b: C
+
+        class Outer(BaseModel, Generic[C]):
+            c: Inner[int, C]
+
+        klass = Outer[str]
+        assert len(_GENERIC_TYPES_CACHE) > initial_cache_size
+        assert klass in _GENERIC_TYPES_CACHE.values()
+
+    fn()
+
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+
+    assert len(_GENERIC_TYPES_CACHE) == initial_cache_size
+
+
 def test_generics_work_with_many_parametrized_base_models(clean_cache):
     cache_size = len(_GENERIC_TYPES_CACHE)
     count_create_models = 1000
