@@ -66,7 +66,9 @@ class ValidateCallWrapper:
         core_config = config_wrapper.core_config(self)
         schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
         simplified_schema = inline_schema_defs(schema)
-        self.__pydantic_validator__ = schema_validator_cls()(simplified_schema, core_config)
+        self.__pydantic_validator__ = schema_validator_cls()(
+            simplified_schema, core_config, config_wrapper.plugin_settings
+        )
 
         if self._validate_return:
             return_type = (

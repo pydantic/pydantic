@@ -31,9 +31,12 @@ class _Plug:
     EVENTS: Final = {'validate_json': 'on_validate_json', 'validate_python': 'on_validate_python'}
     """Events for plugins."""
 
-    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+    def __init__(
+        self, schema: CoreSchema, config: CoreConfig | None = None, plugin_settings: dict[str, Any] | None = None
+    ) -> None:
         self.schema = schema
         self.config = config
+        self.plugin_settings = plugin_settings
 
     def __call__(self, func: Callable[P, R]) -> Callable[P, R]:
         """Call plugins for pydantic."""
@@ -87,7 +90,7 @@ class _Plug:
         for plugin in plugins:
             with contextlib.suppress(AttributeError, TypeError):
                 step_type: type[Step] = getattr(plugin, step)
-                on_step = step_type(schema=self.schema, config=self.config)
+                on_step = step_type(self.schema, self.config, self.plugin_settings)
                 calls.append(getattr(on_step, callback))
 
         return calls
@@ -96,10 +99,10 @@ class _Plug:
 class PluggableSchemaValidator:
     """Pluggable schema validator."""
 
-    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
-        self.schema_validator = SchemaValidator(schema=schema, config=config)
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None, _ignored: Any = None) -> None:
+        self.schema_validator = SchemaValidator(schema, config, _ignored)
 
-        self.plug = _Plug(schema=schema, config=config)
+        self.plug = _Plug(schema=schema, config=config, plugin_settings=_ignored)
 
         self.validate_json = self.plug(self.schema_validator.validate_json)
         self.validate_python = self.plug(self.schema_validator.validate_python)

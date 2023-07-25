@@ -76,6 +76,7 @@ class ConfigWrapper:
     hide_input_in_errors: bool
     defer_build: bool
     schema_generator: type[GenerateSchema] | None
+    plugin_settings: dict[str, Any] | None
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -171,7 +172,6 @@ class ConfigWrapper:
                 str_max_length=self.config_dict.get('str_max_length'),
                 str_min_length=self.config_dict.get('str_min_length'),
                 hide_input_in_errors=self.config_dict.get('hide_input_in_errors'),
-                plugin_settings=self.config_dict.get('plugin_settings'),
             )
         )
         return core_config
