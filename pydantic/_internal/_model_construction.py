@@ -565,7 +565,7 @@ def generate_model_signature(
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
-class _PydanticWeakValueDictionary(weakref.WeakValueDictionary):
+class _PydanticWeakRef(weakref.ReferenceType):
     pass
 
 
@@ -582,7 +582,7 @@ def build_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | No
     result = {}
     for k, v in d.items():
         try:
-            proxy = _PydanticWeakValueDictionary(ref=v)
+            proxy = _PydanticWeakRef(v)
         except TypeError:
             proxy = v
         result[k] = proxy
@@ -596,9 +596,10 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
 
     result = {}
     for k, v in d.items():
-        if isinstance(v, _PydanticWeakValueDictionary):
-            if 'ref' in v:
-                result[k] = v['ref']
+        if isinstance(v, _PydanticWeakRef):
+            v = v()
+            if v is not None:
+                result[k] = v
         else:
             result[k] = v
     return result
