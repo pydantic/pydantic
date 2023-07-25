@@ -11,9 +11,15 @@ from pydantic_core import CoreConfig, CoreSchema, ValidationError
 class Step:
     """Step for plugin callbacks."""
 
-    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+    def __init__(
+        self,
+        schema: CoreSchema,
+        config: CoreConfig | None = None,
+        plugin_settings: dict[str, Any] | None = None,
+    ) -> None:
         self.schema = schema
         self.config = config
+        self.plugin_settings = plugin_settings
 
     @abstractmethod
     def on_success(self, result: Any) -> None:

@@ -484,7 +484,9 @@ def complete_model_class(
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
     simplified_core_schema = inline_schema_defs(schema)
-    cls.__pydantic_validator__ = schema_validator_cls()(simplified_core_schema, core_config)
+    cls.__pydantic_validator__ = schema_validator_cls()(
+        simplified_core_schema, core_config, config_wrapper.plugin_settings
+    )
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
     cls.__pydantic_complete__ = True
 
