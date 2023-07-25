@@ -455,6 +455,10 @@ def complete_model_class(
         ref_mode='unpack',
     )
 
+    if config_wrapper.defer_build:
+        set_basemodel_mock_validator(cls, cls_name)
+        return False
+
     try:
         schema = cls.__get_pydantic_core_schema__(cls, handler)
     except PydanticUndefinedAnnotation as e:
@@ -468,7 +472,7 @@ def complete_model_class(
     schema = gen_schema.collect_definitions(schema)
     schema = apply_discriminators(flatten_schema_defs(schema))
     if collect_invalid_schemas(schema):
-        set_basemodel_mock_validator(cls, cls_name, 'all referenced types')
+        set_basemodel_mock_validator(cls, cls_name)
         return False
 
     # debug(schema)
