@@ -182,7 +182,7 @@ class ConfigDict(TypedDict, total=False):
     defer_build: bool
     """
     Whether to defer model validator and serializer construction until the first model validation.
-    
+
     This can be useful to avoid the overhead of building models which are only
     used nested within other models, or when you want to manually define type namespace via
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
