@@ -1,3 +1,4 @@
+import json
 import re
 import sys
 from contextlib import nullcontext as does_not_raise
@@ -23,6 +24,8 @@ from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
+from pydantic.type_adapter import TypeAdapter
+from pydantic.warnings import PydanticDeprecationWarning
 
 if sys.version_info < (3, 9):
     from typing_extensions import Annotated
@@ -519,8 +522,10 @@ def test_multiple_inheritance_config():
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_wrapper_match():
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict).items()]
+    config_dict_annotations.sort()
     # remove config
     config_wrapper_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigWrapper).items() if k != 'config_dict']
+    config_wrapper_annotations.sort()
 
     assert (
         config_dict_annotations == config_wrapper_annotations
@@ -529,8 +534,8 @@ def test_config_wrapper_match():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_defaults_match():
-    config_dict_keys = list(get_type_hints(ConfigDict).keys())
-    config_defaults_keys = list(config_defaults.keys())
+    config_dict_keys = sorted(list(get_type_hints(ConfigDict).keys()))
+    config_defaults_keys = sorted(list(config_defaults.keys()))
 
     assert config_dict_keys == config_defaults_keys, 'ConfigDict and config_defaults must have the same keys'
 
@@ -633,3 +638,29 @@ def test_config_inheritance_with_annotations():
         model_config: ConfigDict = {'str_to_lower': True}
 
     assert Child.model_config == {'extra': 'allow', 'str_to_lower': True}
+
+
+def test_json_encoders_model() -> None:
+    with pytest.warns(PydanticDeprecationWarning):
+
+        class Model(BaseModel):
+            model_config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
+            value: Decimal
+            x: int
+
+    assert json.loads(Model(value=Decimal('1.1'), x=1).model_dump_json()) == {'value': '2.2', 'x': '3'}
+
+
+@pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecationWarning')
+def test_json_encoders_type_adapter() -> None:
+    config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
+
+    ta = TypeAdapter(int, config=config)
+    assert json.loads(ta.dump_json(1)) == '3'
+
+    ta = TypeAdapter(Decimal, config=config)
+    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
+
+    ta = TypeAdapter(Union[Decimal, int], config=config)
+    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
+    assert json.loads(ta.dump_json(1)) == '2'

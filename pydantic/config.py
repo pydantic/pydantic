@@ -18,6 +18,8 @@ if not TYPE_CHECKING:
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 
 
+JsonEncoder = Callable[[Any], Any]
+
 JsonSchemaExtraCallable: TypeAlias = Union[
     Callable[[Dict[str, Any]], None],
     Callable[[Dict[str, Any], Type[Any]], None],
@@ -127,6 +129,12 @@ class ConfigDict(TypedDict, total=False):
         hide_input_in_errors: Whether to hide inputs when printing errors. Defaults to `False`.
 
             See [Hide Input in Errors](../usage/model_config.md#hide-input-in-errors).
+        json_encoders: A `dict` of custom JSON encoders for specific types. Defaults to `None`.
+
+            !!! note
+                This config option is a carryover from v1.
+                We originally planned to remove it in v2 but didn't have a 1:1 replacement so we are keeping it for now.
+                It is still deprecated and will likely be removed in the future.
     """
 
     title: str | None
@@ -149,6 +157,7 @@ class ConfigDict(TypedDict, total=False):
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
     json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
+    json_encoders: dict[type[object], JsonEncoder] | None
 
     # new in V2
     strict: bool

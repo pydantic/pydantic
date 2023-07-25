@@ -7,6 +7,7 @@ import inspect
 import re
 import sys
 import typing
+import warnings
 from contextlib import contextmanager
 from copy import copy
 from enum import Enum
@@ -24,6 +25,7 @@ from typing import (
     Iterable,
     Iterator,
     Mapping,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -34,10 +36,12 @@ from warnings import warn
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
-from ..config import ConfigDict
+from ..config import ConfigDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import AliasChoices, AliasPath, FieldInfo
 from ..json_schema import JsonSchemaValue
+from ..version import VERSION
+from ..warnings import PydanticDeprecatedSince20
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ._config import ConfigWrapper
@@ -210,6 +214,42 @@ def modify_model_json_schema(
     return json_schema
 
 
+JsonEncoders = Dict[Type[Any], JsonEncoder]
+
+
+def _add_custom_serialization_from_json_encoders(
+    json_encoders: JsonEncoders | None, tp: Any, schema: CoreSchema
+) -> CoreSchema:
+    """Iterate over the json_encoders and add the first matching encoder to the schema.
+
+    Args:
+        json_encoders: A dictionary of types and their encoder functions.
+        tp: The type to check for a matching encoder.
+        schema: The schema to add the encoder to.
+    """
+    if not json_encoders:
+        return schema
+    if 'serialization' in schema:
+        return schema
+    # Check the class type and its superclasses for a matching encoder
+    # Decimal.__class__.__mro__ (and probably other cases) doesn't include Decimal itself
+    for base in (tp, *tp.__class__.__mro__[:-1]):
+        encoder = json_encoders.get(base)
+        if encoder is None:
+            continue
+
+        warnings.warn(
+            f'`json_encoders` is deprecated. See https://docs.pydantic.dev/{VERSION}/usage/serialization/#custom-serializers for alternatives',
+            PydanticDeprecatedSince20,
+        )
+
+        # TODO: in theory we should check that the schema accepts a serialization key
+        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(encoder, when_used='json')  # type: ignore
+        return schema
+
+    return schema
+
+
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datatime`, ... ."""
 
@@ -316,6 +356,8 @@ class GenerateSchema:
             metadata_schema = resolve_original_schema(schema, self.defs.definitions)
             if metadata_schema:
                 self._add_js_function(metadata_schema, metadata_js_function)
+
+        schema = _add_custom_serialization_from_json_encoders(self.config_wrapper.json_encoders, obj, schema)
 
         return schema
 
@@ -1419,7 +1461,7 @@ class GenerateSchema:
         if pydantic_js_annotation_functions:
             metadata = CoreMetadataHandler(schema).metadata
             metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
-        return schema
+        return _add_custom_serialization_from_json_encoders(self.config_wrapper.json_encoders, source_type, schema)
 
     def apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
         if isinstance(metadata, FieldInfo):
