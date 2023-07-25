@@ -439,6 +439,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if not force and cls.__pydantic_complete__:
             return None
         else:
+            if '__pydantic_core_schema__' in cls.__dict__:
+                delattr(cls, '__pydantic_core_schema__')  # delete cached value to ensure full rebuild happens
             if _types_namespace is not None:
                 types_namespace: dict[str, Any] | None = _types_namespace.copy()
             else:
