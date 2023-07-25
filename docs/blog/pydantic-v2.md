@@ -755,7 +755,7 @@ The emoji here is just for variation, I'm not frowning about any of this, these 
    remove the functionality, but it's something of a historical curiosity that it lives within pydantic,
    perhaps it should move to a separate package, perhaps installable alongside pydantic with
    `pip install pydantic[settings]`?
-8. The following `Config` properties will be removed:
+8. The following `Config` properties will be removed or deprecated:
    * `fields` - it's very old (it pre-dates `Field`), can be removed
    * `allow_mutation` will be removed, instead `frozen` will be used
    * `error_msg_templates`, it's not properly documented anyway, error messages can be customized with external logic if required
