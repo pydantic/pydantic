@@ -338,6 +338,34 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     return type_map.get(type_, type_)
 
 
+def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
+    """Checks if the type, or any of its arbitrary nested args, satisfy
+    `isinstance(<type>, isinstance_target)`.
+    """
+    if isinstance(type_, isinstance_target):
+        return True
+
+    type_args = get_args(type_)
+    origin_type = get_origin(type_)
+
+    if origin_type is typing_extensions.Annotated:
+        annotated_type, *annotations = type_args
+        return has_instance_in_type(annotated_type, isinstance_target)
+
+    # Having type args is a good indicator that this is a typing module
+    # class instantiation or a generic alias of some sort.
+    if any(has_instance_in_type(a, isinstance_target) for a in type_args):
+        return True
+
+    # Handle special case for typehints that can have lists as arguments.
+    # `typing.Callable[[int, str], int]` is an example for this.
+    if isinstance(type_, (List, list)):
+        if any(has_instance_in_type(element, isinstance_target) for element in type_):
+            return True
+
+    return False
+
+
 def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) -> None:
     """Check the generic model parameters count is equal.
 

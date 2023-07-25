@@ -72,7 +72,7 @@ from ._decorators import (
 )
 from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticRecursiveRef
-from ._generics import get_standard_typevars_map, recursively_defined_type_refs, replace_types
+from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
 from ._schema_generation_shared import (
     CallbackGetCoreSchemaHandler,
 )
@@ -754,6 +754,18 @@ class GenerateSchema:
         )
 
     def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
+        # Update FieldInfo annotation if appropriate:
+        if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
+            types_namespace = self.types_namespace
+            if self.typevars_map:
+                types_namespace = (types_namespace or {}).copy()
+                # Ensure that typevars get mapped to their concrete types:
+                types_namespace.update({k.__name__: v for k, v in self.typevars_map.items()})
+
+            evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace, None)
+            if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
+                field_info.annotation = evaluated
+
         source_type, annotations = field_info.annotation, field_info.metadata
 
         def set_discriminator(schema: CoreSchema) -> CoreSchema:
