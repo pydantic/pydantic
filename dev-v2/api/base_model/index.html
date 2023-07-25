@@ -3755,7 +3755,12 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="normal">1224</span>
 <span class="normal">1225</span>
 <span class="normal">1226</span>
-<span class="normal">1227</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1227</span>
+<span class="normal">1228</span>
+<span class="normal">1229</span>
+<span class="normal">1230</span>
+<span class="normal">1231</span>
+<span class="normal">1232</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;usage docs: https://docs.pydantic.dev/2.0/usage/models/</span>
 
 <span class="sd">    A base class for creating Pydantic models.</span>
@@ -4143,10 +4148,15 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">_parent_namespace_depth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">frame_parent_ns</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">parent_frame_namespace</span><span class="p">(</span><span class="n">parent_depth</span><span class="o">=</span><span class="n">_parent_namespace_depth</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
-                    <span class="n">cls_parent_ns</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span> <span class="ow">or</span> <span class="p">{}</span>
-                    <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">cls_parent_ns</span><span class="p">,</span> <span class="o">**</span><span class="n">frame_parent_ns</span><span class="p">}</span>
-
-                <span class="n">types_namespace</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span>
+                    <span class="n">cls_parent_ns</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">_model_construction</span><span class="o">.</span><span class="n">unpack_lenient_weakvaluedict</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+                    <span class="p">)</span>
+                    <span class="n">types_namespace</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">cls_parent_ns</span><span class="p">,</span> <span class="o">**</span><span class="n">frame_parent_ns</span><span class="p">}</span>
+                    <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span> <span class="o">=</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">build_lenient_weakvaluedict</span><span class="p">(</span><span class="n">types_namespace</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">unpack_lenient_weakvaluedict</span><span class="p">(</span>
+                        <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span>
+                    <span class="p">)</span>
 
                 <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">get_cls_types_namespace</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">complete_model_class</span><span class="p">(</span>
@@ -4999,8 +5009,8 @@ allow <code>self</code> as a field name.</p>
 
   
   <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_config" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -6650,7 +6660,12 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">458</span>
 <span class="normal">459</span>
 <span class="normal">460</span>
-<span class="normal">461</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_rebuild</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -6684,10 +6699,15 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">_parent_namespace_depth</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">frame_parent_ns</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">parent_frame_namespace</span><span class="p">(</span><span class="n">parent_depth</span><span class="o">=</span><span class="n">_parent_namespace_depth</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
-                <span class="n">cls_parent_ns</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span> <span class="ow">or</span> <span class="p">{}</span>
-                <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">cls_parent_ns</span><span class="p">,</span> <span class="o">**</span><span class="n">frame_parent_ns</span><span class="p">}</span>
-
-            <span class="n">types_namespace</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span>
+                <span class="n">cls_parent_ns</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">_model_construction</span><span class="o">.</span><span class="n">unpack_lenient_weakvaluedict</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+                <span class="p">)</span>
+                <span class="n">types_namespace</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">cls_parent_ns</span><span class="p">,</span> <span class="o">**</span><span class="n">frame_parent_ns</span><span class="p">}</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span> <span class="o">=</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">build_lenient_weakvaluedict</span><span class="p">(</span><span class="n">types_namespace</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">unpack_lenient_weakvaluedict</span><span class="p">(</span>
+                    <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_parent_namespace__</span>
+                <span class="p">)</span>
 
             <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">get_cls_types_namespace</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_model_construction</span><span class="o">.</span><span class="n">complete_model_class</span><span class="p">(</span>
@@ -6846,12 +6866,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">463</span>
-<span class="normal">464</span>
-<span class="normal">465</span>
-<span class="normal">466</span>
-<span class="normal">467</span>
-<span class="normal">468</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">468</span>
 <span class="normal">469</span>
 <span class="normal">470</span>
 <span class="normal">471</span>
@@ -6873,7 +6888,12 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">487</span>
 <span class="normal">488</span>
 <span class="normal">489</span>
-<span class="normal">490</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_validate</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Model</span><span class="p">],</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -7036,12 +7056,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">492</span>
-<span class="normal">493</span>
-<span class="normal">494</span>
-<span class="normal">495</span>
-<span class="normal">496</span>
-<span class="normal">497</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">497</span>
 <span class="normal">498</span>
 <span class="normal">499</span>
 <span class="normal">500</span>
@@ -7059,7 +7074,12 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">512</span>
 <span class="normal">513</span>
 <span class="normal">514</span>
-<span class="normal">515</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_validate_json</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Model</span><span class="p">],</span>
     <span class="n">json_data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">,</span>
@@ -7218,12 +7238,7 @@ in the copied model.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1061</span>
-<span class="normal">1062</span>
-<span class="normal">1063</span>
-<span class="normal">1064</span>
-<span class="normal">1065</span>
-<span class="normal">1066</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1066</span>
 <span class="normal">1067</span>
 <span class="normal">1068</span>
 <span class="normal">1069</span>
@@ -7292,7 +7307,12 @@ in the copied model.</p>
 <span class="normal">1132</span>
 <span class="normal">1133</span>
 <span class="normal">1134</span>
-<span class="normal">1135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span>
+<span class="normal">1137</span>
+<span class="normal">1138</span>
+<span class="normal">1139</span>
+<span class="normal">1140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">PydanticDeprecatedSince20</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span>
@@ -7584,12 +7604,7 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1258</span>
-<span class="normal">1259</span>
-<span class="normal">1260</span>
-<span class="normal">1261</span>
-<span class="normal">1262</span>
-<span class="normal">1263</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1263</span>
 <span class="normal">1264</span>
 <span class="normal">1265</span>
 <span class="normal">1266</span>
@@ -7667,7 +7682,12 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 <span class="normal">1338</span>
 <span class="normal">1339</span>
 <span class="normal">1340</span>
-<span class="normal">1341</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1341</span>
+<span class="normal">1342</span>
+<span class="normal">1343</span>
+<span class="normal">1344</span>
+<span class="normal">1345</span>
+<span class="normal">1346</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
