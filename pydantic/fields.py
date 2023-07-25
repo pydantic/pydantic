@@ -381,8 +381,12 @@ class FieldInfo(_repr.Representation):
             flattened_field_infos.append(field_info)
         field_infos = tuple(flattened_field_infos)
         if len(field_infos) == 1:
-            # No merging necessary
-            return field_infos[0]
+            # No merging necessary, but we still need to make a copy and apply the overrides
+            field_info = copy(field_infos[0])
+            field_info._attributes_set.update(overrides)
+            for k, v in overrides.items():
+                setattr(field_info, k, v)
+            return field_info
 
         new_kwargs: dict[str, Any] = {}
         metadata = {}
