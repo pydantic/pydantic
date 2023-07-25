@@ -57,30 +57,23 @@ class _Plug:
 
     def prepare_enter(self, func: Callable[..., Any]) -> Callable[..., None]:
         enter_calls = self.gather_calls(func, callback='enter')
-
-        def enter(*args: Any, **kwargs: Any) -> None:
-            for enter_call in enter_calls:
-                enter_call(*args, **kwargs)
-
-        return enter
+        return self.run_callbacks(enter_calls)
 
     def prepare_on_success(self, func: Callable[..., Any]) -> Callable[[Any], None]:
         success_calls = self.gather_calls(func, callback='on_success')
-
-        def on_success(result: Any) -> None:
-            for success_call in success_calls:
-                success_call(result)
-
-        return on_success
+        return self.run_callbacks(success_calls)
 
     def prepare_on_error(self, func: Callable[..., Any]) -> Callable[[ValidationError], None]:
         error_calls = self.gather_calls(func, callback='on_error')
+        return self.run_callbacks(error_calls)
 
-        def on_error(error: ValidationError) -> None:
-            for error_call in error_calls:
-                error_call(error)
+    def run_callbacks(self, callbacks: list[Callable[..., None]]) -> Callable[..., None]:
+        def wrapper(*args: Any, **kwargs: Any) -> None:
+            for callback in callbacks:
+                with contextlib.suppress(NotImplementedError):
+                    callback(*args, **kwargs)
 
-        return on_error
+        return wrapper
 
     def gather_calls(
         self, func: Callable[..., Any], callback: Literal['enter', 'on_success', 'on_error']
