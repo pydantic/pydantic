@@ -4,7 +4,7 @@
 ![Samuel Colvin](../img/samuelcolvin.jpg)
 <div markdown>
   **Samuel Colvin** &bull;&nbsp;
-  [:material-github:](https://github.com/samuelcolvin) &bull;&nbsp;
+  [:simple-github:](https://github.com/samuelcolvin) &bull;&nbsp;
   [:material-twitter:](https://twitter.com/samuel_colvin) &bull;&nbsp;
   :octicons-calendar-24: Jul 10, 2022 &bull;&nbsp;
   :octicons-clock-24: 25 min read

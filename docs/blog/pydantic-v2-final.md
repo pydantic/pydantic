@@ -4,7 +4,7 @@
 ![Terrence Dorsey](../img/terrencedorsey.jpg)
 <div markdown>
   **Terrence Dorsey & Samuel Colvin** &bull;&nbsp;
-  [:material-github:](https://github.com/pydantic) &bull;&nbsp;
+  [:simple-github:](https://github.com/pydantic) &bull;&nbsp;
   [:material-twitter:](https://twitter.com/pydantic) &bull;&nbsp;
   :octicons-calendar-24: June 30, 2023 &bull;&nbsp;
   :octicons-clock-24: 2 min read
