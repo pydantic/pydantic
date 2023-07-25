@@ -2487,6 +2487,23 @@ class without an annotation and has a type that is not in this tuple (or otherwi
           </td>
         </tr>
         <tr>
+          <td><code>json_encoders</code></td>
+          <td>
+                <code>dict[type[object], <span title="pydantic.config.JsonEncoder">JsonEncoder</span>] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A <code>dict</code> of custom JSON encoders for specific types. Defaults to <code>None</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This config option is a carryover from v1.
+We originally planned to remove it in v2 but didn't have a 1:1 replacement so we are keeping it for now.
+It is still deprecated and will likely be removed in the future.</p>
+</div>
+            </div>
+          </td>
+        </tr>
+        <tr>
           <td><code>strict</code></td>
           <td>
                 <code>bool</code>
@@ -2586,19 +2603,16 @@ Defaults to <code>('model_', )</code>).</p>
           </td>
         </tr>
         <tr>
-          <td><code>json_encoders</code></td>
+          <td><code>defer_build</code></td>
           <td>
-                <code>dict[type[object], <span title="pydantic.config.JsonEncoder">JsonEncoder</span>] | None</code>
+                <code>bool</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A <code>dict</code> of custom JSON encoders for specific types. Defaults to <code>None</code>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This config option is a carryover from v1.
-We originally planned to remove it in v2 but didn't have a 1:1 replacement so we are keeping it for now.
-It is still deprecated and will likely be removed in the future.</p>
-</div>
+              <p>Whether to defer model validator and serializer construction until the
+first model validation. This can be useful to avoid the overhead of building models which are only
+used nested within other models, or when you want to manually define type namespace via
+<a class="autorefs autorefs-internal" href="../base_model/#pydantic.main.BaseModel.model_rebuild"><code>Model.model_rebuild(_types_namespace=...)</code></a>. Defaults to False.</p>
             </div>
           </td>
         </tr>
