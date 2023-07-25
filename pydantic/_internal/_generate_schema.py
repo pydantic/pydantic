@@ -1455,8 +1455,7 @@ class GenerateSchema:
         if pydantic_js_annotation_functions:
             metadata = CoreMetadataHandler(schema).metadata
             metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
-        schema = _add_custom_serialization_from_json_encoders(self.config_wrapper.json_encoders, source_type, schema)
-        return schema
+        return _add_custom_serialization_from_json_encoders(self.config_wrapper.json_encoders, source_type, schema)
 
     def apply_single_annotation(  # noqa: C901
         self, schema: core_schema.CoreSchema, metadata: Any
