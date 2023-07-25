@@ -57,7 +57,7 @@ class Extra:
 
     def __getattribute__(self, __name: str) -> Any:
         warnings.warn(
-            '`pydantic.config.Extra` is deprecated, use literal values instead' " (e.g. `extra='allow'`)",
+            "`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)",
             DeprecationWarning,
             stacklevel=2,
         )
