@@ -49,9 +49,7 @@ def validate_call(
     def validate(function: AnyCallableT) -> AnyCallableT:
         if isinstance(function, (classmethod, staticmethod)):
             name = type(function).__name__
-            raise TypeError(
-                f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)'
-            )
+            raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
         return _validate_call.ValidateCallWrapper(function, config, validate_return)  # type: ignore
 
     if __func:
