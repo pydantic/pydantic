@@ -236,7 +236,7 @@ def _add_custom_serialization_from_json_encoders(
         except KeyError:
             continue
 
-        serialization = schema.get('serialization') or core_schema.plain_serializer_function_ser_schema(encoder)
+        serialization = core_schema.plain_serializer_function_ser_schema(encoder)
         if 'ref' in schema:
             return core_schema.definition_reference_schema(schema_ref=schema['ref'], serialization=serialization)  # type: ignore
         else:
