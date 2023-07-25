@@ -24,6 +24,7 @@ from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.type_adapter import TypeAdapter
+from pydantic.warnings import PydanticDeprecationWarning
 
 if sys.version_info < (3, 9):
     from typing_extensions import Annotated
@@ -639,14 +640,17 @@ def test_config_inheritance_with_annotations():
 
 
 def test_json_encoders_model() -> None:
-    class Model(BaseModel):
-        model_config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
-        value: Decimal
-        x: int
+    with pytest.warns(PydanticDeprecationWarning):
+
+        class Model(BaseModel):
+            model_config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
+            value: Decimal
+            x: int
 
     assert Model(value=Decimal('1.1'), x=1).model_dump() == {'value': '2.2', 'x': '3'}
 
 
+@pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecationWarning')
 def test_json_encoders_type_adapter() -> None:
     config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
 

@@ -7,6 +7,7 @@ import inspect
 import re
 import sys
 import typing
+import warnings
 from contextlib import contextmanager
 from copy import copy
 from enum import Enum
@@ -34,6 +35,8 @@ from warnings import warn
 
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
+
+from pydantic.warnings import PydanticDeprecatedSince20
 
 from ..config import ConfigDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
@@ -234,6 +237,13 @@ def _add_custom_serialization_from_json_encoders(
         encoder = json_encoders.get(base)
         if encoder is None:
             continue
+
+        from pydantic.version import VERSION
+
+        warnings.warn(
+            f'`json_encoders` is deprecated. See https://docs.pydantic.dev/{VERSION}/usage/serialization/#custom-serializers for alternatives',
+            PydanticDeprecatedSince20,
+        )
 
         serialization = schema.get('serialization') or core_schema.plain_serializer_function_ser_schema(encoder)
         # TODO: in theory we should check that the schema accepts a serialization key
