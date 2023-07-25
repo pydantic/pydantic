@@ -2300,19 +2300,10 @@
 <h2 id="annotated-validators">Annotated Validators<a class="headerlink" href="#annotated-validators" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.WrapValidator"><code>pydantic.functional_validators.WrapValidator</code></a><br></p>
-</details>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>pydantic.functional_validators.PlainValidator</code></a><br></p>
-</details>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.BeforeValidator"><code>pydantic.functional_validators.BeforeValidator</code></a><br></p>
-</details>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>pydantic.functional_validators.AfterValidator</code></a><br></p>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.WrapValidator"><code>pydantic.functional_validators.WrapValidator</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>pydantic.functional_validators.PlainValidator</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.BeforeValidator"><code>pydantic.functional_validators.BeforeValidator</code></a><br>
+<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>pydantic.functional_validators.AfterValidator</code></a><br></p>
 </details>
 <p>Pydantic provides a way to apply validators via use of <code>Annotated</code>.
 You should use this whenever you want to bind validation to a type instead of model or field.</p>
@@ -2366,13 +2357,6 @@ The same approach can be used for dict keys, etc.</p>
 * <code>Before</code> validators run before Pydantic's internal parsing and validation (e.g. coercion of a <code>str</code> to an <code>int</code>). These are more flexible than <code>After</code> validators since they can modify the raw input, but they also have to deal with the raw input, which in theory could be any arbitrary object.
 * <code>Plain</code> validators are like a <code>mode='before'</code> validator but they terminate validation immediately, no further validators are called and Pydantic does not do any of it's internal validation.
 * <code>Wrap</code> validators are the most flexible of all. You can run code before or after Pydantic and other validators do their thing or you can terminate validation immediately, both with a successful value or an error.</p>
-<details class="api">
-<summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.WrapValidator"><code>pydantic.functional_validators.WrapValidator</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.PlainValidator"><code>pydantic.functional_validators.PlainValidator</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.BeforeValidator"><code>pydantic.functional_validators.BeforeValidator</code></a><br>
-<a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>pydantic.functional_validators.AfterValidator</code></a><br></p>
-</details>
 <p>You can use multiple before, after, or <code>mode='wrap'</code> validators, but only one <code>PlainValidator</code> since a plain validator
 will not call any inner validators.</p>
 <p>Here's an example of a <code>mode='wrap'</code> validator:</p>
