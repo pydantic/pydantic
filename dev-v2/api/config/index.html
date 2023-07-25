@@ -1923,6 +1923,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.schema_generator" class="md-nav__link">
+    schema_generator
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2529,6 +2536,13 @@
           <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.defer_build" class="md-nav__link">
     defer_build
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.schema_generator" class="md-nav__link">
+    schema_generator
   </a>
   
 </li>
@@ -3432,6 +3446,38 @@ Defaults to <code>('model_', )</code>).</p>
 <p>This can be useful to avoid the overhead of building models which are only
 used nested within other models, or when you want to manually define type namespace via
 <a class="autorefs autorefs-internal" href="../base_model/#pydantic.main.BaseModel.model_rebuild"><code>Model.model_rebuild(_types_namespace=...)</code></a>. Defaults to False.</p>
+  </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.schema_generator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">schema_generator</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.schema_generator" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_GenerateSchema</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A custom core schema generator class to use when generating JSON schemas.
+Useful if you want to change the way types are validated across an entire model/schema.</p>
+<p>The <code>GenerateSchema</code> interface is subject to change, currently only the <code>string_schema</code> method is public.</p>
+<p>See <a href="https://github.com/pydantic/pydantic/pull/6737">#6737</a> for details.</p>
+<p>Defaults to <code>None</code>.</p>
   </div>
 
 </div>
