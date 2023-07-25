@@ -224,7 +224,7 @@ def _add_custom_serialization_from_json_encoders(
         tp (Any): The type to check for a matching encoder.
         schema (CoreSchema): The schema to add the encoder to.
     """
-    if json_encoders is None:
+    if not json_encoders:
         return schema
     if 'serialization' in schema:
         return schema
