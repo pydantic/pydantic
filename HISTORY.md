@@ -136,7 +136,7 @@ See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/
 First patch release of Pydantic V2
 
 * Extra fields added via `setattr` (i.e. `m.some_extra_field = 'extra_value'`)
-  are added to `.model_extra` if `model_config` `extra='allowed'`. Fixed #6333, [#6365](https://github.com/pydantic/pydantic/pull/6365) by @aaraney
+  are added to `.model_extra` if `model_config` `extra='allowed'`. Fixed [#6333](https://github.com/pydantic/pydantic/pull/6333), [#6365](https://github.com/pydantic/pydantic/pull/6365) by @aaraney
 * Automatically unpack JSON schema '$ref' for custom types, [#6343](https://github.com/pydantic/pydantic/pull/6343) by @adriangb
 * Fix tagged unions multiple processing in submodels, [#6340](https://github.com/pydantic/pydantic/pull/6340) by @suharnikov
 
@@ -268,7 +268,7 @@ See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more deta
 
 ## v1.10.2 (2022-09-05)
 
-* **Revert Change:** Revert percent encoding of URL parts which was originally added in #4224, [#4470](https://github.com/pydantic/pydantic/pull/4470) by @samuelcolvin
+* **Revert Change:** Revert percent encoding of URL parts which was originally added in [#4224](https://github.com/pydantic/pydantic/pull/4224), [#4470](https://github.com/pydantic/pydantic/pull/4470) by @samuelcolvin
 * Prevent long (length > `4_300`) strings/bytes as input to int fields, see
   [python/cpython#95778](https://github.com/python/cpython/issues/95778) and
   [CVE-2020-10735](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10735), [#1477](https://github.com/pydantic/pydantic/pull/1477) by @samuelcolvin
@@ -409,7 +409,7 @@ for their kind support.
 * Prevent subclasses of bytes being converted to bytes, [#3706](https://github.com/pydantic/pydantic/pull/3706) by @samuelcolvin
 * Fixed "error checking inheritance of" when using PEP585 and PEP604 type hints, [#3681](https://github.com/pydantic/pydantic/pull/3681) by @aleksul
 * Allow self referencing `ClassVar`s in models, [#3679](https://github.com/pydantic/pydantic/pull/3679) by @samuelcolvin
-* **Breaking Change, see #4106**: Fix issue with self-referencing dataclass, [#3675](https://github.com/pydantic/pydantic/pull/3675) by @uriyyo
+* **Breaking Change, see [#4106](https://github.com/pydantic/pydantic/pull/4106)**: Fix issue with self-referencing dataclass, [#3675](https://github.com/pydantic/pydantic/pull/3675) by @uriyyo
 * Include non-standard port numbers in rendered URLs, [#3652](https://github.com/pydantic/pydantic/pull/3652) by @dolfinus
 * `Config.copy_on_model_validation` does a deep copy and not a shallow one, [#3641](https://github.com/pydantic/pydantic/pull/3641) by @PrettyWood
 * fix: clarify that discriminated unions do not support singletons, [#3636](https://github.com/pydantic/pydantic/pull/3636) by @tommilligan
@@ -505,7 +505,7 @@ for their kind support.
 * Add episode 313 of the *Talk Python To Me* podcast, where Michael Kennedy and Samuel Colvin discuss Pydantic, to the docs, [#2712](https://github.com/pydantic/pydantic/pull/2712) by @RatulMaharaj
 * fix JSON schema generation when a field is of type `NamedTuple` and has a default value, [#2707](https://github.com/pydantic/pydantic/pull/2707) by @PrettyWood
 * `Enum` fields now properly support extra kwargs in schema generation, [#2697](https://github.com/pydantic/pydantic/pull/2697) by @sammchardy
-* **Breaking Change, see #3780**: Make serialization of referenced pydantic models possible, [#2650](https://github.com/pydantic/pydantic/pull/2650) by @PrettyWood
+* **Breaking Change, see [#3780](https://github.com/pydantic/pydantic/pull/3780)**: Make serialization of referenced pydantic models possible, [#2650](https://github.com/pydantic/pydantic/pull/2650) by @PrettyWood
 * Add `uniqueItems` option to `ConstrainedList`, [#2618](https://github.com/pydantic/pydantic/pull/2618) by @nuno-andre
 * Try to evaluate forward refs automatically at model creation, [#2588](https://github.com/pydantic/pydantic/pull/2588) by @uriyyo
 * Switch docs preview and coverage display to use [smokeshow](https://smokeshow.helpmanual.io/), [#2580](https://github.com/pydantic/pydantic/pull/2580) by @samuelcolvin
@@ -1176,7 +1176,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * Support `Callable` type hint, fix [#279](https://github.com/pydantic/pydantic/pull/279) by @proofit404
 * Fix schema for fields with `validator` decorator, fix [#375](https://github.com/pydantic/pydantic/pull/375) by @tiangolo
 * Add `multiple_of` constraint to `ConstrainedDecimal`, `ConstrainedFloat`, `ConstrainedInt`
-  and their related types `condecimal`, `confloat`, and `conint` #371, thanks @StephenBrown2
+  and their related types `condecimal`, `confloat`, and `conint` [#371](https://github.com/pydantic/pydantic/pull/371), thanks @StephenBrown2
 * Deprecated `ignore_extra` and `allow_extra` Config fields in favor of `extra`, [#352](https://github.com/pydantic/pydantic/pull/352) by @liiight
 * Add type annotations to all functions, test fully with mypy, [#373](https://github.com/pydantic/pydantic/pull/373) by @samuelcolvin
 * fix for 'missing' error with `validate_all` or `validate_always`, [#381](https://github.com/pydantic/pydantic/pull/381) by @samuelcolvin
@@ -1246,13 +1246,13 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 ## v0.13.1 (2018-09-21)
 
 * fix issue where int_validator doesn't cast a `bool` to an `int` [#264](https://github.com/pydantic/pydantic/pull/264) by @nphyatt
-* add deep copy support for `BaseModel.copy()` #249, @gangefors
+* add deep copy support for `BaseModel.copy()` [#249](https://github.com/pydantic/pydantic/pull/249), @gangefors
 
 ## v0.13.0 (2018-08-25)
 
 * raise an exception if a field's name shadows an existing `BaseModel` attribute [#242](https://github.com/pydantic/pydantic/pull/242)
 * add `UrlStr` and `urlstr` types [#236](https://github.com/pydantic/pydantic/pull/236)
-* timedelta json encoding ISO8601 and total seconds, custom json encoders #247, by @cfkanesan and @samuelcolvin
+* timedelta json encoding ISO8601 and total seconds, custom json encoders [#247](https://github.com/pydantic/pydantic/pull/247), by @cfkanesan and @samuelcolvin
 * allow `timedelta` objects as values for properties of type `timedelta` (matches `datetime` etc. behavior) [#247](https://github.com/pydantic/pydantic/pull/247)
 
 ## v0.12.1 (2018-07-31)
@@ -1274,8 +1274,8 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 
 ## v0.11.1 (2018-07-02)
 
-* support Python 3.7 #216, thanks @layday
-* Allow arbitrary types in model #209, thanks @oldPadavan
+* support Python 3.7 [#216](https://github.com/pydantic/pydantic/pull/216), thanks @layday
+* Allow arbitrary types in model [#209](https://github.com/pydantic/pydantic/pull/209), thanks @oldPadavan
 
 ## v0.11.0 (2018-06-28)
 
@@ -1287,12 +1287,12 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 
 ## v0.10.0 (2018-06-11)
 
-* add `Config.allow_population_by_alias` #160, thanks @bendemaree
-* **breaking change**: new errors format #179, thanks @Gr1N
-* **breaking change**: removed `Config.min_number_size` and `Config.max_number_size` #183, thanks @Gr1N
+* add `Config.allow_population_by_alias` [#160](https://github.com/pydantic/pydantic/pull/160), thanks @bendemaree
+* **breaking change**: new errors format [#179](https://github.com/pydantic/pydantic/pull/179), thanks @Gr1N
+* **breaking change**: removed `Config.min_number_size` and `Config.max_number_size` [#183](https://github.com/pydantic/pydantic/pull/183), thanks @Gr1N
 * **breaking change**: correct behaviour of `lt` and `gt` arguments to `conint` etc. [#188](https://github.com/pydantic/pydantic/pull/188)
-  for the old behaviour use `le` and `ge` #194, thanks @jaheba
-* added error context and ability to redefine error message templates using `Config.error_msg_templates` #183,
+  for the old behaviour use `le` and `ge` [#194](https://github.com/pydantic/pydantic/pull/194), thanks @jaheba
+* added error context and ability to redefine error message templates using `Config.error_msg_templates` [#183](https://github.com/pydantic/pydantic/pull/183),
   thanks @Gr1N
 * fix typo in validator exception [#150](https://github.com/pydantic/pydantic/pull/150)
 * copy defaults to model values, so different models don't share objects [#154](https://github.com/pydantic/pydantic/pull/154)
@@ -1300,20 +1300,20 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 ## v0.9.1 (2018-05-10)
 
 * allow custom `get_field_config` on config classes [#159](https://github.com/pydantic/pydantic/pull/159)
-* add `UUID1`, `UUID3`, `UUID4` and `UUID5` types #167, thanks @Gr1N
-* modify some inconsistent docstrings and annotations #173, thanks @YannLuo
-* fix type annotations for exotic types #171, thanks @Gr1N
+* add `UUID1`, `UUID3`, `UUID4` and `UUID5` types [#167](https://github.com/pydantic/pydantic/pull/167), thanks @Gr1N
+* modify some inconsistent docstrings and annotations [#173](https://github.com/pydantic/pydantic/pull/173), thanks @YannLuo
+* fix type annotations for exotic types [#171](https://github.com/pydantic/pydantic/pull/171), thanks @Gr1N
 * re-use type validators in exotic types [#171](https://github.com/pydantic/pydantic/pull/171)
 * scheduled monthly requirements updates [#168](https://github.com/pydantic/pydantic/pull/168)
-* add `Decimal`, `ConstrainedDecimal` and `condecimal` types #170, thanks @Gr1N
+* add `Decimal`, `ConstrainedDecimal` and `condecimal` types [#170](https://github.com/pydantic/pydantic/pull/170), thanks @Gr1N
 
 ## v0.9.0 (2018-04-28)
 
 * tweak email-validator import error message [#145](https://github.com/pydantic/pydantic/pull/145)
-* fix parse error of `parse_date()` and `parse_datetime()` when input is 0 #144, thanks @YannLuo
+* fix parse error of `parse_date()` and `parse_datetime()` when input is 0 [#144](https://github.com/pydantic/pydantic/pull/144), thanks @YannLuo
 * add `Config.anystr_strip_whitespace` and `strip_whitespace` kwarg to `constr`,
-  by default values is `False` #163, thanks @Gr1N
-* add `ConstrainedFloat`, `confloat`, `PositiveFloat` and `NegativeFloat` types #166, thanks @Gr1N
+  by default values is `False` [#163](https://github.com/pydantic/pydantic/pull/163), thanks @Gr1N
+* add `ConstrainedFloat`, `confloat`, `PositiveFloat` and `NegativeFloat` types [#166](https://github.com/pydantic/pydantic/pull/166), thanks @Gr1N
 
 ## v0.8.0 (2018-03-25)
 
@@ -1330,7 +1330,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 ## v0.7.0 (2018-02-06)
 
 * added compatibility with abstract base classes (ABCs) [#123](https://github.com/pydantic/pydantic/pull/123)
-* add `create_model` method [#113](https://github.com/pydantic/pydantic/pull/113) #125
+* add `create_model` method [#113](https://github.com/pydantic/pydantic/pull/113) [#125](https://github.com/pydantic/pydantic/pull/125)
 * **breaking change**: rename `.config` to `.__config__` on a model
 * **breaking change**: remove deprecated `.values()` on a model, use `.dict()` instead
 * remove use of `OrderedDict` and use simple dict [#126](https://github.com/pydantic/pydantic/pull/126)
@@ -1357,7 +1357,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 
 ## v0.6.0 (2017-11-07)
 
-* assignment validation #94, thanks petroswork!
+* assignment validation [#94](https://github.com/pydantic/pydantic/pull/94), thanks petroswork!
 * JSON in environment variables for complex types, [#96](https://github.com/pydantic/pydantic/pull/96)
 * add `validator` decorators for complex validation, [#97](https://github.com/pydantic/pydantic/pull/97)
 * depreciate `values(...)` and replace with `.dict(...)`, [#99](https://github.com/pydantic/pydantic/pull/99)
