@@ -593,3 +593,22 @@ def test_json_schema_extra_on_model_and_on_field():
 
     with pytest.raises(ValueError, match=r'json_schema_extra.*?must not be set simultaneously'):
         Model.model_json_schema()
+
+
+def test_help(create_module):
+    # since pydoc/help access all attributes to generate their documentation,
+    # this triggers the deprecation warnings.
+    with pytest.warns(PydanticDeprecatedSince20):
+        module = create_module(
+            # language=Python
+            """
+import pydoc
+
+from pydantic import RootModel
+
+
+help_result_string = pydoc.render_doc(RootModel)
+"""
+        )
+
+    assert 'class RootModel' in module.help_result_string

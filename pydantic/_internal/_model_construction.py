@@ -116,12 +116,8 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            if '__hash__' not in namespace and config_wrapper.frozen:
-
-                def hash_func(self: Any) -> int:
-                    return hash(self.__class__) + hash(tuple(self.__dict__.values()))
-
-                namespace['__hash__'] = hash_func
+            if config_wrapper.frozen:
+                set_default_hash_func(namespace, bases)
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
@@ -199,8 +195,10 @@ class ModelMetaclass(ABCMeta):
                 # This means the class didn't get a schema generated for it, likely because there was an undefined reference
                 maybe_mock_validator = getattr(self, '__pydantic_validator__', None)
                 if isinstance(maybe_mock_validator, MockValidator):
-                    maybe_mock_validator.force_rebuild()
-                    return getattr(self, '__pydantic_core_schema__')
+                    rebuilt_validator = maybe_mock_validator.rebuild()
+                    if rebuilt_validator is not None:
+                        # In this case, a validator was built, and so `__pydantic_core_schema__` should now be set
+                        return getattr(self, '__pydantic_core_schema__')
             raise AttributeError(item)
 
     @classmethod
@@ -306,16 +304,23 @@ def inspect_namespace(  # noqa C901
         elif isinstance(value, ModelPrivateAttr):
             if var_name.startswith('__'):
                 raise NameError(
-                    f'Private attributes "{var_name}" must not have dunder names; '
-                    'use a single underscore prefix instead.'
+                    'Private attributes must not use dunder names;'
+                    f' use a single underscore prefix instead of {var_name!r}.'
                 )
             elif is_valid_field_name(var_name):
                 raise NameError(
-                    f'Private attributes "{var_name}" must not be a valid field name; '
-                    f'use sunder names, e.g. "_{var_name}"'
+                    'Private attributes must not use valid field names;'
+                    f' use sunder names, e.g. {"_" + var_name!r} instead of {var_name!r}.'
                 )
             private_attributes[var_name] = value
             del namespace[var_name]
+        elif isinstance(value, FieldInfo) and not is_valid_field_name(var_name):
+            suggested_name = var_name.lstrip('_') or 'my_field'  # don't suggest '' for all-underscore name
+            raise NameError(
+                f'Fields must not use names with leading underscores;'
+                f' e.g., use {suggested_name!r} instead of {var_name!r}.'
+            )
+
         elif var_name.startswith('__'):
             continue
         elif is_valid_privateattr_name(var_name):
@@ -355,6 +360,26 @@ def inspect_namespace(  # noqa C901
             private_attributes[ann_name] = PrivateAttr()
 
     return private_attributes
+
+
+def set_default_hash_func(namespace: dict[str, Any], bases: tuple[type[Any], ...]) -> None:
+    if '__hash__' in namespace:
+        return
+
+    base_hash_func = None
+    for base in bases:
+        base_hash_func = getattr(base, '__hash__', PydanticUndefined)
+        if base_hash_func is not PydanticUndefined:
+            break
+
+    if base_hash_func is None:
+        # This will be the case for `BaseModel` since it defines `__eq__` but not `__hash__`.
+        # In this case, we generate a standard hash function, generally for use with frozen models.
+
+        def hash_func(self: Any) -> int:
+            return hash(self.__class__) + hash(tuple(self.__dict__.values()))
+
+        namespace['__hash__'] = hash_func
 
 
 def set_model_fields(

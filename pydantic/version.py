@@ -26,7 +26,8 @@ def version_info() -> str:
 
     info = {
         'pydantic version': VERSION,
-        'pydantic-core version': f'{pdc.__version__} {pdc.build_profile} build profile',
+        'pydantic-core version': pdc.__version__,
+        'pydantic-core build': getattr(pdc, 'build_info', None) or pdc.build_profile,
         'install path': Path(__file__).resolve().parent,
         'python version': sys.version,
         'platform': platform.platform(),

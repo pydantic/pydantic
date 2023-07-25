@@ -33,6 +33,7 @@ from pydantic import (
     Field,
     GetCoreSchemaHandler,
     PrivateAttr,
+    PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
@@ -571,6 +572,31 @@ def test_hash_function_give_different_result_for_different_object():
 
     m4 = TestModel()
     assert hash(m) != hash(m4)
+
+
+def test_hash_method_is_inherited_for_frozen_models():
+    from functools import lru_cache
+
+    class MyBaseModel(BaseModel):
+        """A base model with sensible configurations."""
+
+        model_config = ConfigDict(frozen=True)
+
+        def __hash__(self):
+            return hash(id(self))
+
+    class MySubClass(MyBaseModel):
+        x: Dict[str, int]
+
+        @lru_cache(maxsize=None)
+        def cached_method(self):
+            return len(self.x)
+
+    my_instance = MySubClass(x={'a': 1, 'b': 2})
+    assert my_instance.cached_method() == 2
+
+    object.__setattr__(my_instance, 'x', {})  # can't change the "normal" way due to frozen
+    assert my_instance.cached_method() == 2
 
 
 @pytest.fixture(name='ValidateAssignmentModel', scope='session')
@@ -2723,3 +2749,48 @@ def test_deferred_core_schema() -> None:
         pass
 
     assert Foo.__pydantic_core_schema__
+
+
+def test_help(create_module):
+    # since pydoc/help access all attributes to generate their documentation,
+    # this triggers the deprecation warnings.
+    with pytest.warns(PydanticDeprecatedSince20):
+        module = create_module(
+            # language=Python
+            """
+import pydoc
+
+from pydantic import BaseModel
+
+class Model(BaseModel):
+    x: int
+
+
+help_result_string = pydoc.render_doc(Model)
+"""
+        )
+
+    assert 'class Model' in module.help_result_string
+
+
+def test_cannot_use_leading_underscore_field_names():
+    with pytest.raises(
+        NameError, match="Fields must not use names with leading underscores; e.g., use 'x' instead of '_x'"
+    ):
+
+        class Model1(BaseModel):
+            _x: int = Field(alias='x')
+
+    with pytest.raises(
+        NameError, match="Fields must not use names with leading underscores; e.g., use 'x__' instead of '__x__'"
+    ):
+
+        class Model2(BaseModel):
+            __x__: int = Field()
+
+    with pytest.raises(
+        NameError, match="Fields must not use names with leading underscores; e.g., use 'my_field' instead of '___'"
+    ):
+
+        class Model3(BaseModel):
+            ___: int = Field(default=1)

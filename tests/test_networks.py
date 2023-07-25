@@ -615,6 +615,16 @@ def test_mongodb_dsns():
     assert m.a.hosts() == [{'username': None, 'password': None, 'host': 'localhost', 'port': 27017}]
 
 
+def test_mongodsn_default_ports():
+    class Model(BaseModel):
+        a: MongoDsn
+
+    m1 = Model(a='mongodb://user:pass@localhost/app')
+    m2 = Model(a='mongodb+srv://user:pass@localhost/app')
+    assert str(m1.a) == 'mongodb://user:pass@localhost:27017/app'
+    assert str(m2.a) == 'mongodb+srv://user:pass@localhost/app'
+
+
 def test_kafka_dsns():
     class Model(BaseModel):
         a: KafkaDsn

@@ -58,7 +58,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     max_digits: int | None
     decimal_places: int | None
     discriminator: str | None
-    json_schema_extra: dict[str, Any] | None
+    json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None
     frozen: bool | None
     validate_default: bool | None
     repr: bool
@@ -75,7 +75,12 @@ class _FieldInfoInputs(_FromFieldInfoInputs, total=False):
 class FieldInfo(_repr.Representation):
     """This class holds information about a field.
 
-    `FieldInfo` is used for any field definition regardless of whether the `Field()` function is explicitly used.
+    `FieldInfo` is used for any field definition regardless of whether the [`Field()`][pydantic.fields.Field]
+    function is explicitly used.
+
+    !!! warning
+        You generally shouldn't be creating `FieldInfo` directly, you'll only need to use it when accessing
+        [`BaseModel`][pydantic.main.BaseModel] `.model_fields` internals.
 
     Attributes:
         annotation: The type annotation of the field.
@@ -113,7 +118,7 @@ class FieldInfo(_repr.Representation):
     exclude: bool | None
     include: bool | None
     discriminator: str | None
-    json_schema_extra: dict[str, Any] | None
+    json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None
     frozen: bool | None
     validate_default: bool | None
     repr: bool
@@ -279,7 +284,8 @@ class FieldInfo(_repr.Representation):
             first_arg, *extra_args = typing_extensions.get_args(annotation)
             if _typing_extra.is_finalvar(first_arg):
                 final = True
-            field_info = cls._find_field_info_arg(extra_args)
+            field_info_annotations = [a for a in extra_args if isinstance(a, FieldInfo)]
+            field_info = cls.merge_field_infos(*field_info_annotations, annotation=first_arg)
             if field_info:
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
@@ -322,6 +328,9 @@ class FieldInfo(_repr.Representation):
         if isinstance(default, cls):
             default.annotation, annotation_metadata = cls._extract_metadata(annotation)
             default.metadata += annotation_metadata
+            default = default.merge_field_infos(
+                *[x for x in annotation_metadata if isinstance(x, cls)], default, annotation=default.annotation
+            )
             default.frozen = final or default.frozen
             return default
         elif isinstance(default, dataclasses.Field):
@@ -338,6 +347,11 @@ class FieldInfo(_repr.Representation):
             pydantic_field = cls._from_dataclass_field(default)
             pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
             pydantic_field.metadata += annotation_metadata
+            pydantic_field = pydantic_field.merge_field_infos(
+                *[x for x in annotation_metadata if isinstance(x, cls)],
+                pydantic_field,
+                annotation=pydantic_field.annotation,
+            )
             pydantic_field.frozen = final or pydantic_field.frozen
             pydantic_field.init_var = init_var
             pydantic_field.kw_only = getattr(default, 'kw_only', None)
@@ -356,14 +370,27 @@ class FieldInfo(_repr.Representation):
     def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
         """Merge `FieldInfo` instances keeping only explicitly set attributes.
 
+        Later `FieldInfo` instances override earlier ones.
+
         Returns:
             FieldInfo: A merged FieldInfo instance.
         """
+        flattened_field_infos: list[FieldInfo] = []
+        for field_info in field_infos:
+            flattened_field_infos.extend(x for x in field_info.metadata if isinstance(x, FieldInfo))
+            flattened_field_infos.append(field_info)
+        field_infos = tuple(flattened_field_infos)
         new_kwargs: dict[str, Any] = {}
+        metadata = {}
         for field_info in field_infos:
             new_kwargs.update(field_info._attributes_set)
+            for x in field_info.metadata:
+                if not isinstance(x, FieldInfo):
+                    metadata[type(x)] = x
         new_kwargs.update(overrides)
-        return FieldInfo(**new_kwargs)
+        field_info = FieldInfo(**new_kwargs)
+        field_info.metadata = list(metadata.values())
+        return field_info
 
     @classmethod
     def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> typing_extensions.Self:
@@ -411,18 +438,6 @@ class FieldInfo(_repr.Representation):
                 return first_arg, list(extra_args)
 
         return annotation, []
-
-    @staticmethod
-    def _find_field_info_arg(args: Any) -> FieldInfo | None:
-        """Find an instance of `FieldInfo` in the provided arguments.
-
-        Args:
-            args: The argument list to search for `FieldInfo`.
-
-        Returns:
-            An instance of `FieldInfo` if found, otherwise `None`.
-        """
-        return next((a for a in args if isinstance(a, FieldInfo)), None)
 
     @classmethod
     def _collect_metadata(cls, kwargs: dict[str, Any]) -> list[Any]:
@@ -546,7 +561,7 @@ class FieldInfo(_repr.Representation):
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasPath:
-    """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields#aliaspath-and-aliaschoices
+    """usage docs: https://docs.pydantic.dev/2.0/usage/fields#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -570,7 +585,7 @@ class AliasPath:
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasChoices:
-    """usage docs: https://docs.pydantic.dev/dev-v2/usage/fields#aliaspath-and-aliaschoices
+    """usage docs: https://docs.pydantic.dev/2.0/usage/fields#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -650,7 +665,7 @@ def Field(  # noqa: C901
     exclude: bool | None = _Unset,
     include: bool | None = _Unset,
     discriminator: str | None = _Unset,
-    json_schema_extra: dict[str, Any] | None = _Unset,
+    json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
     repr: bool = _Unset,
@@ -670,7 +685,9 @@ def Field(  # noqa: C901
     max_length: int | None = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Create a field for objects that can be configured.
+    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/fields
+
+    Create a field for objects that can be configured.
 
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (`int`, `float`, `Decimal`) and some apply only to `str`.
@@ -715,7 +732,8 @@ def Field(  # noqa: C901
                 The `extra` kwargs is deprecated. Use `json_schema_extra` instead.
 
     Returns:
-        The generated `FieldInfo` object
+        A new [`FieldInfo`][pydantic.fields.FieldInfo], the return annotation is `Any` so `Field` can be used on
+            type annotated fields without causing a typing error.
     """
     # Check deprecated and removed params from V1. This logic should eventually be removed.
     const = extra.pop('const', None)  # type: ignore
@@ -889,7 +907,7 @@ def PrivateAttr(
             If both `default` and `default_factory` are set, an error will be raised.
 
     Returns:
-        An instance of `ModelPrivateAttr` class.
+        An instance of [`ModelPrivateAttr`][pydantic.fields.ModelPrivateAttr] class.
 
     Raises:
         ValueError: If both `default` and `default_factory` are set.
@@ -961,12 +979,12 @@ def computed_field(
     repr: bool = True,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Decorator to include `property` and `cached_property` when serializing models.
+    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/computed_fields/
+
+    Decorator to include `property` and `cached_property` when serializing models.
 
     If applied to functions not yet decorated with `@property` or `@cached_property`, the function is
     automatically wrapped with `property`.
-
-    See [Computed Fields](../usage/computed_fields.md) for more details.
 
     Args:
         __f: the function to wrap.

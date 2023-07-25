@@ -1,4 +1,11 @@
-"""The `json_schema` module contains classes and functions for generating JSON schemas."""
+"""
+The `json_schema` module contains classes and functions to allow the way [JSON Schema](https://json-schema.org/)
+is generated to be customized.
+
+In general you shouldn't need to use this module directly; instead, you can
+[`BaseModel.model_json_schema`][pydantic.BaseModel.model_json_schema] and
+[`TypeAdapter.json_schema`][pydantic.TypeAdapter.json_schema].
+"""
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -30,7 +37,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreConfig, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Literal, assert_never
+from typing_extensions import Annotated, Literal, assert_never
 
 from pydantic._internal import _annotated_handlers, _internal_dataclass
 
@@ -98,7 +105,8 @@ for more details.
 
 class PydanticJsonSchemaWarning(UserWarning):
     """This class is used to emit warnings produced during JSON schema generation.
-    See the `GenerateJsonSchema.emit_warning` and `GenerateJsonSchema.render_warning_message`
+    See the [`GenerateJsonSchema.emit_warning`][pydantic.json_schema.GenerateJsonSchema.emit_warning] and
+    [`GenerateJsonSchema.render_warning_message`][pydantic.json_schema.GenerateJsonSchema.render_warning_message]
     methods for more details; these can be overridden to control warning behavior.
     """
 
@@ -208,7 +216,8 @@ class GenerateJsonSchema:
     """A class for generating JSON schemas.
 
     This class generates JSON schemas based on configured parameters. The default schema dialect
-    is 'https://json-schema.org/draft/2020-12/schema'. The class uses `by_alias` to configure how fields with
+    is [https://json-schema.org/draft/2020-12/schema](https://json-schema.org/draft/2020-12/schema).
+    The class uses `by_alias` to configure how fields with
     multiple names are handled and `ref_template` to format reference names.
 
     Attributes:
@@ -971,6 +980,8 @@ class GenerateJsonSchema:
         for s in choices:
             try:
                 generated.append(self.generate_inner(s))
+            except PydanticOmit:
+                continue
             except PydanticInvalidForJsonSchema as exc:
                 self.emit_warning('skipped-choice', exc.message)
         if len(generated) == 1:
@@ -997,6 +1008,8 @@ class GenerateJsonSchema:
                     # Use str(k) since keys must be strings for json; while not technically correct,
                     # it's the closest that can be represented in valid JSON
                     generated[str(k)] = self.generate_inner(v).copy()
+                except PydanticOmit:
+                    continue
                 except PydanticInvalidForJsonSchema as exc:
                     self.emit_warning('skipped-choice', exc.message)
 
@@ -1609,13 +1622,13 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        content_core_schema = schema.get('schema') or core_schema.any_schema()
+        content_json_schema = self.generate_inner(content_core_schema)
         if self.mode == 'validation':
-            return {'type': 'string', 'format': 'json-string'}
-        elif 'schema' in schema:
-            return self.generate_inner(schema['schema'])
+            return {'type': 'string', 'contentMediaType': 'application/json', 'contentSchema': content_json_schema}
         else:
-            # No wrapped schema, so return the same thing we would for an Any schema
-            return self.generate_inner(core_schema.any_schema())
+            # self.mode == 'serialization'
+            return content_json_schema
 
     def url_schema(self, schema: core_schema.UrlSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a URL.
@@ -1643,6 +1656,17 @@ class GenerateJsonSchema:
         json_schema = {'type': 'string', 'format': 'multi-host-uri', 'minLength': 1}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
         return json_schema
+
+    def uuid_schema(self, schema: core_schema.UuidSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a UUID.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        return {'type': 'string', 'format': 'uuid'}
 
     def definitions_schema(self, schema: core_schema.DefinitionsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a JSON object with definitions.
@@ -2233,3 +2257,39 @@ def _get_all_json_refs(item: Any) -> set[JsonRef]:
         for item in item:
             refs.update(_get_all_json_refs(item))
     return refs
+
+
+AnyType = TypeVar('AnyType')
+
+if TYPE_CHECKING:
+    SkipJsonSchema = Annotated[AnyType, ...]
+else:
+
+    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    class SkipJsonSchema:
+        """Add this as an annotation on a field to skip generating a JSON schema for that field.
+
+        Example:
+            ```py
+            from pydantic import BaseModel
+            from pydantic.json_schema import SkipJsonSchema
+
+            class Model(BaseModel):
+                a: int | SkipJsonSchema[None] = None
+
+
+            print(Model.model_json_schema())
+            #> {'properties': {'a': {'default': None, 'title': 'A', 'type': 'integer'}}, 'title': 'Model', 'type': 'object'}
+            ```
+        """
+
+        def __class_getitem__(cls, item: AnyType) -> AnyType:
+            return Annotated[item, cls()]
+
+        def __get_pydantic_json_schema__(
+            self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            raise PydanticOmit
+
+        def __hash__(self) -> int:
+            return hash(type(self))

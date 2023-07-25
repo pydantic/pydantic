@@ -1,3 +1,6 @@
+??? api "API Documentation"
+    [`pydantic.dataclasses.dataclass`][pydantic.dataclasses.dataclass]<br>
+
 If you don't want to use Pydantic's `BaseModel` you can instead get the same data validation on standard
 [dataclasses](https://docs.python.org/3/library/dataclasses.html) (introduced in Python 3.7).
 
@@ -39,7 +42,7 @@ You can use all the standard Pydantic field types. Note, however, that arguments
 order to perform validation and, where necessary coercion.
 
 To perform validation or generate a JSON schema on a Pydantic dataclass, you should now wrap the dataclass
-with a [`TypeAdapter`](models.md#typeadapter) and make use of its methods.
+with a [`TypeAdapter`](type_adapter.md) and make use of its methods.
 
 Fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
 
@@ -166,6 +169,33 @@ print(navbar)
 ```
 
 When used as fields, dataclasses (Pydantic or vanilla) should use dicts as validation inputs.
+
+## Generic dataclasses
+
+Pydantic supports generic dataclasses, including those with type variables.
+
+```py
+from typing import Generic, TypeVar
+
+from pydantic import TypeAdapter
+from pydantic.dataclasses import dataclass
+
+T = TypeVar('T')
+
+
+@dataclass
+class GenericDataclass(Generic[T]):
+    x: T
+
+
+validator = TypeAdapter(GenericDataclass)
+
+assert validator.validate_python({'x': None}).x is None
+assert validator.validate_python({'x': 1}).x == 1
+assert validator.validate_python({'x': 'a'}).x == 'a'
+```
+
+Note that, if you use the dataclass as a field of a `BaseModel` or via FastAPI you don't need a `TypeAdapter`.
 
 ## Stdlib dataclasses and Pydantic dataclasses
 
@@ -351,25 +381,35 @@ class User:
 
     @model_validator(mode='before')
     def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        print(values)
-        #> ArgsKwargs((), {'birth': {'year': 1995, 'month': 3, 'day': 2}})
+        print(f'First: {values}')
+        """
+        First: ArgsKwargs((), {'birth': {'year': 1995, 'month': 3, 'day': 2}})
+        """
         return values
 
     @model_validator(mode='after')
     def post_root(self) -> 'User':
-        print(self)
-        #> User(birth=Birth(year=1995, month=3, day=2))
+        print(f'Third: {self}')
+        #> Third: User(birth=Birth(year=1995, month=3, day=2))
         return self
 
     def __post_init__(self):
-        print(self.birth)
-        #> Birth(year=1995, month=3, day=2)
+        print(f'Second: {self.birth}')
+        #> Second: Birth(year=1995, month=3, day=2)
 
 
 user = User(**{'birth': {'year': 1995, 'month': 3, 'day': 2}})
 ```
 
-The `__post_init__` in Pydantic dataclasses is called _after_ validation, rather than before.
+The `__post_init__` in Pydantic dataclasses is called in the _middle_ of validators.
+Here is the order:
+
+* `model_validator(mode='before')`
+* `field_validator(mode='before')`
+* `field_validator(mode='after')`
+* Inner validators. e.g. validation for types like `int`, `str`, ...
+* `__post_init__`.
+* `model_validator(mode='after')`
 
 
 ```py requires="3.8"
@@ -400,9 +440,6 @@ assert path_data.path == Path('/hello/world')
 ### Difference with stdlib dataclasses
 
 Note that the `dataclasses.dataclass` from Python stdlib implements only the `__post_init__` method since it doesn't run a validation step.
-
-When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.dataclass`, it is recommended to move the code executed in the `__post_init__` to
-methods decorated with `model_validator`.
 
 ## JSON dumping
 

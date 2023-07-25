@@ -28,7 +28,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
-          version: 2.7.0
 
       - name: install
         run: |
@@ -51,7 +50,6 @@ jobs:
         # cloudflare pages build containers run 3.8, hence using it here
         python-version: '3.8'
         cache: true
-        version: 2.7.0
 
     - name: install dependencies
       run: |
@@ -59,6 +57,17 @@ jobs:
         pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
+
+    # Adding local symlinks gets nice source locations like
+    #   pydantic_core/core_schema.py
+    # instead of
+    #   .venv/lib/python3.10/site-packages/pydantic_core/core_schema.py
+    - name: prepare shortcuts for extra modules
+      run: |
+        ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
+        ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
+        ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
+
     - run: pdm run mkdocs build
 
   test-memray:
@@ -71,7 +80,6 @@ jobs:
         with:
           python-version: '3.10'
           cache: true
-          version: 2.7.0
 
       - name: install deps
         run: |
@@ -113,7 +121,6 @@ jobs:
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
-        version: 2.7.0
 
     - name: install deps
       run: |
@@ -176,7 +183,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
-        version: 2.7.0
 
     - name: install deps
       run: |
@@ -269,7 +275,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
-        version: 2.7.0
 
     - name: install deps
       run: |

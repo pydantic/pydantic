@@ -1,5 +1,4 @@
 We'd love you to contribute to Pydantic!
-
 ## Issues
 
 Questions, feature requests and bug reports are all welcome as [discussions or issues](https://github.com/pydantic/pydantic/issues/new/choose). **However, to report a security
@@ -176,15 +175,49 @@ You may include example code in docstrings. This code should be complete, self-c
 
     Instance attributes should be documented as "Args" in the `__init__` docstring.
 
-### Guide documentation
+### Documentation Style
 
 In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.
 
 Code examples are encouraged, but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.
 
-Pydantic's test coverage will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use `pytest --update-examples` to update the output and create Python version-specific examples when appropriate.
+Pydantic's unit test will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use the following to test examples and update their formatting and output:
 
 ```bash
 # Run tests and update code examples
-pytest --update-examples
+pytest tests/test_docs.py --update-examples
+```
+
+## Badges
+
+[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json)](https://pydantic.dev)
+[![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json)](https://pydantic.dev)
+
+Pydantic has a badge that you can use to show that your project uses Pydantic. You can use this badge in your `README.md`:
+
+### With Markdown
+```md
+[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json)](https://pydantic.dev)
+
+[![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json)](https://pydantic.dev)
+```
+
+### With reStructuredText
+
+```rst
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json
+    :target: https://pydantic.dev
+    :alt: Pydantic
+
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json
+    :target: https://pydantic.dev
+    :alt: Pydantic
+```
+
+### With HTML
+
+```html
+<a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json" alt="Pydantic Version 1" style="max-width:100%;"></a>
+
+<a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json" alt="Pydantic Version 2" style="max-width:100%;"></a>
 ```

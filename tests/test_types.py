@@ -79,6 +79,7 @@ from pydantic import (
     PydanticInvalidForJsonSchema,
     SecretBytes,
     SecretStr,
+    SerializeAsAny,
     SkipValidation,
     StrictBool,
     StrictBytes,
@@ -108,6 +109,7 @@ try:
     import email_validator
 except ImportError:
     email_validator = None
+
 
 # TODO add back tests for Iterator
 
@@ -1292,7 +1294,7 @@ class BoolCastable:
         ('uuid_check', b'\x12\x34\x56\x78' * 4, UUID('12345678-1234-5678-1234-567812345678')),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-', ValidationError),
         ('uuid_check', 123, ValidationError),
-        ('decimal_check', 42.24, Decimal(42.24)),
+        ('decimal_check', 42.24, Decimal('42.24')),
         ('decimal_check', '42.24', Decimal('42.24')),
         ('decimal_check', b'42.24', ValidationError),
         ('decimal_check', '  42.24  ', Decimal('42.24')),
@@ -2671,18 +2673,12 @@ def test_uuid_error():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'is_instance_of',
-            'loc': ('is-instance[UUID]',),
-            'msg': 'Input should be an instance of UUID',
+            'loc': (),
+            'msg': 'Input should be a valid UUID, invalid group length in group 4: expected 12, found 5',
             'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
-            'ctx': {'class': 'UUID'},
-        },
-        {
+            'ctx': {'error': 'invalid group length in group 4: expected 12, found 5'},
             'type': 'uuid_parsing',
-            'loc': ('function-after[uuid_validator(), union[str,bytes]]',),
-            'msg': 'Input should be a valid UUID, unable to parse string as an UUID',
-            'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
-        },
+        }
     ]
 
     not_a_valid_input_type = object()
@@ -2691,23 +2687,10 @@ def test_uuid_error():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'is_instance_of',
-            'loc': ('is-instance[UUID]',),
-            'msg': 'Input should be an instance of UUID',
             'input': not_a_valid_input_type,
-            'ctx': {'class': 'UUID'},
-        },
-        {
-            'type': 'string_type',
-            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'str'),
-            'msg': 'Input should be a valid string',
-            'input': not_a_valid_input_type,
-        },
-        {
-            'type': 'bytes_type',
-            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'bytes'),
-            'msg': 'Input should be a valid bytes',
-            'input': not_a_valid_input_type,
+            'loc': (),
+            'msg': 'UUID input should be a string, bytes or UUID object',
+            'type': 'uuid_type',
         },
     ]
 
@@ -2760,30 +2743,30 @@ def test_uuid_validation():
         {
             'type': 'uuid_version',
             'loc': ('a',),
-            'msg': 'uuid version 1 expected',
+            'msg': 'UUID version 1 expected',
             'input': d,
-            'ctx': {'required_version': 1},
+            'ctx': {'expected_version': 1},
         },
         {
             'type': 'uuid_version',
             'loc': ('b',),
-            'msg': 'uuid version 3 expected',
+            'msg': 'UUID version 3 expected',
             'input': c,
-            'ctx': {'required_version': 3},
+            'ctx': {'expected_version': 3},
         },
         {
             'type': 'uuid_version',
             'loc': ('c',),
-            'msg': 'uuid version 4 expected',
+            'msg': 'UUID version 4 expected',
             'input': b,
-            'ctx': {'required_version': 4},
+            'ctx': {'expected_version': 4},
         },
         {
             'type': 'uuid_version',
             'loc': ('d',),
-            'msg': 'uuid version 5 expected',
+            'msg': 'UUID version 5 expected',
             'input': a,
-            'ctx': {'required_version': 5},
+            'ctx': {'expected_version': 5},
         },
     ]
 
@@ -3894,6 +3877,39 @@ def test_secretstr():
     assert f.empty_password.get_secret_value() == ''
 
 
+def test_secretstr_subclass():
+    class DecryptableStr(SecretStr):
+        """
+        Simulate a SecretStr with decryption capabilities.
+        """
+
+        def decrypt_value(self) -> str:
+            return f'MOCK DECRYPTED {self.get_secret_value()}'
+
+    class Foobar(BaseModel):
+        password: DecryptableStr
+        empty_password: SecretStr
+
+    # Initialize the model.
+    f = Foobar(password='1234', empty_password='')
+
+    # Assert correct types.
+    assert f.password.__class__.__name__ == 'DecryptableStr'
+    assert f.empty_password.__class__.__name__ == 'SecretStr'
+
+    # Assert str and repr are correct.
+    assert str(f.password) == '**********'
+    assert str(f.empty_password) == ''
+    assert repr(f.password) == "DecryptableStr('**********')"
+    assert repr(f.empty_password) == "SecretStr('')"
+    assert len(f.password) == 4
+    assert len(f.empty_password) == 0
+
+    # Assert retrieval of secret value is correct
+    assert f.password.get_secret_value() == '1234'
+    assert f.empty_password.get_secret_value() == ''
+
+
 def test_secretstr_equality():
     assert SecretStr('abc') == SecretStr('abc')
     assert SecretStr('123') != SecretStr('321')
@@ -4542,7 +4558,12 @@ def test_none(value_type):
             'my_none': {'type': 'null', 'title': 'My None'},
             'my_none_list': {'type': 'array', 'items': {'type': 'null'}, 'title': 'My None List'},
             'my_none_dict': {'type': 'object', 'additionalProperties': {'type': 'null'}, 'title': 'My None Dict'},
-            'my_json_none': {'type': 'string', 'format': 'json-string', 'title': 'My Json None'},
+            'my_json_none': {
+                'contentMediaType': 'application/json',
+                'contentSchema': {'type': 'null'},
+                'title': 'My Json None',
+                'type': 'string',
+            },
         },
         'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
     }
@@ -4595,7 +4616,12 @@ def test_none_literal():
             'my_none': {'const': None, 'title': 'My None'},
             'my_none_list': {'type': 'array', 'items': {'const': None}, 'title': 'My None List'},
             'my_none_dict': {'type': 'object', 'additionalProperties': {'const': None}, 'title': 'My None Dict'},
-            'my_json_none': {'type': 'string', 'format': 'json-string', 'title': 'My Json None'},
+            'my_json_none': {
+                'contentMediaType': 'application/json',
+                'contentSchema': {'const': None},
+                'title': 'My Json None',
+                'type': 'string',
+            },
         },
         'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
     }
@@ -4687,7 +4713,7 @@ def test_union_subclass(max_length: Union[int, None]):
         x: Union[int, Annotated[str, Field(max_length=max_length)]]
 
     v = Model(x=MyStr('1')).x
-    assert type(v) is MyStr
+    assert type(v) is str
     assert v == '1'
 
 
@@ -5333,6 +5359,28 @@ def test_instanceof_invalid_core_schema():
         MyModel.model_json_schema()
 
 
+def test_instanceof_serialization():
+    class Inner(BaseModel):
+        pass
+
+    class SubInner(Inner):
+        x: int
+
+    class OuterStandard(BaseModel):
+        inner: InstanceOf[Inner]
+
+    assert OuterStandard(inner=SubInner(x=1)).model_dump() == {'inner': {}}
+
+    class OuterAsAny(BaseModel):
+        inner1: SerializeAsAny[InstanceOf[Inner]]
+        inner2: InstanceOf[SerializeAsAny[Inner]]
+
+    assert OuterAsAny(inner1=SubInner(x=2), inner2=SubInner(x=3)).model_dump() == {
+        'inner1': {'x': 2},
+        'inner2': {'x': 3},
+    }
+
+
 def test_constraints_arbitrary_type() -> None:
     class CustomType:
         def __init__(self, v: Any) -> None:
@@ -5380,7 +5428,7 @@ def test_constraints_arbitrary_type() -> None:
         lt=CustomType(-1),
         le=CustomType(0),
         min_length=CustomType([1, 2]),
-        max_length=CustomType([]),
+        max_length=CustomType([1]),
         multiple_of=CustomType(4),
         predicate=CustomType(1),
     )
@@ -5572,3 +5620,14 @@ def test_string_constraints() -> None:
         Annotated[str, StringConstraints(strip_whitespace=True, to_lower=True), AfterValidator(lambda x: x * 2)]
     )
     assert ta.validate_python(' ABC ') == 'abcabc'
+
+
+def test_decimal_float_precision() -> None:
+    """https://github.com/pydantic/pydantic/issues/6807"""
+    ta = TypeAdapter(Decimal)
+    assert ta.validate_json('1.1') == Decimal('1.1')
+    assert ta.validate_python(1.1) == Decimal('1.1')
+    assert ta.validate_json('"1.1"') == Decimal('1.1')
+    assert ta.validate_python('1.1') == Decimal('1.1')
+    assert ta.validate_json('1') == Decimal('1')
+    assert ta.validate_python(1) == Decimal('1')

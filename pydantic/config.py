@@ -44,7 +44,9 @@ ExtraValues = Literal['allow', 'ignore', 'forbid']
 
 
 class ConfigDict(TypedDict, total=False):
-    """A dictionary-like class for configuring Pydantic models.
+    """Usage docs: https://docs.pydantic.dev/2.0/usage/model_config/
+
+    A dictionary-like class for configuring Pydantic models.
 
     Attributes:
         title: The title for the generated JSON schema. Defaults to `None`.

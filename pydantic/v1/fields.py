@@ -943,7 +943,7 @@ class ModelField(Representation):
         elif self.shape == SHAPE_TUPLE_ELLIPSIS:
             converted = tuple(result)
         elif self.shape == SHAPE_DEQUE:
-            converted = deque(result)
+            converted = deque(result, maxlen=getattr(v, 'maxlen', None))
         elif self.shape == SHAPE_SEQUENCE:
             if isinstance(v, tuple):
                 converted = tuple(result)
@@ -952,7 +952,7 @@ class ModelField(Representation):
             elif isinstance(v, Generator):
                 converted = iter(result)
             elif isinstance(v, deque):
-                converted = deque(result)
+                converted = deque(result, maxlen=getattr(v, 'maxlen', None))
         return converted, None
 
     def _validate_iterable(
