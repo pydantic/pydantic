@@ -197,13 +197,13 @@ class ConfigDict(TypedDict, total=False):
 
     schema_generator: type[_GenerateSchema] | None
     """
-    A custom core schema generator class to use when generating JSON schemas. 
+    A custom core schema generator class to use when generating JSON schemas.
     Useful if you want to change the way types are validated across an entire model/schema.
-    
+
     The `GenerateSchema` interface is subject to change, currently only the `string_schema` method is public.
-    
+
     See [#6737](https://github.com/pydantic/pydantic/pull/6737) for details.
-    
+
     Defaults to `None`.
     """
 
