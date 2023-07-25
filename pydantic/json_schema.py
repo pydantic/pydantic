@@ -594,6 +594,39 @@ class GenerateJsonSchema:
         json_schema = {k: v for k, v in json_schema.items() if v not in {math.inf, -math.inf}}
         return json_schema
 
+    def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a decimal value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        json_schema = self.str_schema(core_schema.str_schema())
+        if self.mode == 'validation':
+            multiple_of = schema.get('multiple_of')
+            le = schema.get('le')
+            ge = schema.get('ge')
+            lt = schema.get('lt')
+            gt = schema.get('gt')
+            json_schema = {
+                'anyOf': [
+                    self.float_schema(
+                        core_schema.float_schema(
+                            allow_inf_nan=schema.get('allow_inf_nan'),
+                            multiple_of=None if multiple_of is None else float(multiple_of),
+                            le=None if le is None else float(le),
+                            ge=None if ge is None else float(ge),
+                            lt=None if lt is None else float(lt),
+                            gt=None if gt is None else float(gt),
+                        )
+                    ),
+                    json_schema,
+                ],
+            }
+        return json_schema
+
     def str_schema(self, schema: core_schema.StringSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a string value.
 

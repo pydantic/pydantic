@@ -2894,7 +2894,7 @@ ANY_THING = object()
                     'loc': ('foo',),
                     'msg': 'Input should be greater than 42.24',
                     'input': Decimal('42'),
-                    'ctx': {'gt': '42.24'},
+                    'ctx': {'gt': Decimal('42.24')},
                 }
             ],
         ),
@@ -2909,7 +2909,7 @@ ANY_THING = object()
                     'msg': 'Input should be less than 42.24',
                     'input': Decimal('43'),
                     'ctx': {
-                        'lt': '42.24',
+                        'lt': Decimal('42.24'),
                     },
                 },
             ],
@@ -2926,7 +2926,7 @@ ANY_THING = object()
                     'msg': 'Input should be greater than or equal to 42.24',
                     'input': Decimal('42'),
                     'ctx': {
-                        'ge': '42.24',
+                        'ge': Decimal('42.24'),
                     },
                 }
             ],
@@ -2943,7 +2943,7 @@ ANY_THING = object()
                     'msg': 'Input should be less than or equal to 42.24',
                     'input': Decimal('43'),
                     'ctx': {
-                        'le': '42.24',
+                        'le': Decimal('42.24'),
                     },
                 }
             ],
@@ -2956,7 +2956,7 @@ ANY_THING = object()
                 {
                     'type': 'decimal_max_places',
                     'loc': ('foo',),
-                    'msg': 'ensure that there are no more than 1 decimal places',
+                    'msg': 'Decimal input should have no more than 1 decimal places',
                     'input': Decimal('0.99'),
                     'ctx': {
                         'decimal_places': 1,
@@ -2970,7 +2970,7 @@ ANY_THING = object()
             [
                 {
                     'loc': ('foo',),
-                    'msg': 'ensure that there are no more than 2 digits before the decimal point',
+                    'msg': 'Decimal input should have no more than 2 digits before the decimal point',
                     'type': 'decimal_whole_digits',
                     'input': Decimal('999'),
                     'ctx': {'whole_digits': 2},
@@ -2988,7 +2988,7 @@ ANY_THING = object()
                 {
                     'type': 'decimal_whole_digits',
                     'loc': ('foo',),
-                    'msg': 'ensure that there are no more than 4 digits before the decimal point',
+                    'msg': 'Decimal input should have no more than 4 digits before the decimal point',
                     'input': Decimal('11111.700000'),
                     'ctx': {'whole_digits': 4},
                 }
@@ -3001,7 +3001,7 @@ ANY_THING = object()
                 {
                     'type': 'decimal_max_digits',
                     'loc': ('foo',),
-                    'msg': 'ensure that there are no more than 20 digits in total',
+                    'msg': 'Decimal input should have no more than 20 digits in total',
                     'input': Decimal('7424742403889818000000'),
                     'ctx': {
                         'max_digits': 20,
@@ -3017,7 +3017,7 @@ ANY_THING = object()
                 {
                     'type': 'decimal_max_places',
                     'loc': ('foo',),
-                    'msg': 'ensure that there are no more than 2 decimal places',
+                    'msg': 'Decimal input should have no more than 2 decimal places',
                     'input': Decimal('7.304'),
                     'ctx': {'decimal_places': 2},
                 }
@@ -3030,7 +3030,7 @@ ANY_THING = object()
             [
                 {
                     'loc': ('foo',),
-                    'msg': 'ensure that there are no more than 4 digits in total',
+                    'msg': 'Decimal input should have no more than 4 digits in total',
                     'type': 'decimal_max_digits',
                     'input': Decimal('0.00007'),
                     'ctx': {'max_digits': 4},
@@ -3076,9 +3076,7 @@ ANY_THING = object()
                     'loc': ('foo',),
                     'msg': 'Input should be a multiple of 5',
                     'input': Decimal('42'),
-                    'ctx': {
-                        'multiple_of': Decimal('5'),
-                    },
+                    'ctx': {'multiple_of': Decimal('5')},
                 }
             ],
         ),
@@ -3143,7 +3141,7 @@ def test_decimal_not_finite(value, result, AllowInfModel):
 
 
 def test_decimal_invalid():
-    with pytest.raises(ValueError, match='allow_inf_nan=True cannot be used with max_digits or decimal_places'):
+    with pytest.raises(SchemaError, match='allow_inf_nan=True cannot be used with max_digits or decimal_places'):
 
         class Model(BaseModel):
             v: condecimal(allow_inf_nan=True, max_digits=4)
@@ -5119,7 +5117,7 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
             'loc': ('x',),
             'msg': 'Input should be greater than 0',
             'input': -1,
-            'ctx': {'gt': '0'},
+            'ctx': {'gt': Decimal('0')},
         }
     ]
 
