@@ -15,14 +15,18 @@ P = ParamSpec('P')
 R = TypeVar('R')
 
 
-def schema_validator_cls() -> type[SchemaValidator]:
+def create_schema_validator(
+    schema: CoreSchema, config: CoreConfig | None = None, plugin_settings: dict[str, Any] | None = None
+) -> SchemaValidator:
     """Get the schema validator class.
 
     Returns:
         type[SchemaValidator]: If plugins are installed then return `PluggableSchemaValidator`,
             otherwise return `SchemaValidator`.
     """
-    return PluggableSchemaValidator if plugins else SchemaValidator  # type: ignore
+    if plugins:
+        return PluggableSchemaValidator(schema, config, plugin_settings)  # type: ignore
+    return SchemaValidator(schema, config)
 
 
 class _Plug:
@@ -99,10 +103,12 @@ class _Plug:
 class PluggableSchemaValidator:
     """Pluggable schema validator."""
 
-    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None, _ignored: Any = None) -> None:
-        self.schema_validator = SchemaValidator(schema, config, _ignored)
+    def __init__(
+        self, schema: CoreSchema, config: CoreConfig | None = None, plugin_settings: dict[str, Any] | None = None
+    ) -> None:
+        self.schema_validator = SchemaValidator(schema, config)
 
-        self.plug = _Plug(schema=schema, config=config, plugin_settings=_ignored)
+        self.plug = _Plug(schema, config, plugin_settings)
 
         self.validate_json = self.plug(self.schema_validator.validate_json)
         self.validate_python = self.plug(self.schema_validator.validate_python)

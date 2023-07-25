@@ -14,7 +14,7 @@ from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
-from ..plugin.schema_validator import schema_validator_cls
+from ..plugin.schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
@@ -484,7 +484,7 @@ def complete_model_class(
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
     simplified_core_schema = inline_schema_defs(schema)
-    cls.__pydantic_validator__ = schema_validator_cls()(
+    cls.__pydantic_validator__ = create_schema_validator(
         simplified_core_schema, core_config, config_wrapper.plugin_settings
     )
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
