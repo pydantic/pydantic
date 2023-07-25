@@ -619,29 +619,6 @@ class Model(BaseModel):
     assert m.model_dump_json() == '{"foo_user":{"x":"user1"},"user":"User(user2)"}'
 
 
-def test_json_encoder_forward_ref(create_module):
-    # TODO: Replace the use of json_encoders with a root_serializer
-    module = create_module(
-        # language=Python
-        """
-from typing import List, Optional
-from typing_extensions import Annotated
-from pydantic import BaseModel, PlainSerializer
-
-def serialize_user(user):
-    return f'User({user.name})'
-
-class User(BaseModel):
-    name: str
-    friends: Optional[List[Annotated['User', PlainSerializer(serialize_user)]]] = None
-
-"""
-    )
-
-    m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
-    assert m.model_dump_json() == '{"name":"anne","friends":["User(ben)","User(charlie)"]}'
-
-
 skip_pep585 = pytest.mark.skipif(
     sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above'
 )

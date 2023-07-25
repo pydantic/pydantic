@@ -13,6 +13,7 @@ from pydantic import (
     BaseConfig,
     BaseModel,
     Field,
+    GenerateSchema,
     PrivateAttr,
     PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
@@ -522,10 +523,13 @@ def test_multiple_inheritance_config():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_wrapper_match():
-    config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict).items()]
+    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
     config_dict_annotations.sort()
     # remove config
-    config_wrapper_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigWrapper).items() if k != 'config_dict']
+    config_wrapper_annotations = [
+        (k, str(v)) for k, v in get_type_hints(ConfigWrapper, localns=localns).items() if k != 'config_dict'
+    ]
     config_wrapper_annotations.sort()
 
     assert (
@@ -535,7 +539,8 @@ def test_config_wrapper_match():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_defaults_match():
-    config_dict_keys = sorted(list(get_type_hints(ConfigDict).keys()))
+    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    config_dict_keys = sorted(list(get_type_hints(ConfigDict, localns=localns).keys()))
     config_defaults_keys = sorted(list(config_defaults.keys()))
 
     assert config_dict_keys == config_defaults_keys, 'ConfigDict and config_defaults must have the same keys'

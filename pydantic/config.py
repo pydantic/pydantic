@@ -1,13 +1,16 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import Any, Callable, Dict, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Type, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 from ._migration import getattr_migration
 from .deprecated.config import BaseConfig
 from .deprecated.config import Extra as _Extra
+
+if TYPE_CHECKING:
+    from ._internal._generate_schema import GenerateSchema as _GenerateSchema
 
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 
@@ -182,6 +185,7 @@ class ConfigDict(TypedDict, total=False):
 
     See [Hide Input in Errors](../usage/model_config.md#hide-input-in-errors).
     """
+
     defer_build: bool
     """
     Whether to defer model validator and serializer construction until the first model validation.
@@ -189,6 +193,18 @@ class ConfigDict(TypedDict, total=False):
     This can be useful to avoid the overhead of building models which are only
     used nested within other models, or when you want to manually define type namespace via
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
+    """
+
+    schema_generator: type[_GenerateSchema] | None
+    """
+    A custom core schema generator class to use when generating JSON schemas.
+    Useful if you want to change the way types are validated across an entire model/schema.
+
+    The `GenerateSchema` interface is subject to change, currently only the `string_schema` method is public.
+
+    See [#6737](https://github.com/pydantic/pydantic/pull/6737) for details.
+
+    Defaults to `None`.
     """
 
 

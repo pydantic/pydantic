@@ -31,6 +31,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    GenerateSchema,
     GetCoreSchemaHandler,
     PrivateAttr,
     PydanticDeprecatedSince20,
@@ -2794,3 +2795,15 @@ def test_cannot_use_leading_underscore_field_names():
 
         class Model3(BaseModel):
             ___: int = Field(default=1)
+
+
+def test_schema_generator_customize_type() -> None:
+    class LaxStrGenerator(GenerateSchema):
+        def str_schema(self) -> CoreSchema:
+            return core_schema.no_info_plain_validator_function(str)
+
+    class Model(BaseModel):
+        x: str
+        model_config = ConfigDict(schema_generator=LaxStrGenerator)
+
+    assert Model(x=1).x == '1'
