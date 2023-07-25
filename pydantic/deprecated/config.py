@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import warnings
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import deprecated
+from typing_extensions import Literal, deprecated
 
 from .._internal import _config
 from ..warnings import PydanticDeprecatedSince20
@@ -13,7 +13,7 @@ if not TYPE_CHECKING:
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
-__all__ = ('BaseConfig',)
+__all__ = 'BaseConfig', 'Extra'
 
 
 class _ConfigMetaclass(type):
@@ -31,7 +31,7 @@ class BaseConfig(metaclass=_ConfigMetaclass):
     """This class is only retained for backwards compatibility.
 
     !!! Warning "Deprecated"
-        BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead.
+        BaseConfig is deprecated. Use the [`pydantic.ConfigDict`][pydantic.ConfigDict] instead.
     """
 
     def __getattr__(self, item: str) -> Any:
@@ -48,3 +48,17 @@ class BaseConfig(metaclass=_ConfigMetaclass):
     def __init_subclass__(cls, **kwargs: Any) -> None:
         warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
         return super().__init_subclass__(**kwargs)
+
+
+class Extra:
+    allow: Literal['allow'] = 'allow'
+    ignore: Literal['ignore'] = 'ignore'
+    forbid: Literal['forbid'] = 'forbid'
+
+    def __getattribute__(self, __name: str) -> Any:
+        warnings.warn(
+            "`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return super().__getattribute__(__name)
