@@ -1,42 +1,36 @@
 """Plugin interface for Pydantic plugins, and related types."""
 from __future__ import annotations
 
+from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any
 
-from pydantic_core import ValidationError
-from typing_extensions import Protocol
-
-T = TypeVar('T', bound=Callable[..., None])
+from pydantic_core import CoreConfig, CoreSchema, ValidationError
 
 
-class OnSuccess(Protocol):
-    """Protocol for `on_success` callback."""
-
-    def __call__(self, result: Any) -> None:  # noqa: D102
-        ...
-
-
-class OnError(Protocol):
-    """Protocol for `on_error` callback."""
-
-    def __call__(self, error: ValidationError) -> None:  # noqa: D102
-        ...
-
-
-@dataclass
-class Step(Generic[T]):
+class Step:
     """Step for plugin callbacks."""
 
-    enter: T | None = None
-    on_success: OnSuccess | None = None
-    on_error: OnError | None = None
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+        self.schema = schema
+        self.config = config
+
+    @abstractmethod
+    def on_success(self, result: Any) -> None:
+        """Call `on_success` callback."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def on_error(self, error: ValidationError) -> None:
+        """Call `on_error` callback."""
+        raise NotImplementedError()
 
 
-class ValidatePythonEnter(Protocol):
-    """Protocol for `on_validate_python` callback."""
+class OnValidatePython(Step):
+    """`on_validate_python` step callback."""
 
-    def __call__(  # noqa: D102
+    @abstractmethod
+    def enter(
         self,
         input: Any,
         *,
@@ -45,13 +39,15 @@ class ValidatePythonEnter(Protocol):
         context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
     ) -> None:
-        ...
+        """Call `enter` callback."""
+        raise NotImplementedError()
 
 
-class ValidateJsonEnter(Protocol):
-    """Protocol for `on_validate_json` callback."""
+class OnValidateJson(Step):
+    """`on_validate_json` step callback."""
 
-    def __call__(  # noqa: D102
+    @abstractmethod
+    def enter(
         self,
         input: str | bytes | bytearray,
         *,
@@ -59,16 +55,13 @@ class ValidateJsonEnter(Protocol):
         context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
     ) -> None:
-        ...
-
-
-OnValidatePython = Step[ValidatePythonEnter]
-OnValidateJson = Step[ValidateJsonEnter]
+        """Call `enter` callback."""
+        raise NotImplementedError()
 
 
 @dataclass
 class Plugin:
     """Plugin interface for Pydantic plugins."""
 
-    on_validate_python: OnValidatePython | None = None
-    on_validate_json: OnValidateJson | None = None
+    on_validate_python: type[OnValidatePython] | None = None
+    on_validate_json: type[OnValidateJson] | None = None

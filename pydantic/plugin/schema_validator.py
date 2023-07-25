@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import contextlib
 import functools
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, Final, TypeVar
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Literal, ParamSpec
 
 from .loader import plugins
+from .plugin import Step
 
 P = ParamSpec('P')
 R = TypeVar('R')
@@ -24,69 +25,91 @@ def schema_validator_cls() -> type[SchemaValidator]:
     return PluggableSchemaValidator if plugins else SchemaValidator  # type: ignore
 
 
-def _plug(func: Callable[P, R]) -> Callable[P, R]:
-    """Call plugins for pydantic."""
-    caller = _StepCaller(func)
+class _Plug:
+    """Pluggable schema validator."""
 
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        caller.enter(*args, **kwargs)
+    EVENTS: Final = {'validate_json': 'on_validate_json', 'validate_python': 'on_validate_python'}
+    """Events for plugins."""
+
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+        self.schema = schema
+        self.config = config
+
+    def __call__(self, func: Callable[P, R]) -> Callable[P, R]:
+        """Call plugins for pydantic."""
+        enter = self.prepare_enter(func)
+        on_success = self.prepare_on_success(func)
+        on_error = self.prepare_on_error(func)
+
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            enter(*args, **kwargs)
+            try:
+                result = func(*args, **kwargs)
+            except ValidationError as error:
+                on_error(error)
+                raise
+            else:
+                on_success(result)
+                return result
+
+        return wrapper
+
+    def prepare_enter(self, func: Callable[..., Any]) -> Callable[..., None]:
+        enter_calls = self.gather_calls(func, callback='enter')
+
+        def enter(*args: Any, **kwargs: Any) -> None:
+            for enter_call in enter_calls:
+                enter_call(*args, **kwargs)
+
+        return enter
+
+    def prepare_on_success(self, func: Callable[..., Any]) -> Callable[[Any], None]:
+        success_calls = self.gather_calls(func, callback='on_success')
+
+        def on_success(result: Any) -> None:
+            for success_call in success_calls:
+                success_call(result)
+
+        return on_success
+
+    def prepare_on_error(self, func: Callable[..., Any]) -> Callable[[ValidationError], None]:
+        error_calls = self.gather_calls(func, callback='on_error')
+
+        def on_error(error: ValidationError) -> None:
+            for error_call in error_calls:
+                error_call(error)
+
+        return on_error
+
+    def gather_calls(
+        self, func: Callable[..., Any], callback: Literal['enter', 'on_success', 'on_error']
+    ) -> list[Callable[..., None]]:
         try:
-            result = func(*args, **kwargs)
-        except ValidationError as error:
-            caller.on_error(error)
-            raise
-        else:
-            caller.on_success(result)
-            return result
+            step = self.EVENTS[func.__name__]
+        except KeyError as exc:
+            raise RuntimeError(f'Unknown event for {func.__name__}') from exc
 
-    return wrapper
+        calls: list[Callable[..., None]] = []
+        for plugin in plugins:
+            with contextlib.suppress(AttributeError, TypeError):
+                step_type: type[Step] = getattr(plugin, step)
+                on_step = step_type(schema=self.schema, config=self.config)
+                calls.append(getattr(on_step, callback))
 
-
-class _StepCaller:
-    """Call a step for plugins."""
-
-    def __init__(self, func: Callable[..., Any]) -> None:
-        if func.__name__ == 'validate_json':
-            self.event = 'on_validate_json'
-        elif func.__name__ == 'validate_python':
-            self.event = 'on_validate_python'
-        else:
-            raise RuntimeError(f'Unknown event for {func.__name__}')
-
-    def enter(self, *args: Any, **kwargs: Any) -> None:
-        """Call `enter` step for plugins."""
-        self._on_step('enter')(*args, **kwargs)
-
-    def on_success(self, result: Any) -> None:
-        """Call `on_success` step for plugins."""
-        self._on_step('on_success')(result)
-
-    def on_error(self, error: ValidationError) -> None:
-        """Call `on_error` step for plugins."""
-        self._on_step('on_error')(error)
-
-    def _on_step(self, step: Literal['enter', 'on_success', 'on_error']):
-        """Call a step for plugins."""
-
-        def on_step(*args: Any, **kwargs: Any) -> None:
-            for plugin in plugins:
-                with contextlib.suppress(AttributeError, TypeError):
-                    on_event = getattr(plugin, self.event)
-                    step_func = getattr(on_event, step)
-                    step_func(*args, **kwargs)
-
-        return on_step
+        return calls
 
 
 class PluggableSchemaValidator:
     """Pluggable schema validator."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.schema_validator = SchemaValidator(*args, **kwargs)
+    def __init__(self, schema: CoreSchema, config: CoreConfig | None = None) -> None:
+        self.schema_validator = SchemaValidator(schema=schema, config=config)
 
-        self.validate_json = _plug(self.schema_validator.validate_json)
-        self.validate_python = _plug(self.schema_validator.validate_python)
+        self.plug = _Plug(schema=schema, config=config)
+
+        self.validate_json = self.plug(self.schema_validator.validate_json)
+        self.validate_python = self.plug(self.schema_validator.validate_python)
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.schema_validator, name)
