@@ -20,7 +20,7 @@ from .json_schema import (
     JsonSchemaMode,
     JsonSchemaValue,
 )
-from .plugin.schema_validator import schema_validator_cls
+from .plugin.schema_validator import create_schema_validator
 
 T = TypeVar('T')
 
@@ -175,7 +175,7 @@ class TypeAdapter(Generic[T]):
         try:
             validator = _getattr_no_parents(type, '__pydantic_validator__')
         except AttributeError:
-            validator = schema_validator_cls()(simplified_core_schema, core_config, config_wrapper.plugin_settings)
+            validator = create_schema_validator(simplified_core_schema, core_config, config_wrapper.plugin_settings)
 
         serializer: SchemaSerializer
         try:

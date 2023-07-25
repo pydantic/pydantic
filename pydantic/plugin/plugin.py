@@ -1,4 +1,7 @@
-"""Plugin interface for Pydantic plugins, and related types."""
+"""Usage docs: https://docs.pydantic.dev/dev-v2/integrations/plugins#build-a-plugin
+
+Plugin interface for Pydantic plugins, and related types.
+"""
 from __future__ import annotations
 
 from abc import abstractmethod
