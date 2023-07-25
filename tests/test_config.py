@@ -1,3 +1,4 @@
+import json
 import re
 import sys
 from contextlib import nullcontext as does_not_raise
@@ -647,7 +648,7 @@ def test_json_encoders_model() -> None:
             value: Decimal
             x: int
 
-    assert Model(value=Decimal('1.1'), x=1).model_dump() == {'value': '2.2', 'x': '3'}
+    assert json.loads(Model(value=Decimal('1.1'), x=1).model_dump_json()) == {'value': '2.2', 'x': '3'}
 
 
 @pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecationWarning')
@@ -655,11 +656,11 @@ def test_json_encoders_type_adapter() -> None:
     config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
 
     ta = TypeAdapter(int, config=config)
-    assert ta.dump_python(1) == '3'
+    assert json.loads(ta.dump_json(1)) == '3'
 
     ta = TypeAdapter(Decimal, config=config)
-    assert ta.dump_python(Decimal('1.1')) == '2.2'
+    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
 
     ta = TypeAdapter(Union[Decimal, int], config=config)
-    assert ta.dump_python(Decimal('1.1')) == '2.2'
-    assert ta.dump_python(1) == '2'
+    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
+    assert json.loads(ta.dump_json(1)) == '2'

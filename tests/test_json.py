@@ -433,7 +433,7 @@ def test_json_encoders_config_simple_inheritance():
         model_config = ConfigDict(json_encoders={datetime: lambda _: 'child_encoder'})
 
     # insert_assert(Child().model_dump())
-    assert Child().model_dump() == {'dt': 'child_encoder', 'timedt': timedelta(days=4, seconds=14400)}
+    assert json.loads(Child().model_dump_json()) == {'dt': 'child_encoder', 'timedt': 'P4DT14400S'}
 
 
 def test_custom_iso_timedelta_annotated():
@@ -467,11 +467,11 @@ def test_json_encoders_on_model() -> None:
 
     m = Outermost(inner=Outer1(m=Model(x=1)))
     # insert_assert(m.model_dump())
-    assert m.model_dump() == {'inner': {'m': 'encoded!'}}
+    assert json.loads(m.model_dump_json()) == {'inner': {'m': 'encoded!'}}
 
     m = Outermost(inner=Outer2(m=Model(x=1)))
     # insert_assert(m.model_dump())
-    assert m.model_dump() == {'inner': {'m': {'x': 1}}}
+    assert json.loads(m.model_dump_json()) == {'inner': {'m': {'x': 1}}}
 
 
 def test_json_encoders_not_used_for_python_dumps() -> None:
