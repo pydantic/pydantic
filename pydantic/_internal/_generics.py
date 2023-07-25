@@ -284,7 +284,9 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     if origin_type is typing_extensions.Annotated:
         annotated_type, *annotations = type_args
         annotated = replace_types(annotated_type, type_map)
-        return typing_extensions.Annotated[annotated, *annotations]
+        for annotation in annotations:
+            annotated = typing_extensions.Annotated[annotated, annotation]
+        return annotated
 
     # Having type args is a good indicator that this is a typing module
     # class instantiation or a generic alias of some sort.
