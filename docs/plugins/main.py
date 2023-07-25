@@ -62,8 +62,8 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
 
 def add_changelog() -> None:
     history = (PROJECT_ROOT / 'HISTORY.md').read_text()
-    history = re.sub(r'#(\d+)', r'[#\1](https://github.com/pydantic/pydantic/issues/\1)', history)
     history = re.sub(r'(\s)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
+    history = re.sub(r'\[GitHub release]\(', r'[:simple-github: GitHub release](', history)
     history = re.sub('@@', '@', history)
     new_file = DOCS_DIR / 'changelog.md'
 
