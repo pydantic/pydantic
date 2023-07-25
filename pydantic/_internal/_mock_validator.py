@@ -23,7 +23,6 @@ class MockValidator:
         code: PydanticErrorCodes,
         attempt_rebuild: Callable[[], SchemaValidator | None] | None = None,
     ) -> None:
-        # debug(attempt_rebuild, code)
         self._error_message = error_message
         self._code: PydanticErrorCodes = code
         self._attempt_rebuild = attempt_rebuild
