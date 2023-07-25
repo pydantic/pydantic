@@ -1144,7 +1144,7 @@ def test_replace_types():
         assert replace_types(str | list[T] | float, {T: int}) == str | list[int] | float
 
 
-def test_replace_types_with_user_defined_generic_type_field():
+def test_replace_types_with_user_defined_generic_type_field():  # noqa: C901
     """Test that using user defined generic types as generic model fields are handled correctly."""
     T = TypeVar('T')
     KT = TypeVar('KT')
@@ -1216,10 +1216,14 @@ def test_replace_types_with_user_defined_generic_type_field():
             return core_schema.no_info_after_validator_function(cls, handler(Set[get_args(source_type)[0]]))
 
     class CustomTuple(Tuple[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(Tuple[get_args(source_type)[0]]))
 
     class CustomLongTuple(Tuple[T, VT]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(Tuple[get_args(source_type)]))
 
     class Model(BaseModel, Generic[T, KT, VT]):
         counter_field: CustomCounter[T]
@@ -1266,8 +1270,8 @@ def test_replace_types_with_user_defined_generic_type_field():
     assert type(m.mapping_field) is dict  # this is determined in CustomMapping.__get_pydantic_core_schema__
     assert type(m.ordered_dict_field) is CustomOrderedDict
     assert type(m.set_field) is CustomSet
-    assert type(m.tuple_field) is tuple
-    assert type(m.long_tuple_field) is tuple
+    assert type(m.tuple_field) is CustomTuple
+    assert type(m.long_tuple_field) is CustomLongTuple
 
     assert m.model_dump() == {
         'counter_field': {False: 1, True: 1},
