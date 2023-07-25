@@ -223,9 +223,9 @@ def _add_custom_serialization_from_json_encoders(
     """Iterate over the json_encoders and add the first matching encoder to the schema.
 
     Args:
-        json_encoders (JsonEncoders | None): A dictionary of types and their encoder functions.
-        tp (Any): The type to check for a matching encoder.
-        schema (CoreSchema): The schema to add the encoder to.
+        json_encoders: A dictionary of types and their encoder functions.
+        tp: The type to check for a matching encoder.
+        schema: The schema to add the encoder to.
     """
     if not json_encoders:
         return schema
