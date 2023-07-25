@@ -2439,3 +2439,17 @@ def test_signature():
     assert str(inspect.signature(Model)) == (
         "(x: int, y: str = 'y', z: float = 1.0, a: float = <factory>, b: float = 1.0, c: float = <factory>) -> None"
     )
+
+
+def test_dataclasses_with_slots_and_default():
+    @pydantic.dataclasses.dataclass(slots=True)
+    class A:
+        a: int = 0
+
+    assert A().a == 0
+
+    @pydantic.dataclasses.dataclass(slots=True)
+    class B:
+        b: int = Field(1)
+
+    assert B().b == 1

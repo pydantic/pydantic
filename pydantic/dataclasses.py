@@ -107,7 +107,9 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
+    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/dataclasses/
+
+    A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
 
     This function should be used similarly to `dataclasses.dataclass`.

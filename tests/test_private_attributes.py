@@ -140,7 +140,7 @@ def test_private_attribute_intersection_with_extra_field():
 def test_private_attribute_invalid_name():
     with pytest.raises(
         NameError,
-        match='Private attributes "foo" must not be a valid field name; use sunder names, e.g. "_foo"',
+        match="Private attributes must not use valid field names; use sunder names, e.g. '_foo' instead of 'foo'.",
     ):
 
         class Model(BaseModel):
@@ -266,7 +266,7 @@ def test_private_attribute_multiple_inheritance():
 def test_private_attributes_not_dunder() -> None:
     with pytest.raises(
         NameError,
-        match='Private attributes "__foo__" must not have dunder names; use a single underscore prefix instead.',
+        match="Private attributes must not use dunder names;" " use a single underscore prefix instead of '__foo__'.",
     ):
 
         class MyModel(BaseModel):

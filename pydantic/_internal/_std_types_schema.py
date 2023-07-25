@@ -180,7 +180,7 @@ class DecimalValidator:
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         Decimal = decimal.Decimal
 
-        def to_decimal(v: Any) -> decimal.Decimal:
+        def to_decimal(v: str) -> decimal.Decimal:
             try:
                 return Decimal(v)
             except decimal.DecimalException as e:
@@ -188,9 +188,13 @@ class DecimalValidator:
 
         primitive_schema = core_schema.union_schema(
             [
-                core_schema.float_schema(strict=True),
+                # if it's an int keep it like that and pass it straight to Decimal
+                # but if it's not make it a string
+                # we don't use JSON -> float because parsing to any float will cause
+                # loss of precision
                 core_schema.int_schema(strict=True),
                 core_schema.str_schema(strict=True, strip_whitespace=True),
+                core_schema.no_info_plain_validator_function(str),
             ],
         )
         json_schema = core_schema.no_info_after_validator_function(to_decimal, primitive_schema)
@@ -369,40 +373,9 @@ def uuid_prepare_pydantic_annotations(
     if source_type is not UUID:
         return None
 
-    def uuid_validator(input_value: str | bytes | UUID) -> UUID:
-        if isinstance(input_value, UUID):
-            return input_value
-        try:
-            if isinstance(input_value, str):
-                return UUID(input_value)
-            else:
-                try:
-                    return UUID(input_value.decode())
-                except ValueError:
-                    # 16 bytes in big-endian order as the bytes argument fail
-                    # the above check
-                    return UUID(bytes=input_value)
-        except ValueError:
-            raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
-
-    from_primitive_type_schema = core_schema.no_info_after_validator_function(
-        uuid_validator, core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()])
-    )
-    lax = core_schema.json_or_python_schema(
-        json_schema=from_primitive_type_schema,
-        python_schema=core_schema.union_schema(
-            [core_schema.is_instance_schema(UUID), from_primitive_type_schema],
-        ),
-    )
-
-    strict = core_schema.json_or_python_schema(
-        json_schema=from_primitive_type_schema,
-        python_schema=core_schema.is_instance_schema(UUID),
-    )
-
-    schema = core_schema.lax_or_strict_schema(
-        lax_schema=lax,
-        strict_schema=strict,
+    schema = core_schema.uuid_schema(
+        # TODO: this shouldn't be necessary, but avoids a UserWarning emitted
+        # when serializing a string
         serialization=core_schema.to_string_ser_schema(),
     )
 

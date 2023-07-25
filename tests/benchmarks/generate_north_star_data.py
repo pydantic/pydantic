@@ -115,7 +115,6 @@ def person() -> dict:
     return {
         'id': f.uuid4(),
         'name': f.name(),
-        'email': f.safe_email(),
         'height': str(f.pydecimal(min_value=1, max_value=2, right_digits=2)),
         'entry_created_date': date_string(),
         'entry_created_time': lax_time(),

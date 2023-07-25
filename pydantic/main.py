@@ -59,13 +59,11 @@ _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """A base model class for creating Pydantic models.
+    """usage docs: https://docs.pydantic.dev/2.0/usage/models/
+
+    A base class for creating Pydantic models.
 
     Attributes:
-        model_config: Configuration settings for the model.
-        model_fields: Metadata about the fields defined on the model.
-            This replaces `Model.__fields__` from Pydantic V1.
-
         __class_vars__: The names of classvars defined on the model.
         __private_attributes__: Metadata about the private attributes of the model.
         __signature__: The signature for instantiating the model.
@@ -97,7 +95,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         # Class attributes
         model_config: ClassVar[ConfigDict]
+        """
+        Configuration for the model, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
+        """
+
         model_fields: ClassVar[dict[str, FieldInfo]]
+        """
+        Metadata about the fields defined on the model,
+        mapping of field names to [`FieldInfo`][pydantic.fields.FieldInfo].
+
+        This replaces `Model.__fields__` from Pydantic V1.
+        """
 
         __class_vars__: ClassVar[set[str]]
         __private_attributes__: ClassVar[dict[str, ModelPrivateAttr]]
@@ -140,9 +148,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
         """Create a new model by parsing and validating input data from keyword arguments.
 
-        Raises ValidationError if the input data cannot be parsed to form a valid model.
+        Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
+        validated to form a valid model.
 
-        Uses `__pydantic_self__` instead of the more common `self` for the first arg to
+        `__init__` uses `__pydantic_self__` instead of the more common `self` for the first arg to
         allow `self` as a field name.
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
@@ -356,14 +365,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> dict[str, Any]:
         """Generates a JSON schema for a model class.
 
-        To override the logic used to generate the JSON schema, you can create a subclass of `GenerateJsonSchema`
-        with your desired modifications, then override this method on a custom base class and set the default
-        value of `schema_generator` to be your subclass.
-
         Args:
             by_alias: Whether to use attribute aliases or not.
             ref_template: The reference template.
-            schema_generator: The JSON schema generator.
+            schema_generator: To override the logic used to generate the JSON schema, ass a subclass of
+                `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
 
         Returns:
@@ -577,7 +583,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Args:
             **kwargs: Any keyword arguments passed to the class definition that aren't used internally
-            by pydantic.
+                by pydantic.
         """
         pass
 
@@ -1068,7 +1074,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     ) -> Model:  # pragma: no cover
         """Returns a copy of the model.
 
-        This method is now deprecated; use `model_copy` instead. If you need `include` or `exclude`, use:
+        !!! warning "Deprecated"
+            This method is now deprecated; use `model_copy` instead.
+
+        If you need `include` or `exclude`, use:
 
         ```py
         data = self.model_dump(include=include, exclude=exclude, round_trip=True)
@@ -1260,7 +1269,8 @@ def create_model(
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
-    """Dynamically creates and returns a new Pydantic model.
+    """Dynamically creates and returns a new Pydantic model, in other words, `create_model` dynamically creates a
+    subclass of [`BaseModel`][pydantic.BaseModel].
 
     Args:
         __model_name: The name of the newly created model.
@@ -1276,7 +1286,7 @@ def create_model(
             passed in the format: `<name>=<Field>` or `<name>=(<type>, <FieldInfo>)`.
 
     Returns:
-        The newly created model.
+        The new [model][pydantic.BaseModel].
 
     Raises:
         PydanticUserError: If `__base__` and `__config__` are both passed.

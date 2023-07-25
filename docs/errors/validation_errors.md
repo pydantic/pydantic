@@ -544,7 +544,7 @@ except ValidationError as exc:
     #> 'extra_forbidden'
 ```
 
-You can read more about the `extra` configuration in the [Extra Attributes](model_config.md#extra-attributes) section.
+You can read more about the `extra` configuration in the [Extra Attributes](../usage/model_config.md#extra-attributes) section.
 
 ## `finite_number`
 
@@ -1890,6 +1890,67 @@ try:
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'url_type'
+```
+
+## `uuid_parsing`
+
+This error is raised when the input value's type is not valid for a UUID field:
+
+```py
+from uuid import UUID
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    u: UUID
+
+
+try:
+    Model(u='12345678-124-1234-1234-567812345678')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'uuid_parsing'
+```
+
+## `uuid_type`
+
+This error is raised when the input value's type is not valid instance for a UUID field (str, bytes or UUID):
+
+```py
+from uuid import UUID
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    u: UUID
+
+
+try:
+    Model(u=1234567812412341234567812345678)
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'uuid_type'
+```
+
+## `uuid_version`
+
+This error is raised when the input value's type is not match UUID version:
+
+```py
+from pydantic import UUID5, BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    u: UUID5
+
+
+try:
+    Model(u='a6cc5730-2261-11ee-9c43-2eb5a363657c')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'uuid_version'
 ```
 
 ## `value_error`
