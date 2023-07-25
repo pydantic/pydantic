@@ -235,13 +235,10 @@ def _add_custom_serialization_from_json_encoders(
         if encoder is None:
             continue
 
-        serialization = core_schema.plain_serializer_function_ser_schema(encoder)
-        if 'ref' in schema:
-            return core_schema.definition_reference_schema(schema_ref=schema['ref'], serialization=serialization)  # type: ignore
-        else:
-            # TODO: in theory we should check that the schema accepts a serialization key
-            schema['serialization'] = serialization  # type: ignore
-            return schema
+        serialization = schema.get('serialization') or core_schema.plain_serializer_function_ser_schema(encoder)
+        # TODO: in theory we should check that the schema accepts a serialization key
+        schema['serialization'] = serialization  # type: ignore
+        return schema
 
     return schema
 
