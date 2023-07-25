@@ -1,0 +1,64 @@
+
+/* Avoid breaking parameter names, etc. in table cells. */
+.doc-contents td code {
+  word-break: normal !important;
+}
+
+/* No line break before first paragraph of descriptions. */
+.doc-md-description,
+.doc-md-description>p:first-child {
+  display: inline;
+}
+
+/* Max width for docstring sections tables. */
+.doc .md-typeset__table,
+.doc .md-typeset__table table {
+  display: table !important;
+  width: 100%;
+}
+
+.doc .md-typeset__table tr {
+  display: table-row;
+}
+
+/* Defaults in Spacy table style. */
+.doc-param-default {
+  float: right;
+}
+
+/* Keep headings consistent. */
+h1.doc-heading,
+h2.doc-heading,
+h3.doc-heading,
+h4.doc-heading,
+h5.doc-heading,
+h6.doc-heading {
+  font-weight: 400;
+  line-height: 1.5;
+  color: inherit;
+  text-transform: none;
+}
+
+h1.doc-heading {
+  font-size: 1.6rem;
+}
+
+h2.doc-heading {
+  font-size: 1.2rem;
+}
+
+h3.doc-heading {
+  font-size: 1.15rem;
+}
+
+h4.doc-heading {
+  font-size: 1.10rem;
+}
+
+h5.doc-heading {
+  font-size: 1.05rem;
+}
+
+h6.doc-heading {
+  font-size: 1rem;
+}
