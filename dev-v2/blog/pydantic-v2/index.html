@@ -3211,7 +3211,7 @@ mypy can't provide static type analysis, pyright however can.</p>
    remove the functionality, but it's something of a historical curiosity that it lives within pydantic,
    perhaps it should move to a separate package, perhaps installable alongside pydantic with
    <code>pip install pydantic[settings]</code>?</li>
-<li>The following <code>Config</code> properties will be removed:</li>
+<li>The following <code>Config</code> properties will be removed or deprecated:</li>
 <li><code>fields</code> - it's very old (it pre-dates <code>Field</code>), can be removed</li>
 <li><code>allow_mutation</code> will be removed, instead <code>frozen</code> will be used</li>
 <li><code>error_msg_templates</code>, it's not properly documented anyway, error messages can be customized with external logic if required</li>

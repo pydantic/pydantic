@@ -2697,12 +2697,9 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
     <a href="../api/fields/#pydantic.fields.computed_field"><code>@computed_field</code></a> decorators, which each address various
     shortcomings from Pydantic V1.<ul>
 <li>See <a href="../usage/serialization/#custom-serializers">Custom serializers</a> for the usage docs of these new decorators.</li>
-<li>Due to performance overhead and implementation complexity, we have now removed support for specifying
+<li>Due to performance overhead and implementation complexity, we have now deprecated support for specifying
     <code>json_encoders</code> in the model config. This functionality was originally added for the purpose of achieving custom
-    serialization logic, and we think the new serialization decorators are a better choice in most common scenarios.
-    However, if your usage of <code>json_encoders</code> is not compatible with the new serialization decorators,
-    please create a GitHub issue letting us know. See <a href="../usage/types/custom/">Custom data types</a> for further
-    details.</li>
+    serialization logic, and we think the new serialization decorators are a better choice in most common scenarios.</li>
 </ul>
 </li>
 <li>We have changed the behavior related to serializing subclasses of models when they occur as nested fields in a parent
