@@ -472,3 +472,13 @@ def test_json_encoders_on_model() -> None:
     m = Outermost(inner=Outer2(m=Model(x=1)))
     # insert_assert(m.model_dump())
     assert m.model_dump() == {'inner': {'m': {'x': 1}}}
+
+
+def test_json_encoders_not_used_for_python_dumps() -> None:
+    class Model(BaseModel):
+        x: int
+        model_config = ConfigDict(json_encoders={int: lambda x: 'encoded!'})
+
+    m = Model(x=1)
+    assert m.model_dump() == {'x': 1}
+    assert m.model_dump_json() == '{"x":"encoded!"}'
