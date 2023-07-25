@@ -335,8 +335,11 @@ class GenerateSchema:
         return self._config_wrapper.arbitrary_types_allowed
 
     def str_schema(self) -> CoreSchema:
+        """Generate a CoreSchema for `str`"""
         return core_schema.str_schema()
 
+    # the following methods can be overridden but should be considered
+    # unstable / private APIs
     def _list_schema(self, tp: Any, items_type: Any) -> CoreSchema:
         return core_schema.list_schema(self.generate_schema(items_type))
 
