@@ -21,8 +21,7 @@ def create_schema_validator(
     """Get the schema validator class.
 
     Returns:
-        type[SchemaValidator]: If plugins are installed then return `PluggableSchemaValidator`,
-            otherwise return `SchemaValidator`.
+        If plugins are installed then return `PluggableSchemaValidator`, otherwise return `SchemaValidator`.
     """
     if plugins:
         return PluggableSchemaValidator(schema, config, plugin_settings)  # type: ignore
