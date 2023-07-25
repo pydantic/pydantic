@@ -244,7 +244,7 @@ def _add_custom_serialization_from_json_encoders(
         )
 
         # TODO: in theory we should check that the schema accepts a serialization key
-        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(encoder)  # type: ignore
+        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(encoder, when_used='json')  # type: ignore
         return schema
 
     return schema
