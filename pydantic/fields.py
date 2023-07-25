@@ -380,6 +380,10 @@ class FieldInfo(_repr.Representation):
             flattened_field_infos.extend(x for x in field_info.metadata if isinstance(x, FieldInfo))
             flattened_field_infos.append(field_info)
         field_infos = tuple(flattened_field_infos)
+        if len(field_infos) == 1:
+            # No merging necessary
+            return field_infos[0]
+
         new_kwargs: dict[str, Any] = {}
         metadata = {}
         for field_info in field_infos:
