@@ -44,7 +44,6 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
-    include: bool | None
     gt: float | None
     ge: float | None
     lt: float | None
@@ -94,7 +93,6 @@ class FieldInfo(_repr.Representation):
         description: The description of the field.
         examples: List of examples of the field.
         exclude: Whether to exclude the field from the model schema.
-        include: Whether to include the field in the model schema.
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Dictionary of extra JSON schema properties.
         frozen: Whether the field is frozen.
@@ -116,7 +114,6 @@ class FieldInfo(_repr.Representation):
     description: str | None
     examples: list[Any] | None
     exclude: bool | None
-    include: bool | None
     discriminator: str | None
     json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None
     frozen: bool | None
@@ -138,7 +135,6 @@ class FieldInfo(_repr.Representation):
         'description',
         'examples',
         'exclude',
-        'include',
         'discriminator',
         'json_schema_extra',
         'frozen',
@@ -197,7 +193,6 @@ class FieldInfo(_repr.Representation):
         self.description = kwargs.pop('description', None)
         self.examples = kwargs.pop('examples', None)
         self.exclude = kwargs.pop('exclude', None)
-        self.include = kwargs.pop('include', None)
         self.discriminator = kwargs.pop('discriminator', None)
         self.repr = kwargs.pop('repr', True)
         self.json_schema_extra = kwargs.pop('json_schema_extra', None)
@@ -636,7 +631,6 @@ _DefaultValues = dict(
     description=None,
     examples=None,
     exclude=None,
-    include=None,
     discriminator=None,
     json_schema_extra=None,
     frozen=None,
@@ -671,7 +665,6 @@ def Field(  # noqa: C901
     description: str | None = _Unset,
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
-    include: bool | None = _Unset,
     discriminator: str | None = _Unset,
     json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None = _Unset,
     frozen: bool | None = _Unset,
@@ -713,7 +706,6 @@ def Field(  # noqa: C901
         description: Human-readable description.
         examples: Example values for this field.
         exclude: Whether to exclude the field from the model schema.
-        include: Whether to include the field in the model schema.
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Any additional JSON schema data for the schema property.
         frozen: Whether the field is frozen.
@@ -801,6 +793,10 @@ def Field(  # noqa: C901
     if validation_alias in (_Unset, None):
         validation_alias = alias
 
+    include = extra.pop('include', None)  # type: ignore
+    if include is not None:
+        warn('`include` is deprecated and does nothing. It will be removed, use `exclude` instead', DeprecationWarning)
+
     return FieldInfo.from_field(
         default,
         default_factory=default_factory,
@@ -812,7 +808,6 @@ def Field(  # noqa: C901
         description=description,
         examples=examples,
         exclude=exclude,
-        include=include,
         discriminator=discriminator,
         json_schema_extra=json_schema_extra,
         frozen=frozen,

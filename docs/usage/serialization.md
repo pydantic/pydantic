@@ -634,7 +634,7 @@ The same holds for the `model_dump_json` method.
 ### Model- and field-level include and exclude
 
 In addition to the explicit arguments `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
-we can also pass the `include`/`exclude` arguments directly to the `Field` constructor:
+we can also pass the `exclude` arguments directly to the `Field` constructor:
 
 Setting `exclude` on the field constructor (`Field(..., exclude=True)`) takes priority over the
 `exclude`/`include` on `model_dump` and `model_dump_json`:
@@ -705,12 +705,12 @@ print(t.model_dump(exclude={'value': True, 'user': {'username'}}))
 are the same as using merged include settings as follows:
 
 ```py
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, SecretStr
 
 
 class User(BaseModel):
-    id: int = Field(..., include=True)
-    username: str = Field(..., include=True)  # overridden by explicit include
+    id: int
+    username: str  # overridden by explicit include
     password: SecretStr
 
 
