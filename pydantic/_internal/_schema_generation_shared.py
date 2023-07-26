@@ -90,7 +90,7 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
             return self.resolve_ref_schema(schema)
 
     def _get_types_namespace(self) -> dict[str, Any] | None:
-        return self._generate_schema.types_namespace
+        return self._generate_schema._types_namespace
 
     def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:
         return self._generate_schema.generate_schema(__source_type)

@@ -1,7 +1,7 @@
+??? api "API Documentation"
+    [`pydantic.fields.Field`][pydantic.fields.Field]<br>
 
 The `Field` function is used to customize and add metadata to fields of models.
-
-See the [`Field`][pydantic.fields.Field] API reference for additional details.
 
 ## Default values
 
@@ -652,9 +652,9 @@ except ValidationError as e:
 
 2. Since `validate_assignment` is enabled, and the `name` field is frozen, the assignment is not allowed.
 
-## Include and Exclude
+## Exclude
 
-The parameters `include` and `exclude` can be used to control which fields should be included or excluded from the
+The `exclude` parameter can be used to control which fields should be excluded from the
 model when exporting the model.
 
 See the following example:

@@ -7,6 +7,7 @@ import warnings
 from copy import copy
 from typing import TYPE_CHECKING, Any
 
+from annotated_types import BaseMetadata
 from pydantic_core import PydanticUndefined
 
 from . import _typing_extra
@@ -55,7 +56,7 @@ class PydanticMetadata(Representation):
     __slots__ = ()
 
 
-class PydanticGeneralMetadata(PydanticMetadata):
+class PydanticGeneralMetadata(PydanticMetadata, BaseMetadata):
     """Pydantic general metada like `max_digits`."""
 
     def __init__(self, **metadata: Any):
@@ -247,7 +248,7 @@ def collect_dataclass_fields(
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
         fields[ann_name] = field_info
 
-        if field_info.default is not PydanticUndefined:
+        if field_info.default is not PydanticUndefined and isinstance(getattr(cls, ann_name, field_info), FieldInfo):
             # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
             setattr(cls, ann_name, field_info.default)
 

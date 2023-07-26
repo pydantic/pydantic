@@ -8,10 +8,19 @@ from typing import Any, Dict, Generic, List, Optional, TypeVar
 import pytest
 import typing_extensions
 from annotated_types import Lt
-from pydantic_core import core_schema
+from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, ConfigDict, Field, GetCoreSchemaHandler, PositiveInt, PydanticUserError, ValidationError
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    GenerateSchema,
+    GetCoreSchemaHandler,
+    PositiveInt,
+    PydanticUserError,
+    ValidationError,
+)
 from pydantic.functional_serializers import field_serializer, model_serializer
 from pydantic.functional_validators import field_validator, model_validator
 from pydantic.type_adapter import TypeAdapter
@@ -855,3 +864,17 @@ def test_model_config() -> None:
     ta = TypeAdapter(Model)
 
     assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
+
+
+def test_schema_generator() -> None:
+    class LaxStrGenerator(GenerateSchema):
+        def str_schema(self) -> CoreSchema:
+            return core_schema.no_info_plain_validator_function(str)
+
+    class Model(TypedDict):
+        x: str
+        __pydantic_config__ = ConfigDict(schema_generator=LaxStrGenerator)  # type: ignore
+
+    ta = TypeAdapter(Model)
+
+    assert ta.validate_python(dict(x=1))['x'] == '1'

@@ -4,7 +4,7 @@ from __future__ import annotations as _annotations
 import dataclasses as _dataclasses
 import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Union
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated, TypeAlias
@@ -124,7 +124,10 @@ RedisDsn = Annotated[
     UrlConstraints(allowed_schemes=['redis', 'rediss'], default_host='localhost', default_port=6379, default_path='/0'),
 ]
 """A type that will accept any Redis DSN."""
-MongoDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)]
+MongoDsn = Union[
+    Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb'], default_port=27017)],
+    Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb+srv'])],
+]
 """A type that will accept any MongoDB DSN."""
 KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)]
 """A type that will accept any Kafka DSN."""

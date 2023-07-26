@@ -1,3 +1,5 @@
+# Pydantic
+
 [![CI](https://github.com/pydantic/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)
 [![Coverage](https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)<br>
 [![pypi](https://img.shields.io/pypi/v/pydantic.svg)](https://pypi.python.org/pypi/pydantic)
@@ -9,38 +11,43 @@
 
 Pydantic is the most widely used data validation library for Python.
 
-!!! success "Migrating to Pydantic V2"
-    Already using Pydantic V1? See the [Migration Guide](migration.md) for notes on upgrading to Pydantic V2 in your applications!
+Fast and extensible, Pydantic plays nicely with your linters/IDE/brain. Define how data should be in pure, canonical Python 3.7+; validate it with Pydantic.
 
-```py lint="skip" upgrade="skip" title="Pydantic Example" requires="3.10"
+!!! success "Migrating to Pydantic V2"
+    Using Pydantic V1? See the [Migration Guide](migration.md) for notes on upgrading to Pydantic V2 in your applications!
+
+```py title="Pydantic Example" requires="3.10"
+from datetime import datetime
+from typing import Tuple
+
 from pydantic import BaseModel
 
-class MyModel(BaseModel):
-    a: int
-    b: list[str]
 
-m = MyModel(a=123, b=['a', 'b', 'c'])
-print(m.model_dump())
-#> {'a': 123, 'b': ['a', 'b', 'c']}
+class Delivery(BaseModel):
+    timestamp: datetime
+    dimensions: Tuple[int, int]
+
+
+m = Delivery(timestamp='2020-01-02T03:04:05Z', dimensions=['10', '20'])
+print(repr(m.timestamp))
+#> datetime.datetime(2020, 1, 2, 3, 4, 5, tzinfo=TzInfo(UTC))
+print(m.dimensions)
+#> (10, 20)
 ```
 
 ## Why use Pydantic?
 
-- **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write and integration with your IDE and static analysis tools.
-- **Speed** &mdash; Pydantic's core validation logic is written in Rust, as a result Pydantic is among the fastest data validation libraries for Python.
-- **JSON Schema** &mdash; Pydantic models can emit JSON Schema allowing for easy integration with other tools.
-- **Strict** and **Lax** mode &mdash; Pydantic can run in either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate.
-- **Dataclasses**, **TypedDicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`.
-- **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways.
+- **Powered by type hints** &mdash; with Pydantic, schema validation and serialization are controlled by type annotations; less to learn, less code to write, and integration with your IDE and static analysis tools. [Learn more…](why.md#type-hints)
+- **Speed** &mdash; Pydantic's core validation logic is written in Rust. As a result, Pydantic is among the fastest data validation libraries for Python. [Learn more…](why.md#performance)
+- **JSON Schema** &mdash; Pydantic models can emit JSON Schema, allowing for easy integration with other tools. [Learn more…](why.md#json-schema)
+- **Strict** and **Lax** mode &mdash; Pydantic can run in either `strict=True` mode (where data is not converted) or `strict=False` mode where Pydantic tries to coerce data to the correct type where appropriate. [Learn more…](why.md#strict-lax)
+- **Dataclasses**, **TypedDicts** and more &mdash; Pydantic supports validation of many standard library types including `dataclass` and `TypedDict`. [Learn more…](why.md#typeddict)
+- **Customisation** &mdash; Pydantic allows custom validators and serializers to alter how data is processed in many powerful ways. [Learn more…](why.md#customisation)
 - **Ecosystem** &mdash; around 8,000 packages on PyPI use Pydantic, including massively popular libraries like
-  [FastAPI](https://github.com/tiangolo/fastapi),
-  [huggingface/transformers](https://github.com/huggingface/transformers),
-  [Django Ninja](https://github.com/vitalik/django-ninja),
-  [SQLModel](https://github.com/tiangolo/sqlmodel),
-  and [LangChain](https://github.com/hwchase17/langchain).
-- **Battle tested** &mdash; Pydantic is downloaded >70m times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ &mdash; if you're trying to do something with Pydantic, someone else has probably already done it.
+  _FastAPI_, _huggingface_, _Django Ninja_, _SQLModel_, & _LangChain_. [Learn more…](why.md#ecosystem)
+- **Battle tested** &mdash; Pydantic is downloaded over 70M times/month and is used by all FAANG companies and 20 of the 25 largest companies on NASDAQ. If you're trying to do something with Pydantic, someone else has probably already done it. [Learn more…](why.md#using-pydantic)
 
-[Installing Pydantic](install.md) is as simple as: [`pip install pydantic`](install.md)
+[Installing Pydantic](install.md) is as simple as: `pip install pydantic`
 
 ## Pydantic examples
 
@@ -99,10 +106,10 @@ print(user.model_dump())  # (10)!
 
 If validation fails, Pydantic will raise an error with a breakdown of what was wrong:
 
-```py upgrade="skip" title="Validation Error" requires="3.10"
-from datetime import datetime
+```py upgrade="skip" title="Validation Error" test="skip" lint="skip"
+# continuing the above example...
 
-from pydantic import BaseModel, PositiveInt, ValidationError
+from pydantic import ValidationError
 
 
 class User(BaseModel):
@@ -145,181 +152,7 @@ except ValidationError as e:
 
 Hundreds of organisations and packages are using Pydantic. Some of the prominent companies and organizations around the world who are using Pydantic include:
 
-<div id="grid-container">
-<div id="company-grid" class="grid"></div>
-</div>
+{{ organisations }}
 
 For a more comprehensive list of open-source projects using Pydantic see the
 [list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), or you can find some awesome projects using Pydantic in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
-
-<!-- ## Discussion of Pydantic
-
-Podcasts and videos discussing Pydantic.
-
-[Talk Python To Me](https://talkpython.fm/episodes/show/313/automate-your-data-exchange-with-pydantic){target=_blank}
-: Michael Kennedy and Samuel Colvin, the creator of Pydantic, dive into the history of Pydantic and its many uses and benefits.
-
-[Podcast.\_\_init\_\_](https://www.pythonpodcast.com/pydantic-data-validation-episode-263/){target=_blank}
-: Discussion about where Pydantic came from and ideas for where it might go next with
-  Samuel Colvin the creator of Pydantic.
-
-[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand){target=_blank}
-: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management
-  using Python type annotations, and it's the Python type annotations that makes me really extra happy... It works
-  automatically with all the IDE's you already have.*" --Michael Kennedy
-
-[Python Pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
-: A talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to Pydantic and walking
-  through the core features of Pydantic. -->
-
-<script>
-const companies = [
-  {
-    name: 'Adobe',
-    logoUrl: 'logos/adobe_logo.png'
-  },
-  {
-    name: 'AMD',
-    logoUrl: 'logos/amd_logo.png'
-  },
-  {
-    name: 'Amazon',
-    logoUrl: 'logos/amazon_logo.png'
-  },
-  {
-    name: 'Apple',
-    logoUrl: 'logos/apple_logo.png'
-  },
-  {
-    name: 'ASML',
-    logoUrl: 'logos/asml_logo.png'
-  },
-  {
-    name: 'AstraZeneca',
-    logoUrl: 'logos/astrazeneca_logo.png'
-  },
-  {
-    name: 'Broadcom',
-    logoUrl: 'logos/broadcom_logo.png'
-  },
-  {
-    name: 'Cisco Systems',
-    logoUrl: 'logos/cisco_logo.png'
-  },
-  {
-    name: 'Comcast',
-    logoUrl: 'logos/comcast_logo.png'
-  },
-  {
-    name: 'Datadog',
-    logoUrl: 'logos/datadog_logo.png'
-  },
-  {
-    name: 'Facebook',
-    logoUrl: 'logos/facebook_logo.png'
-  },
-  {
-    name: 'FastAPI',
-    logoUrl: 'logos/fastapi_logo.png'
-  },
-  {
-    name: 'Google',
-    logoUrl: 'logos/google_logo.png'
-  },
-  {
-    name: 'IBM',
-    logoUrl: 'logos/ibm_logo.png'
-  },
-  {
-    name: 'Intel',
-    logoUrl: 'logos/intel_logo.png'
-  },
-  {
-    name: 'Intuit',
-    logoUrl: 'logos/intuit_logo.png'
-  },
-  {
-    name: 'IPCC',
-    logoUrl: 'logos/ipcc_logo.png'
-  },
-  {
-    name: 'JPMorgan',
-    logoUrl: 'logos/jpmorgan_logo.png'
-  },
-  {
-    name: 'Jupyter',
-    logoUrl: 'logos/jupyter_logo.png'
-  },
-  {
-    name: 'Microsoft',
-    logoUrl: 'logos/microsoft_logo.png'
-  },
-  {
-    name: 'Molssi',
-    logoUrl: 'logos/molssi_logo.png'
-  },
-  {
-    name: 'NASA',
-    logoUrl: 'logos/nasa_logo.png'
-  },
-  {
-    name: 'Netflix',
-    logoUrl: 'logos/netflix_logo.png'
-  },
-  {
-    name: 'NSA',
-    logoUrl: 'logos/nsa_logo.png'
-  },
-  {
-    name: 'NVIDIA',
-    logoUrl: 'logos/nvidia_logo.png'
-  },
-  {
-    name: 'Qualcomm',
-    logoUrl: 'logos/qualcomm_logo.png'
-  },
-  {
-    name: 'Red Hat',
-    logoUrl: 'logos/redhat_logo.png'
-  },
-  {
-    name: 'Robusta',
-    logoUrl: 'logos/robusta_logo.png'
-  },
-  {
-    name: 'Salesforce',
-    logoUrl: 'logos/salesforce_logo.png'
-  },
-  {
-    name: 'Starbucks',
-    logoUrl: 'logos/starbucks_logo.png'
-  },
-  {
-    name: 'Texas Instruments',
-    logoUrl: 'logos/ti_logo.png'
-  },
-  {
-    name: 'Twilio',
-    logoUrl: 'logos/twilio_logo.png'
-  },
-  {
-    name: 'Twitter',
-    logoUrl: 'logos/twitter_logo.png'
-  },
-  {
-    name: 'UK Home Office',
-    logoUrl: 'logos/ukhomeoffice_logo.png'
-  }
-];
-
-const grid = document.getElementById('company-grid');
-
-for (const company of companies) {
-  const tile = document.createElement('div');
-  tile.classList.add('tile');
-  tile.innerHTML = `
-    <img src="${company.logoUrl}" alt="${company.name}" />
-  `;
-  grid.appendChild(tile);
-}
-</script>

@@ -405,6 +405,34 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
     assert len(_GENERIC_TYPES_CACHE) < types_cache_size + _LIMITED_DICT_SIZE
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
+def test_circular_generic_refs_get_cleaned_up():
+    initial_cache_size = len(_GENERIC_TYPES_CACHE)
+
+    def fn():
+        T = TypeVar('T')
+        C = TypeVar('C')
+
+        class Inner(BaseModel, Generic[T, C]):
+            a: T
+            b: C
+
+        class Outer(BaseModel, Generic[C]):
+            c: Inner[int, C]
+
+        klass = Outer[str]
+        assert len(_GENERIC_TYPES_CACHE) > initial_cache_size
+        assert klass in _GENERIC_TYPES_CACHE.values()
+
+    fn()
+
+    gc.collect(0)
+    gc.collect(1)
+    gc.collect(2)
+
+    assert len(_GENERIC_TYPES_CACHE) == initial_cache_size
+
+
 def test_generics_work_with_many_parametrized_base_models(clean_cache):
     cache_size = len(_GENERIC_TYPES_CACHE)
     count_create_models = 1000
@@ -1116,7 +1144,7 @@ def test_replace_types():
         assert replace_types(str | list[T] | float, {T: int}) == str | list[int] | float
 
 
-def test_replace_types_with_user_defined_generic_type_field():
+def test_replace_types_with_user_defined_generic_type_field():  # noqa: C901
     """Test that using user defined generic types as generic model fields are handled correctly."""
     T = TypeVar('T')
     KT = TypeVar('KT')
@@ -1188,10 +1216,14 @@ def test_replace_types_with_user_defined_generic_type_field():
             return core_schema.no_info_after_validator_function(cls, handler(Set[get_args(source_type)[0]]))
 
     class CustomTuple(Tuple[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(Tuple[get_args(source_type)[0]]))
 
     class CustomLongTuple(Tuple[T, VT]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(Tuple[get_args(source_type)]))
 
     class Model(BaseModel, Generic[T, KT, VT]):
         counter_field: CustomCounter[T]
@@ -1238,8 +1270,8 @@ def test_replace_types_with_user_defined_generic_type_field():
     assert type(m.mapping_field) is dict  # this is determined in CustomMapping.__get_pydantic_core_schema__
     assert type(m.ordered_dict_field) is CustomOrderedDict
     assert type(m.set_field) is CustomSet
-    assert type(m.tuple_field) is tuple
-    assert type(m.long_tuple_field) is tuple
+    assert type(m.tuple_field) is CustomTuple
+    assert type(m.long_tuple_field) is CustomLongTuple
 
     assert m.model_dump() == {
         'counter_field': {False: 1, True: 1},
@@ -2062,7 +2094,22 @@ def test_parse_generic_json():
 
     validation_schema = record.model_json_schema(mode='validation')
     assert validation_schema == {
-        'properties': {'message': {'format': 'json-string', 'title': 'Message', 'type': 'string'}},
+        '$defs': {
+            'Payload': {
+                'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
+                'required': ['payload_field'],
+                'title': 'Payload',
+                'type': 'object',
+            }
+        },
+        'properties': {
+            'message': {
+                'contentMediaType': 'application/json',
+                'contentSchema': {'$ref': '#/$defs/Payload'},
+                'title': 'Message',
+                'type': 'string',
+            }
+        },
         'required': ['message'],
         'title': 'MessageWrapper[test_parse_generic_json.<locals>.Payload]',
         'type': 'object',

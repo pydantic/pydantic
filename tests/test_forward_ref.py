@@ -64,9 +64,7 @@ def test_forward_ref_auto_update_no_model(create_module):
     assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
     # model_fields is complete on Foo
-    assert repr(module.Foo.model_fields['a']) == (
-        "FieldInfo(annotation=Union[ForwardRef('Bar'), NoneType], required=False)"
-    )
+    assert repr(module.Foo.model_fields['a']) == ('FieldInfo(annotation=Union[Bar, NoneType], required=False)')
 
     assert module.Foo.__pydantic_complete__ is False
     # Foo gets auto-rebuilt during the first attempt at validation
@@ -621,29 +619,6 @@ class Model(BaseModel):
     assert m.model_dump_json() == '{"foo_user":{"x":"user1"},"user":"User(user2)"}'
 
 
-def test_json_encoder_forward_ref(create_module):
-    # TODO: Replace the use of json_encoders with a root_serializer
-    module = create_module(
-        # language=Python
-        """
-from typing import List, Optional
-from typing_extensions import Annotated
-from pydantic import BaseModel, PlainSerializer
-
-def serialize_user(user):
-    return f'User({user.name})'
-
-class User(BaseModel):
-    name: str
-    friends: Optional[List[Annotated['User', PlainSerializer(serialize_user)]]] = None
-
-"""
-    )
-
-    m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
-    assert m.model_dump_json() == '{"name":"anne","friends":["User(ben)","User(charlie)"]}'
-
-
 skip_pep585 = pytest.mark.skipif(
     sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above'
 )
@@ -693,7 +668,7 @@ def test_pep585_recursive_generics(create_module):
 
         Team.model_rebuild()
 
-    assert repr(module.Team.model_fields['heroes']) == "FieldInfo(annotation=list[ForwardRef('Hero')], required=True)"
+    assert repr(module.Team.model_fields['heroes']) == 'FieldInfo(annotation=list[Hero], required=True)'
     assert repr(module.Hero.model_fields['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
 
     h = module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])

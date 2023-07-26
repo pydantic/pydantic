@@ -39,6 +39,7 @@ from pydantic import (
     StrictInt,
     StrictStr,
     UrlConstraints,
+    WrapValidator,
     create_model,
     field_validator,
     root_validator,
@@ -297,3 +298,11 @@ class CustomPath(PurePath):
 DynamicModel = create_model('DynamicModel')
 
 examples = Examples({})
+
+
+def double(value: Any, handler: Any) -> int:
+    return handler(value) * 2
+
+
+class WrapValidatorModel(BaseModel):
+    x: Annotated[int, WrapValidator(double)]

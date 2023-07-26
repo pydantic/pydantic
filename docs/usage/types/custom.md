@@ -73,12 +73,6 @@ from pydantic import (
     WithJsonSchema,
 )
 
-
-class MyType:
-    def __init__(self, value: str) -> None:
-        self.value = value
-
-
 TruncatedFloat = Annotated[
     float,
     AfterValidator(lambda x: round(x, 1)),

@@ -12,6 +12,7 @@ MOVED_IN_V2 = {
     'pydantic.utils:to_lower_camel': 'pydantic.alias_generators:to_camel',
     'pydantic:PyObject': 'pydantic.types:ImportString',
     'pydantic.types:PyObject': 'pydantic.types:ImportString',
+    'pydantic.generics:GenericModel': 'pydantic.BaseModel',
 }
 
 DEPRECATED_MOVED_IN_V2 = {

@@ -1,3 +1,4 @@
+import json
 import re
 import sys
 from contextlib import nullcontext as does_not_raise
@@ -6,12 +7,13 @@ from inspect import signature
 from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr, IsPartialDict
-from pydantic_core import SchemaError
+from pydantic_core import SchemaError, SchemaValidator
 
 from pydantic import (
     BaseConfig,
     BaseModel,
     Field,
+    GenerateSchema,
     PrivateAttr,
     PydanticDeprecatedSince20,
     PydanticSchemaGenerationError,
@@ -20,9 +22,12 @@ from pydantic import (
     validate_call,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
+from pydantic._internal._mock_validator import MockValidator
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
+from pydantic.type_adapter import TypeAdapter
+from pydantic.warnings import PydanticDeprecationWarning
 
 if sys.version_info < (3, 9):
     from typing_extensions import Annotated
@@ -518,9 +523,14 @@ def test_multiple_inheritance_config():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_wrapper_match():
-    config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict).items()]
+    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
+    config_dict_annotations.sort()
     # remove config
-    config_wrapper_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigWrapper).items() if k != 'config_dict']
+    config_wrapper_annotations = [
+        (k, str(v)) for k, v in get_type_hints(ConfigWrapper, localns=localns).items() if k != 'config_dict'
+    ]
+    config_wrapper_annotations.sort()
 
     assert (
         config_dict_annotations == config_wrapper_annotations
@@ -529,8 +539,9 @@ def test_config_wrapper_match():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_defaults_match():
-    config_dict_keys = list(get_type_hints(ConfigDict).keys())
-    config_defaults_keys = list(config_defaults.keys())
+    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    config_dict_keys = sorted(list(get_type_hints(ConfigDict, localns=localns).keys()))
+    config_defaults_keys = sorted(list(config_defaults.keys()))
 
     assert config_dict_keys == config_defaults_keys, 'ConfigDict and config_defaults must have the same keys'
 
@@ -633,3 +644,56 @@ def test_config_inheritance_with_annotations():
         model_config: ConfigDict = {'str_to_lower': True}
 
     assert Child.model_config == {'extra': 'allow', 'str_to_lower': True}
+
+
+def test_json_encoders_model() -> None:
+    with pytest.warns(PydanticDeprecationWarning):
+
+        class Model(BaseModel):
+            model_config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
+            value: Decimal
+            x: int
+
+    assert json.loads(Model(value=Decimal('1.1'), x=1).model_dump_json()) == {'value': '2.2', 'x': '3'}
+
+
+@pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecationWarning')
+def test_json_encoders_type_adapter() -> None:
+    config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
+
+    ta = TypeAdapter(int, config=config)
+    assert json.loads(ta.dump_json(1)) == '3'
+
+    ta = TypeAdapter(Decimal, config=config)
+    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
+
+    ta = TypeAdapter(Union[Decimal, int], config=config)
+    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
+    assert json.loads(ta.dump_json(1)) == '2'
+
+
+def test_config_model_defer_build():
+    class MyModel(BaseModel, defer_build=True):
+        x: int
+
+    assert isinstance(MyModel.__pydantic_validator__, MockValidator)
+
+    m = MyModel(x=1)
+    assert m.x == 1
+
+    assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
+
+
+def test_config_model_defer_build_nested():
+    class MyNestedModel(BaseModel, defer_build=True):
+        x: int
+
+    class MyModel(BaseModel):
+        y: MyNestedModel
+
+    assert isinstance(MyNestedModel.__pydantic_validator__, MockValidator)
+
+    m = MyModel(y={'x': 1})
+    assert m.model_dump() == {'y': {'x': 1}}
+
+    assert isinstance(MyNestedModel.__pydantic_validator__, MockValidator)

@@ -10,7 +10,8 @@ on:
 
 env:
   COLUMNS: 150
-  PDM_DEPS: 'urllib3<2'
+  PDM_DEPS: 'urllib3<2,git+https://github.com/adriangb/findpython.git@version-timeout-env'
+  FINDPYTHON_GET_VERSION_TIMEOUT: 30
 
 jobs:
   lint:
@@ -27,7 +28,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
-          version: 2.7.0
 
       - name: install
         run: |
@@ -50,7 +50,6 @@ jobs:
         # cloudflare pages build containers run 3.8, hence using it here
         python-version: '3.8'
         cache: true
-        version: 2.7.0
 
     - name: install dependencies
       run: |
@@ -58,6 +57,17 @@ jobs:
         pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
+
+    # Adding local symlinks gets nice source locations like
+    #   pydantic_core/core_schema.py
+    # instead of
+    #   .venv/lib/python3.10/site-packages/pydantic_core/core_schema.py
+    - name: prepare shortcuts for extra modules
+      run: |
+        ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
+        ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
+        ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
+
     - run: pdm run mkdocs build
 
   test-memray:
@@ -70,7 +80,6 @@ jobs:
         with:
           python-version: '3.10'
           cache: true
-          version: 2.7.0
 
       - name: install deps
         run: |
@@ -112,7 +121,6 @@ jobs:
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
-        version: 2.7.0
 
     - name: install deps
       run: |
@@ -175,7 +183,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
-        version: 2.7.0
 
     - name: install deps
       run: |
@@ -268,7 +275,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
-        version: 2.7.0
 
     - name: install deps
       run: |
@@ -278,7 +284,9 @@ jobs:
     - name: install typing-extensions
       run: |
         if [ ${{ matrix.typing-extensions-version }} == 'main' ]; then
-          pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git ; python_version >= "3.8"'
+          # typing-extensions main only supports 3.8 and newer, so adjust pyproject.toml
+          sed -i "s/requires-python = '>=3.7'/requires-python = '>=3.8'/g" pyproject.toml
+          pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
         else
           pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}'
         fi

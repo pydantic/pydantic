@@ -99,7 +99,7 @@ print(Model(x=['{"a": 1}', '[1, 2]']).model_dump(round_trip=True))
 The `.model_dump_json()` method serializes a model directly to a JSON-encoded string
 that is equivalent to the result produced by [`.model_dump()`](#modelmodeldump).
 
-See [arguments](../api/main.md#pydantic.main.BaseModel.model_dump_json) for more information.
+See [arguments][pydantic.main.BaseModel.model_dump_json] for more information.
 
 !!! note
     Pydantic can serialize many commonly used types to JSON that would otherwise be incompatible with a simple
@@ -634,7 +634,10 @@ The same holds for the `model_dump_json` method.
 ### Model- and field-level include and exclude
 
 In addition to the explicit arguments `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
-we can also pass the `include`/`exclude` arguments directly to the `Field` constructor:
+we can also pass the `exclude` arguments directly to the `Field` constructor:
+
+Setting `exclude` on the field constructor (`Field(..., exclude=True)`) takes priority over the
+`exclude`/`include` on `model_dump` and `model_dump_json`:
 
 ```py
 from pydantic import BaseModel, Field, SecretStr
@@ -662,10 +665,11 @@ print(t.model_dump())
 #> {'id': '1234567890'}
 # TODO: this is wrong! not all of "user" should be excluded
 # TODO: do we need to fix the type of the argument to Field? Or do we want to just remove that functionality?
+print(t.model_dump(include={'id': True, 'value': True}))  # (1)!
+#> {'id': '1234567890'}
 ```
 
-Explicitly setting `exclude`/`include` on `model_dump` and `model_dump_json` takes priority over the
-`exclude`/`include` from the field constructor (i.e. `Field(..., exclude=True)`):
+1. `value` excluded from the output because it excluded in `Field`.
 
 Note that while merging settings, `exclude` entries are merged by computing the "union" of keys, while `include`
 entries are merged by computing the "intersection" of keys.
@@ -701,12 +705,12 @@ print(t.model_dump(exclude={'value': True, 'user': {'username'}}))
 are the same as using merged include settings as follows:
 
 ```py
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, SecretStr
 
 
 class User(BaseModel):
-    id: int = Field(..., include=True)
-    username: str = Field(..., include=True)  # overridden by explicit include
+    id: int
+    username: str
     password: SecretStr
 
 

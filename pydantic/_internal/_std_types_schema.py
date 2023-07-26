@@ -16,6 +16,7 @@ from functools import partial
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any, Callable, Iterable, TypeVar
 
+import typing_extensions
 from pydantic_core import (
     CoreSchema,
     MultiHostUrl,
@@ -179,7 +180,7 @@ class DecimalValidator:
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         Decimal = decimal.Decimal
 
-        def to_decimal(v: Any) -> decimal.Decimal:
+        def to_decimal(v: str) -> decimal.Decimal:
             try:
                 return Decimal(v)
             except decimal.DecimalException as e:
@@ -187,9 +188,13 @@ class DecimalValidator:
 
         primitive_schema = core_schema.union_schema(
             [
-                core_schema.float_schema(strict=True),
+                # if it's an int keep it like that and pass it straight to Decimal
+                # but if it's not make it a string
+                # we don't use JSON -> float because parsing to any float will cause
+                # loss of precision
                 core_schema.int_schema(strict=True),
                 core_schema.str_schema(strict=True, strip_whitespace=True),
+                core_schema.no_info_plain_validator_function(str),
             ],
         )
         json_schema = core_schema.no_info_after_validator_function(to_decimal, primitive_schema)
@@ -241,18 +246,22 @@ class DecimalValidator:
         return schema
 
     def check_digits_validator(self, value: decimal.Decimal) -> decimal.Decimal:
-        try:
-            normalized_value = value.normalize()
-        except decimal.InvalidOperation:
-            normalized_value = value
-        _1, digit_tuple, exponent = normalized_value.as_tuple()
-        if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
+        if not value.is_finite():
+            # Either check_digits is true or allow_inf_nan is False,
+            # either way we cannot allow nan / infinity
             raise PydanticKnownError('finite_number')
 
         if self.check_digits:
-            if isinstance(exponent, str):
-                raise PydanticKnownError('finite_number')
-            elif exponent >= 0:
+            try:
+                normalized_value = value.normalize()
+            except decimal.InvalidOperation:
+                normalized_value = value
+            _1, digit_tuple, exponent = normalized_value.as_tuple()
+
+            # Already checked for finite value above
+            assert isinstance(exponent, int)
+
+            if exponent >= 0:
                 # A positive exponent adds that many trailing zeros.
                 digits = len(digit_tuple) + exponent
                 decimals = 0
@@ -364,50 +373,7 @@ def uuid_prepare_pydantic_annotations(
     if source_type is not UUID:
         return None
 
-    def uuid_validator(input_value: str | bytes | UUID) -> UUID:
-        if isinstance(input_value, UUID):
-            return input_value
-        try:
-            if isinstance(input_value, str):
-                return UUID(input_value)
-            else:
-                try:
-                    return UUID(input_value.decode())
-                except ValueError:
-                    # 16 bytes in big-endian order as the bytes argument fail
-                    # the above check
-                    return UUID(bytes=input_value)
-        except ValueError:
-            raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
-
-    from_primitive_type_schema = core_schema.no_info_after_validator_function(
-        uuid_validator, core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()])
-    )
-    lax = core_schema.json_or_python_schema(
-        json_schema=from_primitive_type_schema,
-        python_schema=core_schema.union_schema(
-            [core_schema.is_instance_schema(UUID), from_primitive_type_schema],
-        ),
-    )
-
-    strict = core_schema.json_or_python_schema(
-        json_schema=from_primitive_type_schema,
-        python_schema=core_schema.is_instance_schema(UUID),
-    )
-
-    schema = core_schema.lax_or_strict_schema(
-        lax_schema=lax,
-        strict_schema=strict,
-        serialization=core_schema.to_string_ser_schema(),
-    )
-
-    return (
-        source_type,
-        [
-            InnerSchemaValidator(schema, js_core_schema=core_schema.str_schema(), js_schema_update={'format': 'uuid'}),
-            *annotations,
-        ],
-    )
+    return (source_type, [InnerSchemaValidator(core_schema.uuid_schema()), *annotations])
 
 
 def path_schema_prepare_pydantic_annotations(
@@ -611,7 +577,7 @@ MAPPING_ORIGIN_MAP: dict[Any, Any] = {
     typing.DefaultDict: collections.defaultdict,
     collections.defaultdict: collections.defaultdict,
     collections.OrderedDict: collections.OrderedDict,
-    typing.OrderedDict: collections.OrderedDict,
+    typing_extensions.OrderedDict: collections.OrderedDict,
     dict: dict,
     typing.Dict: dict,
     collections.Counter: collections.Counter,
@@ -673,7 +639,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             # a somewhat subjective set of types that have reasonable default values
             allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
             raise PydanticSchemaGenerationError(
-                f'Unable to infer a default factory for with keys of type {values_source_type}.'
+                f'Unable to infer a default factory for keys of type {values_source_type}.'
                 f' Only {allowed_msg} are supported, other types require an explicit default factory'
                 ' ' + instructions
             )

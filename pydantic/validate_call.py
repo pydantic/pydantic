@@ -1,4 +1,4 @@
-"""Decorators for validating function calls."""
+"""Decorator for validating function calls."""
 from __future__ import annotations as _annotations
 
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
@@ -31,7 +31,11 @@ def validate_call(
     config: ConfigDict | None = None,
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    """Returns a decorated version of the function that validates the arguments and, optionally, the return value.
+    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/validation_decorator/
+
+    Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.
+
+    Usage may be either as a plain decorator `@validate_call` or with arguments `@validate_call(...)`.
 
     Args:
         __func: The function to be decorated.
@@ -43,6 +47,9 @@ def validate_call(
     """
 
     def validate(function: AnyCallableT) -> AnyCallableT:
+        if isinstance(function, (classmethod, staticmethod)):
+            name = type(function).__name__
+            raise TypeError(f'The `@{name}` decorator should be applied after `@validate_call` (put `@{name}` on top)')
         return _validate_call.ValidateCallWrapper(function, config, validate_return)  # type: ignore
 
     if __func:

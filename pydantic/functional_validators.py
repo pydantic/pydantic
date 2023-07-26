@@ -32,7 +32,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    '''usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#annotated-validators
+    '''usage docs: https://docs.pydantic.dev/2.0/usage/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -87,7 +87,7 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#annotated-validators
+    """usage docs: https://docs.pydantic.dev/2.0/usage/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -129,7 +129,7 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#annotated-validators
+    """usage docs: https://docs.pydantic.dev/2.0/usage/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -164,7 +164,7 @@ class PlainValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#annotated-validators
+    """usage docs: https://docs.pydantic.dev/2.0/usage/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -200,7 +200,11 @@ class WrapValidator:
     ```
     """
 
-    func: core_schema.GeneralWrapValidatorFunction | core_schema.FieldWrapValidatorFunction
+    func: (
+        core_schema.NoInfoWrapValidatorFunction
+        | core_schema.GeneralWrapValidatorFunction
+        | core_schema.FieldWrapValidatorFunction
+    )
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
@@ -527,16 +531,20 @@ else:
             from pydantic import PydanticSchemaGenerationError
 
             # use the generic _origin_ as the second argument to isinstance when appropriate
-            python_schema = core_schema.is_instance_schema(_generics.get_origin(source) or source)
+            instance_of_schema = core_schema.is_instance_schema(_generics.get_origin(source) or source)
 
             try:
                 # Try to generate the "standard" schema, which will be used when loading from JSON
-                json_schema = handler(source)
+                original_schema = handler(source)
             except PydanticSchemaGenerationError:
                 # If that fails, just produce a schema that can validate from python
-                return python_schema
+                return instance_of_schema
             else:
-                return core_schema.json_or_python_schema(python_schema=python_schema, json_schema=json_schema)
+                # Use the "original" approach to serialization
+                instance_of_schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+                    function=lambda v, h: h(v), schema=original_schema
+                )
+                return core_schema.json_or_python_schema(python_schema=instance_of_schema, json_schema=original_schema)
 
         __hash__ = object.__hash__
 

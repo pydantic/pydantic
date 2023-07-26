@@ -83,7 +83,7 @@ def complete_dataclass(
 ) -> bool:
     """Finish building a pydantic dataclass.
 
-    This logic is called on a class which is yet to be wrapped in `dataclasses.dataclass()`.
+    This logic is called on a class which has already been wrapped in `dataclasses.dataclass()`.
 
     This is somewhat analogous to `pydantic._internal._model_construction.complete_model_class`.
 

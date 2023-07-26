@@ -1,9 +1,9 @@
 
-Pydantic will raise `ValidationError` whenever it finds an error in the data it's validating.
+Pydantic will raise a [`ValidationError`][pydantic_core.ValidationError] whenever it finds an error in the data it's validating.
 
 !!! note
-    Validation code should not raise `ValidationError` itself, but rather raise `ValueError`, `TypeError` or
-    `AssertionError` (or subclasses of `ValueError` or `TypeError`) which will be caught and used to populate
+    Validation code should not raise `ValidationError` itself, but rather raise a `ValueError` or
+    `AssertionError` (or subclass thereof) which will be caught and used to populate
     `ValidationError`.
 
 One exception will be raised regardless of the number of errors found, that `ValidationError` will
@@ -11,23 +11,23 @@ contain information about all the errors and how they happened.
 
 You can access these errors in several ways:
 
-| Method            | Description |
-| ----------------- | ----------- |
-| `e.errors()`      | Returns a list of errors found in the input data.           |
-| `e.error_count()` | Returns the number of errors found in `errors`.             |
-| `e.json()`        | Returns a JSON representation of `errors`.                  |
-| `str(e)`          | Returns a human-readable representation of the errors.      |
+| Method            | Description                                            |
+|-------------------|--------------------------------------------------------|
+| `e.errors()`      | Returns a list of errors found in the input data.      |
+| `e.error_count()` | Returns the number of errors found in `errors`.        |
+| `e.json()`        | Returns a JSON representation of `errors`.             |
+| `str(e)`          | Returns a human-readable representation of the errors. |
 
 Each error object contains:
 
 | Property | Description                                                                    |
-| -------- | ------------------------------------------------------------------------------ |
+|----------|--------------------------------------------------------------------------------|
 | `ctx`    | An optional object which contains values required to render the error message. |
 | `input`  | The input provided for validation.                                             |
 | `loc`    | The error's location as a list.                                                |
 | `msg`    | A human-readable explanation of the error.                                     |
 | `type`   | A computer-readable identifier of the error type.                              |
-| `url`    | The URL to further information about the error. |
+| `url`    | The URL to further information about the error.                                |
 
 The first item in the `loc` list will be the field where the error occurred, and if the field is a
 [sub-model](../usage/models.md#nested-models), subsequent items will be present to indicate the nested location of the error.
@@ -81,8 +81,6 @@ except ValidationError as e:
 try:
     Model(**data)
 except ValidationError as e:
-    # print(e.json())
-    # TODO set back to .json() once we add it
     print(e.errors())
     """
     [
@@ -176,7 +174,7 @@ except ValidationError as e:
     """
 ```
 
-You can also define your own error classes, which can specify a custom error code, message template, and context:
+You can also use [`PydanticCustomError`][pydantic_core.PydanticCustomError], to fully control the error structure:
 
 ```py
 from pydantic_core import PydanticCustomError
@@ -215,8 +213,8 @@ Pydantic attempts to provide useful default error messages for validation and us
 
 We've provided documentation for default error codes in the following sections:
 
-- [Validation Errors](../usage/validation_errors.md)
-- [Usage Errors](../usage/errors.md)
+- [Validation Errors](validation_errors.md)
+- [Usage Errors](usage_errors.md)
 
 ### Customize error messages
 

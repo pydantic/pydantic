@@ -1,4 +1,4 @@
-name: Update Docs
+name: Publish Documentation
 
 on:
   push:
@@ -22,7 +22,6 @@ jobs:
         with:
           python-version: '3.11'
           cache: true
-          version: '2.7.0'
 
       - name: install
         run: pdm install -G linting -G email
@@ -42,7 +41,6 @@ jobs:
         with:
           python-version: '3.11'
           cache: true
-          version: '2.7.0'
 
       - name: install deps
         run: pdm install -G testing
@@ -71,7 +69,6 @@ jobs:
         with:
           python-version: '3.10'
           cache: true
-          version: 2.7.0
 
       - name: install
         run: |
@@ -81,6 +78,16 @@ jobs:
           MKDOCS_TOKEN: ${{ secrets.MKDOCS_TOKEN }}
 
       - run: pdm run python -c 'import docs.plugins.main'
+
+      # Adding local symlinks gets nice source locations like
+      #   pydantic_core/core_schema.py
+      # instead of
+      #   .venv/lib/python3.10/site-packages/pydantic_core/core_schema.py
+      - name: prepare shortcuts for extra modules
+        run: |
+          ln -s .venv/lib/python*/site-packages/pydantic_core pydantic_core
+          ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
+          ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
       - name: Set git credentials
         run: |
