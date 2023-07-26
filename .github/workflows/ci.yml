@@ -284,7 +284,9 @@ jobs:
     - name: install typing-extensions
       run: |
         if [ ${{ matrix.typing-extensions-version }} == 'main' ]; then
-          pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git ; python_version >= "3.8"'
+          # typing-extensions main only supports 3.8 and newer, so adjust pyproject.toml
+          sed -i "s/requires-python = '>=3.7'/requires-python = '>=3.8'/g" pyproject.toml
+          pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
         else
           pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}'
         fi
