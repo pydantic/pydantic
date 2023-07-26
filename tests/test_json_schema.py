@@ -49,6 +49,7 @@ from pydantic import (
     ValidationError,
     WithJsonSchema,
     computed_field,
+    field_serializer,
     field_validator,
 )
 from pydantic._internal._core_metadata import CoreMetadataHandler, build_metadata_dict
@@ -2673,16 +2674,16 @@ class NestedModel(BaseModel):
     )
     model_names = set(schema['$defs'].keys())
     expected_model_names = {
-        'ModelOneInput',
-        'ModelOneOutput',
-        'ModelTwoInput',
-        'ModelTwoOutput',
-        f'{module.__name__}__ModelOne__NestedModelInput',
-        f'{module.__name__}__ModelOne__NestedModelOutput',
-        f'{module.__name__}__ModelTwo__NestedModelInput',
-        f'{module.__name__}__ModelTwo__NestedModelOutput',
-        f'{module.__name__}__NestedModelInput',
-        f'{module.__name__}__NestedModelOutput',
+        'ModelOne-Input',
+        'ModelOne-Output',
+        'ModelTwo-Input',
+        'ModelTwo-Output',
+        f'{module.__name__}__ModelOne__NestedModel-Input',
+        f'{module.__name__}__ModelOne__NestedModel-Output',
+        f'{module.__name__}__ModelTwo__NestedModel-Input',
+        f'{module.__name__}__ModelTwo__NestedModel-Output',
+        f'{module.__name__}__NestedModel-Input',
+        f'{module.__name__}__NestedModel-Output',
     }
     assert model_names == expected_model_names
 
@@ -2736,6 +2737,167 @@ class MyModel(BaseModel):
         f'{module_1.__name__}__MyModel',
         f'{module_2.__name__}__MyEnum',
         f'{module_2.__name__}__MyModel',
+    }
+
+
+def test_mode_name_causes_no_conflict():
+    class Organization(BaseModel):
+        pass
+
+    class OrganizationInput(BaseModel):
+        pass
+
+    class OrganizationOutput(BaseModel):
+        pass
+
+    class Model(BaseModel):
+        # Ensure the validation and serialization schemas are different:
+        x: Organization = Field(validation_alias='x_validation', serialization_alias='x_serialization')
+        y: OrganizationInput
+        z: OrganizationOutput
+
+    assert Model.model_json_schema(mode='validation') == {
+        '$defs': {
+            'Organization': {'properties': {}, 'title': 'Organization', 'type': 'object'},
+            'OrganizationInput': {'properties': {}, 'title': 'OrganizationInput', 'type': 'object'},
+            'OrganizationOutput': {'properties': {}, 'title': 'OrganizationOutput', 'type': 'object'},
+        },
+        'properties': {
+            'x_validation': {'$ref': '#/$defs/Organization'},
+            'y': {'$ref': '#/$defs/OrganizationInput'},
+            'z': {'$ref': '#/$defs/OrganizationOutput'},
+        },
+        'required': ['x_validation', 'y', 'z'],
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert Model.model_json_schema(mode='serialization') == {
+        '$defs': {
+            'Organization': {'properties': {}, 'title': 'Organization', 'type': 'object'},
+            'OrganizationInput': {'properties': {}, 'title': 'OrganizationInput', 'type': 'object'},
+            'OrganizationOutput': {'properties': {}, 'title': 'OrganizationOutput', 'type': 'object'},
+        },
+        'properties': {
+            'x_serialization': {'$ref': '#/$defs/Organization'},
+            'y': {'$ref': '#/$defs/OrganizationInput'},
+            'z': {'$ref': '#/$defs/OrganizationOutput'},
+        },
+        'required': ['x_serialization', 'y', 'z'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_ref_conflict_resolution_without_mode_difference():
+    class OrganizationInput(BaseModel):
+        pass
+
+    class Organization(BaseModel):
+        x: int
+
+    schema_with_defs, defs = GenerateJsonSchema().generate_definitions(
+        [
+            (Organization, 'validation', Organization.__pydantic_core_schema__),
+            (Organization, 'serialization', Organization.__pydantic_core_schema__),
+            (OrganizationInput, 'validation', OrganizationInput.__pydantic_core_schema__),
+        ]
+    )
+    assert schema_with_defs == {
+        (Organization, 'serialization'): {'$ref': '#/$defs/Organization'},
+        (Organization, 'validation'): {'$ref': '#/$defs/Organization'},
+        (OrganizationInput, 'validation'): {'$ref': '#/$defs/OrganizationInput'},
+    }
+
+    assert defs == {
+        'OrganizationInput': {'properties': {}, 'title': 'OrganizationInput', 'type': 'object'},
+        'Organization': {
+            'properties': {'x': {'title': 'X', 'type': 'integer'}},
+            'required': ['x'],
+            'title': 'Organization',
+            'type': 'object',
+        },
+    }
+
+
+def test_ref_conflict_resolution_with_mode_difference():
+    class OrganizationInput(BaseModel):
+        pass
+
+    class Organization(BaseModel):
+        x: int
+
+        @field_serializer('x')
+        def serialize_x(self, v: int) -> str:
+            return str(v)
+
+    schema_with_defs, defs = GenerateJsonSchema().generate_definitions(
+        [
+            (Organization, 'validation', Organization.__pydantic_core_schema__),
+            (Organization, 'serialization', Organization.__pydantic_core_schema__),
+            (OrganizationInput, 'validation', OrganizationInput.__pydantic_core_schema__),
+        ]
+    )
+    assert schema_with_defs == {
+        (Organization, 'serialization'): {'$ref': '#/$defs/Organization-Output'},
+        (Organization, 'validation'): {'$ref': '#/$defs/Organization-Input'},
+        (OrganizationInput, 'validation'): {'$ref': '#/$defs/OrganizationInput'},
+    }
+
+    assert defs == {
+        'OrganizationInput': {'properties': {}, 'title': 'OrganizationInput', 'type': 'object'},
+        'Organization-Input': {
+            'properties': {'x': {'title': 'X', 'type': 'integer'}},
+            'required': ['x'],
+            'title': 'Organization',
+            'type': 'object',
+        },
+        'Organization-Output': {
+            'properties': {'x': {'title': 'X', 'type': 'string'}},
+            'required': ['x'],
+            'title': 'Organization',
+            'type': 'object',
+        },
+    }
+
+
+def test_conflicting_names():
+    class Organization__Input(BaseModel):
+        pass
+
+    class Organization(BaseModel):
+        x: int
+
+        @field_serializer('x')
+        def serialize_x(self, v: int) -> str:
+            return str(v)
+
+    schema_with_defs, defs = GenerateJsonSchema().generate_definitions(
+        [
+            (Organization, 'validation', Organization.__pydantic_core_schema__),
+            (Organization, 'serialization', Organization.__pydantic_core_schema__),
+            (Organization__Input, 'validation', Organization__Input.__pydantic_core_schema__),
+        ]
+    )
+    assert schema_with_defs == {
+        (Organization, 'serialization'): {'$ref': '#/$defs/Organization-Output'},
+        (Organization, 'validation'): {'$ref': '#/$defs/Organization-Input'},
+        (Organization__Input, 'validation'): {'$ref': '#/$defs/Organization__Input'},
+    }
+
+    assert defs == {
+        'Organization__Input': {'properties': {}, 'title': 'Organization__Input', 'type': 'object'},
+        'Organization-Input': {
+            'properties': {'x': {'title': 'X', 'type': 'integer'}},
+            'required': ['x'],
+            'title': 'Organization',
+            'type': 'object',
+        },
+        'Organization-Output': {
+            'properties': {'x': {'title': 'X', 'type': 'string'}},
+            'required': ['x'],
+            'title': 'Organization',
+            'type': 'object',
+        },
     }
 
 
@@ -4356,7 +4518,7 @@ def test_serialization_validation_interaction():
     _, vs_schema = models_json_schema([(Outer, 'validation'), (Outer, 'serialization')])
     assert vs_schema == {
         '$defs': {
-            'InnerInput': {
+            'Inner-Input': {
                 'properties': {
                     'x': {
                         'contentMediaType': 'application/json',
@@ -4369,20 +4531,20 @@ def test_serialization_validation_interaction():
                 'title': 'Inner',
                 'type': 'object',
             },
-            'InnerOutput': {
+            'Inner-Output': {
                 'properties': {'x': {'title': 'X', 'type': 'integer'}},
                 'required': ['x'],
                 'title': 'Inner',
                 'type': 'object',
             },
-            'OuterInput': {
-                'properties': {'inner': {'$ref': '#/$defs/InnerInput'}},
+            'Outer-Input': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner-Input'}},
                 'required': ['inner'],
                 'title': 'Outer',
                 'type': 'object',
             },
-            'OuterOutput': {
-                'properties': {'inner': {'$ref': '#/$defs/InnerOutput'}},
+            'Outer-Output': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner-Output'}},
                 'required': ['inner'],
                 'title': 'Outer',
                 'type': 'object',
