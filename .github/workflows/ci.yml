@@ -328,6 +328,7 @@ jobs:
       - test
       - test-memray
       - test-mypy
+      - test-fastapi
 
     runs-on: ubuntu-latest
 
