@@ -710,7 +710,7 @@ from pydantic import BaseModel, SecretStr
 
 class User(BaseModel):
     id: int
-    username: str  # overridden by explicit include
+    username: str
     password: SecretStr
 
 
