@@ -1286,7 +1286,7 @@ def test_sequence_discriminated_union():
         pet_type: Literal['reptile', 'lizard']
         scales: bool
 
-    Pet = Annotated[Cat | Dog | Lizard, Field(discriminator='pet_type')]
+    Pet = Annotated[Union[Cat, Dog, Lizard], Field(discriminator='pet_type')]
 
     class Model(BaseModel):
         pet: Sequence[Pet]
