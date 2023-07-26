@@ -12,17 +12,17 @@ The entry point group is `pydantic` and the name of the entry point is the name 
 On Pydantic, plugins are loaded by calling `load_plugins()`. Plugins are loaded in the order
 they are found, and the order they are found is not guaranteed.
 
-Consider that you have a plugin called `observer`, then you can use it like this:
+Consider that you have a plugin called setting called "observer", then you can use it like this:
 
-```py test="skip"
+```py
 from pydantic import BaseModel
 
-class Foo(BaseModel, observer='all'):
+class Foo(BaseModel, plugin_settings={'observer': 'all'}):
     ...
 ```
 
-On each validation call, a callable registered for the event `all` will be called with the
-instance of `Foo`, the event name, and the validation result.
+On each validation call, the `plugin_settings` will be passed to a callable registered for the
+events.
 """
 from __future__ import annotations
 
