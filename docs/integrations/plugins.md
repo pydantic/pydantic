@@ -37,8 +37,8 @@ Pydantic has an API for creating plugins. The API is exposed via the `pydantic.p
 
 On your plugin you can _wrap_ the following methods:
 
-* [`validate_python`][pydantic_core._pydantic_core.SchemaValidator.validate_python]: Used to validate the data from a Python object.
-* [`validate_json`][pydantic_core._pydantic_core.SchemaValidator.validate_json]: Used to validate the data from a JSON string.
+* [`validate_python`][pydantic_core.SchemaValidator.validate_python]: Used to validate the data from a Python object.
+* [`validate_json`][pydantic_core.SchemaValidator.validate_json]: Used to validate the data from a JSON string.
 
 For each method, you can implement the following callbacks:
 
@@ -50,7 +50,7 @@ Let's see an example of a plugin that _wraps_ the `validate_python` method of th
 
 ```py
 from pprint import pprint
-from typing import Any
+from typing import Any, Optional, Dict
 
 from pydantic_core import ValidationError
 
@@ -63,10 +63,10 @@ class OnValidatePython(_OnValidatePython):
         self,
         input: Any,
         *,
-        strict: bool | None = None,
-        from_attributes: bool | None = None,
-        context: dict[str, Any] | None = None,
-        self_instance: Any | None = None,
+        strict: Optional[bool] = None,
+        from_attributes: Optional[bool] = None,
+        context: Optional[Dict[str, Any]] = None,
+        self_instance: Optional[Any] = None,
     ) -> None:
         pprint(input)
 
