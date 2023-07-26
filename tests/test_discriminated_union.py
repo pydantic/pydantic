@@ -1,7 +1,7 @@
 import re
 import sys
 from enum import Enum, IntEnum
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, Sequence, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -1271,3 +1271,66 @@ def test_function_after_discriminator():
             'type': 'union_tag_invalid',
         }
     ]
+
+
+def test_sequence_discriminated_union():
+    class Cat(BaseModel):
+        pet_type: Literal['cat']
+        meows: int
+
+    class Dog(BaseModel):
+        pet_type: Literal['dog']
+        barks: float
+
+    class Lizard(BaseModel):
+        pet_type: Literal['reptile', 'lizard']
+        scales: bool
+
+    Pet = Annotated[Union[Cat, Dog, Lizard], Field(discriminator='pet_type')]
+
+    class Model(BaseModel):
+        pet: Sequence[Pet]
+        n: int
+
+    assert Model.model_json_schema() == {
+        '$defs': {
+            'Cat': {
+                'properties': {
+                    'meows': {'title': 'Meows', 'type': 'integer'},
+                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                },
+                'required': ['pet_type', 'meows'],
+                'title': 'Cat',
+                'type': 'object',
+            },
+            'Dog': {
+                'properties': {
+                    'barks': {'title': 'Barks', 'type': 'number'},
+                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                },
+                'required': ['pet_type', 'barks'],
+                'title': 'Dog',
+                'type': 'object',
+            },
+            'Lizard': {
+                'properties': {
+                    'pet_type': {'enum': ['reptile', 'lizard'], 'title': 'Pet Type', 'type': 'string'},
+                    'scales': {'title': 'Scales', 'type': 'boolean'},
+                },
+                'required': ['pet_type', 'scales'],
+                'title': 'Lizard',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'n': {'title': 'N', 'type': 'integer'},
+            'pet': {
+                'items': {'anyOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}]},
+                'title': 'Pet',
+                'type': 'array',
+            },
+        },
+        'required': ['pet', 'n'],
+        'title': 'Model',
+        'type': 'object',
+    }
