@@ -639,7 +639,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             # a somewhat subjective set of types that have reasonable default values
             allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
             raise PydanticSchemaGenerationError(
-                f'Unable to infer a default factory for with keys of type {values_source_type}.'
+                f'Unable to infer a default factory for keys of type {values_source_type}.'
                 f' Only {allowed_msg} are supported, other types require an explicit default factory'
                 ' ' + instructions
             )
