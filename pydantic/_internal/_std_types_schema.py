@@ -625,7 +625,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             bool: bool,
         }
         values_type_origin = get_origin(values_source_type) or values_source_type
-        instructions = 'set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]'
+        instructions = 'set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]`'
         if isinstance(values_type_origin, TypeVar):
 
             def type_var_default_factory() -> None:

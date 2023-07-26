@@ -1287,8 +1287,7 @@ def create_model(
         __cls_kwargs__: A dictionary of keyword arguments for class creation.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:
-            `<name>=(<type>, <default value>)` or `<name>=<default value>`. For more complex cases, they can be
-            passed in the format: `<name>=<Field>` or `<name>=(<type>, <FieldInfo>)`.
+            `<name>=(<type>, <default value>)` or `<name>=(<type>, <FieldInfo>)`.
 
     Returns:
         The new [model][pydantic.BaseModel].
