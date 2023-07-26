@@ -37,8 +37,8 @@ Pydantic has an API for creating plugins. The API is exposed via the `pydantic.p
 
 On your plugin you can _wrap_ the following methods:
 
-* [`validate_python`][pydantic_core.SchemaValidator.validate_python]: Used to validate the data from a Python object.
-* [`validate_json`][pydantic_core.SchemaValidator.validate_json]: Used to validate the data from a JSON string.
+* [`validate_python`][pydantic_core._pydantic_core.SchemaValidator.validate_python]: Used to validate the data from a Python object.
+* [`validate_json`][pydantic_core._pydantic_core.SchemaValidator.validate_json]: Used to validate the data from a JSON string.
 
 For each method, you can implement the following callbacks:
 
