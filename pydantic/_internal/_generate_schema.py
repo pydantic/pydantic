@@ -87,6 +87,7 @@ if TYPE_CHECKING:
     from ._schema_generation_shared import GetJsonSchemaFunction
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
+_AnnotatedType = type(Annotated[int, 123])
 
 FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
@@ -391,6 +392,17 @@ class GenerateSchema:
             list(self.defs.definitions.values()),
         )
 
+    def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
+        metadata = CoreMetadataHandler(metadata_schema).metadata
+        pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
+        # because of how we generate core schemas for nested generic models
+        # we can end up adding `BaseModel.__get_pydantic_json_schema__` multiple times
+        # this check may fail to catch duplicates if the function is a `functools.partial`
+        # or something like that
+        # but if it does it'll fail by inserting the duplicate
+        if js_function not in pydantic_js_functions:
+            pydantic_js_functions.append(js_function)
+
     def generate_schema(
         self,
         obj: Any,
@@ -421,29 +433,6 @@ class GenerateSchema:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
                 - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
         """
-        if isinstance(obj, type(Annotated[int, 123])):
-            return self._annotated_schema(obj)
-        return self._generate_schema_for_type(
-            obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
-        )
-
-    def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
-        metadata = CoreMetadataHandler(metadata_schema).metadata
-        pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
-        # because of how we generate core schemas for nested generic models
-        # we can end up adding `BaseModel.__get_pydantic_json_schema__` multiple times
-        # this check may fail to catch duplicates if the function is a `functools.partial`
-        # or something like that
-        # but if it does it'll fail by inserting the duplicate
-        if js_function not in pydantic_js_functions:
-            pydantic_js_functions.append(js_function)
-
-    def _generate_schema_for_type(
-        self,
-        obj: Any,
-        from_dunder_get_core_schema: bool = True,
-        from_prepare_args: bool = True,
-    ) -> CoreSchema:
         schema: CoreSchema | None = None
 
         if from_prepare_args:
@@ -668,6 +657,9 @@ class GenerateSchema:
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         """Recursively generate a pydantic-core schema for any supported python type."""
+        if isinstance(obj, _AnnotatedType):
+            return self._annotated_schema(obj)
+
         if isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
@@ -1509,7 +1501,7 @@ class GenerateSchema:
 
         return source_type, list(annotations)
 
-    def _apply_annotations(  # noqa: C901
+    def _apply_annotations(
         self,
         source_type: Any,
         annotations: list[Any],
@@ -1542,19 +1534,16 @@ class GenerateSchema:
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
-            if isinstance(obj, type(Annotated[int, 123])):
-                schema = transform_inner_schema(self._annotated_schema(obj))
+            from_property = self._generate_schema_from_property(obj, obj)
+            if from_property is None:
+                schema = self._generate_schema(obj)
             else:
-                from_property = self._generate_schema_from_property(obj, obj)
-                if from_property is None:
-                    schema = self._generate_schema(obj)
-                else:
-                    schema = from_property
-                metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
-                if metadata_js_function is not None:
-                    metadata_schema = resolve_original_schema(schema, self.defs.definitions)
-                    if metadata_schema is not None:
-                        self._add_js_function(metadata_schema, metadata_js_function)
+                schema = from_property
+            metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+            if metadata_js_function is not None:
+                metadata_schema = resolve_original_schema(schema, self.defs.definitions)
+                if metadata_schema is not None:
+                    self._add_js_function(metadata_schema, metadata_js_function)
             return transform_inner_schema(schema)
 
         get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
