@@ -2352,11 +2352,13 @@ See <a href="../types/custom/">Custom Types</a> for a more detailed explanation 
 In this example we used that to apply validation to the inner items of a list.
 The same approach can be used for dict keys, etc.</p>
 <h3 id="before-after-wrap-and-plain-validators">Before, After, Wrap and Plain validators<a class="headerlink" href="#before-after-wrap-and-plain-validators" title="Permanent link">&para;</a></h3>
-<p>Pydantic provides multiple types of validator functions.
-* <code>After</code> validators run after Pydantic's internal parsing. They are generally more type safe and thus easier to implement.
-* <code>Before</code> validators run before Pydantic's internal parsing and validation (e.g. coercion of a <code>str</code> to an <code>int</code>). These are more flexible than <code>After</code> validators since they can modify the raw input, but they also have to deal with the raw input, which in theory could be any arbitrary object.
-* <code>Plain</code> validators are like a <code>mode='before'</code> validator but they terminate validation immediately, no further validators are called and Pydantic does not do any of it's internal validation.
-* <code>Wrap</code> validators are the most flexible of all. You can run code before or after Pydantic and other validators do their thing or you can terminate validation immediately, both with a successful value or an error.</p>
+<p>Pydantic provides multiple types of validator functions.</p>
+<ul>
+<li><code>After</code> validators run after Pydantic's internal parsing. They are generally more type safe and thus easier to implement.</li>
+<li><code>Before</code> validators run before Pydantic's internal parsing and validation (e.g. coercion of a <code>str</code> to an <code>int</code>). These are more flexible than <code>After</code> validators since they can modify the raw input, but they also have to deal with the raw input, which in theory could be any arbitrary object.</li>
+<li><code>Plain</code> validators are like a <code>mode='before'</code> validator but they terminate validation immediately, no further validators are called and Pydantic does not do any of its internal validation.</li>
+<li><code>Wrap</code> validators are the most flexible of all. You can run code before or after Pydantic and other validators do their thing or you can terminate validation immediately, both with a successful value or an error.</li>
+</ul>
 <p>You can use multiple before, after, or <code>mode='wrap'</code> validators, but only one <code>PlainValidator</code> since a plain validator
 will not call any inner validators.</p>
 <p>Here's an example of a <code>mode='wrap'</code> validator:</p>
