@@ -1,0 +1,1 @@
+::: pydantic.plugin.plugin
