@@ -3599,6 +3599,11 @@ become fields on model instances:</p>
 <p>Attributes whose name has a leading underscore are not treated as fields by Pydantic, and are not included in the
 model schema. Instead, these are converted into a "private attribute" which is not validated or even set during
 calls to <code>__init__</code>, <code>model_validate</code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As of Pydantic v2.1.0, you will receive a NameError if trying to use the <a href="../fields/"><code>Field</code> function</a> with a private attribute.
+Because private attributes are not treated as fields, the Field() function cannot be applied.</p>
+</div>
 <p>Here is an example of usage:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randint</span>
