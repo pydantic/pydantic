@@ -3414,7 +3414,7 @@ def custom_error_schema(
     custom_error_type: str,
     *,
     custom_error_message: str | None = None,
-    custom_error_context: dict[str, str | int | float] | None = None,
+    custom_error_context: dict[str, Any] | None = None,
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,

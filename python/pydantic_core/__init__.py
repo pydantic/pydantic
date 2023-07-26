@@ -78,9 +78,10 @@ class ErrorDetails(_TypedDict):
     """A human readable error message."""
     input: _Any
     """The input data at this `loc` that caused the error."""
-    ctx: _NotRequired[dict[str, str | int | float]]
+    ctx: _NotRequired[dict[str, _Any]]
     """
     Values which are required to render the error message, and could hence be useful in rendering custom error messages.
+    Also useful for passing custom error data forward.
     """
 
 
@@ -91,9 +92,10 @@ class InitErrorDetails(_TypedDict):
     """Tuple of strings and ints identifying where in the schema the error occurred."""
     input: _Any
     """The input data at this `loc` that caused the error."""
-    ctx: _NotRequired[dict[str, str | int | float]]
+    ctx: _NotRequired[dict[str, _Any]]
     """
     Values which are required to render the error message, and could hence be useful in rendering custom error messages.
+    Also useful for passing custom error data forward.
     """
 
 
@@ -112,7 +114,7 @@ class ErrorTypeInfo(_TypedDict):
     """String template to render a human readable error message from using context, when the input is JSON data."""
     example_message_json: _NotRequired[str]
     """Example of a human readable error message, when the input is JSON data."""
-    example_context: dict[str, str | int | float] | None
+    example_context: dict[str, _Any] | None
     """Example of context values."""
 
 
