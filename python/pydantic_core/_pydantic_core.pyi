@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-import decimal
 import sys
 from typing import Any, Callable, Generic, Optional, Type, TypeVar
 
@@ -746,11 +745,9 @@ class PydanticCustomError(ValueError):
 
 @final
 class PydanticKnownError(ValueError):
-    def __new__(
-        cls, error_type: ErrorType, context: dict[str, str | int | float | decimal.Decimal] | None = None
-    ) -> Self: ...
+    def __new__(cls, error_type: ErrorType, context: dict[str, Any] | None = None) -> Self: ...
     @property
-    def context(self) -> dict[str, str | int | float] | None: ...
+    def context(self) -> dict[str, Any] | None: ...
     @property
     def type(self) -> ErrorType: ...
     @property
