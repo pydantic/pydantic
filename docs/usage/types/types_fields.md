@@ -44,10 +44,7 @@ except ValidationError as e:
 
 !!! note
     This is a new feature of the Python standard library as of Python 3.8.
-    Prior to Python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
-    But required and optional fields are properly differentiated only since Python 3.9.
-    We therefore recommend using [typing-extensions](https://pypi.org/project/typing-extensions/) with Python 3.8 as well.
-
+    Because of various limitations and bugs in the standard library implementations before 3.12, [typing-extensions](https://pypi.org/project/typing-extensions/) package is required for Python <3.12. You'll need to import `TypedDict` from `typing_extensions` instead of `typing` and will get a build time error if you don't.
 
 ```py
 from typing_extensions import TypedDict
