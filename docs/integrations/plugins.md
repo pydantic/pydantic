@@ -50,7 +50,7 @@ Let's see an example of a plugin that _wraps_ the `validate_python` method of th
 
 ```py
 from pprint import pprint
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Optional
 
 from pydantic_core import ValidationError
 
