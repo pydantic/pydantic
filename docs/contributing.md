@@ -66,7 +66,8 @@ cd pydantic
 # https://pre-commit.com/#install
 # To get pipx itself:
 # https://pypa.github.io/pipx/
-pipx install pdm pre-commit
+pipx install pdm
+pipx install pre-commit
 
 # Install pydantic, dependencies, test dependencies and doc dependencies
 make install
