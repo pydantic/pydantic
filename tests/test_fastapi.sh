@@ -7,6 +7,9 @@ cd fastapi
 git fetch --tags
 
 pip install -r requirements.txt
+# Install the version of pydantic from the current branch, not the released version used by fastapi
+pip uninstall -y pydantic
+cd .. && pip install . && cd fastapi
 
 # ./scripts/test.sh accepts arbitrary arguments and passes them to the pytest call.
 # This may be necessary if we make low-consequence changes to pydantic, such as minor changes the details of a JSON
