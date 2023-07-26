@@ -2174,9 +2174,7 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>This is a new feature of the Python standard library as of Python 3.8.
-Prior to Python 3.8, it requires the <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> package.
-But required and optional fields are properly differentiated only since Python 3.9.
-We therefore recommend using <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> with Python 3.8 as well.</p>
+Because of limitations in <code>typing.TypedDict</code> before 3.12, the <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> package is required for Python &lt;3.12. You'll need to import <code>TypedDict</code> from <code>typing_extensions</code> instead of <code>typing</code> and will get a build time error if you don't.</p>
 </div>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
 
