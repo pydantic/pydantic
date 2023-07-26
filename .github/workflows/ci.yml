@@ -156,6 +156,22 @@ jobs:
         name: coverage
         path: coverage
 
+  test-fastapi:
+    # If some tests start failing due to out-of-date schemas/validation errors/etc.,
+    # update the `tests/test_fastapi.sh` script to exclude tests that have known-acceptable failures.
+    name: test fastapi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: test
+        run: make test-fastapi
+
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -308,6 +324,7 @@ jobs:
       - test
       - test-memray
       - test-mypy
+      - test-fastapi
 
     runs-on: ubuntu-latest
 
