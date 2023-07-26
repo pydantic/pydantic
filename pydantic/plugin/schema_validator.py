@@ -8,7 +8,7 @@ from typing import Any, Callable, Final, TypeVar
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Literal, ParamSpec
 
-from .loader import plugins
+from ._loader import plugins
 from .plugin import Step
 
 P = ParamSpec('P')
