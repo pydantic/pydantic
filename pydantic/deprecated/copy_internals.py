@@ -44,7 +44,7 @@ def _iter(
         )
 
     if include is not None:
-        include = _utils.ValueItems.merge({k: v.include for k, v in self.model_fields.items()}, include, intersect=True)
+        include = _utils.ValueItems.merge({k: True for k in self.model_fields}, include, intersect=True)
 
     allowed_keys = _calculate_keys(self, include=include, exclude=exclude, exclude_unset=exclude_unset)  # type: ignore
     if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):

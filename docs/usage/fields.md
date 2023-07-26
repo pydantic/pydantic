@@ -652,9 +652,9 @@ except ValidationError as e:
 
 2. Since `validate_assignment` is enabled, and the `name` field is frozen, the assignment is not allowed.
 
-## Include and Exclude
+## Exclude
 
-The parameters `include` and `exclude` can be used to control which fields should be included or excluded from the
+The `exclude` parameter can be used to control which fields should be excluded from the
 model when exporting the model.
 
 See the following example:

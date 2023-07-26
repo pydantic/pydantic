@@ -431,6 +431,14 @@ def test_field_const():
             x: str = Field('test', const=True)
 
 
+def test_field_include_deprecation():
+    m = '`include` is deprecated and does nothing. It will be removed, use `exclude` instead'
+    with pytest.warns(PydanticDeprecatedSince20, match=m):
+
+        class Model(BaseModel):
+            x: int = Field(include=True)
+
+
 def test_unique_items_items():
     with pytest.raises(PydanticUserError, match='`unique_items` is removed. use `Set` instead'):
 
