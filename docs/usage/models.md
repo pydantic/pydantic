@@ -1211,7 +1211,7 @@ calls to `__init__`, `model_validate`, etc.
 
 !!! note
     As of Pydantic v2.1.0, you will receive a NameError if trying to use the [`Field` function](fields.md) with a private attribute.
-    Because private attributes are not treated as fields, the Field() function cannot be applied. 
+    Because private attributes are not treated as fields, the Field() function cannot be applied.
 
 Here is an example of usage:
 
