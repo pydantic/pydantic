@@ -4967,7 +4967,7 @@ def test_defaultdict_unknown_default_factory() -> None:
     """
     with pytest.raises(
         PydanticSchemaGenerationError,
-        match=r'Unable to infer a default factory for with keys of type typing.DefaultDict\[int, int\]',
+        match=r'Unable to infer a default factory for keys of type typing.DefaultDict\[int, int\]',
     ):
 
         class Model(BaseModel):
