@@ -131,6 +131,8 @@ MongoDsn = Union[
 """A type that will accept any MongoDB DSN."""
 KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)]
 """A type that will accept any Kafka DSN."""
+NatsDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['nats', 'tls', 'ws'], default_host='localhost', default_port=4222)]
+"""A type that will accept any NATS DSN."""
 MySQLDsn = Annotated[
     Url,
     UrlConstraints(
