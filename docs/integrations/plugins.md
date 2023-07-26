@@ -33,15 +33,12 @@ class Foo(BaseModel, plugin_settings=dict(observe='all')):
 ??? api "API Documentation"
     [`pydantic.plugin.plugin`][pydantic.plugin.plugin]<br>
 
-??? api "API Documentation"
-    [`pydantic.plugin`][pydantic.plugin]<br>
-
 Pydantic has an API for creating plugins. The API is exposed via the `pydantic.plugin` module.
 
 On your plugin you can _wrap_ the following methods:
 
-* [`validate_python`][validate python]: Used to validate the data from a Python object.
-* [`validate_json`][validate json]: Used to validate the data from a JSON string.
+* [`validate_python`][pydantic_core.SchemaValidator.validate_python]: Used to validate the data from a Python object.
+* [`validate_json`][pydantic_core.SchemaValidator.validate_json]: Used to validate the data from a JSON string.
 
 For each method, you can implement the following callbacks:
 
@@ -49,7 +46,7 @@ For each method, you can implement the following callbacks:
 * `on_success`: Called when the validation of a field succeeds.
 * `on_error`: Called when the validation of a field fails.
 
-Let's see an example of a plugin that _wraps_ the `validate_python` method of the [`SchemaValidator`][schema validator].
+Let's see an example of a plugin that _wraps_ the `validate_python` method of the [`SchemaValidator`][pydantic_core.SchemaValidator].
 
 ```py
 from pprint import pprint
@@ -82,7 +79,3 @@ class OnValidatePython(_OnValidatePython):
 
 plugin = Plugin(on_validate_python=OnValidatePython)
 ```
-
-[schema validator]: pydantic_core.SchemaValidator
-[validate python]: pydantic_core.SchemaValidator.validate_python
-[validate json]: pydantic_core.SchemaValidator.validate_json
