@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import contextlib
 import functools
-from typing import Any, Callable, Final, TypeVar
+from typing import Any, Callable, TypeVar
 
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
-from typing_extensions import Literal, ParamSpec
+from typing_extensions import Final, Literal, ParamSpec
 
 from ._loader import plugins
 from .plugin import Step
