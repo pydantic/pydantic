@@ -1,0 +1,4 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
