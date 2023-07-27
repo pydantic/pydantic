@@ -149,7 +149,7 @@ def test_timedelta_strict_json(input_value, expected):
             {'le': timedelta(seconds=-86400.123)},
             '-PT86400.122S',
             Err(
-                'Input should be less than or equal to datetime.timedelta(days=-2, seconds=86399, microseconds=877000) [type=less_than_equal'  # noqa: E501
+                'Input should be less than or equal to datetime.timedelta(days=-2, seconds=86399, microseconds=877000) [type=less_than_equal'
             ),
         ),
         ({'gt': timedelta(seconds=-86400.123)}, timedelta(seconds=-86400.122), timedelta(seconds=-86400.122)),
@@ -158,7 +158,7 @@ def test_timedelta_strict_json(input_value, expected):
             {'gt': timedelta(seconds=-86400.123)},
             '-PT86400.124S',
             Err(
-                'Input should be greater than datetime.timedelta(days=-2, seconds=86399, microseconds=877000) [type=greater_than'  # noqa: E501
+                'Input should be greater than datetime.timedelta(days=-2, seconds=86399, microseconds=877000) [type=greater_than'
             ),
         ),
     ],
