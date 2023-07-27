@@ -778,7 +778,8 @@ except ValidationError as exc:
 
 ## `int_parsing_size`
 
-This error is raised when attempting to parse a python value from a string outside the maximum range of a Python `int`:
+This error is raised when attempting to parse a python or JSON value from a string outside the maximum range that Python
+`str` to `int` parsing permits:
 
 ```py
 import json
