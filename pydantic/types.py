@@ -1433,6 +1433,9 @@ class CallableDiscriminator:
 
     choices: dict[Hashable, Any]  # the values of this dict should be the type annotations from the typing.Union
     discriminator: Callable[[Any], Hashable]
+    custom_error_type: str | None = None
+    custom_error_message: str | None = None
+    custom_error_context: dict[str, int | str | float] | None = None
 
     def __get_pydantic_core_schema__(
         self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
@@ -1467,12 +1470,27 @@ class CallableDiscriminator:
         self, original_schema: core_schema.UnionSchema, handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.TaggedUnionSchema:
         choices = {k: handler.generate_schema(v) for k, v in self.choices.items()}
+
+        # Have to do these verbose checks to ensure falsy values ('' and {}) don't get ignored
+        custom_error_type = self.custom_error_type
+        if custom_error_type is None:
+            custom_error_type = original_schema.get('custom_error_type')
+
+        custom_error_message = self.custom_error_message
+        if custom_error_message is None:
+            custom_error_message = original_schema.get('custom_error_message')
+
+        custom_error_context = self.custom_error_context
+        if custom_error_context is None:
+            custom_error_context = original_schema.get('custom_error_context')
+
+        custom_error_type = original_schema.get('custom_error_type') if custom_error_type is None else custom_error_type
         return core_schema.tagged_union_schema(
             choices,
             self.discriminator,  # type: ignore  # can be dropped once type hint is Callable[[Any], Hashable]
-            custom_error_type=original_schema.get('custom_error_type'),
-            custom_error_message=original_schema.get('custom_error_message'),
-            custom_error_context=original_schema.get('custom_error_context'),
+            custom_error_type=custom_error_type,
+            custom_error_message=custom_error_message,
+            custom_error_context=custom_error_context,
             strict=original_schema.get('strict'),
             ref=original_schema.get('ref'),
             metadata=original_schema.get('metadata'),

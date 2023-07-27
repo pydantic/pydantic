@@ -1450,6 +1450,35 @@ def test_callable_discriminated_union_recursive():
         },
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'x': {'x': {'x': {}}}})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': {'x': {'x': {}}},
+            'loc': ('x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': {'x': {}},
+            'loc': ('x', 'Model', 'x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': {},
+            'loc': ('x', 'Model', 'x', 'Model', 'x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': {},
+            'loc': ('x', 'Model', 'x', 'Model', 'x', 'Model', 'x'),
+            'msg': 'Field required',
+            'type': 'missing',
+        },
+    ]
+
     # Demonstrate that the errors suck less _with_ a callable discriminator:
     def model_x_discriminator(v):
         if isinstance(v, str):
@@ -1460,21 +1489,37 @@ def test_callable_discriminated_union_recursive():
     class DiscriminatedModel(BaseModel):
         x: Annotated[
             Union[str, 'DiscriminatedModel'],
-            CallableDiscriminator({'str': str, 'model': 'DiscriminatedModel'}, model_x_discriminator),
+            CallableDiscriminator(
+                {'str': str, 'model': 'DiscriminatedModel'},
+                model_x_discriminator,
+                custom_error_type='invalid_union_member',
+                custom_error_message='Invalid union member',
+                custom_error_context={'discriminator': 'str_or_model'},
+            ),
         ]
 
     with pytest.raises(ValidationError) as exc_info:
         DiscriminatedModel.model_validate({'x': {'x': {'x': 1}}})
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'discriminator': 'model_x_discriminator()'},
+            'ctx': {'discriminator': 'str_or_model'},
             'input': 1,
             'loc': ('x', 'model', 'x', 'model', 'x'),
-            'msg': 'Unable to extract tag using discriminator model_x_discriminator()',
-            'type': 'union_tag_not_found',
+            'msg': 'Invalid union member',
+            'type': 'invalid_union_member',
         }
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        DiscriminatedModel.model_validate({'x': {'x': {'x': {}}}})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': {},
+            'loc': ('x', 'model', 'x', 'model', 'x', 'model', 'x'),
+            'msg': 'Field required',
+            'type': 'missing',
+        }
+    ]
     # Demonstrate that the data is still handled properly when valid:
     data = {'x': {'x': {'x': 'a'}}}
     m = DiscriminatedModel.model_validate(data)
