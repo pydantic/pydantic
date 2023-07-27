@@ -8,7 +8,7 @@ from __future__ import annotations as _annotations
 import sys
 from collections.abc import Mapping
 from datetime import date, datetime, time, timedelta
-from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, List, Optional, Set, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, List, Set, Type, Union
 
 if sys.version_info < (3, 11):
     from typing_extensions import Protocol, Required, TypeAlias
@@ -2443,9 +2443,7 @@ def union_schema(
 class TaggedUnionSchema(TypedDict, total=False):
     type: Required[Literal['tagged-union']]
     choices: Required[Dict[Hashable, CoreSchema]]
-    discriminator: Required[
-        Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Optional[Union[str, int]]]]
-    ]
+    discriminator: Required[Union[str, List[Union[str, int]], List[List[Union[str, int]]], Callable[[Any], Hashable]]]
     custom_error_type: str
     custom_error_message: str
     custom_error_context: Dict[str, Union[str, int, float]]
@@ -2458,7 +2456,7 @@ class TaggedUnionSchema(TypedDict, total=False):
 
 def tagged_union_schema(
     choices: Dict[Hashable, CoreSchema],
-    discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], str | int | None],
+    discriminator: str | list[str | int] | list[list[str | int]] | Callable[[Any], Hashable],
     *,
     custom_error_type: str | None = None,
     custom_error_message: str | None = None,
