@@ -8,7 +8,7 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
+from pydantic import BaseModel, CallableDiscriminator, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.errors import PydanticUserError
 
@@ -1334,3 +1334,149 @@ def test_sequence_discriminated_union():
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_callable_discriminated_union_multi_field():
+    class Cat(BaseModel):
+        pet_type: Literal['cat'] = 'cat'
+
+    class Dog(BaseModel):
+        pet_kind: Literal['dog'] = 'dog'
+
+    class Fish(BaseModel):
+        pet_kind: Literal['fish'] = 'fish'
+
+    class Lizard(BaseModel):
+        pet_variety: Literal['lizard'] = 'lizard'
+
+    def get_discriminator_value(v):
+        if isinstance(v, dict):
+            return v.get('pet_type', v.get('pet_kind'))
+        return getattr(v, 'pet_type', getattr(v, 'pet_kind', None))
+
+    discriminator = CallableDiscriminator({'cat': Cat, 'dog': Dog}, get_discriminator_value)
+
+    pet_adapter = TypeAdapter(Annotated[Union[Cat, Dog], discriminator])
+
+    assert pet_adapter.validate_python({'pet_type': 'cat'}).pet_type == 'cat'
+    assert pet_adapter.validate_python({'pet_kind': 'dog'}).pet_kind == 'dog'
+    assert pet_adapter.validate_python(Cat()).pet_type == 'cat'
+    assert pet_adapter.validate_python(Dog()).pet_kind == 'dog'
+    assert pet_adapter.validate_json('{"pet_type":"cat"}').pet_type == 'cat'
+    assert pet_adapter.validate_json('{"pet_kind":"dog"}').pet_kind == 'dog'
+
+    # Unexpected discriminator value for dict
+    with pytest.raises(ValidationError) as exc_info:
+        pet_adapter.validate_python({'pet_kind': 'fish'})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'discriminator': 'get_discriminator_value()', 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
+            'input': {'pet_kind': 'fish'},
+            'loc': (),
+            'msg': "Input tag 'fish' found using get_discriminator_value() does not "
+            "match any of the expected tags: 'cat', 'dog'",
+            'type': 'union_tag_invalid',
+        }
+    ]
+
+    # Missing discriminator key for dict
+    with pytest.raises(ValidationError) as exc_info:
+        pet_adapter.validate_python({'pet_variety': 'lizard'})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'discriminator': 'get_discriminator_value()'},
+            'input': {'pet_variety': 'lizard'},
+            'loc': (),
+            'msg': 'Unable to extract tag using discriminator get_discriminator_value()',
+            'type': 'union_tag_not_found',
+        }
+    ]
+
+    # Unexpected discriminator value for instance
+    with pytest.raises(ValidationError) as exc_info:
+        pet_adapter.validate_python(Fish())
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'discriminator': 'get_discriminator_value()', 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
+            'input': Fish(pet_kind='fish'),
+            'loc': (),
+            'msg': "Input tag 'fish' found using get_discriminator_value() does not "
+            "match any of the expected tags: 'cat', 'dog'",
+            'type': 'union_tag_invalid',
+        }
+    ]
+
+    # Missing discriminator key for instance
+    with pytest.raises(ValidationError) as exc_info:
+        pet_adapter.validate_python(Lizard())
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'discriminator': 'get_discriminator_value()'},
+            'input': Lizard(pet_variety='lizard'),
+            'loc': (),
+            'msg': 'Unable to extract tag using discriminator get_discriminator_value()',
+            'type': 'union_tag_not_found',
+        }
+    ]
+
+
+def test_callable_discriminated_union_recursive():
+    # Demonstrate that the errors suck without a callable discriminator:
+    class Model(BaseModel):
+        x: Union[str, 'Model']
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'x': {'x': {'x': 1}}})
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': {'x': {'x': 1}}, 'loc': ('x', 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
+        {
+            'input': {'x': 1},
+            'loc': ('x', 'Model', 'x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': 1,
+            'loc': ('x', 'Model', 'x', 'Model', 'x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'ctx': {'class_name': 'Model'},
+            'input': 1,
+            'loc': ('x', 'Model', 'x', 'Model', 'x', 'Model'),
+            'msg': 'Input should be a valid dictionary or instance of Model',
+            'type': 'model_type',
+        },
+    ]
+
+    # Demonstrate that the errors suck less _with_ a callable discriminator:
+    def model_x_discriminator(v):
+        if isinstance(v, str):
+            return 'str'
+        if isinstance(v, (dict, BaseModel)):
+            return 'model'
+
+    class DiscriminatedModel(BaseModel):
+        x: Annotated[
+            Union[str, 'DiscriminatedModel'],
+            CallableDiscriminator({'str': str, 'model': 'DiscriminatedModel'}, model_x_discriminator),
+        ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        DiscriminatedModel.model_validate({'x': {'x': {'x': 1}}})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'discriminator': 'model_x_discriminator()'},
+            'input': 1,
+            'loc': ('x', 'model', 'x', 'model', 'x'),
+            'msg': 'Unable to extract tag using discriminator model_x_discriminator()',
+            'type': 'union_tag_not_found',
+        }
+    ]
+
+    # Demonstrate that the data is still handled properly when valid:
+    data = {'x': {'x': {'x': 'a'}}}
+    m = DiscriminatedModel.model_validate(data)
+    assert m == DiscriminatedModel(x=DiscriminatedModel(x=DiscriminatedModel(x='a')))
+    assert m.model_dump() == data

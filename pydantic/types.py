@@ -36,6 +36,7 @@ from ._internal import (
     _fields,
     _internal_dataclass,
     _known_annotated_metadata,
+    _typing_extra,
     _utils,
     _validators,
 )
@@ -98,6 +99,7 @@ __all__ = (
     'Base64Str',
     'GetPydanticSchema',
     'StringConstraints',
+    'CallableDiscriminator',
 )
 
 
@@ -1418,3 +1420,61 @@ class GetPydanticSchema:
                 return object.__getattribute__(self, item)
 
     __hash__ = object.__hash__
+
+
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+class CallableDiscriminator:
+    """Provides a way to use a custom callable as the way to extract the value of a union discriminator.
+
+    This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
+    but without needing to have a single shared field across all the union choices. This also makes it
+    possible to handle unions of models and primitive types with discriminated-union-style validation errors.
+    """
+
+    choices: dict[Hashable, Any]  # the values of this dict should be the type annotations from the typing.Union
+    discriminator: Callable[[Any], Hashable]
+
+    def __get_pydantic_core_schema__(
+        self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
+    ) -> CoreSchema:
+        origin = _typing_extra.get_origin(source_type)
+        if not origin or not _typing_extra.origin_is_union(origin):
+            raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
+
+        # self._validate_choices(source_type)
+        original_schema = handler.generate_schema(source_type)
+        if original_schema['type'] != 'union':
+            raise TypeError(f'{type(self).__name__} must be used with a Union type with at least two choices')
+        return self._convert_union_schema(original_schema, handler)
+
+    def _validate_choices(self, source_type: Any) -> None:
+        # TODO: Make this work better with ForwardRef's, or drop it entirely
+        union_items = _typing_extra.get_args(source_type)
+        choices_items = self.choices.values()
+        missing_from_union = [c for c in choices_items if c not in union_items]
+        missing_from_choices = [c for c in union_items if c not in choices_items]
+        if missing_from_union or missing_from_choices:
+            error_message = (
+                f'A {type(self).__name__} must have all choices from the union annotation as values in `choices`.'
+            )
+            if missing_from_union:
+                error_message += f' Missing from type annotation: {missing_from_union}.'
+            if missing_from_choices:
+                error_message += f' Missing from `choices`: {missing_from_choices}.'
+            raise TypeError(error_message)
+
+    def _convert_union_schema(
+        self, original_schema: core_schema.UnionSchema, handler: _annotated_handlers.GetCoreSchemaHandler
+    ) -> core_schema.TaggedUnionSchema:
+        choices = {k: handler.generate_schema(v) for k, v in self.choices.items()}
+        return core_schema.tagged_union_schema(
+            choices,
+            self.discriminator,  # type: ignore  # can be dropped once type hint is Callable[[Any], Hashable]
+            custom_error_type=original_schema.get('custom_error_type'),
+            custom_error_message=original_schema.get('custom_error_message'),
+            custom_error_context=original_schema.get('custom_error_context'),
+            strict=original_schema.get('strict'),
+            ref=original_schema.get('ref'),
+            metadata=original_schema.get('metadata'),
+            serialization=original_schema.get('serialization'),
+        )

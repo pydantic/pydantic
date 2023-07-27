@@ -183,6 +183,7 @@ __all__ = [
     'InstanceOf',
     'WithJsonSchema',
     'GetPydanticSchema',
+    'CallableDiscriminator',
     # type_adapter
     'TypeAdapter',
     # version
