@@ -1306,13 +1306,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#model-fields-and-reserved-arguments" class="md-nav__link">
-    Model fields and reserved arguments
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -2266,13 +2259,6 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#model-fields-and-reserved-arguments" class="md-nav__link">
-    Model fields and reserved arguments
-  </a>
-  
-</li>
-        
       </ul>
     </nav>
   
@@ -2651,18 +2637,6 @@ calling the raw function.</p>
 it never will be.</p>
 <h3 id="return-value">Return value<a class="headerlink" href="#return-value" title="Permanent link">&para;</a></h3>
 <p>The return value of the function may optionally be validated against its return type annotation.</p>
-<h3 id="model-fields-and-reserved-arguments">Model fields and reserved arguments<a class="headerlink" href="#model-fields-and-reserved-arguments" title="Permanent link">&para;</a></h3>
-<p>The following names may not be used by arguments since they can be used internally to store information about
-the function's signature:</p>
-<ul>
-<li><code>v__args</code></li>
-<li><code>v__kwargs</code></li>
-<li><code>v__positional_only</code></li>
-</ul>
-<p>These names (together with <code>"args"</code> and <code>"kwargs"</code>) may or may not (depending on the function's signature) appear as
-fields on the internal Pydantic model accessible via <code>.model</code> thus this model isn't especially useful
-(e.g. for generating a schema) at the moment.</p>
-<p>This should be fixable in future as the way error are raised is changed.</p>
 
 
 

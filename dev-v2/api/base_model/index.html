@@ -5015,8 +5015,8 @@ allow <code>self</code> as a field name.</p>
 
   
   <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_config" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -7559,8 +7559,7 @@ fields.</p>
           <td>
             <div class="doc-md-description">
               <p>Attributes of the new model. They should be passed in the format:
-<code>&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)</code> or <code>&lt;name&gt;=&lt;default value&gt;</code>. For more complex cases, they can be
-passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)</code>.</p>
+<code>&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)</code> or <code>&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)</code>.</p>
             </div>
           </td>
           <td>
@@ -7698,8 +7697,7 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 <span class="normal">1345</span>
 <span class="normal">1346</span>
 <span class="normal">1347</span>
-<span class="normal">1348</span>
-<span class="normal">1349</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1348</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7723,8 +7721,7 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 <span class="sd">        __cls_kwargs__: A dictionary of keyword arguments for class creation.</span>
 <span class="sd">        __slots__: Deprecated. Should not be passed to `create_model`.</span>
 <span class="sd">        **field_definitions: Attributes of the new model. They should be passed in the format:</span>
-<span class="sd">            `&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)` or `&lt;name&gt;=&lt;default value&gt;`. For more complex cases, they can be</span>
-<span class="sd">            passed in the format: `&lt;name&gt;=&lt;Field&gt;` or `&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)`.</span>
+<span class="sd">            `&lt;name&gt;=(&lt;type&gt;, &lt;default value&gt;)` or `&lt;name&gt;=(&lt;type&gt;, &lt;FieldInfo&gt;)`.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The new [model][pydantic.BaseModel].</span>
