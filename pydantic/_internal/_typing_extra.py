@@ -276,7 +276,7 @@ else:
     _make_forward_ref = typing.ForwardRef
 
 
-if sys.version_info >= (3, 10):
+if sys.version_info >= (3, 10, 1):
     get_type_hints = typing.get_type_hints
 
 else:
