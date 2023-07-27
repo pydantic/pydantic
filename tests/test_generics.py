@@ -2536,6 +2536,7 @@ def test_generic_none():
     assert Container[None](value=None).value is None
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not allow ParamSpec in generics')
 def test_paramspec_is_usable():
     # This used to cause a recursion error due to `P in P is True`
     # This test doesn't actually test that ParamSpec works properly for validation or anything.
