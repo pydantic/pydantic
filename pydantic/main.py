@@ -493,9 +493,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        return cls.__pydantic_validator__.validate_python(
-            obj, strict=strict, from_attributes=from_attributes, context=context
-        )
+        kwargs = {'strict': strict, 'from_attributes': from_attributes, 'context': context}
+        if from_attributes and isinstance(obj, BaseModel):
+            kwargs['self_instance'] = obj
+        return cls.__pydantic_validator__.validate_python(obj, **kwargs)
 
     @classmethod
     def model_validate_json(

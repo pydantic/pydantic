@@ -98,6 +98,26 @@ def test_type_alias():
     assert res == [1, '2']
 
 
+def test_validate_missing_value() -> None:
+    class Model(BaseModel):
+        x: int
+
+    validator = TypeAdapter(Model)
+
+    with pytest.raises(ValidationError) as exc_info:
+        validator.validate_python({})
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('x',), 'msg': 'Field required', 'input': {}}
+    ]
+
+    m = Model.model_construct()
+    with pytest.raises(ValidationError) as exc_info:
+        validator.validate_python(m, from_attributes=True)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('x',), 'msg': 'Field required', 'input': m}
+    ]
+
+
 def test_validate_python_strict() -> None:
     class Model(TypedDict):
         x: int

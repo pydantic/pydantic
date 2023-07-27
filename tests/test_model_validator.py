@@ -4,7 +4,33 @@ from typing import Any, Dict, Union, cast
 
 import pytest
 
-from pydantic import BaseModel, ValidationInfo, ValidatorFunctionWrapHandler, model_validator
+from pydantic import BaseModel, ValidationError, ValidationInfo, ValidatorFunctionWrapHandler, model_validator
+
+
+def test_model_instantiate_validate() -> None:
+    class Model(BaseModel):
+        x: str
+
+    with pytest.raises(ValidationError) as exc_info:
+        # Missing required field
+        Model()
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('x',), 'msg': 'Field required', 'input': {}}
+    ]
+
+
+def test_model_construct_validate() -> None:
+    class Model(BaseModel):
+        x: str
+
+    obj = Model.model_construct()
+
+    with pytest.raises(ValidationError) as exc_info:
+        # Missing required field
+        obj.model_validate(obj, from_attributes=True)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('x',), 'msg': 'Field required', 'input': obj}
+    ]
 
 
 def test_model_validator_wrap() -> None:

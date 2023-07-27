@@ -205,7 +205,10 @@ class TypeAdapter(Generic[T]):
         Returns:
             The validated object.
         """
-        return self.validator.validate_python(__object, strict=strict, from_attributes=from_attributes, context=context)
+        kwargs = {'strict': strict, 'from_attributes': from_attributes, 'context': context}
+        if from_attributes and isinstance(__object, BaseModel):
+            kwargs['self_instance'] = __object
+        return self.validator.validate_python(__object, **kwargs)
 
     def validate_json(
         self, __data: str | bytes, *, strict: bool | None = None, context: dict[str, Any] | None = None
