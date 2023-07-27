@@ -9,5 +9,6 @@ The following types are supported by [Pydantic Extra Types]:
 * [Phone Numbers](phone_numbers.md) &mdash; a type that allows you to store phone numbers in your model.
 * [Routing Numbers](routing_numbers.md) &mdash; a type that allows you to store ABA transit routing numbers in your model.
 * [MAC Address](mac_address.md) &mdash; a type that allows you to store MAC addresses in your model.
+* [Coordinate](coordinate.md) &mdash; a type that allows you to store the latitude and longitude in your model.
 
 [Pydantic Extra Types]: https://github.com/pydantic/pydantic-extra-types
