@@ -32,7 +32,7 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated, Literal, OrderedDict, TypeVarTuple, Unpack, get_args
+from typing_extensions import Annotated, Literal, OrderedDict, ParamSpec, TypeVarTuple, Unpack, get_args
 
 from pydantic import (
     BaseModel,
@@ -2534,3 +2534,19 @@ def test_generic_none():
 
     assert Container[type(None)](value=None).value is None
     assert Container[None](value=None).value is None
+
+
+def test_paramspec_is_usable():
+    # This used to cause a recursion error due to `P in P is True`
+    # This test doesn't actually test that ParamSpec works properly for validation or anything.
+
+    P = ParamSpec('P')
+
+    class MyGenericParamSpecClass(Generic[P]):
+        def __init__(self, func: Callable[P, None], *args: P.args, **kwargs: P.kwargs) -> None:
+            super().__init__()
+
+    class ParamSpecGenericModel(BaseModel, Generic[P]):
+        my_generic: MyGenericParamSpecClass[P]
+
+        model_config = dict(arbitrary_types_allowed=True)
