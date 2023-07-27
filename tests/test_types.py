@@ -3210,19 +3210,14 @@ def test_path_validation_fails():
         Model(foo=123)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'is_instance_of',
-            'loc': ('foo', 'json-or-python[json=function-after[path_validator(), str],python=is-instance[Path]]'),
-            'msg': 'Input should be an instance of Path',
-            'input': 123,
-            'ctx': {'class': 'Path'},
-        },
-        {
-            'type': 'string_type',
-            'loc': ('foo', 'function-after[path_validator(), str]'),
-            'msg': 'Input should be a valid string',
-            'input': 123,
-        },
+        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=None)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': None}
     ]
 
 
