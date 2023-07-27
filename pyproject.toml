@@ -56,6 +56,7 @@ features = ["pyo3/extension-module"]
 [tool.ruff]
 line-length = 120
 extend-select = ['Q', 'RUF100', 'C90', 'I']
+extend-ignore = ['E501']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 13 }
 isort = { known-first-party = ['pydantic_core', 'tests'] }

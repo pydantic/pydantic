@@ -198,7 +198,7 @@ def test_unicode_error_input_repr() -> None:
     validator = SchemaValidator(schema)
 
     danger_str = 'ÿ' * 1000
-    expected = "1 validation error for int\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='ÿÿÿÿÿÿÿÿÿÿÿÿ...ÿÿÿÿÿÿÿÿÿÿÿ', input_type=str]"  # noqa: E501
+    expected = "1 validation error for int\n  Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='ÿÿÿÿÿÿÿÿÿÿÿÿ...ÿÿÿÿÿÿÿÿÿÿÿ', input_type=str]"
     with pytest.raises(ValidationError) as exc_info:
         validator.validate_python(danger_str)
     actual = repr(exc_info.value).split('For further information visit ')[0].strip()
