@@ -411,6 +411,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/usage/types/extra_types/coordinate/</loc>
+         <lastmod>2023-07-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/usage/types/extra_types/extra_types/</loc>
          <lastmod>2023-07-27</lastmod>
          <changefreq>daily</changefreq>
