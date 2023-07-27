@@ -210,8 +210,8 @@ def generate_dataclass_signature(cls: type[StandardDataclass]) -> Signature:
                 name = param_default.validation_alias
 
             # Replace the field default
-            default = param_default.default
-            if default is PydanticUndefined:
+            default = param_default
+            if param_default.default is PydanticUndefined:
                 if param_default.default_factory is PydanticUndefined:
                     default = inspect.Signature.empty
                 else:

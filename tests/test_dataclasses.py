@@ -2428,7 +2428,7 @@ def test_metadata():
 
 def test_signature():
     @pydantic.dataclasses.dataclass
-    class Model:
+    class Model1:
         x: int
         y: str = 'y'
         z: float = dataclasses.field(default=1.0)
@@ -2436,8 +2436,8 @@ def test_signature():
         b: float = Field(default=1.0)
         c: float = Field(default_factory=float)
 
-    assert str(inspect.signature(Model)) == (
-        "(x: int, y: str = 'y', z: float = 1.0, a: float = <factory>, b: float = 1.0, c: float = <factory>) -> None"
+    assert str(inspect.signature(Model1)) == (
+        "(x: int, y: str = 'y', z: float = 1.0, a: float = <factory>, b: float = FieldInfo(annotation=float, required=False, default=1.0), c: float = <factory>) -> None"
     )
 
 
