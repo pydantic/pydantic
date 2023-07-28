@@ -1447,7 +1447,11 @@ class CallableDiscriminator:
         # self._validate_choices(source_type)
         original_schema = handler.generate_schema(source_type)
         if original_schema['type'] != 'union':
-            raise TypeError(f'{type(self).__name__} must be used with a Union type with at least two choices')
+            # This likely indicates that the schema was a single-item union that was simplified.
+            # In this case, we do the same thing we do in
+            # `pydantic._internal._discriminated_union._ApplyInferredDiscriminator._apply_to_root`, namely,
+            # package the generated schema back into a single-item union.
+            original_schema = core_schema.union_schema([original_schema])
         return self._convert_union_schema(original_schema, handler)
 
     def _validate_choices(self, source_type: Any) -> None:
