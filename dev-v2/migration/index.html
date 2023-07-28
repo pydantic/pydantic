@@ -711,6 +711,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained types
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2542,6 +2549,13 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained types
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3303,6 +3317,31 @@ which may be installed separately if needed.</p>
 classes using <code>Annotated</code>.</p>
 <p>Inheriting from <code>str</code> had upsides and downsides, and for V2 we decided it would be better to remove this. To use these
 types in APIs which expect <code>str</code> you'll now need to convert them (with <code>str(url)</code>).</p>
+<h3 id="constrained-types">Constrained types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h3>
+<p>The <code>Constrained*</code> classes were <em>removed</em>, and you should replace them by <code>Annotated[&lt;type&gt;, Field(...)]</code>, for example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConstrainedInt</span>
+
+
+<span class="k">class</span> <span class="nc">MyInt</span><span class="p">(</span><span class="n">ConstrainedInt</span><span class="p">):</span>
+    <span class="n">ge</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">MyInt</span>
+</code></pre></div>
+<p>...becomes:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+<span class="n">MyInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)]</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">MyInt</span>
+</code></pre></div>
+<p>Read more about it on the <a href="../usage/types/custom/#composing-types-via-annotated">Composing types via <code>Annotated</code></a> section.</p>
+<p>For <code>ConstrainedStr</code> you can use <a class="autorefs autorefs-internal" href="../api/types/#pydantic.types.StringConstraints"><code>StringConstraints</code></a> instead.</p>
 <h2 id="moved-in-pydantic-v2">Moved in Pydantic V2<a class="headerlink" href="#moved-in-pydantic-v2" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -3457,12 +3496,24 @@ types in APIs which expect <code>str</code> you'll now need to convert them (wit
 <li><code>pydantic.ConstrainedSet</code></li>
 <li><code>pydantic.ConstrainedStr</code></li>
 <li><code>pydantic.JsonWrapper</code></li>
-<li><code>pydantic.NoneBytes</code></li>
-<li><code>pydantic.NoneStr</code></li>
-<li><code>pydantic.NoneStrBytes</code></li>
+<li><code>pydantic.NoneBytes</code><ul>
+<li>This was an alias to <code>None | bytes</code>.</li>
+</ul>
+</li>
+<li><code>pydantic.NoneStr</code><ul>
+<li>This was an alias to <code>None | str</code>.</li>
+</ul>
+</li>
+<li><code>pydantic.NoneStrBytes</code><ul>
+<li>This was an alias to <code>None | str | bytes</code>.</li>
+</ul>
+</li>
 <li><code>pydantic.Protocol</code></li>
 <li><code>pydantic.Required</code></li>
-<li><code>pydantic.StrBytes</code></li>
+<li><code>pydantic.StrBytes</code><ul>
+<li>This was an alias to <code>str | bytes</code>.</li>
+</ul>
+</li>
 <li><code>pydantic.compiled</code></li>
 <li><code>pydantic.config.get_config</code></li>
 <li><code>pydantic.config.inherit_config</code></li>
@@ -3577,15 +3628,6 @@ types in APIs which expect <code>str</code> you'll now need to convert them (wit
 <li><code>pydantic.stricturl</code></li>
 <li><code>pydantic.tools.parse_file_as</code></li>
 <li><code>pydantic.tools.parse_raw_as</code></li>
-<li><code>pydantic.types.ConstrainedBytes</code></li>
-<li><code>pydantic.types.ConstrainedDate</code></li>
-<li><code>pydantic.types.ConstrainedDecimal</code></li>
-<li><code>pydantic.types.ConstrainedFloat</code></li>
-<li><code>pydantic.types.ConstrainedFrozenSet</code></li>
-<li><code>pydantic.types.ConstrainedInt</code></li>
-<li><code>pydantic.types.ConstrainedList</code></li>
-<li><code>pydantic.types.ConstrainedSet</code></li>
-<li><code>pydantic.types.ConstrainedStr</code></li>
 <li><code>pydantic.types.JsonWrapper</code></li>
 <li><code>pydantic.types.NoneBytes</code></li>
 <li><code>pydantic.types.NoneStr</code></li>
