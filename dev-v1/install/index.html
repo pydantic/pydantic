@@ -814,14 +814,14 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
   <h1>Install</h1>
 
 <p>Installation is as simple as:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pydantic
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;pydantic&lt;2&#39;</span>
 </code></pre></div>
 <p><em>pydantic</em> has no required dependencies except Python 3.7, 3.8, 3.9, 3.10 or 3.11 and
 <a href="https://pypi.org/project/typing-extensions/"><code>typing-extensions</code></a>.
 If you've got Python 3.7+ and <code>pip</code> installed, you're good to go.</p>
 <p>Pydantic is also available on <a href="https://www.anaconda.com">conda</a> under the <a href="https://conda-forge.org">conda-forge</a>
 channel:</p>
-<div class="highlight"><pre><span></span><code>conda<span class="w"> </span>install<span class="w"> </span>pydantic<span class="w"> </span>-c<span class="w"> </span>conda-forge
+<div class="highlight"><pre><span></span><code>conda<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;pydantic&lt;2&#39;</span><span class="w"> </span>-c<span class="w"> </span>conda-forge
 </code></pre></div>
 <h2 id="compiled-with-cython">Compiled with Cython<a class="headerlink" href="#compiled-with-cython" title="Permanent link">&para;</a></h2>
 <p><em>pydantic</em> can optionally be compiled with <a href="https://cython.org/">cython</a> which should give a 30-50% performance improvement. </p>
@@ -833,7 +833,7 @@ channel:</p>
 </code></pre></div>
 <h3 id="performance-vs-package-size-trade-off">Performance vs package size trade-off<a class="headerlink" href="#performance-vs-package-size-trade-off" title="Permanent link">&para;</a></h3>
 <p>Compiled binaries can increase the size of your Python environment. If for some reason you want to reduce the size of your <em>pydantic</em> installation you can avoid installing any binaries using the <a href="https://pip.pypa.io/en/stable/cli/pip_install/#install-no-binary"><code>pip --no-binary</code></a> option. Make sure <code>Cython</code> is not in your environment, or that you have the <code>SKIP_CYTHON</code> environment variable set to avoid re-compiling <em>pydantic</em> libraries:</p>
-<div class="highlight"><pre><span></span><code><span class="nv">SKIP_CYTHON</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--no-binary<span class="w"> </span>pydantic<span class="w"> </span>pydantic
+<div class="highlight"><pre><span></span><code><span class="nv">SKIP_CYTHON</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--no-binary<span class="w"> </span>pydantic<span class="w"> </span>pydantic&lt;<span class="m">2</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -844,7 +844,7 @@ the next <code>pydantic</code> tells <code>pip</code> which package to install.<
 <div class="highlight"><pre><span></span><code><span class="nv">CFLAGS</span><span class="o">=</span><span class="s2">&quot;-Os -g0 -s&quot;</span><span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--no-binary<span class="w"> </span>pydantic<span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--global-option<span class="o">=</span>build_ext<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>pydantic
+<span class="w">  </span>pydantic&lt;<span class="m">2</span>
 </code></pre></div></p>
 <h2 id="optional-dependencies">Optional dependencies<a class="headerlink" href="#optional-dependencies" title="Permanent link">&para;</a></h2>
 <p><em>pydantic</em> has two optional dependencies:</p>
@@ -854,18 +854,18 @@ the next <code>pydantic</code> tells <code>pip</code> which package to install.<
   <a href="https://pypi.org/project/python-dotenv">python-dotenv</a></li>
 </ul>
 <p>To install these along with <em>pydantic</em>:
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pydantic<span class="o">[</span>email<span class="o">]</span>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;pydantic[email]&lt;2&#39;</span>
 <span class="c1"># or</span>
-pip<span class="w"> </span>install<span class="w"> </span>pydantic<span class="o">[</span>dotenv<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;pydantic[dotenv]&lt;2&#39;</span>
 <span class="c1"># or just</span>
-pip<span class="w"> </span>install<span class="w"> </span>pydantic<span class="o">[</span>email,dotenv<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s1">&#39;pydantic[email,dotenv]&lt;2&#39;</span>
 </code></pre></div></p>
 <p>Of course, you can also install these requirements manually with <code>pip install email-validator</code> and/or <code>pip install python-dotenv</code>.</p>
 <h2 id="install-from-repository">Install from repository<a class="headerlink" href="#install-from-repository" title="Permanent link">&para;</a></h2>
 <p>And if you prefer to install <em>pydantic</em> directly from the repository:
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>git+git://github.com/pydantic/pydantic@main#egg<span class="o">=</span>pydantic
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/pydantic/pydantic@1.10.X-fixes#egg<span class="o">=</span>pydantic
 <span class="c1"># or with extras</span>
-pip<span class="w"> </span>install<span class="w"> </span>git+git://github.com/pydantic/pydantic@main#egg<span class="o">=</span>pydantic<span class="o">[</span>email,dotenv<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span>git+https<span class="p">;</span>://github.com/pydantic/pydantic@1.10.X-fixes#egg<span class="o">=</span>pydantic<span class="o">[</span>email,dotenv<span class="o">]</span>
 </code></pre></div></p>
 
 
