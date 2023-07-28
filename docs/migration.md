@@ -749,6 +749,40 @@ classes using `Annotated`.
 Inheriting from `str` had upsides and downsides, and for V2 we decided it would be better to remove this. To use these
 types in APIs which expect `str` you'll now need to convert them (with `str(url)`).
 
+### Constrained types
+
+The `Constrained*` classes were _removed_, and you should replace them by `Annotated[<type>, Field(...)]`, for example:
+
+```py test="skip"
+from pydantic import BaseModel, ConstrainedInt
+
+
+class MyInt(ConstrainedInt):
+    ge = 0
+
+
+class Model(BaseModel):
+    x: MyInt
+```
+
+...becomes:
+
+```py
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field
+
+MyInt = Annotated[int, Field(ge=0)]
+
+
+class Model(BaseModel):
+    x: MyInt
+```
+
+Read more about it on the [Composing types via `Annotated`](../usage/types/custom/#composing-types-via-annotated) section.
+
+For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.
+
 ## Moved in Pydantic V2
 
 | Pydantic V1 | Pydantic V2 |
@@ -802,11 +836,15 @@ types in APIs which expect `str` you'll now need to convert them (with `str(url)
 - `pydantic.ConstrainedStr`
 - `pydantic.JsonWrapper`
 - `pydantic.NoneBytes`
+    - This was an alias to `None | bytes`.
 - `pydantic.NoneStr`
+    - This was an alias to `None | str`.
 - `pydantic.NoneStrBytes`
+    - This was an alias to `None | str | bytes`.
 - `pydantic.Protocol`
 - `pydantic.Required`
 - `pydantic.StrBytes`
+    - This was an alias to `str | bytes`.
 - `pydantic.compiled`
 - `pydantic.config.get_config`
 - `pydantic.config.inherit_config`
@@ -921,15 +959,6 @@ types in APIs which expect `str` you'll now need to convert them (with `str(url)
 - `pydantic.stricturl`
 - `pydantic.tools.parse_file_as`
 - `pydantic.tools.parse_raw_as`
-- `pydantic.types.ConstrainedBytes`
-- `pydantic.types.ConstrainedDate`
-- `pydantic.types.ConstrainedDecimal`
-- `pydantic.types.ConstrainedFloat`
-- `pydantic.types.ConstrainedFrozenSet`
-- `pydantic.types.ConstrainedInt`
-- `pydantic.types.ConstrainedList`
-- `pydantic.types.ConstrainedSet`
-- `pydantic.types.ConstrainedStr`
 - `pydantic.types.JsonWrapper`
 - `pydantic.types.NoneBytes`
 - `pydantic.types.NoneStr`
