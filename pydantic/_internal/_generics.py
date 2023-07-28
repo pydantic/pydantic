@@ -359,7 +359,7 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
-    if isinstance(type_, (List, list)):
+    if isinstance(type_, (List, list)) and not isinstance(type_, typing_extensions.ParamSpec):
         if any(has_instance_in_type(element, isinstance_target) for element in type_):
             return True
 
