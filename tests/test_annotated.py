@@ -287,3 +287,14 @@ def test_merge_field_infos_model() -> None:
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_model_dump_doesnt_dump_annotated_dunder():
+    class Model(BaseModel):
+        one: int
+
+    AnnotatedModel = Annotated[Model, ...]
+
+    # In Pydantic v1, `AnnotatedModel.dict()` would have returned
+    # `{'one': 1, '__orig_class__': typing.Annotated[...]}`
+    assert AnnotatedModel(one=1).model_dump() == {'one': 1}
