@@ -1,7 +1,7 @@
 Installation is as simple as:
 
 ```bash
-pip install pydantic
+pip install 'pydantic<2'
 ```
 
 *pydantic* has no required dependencies except Python 3.7, 3.8, 3.9, 3.10 or 3.11 and
@@ -12,7 +12,7 @@ Pydantic is also available on [conda](https://www.anaconda.com) under the [conda
 channel:
 
 ```bash
-conda install pydantic -c conda-forge
+conda install 'pydantic<2' -c conda-forge
 ```
 
 ## Compiled with Cython
@@ -36,7 +36,7 @@ print('compiled:', pydantic.compiled)
 Compiled binaries can increase the size of your Python environment. If for some reason you want to reduce the size of your *pydantic* installation you can avoid installing any binaries using the [`pip --no-binary`](https://pip.pypa.io/en/stable/cli/pip_install/#install-no-binary) option. Make sure `Cython` is not in your environment, or that you have the `SKIP_CYTHON` environment variable set to avoid re-compiling *pydantic* libraries:
 
 ```bash
-SKIP_CYTHON=1 pip install --no-binary pydantic pydantic
+SKIP_CYTHON=1 pip install --no-binary pydantic pydantic<2
 ```
 !!! note
     `pydantic` is repeated here intentionally, `--no-binary pydantic` tells `pip` you want no binaries for pydantic,
@@ -47,7 +47,7 @@ Alternatively, you can re-compile *pydantic* with custom [build options](https:/
 CFLAGS="-Os -g0 -s" pip install \
   --no-binary pydantic \
   --global-option=build_ext \
-  pydantic
+  pydantic<2
 ```
 
 ## Optional dependencies
@@ -60,11 +60,11 @@ CFLAGS="-Os -g0 -s" pip install \
 
 To install these along with *pydantic*:
 ```bash
-pip install pydantic[email]
+pip install 'pydantic[email]<2'
 # or
-pip install pydantic[dotenv]
+pip install 'pydantic[dotenv]<2'
 # or just
-pip install pydantic[email,dotenv]
+pip install 'pydantic[email,dotenv]<2'
 ```
 
 Of course, you can also install these requirements manually with `pip install email-validator` and/or `pip install python-dotenv`.
