@@ -768,6 +768,8 @@ class Model(BaseModel):
 ...becomes:
 
 ```py
+from typing_extensions import Annotated
+
 from pydantic import BaseModel, Field
 
 
