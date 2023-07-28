@@ -753,7 +753,7 @@ types in APIs which expect `str` you'll now need to convert them (with `str(url)
 
 The `Constrained*` classes were _removed_, and you should replace them by `Annotated[<type>, Field(...)]`, for example:
 
-```py
+```py test="skip"
 from pydantic import BaseModel, ConstrainedInt
 
 
