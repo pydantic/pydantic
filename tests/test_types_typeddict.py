@@ -710,18 +710,18 @@ def test_recursive_generic_typeddict_in_function_3():
     ]
 
 
-@pytest.mark.xfail(reason='Needs https://github.com/pydantic/pydantic/pull/5944')
 def test_typeddict_alias_generator(TypedDict):
     def alias_generator(name: str) -> str:
         return 'alias_' + name
 
     class MyDict(TypedDict):
+        __pydantic_config__ = ConfigDict(alias_generator=alias_generator, extra='forbid')
         foo: str
 
     class Model(BaseModel):
         d: MyDict
 
-    ta = TypeAdapter(MyDict, config=ConfigDict(alias_generator=alias_generator))
+    ta = TypeAdapter(MyDict)
     model = ta.validate_python({'alias_foo': 'bar'})
 
     assert model['foo'] == 'bar'
