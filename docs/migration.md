@@ -234,9 +234,10 @@ See [Model Config](usage/model_config.md) for more details.
         `config` arguments to the signature of validator functions. If you need access to these, you'll need
         to migrate to `@field_validator` — see the [next section](#changes-to-validators-allowed-signatures)
         for more details.
-    * If you use the `always=True` keyword argument to a validator function, note that standard validators
-        for the annotated type will _also_ be applied even to defaults, not just the custom validators. For
-        example, despite the fact that the validator below will never error, the following code raises a `ValidationError`:
+
+    * If you use the `always=True` keyword argument to a validator function, it's important to note that standard validators
+        for the annotated type will be applied to _both_ defaults and custom validators. For
+        example, despite the fact that the validator below will never produce an error, the following code raises a `ValidationError`:
 
 ```python test="skip"
 from pydantic import BaseModel, validator
