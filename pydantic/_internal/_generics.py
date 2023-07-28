@@ -15,7 +15,7 @@ import typing_extensions
 from ._core_utils import get_type_ref
 from ._forward_ref import PydanticRecursiveRef
 from ._typing_extra import TypeVarType, typing_base
-from ._utils import all_identical, is_basemodel
+from ._utils import all_identical, is_model_class
 
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias  # type: ignore[attr-defined]
@@ -197,7 +197,7 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
     """
     if isinstance(v, TypeVar):
         yield v
-    elif is_basemodel(v):
+    elif is_model_class(v):
         yield from v.__pydantic_generic_metadata__['parameters']
     elif isinstance(v, (DictValues, list)):
         for var in v:
@@ -316,7 +316,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     # We handle pydantic generic models separately as they don't have the same
     # semantics as "typing" classes or generic aliases
 
-    if not origin_type and is_basemodel(type_):
+    if not origin_type and is_model_class(type_):
         parameters = type_.__pydantic_generic_metadata__['parameters']
         if not parameters:
             return type_

@@ -79,17 +79,13 @@ def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:  # pragma: no cov
         raise  # pragma: no cover
 
 
-def is_basemodel(cls: Any) -> TypeGuard[type[BaseModel]]:
-    """We can remove this function and go back to using lenient_issubclass, but this is nice because it
-    ensures that we get proper type-checking, which lenient_issubclass doesn't provide.
-
-    Would be nice if there was a lenient_issubclass-equivalent in typing_extensions, or otherwise
-    a way to define such a function that would support proper type-checking; maybe we should bring it up
-    at the typing summit..
+def is_model_class(cls: Any) -> TypeGuard[type[BaseModel]]:
+    """Returns true if cls is a _proper_ subclass of BaseModel, and provides proper type-checking,
+    unlike raw calls to lenient_issubclass.
     """
     from ..main import BaseModel
 
-    return lenient_issubclass(cls, BaseModel)
+    return lenient_issubclass(cls, BaseModel) and cls is not BaseModel
 
 
 def is_valid_identifier(identifier: str) -> bool:

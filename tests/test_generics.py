@@ -2551,3 +2551,13 @@ def test_paramspec_is_usable():
         my_generic: MyGenericParamSpecClass[P]
 
         model_config = dict(arbitrary_types_allowed=True)
+
+
+def test_parametrize_with_basemodel():
+    T = TypeVar('T')
+
+    class SimpleGenericModel(BaseModel, Generic[T]):
+        pass
+
+    class Concrete(SimpleGenericModel[BaseModel]):
+        pass
