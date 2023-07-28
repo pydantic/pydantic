@@ -612,3 +612,13 @@ help_result_string = pydoc.render_doc(RootModel)
         )
 
     assert 'class RootModel' in module.help_result_string
+
+
+def test_copy_preserves_equality():
+    model = RootModel()
+
+    copied = model.__copy__()
+    assert model == copied
+
+    deepcopied = model.__deepcopy__()
+    assert model == deepcopied

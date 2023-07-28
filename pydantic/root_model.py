@@ -3,11 +3,12 @@
 from __future__ import annotations as _annotations
 
 import typing
+from copy import copy, deepcopy
 
 from pydantic_core import PydanticUndefined
 
 from ._internal import _repr
-from .main import BaseModel
+from .main import BaseModel, _object_setattr
 
 if typing.TYPE_CHECKING:
     from typing import Any
@@ -67,6 +68,34 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
             NotImplemented: If the model is not a subclass of `RootModel`.
         """
         return super().model_construct(root=root, _fields_set=_fields_set)
+
+    def __getstate__(self) -> dict[Any, Any]:
+        return {
+            '__dict__': self.__dict__,
+            '__pydantic_fields_set__': self.__pydantic_fields_set__,
+        }
+
+    def __setstate__(self, state: dict[Any, Any]) -> None:
+        _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
+        _object_setattr(self, '__dict__', state['__dict__'])
+
+    def __copy__(self: Model) -> Model:
+        """Returns a shallow copy of the model."""
+        cls = type(self)
+        m = cls.__new__(cls)
+        _object_setattr(m, '__dict__', copy(self.__dict__))
+        _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
+        return m
+
+    def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
+        """Returns a deep copy of the model."""
+        cls = type(self)
+        m = cls.__new__(cls)
+        _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
+        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
+        # and attempting a deepcopy would be marginally slower.
+        _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
+        return m
 
     if typing.TYPE_CHECKING:
 
