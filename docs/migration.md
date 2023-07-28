@@ -771,8 +771,10 @@ class Model(BaseModel):
 from pydantic import BaseModel, Field
 
 
+MyInt = Annotated[int, Field(ge=0)]
+
 class Model(BaseModel):
-    x: Annotated[int, Field(ge=0)]
+    x: MyInt
 ```
 
 Read more about it on the [Composing types via `Annotated`](../usage/types/custom/#composing-types-via-annotated) section.
