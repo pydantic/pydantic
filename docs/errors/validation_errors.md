@@ -778,8 +778,8 @@ except ValidationError as exc:
 
 ## `int_parsing_size`
 
-This error is raised when attempting to parse a python value from a string outside the maximum range of a Python `int`,
-or when trying to parse an integer from JSON that is outside the valid range of a 64 bit integer:
+This error is raised when attempting to parse a python or JSON value from a string outside the maximum range that Python
+`str` to `int` parsing permits:
 
 ```py
 import json
@@ -802,9 +802,8 @@ except ValidationError as exc:
     #> 'int_parsing_size'
 
 # from JSON
-i64_max = 9_223_372_036_854_775_807
 try:
-    Model.model_validate_json(json.dumps({'x': -i64_max * 2}))
+    Model.model_validate_json(json.dumps({'x': too_long}))
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'int_parsing_size'
