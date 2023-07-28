@@ -3998,8 +3998,8 @@ any of the fields:</p>
     <span class="c1">#&gt; &#39;int_parsing&#39;</span>
 </code></pre></div>
 <h2 id="int_parsing_size"><code>int_parsing_size</code><a class="headerlink" href="#int_parsing_size" title="Permanent link">&para;</a></h2>
-<p>This error is raised when attempting to parse a python value from a string outside the maximum range of a Python <code>int</code>,
-or when trying to parse an integer from JSON that is outside the valid range of a 64 bit integer:</p>
+<p>This error is raised when attempting to parse a python or JSON value from a string outside the maximum range that Python
+<code>str</code> to <code>int</code> parsing permits:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4020,9 +4020,8 @@ or when trying to parse an integer from JSON that is outside the valid range of 
     <span class="c1">#&gt; &#39;int_parsing_size&#39;</span>
 
 <span class="c1"># from JSON</span>
-<span class="n">i64_max</span> <span class="o">=</span> <span class="mi">9_223_372_036_854_775_807</span>
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="o">-</span><span class="n">i64_max</span> <span class="o">*</span> <span class="mi">2</span><span class="p">}))</span>
+    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">too_long</span><span class="p">}))</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]))</span>
     <span class="c1">#&gt; &#39;int_parsing_size&#39;</span>
