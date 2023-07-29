@@ -3893,7 +3893,6 @@ def test_discriminated_annotated_union_literal_enum():
     }
 
 
-@pytest.mark.xfail(reason='json schema generation for tagged unions is fundamentally incompatible with references')
 def test_alias_same():
     class Cat(BaseModel):
         pet_type: Literal['cat'] = Field(alias='typeOfPet')
@@ -3934,7 +3933,7 @@ def test_alias_same():
             'pet': {
                 'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
                 'title': 'Pet',
-                'discriminator': 'something',
+                'discriminator': {'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}, 'propertyName': 'typeOfPet'},
             },
         },
         'required': ['pet', 'number'],
