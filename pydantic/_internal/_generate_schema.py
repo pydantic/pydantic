@@ -1094,6 +1094,8 @@ class GenerateSchema:
                 )
             else:
                 return self._type_schema()
+        elif issubclass(type(type_param), typing._GenericAlias):  # type: ignore
+            return self._type_schema()
         else:
             return core_schema.is_subclass_schema(type_param)
 
