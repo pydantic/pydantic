@@ -28,6 +28,7 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
@@ -38,14 +39,13 @@ from pydantic import (
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
+    StringConstraints,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     constr,
     field_validator,
 )
-from pydantic.functional_validators import AfterValidator
-from pydantic.type_adapter import TypeAdapter
-from pydantic.types import StringConstraints
 
 
 def test_success():
@@ -2819,7 +2819,7 @@ def test_schema_generator_customize_type_constraints() -> None:
     class Model(BaseModel):
         x: Annotated[str, Field(pattern='^\\d+$')]
         y: Annotated[float, Field(gt=0)]
-        z: Annotated[list[int], Field(min_length=1)]
+        z: Annotated[List[int], Field(min_length=1)]
         model_config = ConfigDict(schema_generator=LaxStrGenerator)
 
     # insert_assert(Model(x='123', y=1, z=[-1]).model_dump())
