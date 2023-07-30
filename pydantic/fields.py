@@ -701,6 +701,9 @@ def Field(  # noqa: C901
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (`int`, `float`, `Decimal`) and some apply only to `str`.
 
+    Note:
+        - Any `_Unset` objects will be replaced by the corresponding value defined in the `_DefaultValues` dictionary. If a key for the `_Unset` object is not found in the `_DefaultValues` dictionary, it will default to `None`
+
     Args:
         default: Default value if the field is not set.
         default_factory: A callable to generate the default value, such as :func:`~datetime.utcnow`.
@@ -717,7 +720,7 @@ def Field(  # noqa: C901
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Any additional JSON schema data for the schema property.
         frozen: Whether the field is frozen.
-        validate_default: Run validation that isn't only checking existence of defaults. `True` by default.
+        validate_default: Run validation that isn't only checking existence of defaults. This can be set to `True` or `False`. If not set, it defaults to `None`.
         repr: A boolean indicating whether to include the field in the `__repr__` output.
         init_var: Whether the field should be included in the constructor of the dataclass.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
