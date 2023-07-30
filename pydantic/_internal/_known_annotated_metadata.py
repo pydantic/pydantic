@@ -73,8 +73,8 @@ for constraint in TIMEDELTA_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('timedelta',))
 for constraint in TIME_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('time',))
-for schema_type in (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, NUMERIC_SCHEMA_TYPES):
-    CONSTRAINTS_TO_ALLOWED_SCHEMAS['strict'].update(schema_type)
+for schema_type in (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, *NUMERIC_SCHEMA_TYPES, 'typed-dict', 'model'):
+    CONSTRAINTS_TO_ALLOWED_SCHEMAS['strict'].add(schema_type)
 for constraint in URL_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('url', 'multi-host-url'))
 for constraint in BOOL_CONSTRAINTS:
@@ -317,7 +317,9 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         # But it seems dangerous!
         if isinstance(annotation, PydanticGeneralMetadata):
             res.update(annotation.__dict__)
-        elif isinstance(annotation, (at.BaseMetadata, PydanticMetadata)):
+        elif isinstance(annotation, PydanticMetadata):
+            res.update(dataclasses.asdict(annotation))  # type: ignore[call-overload]
+        elif isinstance(annotation, (at.MinLen, at.MaxLen, at.Gt, at.Ge, at.Lt, at.Le, at.MultipleOf)):
             res.update(dataclasses.asdict(annotation))  # type: ignore[call-overload]
         elif isinstance(annotation, type) and issubclass(annotation, PydanticMetadata):
             # also support PydanticMetadata classes being used without initialisation,

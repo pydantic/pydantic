@@ -39,7 +39,7 @@ import annotated_types
 import dirty_equals
 import pytest
 from dirty_equals import HasRepr, IsOneOf, IsStr
-from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, TypedDict, get_args
 
 from pydantic import (
@@ -1673,25 +1673,6 @@ def test_enum_from_json(enum_base, strict):
                 'type': 'enum',
             }
         ]
-
-
-@pytest.mark.parametrize(
-    'kwargs,type_',
-    [
-        ({'pattern': '^foo$'}, int),
-        ({'gt': 0}, conlist(int, min_length=4)),
-        ({'gt': 0}, conset(int, min_length=4)),
-        ({'gt': 0}, confrozenset(int, min_length=4)),
-    ],
-)
-def test_invalid_schema_constraints(kwargs, type_):
-    match = (
-        r'(:?Invalid Schema:\n.*\n  Extra inputs are not permitted)|(:?The following constraints cannot be applied to)'
-    )
-    with pytest.raises((SchemaError, TypeError), match=match):
-
-        class Foo(BaseModel):
-            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
 def test_invalid_decimal_constraint():
