@@ -238,6 +238,10 @@ See [Model Config](usage/model_config.md) for more details.
         for the annotated type will _also_ be applied even to defaults, not just the custom validators. For
         example, despite the fact that the validator below will never error, the following code raises a `ValidationError`:
 
+!!! note
+    To avoid this, you can use the `validate_default` argument in the `Field` function. When set to `True`, it mimics the behavior of `always=True` in pydantic v1. However, the new way of using `validate_default` is encouraged as it provides more flexibility and control.
+
+
 ```python test="skip"
 from pydantic import BaseModel, validator
 
