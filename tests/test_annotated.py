@@ -6,7 +6,7 @@ from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
 from pydantic.errors import PydanticSchemaGenerationError
 
 NO_VALUE = object()
@@ -266,11 +266,29 @@ def test_merge_field_infos_type_adapter() -> None:
         ]
     )
 
-    # insert_assert(ta.core_schema)
-    assert ta.core_schema == {'type': 'default', 'schema': {'type': 'int', 'gt': 1, 'lt': 100}, 'default': 3}
+    default = ta.get_default_value()
+    assert default is not None
+    assert default.value == 3
+
+    # insert_assert(ta.validate_python(2))
+    assert ta.validate_python(2) == 2
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(1)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'greater_than', 'loc': (), 'msg': 'Input should be greater than 1', 'input': 1, 'ctx': {'gt': 1}}
+    ]
 
     # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {'default': 3, 'exclusiveMaximum': 100, 'exclusiveMinimum': 1, 'type': 'integer'}
+    assert ta.json_schema() == {
+        'default': 3,
+        'description': 'abc',
+        'exclusiveMaximum': 100,
+        'exclusiveMinimum': 1,
+        'type': 'integer',
+    }
 
 
 def test_merge_field_infos_model() -> None:

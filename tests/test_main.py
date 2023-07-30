@@ -43,6 +43,7 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic.functional_validators import AfterValidator
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import StringConstraints
 
@@ -2853,15 +2854,23 @@ def test_schema_generator_customize_type_constraints() -> None:
     ]
 
 
-@pytest.mark.xfail(reason='Order of constraints is not preserved')
 def test_schema_generator_customize_type_constraints_order() -> None:
     class Model(BaseModel):
         # whitespace will be stripped first, then max length will be checked, should pass on ' 1 '
-        x: Annotated[str, StringConstraints(strip_whitespace=True), StringConstraints(max_length=1)]
+        x: Annotated[str, AfterValidator(lambda x: x.strip()), StringConstraints(max_length=1)]
         # max length will be checked first, then whitespace will be stripped, should fail on ' 1 '
-        y: Annotated[str, StringConstraints(max_length=1), StringConstraints(strip_whitespace=True)]
+        y: Annotated[str, StringConstraints(max_length=1), AfterValidator(lambda x: x.strip())]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x=' 1 ', y=' 1 ')
 
-    assert exc_info.value.errors(include_url=False) == []  # TODO: add errors when fixing
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'string_too_long',
+            'loc': ('y',),
+            'msg': 'String should have at most 1 characters',
+            'input': ' 1 ',
+            'ctx': {'max_length': 1},
+        }
+    ]
