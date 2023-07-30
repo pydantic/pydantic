@@ -896,7 +896,7 @@ def test_serialize_as_any() -> None:
         password: SecretStr
 
     class OuterModel(BaseModel):
-        maybe_as_any: Optional[SerializeAsAny[User]]
+        maybe_as_any: Optional[SerializeAsAny[User]] = None
         as_any: SerializeAsAny[User]
         without: User
 
