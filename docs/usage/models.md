@@ -1,7 +1,7 @@
 ??? api "API Documentation"
     [`pydantic.main.BaseModel`][pydantic.main.BaseModel]<br>
 
-One of the primary way of defining schema in Pydantic is via models. Models are simply classes which inherit from
+One of the primary ways of defining schema in Pydantic is via models. Models are simply classes which inherit from
 [`pydantic.BaseModel`][pydantic.main.BaseModel] and define fields as annotated attributes.
 
 You can think of models as similar to structs in languages like C, or as the requirements of a single endpoint
