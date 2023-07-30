@@ -6,6 +6,7 @@ from typing_extensions import Annotated
 
 from pydantic import (
     AmqpDsn,
+    AnyHttpUrl,
     AnyUrl,
     BaseModel,
     CockroachDsn,
@@ -820,3 +821,17 @@ def test_name_email():
     assert str(Model(v='foo bar  <foobaR@example.com>').v) == 'foo bar <foobaR@example.com>'
     assert NameEmail('foo bar', 'foobaR@example.com') == NameEmail('foo bar', 'foobaR@example.com')
     assert NameEmail('foo bar', 'foobaR@example.com') != NameEmail('foo bar', 'different@example.com')
+
+
+def test_build():
+    AnyHttpUrl.build(scheme='https', host='example.com', port=1234, path='/foo')
+    HttpUrl.build(scheme='https', host='example.com', port=1234, path='/foo')
+    FileUrl.build(scheme='file', host='', path='/foo')
+    PostgresDsn.build(scheme='postgres', username='user', password='password', host='localhost', port=5432, path='/db')
+    CockroachDsn.build(scheme='cockroachdb', username='user', password='password', host='localhost', port=5432)
+    AmqpDsn.build(scheme='amqp', username='user', password='password', host='localhost', port=5672, path='/db')
+    RedisDsn.build(scheme='redis', username='user', password='password', host='localhost', port=6379, path='/db')
+    # MongoDsn.build(scheme='mongodb', username='user', password='password', host='localhost', port=27017, path='/db')
+    KafkaDsn.build(scheme='kafka', username='user', password='password', host='localhost', port=9092, path='/db')
+    MySQLDsn.build(scheme='mysql', username='user', password='password', host='localhost', port=3306, path='/db')
+    MariaDBDsn.build(scheme='mariadb', username='user', password='password', host='localhost', port=3306, path='/db')
