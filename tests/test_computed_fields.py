@@ -15,6 +15,7 @@ from pydantic import (
     TypeAdapter,
     computed_field,
     dataclasses,
+    field_serializer,
     field_validator,
 )
 from pydantic.alias_generators import to_camel
@@ -119,14 +120,23 @@ def test_computed_fields_set():
         def area(self) -> float:
             return self.side**2
 
+        @computed_field
+        @property
+        def area_string(self) -> str:
+            return f'{self.area} square units'
+
+        @field_serializer('area_string')
+        def serialize_area_string(self, area_string):
+            return area_string.upper()
+
         @area.setter
         def area(self, new_area: int):
             self.side = new_area**0.5
 
     s = Square(side=10)
-    assert s.model_dump() == {'side': 10.0, 'area': 100.0}
+    assert s.model_dump() == {'side': 10.0, 'area': 100.0, 'area_string': '100.0 SQUARE UNITS'}
     s.area = 64
-    assert s.model_dump() == {'side': 8.0, 'area': 64.0}
+    assert s.model_dump() == {'side': 8.0, 'area': 64.0, 'area_string': '64.0 SQUARE UNITS'}
 
 
 def test_computed_fields_del():

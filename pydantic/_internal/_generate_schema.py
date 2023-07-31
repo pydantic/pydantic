@@ -464,13 +464,14 @@ class GenerateSchema:
 
             fields = cls.model_fields
             decorators = cls.__pydantic_decorators__
+            computed_fields = decorators.computed_fields
             check_decorator_fields_exist(
                 chain(
                     decorators.field_validators.values(),
                     decorators.field_serializers.values(),
                     decorators.validators.values(),
                 ),
-                fields.keys(),
+                {*fields.keys(), *computed_fields.keys()},
             )
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
             core_config = config_wrapper.core_config(cls)
@@ -515,11 +516,13 @@ class GenerateSchema:
                 else:
                     fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
                         {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
-                        computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                        computed_fields=[
+                            self._computed_field_schema(d, decorators.field_serializers)
+                            for d in computed_fields.values()
+                        ],
                         extra_validator=extra_validator,
                         model_name=cls.__name__,
                     )
-
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values(), None)
                     inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
@@ -1083,7 +1086,10 @@ class GenerateSchema:
 
                 td_schema = core_schema.typed_dict_schema(
                     fields,
-                    computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                    computed_fields=[
+                        self._computed_field_schema(d, decorators.field_serializers)
+                        for d in decorators.computed_fields.values()
+                    ],
                     ref=typed_dict_ref,
                     metadata=metadata,
                     config=core_config,
@@ -1316,7 +1322,10 @@ class GenerateSchema:
                 args_schema = core_schema.dataclass_args_schema(
                     dataclass.__name__,
                     args,
-                    computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                    computed_fields=[
+                        self._computed_field_schema(d, decorators.field_serializers)
+                        for d in decorators.computed_fields.values()
+                    ],
                     collect_init_only=has_post_init,
                 )
 
@@ -1402,7 +1411,11 @@ class GenerateSchema:
         else:
             return core_schema.any_schema()
 
-    def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
+    def _computed_field_schema(
+        self,
+        d: Decorator[ComputedFieldInfo],
+        field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]],
+    ) -> core_schema.ComputedField:
         try:
             return_type = _decorators.get_function_return_type(d.func, d.info.return_type, self._types_namespace)
         except NameError as e:
@@ -1415,7 +1428,10 @@ class GenerateSchema:
             )
 
         return_type_schema = self.generate_schema(return_type)
-
+        # Apply serializers to computed field if there exist
+        return_type_schema = self._apply_field_serializers(
+            return_type_schema, filter_field_decorator_info_by_field(field_serializers.values(), d.cls_var_name)
+        )
         # Handle alias_generator using similar logic to that from
         # pydantic._internal._generate_schema.GenerateSchema._common_field_schema,
         # with field_info -> d.info and name -> d.cls_var_name
