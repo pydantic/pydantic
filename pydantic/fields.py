@@ -340,10 +340,8 @@ class FieldInfo(_repr.Representation):
                 init_var = True
                 annotation = annotation.type
             pydantic_field = cls._from_dataclass_field(default)
-            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
-            pydantic_field.metadata += annotation_metadata
             pydantic_field = pydantic_field.merge_field_infos(
-                *[x for x in annotation_metadata if isinstance(x, cls)],
+                *[x for x in pydantic_field.metadata if isinstance(x, cls)],
                 pydantic_field,
                 annotation=pydantic_field.annotation,
             )
