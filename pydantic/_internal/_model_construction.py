@@ -7,7 +7,7 @@ import weakref
 from abc import ABCMeta
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable, Generic, Mapping
+from typing import Any, Callable, ClassVar, Generic, Mapping
 
 from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
 from typing_extensions import dataclass_transform, deprecated
@@ -32,6 +32,7 @@ if typing.TYPE_CHECKING:
     from inspect import Signature
 
     from ..main import BaseModel
+    from . import _decorators
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -65,6 +66,8 @@ class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
+    __pydantic_decorators__: ClassVar[_decorators.DecoratorInfos]
+
     def __new__(
         mcs,
         cls_name: str,
@@ -237,6 +240,15 @@ class ModelMetaclass(ABCMeta):
     def __fields__(self) -> dict[str, FieldInfo]:
         warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
         return self.model_fields  # type: ignore
+
+    @property
+    def model_computed_fields(cls) -> dict[str, ComputedFieldInfo]:  # type: ignore
+        """Get the computed fields of this model instance.
+
+        Returns:
+            A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects.
+        """
+        return {k: v.info for k, v in cls.__pydantic_decorators__.computed_fields.items()}
 
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:

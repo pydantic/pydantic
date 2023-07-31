@@ -462,7 +462,7 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            fields = cls.model_fields
+            fields = {**cls.model_fields, **cls.model_computed_fields}
             decorators = cls.__pydantic_decorators__
             check_decorator_fields_exist(
                 chain(
@@ -499,7 +499,9 @@ class GenerateSchema:
             with self._config_wrapper_stack.push(config_wrapper):
                 self = self._current_generate_schema
                 if cls.__pydantic_root_model__:
-                    root_field = self._common_field_schema('root', fields['root'], decorators)
+                    root_field = fields['root']
+                    assert isinstance(root_field, FieldInfo)
+                    root_field = self._common_field_schema('root', root_field, decorators)
                     inner_schema = root_field['schema']
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
                     model_schema = core_schema.model_schema(
@@ -514,8 +516,14 @@ class GenerateSchema:
                     )
                 else:
                     fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
-                        {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
-                        computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                        {
+                            k: self._generate_md_field_schema(k, v, decorators)
+                            for k, v in fields.items()
+                            if isinstance(v, FieldInfo)
+                        },
+                        computed_fields=[
+                            self._computed_field_schema(k, v, decorators) for k, v in decorators.computed_fields.items()
+                        ],
                         extra_validator=extra_validator,
                         model_name=cls.__name__,
                     )
@@ -1083,7 +1091,9 @@ class GenerateSchema:
 
                 td_schema = core_schema.typed_dict_schema(
                     fields,
-                    computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                    computed_fields=[
+                        self._computed_field_schema(k, v, decorators) for k, v in decorators.computed_fields.items()
+                    ],
                     ref=typed_dict_ref,
                     metadata=metadata,
                     config=core_config,
@@ -1316,7 +1326,9 @@ class GenerateSchema:
                 args_schema = core_schema.dataclass_args_schema(
                     dataclass.__name__,
                     args,
-                    computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                    computed_fields=[
+                        self._computed_field_schema(k, v, decorators) for k, v in decorators.computed_fields.items()
+                    ],
                     collect_init_only=has_post_init,
                 )
 
@@ -1402,7 +1414,9 @@ class GenerateSchema:
         else:
             return core_schema.any_schema()
 
-    def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
+    def _computed_field_schema(
+        self, name: str, d: Decorator[ComputedFieldInfo], decorators: DecoratorInfos
+    ) -> core_schema.ComputedField:
         try:
             return_type = _decorators.get_function_return_type(d.func, d.info.return_type, self._types_namespace)
         except NameError as e:
@@ -1443,6 +1457,9 @@ class GenerateSchema:
             return json_schema
 
         metadata = build_metadata_dict(js_annotation_functions=[set_computed_field_metadata])
+        return_type_schema = self._apply_field_serializers(
+            return_type_schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
+        )
         return core_schema.computed_field(
             d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias, metadata=metadata
         )

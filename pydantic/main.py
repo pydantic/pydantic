@@ -5,7 +5,7 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import pydantic_core
 import typing_extensions
@@ -121,6 +121,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_root_model__: ClassVar[bool]
         __pydantic_serializer__: ClassVar[SchemaSerializer]
         __pydantic_validator__: ClassVar[SchemaValidator]
+        model_computed_fields: ClassVar[dict[str, ComputedFieldInfo]]
 
         # Instance attributes
         # Note: we use the non-existent kwarg `init=False` in pydantic.fields.Field below so that @dataclass_transform
@@ -161,14 +162,19 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True  # type: ignore
 
-    @property
-    def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
-        """Get the computed fields of this model instance.
+    if not TYPE_CHECKING:
 
-        Returns:
-            A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects.
-        """
-        return {k: v.info for k, v in self.__pydantic_decorators__.computed_fields.items()}
+        @property
+        def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
+            """Get the computed fields of this model instance.
+
+            Returns:
+                A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects.
+            """
+            # we need to define this both on the metaclass as a classmethod and the instance
+            # because you can't stack @property with @classmethod on 3.11+
+            # and we also need this to work on classes and instances
+            return {k: v.info for k, v in self.__pydantic_decorators__.computed_fields.items()}
 
     @property
     def model_extra(self) -> dict[str, Any] | None:

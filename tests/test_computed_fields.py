@@ -1,7 +1,7 @@
 import random
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Callable, ClassVar, List, Tuple
+from typing import Annotated, Any, Callable, ClassVar, List, Tuple
 
 import pytest
 from pydantic_core import ValidationError, core_schema
@@ -11,10 +11,12 @@ from pydantic import (
     BaseModel,
     Field,
     GetCoreSchemaHandler,
+    PlainSerializer,
     PrivateAttr,
     TypeAdapter,
     computed_field,
     dataclasses,
+    field_serializer,
     field_validator,
 )
 from pydantic.alias_generators import to_camel
@@ -707,3 +709,25 @@ def test_multiple_references_to_schema(model_factory: Callable[[], Any]) -> None
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_custom_field_serializer() -> None:
+    class Model(BaseModel):
+        foo: str
+
+        @computed_field
+        @property
+        def bar(self) -> str:
+            return self.foo + ' bar'
+
+        @field_serializer('bar')
+        def serialize_dummy_property(self, value: str) -> str:
+            return value.upper()
+
+        @computed_field
+        @property
+        def baz(self) -> Annotated[str, PlainSerializer(lambda x: x * 2)]:
+            return self.bar + ' baz'
+
+    # insert_assert(Model(foo='abc').model_dump())
+    assert Model(foo='abc').model_dump() == {'foo': 'abc', 'bar': 'ABC BAR', 'baz': 'abc bar bazabc bar baz'}
