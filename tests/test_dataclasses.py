@@ -2466,3 +2466,27 @@ def test_schema_generator() -> None:
         __pydantic_config__ = ConfigDict(schema_generator=LaxStrGenerator)
 
     assert Model(x=1).x == '1'
+
+
+def test_dataclasses() -> None:
+    """https://github.com/pydantic/pydantic/issues/6962"""
+    from typing import Annotated
+
+    from pydantic import BeforeValidator
+    from pydantic.dataclasses import dataclass
+
+    calls = 0
+
+    def convert(value: Any) -> Any:
+        nonlocal calls
+        calls += 1
+        return value
+
+    IntToStr = Annotated[str, BeforeValidator(convert)]
+
+    @dataclass
+    class A:
+        a: IntToStr
+
+    assert A('abc').a == 'abc'
+    assert calls == 1
