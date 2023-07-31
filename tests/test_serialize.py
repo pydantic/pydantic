@@ -15,6 +15,7 @@ from pydantic import (
     BaseModel,
     Field,
     FieldSerializationInfo,
+    PydanticUserError,
     SecretStr,
     SerializationInfo,
     SerializeAsAny,
@@ -998,8 +999,28 @@ def test_computed_fields_custom_serializations():
         def ser_two_x(self, v):
             return f'The double of x is {v}'
 
-    assert Model(x=1).model_dump() == {'two_x': 2, 'x': 1}
-    assert json.loads(Model(x=1).model_dump_json()) == {'two_x': 'The double of x is 2', 'x': 1}
+    m = Model(x=1)
+
+    assert m.model_dump() == {'two_x': 2, 'x': 1}
+    assert json.loads(m.model_dump_json()) == {'two_x': 'The double of x is 2', 'x': 1}
+
+
+def test_computed_fields_custom_serializations_bad_signature():
+    error_msg = 'field_serializer on computed_field does not use info signature'
+
+    with pytest.raises(PydanticUserError, match=error_msg):
+
+        class Model(BaseModel):
+            x: int
+
+            @computed_field
+            @property
+            def two_x(self) -> int:
+                return self.x * 2
+
+            @field_serializer('two_x')
+            def ser_two_x_bad_signature(self, v, _info):
+                return f'The double of x is {v}'
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='@computed_field @classmethod @property only works in 3.9+')

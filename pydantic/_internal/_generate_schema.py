@@ -1430,7 +1430,9 @@ class GenerateSchema:
         return_type_schema = self.generate_schema(return_type)
         # Apply serializers to computed field if there exist
         return_type_schema = self._apply_field_serializers(
-            return_type_schema, filter_field_decorator_info_by_field(field_serializers.values(), d.cls_var_name)
+            return_type_schema,
+            filter_field_decorator_info_by_field(field_serializers.values(), d.cls_var_name),
+            computed_field=True,
         )
         # Handle alias_generator using similar logic to that from
         # pydantic._internal._generate_schema.GenerateSchema._common_field_schema,
@@ -1693,7 +1695,10 @@ class GenerateSchema:
         return CallbackGetCoreSchemaHandler(new_handler, self)
 
     def _apply_field_serializers(
-        self, schema: core_schema.CoreSchema, serializers: list[Decorator[FieldSerializerDecoratorInfo]]
+        self,
+        schema: core_schema.CoreSchema,
+        serializers: list[Decorator[FieldSerializerDecoratorInfo]],
+        computed_field: bool = False,
     ) -> core_schema.CoreSchema:
         """Apply field serializers to a schema."""
         if serializers:
@@ -1709,7 +1714,9 @@ class GenerateSchema:
 
             # use the last serializer to make it easy to override a serializer set on a parent model
             serializer = serializers[-1]
-            is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
+            is_field_serializer, info_arg = inspect_field_serializer(
+                serializer.func, serializer.info.mode, computed_field=computed_field
+            )
 
             try:
                 return_type = _decorators.get_function_return_type(
