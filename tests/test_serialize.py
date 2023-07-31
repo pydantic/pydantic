@@ -986,7 +986,7 @@ def test_forward_ref_for_computed_fields():
     assert Model(x=1).model_dump() == {'two_x': 2, 'x': 1}
 
 
-def test_computed_fields_custom_serializations():
+def test_computed_field_custom_serializer():
     class Model(BaseModel):
         x: int
 
@@ -1005,7 +1005,33 @@ def test_computed_fields_custom_serializations():
     assert json.loads(m.model_dump_json()) == {'two_x': 'The double of x is 2', 'x': 1}
 
 
-def test_computed_fields_custom_serializations_bad_signature():
+def test_annotated_computed_field_custom_serializer():
+    class Model(BaseModel):
+        x: int
+
+        @computed_field
+        @property
+        def two_x(self) -> Annotated[int, PlainSerializer(lambda v: f'The double of x is {v}', return_type=str)]:
+            return self.x * 2
+
+        @computed_field(
+            return_type=Annotated[int, PlainSerializer(lambda v: f'The quadruple of x is {v}', return_type=str)]
+        )
+        @property
+        def four_x(self) -> int:
+            return self.two_x * 2
+
+    m = Model(x=1)
+
+    assert m.model_dump() == {'x': 1, 'two_x': 'The double of x is 2', 'four_x': 'The quadruple of x is 4'}
+    assert json.loads(m.model_dump_json()) == {
+        'x': 1,
+        'two_x': 'The double of x is 2',
+        'four_x': 'The quadruple of x is 4',
+    }
+
+
+def test_computed_field_custom_serializer_bad_signature():
     error_msg = 'field_serializer on computed_field does not use info signature'
 
     with pytest.raises(PydanticUserError, match=error_msg):
