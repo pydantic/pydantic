@@ -985,6 +985,23 @@ def test_forward_ref_for_computed_fields():
     assert Model(x=1).model_dump() == {'two_x': 2, 'x': 1}
 
 
+def test_computed_fields_custom_serializations():
+    class Model(BaseModel):
+        x: int
+
+        @computed_field
+        @property
+        def two_x(self) -> int:
+            return self.x * 2
+
+        @field_serializer('two_x', when_used='json')
+        def ser_two_x(self, v):
+            return f'The double of x is {v}'
+
+    assert Model(x=1).model_dump() == {'two_x': 2, 'x': 1}
+    assert json.loads(Model(x=1).model_dump_json()) == {'two_x': 'The double of x is 2', 'x': 1}
+
+
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='@computed_field @classmethod @property only works in 3.9+')
 def test_forward_ref_for_classmethod_computed_fields():
     class Model(BaseModel):
