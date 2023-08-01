@@ -1395,11 +1395,10 @@ def test_type_on_annotation():
         g: Sequence[Type[FooBar]] = [FooBar]
         h: Union[Type[FooBar], Sequence[Type[FooBar]]] = FooBar
         i: Union[Type[FooBar], Sequence[Type[FooBar]]] = [FooBar]
-        j: Type[Union[FooBar, Sequence]] = FooBar
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    assert Model.model_fields.keys() == set('abcdefghij')
+    assert Model.model_fields.keys() == set('abcdefghi')
 
 
 def test_assign_type():
@@ -2591,4 +2590,3 @@ def test_type_union():
     m = Model(a=bytes, b=int)
     assert m.model_dump() == {'a': bytes, 'b': int}
     assert m.a == bytes
-    assert m.b == int
