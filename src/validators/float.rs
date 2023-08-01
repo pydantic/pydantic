@@ -72,11 +72,10 @@ impl Validator for FloatValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_float = input.validate_float(extra.strict.unwrap_or(self.strict), extra.ultra_strict)?;
-        let float: f64 = either_float.try_into()?;
-        if !self.allow_inf_nan && !float.is_finite() {
+        if !self.allow_inf_nan && !either_float.as_f64().is_finite() {
             return Err(ValError::new(ErrorType::FiniteNumber, input));
         }
-        Ok(float.into_py(py))
+        Ok(either_float.into_py(py))
     }
 
     fn different_strict_behavior(
@@ -119,7 +118,7 @@ impl Validator for ConstrainedFloatValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_float = input.validate_float(extra.strict.unwrap_or(self.strict), extra.ultra_strict)?;
-        let float: f64 = either_float.try_into()?;
+        let float: f64 = either_float.as_f64();
         if !self.allow_inf_nan && !float.is_finite() {
             return Err(ValError::new(ErrorType::FiniteNumber, input));
         }
@@ -155,7 +154,7 @@ impl Validator for ConstrainedFloatValidator {
                 return Err(ValError::new(ErrorType::GreaterThan { gt: gt.into() }, input));
             }
         }
-        Ok(float.into_py(py))
+        Ok(either_float.into_py(py))
     }
 
     fn different_strict_behavior(
