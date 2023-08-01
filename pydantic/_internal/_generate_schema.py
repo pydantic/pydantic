@@ -1043,7 +1043,12 @@ class GenerateSchema:
                     code='typed-dict-version',
                 )
 
-            config = getattr(typed_dict_cls, '__pydantic_config__', None)
+            config: ConfigDict | None = None
+            for base in (typed_dict_cls, *typed_dict_cls.__orig_bases__):
+                config = getattr(base, '__pydantic_config__', None)
+                if config is not None:
+                    break
+
             with self._config_wrapper_stack.push(config):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
 
