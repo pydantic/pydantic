@@ -1014,20 +1014,49 @@ def test_annotated_computed_field_custom_serializer():
         def two_x(self) -> Annotated[int, PlainSerializer(lambda v: f'The double of x is {v}', return_type=str)]:
             return self.x * 2
 
-        @computed_field(
-            return_type=Annotated[int, PlainSerializer(lambda v: f'The quadruple of x is {v}', return_type=str)]
-        )
+        @computed_field
         @property
-        def four_x(self) -> int:
+        def triple_x(self) -> Annotated[int, PlainSerializer(lambda v: f'The triple of x is {v}', return_type=str)]:
+            return self.two_x * 3
+
+        @computed_field
+        @property
+        def quadruple_x_plus_one(self) -> Annotated[int, PlainSerializer(lambda v: v + 1, return_type=int)]:
             return self.two_x * 2
 
     m = Model(x=1)
+    assert m.x == 1
+    assert m.two_x == 2
+    assert m.triple_x == 6
+    assert m.quadruple_x_plus_one == 4
 
-    assert m.model_dump() == {'x': 1, 'two_x': 'The double of x is 2', 'four_x': 'The quadruple of x is 4'}
+    # insert_assert(m.model_dump())
+    assert m.model_dump() == {
+        'x': 1,
+        'two_x': 'The double of x is 2',
+        'triple_x': 'The triple of x is 6',
+        'quadruple_x_plus_one': 5,
+    }
+
+    # insert_assert(json.loads(m.model_dump_json()))
     assert json.loads(m.model_dump_json()) == {
         'x': 1,
         'two_x': 'The double of x is 2',
-        'four_x': 'The quadruple of x is 4',
+        'triple_x': 'The triple of x is 6',
+        'quadruple_x_plus_one': 5,
+    }
+
+    # insert_assert(Model.model_json_schema(mode='serialization'))
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'x': {'title': 'X', 'type': 'integer'},
+            'two_x': {'readOnly': True, 'title': 'Two X', 'type': 'string'},
+            'triple_x': {'readOnly': True, 'title': 'Triple X', 'type': 'string'},
+            'quadruple_x_plus_one': {'readOnly': True, 'title': 'Quadruple X Plus One', 'type': 'integer'},
+        },
+        'required': ['x', 'two_x', 'triple_x', 'quadruple_x_plus_one'],
+        'title': 'Model',
+        'type': 'object',
     }
 
 
