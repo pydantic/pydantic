@@ -866,6 +866,18 @@ def test_model_config() -> None:
     assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
 
 
+def test_model_config_inherited() -> None:
+    class Base(TypedDict):
+        __pydantic_config__ = ConfigDict(str_to_lower=True)  # type: ignore
+
+    class Model(Base):
+        x: str
+
+    ta = TypeAdapter(Model)
+
+    assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
+
+
 def test_schema_generator() -> None:
     class LaxStrGenerator(GenerateSchema):
         def str_schema(self) -> CoreSchema:
