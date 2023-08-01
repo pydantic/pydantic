@@ -65,6 +65,7 @@ class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
+    # ruff: noqa: C901
     def __new__(
         mcs,
         cls_name: str,
@@ -117,8 +118,25 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            if config_wrapper.frozen:
-                set_default_hash_func(namespace, bases)
+            # Make sure BaseModels are hashable
+            if '__hash__' not in namespace:
+                for base in bases:
+                    if hasattr(base, '__hash__') and base.__hash__:
+                        namespace['__hash__'] = base.__hash__
+                        break
+
+                if '__hash__' not in namespace:
+                    if config_wrapper.frozen:
+
+                        def hash_func(self: BaseModel) -> int:
+                            return hash(self.__class__) + hash(tuple(self.__dict__.values()))
+
+                    else:
+
+                        def hash_func(self: BaseModel) -> int:
+                            return hash(self.__class__) + id(self)
+
+                    namespace['__hash__'] = hash_func
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
@@ -256,7 +274,7 @@ def init_private_attributes(self: BaseModel, __context: Any) -> None:
     object_setattr(self, '__pydantic_private__', pydantic_private)
 
 
-def inspect_namespace(  # noqa C901
+def inspect_namespace(  # C901
     namespace: dict[str, Any],
     ignored_types: tuple[type[Any], ...],
     base_class_vars: set[str],
@@ -363,26 +381,6 @@ def inspect_namespace(  # noqa C901
             private_attributes[ann_name] = PrivateAttr()
 
     return private_attributes
-
-
-def set_default_hash_func(namespace: dict[str, Any], bases: tuple[type[Any], ...]) -> None:
-    if '__hash__' in namespace:
-        return
-
-    base_hash_func = None
-    for base in bases:
-        base_hash_func = getattr(base, '__hash__', PydanticUndefined)
-        if base_hash_func is not PydanticUndefined:
-            break
-
-    if base_hash_func is None:
-        # This will be the case for `BaseModel` since it defines `__eq__` but not `__hash__`.
-        # In this case, we generate a standard hash function, generally for use with frozen models.
-
-        def hash_func(self: Any) -> int:
-            return hash(self.__class__) + hash(tuple(self.__dict__.values()))
-
-        namespace['__hash__'] = hash_func
 
 
 def set_model_fields(

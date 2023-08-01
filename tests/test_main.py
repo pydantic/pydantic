@@ -6,6 +6,7 @@ from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
+from functools import lru_cache
 from typing import (
     Any,
     Callable,
@@ -485,6 +486,35 @@ def test_mutability():
     assert m.a == 11
 
 
+def test_hashable():
+    class TestModel(BaseModel):
+        a: int = 95
+
+    m = TestModel()
+    assert hash(m)
+
+
+def test_cached_method():
+    should_never_be_more_than_one = 0
+
+    class TestModel(BaseModel):
+        a: int = 95
+
+        @lru_cache
+        def my_cached_method(self) -> int:
+            nonlocal should_never_be_more_than_one
+
+            should_never_be_more_than_one += 1
+
+            return 0
+
+    m = TestModel()
+    m.my_cached_method()
+
+    assert m.my_cached_method() == 0
+    assert should_never_be_more_than_one == 1
+
+
 def test_frozen_model():
     class FrozenModel(BaseModel):
         model_config = ConfigDict(extra='forbid', frozen=True)
@@ -499,16 +529,6 @@ def test_frozen_model():
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': 11}
     ]
-
-
-def test_not_frozen_are_not_hashable():
-    class TestModel(BaseModel):
-        a: int = 10
-
-    m = TestModel()
-    with pytest.raises(TypeError) as exc_info:
-        hash(m)
-    assert "unhashable type: 'TestModel'" in exc_info.value.args[0]
 
 
 def test_with_declared_hash():

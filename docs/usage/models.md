@@ -121,6 +121,19 @@ Models possess the following methods and attributes:
     See [Changes to `pydantic.BaseModel`](../migration.md#changes-to-pydanticbasemodel) in the
     [Migration Guide](../migration.md) for details on changes from Pydantic V1.
 
+### Hash
+
+`BaseModel` hash is the sum of the class hash and instance identity:
+```py
+def __hash__(self: BaseModel) -> int:
+    return hash(self.__class__) + id(self)
+```
+When `frozen` the hash method is overridden by the sum of the class hash and the tuple of all model field values:
+```py
+def hash_func(self: BaseModel) -> int:
+    return hash(self.__class__) + hash(tuple(self.__dict__.values()))
+```
+
 ## Nested models
 
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
