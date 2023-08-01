@@ -10,7 +10,8 @@ use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::types::iter::PyDictIterator;
 use pyo3::types::{
-    PyByteArray, PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PyMapping, PySequence, PySet, PyString, PyTuple,
+    PyByteArray, PyBytes, PyDict, PyFloat, PyFrozenSet, PyIterator, PyList, PyMapping, PySequence, PySet, PyString,
+    PyTuple,
 };
 use pyo3::{ffi, intern, AsPyPointer, PyNativeType};
 
@@ -910,18 +911,23 @@ impl<'a> IntoPy<PyObject> for EitherInt<'a> {
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Copy, Clone)]
 pub enum EitherFloat<'a> {
     F64(f64),
-    Py(&'a PyAny),
+    Py(&'a PyFloat),
 }
 
-impl<'a> TryInto<f64> for EitherFloat<'a> {
-    type Error = ValError<'a>;
-
-    fn try_into(self) -> ValResult<'a, f64> {
+impl<'a> EitherFloat<'a> {
+    pub fn as_f64(self) -> f64 {
         match self {
-            EitherFloat::F64(f) => Ok(f),
-            EitherFloat::Py(i) => i.extract().map_err(|_| ValError::new(ErrorType::FloatParsing, i)),
+            EitherFloat::F64(f) => f,
+
+            EitherFloat::Py(f) => {
+                {
+                    // Safety: known to be a python float
+                    unsafe { ffi::PyFloat_AS_DOUBLE(f.as_ptr()) }
+                }
+            }
         }
     }
 }
