@@ -1427,6 +1427,7 @@ class GenerateSchema:
                 code='model-field-missing-annotation',
             )
 
+        return_type = replace_types(return_type, self._typevars_map)
         return_type_schema = self.generate_schema(return_type)
         # Apply serializers to computed field if there exist
         return_type_schema = self._apply_field_serializers(

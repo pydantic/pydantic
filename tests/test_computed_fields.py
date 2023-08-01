@@ -1,7 +1,7 @@
 import random
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Callable, ClassVar, List, Tuple
+from typing import Any, Callable, ClassVar, Generic, List, Tuple, TypeVar
 
 import pytest
 from pydantic_core import ValidationError, core_schema
@@ -717,3 +717,18 @@ def test_multiple_references_to_schema(model_factory: Callable[[], Any]) -> None
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_generic_computed_field():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        x: T
+
+        @computed_field
+        @property
+        def double_x(self) -> T:
+            return self.x * 2
+
+    assert A[int](x=1).model_dump() == {'x': 1, 'double_x': 2}
+    assert A[str](x='abc').model_dump() == {'x': 'abc', 'double_x': 'abcabc'}
