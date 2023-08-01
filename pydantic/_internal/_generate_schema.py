@@ -1212,6 +1212,9 @@ class GenerateSchema:
                 )
             else:
                 return self._type_schema()
+        elif _typing_extra.origin_is_union(get_origin(type_param)):
+            args = self._get_args_resolving_forward_refs(type_param, required=True)
+            return core_schema.union_schema([self.generate_schema(typing.Type[args]) for args in args])
         else:
             return core_schema.is_subclass_schema(type_param)
 

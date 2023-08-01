@@ -2580,3 +2580,13 @@ def test_union_literal_with_other_type(literal_type, other_type, data, json_valu
     m = Model(value=data, value_types_reversed=data)
     assert m.model_dump() == {'value': data, 'value_types_reversed': data_reversed}
     assert m.model_dump_json() == f'{{"value":{json_value},"value_types_reversed":{json_value_reversed}}}'
+
+
+def test_type_union():
+    class Model(BaseModel):
+        a: Type[Union[str, bytes]]
+        b: Type[Union[Any, str]]
+
+    m = Model(a=bytes, b=int)
+    assert m.model_dump() == {'a': bytes, 'b': int}
+    assert m.a == bytes
