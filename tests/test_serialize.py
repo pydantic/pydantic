@@ -15,6 +15,7 @@ from pydantic import (
     BaseModel,
     Field,
     FieldSerializationInfo,
+    PydanticUserError,
     SecretStr,
     SerializationInfo,
     SerializeAsAny,
@@ -983,6 +984,98 @@ def test_forward_ref_for_computed_fields():
     }
 
     assert Model(x=1).model_dump() == {'two_x': 2, 'x': 1}
+
+
+def test_computed_field_custom_serializer():
+    class Model(BaseModel):
+        x: int
+
+        @computed_field
+        @property
+        def two_x(self) -> int:
+            return self.x * 2
+
+        @field_serializer('two_x', when_used='json')
+        def ser_two_x(self, v):
+            return f'The double of x is {v}'
+
+    m = Model(x=1)
+
+    assert m.model_dump() == {'two_x': 2, 'x': 1}
+    assert json.loads(m.model_dump_json()) == {'two_x': 'The double of x is 2', 'x': 1}
+
+
+def test_annotated_computed_field_custom_serializer():
+    class Model(BaseModel):
+        x: int
+
+        @computed_field
+        @property
+        def two_x(self) -> Annotated[int, PlainSerializer(lambda v: f'The double of x is {v}', return_type=str)]:
+            return self.x * 2
+
+        @computed_field
+        @property
+        def triple_x(self) -> Annotated[int, PlainSerializer(lambda v: f'The triple of x is {v}', return_type=str)]:
+            return self.two_x * 3
+
+        @computed_field
+        @property
+        def quadruple_x_plus_one(self) -> Annotated[int, PlainSerializer(lambda v: v + 1, return_type=int)]:
+            return self.two_x * 2
+
+    m = Model(x=1)
+    assert m.x == 1
+    assert m.two_x == 2
+    assert m.triple_x == 6
+    assert m.quadruple_x_plus_one == 4
+
+    # insert_assert(m.model_dump())
+    assert m.model_dump() == {
+        'x': 1,
+        'two_x': 'The double of x is 2',
+        'triple_x': 'The triple of x is 6',
+        'quadruple_x_plus_one': 5,
+    }
+
+    # insert_assert(json.loads(m.model_dump_json()))
+    assert json.loads(m.model_dump_json()) == {
+        'x': 1,
+        'two_x': 'The double of x is 2',
+        'triple_x': 'The triple of x is 6',
+        'quadruple_x_plus_one': 5,
+    }
+
+    # insert_assert(Model.model_json_schema(mode='serialization'))
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {
+            'x': {'title': 'X', 'type': 'integer'},
+            'two_x': {'readOnly': True, 'title': 'Two X', 'type': 'string'},
+            'triple_x': {'readOnly': True, 'title': 'Triple X', 'type': 'string'},
+            'quadruple_x_plus_one': {'readOnly': True, 'title': 'Quadruple X Plus One', 'type': 'integer'},
+        },
+        'required': ['x', 'two_x', 'triple_x', 'quadruple_x_plus_one'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_computed_field_custom_serializer_bad_signature():
+    error_msg = 'field_serializer on computed_field does not use info signature'
+
+    with pytest.raises(PydanticUserError, match=error_msg):
+
+        class Model(BaseModel):
+            x: int
+
+            @computed_field
+            @property
+            def two_x(self) -> int:
+                return self.x * 2
+
+            @field_serializer('two_x')
+            def ser_two_x_bad_signature(self, v, _info):
+                return f'The double of x is {v}'
 
 
 @pytest.mark.skipif(sys.version_info < (3, 9), reason='@computed_field @classmethod @property only works in 3.9+')
