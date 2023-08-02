@@ -732,3 +732,12 @@ def test_generic_computed_field():
 
     assert A[int](x=1).model_dump() == {'x': 1, 'double_x': 2}
     assert A[str](x='abc').model_dump() == {'x': 'abc', 'double_x': 'abcabc'}
+
+    class B(BaseModel, Generic[T]):
+        @computed_field
+        @property
+        def double_x(self) -> T:
+            return 'abc'  # this may not match the annotated return type, and will warn if not
+
+    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+        B[int]().model_dump()
