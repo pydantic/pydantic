@@ -125,12 +125,12 @@ Models possess the following methods and attributes:
 
 `BaseModel` hash is the sum of the class hash and instance identity:
 ```py
-def __hash__(self: BaseModel) -> int:
+def __hash__(self) -> int:
     return hash(self.__class__) + id(self)
 ```
 When `frozen` the hash method is overridden by the sum of the class hash and the tuple of all model field values:
 ```py
-def hash_func(self: BaseModel) -> int:
+def __hash__(self) -> int:
     return hash(self.__class__) + hash(tuple(self.__dict__.values()))
 ```
 

@@ -6,7 +6,6 @@ from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
-from functools import lru_cache
 from typing import (
     Any,
     Callable,
@@ -495,12 +494,14 @@ def test_hashable():
 
 
 def test_cached_method():
+    from functools import lru_cache
+
     should_never_be_more_than_one = 0
 
     class TestModel(BaseModel):
         a: int = 95
 
-        @lru_cache
+        @lru_cache(maxsize=None)
         def my_cached_method(self) -> int:
             nonlocal should_never_be_more_than_one
 
