@@ -419,11 +419,7 @@ class FieldInfo(_repr.Representation):
 
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
         dc_field_metadata = {k: v for k, v in dc_field.metadata.items() if k in _FIELD_ARG_NAMES}
-        field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)
-
-        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type)
-        field.metadata += annotation_metadata
-        return field
+        return Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)
 
     @classmethod
     def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:

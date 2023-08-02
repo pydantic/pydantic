@@ -18,6 +18,7 @@ from typing_extensions import Annotated, Literal
 import pydantic
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     FieldValidationInfo,
     GenerateSchema,
@@ -2466,3 +2467,23 @@ def test_schema_generator() -> None:
         __pydantic_config__ = ConfigDict(schema_generator=LaxStrGenerator)
 
     assert Model(x=1).x == '1'
+
+
+@pytest.mark.parametrize('decorator1', **dataclass_decorators())
+def test_annotated_before_validator_called_once(decorator1):
+    count = 0
+
+    def convert(value: int) -> str:
+        nonlocal count
+        count += 1
+        return str(value)
+
+    IntToStr = Annotated[str, BeforeValidator(convert)]
+
+    @decorator1
+    class A:
+        a: IntToStr
+
+    assert count == 0
+    TypeAdapter(A).validate_python({'a': 123})
+    assert count == 1
