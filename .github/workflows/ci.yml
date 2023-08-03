@@ -74,6 +74,7 @@ jobs:
           - 'pypy3.7'
           - 'pypy3.8'
           - 'pypy3.9'
+          - 'pypy3.10'
 
     runs-on: ubuntu-latest
 
@@ -152,7 +153,7 @@ jobs:
       matrix:
         python-version:
           - '3.11'
-          - 'pypy3.9'
+          - 'pypy3.10'
 
     steps:
       - uses: actions/checkout@v3
