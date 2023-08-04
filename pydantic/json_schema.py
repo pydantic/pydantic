@@ -281,7 +281,7 @@ class GenerateJsonSchema:
 
         # When we encounter definitions we need to try to build them immediately
         # so that they are available schemas that reference them
-        # But it's possible that that CoreSchema was never going to be used
+        # But it's possible that CoreSchema was never going to be used
         # (e.g. because the CoreSchema that references short circuits is JSON schema generation without needing
         #  the reference) so instead of failing altogether if we can't build a definition we
         # store the error raised and re-throw it if we end up needing that def
@@ -2017,8 +2017,7 @@ class GenerateJsonSchema:
 
     def emit_warning(self, kind: JsonSchemaWarningKind, detail: str) -> None:
         """This method simply emits PydanticJsonSchemaWarnings based on handling in the `warning_message` method."""
-        message = self.render_warning_message(kind, detail)
-        if message is not None:
+        if (message := self.render_warning_message(kind, detail)) is not None:
             warnings.warn(message, PydanticJsonSchemaWarning)
 
     def render_warning_message(self, kind: JsonSchemaWarningKind, detail: str) -> str | None:
