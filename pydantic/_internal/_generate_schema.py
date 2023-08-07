@@ -242,7 +242,8 @@ def _add_custom_serialization_from_json_encoders(
         return schema
     # Check the class type and its superclasses for a matching encoder
     # Decimal.__class__.__mro__ (and probably other cases) doesn't include Decimal itself
-    for base in (tp, *tp.__class__.__mro__[:-1]):
+    # if the type is a GenericAlias (e.g. from list[int]) we need to use __class__ instead of .__mro__
+    for base in (tp, *getattr(tp, '__mro__', tp.__class__.__mro__)[:-1]):
         encoder = json_encoders.get(base)
         if encoder is None:
             continue
