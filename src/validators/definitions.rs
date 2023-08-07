@@ -2,7 +2,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::errors::{ErrorType, ValError, ValResult};
+use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 
 use crate::recursion_guard::RecursionGuard;
@@ -85,10 +85,10 @@ impl Validator for DefinitionRefValidator {
         if let Some(id) = input.identity() {
             if recursion_guard.contains_or_insert(id, self.validator_id) {
                 // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-                Err(ValError::new(ErrorType::RecursionLoop, input))
+                Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input))
             } else {
                 if recursion_guard.incr_depth() {
-                    return Err(ValError::new(ErrorType::RecursionLoop, input));
+                    return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));
                 }
                 let output = validate(self.validator_id, py, input, extra, definitions, recursion_guard);
                 recursion_guard.remove(id, self.validator_id);
@@ -113,10 +113,10 @@ impl Validator for DefinitionRefValidator {
         if let Some(id) = obj.identity() {
             if recursion_guard.contains_or_insert(id, self.validator_id) {
                 // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
-                Err(ValError::new(ErrorType::RecursionLoop, obj))
+                Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj))
             } else {
                 if recursion_guard.incr_depth() {
-                    return Err(ValError::new(ErrorType::RecursionLoop, obj));
+                    return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj));
                 }
                 let output = validate_assignment(
                     self.validator_id,

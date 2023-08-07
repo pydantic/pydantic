@@ -78,6 +78,7 @@ impl Validator for IsInstanceValidator {
             false => Err(ValError::new(
                 ErrorType::IsInstanceOf {
                     class: self.class_repr.clone(),
+                    context: None,
                 },
                 input,
             )),

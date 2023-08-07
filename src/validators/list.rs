@@ -45,6 +45,7 @@ macro_rules! length_check {
                         field_type: $field_type.to_string(),
                         min_length,
                         actual_length,
+                        context: None,
                     },
                     $input,
                 ));
@@ -59,6 +60,7 @@ macro_rules! length_check {
                         field_type: $field_type.to_string(),
                         max_length,
                         actual_length,
+                        context: None,
                     },
                     $input,
                 ));
@@ -78,6 +80,7 @@ macro_rules! min_length_check {
                         field_type: $field_type.to_string(),
                         min_length,
                         actual_length,
+                        context: None,
                     },
                     $input,
                 ));

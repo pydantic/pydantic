@@ -21,7 +21,7 @@ use pyo3::types::PyFunction;
 use pyo3::PyTypeInfo;
 use serde::{ser::Error, Serialize, Serializer};
 
-use crate::errors::{py_err_string, ErrorType, InputValue, ValError, ValLineError, ValResult};
+use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::py_err;
 use crate::validators::{CombinedValidator, Extra, Validator};
@@ -127,6 +127,7 @@ impl<'a, INPUT: Input<'a>> MaxLengthCheck<'a, INPUT> {
                         field_type: self.field_type.to_string(),
                         max_length,
                         actual_length: self.current_length,
+                        context: None,
                     },
                     self.input,
                 ));
@@ -141,6 +142,7 @@ macro_rules! any_next_error {
         ValError::new_with_loc(
             ErrorType::IterationError {
                 error: py_err_string($py, $err),
+                context: None,
             },
             $input,
             $index,
@@ -242,6 +244,7 @@ fn validate_iter_to_set<'a, 's>(
                                 field_type: field_type.to_string(),
                                 max_length,
                                 actual_length,
+                                context: None,
                             },
                             input,
                         ));
@@ -467,6 +470,7 @@ fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py impl Input<'py>) ->
     ValError::new(
         ErrorType::MappingType {
             error: py_err_string(py, err).into(),
+            context: None,
         },
         input,
     )
@@ -502,6 +506,7 @@ impl<'py> Iterator for MappingGenericIterator<'py> {
                 return Some(Err(ValError::new(
                     ErrorType::MappingType {
                         error: MAPPING_TUPLE_ERROR.into(),
+                        context: None,
                     },
                     self.input,
                 )))
@@ -511,6 +516,7 @@ impl<'py> Iterator for MappingGenericIterator<'py> {
             return Some(Err(ValError::new(
                 ErrorType::MappingType {
                     error: MAPPING_TUPLE_ERROR.into(),
+                    context: None,
                 },
                 self.input,
             )));
@@ -782,7 +788,7 @@ impl<'a> IntoPy<PyObject> for EitherString<'a> {
 pub fn py_string_str(py_str: &PyString) -> ValResult<&str> {
     py_str
         .to_str()
-        .map_err(|_| ValError::new_custom_input(ErrorType::StringUnicode, InputValue::PyAny(py_str as &PyAny)))
+        .map_err(|_| ValError::new_custom_input(ErrorTypeDefaults::StringUnicode, InputValue::PyAny(py_str as &PyAny)))
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -848,16 +854,21 @@ impl<'a> EitherInt<'a> {
             EitherInt::I64(i) => Ok(i),
             EitherInt::U64(u) => match i64::try_from(u) {
                 Ok(u) => Ok(u),
-                Err(_) => Err(ValError::new(ErrorType::IntParsingSize, u.into_py(py).into_ref(py))),
+                Err(_) => Err(ValError::new(
+                    ErrorTypeDefaults::IntParsingSize,
+                    u.into_py(py).into_ref(py),
+                )),
             },
             EitherInt::BigInt(u) => match i64::try_from(u) {
                 Ok(u) => Ok(u),
                 Err(e) => Err(ValError::new(
-                    ErrorType::IntParsingSize,
+                    ErrorTypeDefaults::IntParsingSize,
                     e.into_original().into_py(py).into_ref(py),
                 )),
             },
-            EitherInt::Py(i) => i.extract().map_err(|_| ValError::new(ErrorType::IntParsingSize, i)),
+            EitherInt::Py(i) => i
+                .extract()
+                .map_err(|_| ValError::new(ErrorTypeDefaults::IntParsingSize, i)),
         }
     }
 
@@ -869,7 +880,9 @@ impl<'a> EitherInt<'a> {
                 Err(_) => Ok(Int::Big(BigInt::from(*u))),
             },
             EitherInt::BigInt(b) => Ok(Int::Big(b.clone())),
-            EitherInt::Py(i) => i.extract().map_err(|_| ValError::new(ErrorType::IntParsingSize, *i)),
+            EitherInt::Py(i) => i
+                .extract()
+                .map_err(|_| ValError::new(ErrorTypeDefaults::IntParsingSize, *i)),
         }
     }
 

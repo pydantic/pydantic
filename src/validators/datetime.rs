@@ -8,7 +8,7 @@ use strum::EnumMessage;
 
 use crate::build_tools::{is_strict, py_schema_error_type};
 use crate::build_tools::{py_schema_err, schema_or_config_same};
-use crate::errors::{py_err_string, ErrorType, ValError, ValResult};
+use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::{EitherDateTime, Input};
 
 use crate::recursion_guard::RecursionGuard;
@@ -75,7 +75,10 @@ impl Validator for DateTimeValidator {
                 Ok(dt) => dt,
                 Err(err) => {
                     let error = py_err_string(py, err);
-                    return Err(ValError::new(ErrorType::DatetimeObjectInvalid { error }, input));
+                    return Err(ValError::new(
+                        ErrorType::DatetimeObjectInvalid { error, context: None },
+                        input,
+                    ));
                 }
             };
             macro_rules! check_constraint {
@@ -85,6 +88,7 @@ impl Validator for DateTimeValidator {
                             return Err(ValError::new(
                                 ErrorType::$error {
                                     $constraint: constraint.to_string().into(),
+                                    context: None,
                                 },
                                 input,
                             ));
@@ -108,8 +112,8 @@ impl Validator for DateTimeValidator {
                     let dt_compliant = now_constraint.op.compare(c);
                     if !dt_compliant {
                         let error_type = match now_constraint.op {
-                            NowOp::Past => ErrorType::DatetimePast,
-                            NowOp::Future => ErrorType::DatetimeFuture,
+                            NowOp::Past => ErrorTypeDefaults::DatetimePast,
+                            NowOp::Future => ErrorTypeDefaults::DatetimeFuture,
                         };
                         return Err(ValError::new(error_type, input));
                     }
@@ -273,17 +277,21 @@ impl TZConstraint {
 
     pub(super) fn tz_check<'d>(&self, tz_offset: Option<i32>, input: &'d impl Input<'d>) -> ValResult<'d, ()> {
         match (self, tz_offset) {
-            (TZConstraint::Aware(_), None) => return Err(ValError::new(ErrorType::TimezoneAware, input)),
+            (TZConstraint::Aware(_), None) => return Err(ValError::new(ErrorTypeDefaults::TimezoneAware, input)),
             (TZConstraint::Aware(Some(tz_expected)), Some(tz_actual)) => {
                 let tz_expected = *tz_expected;
                 if tz_expected != tz_actual {
                     return Err(ValError::new(
-                        ErrorType::TimezoneOffset { tz_expected, tz_actual },
+                        ErrorType::TimezoneOffset {
+                            tz_expected,
+                            tz_actual,
+                            context: None,
+                        },
                         input,
                     ));
                 }
             }
-            (TZConstraint::Naive, Some(_)) => return Err(ValError::new(ErrorType::TimezoneNaive, input)),
+            (TZConstraint::Naive, Some(_)) => return Err(ValError::new(ErrorTypeDefaults::TimezoneNaive, input)),
             _ => (),
         }
         Ok(())

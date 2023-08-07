@@ -445,6 +445,7 @@ impl TaggedUnionValidator {
                     discriminator: self.discriminator_repr.clone(),
                     tag: tag.to_string(),
                     expected_tags: self.tags_repr.clone(),
+                    context: None,
                 },
                 input,
             )),
@@ -457,6 +458,7 @@ impl TaggedUnionValidator {
             None => ValError::new(
                 ErrorType::UnionTagNotFound {
                     discriminator: self.discriminator_repr.clone(),
+                    context: None,
                 },
                 input,
             ),

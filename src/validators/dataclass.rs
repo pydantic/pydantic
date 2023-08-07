@@ -7,7 +7,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
-use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
@@ -185,7 +185,7 @@ impl Validator for DataclassArgsValidator {
                         // found both positional and keyword arguments, error
                         (Some(_), Some((_, kw_value))) => {
                             errors.push(ValLineError::new_with_loc(
-                                ErrorType::MultipleArgumentValues,
+                                ErrorTypeDefaults::MultipleArgumentValues,
                                 kw_value,
                                 field.name.clone(),
                             ));
@@ -236,7 +236,7 @@ impl Validator for DataclassArgsValidator {
                                 set_item!(field, value);
                             } else {
                                 errors.push(field.lookup_key.error(
-                                    ErrorType::Missing,
+                                    ErrorTypeDefaults::Missing,
                                     input,
                                     self.loc_by_alias,
                                     &field.name,
@@ -251,7 +251,7 @@ impl Validator for DataclassArgsValidator {
                     if len > self.positional_count {
                         for (index, item) in $slice_macro!(args, self.positional_count, len).iter().enumerate() {
                             errors.push(ValLineError::new_with_loc(
-                                ErrorType::UnexpectedPositionalArgument,
+                                ErrorTypeDefaults::UnexpectedPositionalArgument,
                                 item,
                                 index + self.positional_count,
                             ));
@@ -269,7 +269,7 @@ impl Validator for DataclassArgsValidator {
                                         match self.extra_behavior {
                                             ExtraBehavior::Forbid => {
                                                 errors.push(ValLineError::new_with_loc(
-                                                    ErrorType::UnexpectedKeywordArgument,
+                                                    ErrorTypeDefaults::UnexpectedKeywordArgument,
                                                     value,
                                                     raw_key.as_loc_item(),
                                                 ));
@@ -285,7 +285,7 @@ impl Validator for DataclassArgsValidator {
                                     for err in line_errors {
                                         errors.push(
                                             err.with_outer_location(raw_key.as_loc_item())
-                                                .with_type(ErrorType::InvalidKey),
+                                                .with_type(ErrorTypeDefaults::InvalidKey),
                                         );
                                     }
                                 }
@@ -335,7 +335,7 @@ impl Validator for DataclassArgsValidator {
         if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
             if field.frozen {
                 return Err(ValError::new_with_loc(
-                    ErrorType::FrozenField,
+                    ErrorTypeDefaults::FrozenField,
                     field_value,
                     field.name.to_string(),
                 ));
@@ -377,6 +377,7 @@ impl Validator for DataclassArgsValidator {
                 _ => Err(ValError::new_with_loc(
                     ErrorType::NoSuchAttribute {
                         attribute: field_name.to_string(),
+                        context: None,
                     },
                     field_value,
                     field_name.to_string(),
@@ -505,6 +506,7 @@ impl Validator for DataclassValidator {
             Err(ValError::new(
                 ErrorType::DataclassExactType {
                     class_name: self.get_name().to_string(),
+                    context: None,
                 },
                 input,
             ))
@@ -529,7 +531,7 @@ impl Validator for DataclassValidator {
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         if self.frozen {
-            return Err(ValError::new(ErrorType::FrozenInstance, field_value));
+            return Err(ValError::new(ErrorTypeDefaults::FrozenInstance, field_value));
         }
 
         let new_dict = self.dataclass_to_dict(py, obj)?;

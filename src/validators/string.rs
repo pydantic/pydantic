@@ -105,12 +105,24 @@ impl Validator for StrConstrainedValidator {
         };
         if let Some(min_length) = self.min_length {
             if str_len.unwrap() < min_length {
-                return Err(ValError::new(ErrorType::StringTooShort { min_length }, input));
+                return Err(ValError::new(
+                    ErrorType::StringTooShort {
+                        min_length,
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
         if let Some(max_length) = self.max_length {
             if str_len.unwrap() > max_length {
-                return Err(ValError::new(ErrorType::StringTooLong { max_length }, input));
+                return Err(ValError::new(
+                    ErrorType::StringTooLong {
+                        max_length,
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
 
@@ -119,6 +131,7 @@ impl Validator for StrConstrainedValidator {
                 return Err(ValError::new(
                     ErrorType::StringPatternMismatch {
                         pattern: pattern.to_string(),
+                        context: None,
                     },
                     input,
                 ));

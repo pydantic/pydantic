@@ -6,7 +6,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config, schema_or_config_same, ExtraBehavior};
-use crate::errors::{py_err_string, ErrorType, ValError, ValLineError, ValResult};
+use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{
     AttributesGenericIterator, DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator,
     MappingGenericIterator,
@@ -175,6 +175,7 @@ impl Validator for TypedDictValidator {
                             errors.push(ValLineError::new_with_loc(
                                 ErrorType::GetAttributeError {
                                     error: py_err_string(py, err),
+                                    context: None,
                                 },
                                 input,
                                 field.name.clone(),
@@ -208,7 +209,7 @@ impl Validator for TypedDictValidator {
                         output_dict.set_item(&field.name_py, value)?;
                     } else if field.required {
                         errors.push(field.lookup_key.error(
-                            ErrorType::Missing,
+                            ErrorTypeDefaults::Missing,
                             input,
                             self.loc_by_alias,
                             &field.name
@@ -225,7 +226,7 @@ impl Validator for TypedDictValidator {
                                 for err in line_errors {
                                     errors.push(
                                         err.with_outer_location(raw_key.as_loc_item())
-                                            .with_type(ErrorType::InvalidKey),
+                                            .with_type(ErrorTypeDefaults::InvalidKey),
                                     );
                                 }
                                 continue;
@@ -240,7 +241,7 @@ impl Validator for TypedDictValidator {
                         match self.extra_behavior {
                             ExtraBehavior::Forbid => {
                                 errors.push(ValLineError::new_with_loc(
-                                    ErrorType::ExtraForbidden,
+                                    ErrorTypeDefaults::ExtraForbidden,
                                     value,
                                     raw_key.as_loc_item(),
                                 ));
