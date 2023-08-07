@@ -801,8 +801,8 @@ class PydanticModelTransformer:
             )
             if is_settings:
                 base_settings_node = self._api.lookup_fully_qualified(BASESETTINGS_FULLNAME).node
-                if '__init__' in base_settings_info.names:
-                    base_settings_init_node = base_settings_info.names['__init__'].node
+                if '__init__' in base_settings_node.names:
+                    base_settings_init_node = base_settings_node.names['__init__'].node
                     if base_settings_init_node is not None and base_settings_init_node.type is not None:
                         func_type = base_settings_init_node.type
                         for arg_idx, arg_name in enumerate(func_type.arg_names):
