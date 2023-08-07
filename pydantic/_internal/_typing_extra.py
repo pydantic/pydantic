@@ -60,7 +60,7 @@ else:
 
 LITERAL_TYPES: set[Any] = {Literal}
 if hasattr(typing, 'Literal'):
-    LITERAL_TYPES.add(typing.Literal)  # type: ignore[attr-defined]
+    LITERAL_TYPES.add(typing.Literal)
 
 NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
 

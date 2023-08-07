@@ -253,7 +253,7 @@ def _add_custom_serialization_from_json_encoders(
         )
 
         # TODO: in theory we should check that the schema accepts a serialization key
-        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(encoder, when_used='json')  # type: ignore
+        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(encoder, when_used='json')
         return schema
 
     return schema
@@ -641,7 +641,7 @@ class GenerateSchema:
             args = tuple([self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args])
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
-        return args  # type: ignore
+        return args
 
     def _get_first_arg_or_any(self, obj: Any) -> Any:
         args = self._get_args_resolving_forward_refs(obj)

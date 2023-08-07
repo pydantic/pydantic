@@ -236,6 +236,7 @@ exclude = '''
 [tool.pyright]
 include = ['pydantic']
 exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py', 'pydantic/v1']
+reportUnnecessaryTypeIgnoreComment = true
 
 [tool.codespell]
 skip = '.git,env*,pydantic/v1/*'

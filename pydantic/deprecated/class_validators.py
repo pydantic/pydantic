@@ -118,7 +118,7 @@ def validator(
             "E.g. usage should be `@validator('<field_name>', ...)`",
             code='validator-no-fields',
         )
-    elif not all(isinstance(field, str) for field in fields):  # type: ignore
+    elif not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
             "`@validator` fields should be passed as separate string args. "
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",

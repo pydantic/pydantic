@@ -154,7 +154,7 @@ def conint(
     Returns:
         The wrapped integer type.
     """
-    return Annotated[  # type: ignore[return-value]
+    return Annotated[
         int,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -210,7 +210,7 @@ def confloat(
     Returns:
         The wrapped float type.
     """
-    return Annotated[  # type: ignore[return-value]
+    return Annotated[
         float,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -252,7 +252,7 @@ def conbytes(
     Returns:
         The wrapped bytes type.
     """
-    return Annotated[  # type: ignore[return-value]
+    return Annotated[
         bytes,
         Strict(strict) if strict is not None else None,
         annotated_types.Len(min_length or 0, max_length),
@@ -333,7 +333,7 @@ def constr(
     Returns:
         The wrapped string type.
     """
-    return Annotated[  # type: ignore[return-value]
+    return Annotated[
         str,
         StringConstraints(
             strip_whitespace=strip_whitespace,
@@ -368,9 +368,7 @@ def conset(
     Returns:
         The wrapped set type.
     """
-    return Annotated[  # type: ignore[return-value]
-        Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]
-    ]
+    return Annotated[Set[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
 def confrozenset(
@@ -386,10 +384,7 @@ def confrozenset(
     Returns:
         The wrapped frozenset type.
     """
-    return Annotated[  # type: ignore[return-value]
-        FrozenSet[item_type],  # type: ignore[valid-type]
-        annotated_types.Len(min_length or 0, max_length),
-    ]
+    return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
 AnyItemType = TypeVar('AnyItemType')
@@ -421,10 +416,7 @@ def conlist(
             ),
             code='removed-kwargs',
         )
-    return Annotated[  # type: ignore[return-value]
-        List[item_type],  # type: ignore[valid-type]
-        annotated_types.Len(min_length or 0, max_length),
-    ]
+    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -514,7 +506,7 @@ def condecimal(
         decimal_places: The number of decimal places. Defaults to `None`.
         allow_inf_nan: Whether to allow infinity and NaN. Defaults to `None`.
     """
-    return Annotated[  # type: ignore[return-value]
+    return Annotated[
         Decimal,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
@@ -1106,7 +1098,7 @@ def condate(
     Returns:
         A date type with the specified constraints.
     """
-    return Annotated[  # type: ignore[return-value]
+    return Annotated[
         date,
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),

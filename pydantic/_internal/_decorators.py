@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from ..functional_validators import FieldValidatorModes
 
 try:
-    from functools import cached_property  # type: ignore
+    from functools import cached_property
 except ImportError:
     # python 3.7
     cached_property = None
@@ -714,9 +714,9 @@ def unwrap_wrapped_function(
         all.update({partial, partialmethod})
 
     try:
-        from functools import cached_property  # type: ignore
+        from functools import cached_property
     except ImportError:
-        cached_property = type('', (), {})  # type: ignore
+        cached_property = type('', (), {})
     else:
         all.add(cached_property)
 
