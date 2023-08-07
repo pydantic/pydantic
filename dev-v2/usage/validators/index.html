@@ -2366,7 +2366,7 @@ See <a href="../types/custom/">Custom Types</a> for a more detailed explanation 
 In this example we used that to apply validation to the inner items of a list.
 The same approach can be used for dict keys, etc.</p>
 <h3 id="before-after-wrap-and-plain-validators">Before, After, Wrap and Plain validators<a class="headerlink" href="#before-after-wrap-and-plain-validators" title="Permanent link">&para;</a></h3>
-<p>Pydantic provides multiple types of validator functions.</p>
+<p>Pydantic provides multiple types of validator functions:</p>
 <ul>
 <li><code>After</code> validators run after Pydantic's internal parsing. They are generally more type safe and thus easier to implement.</li>
 <li><code>Before</code> validators run before Pydantic's internal parsing and validation (e.g. coercion of a <code>str</code> to an <code>int</code>). These are more flexible than <code>After</code> validators since they can modify the raw input, but they also have to deal with the raw input, which in theory could be any arbitrary object.</li>
