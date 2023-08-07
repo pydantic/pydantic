@@ -368,7 +368,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             by_alias: Whether to use attribute aliases or not.
             ref_template: The reference template.
-            schema_generator: To override the logic used to generate the JSON schema, ass a subclass of
+            schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
 
