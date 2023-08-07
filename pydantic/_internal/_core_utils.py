@@ -66,6 +66,9 @@ def is_list_like_schema_with_items_schema(
     return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
+missing = cast(Any, object())
+
+
 def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
     """Produces the ref to be used for this type by pydantic_core's core schemas.
 
@@ -198,8 +201,9 @@ class _WalkCoreSchema:
         return schema
 
     def _handle_other_schemas(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
-        if 'schema' in schema:
-            schema['schema'] = self.walk(schema['schema'], f)  # type: ignore
+        sub_schema = schema.get('schema', missing)
+        if sub_schema is not missing:
+            schema['schema'] = self.walk(sub_schema, f)  # type: ignore
         return schema
 
     def _handle_ser_schemas(self, ser_schema: core_schema.SerSchema, f: Walk) -> core_schema.SerSchema:
@@ -227,36 +231,40 @@ class _WalkCoreSchema:
             return new_inner_schema
 
         new_schema = schema.copy()
-        new_schema['schema'] = new_inner_schema
-        new_schema['definitions'] = new_definitions
+        new_schema.update(schema=new_inner_schema, definitions=new_definitions)  # type: ignore
         return new_schema
 
     def handle_list_schema(self, schema: core_schema.ListSchema, f: Walk) -> core_schema.CoreSchema:
-        if 'items_schema' in schema:
-            schema['items_schema'] = self.walk(schema['items_schema'], f)
+        items_schema = schema.get('items_schema', missing)
+        if items_schema is not missing:
+            schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
     def handle_set_schema(self, schema: core_schema.SetSchema, f: Walk) -> core_schema.CoreSchema:
-        if 'items_schema' in schema:
-            schema['items_schema'] = self.walk(schema['items_schema'], f)
+        items_schema = schema.get('items_schema', missing)
+        if items_schema is not missing:
+            schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
     def handle_frozenset_schema(self, schema: core_schema.FrozenSetSchema, f: Walk) -> core_schema.CoreSchema:
-        if 'items_schema' in schema:
-            schema['items_schema'] = self.walk(schema['items_schema'], f)
+        items_schema = schema.get('items_schema', missing)
+        if items_schema is not missing:
+            schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
     def handle_generator_schema(self, schema: core_schema.GeneratorSchema, f: Walk) -> core_schema.CoreSchema:
-        if 'items_schema' in schema:
-            schema['items_schema'] = self.walk(schema['items_schema'], f)
+        items_schema = schema.get('items_schema', missing)
+        if items_schema is not missing:
+            schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
     def handle_tuple_variable_schema(
         self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema, f: Walk
     ) -> core_schema.CoreSchema:
         schema = cast(core_schema.TupleVariableSchema, schema)
-        if 'items_schema' in schema:
-            schema['items_schema'] = self.walk(schema['items_schema'], f)
+        items_schema = schema.get('items_schema', missing)
+        if items_schema is not missing:
+            schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
     def handle_tuple_positional_schema(
@@ -264,15 +272,18 @@ class _WalkCoreSchema:
     ) -> core_schema.CoreSchema:
         schema = cast(core_schema.TuplePositionalSchema, schema)
         schema['items_schema'] = [self.walk(v, f) for v in schema['items_schema']]
-        if 'extra_schema' in schema:
-            schema['extra_schema'] = self.walk(schema['extra_schema'], f)
+        extra_schema = schema.get('extra_schema', missing)
+        if extra_schema is not missing:
+            schema['extra_schema'] = self.walk(extra_schema, f)
         return schema
 
     def handle_dict_schema(self, schema: core_schema.DictSchema, f: Walk) -> core_schema.CoreSchema:
-        if 'keys_schema' in schema:
-            schema['keys_schema'] = self.walk(schema['keys_schema'], f)
-        if 'values_schema' in schema:
-            schema['values_schema'] = self.walk(schema['values_schema'], f)
+        key_schema = schema.get('keys_schema', missing)
+        if key_schema is not missing:
+            schema['keys_schema'] = self.walk(key_schema, f)
+        value_schema = schema.get('values_schema', missing)
+        if value_schema is not missing:
+            schema['values_schema'] = self.walk(value_schema, f)
         return schema
 
     def handle_function_schema(self, schema: AnyFunctionSchema, f: Walk) -> core_schema.CoreSchema:
@@ -307,8 +318,9 @@ class _WalkCoreSchema:
         return schema
 
     def handle_model_fields_schema(self, schema: core_schema.ModelFieldsSchema, f: Walk) -> core_schema.CoreSchema:
-        if 'extra_validator' in schema:
-            schema['extra_validator'] = self.walk(schema['extra_validator'], f)
+        extra_validator = schema.get('extra_validator', missing)
+        if extra_validator is not missing:
+            schema['extra_validator'] = self.walk(extra_validator, f)
         replaced_fields: dict[str, core_schema.ModelField] = {}
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', None) or ():
@@ -325,8 +337,9 @@ class _WalkCoreSchema:
         return schema
 
     def handle_typed_dict_schema(self, schema: core_schema.TypedDictSchema, f: Walk) -> core_schema.CoreSchema:
-        if 'extra_validator' in schema:
-            schema['extra_validator'] = self.walk(schema['extra_validator'], f)
+        extra_validator = schema.get('extra_validator', missing)
+        if extra_validator is not missing:
+            schema['extra_validator'] = self.walk(extra_validator, f)
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', None) or ():
             replaced_field = computed_field.copy()
@@ -373,8 +386,9 @@ class _WalkCoreSchema:
 
     def handle_call_schema(self, schema: core_schema.CallSchema, f: Walk) -> core_schema.CoreSchema:
         schema['arguments_schema'] = self.walk(schema['arguments_schema'], f)
-        if 'return_schema' in schema:
-            schema['return_schema'] = self.walk(schema['return_schema'], f)
+        return_schema = schema.get('return_schema', missing)
+        if return_schema:
+            schema['return_schema'] = self.walk(return_schema, f)
         return schema
 
 
