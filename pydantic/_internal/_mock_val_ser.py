@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Callable, Generic, TypeVar
 
 from pydantic_core import SchemaSerializer, SchemaValidator
+from typing_extensions import Literal
 
-from pydantic.errors import PydanticErrorCodes, PydanticUserError
+from ..errors import PydanticErrorCodes, PydanticUserError
 
 if TYPE_CHECKING:
     from ..dataclasses import PydanticDataclass
