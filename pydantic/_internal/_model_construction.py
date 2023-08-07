@@ -22,7 +22,7 @@ from ._discriminated_union import apply_discriminators
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
-from ._mock_validator import MockValidator, set_basemodel_mock_validator
+from ._mock_val_ser import MockValSer, set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_types_namespace, is_classvar, parent_frame_namespace
 from ._utils import ClassAttribute, is_valid_identifier
@@ -202,7 +202,7 @@ class ModelMetaclass(ABCMeta):
             if item == '__pydantic_core_schema__':
                 # This means the class didn't get a schema generated for it, likely because there was an undefined reference
                 maybe_mock_validator = getattr(self, '__pydantic_validator__', None)
-                if isinstance(maybe_mock_validator, MockValidator):
+                if isinstance(maybe_mock_validator, MockValSer):
                     rebuilt_validator = maybe_mock_validator.rebuild()
                     if rebuilt_validator is not None:
                         # In this case, a validator was built, and so `__pydantic_core_schema__` should now be set
@@ -461,7 +461,7 @@ def complete_model_class(
     )
 
     if config_wrapper.defer_build:
-        set_basemodel_mock_validator(cls, cls_name)
+        set_model_mocks(cls, cls_name)
         return False
 
     try:
@@ -469,7 +469,7 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_basemodel_mock_validator(cls, cls_name, f'`{e.name}`')
+        set_model_mocks(cls, cls_name, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(cls)
@@ -477,7 +477,7 @@ def complete_model_class(
     schema = gen_schema.collect_definitions(schema)
     schema = apply_discriminators(flatten_schema_defs(schema))
     if collect_invalid_schemas(schema):
-        set_basemodel_mock_validator(cls, cls_name)
+        set_model_mocks(cls, cls_name)
         return False
 
     # debug(schema)
