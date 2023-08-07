@@ -56,6 +56,13 @@ class MockValSer(Generic[ValSer]):
 
 
 def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = 'all referenced types') -> None:
+    """Set `__pydantic_validator__` and `__pydantic_serializer__` to `MockValSer`s on a model.
+
+    Args:
+        cls: The model class to set the mocks on
+        cls_name: Name of the model class, used in error messages
+        undefined_name: Name of the undefined thing, used in error messages
+    """
     undefined_type_error_message = (
         f'`{cls_name}` is not fully defined; you should define {undefined_name},'
         f' then call `{cls_name}.model_rebuild()`.'
