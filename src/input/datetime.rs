@@ -260,6 +260,7 @@ pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'
         Err(err) => Err(ValError::new(
             ErrorType::DateParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
+                context: None,
             },
             input,
         )),
@@ -282,6 +283,7 @@ pub fn bytes_as_time<'a>(
         Err(err) => Err(ValError::new(
             ErrorType::TimeParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
+                context: None,
             },
             input,
         )),
@@ -304,6 +306,7 @@ pub fn bytes_as_datetime<'a, 'b>(
         Err(err) => Err(ValError::new(
             ErrorType::DatetimeParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
+                context: None,
             },
             input,
         )),
@@ -327,6 +330,7 @@ pub fn int_as_datetime<'a>(
         Err(err) => Err(ValError::new(
             ErrorType::DatetimeParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
+                context: None,
             },
             input,
         )),
@@ -339,6 +343,7 @@ macro_rules! nan_check {
             return Err(ValError::new(
                 ErrorType::$error_type {
                     error: Cow::Borrowed("NaN values not permitted"),
+                    context: None,
                 },
                 $input,
             ));
@@ -382,6 +387,7 @@ pub fn int_as_time<'a>(
             return Err(ValError::new(
                 ErrorType::TimeParsing {
                     error: Cow::Borrowed("time in seconds should be positive"),
+                    context: None,
                 },
                 input,
             ));
@@ -403,6 +409,7 @@ pub fn int_as_time<'a>(
         Err(err) => Err(ValError::new(
             ErrorType::TimeParsing {
                 error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
+                context: None,
             },
             input,
         )),
@@ -420,6 +427,7 @@ fn map_timedelta_err<'a>(input: &'a impl Input<'a>, err: ParseError) -> ValError
     ValError::new(
         ErrorType::TimeDeltaParsing {
             error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
+            context: None,
         },
         input,
     )

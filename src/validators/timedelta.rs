@@ -86,6 +86,7 @@ impl Validator for TimeDeltaValidator {
                         if !raw_timedelta.$constraint(constraint) {
                             return Err(ValError::new(
                                 ErrorType::$error {
+                                    context: None,
                                     $constraint: duration_as_pytimedelta(py, constraint)?
                                         .repr()?
                                         .to_string()

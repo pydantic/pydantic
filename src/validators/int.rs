@@ -101,6 +101,7 @@ impl Validator for ConstrainedIntValidator {
                 return Err(ValError::new(
                     ErrorType::MultipleOf {
                         multiple_of: multiple_of.clone().into(),
+                        context: None,
                     },
                     input,
                 ));
@@ -108,25 +109,46 @@ impl Validator for ConstrainedIntValidator {
         }
         if let Some(ref le) = self.le {
             if &int_value > le {
-                return Err(ValError::new(ErrorType::LessThanEqual { le: le.clone().into() }, input));
+                return Err(ValError::new(
+                    ErrorType::LessThanEqual {
+                        le: le.clone().into(),
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
         if let Some(ref lt) = self.lt {
             if &int_value >= lt {
-                return Err(ValError::new(ErrorType::LessThan { lt: lt.clone().into() }, input));
+                return Err(ValError::new(
+                    ErrorType::LessThan {
+                        lt: lt.clone().into(),
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
         if let Some(ref ge) = self.ge {
             if &int_value < ge {
                 return Err(ValError::new(
-                    ErrorType::GreaterThanEqual { ge: ge.clone().into() },
+                    ErrorType::GreaterThanEqual {
+                        ge: ge.clone().into(),
+                        context: None,
+                    },
                     input,
                 ));
             }
         }
         if let Some(ref gt) = self.gt {
             if &int_value <= gt {
-                return Err(ValError::new(ErrorType::GreaterThan { gt: gt.clone().into() }, input));
+                return Err(ValError::new(
+                    ErrorType::GreaterThan {
+                        gt: gt.clone().into(),
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
         Ok(either_int.into_py(py))

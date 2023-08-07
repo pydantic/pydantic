@@ -93,12 +93,24 @@ impl Validator for BytesConstrainedValidator {
 
         if let Some(min_length) = self.min_length {
             if len < min_length {
-                return Err(ValError::new(ErrorType::BytesTooShort { min_length }, input));
+                return Err(ValError::new(
+                    ErrorType::BytesTooShort {
+                        min_length,
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
         if let Some(max_length) = self.max_length {
             if len > max_length {
-                return Err(ValError::new(ErrorType::BytesTooLong { max_length }, input));
+                return Err(ValError::new(
+                    ErrorType::BytesTooLong {
+                        max_length,
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
 

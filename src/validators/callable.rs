@@ -1,7 +1,7 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::errors::{ErrorType, ValError, ValResult};
+use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 
 use crate::recursion_guard::RecursionGuard;
@@ -36,7 +36,7 @@ impl Validator for CallableValidator {
     ) -> ValResult<'data, PyObject> {
         match input.callable() {
             true => Ok(input.to_object(py)),
-            false => Err(ValError::new(ErrorType::CallableType, input)),
+            false => Err(ValError::new(ErrorTypeDefaults::CallableType, input)),
         }
     }
 

@@ -7,7 +7,7 @@ use pyo3::types::{PyDict, PyType};
 use uuid::Uuid;
 
 use crate::build_tools::is_strict;
-use crate::errors::{ErrorType, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
@@ -98,7 +98,13 @@ impl Validator for UuidValidator {
                 let py_input_version: usize = py_input.getattr(intern!(py, "version"))?.extract()?;
                 let expected_version = usize::from(expected_version);
                 if expected_version != py_input_version {
-                    return Err(ValError::new(ErrorType::UuidVersion { expected_version }, input));
+                    return Err(ValError::new(
+                        ErrorType::UuidVersion {
+                            expected_version,
+                            context: None,
+                        },
+                        input,
+                    ));
                 }
             }
             Ok(py_input.to_object(py))
@@ -106,6 +112,7 @@ impl Validator for UuidValidator {
             Err(ValError::new(
                 ErrorType::IsInstanceOf {
                     class: class.name().unwrap_or("UUID").to_string(),
+                    context: None,
                 },
                 input,
             ))
@@ -138,13 +145,20 @@ impl UuidValidator {
             Some(either_string) => {
                 let cow = either_string.as_cow()?;
                 let uuid_str = cow.as_ref();
-                Uuid::parse_str(uuid_str)
-                    .map_err(|e| ValError::new(ErrorType::UuidParsing { error: e.to_string() }, input))?
+                Uuid::parse_str(uuid_str).map_err(|e| {
+                    ValError::new(
+                        ErrorType::UuidParsing {
+                            error: e.to_string(),
+                            context: None,
+                        },
+                        input,
+                    )
+                })?
             }
             None => {
                 let either_bytes = input
                     .validate_bytes(true)
-                    .map_err(|_| ValError::new(ErrorType::UuidType, input))?;
+                    .map_err(|_| ValError::new(ErrorTypeDefaults::UuidType, input))?;
                 let bytes_slice = either_bytes.as_slice();
                 'parse: {
                     // Try parsing as utf8, but don't care if it fails
@@ -153,8 +167,15 @@ impl UuidValidator {
                             break 'parse uuid;
                         }
                     }
-                    Uuid::from_slice(bytes_slice)
-                        .map_err(|e| ValError::new(ErrorType::UuidParsing { error: e.to_string() }, input))?
+                    Uuid::from_slice(bytes_slice).map_err(|e| {
+                        ValError::new(
+                            ErrorType::UuidParsing {
+                                error: e.to_string(),
+                                context: None,
+                            },
+                            input,
+                        )
+                    })?
                 }
             }
         };
@@ -163,7 +184,13 @@ impl UuidValidator {
             let v1 = uuid.get_version_num();
             let expected_version = usize::from(expected_version);
             if v1 != expected_version {
-                return Err(ValError::new(ErrorType::UuidVersion { expected_version }, input));
+                return Err(ValError::new(
+                    ErrorType::UuidVersion {
+                        expected_version,
+                        context: None,
+                    },
+                    input,
+                ));
             }
         };
         Ok(uuid)

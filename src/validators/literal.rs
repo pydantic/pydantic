@@ -194,6 +194,7 @@ impl Validator for LiteralValidator {
             None => Err(ValError::new(
                 ErrorType::LiteralError {
                     expected: self.expected_repr.clone(),
+                    context: None,
                 },
                 input,
             )),

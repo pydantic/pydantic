@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
 use crate::build_tools::is_strict;
-use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{GenericIterable, Input};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
@@ -167,7 +167,7 @@ fn validate_tuple_positional<'s, 'data, T: Iterator<Item = PyResult<&'data I>>, 
                 if let Some(value) = validator.default_value(py, Some(index), extra, definitions, recursion_guard)? {
                     output.push(value);
                 } else {
-                    errors.push(ValLineError::new_with_loc(ErrorType::Missing, input, index));
+                    errors.push(ValLineError::new_with_loc(ErrorTypeDefaults::Missing, input, index));
                 }
             }
         }
@@ -195,6 +195,7 @@ fn validate_tuple_positional<'s, 'data, T: Iterator<Item = PyResult<&'data I>>, 
                         field_type: "Tuple".to_string(),
                         max_length: expected_length,
                         actual_length: collection_len.unwrap_or(index),
+                        context: None,
                     },
                     input,
                 ));

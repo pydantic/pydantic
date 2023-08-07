@@ -89,21 +89,7 @@ impl PydanticCustomError {
     }
 
     pub fn message(&self, py: Python) -> PyResult<String> {
-        let mut message = self.message_template.clone();
-        if let Some(ref context) = self.context {
-            for (key, value) in context.as_ref(py) {
-                let key: &PyString = key.downcast()?;
-                if let Ok(py_str) = value.downcast::<PyString>() {
-                    message = message.replace(&format!("{{{}}}", key.to_str()?), py_str.to_str()?);
-                } else if let Ok(value_int) = extract_i64(value) {
-                    message = message.replace(&format!("{{{}}}", key.to_str()?), &value_int.to_string());
-                } else {
-                    // fallback for anything else just in case
-                    message = message.replace(&format!("{{{}}}", key.to_str()?), &value.to_string());
-                }
-            }
-        }
-        Ok(message)
+        Self::format_message(&self.message_template, self.context.as_ref().map(|c| c.as_ref(py)))
     }
 
     fn __str__(&self, py: Python) -> PyResult<String> {
@@ -121,8 +107,30 @@ impl PydanticCustomError {
 
 impl PydanticCustomError {
     pub fn into_val_error<'a>(self, input: &'a impl Input<'a>) -> ValError<'a> {
-        let error_type = ErrorType::CustomError { custom_error: self };
+        let error_type = ErrorType::CustomError {
+            error_type: self.error_type,
+            message_template: self.message_template,
+            context: self.context,
+        };
         ValError::new(error_type, input)
+    }
+
+    pub fn format_message(message_template: &str, context: Option<&PyDict>) -> PyResult<String> {
+        let mut message = message_template.to_string();
+        if let Some(ctx) = context {
+            for (key, value) in ctx {
+                let key: &PyString = key.downcast()?;
+                if let Ok(py_str) = value.downcast::<PyString>() {
+                    message = message.replace(&format!("{{{}}}", key.to_str()?), py_str.to_str()?);
+                } else if let Ok(value_int) = extract_i64(value) {
+                    message = message.replace(&format!("{{{}}}", key.to_str()?), &value_int.to_string());
+                } else {
+                    // fallback for anything else just in case
+                    message = message.replace(&format!("{{{}}}", key.to_str()?), &value.to_string());
+                }
+            }
+        }
+        Ok(message)
     }
 }
 

@@ -10,7 +10,7 @@ use ahash::AHashSet;
 use url::{ParseError, SyntaxViolation, Url};
 
 use crate::build_tools::{is_strict, py_schema_err};
-use crate::errors::{ErrorType, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
@@ -73,7 +73,13 @@ impl Validator for UrlValidator {
         if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
             if !allowed_schemes.contains(lib_url.scheme()) {
                 let expected_schemes = expected_schemes_repr.clone();
-                return Err(ValError::new(ErrorType::UrlScheme { expected_schemes }, input));
+                return Err(ValError::new(
+                    ErrorType::UrlScheme {
+                        expected_schemes,
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
 
@@ -130,7 +136,7 @@ impl UrlValidator {
 
                     parse_url(&url_str, input, strict)
                 } else {
-                    Err(ValError::new(ErrorType::UrlType, input))
+                    Err(ValError::new(ErrorTypeDefaults::UrlType, input))
                 }
             }
         }
@@ -139,7 +145,13 @@ impl UrlValidator {
     fn check_length<'s, 'data>(&self, input: &'data impl Input<'data>, url_str: &str) -> ValResult<'data, ()> {
         if let Some(max_length) = self.max_length {
             if url_str.len() > max_length {
-                return Err(ValError::new(ErrorType::UrlTooLong { max_length }, input));
+                return Err(ValError::new(
+                    ErrorType::UrlTooLong {
+                        max_length,
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
         Ok(())
@@ -204,7 +216,13 @@ impl Validator for MultiHostUrlValidator {
         if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
             if !allowed_schemes.contains(multi_url.scheme()) {
                 let expected_schemes = expected_schemes_repr.clone();
-                return Err(ValError::new(ErrorType::UrlScheme { expected_schemes }, input));
+                return Err(ValError::new(
+                    ErrorType::UrlScheme {
+                        expected_schemes,
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
         match check_sub_defaults(
@@ -258,7 +276,7 @@ impl MultiHostUrlValidator {
                     self.check_length(input, || lib_url.as_str().len())?;
                     Ok(PyMultiHostUrl::new(lib_url, None))
                 } else {
-                    Err(ValError::new(ErrorType::UrlType, input))
+                    Err(ValError::new(ErrorTypeDefaults::UrlType, input))
                 }
             }
         }
@@ -270,7 +288,13 @@ impl MultiHostUrlValidator {
     {
         if let Some(max_length) = self.max_length {
             if func() > max_length {
-                return Err(ValError::new(ErrorType::UrlTooLong { max_length }, input));
+                return Err(ValError::new(
+                    ErrorType::UrlTooLong {
+                        max_length,
+                        context: None,
+                    },
+                    input,
+                ));
             }
         }
         Ok(())
@@ -287,6 +311,7 @@ fn parse_multihost_url<'url, 'input>(
             Err(ValError::new(
                 ErrorType::UrlParsing {
                     error: $parse_error.to_string(),
+                    context: None,
                 },
                 input,
             ))
@@ -404,6 +429,7 @@ fn parse_url<'url, 'input>(
         return Err(ValError::new(
             ErrorType::UrlParsing {
                 error: EMPTY_INPUT.into(),
+                context: None,
             },
             input,
         ));
@@ -430,6 +456,7 @@ fn parse_url<'url, 'input>(
                     Err(ValError::new(
                         ErrorType::UrlSyntaxViolation {
                             error: vio.description().into(),
+                            context: None,
                         },
                         input,
                     ))
@@ -437,10 +464,24 @@ fn parse_url<'url, 'input>(
                     Ok(url)
                 }
             }
-            Err(e) => Err(ValError::new(ErrorType::UrlParsing { error: e.to_string() }, input)),
+            Err(e) => Err(ValError::new(
+                ErrorType::UrlParsing {
+                    error: e.to_string(),
+                    context: None,
+                },
+                input,
+            )),
         }
     } else {
-        Url::parse(url_str).map_err(move |e| ValError::new(ErrorType::UrlParsing { error: e.to_string() }, input))
+        Url::parse(url_str).map_err(move |e| {
+            ValError::new(
+                ErrorType::UrlParsing {
+                    error: e.to_string(),
+                    context: None,
+                },
+                input,
+            )
+        })
     }
 }
 
@@ -452,13 +493,17 @@ fn check_sub_defaults(
     default_port: Option<u16>,
     default_path: &Option<String>,
 ) -> Result<(), ErrorType> {
-    let map_parse_err = |e: ParseError| ErrorType::UrlParsing { error: e.to_string() };
+    let map_parse_err = |e: ParseError| ErrorType::UrlParsing {
+        error: e.to_string(),
+        context: None,
+    };
     if !lib_url.has_host() {
         if let Some(ref default_host) = default_host {
             lib_url.set_host(Some(default_host)).map_err(map_parse_err)?;
         } else if host_required {
             return Err(ErrorType::UrlParsing {
                 error: ParseError::EmptyHost.to_string(),
+                context: None,
             });
         }
     }

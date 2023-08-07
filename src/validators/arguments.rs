@@ -6,7 +6,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
-use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 
@@ -199,7 +199,7 @@ impl Validator for ArgumentsValidator {
                     match (pos_value, kw_value) {
                         (Some(_), Some((_, kw_value))) => {
                             errors.push(ValLineError::new_with_loc(
-                                ErrorType::MultipleArgumentValues,
+                                ErrorTypeDefaults::MultipleArgumentValues,
                                 kw_value,
                                 parameter.name.clone(),
                             ));
@@ -239,9 +239,9 @@ impl Validator for ArgumentsValidator {
                                 }
                             } else if let Some(ref lookup_key) = parameter.kw_lookup_key {
                                 let error_type = if parameter.positional {
-                                    ErrorType::MissingArgument
+                                    ErrorTypeDefaults::MissingArgument
                                 } else {
-                                    ErrorType::MissingKeywordOnlyArgument
+                                    ErrorTypeDefaults::MissingKeywordOnlyArgument
                                 };
                                 errors.push(lookup_key.error(
                                     error_type,
@@ -250,7 +250,7 @@ impl Validator for ArgumentsValidator {
                                     &parameter.name,
                                 ));
                             } else {
-                                errors.push(ValLineError::new_with_loc(ErrorType::MissingPositionalOnlyArgument, input, index));
+                                errors.push(ValLineError::new_with_loc(ErrorTypeDefaults::MissingPositionalOnlyArgument, input, index));
                             };
                         }
                     }
@@ -276,7 +276,7 @@ impl Validator for ArgumentsValidator {
                         } else {
                             for (index, item) in $slice_macro!(args, self.positional_params_count, len).iter().enumerate() {
                                 errors.push(ValLineError::new_with_loc(
-                                    ErrorType::UnexpectedPositionalArgument,
+                                    ErrorTypeDefaults::UnexpectedPositionalArgument,
                                     item,
                                     index + self.positional_params_count,
                                 ));
@@ -294,7 +294,7 @@ impl Validator for ArgumentsValidator {
                                     for err in line_errors {
                                         errors.push(
                                             err.with_outer_location(raw_key.as_loc_item())
-                                                .with_type(ErrorType::InvalidKey),
+                                                .with_type(ErrorTypeDefaults::InvalidKey),
                                         );
                                     }
                                     continue;
@@ -314,7 +314,7 @@ impl Validator for ArgumentsValidator {
                                     },
                                     None => {
                                         errors.push(ValLineError::new_with_loc(
-                                            ErrorType::UnexpectedKeywordArgument,
+                                            ErrorTypeDefaults::UnexpectedKeywordArgument,
                                             value,
                                             raw_key.as_loc_item(),
                                         ));

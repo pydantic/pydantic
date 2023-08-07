@@ -7,7 +7,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
-use crate::errors::{py_err_string, ErrorType, ValError, ValLineError, ValResult};
+use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{
     AttributesGenericIterator, DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator,
     MappingGenericIterator,
@@ -133,10 +133,11 @@ impl Validator for ModelFieldsValidator {
                 let errors: Vec<ValLineError> = errors
                     .into_iter()
                     .map(|e| match e.error_type {
-                        ErrorType::DictType => {
+                        ErrorType::DictType { .. } => {
                             let mut e = e;
                             e.error_type = ErrorType::ModelType {
                                 class_name: self.model_name.clone(),
+                                context: None,
                             };
                             e
                         }
@@ -174,6 +175,7 @@ impl Validator for ModelFieldsValidator {
                             errors.push(ValLineError::new_with_loc(
                                 ErrorType::GetAttributeError {
                                     error: py_err_string(py, err),
+                                    context: None,
                                 },
                                 input,
                                 field.name.clone(),
@@ -208,7 +210,7 @@ impl Validator for ModelFieldsValidator {
                         model_dict.set_item(&field.name_py, value)?;
                     } else {
                         errors.push(field.lookup_key.error(
-                            ErrorType::Missing,
+                            ErrorTypeDefaults::Missing,
                             input,
                             self.loc_by_alias,
                             &field.name
@@ -226,7 +228,7 @@ impl Validator for ModelFieldsValidator {
                                 for err in line_errors {
                                     errors.push(
                                         err.with_outer_location(raw_key.as_loc_item())
-                                            .with_type(ErrorType::InvalidKey),
+                                            .with_type(ErrorTypeDefaults::InvalidKey),
                                     );
                                 }
                                 continue;
@@ -241,7 +243,7 @@ impl Validator for ModelFieldsValidator {
                         match self.extra_behavior {
                             ExtraBehavior::Forbid => {
                                 errors.push(ValLineError::new_with_loc(
-                                    ErrorType::ExtraForbidden,
+                                    ErrorTypeDefaults::ExtraForbidden,
                                     value,
                                     raw_key.as_loc_item(),
                                 ));
@@ -343,7 +345,7 @@ impl Validator for ModelFieldsValidator {
         let new_data = if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
             if field.frozen {
                 Err(ValError::new_with_loc(
-                    ErrorType::FrozenField,
+                    ErrorTypeDefaults::FrozenField,
                     field_value,
                     field.name.to_string(),
                 ))
@@ -371,6 +373,7 @@ impl Validator for ModelFieldsValidator {
                     return Err(ValError::new_with_loc(
                         ErrorType::NoSuchAttribute {
                             attribute: field_name.to_string(),
+                            context: None,
                         },
                         field_value,
                         field_name.to_string(),
