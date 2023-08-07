@@ -810,8 +810,7 @@ class PydanticModelTransformer:
                                 continue
                             analyzed_variable_type = self._api.anal_type(func_type.arg_types[arg_idx])
                             variable = Var(arg_name, analyzed_variable_type)
-                            settings_init_argument = Argument(variable, analyzed_variable_type, None, ARG_OPT)
-                            args.append(settings_init_argument)
+                            args.append(Argument(variable, analyzed_variable_type, None, ARG_OPT))
 
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
