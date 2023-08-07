@@ -383,6 +383,10 @@ jobs:
             target: i686
             python-architecture: x86
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
+          - os: windows
+            ls: dir
+            target: aarch64
+            interpreter: 3.11 3.12
           - os: macos
             target: aarch64
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
