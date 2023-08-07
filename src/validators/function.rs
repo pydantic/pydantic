@@ -499,6 +499,7 @@ macro_rules! py_err_string {
                 Ok(_) => ValError::new(
                     ErrorType::$type_member {
                         error: Some($error_value.into()),
+                        context: None,
                     },
                     $input,
                 ),

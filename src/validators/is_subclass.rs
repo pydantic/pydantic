@@ -57,6 +57,7 @@ impl Validator for IsSubclassValidator {
             false => Err(ValError::new(
                 ErrorType::IsSubclassOf {
                     class: self.class_repr.clone(),
+                    context: None,
                 },
                 input,
             )),

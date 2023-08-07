@@ -60,6 +60,7 @@ impl Validator for TimeValidator {
                             return Err(ValError::new(
                                 ErrorType::$error {
                                     $constraint: constraint.to_string().into(),
+                                    context: None,
                                 },
                                 input,
                             ));

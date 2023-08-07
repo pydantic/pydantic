@@ -5,7 +5,7 @@ use speedate::{Date, Time};
 use strum::EnumMessage;
 
 use crate::build_tools::{is_strict, py_schema_error_type};
-use crate::errors::{ErrorType, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::{EitherDate, Input};
 
 use crate::recursion_guard::RecursionGuard;
@@ -68,6 +68,7 @@ impl Validator for DateValidator {
                             return Err(ValError::new(
                                 ErrorType::$error {
                                     $constraint: constraint.to_string().into(),
+                                    context: None,
                                 },
                                 input,
                             ));
@@ -91,8 +92,8 @@ impl Validator for DateValidator {
                     let date_compliant = today_constraint.op.compare(c);
                     if !date_compliant {
                         let error_type = match today_constraint.op {
-                            NowOp::Past => ErrorType::DatePast,
-                            NowOp::Future => ErrorType::DateFuture,
+                            NowOp::Past => ErrorTypeDefaults::DatePast,
+                            NowOp::Future => ErrorTypeDefaults::DateFuture,
                         };
                         return Err(ValError::new(error_type, input));
                     }
@@ -134,9 +135,10 @@ fn date_from_datetime<'data>(
                     // convert DateTimeParsing -> DateFromDatetimeParsing but keep the rest of the error unchanged
                     for line_error in &mut line_errors {
                         match line_error.error_type {
-                            ErrorType::DatetimeParsing { ref error } => {
+                            ErrorType::DatetimeParsing { ref error, .. } => {
                                 line_error.error_type = ErrorType::DateFromDatetimeParsing {
                                     error: error.to_string(),
+                                    context: None,
                                 };
                             }
                             _ => {
@@ -161,7 +163,7 @@ fn date_from_datetime<'data>(
     if dt.time == zero_time {
         Ok(EitherDate::Raw(dt.date))
     } else {
-        Err(ValError::new(ErrorType::DateFromDatetimeInexact, input))
+        Err(ValError::new(ErrorTypeDefaults::DateFromDatetimeInexact, input))
     }
 }
 

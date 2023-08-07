@@ -344,7 +344,7 @@ impl TryFrom<&PyAny> for PyLineError {
             let context: Option<&PyDict> = dict.get_as(intern!(py, "ctx"))?;
             ErrorType::new(py, type_str.to_str()?, context)?
         } else if let Ok(custom_error) = type_raw.extract::<PydanticCustomError>() {
-            ErrorType::new_custom_error(custom_error)
+            ErrorType::new_custom_error(py, custom_error)
         } else {
             return Err(PyTypeError::new_err(
                 "`type` should be a `str` or `PydanticCustomError`",
@@ -390,7 +390,7 @@ impl PyLineError {
         }
         if let Some(url_prefix) = url_prefix {
             match self.error_type {
-                ErrorType::CustomError { custom_error: _ } => {
+                ErrorType::CustomError { .. } => {
                     // Don't add URLs for custom errors
                 }
                 _ => {
@@ -428,7 +428,7 @@ impl PyLineError {
         }
         if let Some(url_prefix) = url_prefix {
             match self.error_type {
-                ErrorType::CustomError { custom_error: _ } => {
+                ErrorType::CustomError { .. } => {
                     // Don't display URLs for custom errors
                     output.push(']');
                 }

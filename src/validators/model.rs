@@ -10,7 +10,7 @@ use super::function::convert_err;
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
-use crate::errors::{ErrorType, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::{py_error_on_minusone, Input};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::{py_err, SchemaDict};
@@ -159,12 +159,13 @@ impl Validator for ModelValidator {
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         if self.frozen {
-            return Err(ValError::new(ErrorType::FrozenInstance, field_value));
+            return Err(ValError::new(ErrorTypeDefaults::FrozenInstance, field_value));
         } else if self.root_model {
             return if field_name != ROOT_FIELD {
                 Err(ValError::new_with_loc(
                     ErrorType::NoSuchAttribute {
                         attribute: field_name.to_string(),
+                        context: None,
                     },
                     field_value,
                     field_name.to_string(),

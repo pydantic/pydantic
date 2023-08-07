@@ -141,6 +141,7 @@ impl ValidatorIterator {
                                             field_type: "Generator".to_string(),
                                             max_length,
                                             actual_length: index + 1,
+                                            context: None,
                                         },
                                         $iter.input(py),
                                     );
@@ -166,6 +167,7 @@ impl ValidatorIterator {
                                         field_type: "Generator".to_string(),
                                         min_length,
                                         actual_length: $iter.index(),
+                                        context: None,
                                     },
                                     $iter.input(py),
                                 );

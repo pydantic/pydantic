@@ -1,6 +1,6 @@
 use num_bigint::BigInt;
 
-use crate::errors::{ErrorType, ValError, ValResult};
+use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::EitherInt;
 
 use super::Input;
@@ -9,6 +9,7 @@ pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: serde_json::Error) -> 
     ValError::new(
         ErrorType::JsonInvalid {
             error: error.to_string(),
+            context: None,
         },
         input,
     )
@@ -32,7 +33,7 @@ pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<'a, bo
     {
         Ok(true)
     } else {
-        Err(ValError::new(ErrorType::BoolParsing, input))
+        Err(ValError::new(ErrorTypeDefaults::BoolParsing, input))
     }
 }
 
@@ -42,7 +43,7 @@ pub fn int_as_bool<'a>(input: &'a impl Input<'a>, int: i64) -> ValResult<'a, boo
     } else if int == 1 {
         Ok(true)
     } else {
-        Err(ValError::new(ErrorType::BoolParsing, input))
+        Err(ValError::new(ErrorTypeDefaults::BoolParsing, input))
     }
 }
 
@@ -54,17 +55,17 @@ pub fn int_as_bool<'a>(input: &'a impl Input<'a>, int: i64) -> ValResult<'a, boo
 pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<'s, EitherInt<'s>> {
     let len = str.len();
     if len > 4300 {
-        Err(ValError::new(ErrorType::IntParsingSize, input))
+        Err(ValError::new(ErrorTypeDefaults::IntParsingSize, input))
     } else if let Some(int) = _parse_str(input, str, len) {
         Ok(int)
     } else if let Some(str_stripped) = strip_decimal_zeros(str) {
         if let Some(int) = _parse_str(input, str_stripped, len) {
             Ok(int)
         } else {
-            Err(ValError::new(ErrorType::IntParsing, input))
+            Err(ValError::new(ErrorTypeDefaults::IntParsing, input))
         }
     } else {
-        Err(ValError::new(ErrorType::IntParsing, input))
+        Err(ValError::new(ErrorTypeDefaults::IntParsing, input))
     }
 }
 
@@ -94,12 +95,12 @@ fn strip_decimal_zeros(s: &str) -> Option<&str> {
 
 pub fn float_as_int<'a>(input: &'a impl Input<'a>, float: f64) -> ValResult<'a, EitherInt<'a>> {
     if float == f64::INFINITY || float == f64::NEG_INFINITY || float.is_nan() {
-        Err(ValError::new(ErrorType::FiniteNumber, input))
+        Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input))
     } else if float % 1.0 != 0.0 {
-        Err(ValError::new(ErrorType::IntFromFloat, input))
+        Err(ValError::new(ErrorTypeDefaults::IntFromFloat, input))
     } else if (i64::MIN as f64) < float && float < (i64::MAX as f64) {
         Ok(EitherInt::I64(float as i64))
     } else {
-        Err(ValError::new(ErrorType::IntParsingSize, input))
+        Err(ValError::new(ErrorTypeDefaults::IntParsingSize, input))
     }
 }
