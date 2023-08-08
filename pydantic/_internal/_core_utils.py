@@ -458,9 +458,9 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
     if not inline:
         return make_result(schema, all_defs.values())
 
-    ref_counts: dict[str, int] = defaultdict(int)
+    ref_counts: defaultdict[str, int] = defaultdict(int)
     involved_in_recursion: dict[str, bool] = {}
-    current_recursion_ref_count: dict[str, int] = defaultdict(int)
+    current_recursion_ref_count: defaultdict[str, int] = defaultdict(int)
 
     def count_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if not is_definition_ref_schema(s):
