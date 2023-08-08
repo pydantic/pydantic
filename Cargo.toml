@@ -16,7 +16,7 @@ include = [
     "/rust-toolchain",
     "/src",
     "!/src/self_schema.py",
-    "/pydantic_core",
+    "/python/pydantic_core",
     "/tests",
     "/.cargo",
     "!__pycache__",
