@@ -8,8 +8,9 @@ from pydantic.fields import FieldInfo
 
 TYPES_DEFAULTS = {int: 0, str: '', bool: False}  # some dummy basic types with defaults for some fields
 TYPES = [*TYPES_DEFAULTS.keys()]
-INNER_DATA_MODEL_COUNT = 50
-OUTER_DATA_MODEL_COUNT = 50
+# these are set low to minimise test time, they're increased below in the cProfile call
+INNER_DATA_MODEL_COUNT = 5
+OUTER_DATA_MODEL_COUNT = 5
 
 
 def create_data_models() -> list[Any]:
@@ -116,3 +117,12 @@ def test_fastapi_startup_perf(benchmark: Any):
         assert len(adapters) == len(concrete_api_models) * 2
 
     benchmark(bench)
+
+
+if __name__ == '__main__':
+    # run with `python tests/benchmarks/test_fastapi_startup.py`
+    import cProfile
+
+    INNER_DATA_MODEL_COUNT = 50
+    OUTER_DATA_MODEL_COUNT = 50
+    cProfile.run('test_fastapi_startup_perf(lambda f: f())', sort='tottime')
