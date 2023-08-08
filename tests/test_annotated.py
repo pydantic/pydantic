@@ -2,7 +2,7 @@ import sys
 from typing import Any, Generic, Iterator, List, Set, TypeVar
 
 import pytest
-from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt
+from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Predicate
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
@@ -342,5 +342,36 @@ def test_merge_field_infos_ordering() -> None:
             'msg': 'Input should be less than or equal to 2',
             'input': 3,
             'ctx': {'le': '2'},
+        }
+    ]
+
+
+def test_validate_float_inf_nan_python() -> None:
+    ta = TypeAdapter(Annotated[float, AfterValidator(lambda _: float('nan')), Field(allow_inf_nan=False)])
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(1.0)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    # TODO: input should be float('nan'), this seems like a subtle bug in pydantic-core
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': 1.0}
+    ]
+
+
+def test_predicate_error_python() -> None:
+    ta = TypeAdapter(Annotated[int, Predicate(lambda x: x > 0)])
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(-1)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'predicate_failed',
+            'loc': (),
+            'msg': 'Predicate test_predicate_error_python.<locals>.<lambda> failed',
+            'input': -1,
+            'ctx': {},
         }
     ]
