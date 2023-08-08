@@ -1,7 +1,9 @@
 """https://github.com/pydantic/pydantic/issues/6768"""
 from __future__ import annotations
 
-from typing import Annotated, Any, Generic, TypeVar
+from typing import Any, Dict, Generic, List, TypeVar
+
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, TypeAdapter, create_model
 from pydantic.fields import FieldInfo
@@ -22,7 +24,7 @@ def create_data_models() -> list[Any]:
             type_ = TYPES[j % len(TYPES)]
             type_default = TYPES_DEFAULTS[type_]
             if j % 4 == 0:
-                type_ = list[type_]
+                type_ = List[type_]
                 type_default = []
 
             default = ... if j % 2 == 0 else type_default
@@ -36,7 +38,7 @@ def create_data_models() -> list[Any]:
         for j in range(i):
             type_ = models[j % len(models)] if j % 2 == 0 else TYPES[j % len(TYPES)]
             if j % 4 == 0:
-                type_ = list[type_]
+                type_ = List[type_]
             fields[f'f{j}'] = (type_, ...)
         models_with_nested.append(create_model(f'M2{i}', **fields))
 
@@ -56,17 +58,17 @@ def test_fastapi_startup_perf(benchmark: Any):
         bar: str
 
     class GetManyModel(BaseModel, Generic[T]):
-        res: list[T]
+        res: List[T]
 
     class GetManyModel2(GetManyModel[T], Generic[T]):
         foo: str
         bar: str
 
     class GetManyModel3(BaseModel, Generic[T]):
-        res: dict[str, T]
+        res: Dict[str, T]
 
     class GetManyModel4(BaseModel, Generic[T]):
-        res: dict[str, list[T]]
+        res: Dict[str, List[T]]
 
     class PutModel(BaseModel, Generic[T]):
         data: T
@@ -76,13 +78,13 @@ def test_fastapi_startup_perf(benchmark: Any):
         bar: str
 
     class PutManyModel(BaseModel, Generic[T]):
-        data: list[T]
+        data: List[T]
 
     class PutManyModel2(PutManyModel[T], Generic[T]):
         foo: str
         bar: str
 
-    api_models: list[Any] = [
+    api_models: List[Any] = [
         GetModel,
         GetModel2,
         GetManyModel,
@@ -122,7 +124,9 @@ def test_fastapi_startup_perf(benchmark: Any):
 if __name__ == '__main__':
     # run with `python tests/benchmarks/test_fastapi_startup.py`
     import cProfile
+    import sys
 
     INNER_DATA_MODEL_COUNT = 50
     OUTER_DATA_MODEL_COUNT = 50
+    print(f'Python version: {sys.version}')
     cProfile.run('test_fastapi_startup_perf(lambda f: f())', sort='tottime')
