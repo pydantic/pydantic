@@ -105,7 +105,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
             Converted `PydanticUndefinedAnnotation` error.
         """
         try:
-            name = name_error.name  # python > 3.10
+            name = name_error.name  # type: ignore  # python > 3.10
         except AttributeError:
             name = re.search(r".*'(.+?)'", str(name_error)).group(1)  # type: ignore[union-attr]
         return cls(name=name, message=str(name_error))
