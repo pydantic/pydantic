@@ -8,6 +8,7 @@ from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
 from pydantic.errors import PydanticSchemaGenerationError
+from pydantic.functional_validators import AfterValidator
 
 NO_VALUE = object()
 
@@ -23,7 +24,7 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Field(gt=0)],
             5,
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])])',
         ),
         (
             lambda: int,
@@ -63,7 +64,7 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Field(gt=0), Lt(2)],
             5,
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)]), Lt(lt=2)])',
         ),
         (
             lambda: Annotated[int, Field(alias='foobar')],
@@ -164,15 +165,13 @@ def test_annotated_alias() -> None:
         e: Nested
 
     fields_repr = {k: repr(v) for k, v in MyModel.model_fields.items()}
+    # insert_assert(fields_repr)
     assert fields_repr == {
-        'a': "FieldInfo(annotation=str, required=False, default='abc', metadata=[MaxLen(max_length=3)])",
+        'a': "FieldInfo(annotation=str, required=False, default='abc', metadata=[FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=3)])])",
         'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)])',
         'c': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
         'd': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
-        'e': (
-            'FieldInfo(annotation=List[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLe'
-            "n(max_length=3)])]], required=True, description='foo')"
-        ),
+        'e': "FieldInfo(annotation=List[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=3)])]], required=True, description='foo')",
     }
     assert MyModel(b='def', e=['xyz']).model_dump() == dict(a='abc', b='def', c=2, d=2, e=['xyz'])
 
@@ -316,3 +315,32 @@ def test_model_dump_doesnt_dump_annotated_dunder():
     # In Pydantic v1, `AnnotatedModel.dict()` would have returned
     # `{'one': 1, '__orig_class__': typing.Annotated[...]}`
     assert AnnotatedModel(one=1).model_dump() == {'one': 1}
+
+
+def test_merge_field_infos_ordering() -> None:
+    TheType = Annotated[int, AfterValidator(lambda x: x), Field(le=2), AfterValidator(lambda x: x * 2), Field(lt=4)]
+
+    class Model(BaseModel):
+        x: TheType
+
+    assert Model(x=1).x == 2
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=2)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'less_than', 'loc': ('x',), 'msg': 'Input should be less than 4', 'input': 2, 'ctx': {'lt': '4'}}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=3)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'less_than_equal',
+            'loc': ('x',),
+            'msg': 'Input should be less than or equal to 2',
+            'input': 3,
+            'ctx': {'le': '2'},
+        }
+    ]
