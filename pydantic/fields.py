@@ -362,7 +362,13 @@ class FieldInfo(_repr.Representation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
                 field_info = cls.merge_field_infos(*field_infos, annotation=first_arg, default=default)
-                field_info.metadata = list(extra_args)
+                metadata: list[Any] = []
+                for a in extra_args:
+                    if not isinstance(a, FieldInfo):
+                        metadata.append(a)
+                    else:
+                        metadata.extend(a.metadata)
+                field_info.metadata = metadata
                 return field_info
 
             return cls(annotation=annotation, default=default, frozen=final or None)

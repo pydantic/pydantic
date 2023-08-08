@@ -24,7 +24,7 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Field(gt=0)],
             5,
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)])])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: int,
@@ -64,7 +64,7 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Field(gt=0), Lt(2)],
             5,
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[FieldInfo(annotation=NoneType, required=True, metadata=[Gt(gt=0)]), Lt(lt=2)])',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
         ),
         (
             lambda: Annotated[int, Field(alias='foobar')],
