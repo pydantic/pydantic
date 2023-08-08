@@ -2643,7 +2643,7 @@ new attributes after instantiation.</p>
             <span class="c1">#   If the class is generic, we need to make sure the subclass also inherits from Generic</span>
             <span class="c1">#   with all the same parameters.</span>
             <span class="n">bases</span> <span class="o">=</span> <span class="p">(</span><span class="bp">cls</span><span class="p">,)</span>
-            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">Generic</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">Generic</span><span class="p">):</span>
                 <span class="n">generic_base</span> <span class="o">=</span> <span class="n">Generic</span><span class="p">[</span><span class="bp">cls</span><span class="o">.</span><span class="n">__parameters__</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
                 <span class="n">bases</span> <span class="o">=</span> <span class="n">bases</span> <span class="o">+</span> <span class="p">(</span><span class="n">generic_base</span><span class="p">,)</span>
             <span class="bp">cls</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">new_class</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">bases</span><span class="p">)</span>

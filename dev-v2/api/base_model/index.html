@@ -3878,7 +3878,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="n">__pydantic_self__</span><span class="o">.</span><span class="n">__pydantic_validator__</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">self_instance</span><span class="o">=</span><span class="n">__pydantic_self__</span><span class="p">)</span>
 
     <span class="c1"># The following line sets a flag that we use to determine when `__init__` gets overridden by the user</span>
-    <span class="fm">__init__</span><span class="o">.</span><span class="n">__pydantic_base_init__</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># type: ignore</span>
+    <span class="fm">__init__</span><span class="o">.</span><span class="n">__pydantic_base_init__</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">model_computed_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ComputedFieldInfo</span><span class="p">]:</span>
@@ -4115,7 +4115,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="sd">        Raises:</span>
 <span class="sd">            TypeError: Raised when trying to generate concrete names for non-generic models.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Generic</span><span class="p">):</span>  <span class="c1"># type: ignore[arg-type]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Generic</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Concrete names should only be generated for generic models.&#39;</span><span class="p">)</span>
 
         <span class="c1"># Any strings received should represent forward references, so we handle them specially below.</span>
@@ -4828,7 +4828,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="p">)</span>
 
         <span class="n">values</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-            <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+            <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">,</span> <span class="n">to_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span> <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span>
             <span class="p">),</span>
             <span class="o">**</span><span class="p">(</span><span class="n">update</span> <span class="ow">or</span> <span class="p">{}),</span>
@@ -4919,7 +4919,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
     <span class="p">)</span>
     <span class="k">def</span> <span class="nf">_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;The private method `_iter` will be removed and should no longer be used.&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="k">return</span> <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
         <span class="s1">&#39;The private method `_copy_and_set_values` will be removed and should no longer be used.&#39;</span><span class="p">,</span>
@@ -4930,7 +4930,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
             <span class="s1">&#39;The private method  `_copy_and_set_values` will be removed and should no longer be used.&#39;</span><span class="p">,</span>
             <span class="ne">DeprecationWarning</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_copy_and_set_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="k">return</span> <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_copy_and_set_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
@@ -4941,7 +4941,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="s1">&#39;The private method  `_get_value` will be removed and should no longer be used.&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_get_value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="k">return</span> <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_get_value</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
         <span class="s1">&#39;The private method `_calculate_keys` will be removed and should no longer be used.&#39;</span><span class="p">,</span>
@@ -4951,7 +4951,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
             <span class="s1">&#39;The private method `_calculate_keys` will be removed and should no longer be used.&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_calculate_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="k">return</span> <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_calculate_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
         </details>
 
@@ -6443,7 +6443,7 @@ the value <code>(str, int)</code> would be passed to <code>params</code>.</p>
 <span class="sd">    Raises:</span>
 <span class="sd">        TypeError: Raised when trying to generate concrete names for non-generic models.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Generic</span><span class="p">):</span>  <span class="c1"># type: ignore[arg-type]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">typing</span><span class="o">.</span><span class="n">Generic</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Concrete names should only be generated for generic models.&#39;</span><span class="p">)</span>
 
     <span class="c1"># Any strings received should represent forward references, so we handle them specially below.</span>
@@ -7381,7 +7381,7 @@ in the copied model.</p>
     <span class="p">)</span>
 
     <span class="n">values</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-        <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+        <span class="n">_deprecated_copy_internals</span><span class="o">.</span><span class="n">_iter</span><span class="p">(</span>
             <span class="bp">self</span><span class="p">,</span> <span class="n">to_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="n">include</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">,</span> <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">),</span>
         <span class="o">**</span><span class="p">(</span><span class="n">update</span> <span class="ow">or</span> <span class="p">{}),</span>
