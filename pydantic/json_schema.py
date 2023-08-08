@@ -1182,7 +1182,7 @@ class GenerateJsonSchema:
 
         json_schema = {'type': 'object', 'properties': properties}
         if required_fields:
-            json_schema['required'] = required_fields  # type: ignore
+            json_schema['required'] = required_fields
         return json_schema
 
     def _get_alias_name(self, field: CoreSchemaField, name: str) -> str:
@@ -1932,7 +1932,7 @@ class GenerateJsonSchema:
         """
         for core_key, json_schema_key in mapping.items():
             if core_key in core_schema:
-                json_schema[json_schema_key] = core_schema[core_key]  # type: ignore[literal-required]
+                json_schema[json_schema_key] = core_schema[core_key]
 
     class ValidationsMapping:
         """This class just contains mappings from core_schema attribute names to the corresponding
@@ -2161,15 +2161,15 @@ def _make_json_hashable(value: _Json) -> _HashableJson:
 
 
 def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
-    if isinstance(value, dict):  # type: ignore
+    if isinstance(value, dict):
         sorted_dict: dict[str, JsonSchemaValue] = {}
         keys = value.keys()
         if parent_key != 'properties':
             keys = sorted(keys)
         for key in keys:
             sorted_dict[key] = _sort_json_schema(value[key], parent_key=key)
-        return sorted_dict  # type: ignore
-    elif isinstance(value, list):  # type: ignore
+        return sorted_dict
+    elif isinstance(value, list):
         sorted_list: list[JsonSchemaValue] = []
         for item in value:  # type: ignore
             sorted_list.append(_sort_json_schema(item))

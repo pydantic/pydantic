@@ -107,7 +107,7 @@ def _import_string_logic(dotted_path: str) -> Any:
 
 def pattern_either_validator(__input_value: Any) -> typing.Pattern[Any]:
     if isinstance(__input_value, typing.Pattern):
-        return __input_value  # type: ignore
+        return __input_value
     elif isinstance(__input_value, (str, bytes)):
         # todo strict mode
         return compile_pattern(__input_value)  # type: ignore

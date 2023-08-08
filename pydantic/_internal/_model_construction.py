@@ -50,7 +50,7 @@ IGNORED_TYPES: tuple[Any, ...] = (
 object_setattr = object.__setattr__
 
 
-class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
+class _ModelNamespaceDict(dict):
     """A dictionary subclass that intercepts attribute setting on model classes and
     warns about overriding of decorators.
     """

@@ -236,6 +236,8 @@ exclude = '''
 [tool.pyright]
 include = ['pydantic']
 exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py', 'pydantic/v1']
+# reportUnnecessaryTypeIgnoreComment can't be set since we run pyright with multiple python versions
+#reportUnnecessaryTypeIgnoreComment = true
 
 [tool.codespell]
 skip = '.git,env*,pydantic/v1/*'

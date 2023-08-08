@@ -716,7 +716,7 @@ def unwrap_wrapped_function(
     try:
         from functools import cached_property  # type: ignore
     except ImportError:
-        cached_property = type('', (), {})  # type: ignore
+        cached_property = type('', (), {})
     else:
         all.add(cached_property)
 

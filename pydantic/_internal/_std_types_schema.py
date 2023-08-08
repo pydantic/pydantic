@@ -76,7 +76,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
 
     def to_enum(__input_value: Any) -> Enum:
         try:
-            enum_field = enum_type(__input_value)  # type: ignore
+            enum_field = enum_type(__input_value)
             if use_enum_values:
                 return enum_field.value
             return enum_field
@@ -398,7 +398,7 @@ def path_schema_prepare_pydantic_annotations(
 
     def path_validator(input_value: str) -> os.PathLike[Any]:
         try:
-            return construct_path(input_value)  # type: ignore
+            return construct_path(input_value)
         except TypeError as e:
             raise PydanticCustomError('path_type', 'Input is not a valid path') from e
 

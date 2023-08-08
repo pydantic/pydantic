@@ -257,7 +257,7 @@ class ValueItems(_repr.Representation):
     def _coerce_items(items: AbstractSetIntStr | MappingIntStrAny) -> MappingIntStrAny:
         if isinstance(items, typing.Mapping):
             pass
-        elif isinstance(items, typing.AbstractSet):  # type: ignore
+        elif isinstance(items, typing.AbstractSet):
             items = dict.fromkeys(items, ...)  # type: ignore
         else:
             class_name = getattr(items, '__class__', '???')
@@ -314,7 +314,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
     try:
         if not obj and obj_type in BUILTIN_COLLECTIONS:
             # faster way for empty collections, no need to copy its members
-            return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
+            return obj if obj_type is tuple else obj.copy()  # tuple doesn't have copy method
     except (TypeError, ValueError, RuntimeError):
         # do we really dare to catch ALL errors? Seems a bit risky
         pass

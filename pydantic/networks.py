@@ -271,7 +271,7 @@ class IPvAnyAddress:
 
     __slots__ = ()
 
-    def __new__(cls, value: Any) -> IPv4Address | IPv6Address:  # type: ignore[misc]
+    def __new__(cls, value: Any) -> IPv4Address | IPv6Address:
         """Validate an IPv4 or IPv6 address."""
         try:
             return IPv4Address(value)
@@ -310,7 +310,7 @@ class IPvAnyInterface:
 
     __slots__ = ()
 
-    def __new__(cls, value: NetworkType) -> IPv4Interface | IPv6Interface:  # type: ignore[misc]
+    def __new__(cls, value: NetworkType) -> IPv4Interface | IPv6Interface:
         """Validate an IPv4 or IPv6 interface."""
         try:
             return IPv4Interface(value)
@@ -349,7 +349,7 @@ class IPvAnyNetwork:
 
     __slots__ = ()
 
-    def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:  # type: ignore[misc]
+    def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:
         """Validate an IPv4 or IPv6 network."""
         # Assume IP Network is defined with a default value for `strict` argument.
         # Define your own class if you want to specify network address check strictness.
