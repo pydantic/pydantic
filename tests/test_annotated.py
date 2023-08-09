@@ -371,6 +371,5 @@ def test_predicate_error_python() -> None:
             'loc': (),
             'msg': 'Predicate test_predicate_error_python.<locals>.<lambda> failed',
             'input': -1,
-            'ctx': {},
         }
     ]
