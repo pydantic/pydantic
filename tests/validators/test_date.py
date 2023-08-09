@@ -127,13 +127,13 @@ def test_date_json(py_and_json: PyAndJson, input_value, expected):
     ],
     ids=repr,
 )
-def test_date_strict(input_value, expected):
-    v = SchemaValidator({'type': 'date', 'strict': True})
+def test_date_strict(input_value, expected, strict_mode_type):
+    v = SchemaValidator({'type': 'date', 'strict': strict_mode_type.schema})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            v.validate_python(input_value)
+            v.validate_python(input_value, **strict_mode_type.validator_args)
     else:
-        output = v.validate_python(input_value)
+        output = v.validate_python(input_value, **strict_mode_type.validator_args)
         assert output == expected
 
 
@@ -148,13 +148,13 @@ def test_date_strict(input_value, expected):
         ('1654646400', Err('Input should be a valid date [type=date_type')),
     ],
 )
-def test_date_strict_json(input_value, expected):
-    v = SchemaValidator({'type': 'date', 'strict': True})
+def test_date_strict_json(input_value, expected, strict_mode_type):
+    v = SchemaValidator({'type': 'date', 'strict': strict_mode_type.schema})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            v.validate_json(input_value)
+            v.validate_json(input_value, **strict_mode_type.validator_args)
     else:
-        output = v.validate_json(input_value)
+        output = v.validate_json(input_value, **strict_mode_type.validator_args)
         assert output == expected
 
 
