@@ -289,7 +289,7 @@ class ConfigWrapperStack:
 
 
 class GenerateSchema:
-    """Generate core schema for a Pydantic model, dataclass and types like `str`, `datatime`, ... ."""
+    """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
     def __init__(
         self,
