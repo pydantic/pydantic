@@ -3331,7 +3331,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 </code></pre></div>
 <h2 id="type-adapter-config-unused"><code>config</code> is unused with TypeAdapter<a class="headerlink" href="#type-adapter-config-unused" title="Permanent link">&para;</a></h2>
 <p>You will get this error if you try to pass <code>config</code> to <code>TypeAdapter</code> when the type is a type that
-has it's own config that cannot be overridden (currently this is only <code>BaseModel</code>, <code>TypedDict</code> and <code>dataclass</code>):</p>
+has its own config that cannot be overridden (currently this is only <code>BaseModel</code>, <code>TypedDict</code> and <code>dataclass</code>):</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">TypeAdapter</span>
