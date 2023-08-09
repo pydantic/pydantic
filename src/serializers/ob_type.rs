@@ -110,7 +110,17 @@ impl ObTypeLookup {
             // op_value is None on recursive calls
             ObType::IntSubclass => self.int == ob_type && op_value.is_none(),
             ObType::Bool => self.bool == ob_type,
-            ObType::Float => self.float == ob_type,
+            ObType::Float => {
+                if self.float == ob_type {
+                    true
+                } else if self.int == ob_type {
+                    // special case for int as the input to float serializer,
+                    // https://github.com/pydantic/pydantic-core/pull/866
+                    return IsType::Subclass;
+                } else {
+                    false
+                }
+            }
             ObType::FloatSubclass => self.float == ob_type && op_value.is_none(),
             ObType::Str => self.string == ob_type,
             ObType::List => self.list == ob_type,
