@@ -800,17 +800,17 @@ class PydanticModelTransformer:
                 is_settings=is_settings,
             )
             if is_settings:
-                base_settings_info = self._api.lookup_fully_qualified(BASESETTINGS_FULLNAME).node.defn.info
-                base_settings_init_arguments = base_settings_info.names['__init__'].node.arguments
-                settings_init_arguments = []
-                a: Argument
-                for a in base_settings_init_arguments:
-                    if a.variable.name.startswith('__') or not a.variable.name.startswith('_'):
-                        continue
-                    analyzed_variable_type = self._api.anal_type(a.variable.type)
-                    variable = Var(a.variable.name, analyzed_variable_type)
-                    settings_init_arguments.append(Argument(variable, analyzed_variable_type, None, ARG_OPT))
-                args.extend(settings_init_arguments)
+                base_settings_node = self._api.lookup_fully_qualified(BASESETTINGS_FULLNAME).node
+                if '__init__' in base_settings_node.names:
+                    base_settings_init_node = base_settings_node.names['__init__'].node
+                    if base_settings_init_node is not None and base_settings_init_node.type is not None:
+                        func_type = base_settings_init_node.type
+                        for arg_idx, arg_name in enumerate(func_type.arg_names):
+                            if arg_name.startswith('__') or not arg_name.startswith('_'):
+                                continue
+                            analyzed_variable_type = self._api.anal_type(func_type.arg_types[arg_idx])
+                            variable = Var(arg_name, analyzed_variable_type)
+                            args.append(Argument(variable, analyzed_variable_type, None, ARG_OPT))
 
         if not self.should_init_forbid_extra(fields, config):
             var = Var('kwargs')
