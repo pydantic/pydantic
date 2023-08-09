@@ -58,7 +58,7 @@ mypy \
 
 ### Strict Optional
 
-For your code to pass with `--strict-optional`, you need to to use `Optional[]` or an alias of `Optional[]`
+For your code to pass with `--strict-optional`, you need to use `Optional[]` or an alias of `Optional[]`
 for all fields with `None` as the default. (This is standard with mypy.)
 
 ### Other Pydantic interfaces

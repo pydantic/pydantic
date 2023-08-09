@@ -903,7 +903,7 @@ except PydanticUserError as exc_info:
 ## `config` is unused with TypeAdapter {#type-adapter-config-unused}
 
 You will get this error if you try to pass `config` to `TypeAdapter` when the type is a type that
-has it's own config that cannot be overridden (currently this is only `BaseModel`, `TypedDict` and `dataclass`):
+has its own config that cannot be overridden (currently this is only `BaseModel`, `TypedDict` and `dataclass`):
 
 ```py
 from typing_extensions import TypedDict

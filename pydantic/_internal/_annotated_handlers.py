@@ -83,7 +83,7 @@ class GetCoreSchemaHandler:
         Use this function if e.g. you are handling schema generation for a sequence
         and want to generate a schema for its items.
         Otherwise, you may end up doing something like applying a `min_length` constraint
-        that was intended for the sequence itself to it's items!
+        that was intended for the sequence itself to its items!
 
         Args:
             __source_type: The input type.

@@ -1964,7 +1964,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
                 code='custom-json-schema',
             )
 
-    # handle GenericAlias' but ignore Annotated which "lies" about it's origin (in this case it would be `int`)
+    # handle GenericAlias' but ignore Annotated which "lies" about its origin (in this case it would be `int`)
     if hasattr(tp, '__origin__') and not isinstance(tp, type(Annotated[int, 'placeholder'])):
         return _extract_get_pydantic_json_schema(tp.__origin__, schema)
 
