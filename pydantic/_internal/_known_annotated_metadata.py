@@ -277,7 +277,6 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                     raise PydanticCustomError(
                         'predicate_failed',
                         f'Predicate {predicate_name} failed',  # type: ignore
-                        {},
                     )
                 return v
 
