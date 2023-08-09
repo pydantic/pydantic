@@ -6,6 +6,7 @@ The schema is generated from `python/pydantic_core/core_schema.py`.
 """
 from __future__ import annotations as _annotations
 
+import decimal
 import importlib.util
 import re
 from collections.abc import Callable
@@ -23,6 +24,7 @@ try:
     UnionType = Union[TypingUnionType, TypesUnionType]
 
 except ImportError:
+    TypesUnionType = TypingUnionType
     UnionType = TypingUnionType
 
 
@@ -46,8 +48,8 @@ schema_ref_validator = {'type': 'definition-ref', 'schema_ref': 'root-schema'}
 def get_schema(obj) -> core_schema.CoreSchema:
     if isinstance(obj, str):
         return {'type': obj}
-    elif obj in (datetime, timedelta, date, time, bool, int, float, str):
-        return {'type': obj.__name__}
+    elif obj in (datetime, timedelta, date, time, bool, int, float, str, decimal.Decimal):
+        return {'type': obj.__name__.lower()}
     elif is_typeddict(obj):
         return type_dict_schema(obj)
     elif obj == Any or obj == type:
@@ -57,7 +59,7 @@ def get_schema(obj) -> core_schema.CoreSchema:
 
     origin = get_origin(obj)
     assert origin is not None, f'origin cannot be None, obj={obj}, you probably need to fix generate_self_schema.py'
-    if origin is Union:
+    if origin is Union or origin is TypesUnionType:
         return union_schema(obj)
     elif obj is Callable or origin is Callable:
         return {'type': 'callable'}
