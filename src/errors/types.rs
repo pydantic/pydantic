@@ -336,7 +336,7 @@ error_types! {
         error: {ctx_type: Cow<'static, str>, ctx_fn: cow_field_from_context<String, _>},
     },
     DateFromDatetimeParsing {
-        error: {ctx_type: String, ctx_fn: field_from_context},
+        error: {ctx_type: Cow<'static, str>, ctx_fn: cow_field_from_context<String, _>},
     },
     DateFromDatetimeInexact {},
     DatePast {},
