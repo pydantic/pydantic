@@ -5384,3 +5384,16 @@ def test_callable_json_schema_extra_dataclass():
     json_schema = adapter.json_schema()
     for key in 'abcdef':
         assert json_schema['properties'][key] == {'title': key.upper(), 'type': 'integer'}  # default is not present
+
+
+def test_enum_complex_value() -> None:
+    """https://github.com/pydantic/pydantic/issues/7045"""
+
+    class MyEnum(Enum):
+        foo = (1, 2)
+        bar = (2, 3)
+
+    ta = TypeAdapter(MyEnum)
+
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {'enum': [[1, 2], [2, 3]], 'title': 'MyEnum', 'type': 'array'}
