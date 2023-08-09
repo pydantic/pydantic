@@ -5501,7 +5501,6 @@ def test_constraints_arbitrary_type() -> None:
             'loc': ('predicate',),
             'msg': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
             'input': CustomType(-1),
-            'ctx': {},
         },
     ]
 
