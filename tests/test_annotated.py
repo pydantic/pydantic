@@ -165,9 +165,8 @@ def test_annotated_alias() -> None:
         e: Nested
 
     fields_repr = {k: repr(v) for k, v in MyModel.model_fields.items()}
-    # insert_assert(fields_repr)
     assert fields_repr == {
-        'a': "FieldInfo(annotation=str, required=False, default='abc', metadata=[FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=3)])])",
+        'a': "FieldInfo(annotation=str, required=False, default='abc', metadata=[MaxLen(max_length=3)])",
         'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)])',
         'c': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
         'd': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
