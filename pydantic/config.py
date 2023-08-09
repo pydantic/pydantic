@@ -161,7 +161,7 @@ class ConfigDict(TypedDict, total=False):
     Defaults to `'utf8'`.
 
     - `'utf8'` will serialize bytes to UTF-8 strings.
-    - `'base64'` will serialize bytes to base64 strings.
+    - `'base64'` will serialize bytes to URL safe base64 strings.
     """
 
     # whether to validate default values during validation, default False
