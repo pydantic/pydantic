@@ -1,6 +1,7 @@
 """
 Numerous benchmarks of specific functionality.
 """
+import decimal
 import json
 import platform
 import sys
@@ -14,7 +15,14 @@ import pytest
 from dirty_equals import IsStr
 
 import pydantic_core
-from pydantic_core import ArgsKwargs, PydanticCustomError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import (
+    ArgsKwargs,
+    PydanticCustomError,
+    PydanticKnownError,
+    SchemaValidator,
+    ValidationError,
+    core_schema,
+)
 from pydantic_core import ValidationError as CoreValidationError
 
 skip_pypy_deep_stack = pytest.mark.skipif(
@@ -1310,3 +1318,61 @@ def test_field_function_validator(benchmark) -> None:
     assert v.validate_python(payload) == {'x': limit}
 
     benchmark(v.validate_python, payload)
+
+
+class TestBenchmarkDecimal:
+    @pytest.fixture(scope='class')
+    def validator(self):
+        return SchemaValidator({'type': 'decimal'})
+
+    @pytest.fixture(scope='class')
+    def pydantic_validator(self):
+        Decimal = decimal.Decimal
+
+        def to_decimal(v: str) -> decimal.Decimal:
+            try:
+                return Decimal(v)
+            except decimal.DecimalException as e:
+                raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal') from e
+
+        primitive_schema = core_schema.union_schema(
+            [
+                # if it's an int keep it like that and pass it straight to Decimal
+                # but if it's not make it a string
+                # we don't use JSON -> float because parsing to any float will cause
+                # loss of precision
+                core_schema.int_schema(strict=True),
+                core_schema.str_schema(strict=True, strip_whitespace=True),
+                core_schema.no_info_plain_validator_function(str),
+            ]
+        )
+        json_schema = core_schema.no_info_after_validator_function(to_decimal, primitive_schema)
+        schema = core_schema.json_or_python_schema(
+            json_schema=json_schema,
+            python_schema=core_schema.lax_or_strict_schema(
+                lax_schema=core_schema.union_schema([core_schema.is_instance_schema(decimal.Decimal), json_schema]),
+                strict_schema=core_schema.is_instance_schema(decimal.Decimal),
+            ),
+            serialization=core_schema.to_string_ser_schema(when_used='json'),
+        )
+
+        def check_finite(value: decimal.Decimal) -> decimal.Decimal:
+            if not value.is_finite():
+                raise PydanticKnownError('finite_number')
+            return value
+
+        schema = core_schema.no_info_after_validator_function(check_finite, schema)
+
+        return SchemaValidator(schema)
+
+    @pytest.mark.benchmark(group='decimal from str')
+    def test_decimal_from_string_core(self, benchmark, validator):
+        benchmark(validator.validate_python, '123.456789')
+
+    @pytest.mark.benchmark(group='decimal from str')
+    def test_decimal_from_string_pyd(self, benchmark, pydantic_validator):
+        benchmark(pydantic_validator.validate_python, '123.456789')
+
+    @pytest.mark.benchmark(group='decimal from str')
+    def test_decimal_from_string_limit(self, benchmark):
+        benchmark(decimal.Decimal, '123.456789')

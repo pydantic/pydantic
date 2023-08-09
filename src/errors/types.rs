@@ -217,8 +217,7 @@ error_types! {
     // None errors
     NoneRequired {},
     // ---------------------
-    // generic comparison errors - used for all inequality comparisons except int and float which have their
-    // own type, bounds arguments are Strings so they can be created from any type
+    // generic comparison errors
     GreaterThan {
         gt: {ctx_type: Number, ctx_fn: field_from_context},
     },
@@ -427,6 +426,18 @@ error_types! {
     UuidVersion {
         expected_version: {ctx_type: usize, ctx_fn: field_from_context},
     },
+    // Decimal errors
+    DecimalType {},
+    DecimalParsing {},
+    DecimalMaxDigits {
+        max_digits: {ctx_type: u64, ctx_fn: field_from_context},
+    },
+    DecimalMaxPlaces {
+        decimal_places: {ctx_type: u64, ctx_fn: field_from_context},
+    },
+    DecimalWholeDigits {
+        whole_digits: {ctx_type: u64, ctx_fn: field_from_context},
+    },
 }
 
 macro_rules! render {
@@ -560,9 +571,14 @@ impl ErrorType {
             Self::UrlSyntaxViolation {..} => "Input violated strict URL syntax rules, {error}",
             Self::UrlTooLong {..} => "URL should have at most {max_length} characters",
             Self::UrlScheme {..} => "URL scheme should be {expected_schemes}",
-            Self::UuidType{..} => "UUID input should be a string, bytes or UUID object",
+            Self::UuidType {..} => "UUID input should be a string, bytes or UUID object",
             Self::UuidParsing {..} => "Input should be a valid UUID, {error}",
-            Self::UuidVersion {..} => "UUID version {expected_version} expected"
+            Self::UuidVersion {..} => "UUID version {expected_version} expected",
+            Self::DecimalType {..} => "Decimal input should be an integer, float, string or Decimal object",
+            Self::DecimalParsing {..} => "Input should be a valid decimal",
+            Self::DecimalMaxDigits {..} => "Decimal input should have no more than {max_digits} digits in total",
+            Self::DecimalMaxPlaces {..} => "Decimal input should have no more than {decimal_places} decimal places",
+            Self::DecimalWholeDigits {..} => "Decimal input should have no more than {whole_digits} digits before the decimal point",
         }
     }
 
@@ -692,6 +708,9 @@ impl ErrorType {
             Self::UrlScheme { expected_schemes, .. } => render!(tmpl, expected_schemes),
             Self::UuidParsing { error, .. } => render!(tmpl, error),
             Self::UuidVersion { expected_version, .. } => to_string_render!(tmpl, expected_version),
+            Self::DecimalMaxDigits { max_digits, .. } => to_string_render!(tmpl, max_digits),
+            Self::DecimalMaxPlaces { decimal_places, .. } => to_string_render!(tmpl, decimal_places),
+            Self::DecimalWholeDigits { whole_digits, .. } => to_string_render!(tmpl, whole_digits),
             _ => Ok(tmpl.to_string()),
         }
     }

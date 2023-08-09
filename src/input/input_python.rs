@@ -13,6 +13,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::{extract_i64, safe_repr};
+use crate::validators::decimal::create_decimal;
 use crate::{ArgsKwargs, PyMultiHostUrl, PyUrl};
 
 use super::datetime::{
@@ -359,6 +360,45 @@ impl<'a> Input<'a> for PyAny {
             Ok(EitherFloat::F64(float))
         } else {
             Err(ValError::new(ErrorTypeDefaults::FloatType, self))
+        }
+    }
+
+    fn strict_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
+        // Fast path for existing decimal objects
+        if self.is_exact_instance(decimal_type) {
+            return Ok(self);
+        }
+
+        // Try subclasses of decimals, they will be upcast to Decimal
+        if self.is_instance(decimal_type)? {
+            return create_decimal(self, self, decimal_type);
+        }
+
+        Err(ValError::new(
+            ErrorType::IsInstanceOf {
+                class: decimal_type.name().unwrap_or("Decimal").to_string(),
+                context: None,
+            },
+            self,
+        ))
+    }
+
+    fn lax_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
+        // Fast path for existing decimal objects
+        if self.is_exact_instance(decimal_type) {
+            return Ok(self);
+        }
+
+        if self.is_instance_of::<PyString>() || (self.is_instance_of::<PyInt>() && !self.is_instance_of::<PyBool>()) {
+            // checking isinstance for str / int / bool is fast compared to decimal / float
+            create_decimal(self, self, decimal_type)
+        } else if self.is_instance(decimal_type)? {
+            // upcast subclasses to decimal
+            return create_decimal(self, self, decimal_type);
+        } else if self.is_instance_of::<PyFloat>() {
+            create_decimal(self.str()?, self, decimal_type)
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::DecimalType, self))
         }
     }
 

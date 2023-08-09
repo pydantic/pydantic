@@ -1,11 +1,12 @@
 use std::borrow::Cow;
 
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDict, PyString, PyType};
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::validators::decimal::create_decimal;
 
 use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
@@ -177,6 +178,18 @@ impl<'a> Input<'a> for JsonInput {
                 Err(_) => Err(ValError::new(ErrorTypeDefaults::FloatParsing, self)),
             },
             _ => Err(ValError::new(ErrorTypeDefaults::FloatType, self)),
+        }
+    }
+
+    fn strict_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
+        let py = decimal_type.py();
+        match self {
+            JsonInput::Float(f) => create_decimal(PyString::new(py, &f.to_string()), self, decimal_type),
+
+            JsonInput::String(..) | JsonInput::Int(..) | JsonInput::Uint(..) | JsonInput::BigInt(..) => {
+                create_decimal(self.to_object(py).into_ref(py), self, decimal_type)
+            }
+            _ => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
     }
 
@@ -430,6 +443,11 @@ impl<'a> Input<'a> for String {
             Ok(f) => Ok(EitherFloat::F64(f)),
             Err(_) => Err(ValError::new(ErrorTypeDefaults::FloatParsing, self)),
         }
+    }
+
+    fn strict_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
+        let py = decimal_type.py();
+        create_decimal(self.to_object(py).into_ref(py), self, decimal_type)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]

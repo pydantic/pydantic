@@ -373,6 +373,15 @@ all_errors = [
     ('uuid_type', 'UUID input should be a string, bytes or UUID object', None),
     ('uuid_parsing', 'Input should be a valid UUID, Foobar', {'error': 'Foobar'}),
     ('uuid_version', 'UUID version 42 expected', {'expected_version': 42}),
+    ('decimal_type', 'Decimal input should be an integer, float, string or Decimal object', None),
+    ('decimal_parsing', 'Input should be a valid decimal', None),
+    ('decimal_max_digits', 'Decimal input should have no more than 42 digits in total', {'max_digits': 42}),
+    ('decimal_max_places', 'Decimal input should have no more than 42 decimal places', {'decimal_places': 42}),
+    (
+        'decimal_whole_digits',
+        'Decimal input should have no more than 42 digits before the decimal point',
+        {'whole_digits': 42},
+    ),
 ]
 
 
