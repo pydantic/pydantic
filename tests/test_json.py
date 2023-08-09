@@ -449,7 +449,7 @@ def test_custom_iso_timedelta_annotated():
 
 def test_json_encoders_on_model() -> None:
     """Make sure that applying json_encoders to a BaseModel
-    does not edit it's schema in place.
+    does not edit its schema in place.
     """
 
     class Model(BaseModel):
