@@ -91,6 +91,25 @@ def py_and_json(request) -> PyAndJson:
     return ChosenPyAndJsonValidator
 
 
+class StrictModeType:
+    def __init__(self, schema: bool, extra: bool):
+        assert schema or extra
+        self.schema = schema
+        self.validator_args = {'strict': True} if extra else {}
+
+
+@pytest.fixture(
+    params=[
+        StrictModeType(schema=True, extra=False),
+        StrictModeType(schema=False, extra=True),
+        StrictModeType(schema=True, extra=True),
+    ],
+    ids=['strict-schema', 'strict-extra', 'strict-both'],
+)
+def strict_mode_type(request) -> StrictModeType:
+    return request.param
+
+
 @pytest.fixture
 def tmp_work_path(tmp_path: Path):
     """
