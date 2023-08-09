@@ -114,6 +114,7 @@ combined_serializer! {
         Int: super::type_serializers::simple::IntSerializer;
         Bool: super::type_serializers::simple::BoolSerializer;
         Float: super::type_serializers::simple::FloatSerializer;
+        Decimal: super::type_serializers::decimal::DecimalSerializer;
         Str: super::type_serializers::string::StrSerializer;
         Bytes: super::type_serializers::bytes::BytesSerializer;
         Datetime: super::type_serializers::datetime_etc::DatetimeSerializer;
@@ -229,6 +230,7 @@ impl PyGcTraverse for CombinedSerializer {
             CombinedSerializer::Int(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Bool(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Float(inner) => inner.py_gc_traverse(visit),
+            CombinedSerializer::Decimal(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Str(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Bytes(inner) => inner.py_gc_traverse(visit),
             CombinedSerializer::Datetime(inner) => inner.py_gc_traverse(visit),

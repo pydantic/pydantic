@@ -1,3 +1,6 @@
+from decimal import Decimal
+
+
 def schema(*, strict: bool = False) -> dict:
     class MyModel:
         # __slots__ is not required, but it avoids __pydantic_fields_set__ falling into __dict__
@@ -31,6 +34,7 @@ def schema(*, strict: bool = False) -> dict:
                     'type': 'model-field',
                     'schema': {'type': 'float', 'ge': 1.0, 'le': 10.0, 'multiple_of': 0.5},
                 },
+                'field_decimal': {'type': 'model-field', 'schema': {'type': 'decimal'}},
                 'field_bool': {'type': 'model-field', 'schema': {'type': 'bool'}},
                 'field_bytes': {'type': 'model-field', 'schema': {'type': 'bytes'}},
                 'field_bytes_con': {
@@ -218,6 +222,7 @@ def input_data_lax():
         'field_int_con': 8,
         'field_float': 1.0,
         'field_float_con': 10.0,
+        'field_decimal': 42.0,
         'field_bool': True,
         'field_bytes': b'foobar',
         'field_bytes_con': b'foobar',
@@ -276,6 +281,7 @@ def input_data_strict():
         field_datetime=datetime(2020, 1, 1, 12, 13, 14),
         field_datetime_con=datetime(2020, 1, 1),
         field_uuid=UUID('12345678-1234-5678-1234-567812345678'),
+        field_decimal=Decimal('42.0'),
     )
     return input_data
 
@@ -288,6 +294,7 @@ def input_data_wrong():
         'field_int_con': 11,
         'field_float': False,
         'field_float_con': 10.1,
+        'field_decimal': 'wrong',
         'field_bool': 4,
         'field_bytes': 42,
         'field_bytes_con': b'foo',

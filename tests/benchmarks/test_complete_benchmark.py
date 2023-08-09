@@ -3,6 +3,7 @@ General benchmarks that attempt to cover all field types, through by no means al
 """
 import json
 from datetime import date, datetime, time
+from decimal import Decimal
 from uuid import UUID
 
 import pytest
@@ -18,7 +19,7 @@ def test_complete_valid():
     lax_validator = SchemaValidator(lax_schema)
     output = lax_validator.validate_python(input_data_lax())
     assert isinstance(output, cls)
-    assert len(output.__pydantic_fields_set__) == 40
+    assert len(output.__pydantic_fields_set__) == 41
     output_dict = output.__dict__
     assert output_dict == {
         'field_str': 'fo',
@@ -27,6 +28,7 @@ def test_complete_valid():
         'field_int_con': 8,
         'field_float': 1.0,
         'field_float_con': 10.0,
+        'field_decimal': Decimal('42.0'),
         'field_bool': True,
         'field_bytes': b'foobar',
         'field_bytes_con': b'foobar',
@@ -81,7 +83,7 @@ def test_complete_invalid():
     lax_validator = SchemaValidator(lax_schema)
     with pytest.raises(ValidationError) as exc_info:
         lax_validator.validate_python(input_data_wrong())
-    assert len(exc_info.value.errors(include_url=False)) == 738
+    assert len(exc_info.value.errors(include_url=False)) == 739
 
 
 @pytest.mark.benchmark(group='complete')

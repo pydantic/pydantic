@@ -27,6 +27,7 @@ mod custom_error;
 mod dataclass;
 mod date;
 mod datetime;
+pub(crate) mod decimal;
 mod definitions;
 mod dict;
 mod float;
@@ -451,6 +452,8 @@ pub fn build_validator<'a>(
         bool::BoolValidator,
         // floats
         float::FloatBuilder,
+        // decimals
+        decimal::DecimalValidator,
         // tuples
         tuple::TuplePositionalValidator,
         tuple::TupleVariableValidator,
@@ -597,6 +600,8 @@ pub enum CombinedValidator {
     // floats
     Float(float::FloatValidator),
     ConstrainedFloat(float::ConstrainedFloatValidator),
+    // decimals
+    Decimal(decimal::DecimalValidator),
     // lists
     List(list::ListValidator),
     // sets - unique lists
