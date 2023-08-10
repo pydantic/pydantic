@@ -3859,7 +3859,7 @@ occurrence at the end of the process.</p>
 
     <span class="c1"># When we encounter definitions we need to try to build them immediately</span>
     <span class="c1"># so that they are available schemas that reference them</span>
-    <span class="c1"># But it&#39;s possible that that CoreSchema was never going to be used</span>
+    <span class="c1"># But it&#39;s possible that CoreSchema was never going to be used</span>
     <span class="c1"># (e.g. because the CoreSchema that references short circuits is JSON schema generation without needing</span>
     <span class="c1">#  the reference) so instead of failing altogether if we can&#39;t build a definition we</span>
     <span class="c1"># store the error raised and re-throw it if we end up needing that def</span>
