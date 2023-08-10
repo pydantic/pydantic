@@ -288,7 +288,7 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         if import_path == 'pydantic:BaseSettings':
             raise PydanticImportError(
                 '`BaseSettings` has been moved to the `pydantic-settings` package. '
-                f'See https://docs.pydantic.dev/{VERSION}/migration/#basesettings-has-moved-to-pydantic-settings '
+                f'See https://docs.pydantic.dev/{".".join(VERSION.split(".")[:2])}/migration/#basesettings-has-moved-to-pydantic-settings '
                 'for more details.'
             )
         if import_path in REMOVED_IN_V2:
