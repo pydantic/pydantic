@@ -285,7 +285,13 @@ class FieldInfo(_repr.Representation):
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
                 new_field_info.frozen = final or field_info.frozen
-                new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                metadata: list[Any] = []
+                for a in extra_args:
+                    if not isinstance(a, FieldInfo):
+                        metadata.append(a)
+                    else:
+                        metadata.extend(a.metadata)
+                new_field_info.metadata = metadata
                 return new_field_info
 
         return cls(annotation=annotation, frozen=final or None)
@@ -356,7 +362,13 @@ class FieldInfo(_repr.Representation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
                 field_info = cls.merge_field_infos(*field_infos, annotation=first_arg, default=default)
-                field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                metadata: list[Any] = []
+                for a in extra_args:
+                    if not isinstance(a, FieldInfo):
+                        metadata.append(a)
+                    else:
+                        metadata.extend(a.metadata)
+                field_info.metadata = metadata
                 return field_info
 
             return cls(annotation=annotation, default=default, frozen=final or None)

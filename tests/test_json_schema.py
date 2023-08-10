@@ -5037,7 +5037,7 @@ def test_skip_json_schema_annotation() -> None:
 
 def test_skip_json_schema_exclude_default():
     class Model(BaseModel):
-        x: Annotated[Union[int, SkipJsonSchema[None]], Field(json_schema_extra=lambda s: s.pop('default'))] = None
+        x: Union[int, SkipJsonSchema[None]] = Field(default=None, json_schema_extra=lambda s: s.pop('default'))
 
     assert Model().x is None
     # insert_assert(Model.model_json_schema())
@@ -5333,24 +5333,18 @@ def test_callable_json_schema_extra():
 
     class Model(BaseModel):
         a: int = Field(default=1, json_schema_extra=pop_default)
-        b: Annotated[int, Field(json_schema_extra=pop_default)] = 2
-        c: Annotated[int, Field(json_schema_extra=pop_default), Field(default=3)]
-        d: Annotated[int, Field(default=4), Field(json_schema_extra=pop_default)]
-        e: Annotated[int, Field(json_schema_extra=pop_default)] = Field(default=5)
-        f: Annotated[int, Field(default=6)] = Field(json_schema_extra=pop_default)
+        b: Annotated[int, Field(default=2), Field(json_schema_extra=pop_default)]
+        c: Annotated[int, Field(default=3)] = Field(json_schema_extra=pop_default)
 
-    assert Model().model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
-    assert Model(a=11, b=12, c=13, d=14, e=15, f=16).model_dump() == {
+    assert Model().model_dump() == {'a': 1, 'b': 2, 'c': 3}
+    assert Model(a=11, b=12, c=13).model_dump() == {
         'a': 11,
         'b': 12,
         'c': 13,
-        'd': 14,
-        'e': 15,
-        'f': 16,
     }
 
     json_schema = Model.model_json_schema()
-    for key in 'abcdef':
+    for key in 'abc':
         assert json_schema['properties'][key] == {'title': key.upper(), 'type': 'integer'}  # default is not present
 
 

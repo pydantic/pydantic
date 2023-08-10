@@ -1543,11 +1543,6 @@ class GenerateSchema:
         # expand annotations before we start processing them so that `__prepare_pydantic_annotations` can consume
         # individual items from GroupedMetadata
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
-        non_field_infos, field_infos = [a for a in annotations if not isinstance(a, FieldInfo)], [
-            a for a in annotations if isinstance(a, FieldInfo)
-        ]
-        if field_infos:
-            annotations = [*non_field_infos, FieldInfo.merge_field_infos(*field_infos)]
         idx = -1
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
         if prepare:
