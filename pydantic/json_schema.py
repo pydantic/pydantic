@@ -281,7 +281,7 @@ class GenerateJsonSchema:
 
         # When we encounter definitions we need to try to build them immediately
         # so that they are available schemas that reference them
-        # But it's possible that that CoreSchema was never going to be used
+        # But it's possible that CoreSchema was never going to be used
         # (e.g. because the CoreSchema that references short circuits is JSON schema generation without needing
         #  the reference) so instead of failing altogether if we can't build a definition we
         # store the error raised and re-throw it if we end up needing that def
