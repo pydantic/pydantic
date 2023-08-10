@@ -34,10 +34,10 @@ class DemoModel(BaseModel):
     number: List[MyNumber]
 
 
-print(DemoModel(number=[2, 8]))
+print(DemoModel(number=[2, 4]))
 #> number=[4, 16]
 try:
-    DemoModel(number=[2, 4])
+    DemoModel(number=[2, 8])
 except ValidationError as e:
     print(e)
     """
