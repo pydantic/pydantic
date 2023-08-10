@@ -21,7 +21,7 @@ use super::datetime::{
     float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime,
     EitherTime,
 };
-use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
+use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int};
 use super::{
     py_string_str, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments,
     GenericIterable, GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
@@ -352,10 +352,7 @@ impl<'a> Input<'a> for PyAny {
             // Safety: self is PyFloat
             Ok(EitherFloat::Py(unsafe { self.downcast_unchecked::<PyFloat>() }))
         } else if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::FloatParsing)? {
-            match cow_str.as_ref().parse::<f64>() {
-                Ok(i) => Ok(EitherFloat::F64(i)),
-                Err(_) => Err(ValError::new(ErrorTypeDefaults::FloatParsing, self)),
-            }
+            str_as_float(self, &cow_str)
         } else if let Ok(float) = self.extract::<f64>() {
             Ok(EitherFloat::F64(float))
         } else {

@@ -13,7 +13,7 @@ use super::datetime::{
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
 use super::parse_json::JsonArray;
-use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
+use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int};
 use super::{
     EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
     GenericIterator, GenericMapping, Input, JsonArgs, JsonInput,
@@ -173,10 +173,7 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::Float(f) => Ok(EitherFloat::F64(*f)),
             JsonInput::Int(i) => Ok(EitherFloat::F64(*i as f64)),
             JsonInput::Uint(u) => Ok(EitherFloat::F64(*u as f64)),
-            JsonInput::String(str) => match str.parse::<f64>() {
-                Ok(i) => Ok(EitherFloat::F64(i)),
-                Err(_) => Err(ValError::new(ErrorTypeDefaults::FloatParsing, self)),
-            },
+            JsonInput::String(str) => str_as_float(self, str),
             _ => Err(ValError::new(ErrorTypeDefaults::FloatType, self)),
         }
     }
@@ -439,10 +436,7 @@ impl<'a> Input<'a> for String {
         Err(ValError::new(ErrorTypeDefaults::FloatType, self))
     }
     fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        match self.parse() {
-            Ok(f) => Ok(EitherFloat::F64(f)),
-            Err(_) => Err(ValError::new(ErrorTypeDefaults::FloatParsing, self)),
-        }
+        str_as_float(self, self)
     }
 
     fn strict_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
