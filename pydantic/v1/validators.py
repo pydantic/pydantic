@@ -170,7 +170,7 @@ def float_finite_validator(v: 'Number', field: 'ModelField', config: 'BaseConfig
     if allow_inf_nan is None:
         allow_inf_nan = config.allow_inf_nan
 
-    if allow_inf_nan is False and (math.isnan(v) or math.isinf(v)):
+    if allow_inf_nan is False and not math.isfinite(v):
         raise errors.NumberNotFiniteError()
     return v
 

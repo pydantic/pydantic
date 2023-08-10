@@ -577,7 +577,7 @@ class GenerateJsonSchema:
         """
         json_schema: dict[str, Any] = {'type': 'integer'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.numeric)
-        json_schema = {k: v for k, v in json_schema.items() if v not in {math.inf, -math.inf}}
+        json_schema = {k: v for k, v in json_schema.items() if not math.isinf(v)}
         return json_schema
 
     def float_schema(self, schema: core_schema.FloatSchema) -> JsonSchemaValue:
@@ -591,7 +591,7 @@ class GenerateJsonSchema:
         """
         json_schema: dict[str, Any] = {'type': 'number'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.numeric)
-        json_schema = {k: v for k, v in json_schema.items() if v not in {math.inf, -math.inf}}
+        json_schema = {k: v for k, v in json_schema.items() if not math.isinf(v)}
         return json_schema
 
     def str_schema(self, schema: core_schema.StringSchema) -> JsonSchemaValue:
