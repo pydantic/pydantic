@@ -164,7 +164,6 @@ def decimal_prepare_pydantic_annotations(
 
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
 
-    # FIXME: think pydantic-core already checks the config?
     config_allow_inf_nan = config.get('allow_inf_nan')
     if config_allow_inf_nan is not None:
         metadata.setdefault('allow_inf_nan', config_allow_inf_nan)
