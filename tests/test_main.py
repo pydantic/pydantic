@@ -505,7 +505,7 @@ def test_frozen_model():
 
 def test_frozen_field():
     class FrozenModel(BaseModel):
-        a: int = 10 = Field(frozen=True)
+        a: int = Field(10, frozen=True)
 
     m = FrozenModel()
 
