@@ -515,6 +515,7 @@ def test_frozen_field():
         {'type': 'frozen_field', 'loc': ('a',), 'msg': 'Field is frozen', 'input': 11}
     ]
 
+
 def test_not_frozen_are_not_hashable():
     class TestModel(BaseModel):
         a: int = 10
