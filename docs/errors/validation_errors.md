@@ -606,8 +606,7 @@ except ValidationError as exc:
 
 ## `frozen_field`
 
-This error is raised when `model_config['validate_assignment'] == True` and you attempt to assign
-a value to a field with `frozen=True`:
+This error is raised when you attempt to assign a value to a field with `frozen=True`:
 
 ```py
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -615,8 +614,6 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 class Model(BaseModel):
     x: str = Field('test', frozen=True)
-
-    model_config = ConfigDict(validate_assignment=True)
 
 
 model = Model()
