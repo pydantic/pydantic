@@ -609,7 +609,7 @@ except ValidationError as exc:
 This error is raised when you attempt to assign a value to a field with `frozen=True`:
 
 ```py
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 
 class Model(BaseModel):
