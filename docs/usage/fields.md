@@ -623,7 +623,7 @@ assigned a new value after the model is created (immutability).
 See the [frozen dataclass documentation] for more details.
 
 ```py
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 
 class User(BaseModel):
