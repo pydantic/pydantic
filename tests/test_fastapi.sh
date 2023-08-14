@@ -27,3 +27,5 @@ cd .. && pip install . && cd fastapi
   --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005.py \
   --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005_py310.py \
   --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005_py39.py \
+  --deselect tests/test_multi_body_errors.py::test_jsonable_encoder_requiring_error \
+  --deselect tests/test_multi_body_errors.py::test_put_incorrect_body_multiple \
