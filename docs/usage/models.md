@@ -910,6 +910,9 @@ except ValidationError as e:
 
 ## `RootModel` and custom root types
 
+??? api "API Documentation"
+    [`pydantic.root_model.RootModel`][pydantic.root_model.RootModel]<br>
+
 Pydantic models can be defined with a "custom root type" by subclassing [`pydantic.RootModel`][pydantic.RootModel].
 
 The root type can be any type supported by Pydantic, and is specified by the generic parameter to `RootModel`.
