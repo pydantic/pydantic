@@ -133,8 +133,8 @@ class ModelMetaclass(ABCMeta):
             if __pydantic_generic_metadata__:
                 cls.__pydantic_generic_metadata__ = __pydantic_generic_metadata__
             else:
-                parameters = getattr(cls, '__parameters__', ())
                 parent_parameters = getattr(cls, '__pydantic_generic_metadata__', {}).get('parameters', ())
+                parameters = getattr(cls, '__parameters__', None) or parent_parameters
                 if parameters and parent_parameters and not all(x in parameters for x in parent_parameters):
                     combined_parameters = parent_parameters + tuple(x for x in parameters if x not in parent_parameters)
                     parameters_str = ', '.join([str(x) for x in combined_parameters])
