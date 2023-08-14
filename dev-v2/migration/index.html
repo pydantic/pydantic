@@ -2857,6 +2857,10 @@ dataclasses without having to subclass <code>BaseModel</code>. Pydantic V2 intro
 </ul>
 </li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To avoid this, you can use the <code>validate_default</code> argument in the <code>Field</code> function. When set to <code>True</code>, it mimics the behavior of <code>always=True</code> in Pydantic v1. However, the new way of using <code>validate_default</code> is encouraged as it provides more flexibility and control.</p>
+</div>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">validator</span>
 
 
