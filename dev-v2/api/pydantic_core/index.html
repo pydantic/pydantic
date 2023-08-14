@@ -5150,12 +5150,13 @@ programmatic use that will change rarely or never.</p>
   </span>
 
 <a href="#pydantic_core.ErrorDetails.ctx" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">ctx</span><span class="p">:</span> <span class="n">_NotRequired</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]]</span>
+<div class="highlight"><pre><span></span><code><span class="n">ctx</span><span class="p">:</span> <span class="n">_NotRequired</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">_Any</span><span class="p">]]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Values which are required to render the error message, and could hence be useful in rendering custom error messages.</p>
+      <p>Values which are required to render the error message, and could hence be useful in rendering custom error messages.
+Also useful for passing custom error data forward.</p>
   </div>
 
 </div>
@@ -5280,12 +5281,13 @@ programmatic use that will change rarely or never.</p>
   </span>
 
 <a href="#pydantic_core.InitErrorDetails.ctx" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">ctx</span><span class="p">:</span> <span class="n">_NotRequired</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]]</span>
+<div class="highlight"><pre><span></span><code><span class="n">ctx</span><span class="p">:</span> <span class="n">_NotRequired</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">_Any</span><span class="p">]]</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Values which are required to render the error message, and could hence be useful in rendering custom error messages.</p>
+      <p>Values which are required to render the error message, and could hence be useful in rendering custom error messages.
+Also useful for passing custom error data forward.</p>
   </div>
 
 </div>
@@ -6916,7 +6918,7 @@ identifies a value as being present, and provides a way to access it.</p>
   </span>
 
 <a href="#pydantic_core.ErrorTypeInfo.example_context" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">example_context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="highlight"><pre><span></span><code><span class="n">example_context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">_Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
