@@ -239,7 +239,7 @@ See [Model Config](usage/model_config.md) for more details.
         example, despite the fact that the validator below will never error, the following code raises a `ValidationError`:
 
 !!! note
-    To avoid this, you can use the `validate_default` argument in the `Field` function. When set to `True`, it mimics the behavior of `always=True` in pydantic v1. However, the new way of using `validate_default` is encouraged as it provides more flexibility and control.
+    To avoid this, you can use the `validate_default` argument in the `Field` function. When set to `True`, it mimics the behavior of `always=True` in Pydantic v1. However, the new way of using `validate_default` is encouraged as it provides more flexibility and control.
 
 
 ```python test="skip"
