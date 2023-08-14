@@ -5,6 +5,7 @@ use pyo3::types::{PyDate, PyDateTime, PyDict, PyTime};
 
 use crate::definitions::DefinitionsBuilder;
 use crate::input::{pydate_as_date, pydatetime_as_datetime, pytime_as_time};
+use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
@@ -23,8 +24,20 @@ pub(crate) fn time_to_string(py_time: &PyTime) -> PyResult<String> {
     pytime_as_time(py_time, None).map(|dt| dt.to_string())
 }
 
+fn downcast_date_reject_datetime(py_date: &PyAny) -> PyResult<&PyDate> {
+    if let Ok(py_date) = py_date.downcast::<PyDate>() {
+        // because `datetime` is a subclass of `date` we have to check that the value is not a
+        // `datetime` to avoid lossy serialization
+        if !py_date.is_instance_of::<PyDateTime>() {
+            return Ok(py_date);
+        }
+    }
+
+    Err(PydanticSerializationUnexpectedValue::new_err(None))
+}
+
 macro_rules! build_serializer {
-    ($struct_name:ident, $expected_type:literal, $cast_as:ty, $convert_func:ident) => {
+    ($struct_name:ident, $expected_type:literal, $downcast:path, $convert_func:ident $(, $json_check_func:ident)?) => {
         #[derive(Debug, Clone)]
         pub struct $struct_name;
 
@@ -51,7 +64,7 @@ macro_rules! build_serializer {
                 extra: &Extra,
             ) -> PyResult<PyObject> {
                 let py = value.py();
-                match value.downcast::<$cast_as>() {
+                match $downcast(value) {
                     Ok(py_value) => match extra.mode {
                         SerMode::Json => {
                             let s = $convert_func(py_value)?;
@@ -67,7 +80,7 @@ macro_rules! build_serializer {
             }
 
             fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
-                match key.downcast::<$cast_as>() {
+                match $downcast(key) {
                     Ok(py_value) => Ok(Cow::Owned($convert_func(py_value)?)),
                     Err(_) => {
                         extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
@@ -84,7 +97,7 @@ macro_rules! build_serializer {
                 exclude: Option<&PyAny>,
                 extra: &Extra,
             ) -> Result<S::Ok, S::Error> {
-                match value.downcast::<$cast_as>() {
+                match $downcast(value) {
                     Ok(py_value) => {
                         let s = $convert_func(py_value).map_err(py_err_se_err)?;
                         serializer.serialize_str(&s)
@@ -105,6 +118,11 @@ macro_rules! build_serializer {
     };
 }
 
-build_serializer!(DatetimeSerializer, "datetime", PyDateTime, datetime_to_string);
-build_serializer!(DateSerializer, "date", PyDate, date_to_string);
-build_serializer!(TimeSerializer, "time", PyTime, time_to_string);
+build_serializer!(
+    DatetimeSerializer,
+    "datetime",
+    PyAny::downcast::<PyDateTime>,
+    datetime_to_string
+);
+build_serializer!(DateSerializer, "date", downcast_date_reject_datetime, date_to_string);
+build_serializer!(TimeSerializer, "time", PyAny::downcast::<PyTime>, time_to_string);
