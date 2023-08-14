@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 import inspect
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import pydantic_core
 
@@ -80,7 +80,15 @@ class ValidateCallWrapper:
             core_config = config_wrapper.core_config(self)
             schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
             simplified_schema = inline_schema_defs(schema)
-            self.__return_pydantic_validator__ = pydantic_core.SchemaValidator(simplified_schema, core_config)
+            validator = pydantic_core.SchemaValidator(simplified_schema, core_config)
+            if inspect.iscoroutinefunction(self.raw_function):
+
+                async def return_val_wrapper(aw: Awaitable[Any]) -> None:
+                    return validator.validate_python(await aw)
+
+                self.__return_pydantic_validator__ = return_val_wrapper
+            else:
+                self.__return_pydantic_validator__ = validator.validate_python
         else:
             self.__return_pydantic_core_schema__ = None
             self.__return_pydantic_validator__ = None
@@ -90,7 +98,7 @@ class ValidateCallWrapper:
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         res = self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
         if self.__return_pydantic_validator__:
-            return self.__return_pydantic_validator__.validate_python(res)
+            return self.__return_pydantic_validator__(res)
         return res
 
     def __get__(self, obj: Any, objtype: type[Any] | None = None) -> ValidateCallWrapper:

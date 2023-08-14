@@ -59,7 +59,7 @@ class CoreMetadataHandler:
             self._schema['metadata'] = metadata = CoreMetadata()
         if not isinstance(metadata, dict):
             raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
-        return metadata  # type: ignore[return-value]
+        return metadata
 
 
 def build_metadata_dict(
@@ -80,9 +80,9 @@ def build_metadata_dict(
         pydantic_js_annotation_functions=js_annotation_functions or [],
         pydantic_js_prefer_positional_arguments=js_prefer_positional_arguments,
     )
-    metadata = {k: v for k, v in metadata.items() if v is not None}  # type: ignore[assignment]
+    metadata = {k: v for k, v in metadata.items() if v is not None}
 
     if initial_metadata is not None:
-        metadata = {**initial_metadata, **metadata}  # type: ignore[misc]
+        metadata = {**initial_metadata, **metadata}
 
     return metadata

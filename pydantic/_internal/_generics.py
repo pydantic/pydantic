@@ -36,7 +36,7 @@ VT = TypeVar('VT')
 _LIMITED_DICT_SIZE = 100
 if TYPE_CHECKING:
 
-    class LimitedDict(dict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
+    class LimitedDict(dict, MutableMapping[KT, VT]):
         def __init__(self, size_limit: int = _LIMITED_DICT_SIZE):
             ...
 
@@ -235,7 +235,7 @@ def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
     # In this case, we know that cls is a _GenericAlias, and origin is the generic type
     # So it is safe to access cls.__args__ and origin.__parameters__
     args: tuple[Any, ...] = cls.__args__  # type: ignore
-    parameters: tuple[TypeVarType, ...] = origin.__parameters__  # type: ignore
+    parameters: tuple[TypeVarType, ...] = origin.__parameters__
     return dict(zip(parameters, args))
 
 
@@ -323,7 +323,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
         if all_identical(parameters, resolved_type_args):
             return type_
-        return type_[resolved_type_args]  # type: ignore[index]
+        return type_[resolved_type_args]
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.

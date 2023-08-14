@@ -41,7 +41,7 @@ from ..config import ConfigDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import AliasChoices, AliasPath, FieldInfo
 from ..json_schema import JsonSchemaValue
-from ..version import VERSION
+from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -242,18 +242,19 @@ def _add_custom_serialization_from_json_encoders(
         return schema
     # Check the class type and its superclasses for a matching encoder
     # Decimal.__class__.__mro__ (and probably other cases) doesn't include Decimal itself
-    for base in (tp, *tp.__class__.__mro__[:-1]):
+    # if the type is a GenericAlias (e.g. from list[int]) we need to use __class__ instead of .__mro__
+    for base in (tp, *getattr(tp, '__mro__', tp.__class__.__mro__)[:-1]):
         encoder = json_encoders.get(base)
         if encoder is None:
             continue
 
         warnings.warn(
-            f'`json_encoders` is deprecated. See https://docs.pydantic.dev/{VERSION}/usage/serialization/#custom-serializers for alternatives',
+            f'`json_encoders` is deprecated. See https://docs.pydantic.dev/{version_short()}/usage/serialization/#custom-serializers for alternatives',
             PydanticDeprecatedSince20,
         )
 
         # TODO: in theory we should check that the schema accepts a serialization key
-        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(encoder, when_used='json')  # type: ignore
+        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(encoder, when_used='json')
         return schema
 
     return schema
@@ -288,7 +289,7 @@ class ConfigWrapperStack:
 
 
 class GenerateSchema:
-    """Generate core schema for a Pydantic model, dataclass and types like `str`, `datatime`, ... ."""
+    """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
 
     def __init__(
         self,
@@ -641,7 +642,7 @@ class GenerateSchema:
             args = tuple([self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args])
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
-        return args  # type: ignore
+        return args
 
     def _get_first_arg_or_any(self, obj: Any) -> Any:
         args = self._get_args_resolving_forward_refs(obj)
@@ -1542,11 +1543,6 @@ class GenerateSchema:
         # expand annotations before we start processing them so that `__prepare_pydantic_annotations` can consume
         # individual items from GroupedMetadata
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
-        non_field_infos, field_infos = [a for a in annotations if not isinstance(a, FieldInfo)], [
-            a for a in annotations if isinstance(a, FieldInfo)
-        ]
-        if field_infos:
-            annotations = [*non_field_infos, FieldInfo.merge_field_infos(*field_infos)]
         idx = -1
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
         if prepare:
@@ -1963,7 +1959,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
                 code='custom-json-schema',
             )
 
-    # handle GenericAlias' but ignore Annotated which "lies" about it's origin (in this case it would be `int`)
+    # handle GenericAlias' but ignore Annotated which "lies" about its origin (in this case it would be `int`)
     if hasattr(tp, '__origin__') and not isinstance(tp, type(Annotated[int, 'placeholder'])):
         return _extract_get_pydantic_json_schema(tp.__origin__, schema)
 

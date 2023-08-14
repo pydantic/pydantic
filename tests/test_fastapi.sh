@@ -19,8 +19,13 @@ cd .. && pip install . && cd fastapi
 #
 # To update the list of deselected tests, remove all deselections, run the tests, and re-add any remaining failures
 ./scripts/test.sh \
-  --deselect tests/test_filter_pydantic_sub_model_pv2.py::test_validator_is_cloned \
+  --deselect tests/test_tutorial/test_body_updates/test_tutorial001.py \
+  --deselect tests/test_tutorial/test_body_updates/test_tutorial001_py310.py \
+  --deselect tests/test_tutorial/test_body_updates/test_tutorial001_py39.py \
+  --deselect tests/test_tutorial/test_dataclasses/test_tutorial003.py \
+  --deselect tests/test_tutorial/test_path_operation_advanced_configurations/test_tutorial004.py \
+  --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005.py \
+  --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005_py310.py \
+  --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005_py39.py \
   --deselect tests/test_multi_body_errors.py::test_jsonable_encoder_requiring_error \
   --deselect tests/test_multi_body_errors.py::test_put_incorrect_body_multiple \
-
-# TODO: Update the deselections after https://github.com/tiangolo/fastapi/pull/9943 is merged

@@ -19,7 +19,7 @@ from typing import Any, Callable, Optional, Tuple, Type, Union, cast
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import deprecated
 
-from ._internal import _repr, _utils
+from ._internal import _repr
 from ._internal._schema_generation_shared import GetJsonSchemaHandler as _GetJsonSchemaHandler
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
@@ -399,7 +399,7 @@ def parse_float_alpha(value: Union[None, str, float, int]) -> Optional[float]:
     except ValueError:
         raise PydanticCustomError('color_error', 'value is not a valid color: alpha values must be a valid float')
 
-    if _utils.almost_equal_floats(alpha, 1):
+    if math.isclose(alpha, 1):
         return None
     elif 0 <= alpha <= 1:
         return alpha

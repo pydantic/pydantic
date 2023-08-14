@@ -281,7 +281,7 @@ class GenerateJsonSchema:
 
         # When we encounter definitions we need to try to build them immediately
         # so that they are available schemas that reference them
-        # But it's possible that that CoreSchema was never going to be used
+        # But it's possible that CoreSchema was never going to be used
         # (e.g. because the CoreSchema that references short circuits is JSON schema generation without needing
         #  the reference) so instead of failing altogether if we can't build a definition we
         # store the error raised and re-throw it if we end up needing that def
@@ -592,6 +592,39 @@ class GenerateJsonSchema:
         json_schema: dict[str, Any] = {'type': 'number'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.numeric)
         json_schema = {k: v for k, v in json_schema.items() if v not in {math.inf, -math.inf}}
+        return json_schema
+
+    def decimal_schema(self, schema: core_schema.DecimalSchema) -> JsonSchemaValue:
+        """Generates a JSON schema that matches a decimal value.
+
+        Args:
+            schema: The core schema.
+
+        Returns:
+            The generated JSON schema.
+        """
+        json_schema = self.str_schema(core_schema.str_schema())
+        if self.mode == 'validation':
+            multiple_of = schema.get('multiple_of')
+            le = schema.get('le')
+            ge = schema.get('ge')
+            lt = schema.get('lt')
+            gt = schema.get('gt')
+            json_schema = {
+                'anyOf': [
+                    self.float_schema(
+                        core_schema.float_schema(
+                            allow_inf_nan=schema.get('allow_inf_nan'),
+                            multiple_of=None if multiple_of is None else float(multiple_of),
+                            le=None if le is None else float(le),
+                            ge=None if ge is None else float(ge),
+                            lt=None if lt is None else float(lt),
+                            gt=None if gt is None else float(gt),
+                        )
+                    ),
+                    json_schema,
+                ],
+            }
         return json_schema
 
     def str_schema(self, schema: core_schema.StringSchema) -> JsonSchemaValue:
@@ -1182,7 +1215,7 @@ class GenerateJsonSchema:
 
         json_schema = {'type': 'object', 'properties': properties}
         if required_fields:
-            json_schema['required'] = required_fields  # type: ignore
+            json_schema['required'] = required_fields
         return json_schema
 
     def _get_alias_name(self, field: CoreSchemaField, name: str) -> str:
@@ -1932,7 +1965,7 @@ class GenerateJsonSchema:
         """
         for core_key, json_schema_key in mapping.items():
             if core_key in core_schema:
-                json_schema[json_schema_key] = core_schema[core_key]  # type: ignore[literal-required]
+                json_schema[json_schema_key] = core_schema[core_key]
 
     class ValidationsMapping:
         """This class just contains mappings from core_schema attribute names to the corresponding
@@ -2164,15 +2197,15 @@ def _make_json_hashable(value: _Json) -> _HashableJson:
 
 
 def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> JsonSchemaValue:
-    if isinstance(value, dict):  # type: ignore
+    if isinstance(value, dict):
         sorted_dict: dict[str, JsonSchemaValue] = {}
         keys = value.keys()
         if parent_key != 'properties':
             keys = sorted(keys)
         for key in keys:
             sorted_dict[key] = _sort_json_schema(value[key], parent_key=key)
-        return sorted_dict  # type: ignore
-    elif isinstance(value, list):  # type: ignore
+        return sorted_dict
+    elif isinstance(value, list):
         sorted_list: list[JsonSchemaValue] = []
         for item in value:  # type: ignore
             sorted_list.append(_sort_json_schema(item))

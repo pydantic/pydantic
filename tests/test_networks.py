@@ -615,14 +615,28 @@ def test_mongodb_dsns():
     assert m.a.hosts() == [{'username': None, 'password': None, 'host': 'localhost', 'port': 27017}]
 
 
-def test_mongodsn_default_ports():
+@pytest.mark.parametrize(
+    ('dsn', 'expected'),
+    [
+        ('mongodb://user:pass@localhost/app', 'mongodb://user:pass@localhost:27017/app'),
+        pytest.param(
+            'mongodb+srv://user:pass@localhost/app',
+            'mongodb+srv://user:pass@localhost/app',
+            marks=pytest.mark.xfail(
+                reason=(
+                    'This case is not supported. '
+                    'Check https://github.com/pydantic/pydantic/pull/7116 for more details.'
+                )
+            ),
+        ),
+    ],
+)
+def test_mongodsn_default_ports(dsn: str, expected: str):
     class Model(BaseModel):
-        a: MongoDsn
+        dsn: MongoDsn
 
-    m1 = Model(a='mongodb://user:pass@localhost/app')
-    m2 = Model(a='mongodb+srv://user:pass@localhost/app')
-    assert str(m1.a) == 'mongodb://user:pass@localhost:27017/app'
-    assert str(m2.a) == 'mongodb+srv://user:pass@localhost/app'
+    m = Model(dsn=dsn)
+    assert str(m.dsn) == expected
 
 
 def test_kafka_dsns():

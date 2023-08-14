@@ -59,7 +59,7 @@ The same approach can be used for dict keys, etc.
 
 ### Before, After, Wrap and Plain validators
 
-Pydantic provides multiple types of validator functions.
+Pydantic provides multiple types of validator functions:
 
 * `After` validators run after Pydantic's internal parsing. They are generally more type safe and thus easier to implement.
 * `Before` validators run before Pydantic's internal parsing and validation (e.g. coercion of a `str` to an `int`). These are more flexible than `After` validators since they can modify the raw input, but they also have to deal with the raw input, which in theory could be any arbitrary object.

@@ -25,7 +25,9 @@ RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType]):
-    """A Pydantic `BaseModel` for the root object of the model.
+    """usage docs: https://docs.pydantic.dev/2.1/usage/models/#rootmodel-and-custom-root-types
+
+    A Pydantic `BaseModel` for the root object of the model.
 
     Attributes:
         root: The root object of the model.
@@ -51,7 +53,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
             root = data  # type: ignore
         __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
 
-    __init__.__pydantic_base_init__ = True  # type: ignore
+    __init__.__pydantic_base_init__ = True
 
     @classmethod
     def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:

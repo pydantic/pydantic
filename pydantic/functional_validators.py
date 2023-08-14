@@ -314,7 +314,7 @@ def field_validator(
             code='validator-no-fields',
         )
     fields = __field, *fields
-    if not all(isinstance(field, str) for field in fields):  # type: ignore
+    if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
             '`@field_validator` fields should be passed as separate string args. '
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",

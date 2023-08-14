@@ -159,7 +159,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
-    __init__.__pydantic_base_init__ = True  # type: ignore
+    __init__.__pydantic_base_init__ = True
 
     @property
     def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
@@ -368,7 +368,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Args:
             by_alias: Whether to use attribute aliases or not.
             ref_template: The reference template.
-            schema_generator: To override the logic used to generate the JSON schema, ass a subclass of
+            schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
 
@@ -396,7 +396,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         Raises:
             TypeError: Raised when trying to generate concrete names for non-generic models.
         """
-        if not issubclass(cls, typing.Generic):  # type: ignore[arg-type]
+        if not issubclass(cls, typing.Generic):
             raise TypeError('Concrete names should only be generated for generic models.')
 
         # Any strings received should represent forward references, so we handle them specially below.
@@ -1109,7 +1109,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         )
 
         values = dict(
-            _deprecated_copy_internals._iter(  # type: ignore
+            _deprecated_copy_internals._iter(
                 self, to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False
             ),
             **(update or {}),
@@ -1200,7 +1200,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     )
     def _iter(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
-        return _deprecated_copy_internals._iter(self, *args, **kwargs)  # type: ignore
+        return _deprecated_copy_internals._iter(self, *args, **kwargs)
 
     @typing_extensions.deprecated(
         'The private method `_copy_and_set_values` will be removed and should no longer be used.',
@@ -1211,7 +1211,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'The private method  `_copy_and_set_values` will be removed and should no longer be used.',
             DeprecationWarning,
         )
-        return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)  # type: ignore
+        return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)
 
     @classmethod
     @typing_extensions.deprecated(
@@ -1222,7 +1222,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings.warn(
             'The private method  `_get_value` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._get_value(cls, *args, **kwargs)  # type: ignore
+        return _deprecated_copy_internals._get_value(cls, *args, **kwargs)
 
     @typing_extensions.deprecated(
         'The private method `_calculate_keys` will be removed and should no longer be used.',
@@ -1232,7 +1232,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings.warn(
             'The private method `_calculate_keys` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)  # type: ignore
+        return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)
 
 
 @typing.overload

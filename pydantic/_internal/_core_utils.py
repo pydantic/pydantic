@@ -107,7 +107,7 @@ def get_ref(s: core_schema.CoreSchema) -> None | str:
     """Get the ref from the schema if it has one.
     This exists just for type checking to work correctly.
     """
-    return s.get('ref', None)  # type: ignore
+    return s.get('ref', None)
 
 
 def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema.CoreSchema]:
@@ -134,7 +134,7 @@ def define_expected_missing_refs(
     refs = set()
 
     def _record_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        ref: str | None = s.get('ref')  # type: ignore[assignment]
+        ref: str | None = s.get('ref')
         if ref:
             refs.add(ref)
         return recurse(s, _record_refs)

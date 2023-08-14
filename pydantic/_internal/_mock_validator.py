@@ -77,7 +77,7 @@ def set_dataclass_mock_validator(cls: type[PydanticDataclass], cls_name: str, un
         from ..dataclasses import rebuild_dataclass
 
         if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=5):
-            return cls.__pydantic_validator__  # type: ignore
+            return cls.__pydantic_validator__
         else:
             return None
 

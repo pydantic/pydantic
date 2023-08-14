@@ -61,7 +61,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.4.0",
+    "pydantic-core==2.5.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -118,7 +118,7 @@ memray = [
 ]
 
 [tool.pdm.resolution.overrides]
-# requires Python > 3.8, we only test with 3.8 in CI but because of it it won't lock properly
+# requires Python > 3.8, we only test with 3.8 in CI but because of it won't lock properly
 pytest-memray = "1.4.0"
 
 [project.urls]
@@ -180,6 +180,7 @@ exclude=['pydantic/v1', 'tests/mypy/outputs']
 [tool.ruff.extend-per-file-ignores]
 "docs/**/*.py" = ['T']
 "tests/**/*.py" = ['T']
+"tests/benchmarks/test_fastapi_startup.py" = ['UP006']
 
 [tool.ruff.pydocstyle]
 convention = "google"
@@ -236,6 +237,8 @@ exclude = '''
 [tool.pyright]
 include = ['pydantic']
 exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py', 'pydantic/v1']
+# reportUnnecessaryTypeIgnoreComment can't be set since we run pyright with multiple python versions
+#reportUnnecessaryTypeIgnoreComment = true
 
 [tool.codespell]
 skip = '.git,env*,pydantic/v1/*'

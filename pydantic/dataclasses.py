@@ -180,7 +180,7 @@ def dataclass(
             #   If the class is generic, we need to make sure the subclass also inherits from Generic
             #   with all the same parameters.
             bases = (cls,)
-            if issubclass(cls, Generic):  # type: ignore
+            if issubclass(cls, Generic):
                 generic_base = Generic[cls.__parameters__]  # type: ignore
                 bases = bases + (generic_base,)
             cls = types.new_class(cls.__name__, bases)
@@ -226,7 +226,7 @@ if (3, 8) <= sys.version_info < (3, 11):
         """
         raise TypeError("'InitVar' object is not callable")
 
-    dataclasses.InitVar.__call__ = _call_initvar  # type: ignore
+    dataclasses.InitVar.__call__ = _call_initvar
 
 
 def rebuild_dataclass(

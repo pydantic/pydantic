@@ -244,7 +244,7 @@ print(user)
 #> name='John Doe'
 ```
 
-1. This is the the default behaviour.
+1. This is the default behaviour.
 2. The `age` argument is ignored.
 
 Instead, with `extra='allow'`, the `age` argument is included:
