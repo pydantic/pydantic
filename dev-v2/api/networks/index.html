@@ -2661,17 +2661,12 @@
   </span>
 
 <a href="#pydantic.networks.MongoDsn" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">MongoDsn</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
-    <span class="n">Annotated</span><span class="p">[</span>
-        <span class="n">MultiHostUrl</span><span class="p">,</span>
-        <span class="n">UrlConstraints</span><span class="p">(</span>
-            <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mongodb&quot;</span><span class="p">],</span> <span class="n">default_port</span><span class="o">=</span><span class="mi">27017</span>
-        <span class="p">),</span>
-    <span class="p">],</span>
-    <span class="n">Annotated</span><span class="p">[</span>
-        <span class="n">MultiHostUrl</span><span class="p">,</span>
-        <span class="n">UrlConstraints</span><span class="p">(</span><span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mongodb+srv&quot;</span><span class="p">]),</span>
-    <span class="p">],</span>
+<div class="highlight"><pre><span></span><code><span class="n">MongoDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="n">MultiHostUrl</span><span class="p">,</span>
+    <span class="n">UrlConstraints</span><span class="p">(</span>
+        <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mongodb&quot;</span><span class="p">,</span> <span class="s2">&quot;mongodb+srv&quot;</span><span class="p">],</span>
+        <span class="n">default_port</span><span class="o">=</span><span class="mi">27017</span><span class="p">,</span>
+    <span class="p">),</span>
 <span class="p">]</span>
 </code></pre></div>
 
@@ -3022,9 +3017,9 @@
 
           <details class="quote">
             <summary>Source code in <code>pydantic/networks.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
 </code></pre></div></td></tr></table></div>
@@ -3192,7 +3187,10 @@
 </details>
       <details class="quote">
         <summary>Source code in <code>pydantic/networks.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">399</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
 <span class="normal">400</span>
 <span class="normal">401</span>
 <span class="normal">402</span>
@@ -3220,10 +3218,7 @@
 <span class="normal">424</span>
 <span class="normal">425</span>
 <span class="normal">426</span>
-<span class="normal">427</span>
-<span class="normal">428</span>
-<span class="normal">429</span>
-<span class="normal">430</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="normal">427</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Email address validation using https://pypi.org/project/email-validator/.</span>
 
 <span class="sd">    Note:</span>
