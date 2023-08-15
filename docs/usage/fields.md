@@ -623,12 +623,10 @@ assigned a new value after the model is created (immutability).
 See the [frozen dataclass documentation] for more details.
 
 ```py
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 
 class User(BaseModel):
-    model_config = ConfigDict(validate_assignment=True)  # (1)!
-
     name: str = Field(frozen=True)
     age: int
 
@@ -636,7 +634,7 @@ class User(BaseModel):
 user = User(name='John', age=42)
 
 try:
-    user.name = 'Jane'  # (2)!
+    user.name = 'Jane'  # (1)!
 except ValidationError as e:
     print(e)
     """
@@ -646,11 +644,7 @@ except ValidationError as e:
     """
 ```
 
-1. The `model_config` field is used to enable the validation of assignments.
-
-    See the [Validate Assignment] section for more details.
-
-2. Since `validate_assignment` is enabled, and the `name` field is frozen, the assignment is not allowed.
+1. Since `name` field is frozen, the assignment is not allowed.
 
 ## Exclude
 

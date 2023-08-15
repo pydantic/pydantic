@@ -503,6 +503,19 @@ def test_frozen_model():
     ]
 
 
+def test_frozen_field():
+    class FrozenModel(BaseModel):
+        a: int = Field(10, frozen=True)
+
+    m = FrozenModel()
+
+    with pytest.raises(ValidationError) as exc_info:
+        m.a = 11
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_field', 'loc': ('a',), 'msg': 'Field is frozen', 'input': 11}
+    ]
+
+
 def test_not_frozen_are_not_hashable():
     class TestModel(BaseModel):
         a: int = 10
@@ -1660,7 +1673,7 @@ def test_base_config_type_hinting():
     get_type_hints(type(M.model_config))
 
 
-def test_frozen_field():
+def test_frozen_field_with_validate_assignment():
     """assigning a frozen=True field should raise a TypeError"""
 
     class Entry(BaseModel):

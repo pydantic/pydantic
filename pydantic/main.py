@@ -748,6 +748,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 'input': value,
             }
             raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
+        elif getattr(self.model_fields.get(name), 'frozen', False):
+            error: pydantic_core.InitErrorDetails = {
+                'type': 'frozen_field',
+                'loc': (name,),
+                'input': value,
+            }
+            raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
 
         attr = getattr(self.__class__, name, None)
         if isinstance(attr, property):
