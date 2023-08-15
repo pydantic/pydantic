@@ -613,7 +613,7 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
         }
         ObType::Tuple => {
             let mut key_build = super::type_serializers::tuple::KeyBuilder::new();
-            for element in key.downcast::<PyTuple>()?.iter() {
+            for element in key.downcast::<PyTuple>()? {
                 key_build.push(&infer_json_key(element, extra)?);
             }
             Ok(Cow::Owned(key_build.finish()))

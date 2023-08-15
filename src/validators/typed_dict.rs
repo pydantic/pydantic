@@ -67,7 +67,7 @@ impl BuildValidator for TypedDictValidator {
         let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: Vec<TypedDictField> = Vec::with_capacity(fields_dict.len());
 
-        for (key, value) in fields_dict.iter() {
+        for (key, value) in fields_dict {
             let field_info: &PyDict = value.downcast()?;
             let field_name: &str = key.extract()?;
 

@@ -89,7 +89,7 @@ impl TypeSerializer for TupleVariableSerializer {
                 let item_serializer = self.item_serializer.as_ref();
 
                 let mut key_builder = KeyBuilder::new();
-                for element in py_tuple.iter() {
+                for element in py_tuple {
                     key_builder.push(&item_serializer.json_key(element, extra)?);
                 }
                 Ok(Cow::Owned(key_builder.finish()))

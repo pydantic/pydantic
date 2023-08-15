@@ -39,7 +39,7 @@ fn map_negative_indices(include_or_exclude: &PyAny, len: Option<usize>) -> PyRes
     let py = include_or_exclude.py();
     if let Ok(exclude_dict) = include_or_exclude.downcast::<PyDict>() {
         let out = PyDict::new(py);
-        for (k, v) in exclude_dict.iter() {
+        for (k, v) in exclude_dict {
             out.set_item(map_negative_index(k, len)?, v)?;
         }
         Ok(out)

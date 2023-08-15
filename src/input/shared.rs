@@ -126,7 +126,7 @@ fn strip_decimal_zeros(s: &str) -> Option<&str> {
 }
 
 pub fn float_as_int<'a>(input: &'a impl Input<'a>, float: f64) -> ValResult<'a, EitherInt<'a>> {
-    if float == f64::INFINITY || float == f64::NEG_INFINITY || float.is_nan() {
+    if float.is_infinite() || float.is_nan() {
         Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input))
     } else if float % 1.0 != 0.0 {
         Err(ValError::new(ErrorTypeDefaults::IntFromFloat, input))
