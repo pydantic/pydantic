@@ -444,6 +444,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             list: list,
             typing.Sequence: list,
             typing.Set: set,
+            set: set,
             typing.MutableSet: set,
             collections.abc.MutableSet: set,
             collections.abc.Set: frozenset,
