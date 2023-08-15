@@ -1,6 +1,6 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::{PyDict, PyList, PyTuple};
 use std::borrow::Cow;
 
 use crate::build_tools::py_schema_err;
@@ -31,7 +31,13 @@ impl BuildSerializer for UnionSerializer {
         let choices: Vec<CombinedSerializer> = schema
             .get_as_req::<&PyList>(intern!(py, "choices"))?
             .iter()
-            .map(|choice| CombinedSerializer::build(choice.downcast()?, config, definitions))
+            .map(|choice| {
+                let choice: &PyAny = match choice.downcast::<PyTuple>() {
+                    Ok(py_tuple) => py_tuple.get_item(0)?,
+                    Err(_) => choice,
+                };
+                CombinedSerializer::build(choice.downcast()?, config, definitions)
+            })
             .collect::<PyResult<Vec<CombinedSerializer>>>()?;
 
         Self::from_choices(choices)

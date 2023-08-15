@@ -9,7 +9,7 @@ import sys
 from collections.abc import Mapping
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, List, Set, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, List, Set, Tuple, Type, Union
 
 if sys.version_info < (3, 11):
     from typing_extensions import Protocol, Required, TypeAlias
@@ -2454,7 +2454,7 @@ def nullable_schema(
 
 class UnionSchema(TypedDict, total=False):
     type: Required[Literal['union']]
-    choices: Required[List[CoreSchema]]
+    choices: Required[List[Union[CoreSchema, Tuple[CoreSchema, str]]]]
     # default true, whether to automatically collapse unions with one element to the inner validator
     auto_collapse: bool
     custom_error_type: str
@@ -2467,7 +2467,7 @@ class UnionSchema(TypedDict, total=False):
 
 
 def union_schema(
-    choices: list[CoreSchema],
+    choices: list[CoreSchema | tuple[CoreSchema, str]],
     *,
     auto_collapse: bool | None = None,
     custom_error_type: str | None = None,
@@ -2491,7 +2491,7 @@ def union_schema(
     ```
 
     Args:
-        choices: The schemas to match
+        choices: The schemas to match. If a tuple, the second item is used as the label for the case.
         auto_collapse: whether to automatically collapse unions with one element to the inner validator, default true
         custom_error_type: The custom error type to use if the validation fails
         custom_error_message: The custom error message to use if the validation fails

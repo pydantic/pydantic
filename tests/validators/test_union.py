@@ -411,3 +411,23 @@ def test_strict_reference():
 
     assert repr(v.validate_python((1, 2))) == '(1.0, 2)'
     assert repr(v.validate_python((1.0, (2.0, 3)))) == '(1.0, (2.0, 3))'
+
+
+def test_case_labels():
+    v = SchemaValidator(
+        {'type': 'union', 'choices': [{'type': 'none'}, ({'type': 'int'}, 'my_label'), {'type': 'str'}]}
+    )
+    assert v.validate_python(None) is None
+    assert v.validate_python(1) == 1
+    with pytest.raises(ValidationError, match=r'3 validation errors for union\[none,my_label,str]') as exc_info:
+        v.validate_python(1.5)
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': 1.5, 'loc': ('none',), 'msg': 'Input should be None', 'type': 'none_required'},
+        {
+            'input': 1.5,
+            'loc': ('my_label',),
+            'msg': 'Input should be a valid integer, got a number with a fractional part',
+            'type': 'int_from_float',
+        },
+        {'input': 1.5, 'loc': ('str',), 'msg': 'Input should be a valid string', 'type': 'string_type'},
+    ]
