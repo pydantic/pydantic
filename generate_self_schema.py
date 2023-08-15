@@ -133,6 +133,17 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:  # noqa: C901
                     schema = {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': schema_ref_validator}
                 elif fr_arg == 'Dict[Hashable, CoreSchema]':
                     schema = {'type': 'dict', 'keys_schema': {'type': 'any'}, 'values_schema': schema_ref_validator}
+                elif fr_arg == 'List[Union[CoreSchema, Tuple[CoreSchema, str]]]':
+                    schema = {
+                        'type': 'list',
+                        'items_schema': {
+                            'type': 'union',
+                            'choices': [
+                                schema_ref_validator,
+                                {'type': 'tuple-positional', 'items_schema': [schema_ref_validator, {'type': 'str'}]},
+                            ],
+                        },
+                    }
                 else:
                     raise ValueError(f'Unknown Schema forward ref: {fr_arg}')
             else:
