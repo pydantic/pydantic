@@ -147,6 +147,7 @@ class ModelMetaclass(ABCMeta):
                         # If that is the case, and a user hits this, I could imagine it being very helpful
                         # to have this extra detail in the reported traceback.
                         error_message += f' (bases={bases})'
+                        error_message += ' Hint: Inherit BaseModel before typing.Generic'
                     raise TypeError(error_message)
 
                 cls.__pydantic_generic_metadata__ = {
