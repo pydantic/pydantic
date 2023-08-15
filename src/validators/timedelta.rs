@@ -5,10 +5,9 @@ use speedate::Duration;
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{duration_as_pytimedelta, EitherTimedelta, Input};
-use crate::recursion_guard::RecursionGuard;
 
 use super::datetime::extract_microseconds_precision;
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct TimeDeltaValidator {
@@ -70,11 +69,9 @@ impl Validator for TimeDeltaValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let timedelta = input.validate_timedelta(extra.strict.unwrap_or(self.strict), self.microseconds_precision)?;
+        let timedelta = input.validate_timedelta(state.strict_or(self.strict), self.microseconds_precision)?;
         let py_timedelta = timedelta.try_into_py(py)?;
         if let Some(constraints) = &self.constraints {
             let raw_timedelta = timedelta.to_duration()?;

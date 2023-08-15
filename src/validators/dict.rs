@@ -8,12 +8,11 @@ use crate::input::{
     DictGenericIterator, GenericMapping, Input, JsonObject, JsonObjectGenericIterator, MappingGenericIterator,
 };
 
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
 use super::any::AnyValidator;
 use super::list::length_check;
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct DictValidator {
@@ -70,22 +69,15 @@ impl Validator for DictValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let dict = input.validate_dict(extra.strict.unwrap_or(self.strict))?;
+        let strict = state.strict_or(self.strict);
+        let dict = input.validate_dict(strict)?;
         match dict {
-            GenericMapping::PyDict(py_dict) => {
-                self.validate_dict(py, input, py_dict, extra, definitions, recursion_guard)
-            }
-            GenericMapping::PyMapping(mapping) => {
-                self.validate_mapping(py, input, mapping, extra, definitions, recursion_guard)
-            }
+            GenericMapping::PyDict(py_dict) => self.validate_dict(py, input, py_dict, state),
+            GenericMapping::PyMapping(mapping) => self.validate_mapping(py, input, mapping, state),
             GenericMapping::PyGetAttr(_, _) => unreachable!(),
-            GenericMapping::JsonObject(json_object) => {
-                self.validate_json_object(py, input, json_object, extra, definitions, recursion_guard)
-            }
+            GenericMapping::JsonObject(json_object) => self.validate_json_object(py, input, json_object, state),
         }
     }
 
@@ -119,9 +111,7 @@ macro_rules! build_validate {
             py: Python<'data>,
             input: &'data impl Input<'data>,
             dict: &'data $dict_type,
-            extra: &Extra,
-            definitions: &'data Definitions<CombinedValidator>,
-            recursion_guard: &'s mut RecursionGuard,
+            state: &mut ValidationState,
         ) -> ValResult<'data, PyObject> {
             let output = PyDict::new(py);
             let mut errors: Vec<ValLineError> = Vec::new();
@@ -130,7 +120,7 @@ macro_rules! build_validate {
             let value_validator = self.value_validator.as_ref();
             for item_result in <$iter>::new(dict)? {
                 let (key, value) = item_result?;
-                let output_key = match key_validator.validate(py, key, extra, definitions, recursion_guard) {
+                let output_key = match key_validator.validate(py, key, state) {
                     Ok(value) => Some(value),
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
@@ -145,7 +135,7 @@ macro_rules! build_validate {
                     Err(ValError::Omit) => continue,
                     Err(err) => return Err(err),
                 };
-                let output_value = match value_validator.validate(py, value, extra, definitions, recursion_guard) {
+                let output_value = match value_validator.validate(py, value, state) {
                     Ok(value) => Some(value),
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {

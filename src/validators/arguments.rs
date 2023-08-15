@@ -10,10 +10,10 @@ use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::validation_state::ValidationState;
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 struct Parameter {
@@ -165,9 +165,7 @@ impl Validator for ArgumentsValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let args = input.validate_args()?;
 
@@ -205,9 +203,7 @@ impl Validator for ArgumentsValidator {
                             ));
                         }
                         (Some(pos_value), None) => {
-                            match parameter
-                                .validator
-                                .validate(py, pos_value, extra, definitions, recursion_guard)
+                            match parameter.validator.validate(py, pos_value, state)
                             {
                                 Ok(value) => output_args.push(value),
                                 Err(ValError::LineErrors(line_errors)) => {
@@ -217,9 +213,7 @@ impl Validator for ArgumentsValidator {
                             }
                         }
                         (None, Some((lookup_path, kw_value))) => {
-                            match parameter
-                                .validator
-                                .validate(py, kw_value, extra, definitions, recursion_guard)
+                            match parameter.validator.validate(py, kw_value, state)
                             {
                                 Ok(value) => output_kwargs.set_item(parameter.kwarg_key.as_ref().unwrap(), value)?,
                                 Err(ValError::LineErrors(line_errors)) => {
@@ -231,7 +225,7 @@ impl Validator for ArgumentsValidator {
                             }
                         }
                         (None, None) => {
-                            if let Some(value) = parameter.validator.default_value(py, Some(parameter.name.as_str()), extra, definitions, recursion_guard)? {
+                            if let Some(value) = parameter.validator.default_value(py, Some(parameter.name.as_str()), state)? {
                                 if let Some(ref kwarg_key) = parameter.kwarg_key {
                                     output_kwargs.set_item(kwarg_key, value)?;
                                 } else {
@@ -261,7 +255,7 @@ impl Validator for ArgumentsValidator {
                     if len > self.positional_params_count {
                         if let Some(ref validator) = self.var_args_validator {
                             for (index, item) in $slice_macro!(args, self.positional_params_count, len).iter().enumerate() {
-                                match validator.validate(py, item, extra, definitions, recursion_guard) {
+                                match validator.validate(py, item, state) {
                                     Ok(value) => output_args.push(value),
                                     Err(ValError::LineErrors(line_errors)) => {
                                         errors.extend(
@@ -303,7 +297,7 @@ impl Validator for ArgumentsValidator {
                             };
                             if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
                                 match self.var_kwargs_validator {
-                                    Some(ref validator) => match validator.validate(py, value, extra, definitions, recursion_guard) {
+                                    Some(ref validator) => match validator.validate(py, value, state) {
                                         Ok(value) => output_kwargs.set_item(either_str.as_py_string(py), value)?,
                                         Err(ValError::LineErrors(line_errors)) => {
                                             for err in line_errors {

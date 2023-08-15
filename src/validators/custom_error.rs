@@ -5,10 +5,10 @@ use pyo3::types::PyDict;
 use crate::build_tools::py_schema_err;
 use crate::errors::{ErrorType, PydanticCustomError, PydanticKnownError, ValError, ValResult};
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::validation_state::ValidationState;
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub enum CustomError {
@@ -92,12 +92,10 @@ impl Validator for CustomErrorValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         self.validator
-            .validate(py, input, extra, definitions, recursion_guard)
+            .validate(py, input, state)
             .map_err(|_| self.custom_error.as_val_error(input))
     }
 

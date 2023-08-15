@@ -5,13 +5,12 @@ use pyo3::types::PyDict;
 use pyo3::PyTraverseError;
 use pyo3::PyVisit;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{LocItem, ValError, ValResult};
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 use crate::PydanticUndefinedType;
 
@@ -131,26 +130,18 @@ impl Validator for WithDefaultValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         if input.to_object(py).is(&PydanticUndefinedType::py_undefined()) {
-            Ok(self
-                .default_value(py, None::<usize>, extra, definitions, recursion_guard)?
-                .unwrap())
+            Ok(self.default_value(py, None::<usize>, state)?.unwrap())
         } else {
-            match self.validator.validate(py, input, extra, definitions, recursion_guard) {
+            match self.validator.validate(py, input, state) {
                 Ok(v) => Ok(v),
                 Err(e) => match e {
-                    ValError::UseDefault => Ok(self
-                        .default_value(py, None::<usize>, extra, definitions, recursion_guard)?
-                        .ok_or(e)?),
+                    ValError::UseDefault => Ok(self.default_value(py, None::<usize>, state)?.ok_or(e)?),
                     e => match self.on_error {
                         OnError::Raise => Err(e),
-                        OnError::Default => Ok(self
-                            .default_value(py, None::<usize>, extra, definitions, recursion_guard)?
-                            .ok_or(e)?),
+                        OnError::Default => Ok(self.default_value(py, None::<usize>, state)?.ok_or(e)?),
                         OnError::Omit => Err(ValError::Omit),
                     },
                 },
@@ -158,13 +149,11 @@ impl Validator for WithDefaultValidator {
         }
     }
 
-    fn default_value<'s, 'data>(
-        &'s self,
+    fn default_value<'data>(
+        &self,
         py: Python<'data>,
         outer_loc: Option<impl Into<LocItem>>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, Option<PyObject>> {
         match self.default.default_value(py)? {
             Some(stored_dft) => {
@@ -175,7 +164,7 @@ impl Validator for WithDefaultValidator {
                     stored_dft
                 };
                 if self.validate_default {
-                    match self.validate(py, dft.into_ref(py), extra, definitions, recursion_guard) {
+                    match self.validate(py, dft.into_ref(py), state) {
                         Ok(v) => Ok(Some(v)),
                         Err(e) => {
                             if let Some(outer_loc) = outer_loc {

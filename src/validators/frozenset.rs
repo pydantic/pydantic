@@ -3,12 +3,12 @@ use pyo3::types::{PyDict, PyFrozenSet};
 
 use crate::errors::ValResult;
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
 use super::list::min_length_check;
 use super::set::set_build;
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::validation_state::ValidationState;
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub struct FrozenSetValidator {
@@ -31,11 +31,9 @@ impl Validator for FrozenSetValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let collection = input.validate_frozenset(extra.strict.unwrap_or(self.strict))?;
+        let collection = input.validate_frozenset(state.strict_or(self.strict))?;
         let f_set = PyFrozenSet::empty(py)?;
         collection.validate_to_set(
             py,
@@ -44,9 +42,7 @@ impl Validator for FrozenSetValidator {
             self.max_length,
             "Frozenset",
             &self.item_validator,
-            extra,
-            definitions,
-            recursion_guard,
+            state,
         )?;
         min_length_check!(input, "Frozenset", self.min_length, f_set);
         Ok(f_set.into_py(py))

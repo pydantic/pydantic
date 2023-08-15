@@ -9,12 +9,11 @@ use uuid::Uuid;
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
 use super::model::create_class;
 use super::model::force_setattr;
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 const UUID_INT: &str = "int";
 const UUID_IS_SAFE: &str = "is_safe";
@@ -88,9 +87,7 @@ impl Validator for UuidValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let class = get_uuid_type(py)?;
         if let Some(py_input) = input.input_is_instance(class) {
@@ -108,7 +105,7 @@ impl Validator for UuidValidator {
                 }
             }
             Ok(py_input.to_object(py))
-        } else if extra.strict.unwrap_or(self.strict) && input.is_python() {
+        } else if state.strict_or(self.strict) && input.is_python() {
             Err(ValError::new(
                 ErrorType::IsInstanceOf {
                     class: class.name().unwrap_or("UUID").to_string(),

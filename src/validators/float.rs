@@ -5,10 +5,9 @@ use pyo3::types::PyDict;
 use crate::build_tools::{is_strict, schema_or_config_same};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 pub struct FloatBuilder;
 
@@ -67,11 +66,10 @@ impl Validator for FloatValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let either_float = input.validate_float(extra.strict.unwrap_or(self.strict), extra.ultra_strict)?;
+        let strict = state.strict_or(self.strict);
+        let either_float = input.validate_float(strict, state.extra().ultra_strict)?;
         if !self.allow_inf_nan && !either_float.as_f64().is_finite() {
             return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));
         }
@@ -113,11 +111,10 @@ impl Validator for ConstrainedFloatValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let either_float = input.validate_float(extra.strict.unwrap_or(self.strict), extra.ultra_strict)?;
+        let strict = state.strict_or(self.strict);
+        let either_float = input.validate_float(strict, state.extra().ultra_strict)?;
         let float: f64 = either_float.as_f64();
         if !self.allow_inf_nan && !float.is_finite() {
             return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));

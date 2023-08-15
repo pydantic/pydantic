@@ -13,10 +13,12 @@ use crate::input::{
     MappingGenericIterator,
 };
 use crate::lookup_key::LookupKey;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::ValidationState;
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, Validator};
+
+use std::ops::ControlFlow;
 
 #[derive(Debug, Clone)]
 struct Field {
@@ -119,12 +121,10 @@ impl Validator for ModelFieldsValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let strict = extra.strict.unwrap_or(self.strict);
-        let from_attributes = extra.from_attributes.unwrap_or(self.from_attributes);
+        let strict = state.strict_or(self.strict);
+        let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
 
         // we convert the DictType error to a ModelType error
         let dict = match input.validate_model_fields(strict, from_attributes) {
@@ -162,60 +162,74 @@ impl Validator for ModelFieldsValidator {
             _ => None,
         };
 
+        macro_rules! control_flow {
+            ($e: expr) => {
+                match $e {
+                    Ok(v) => ControlFlow::Continue(v),
+                    Err(err) => ControlFlow::Break(ValError::from(err)),
+                }
+            };
+        }
+
         macro_rules! process {
             ($dict:ident, $get_method:ident, $iter:ty $(,$kwargs:ident)?) => {{
-                for field in &self.fields {
-                    let extra = Extra {
-                        data: Some(model_dict),
-                        ..*extra
-                    };
-                    let op_key_value = match field.lookup_key.$get_method($dict $(, $kwargs )? ) {
-                        Ok(v) => v,
-                        Err(err) => {
-                            errors.push(ValLineError::new_with_loc(
-                                ErrorType::GetAttributeError {
-                                    error: py_err_string(py, err),
-                                    context: None,
-                                },
-                                input,
-                                field.name.clone(),
-                            ));
-                            continue;
-                        }
-                    };
-                    if let Some((lookup_path, value)) = op_key_value {
-                        if let Some(ref mut used_keys) = used_keys {
-                            // key is "used" whether or not validation passes, since we want to skip this key in
-                            // extra logic either way
-                            used_keys.insert(lookup_path.first_key());
-                        }
-                        match field
-                            .validator
-                            .validate(py, value, &extra, definitions, recursion_guard)
-                        {
-                            Ok(value) => {
-                                model_dict.set_item(&field.name_py, value)?;
-                                fields_set_vec.push(field.name_py.clone_ref(py));
+                match state.with_new_extra(Extra {
+                    data: Some(model_dict),
+                    ..*state.extra()
+                }, |state| {
+                    for field in &self.fields {
+                        let op_key_value = match field.lookup_key.$get_method($dict $(, $kwargs )? ) {
+                            Ok(v) => v,
+                            Err(err) => {
+                                errors.push(ValLineError::new_with_loc(
+                                    ErrorType::GetAttributeError {
+                                        error: py_err_string(py, err),
+                                        context: None,
+                                    },
+                                    input,
+                                    field.name.clone(),
+                                ));
+                                continue;
                             }
-                            Err(ValError::Omit) => continue,
-                            Err(ValError::LineErrors(line_errors)) => {
-                                for err in line_errors {
-                                    errors.push(lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name));
+                        };
+                        if let Some((lookup_path, value)) = op_key_value {
+                            if let Some(ref mut used_keys) = used_keys {
+                                // key is "used" whether or not validation passes, since we want to skip this key in
+                                // extra logic either way
+                                used_keys.insert(lookup_path.first_key());
+                            }
+                            match field
+                                .validator
+                                .validate(py, value, state)
+                            {
+                                Ok(value) => {
+                                    control_flow!(model_dict.set_item(&field.name_py, value))?;
+                                    fields_set_vec.push(field.name_py.clone_ref(py));
                                 }
+                                Err(ValError::Omit) => continue,
+                                Err(ValError::LineErrors(line_errors)) => {
+                                    for err in line_errors {
+                                        errors.push(lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name));
+                                    }
+                                }
+                                Err(err) => return ControlFlow::Break(err),
                             }
-                            Err(err) => return Err(err),
+                            continue;
+                        } else if let Some(value) = control_flow!(field.validator.default_value(py, Some(field.name.as_str()), state))? {
+                            control_flow!(model_dict.set_item(&field.name_py, value))?;
+                        } else {
+                            errors.push(field.lookup_key.error(
+                                ErrorTypeDefaults::Missing,
+                                input,
+                                self.loc_by_alias,
+                                &field.name
+                            ));
                         }
-                        continue;
-                    } else if let Some(value) = field.validator.default_value(py, Some(field.name.as_str()), &extra, definitions, recursion_guard)? {
-                        model_dict.set_item(&field.name_py, value)?;
-                    } else {
-                        errors.push(field.lookup_key.error(
-                            ErrorTypeDefaults::Missing,
-                            input,
-                            self.loc_by_alias,
-                            &field.name
-                        ));
                     }
+                    ControlFlow::Continue(())
+                }) {
+                    ControlFlow::Continue(()) => {}
+                    ControlFlow::Break(err) => return Err(err),
                 }
 
                 if let Some(ref mut used_keys) = used_keys {
@@ -252,7 +266,7 @@ impl Validator for ModelFieldsValidator {
                             ExtraBehavior::Allow => {
                             let py_key = either_str.as_py_string(py);
                                 if let Some(ref validator) = self.extra_validator {
-                                    match validator.validate(py, value, &extra, definitions, recursion_guard) {
+                                    match validator.validate(py, value, state) {
                                         Ok(value) => {
                                             model_extra_dict.set_item(py_key, value)?;
                                             fields_set_vec.push(py_key.into_py(py));
@@ -305,9 +319,7 @@ impl Validator for ModelFieldsValidator {
         obj: &'data PyAny,
         field_name: &'data str,
         field_value: &'data PyAny,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let dict: &PyDict = obj.downcast()?;
 
@@ -337,9 +349,9 @@ impl Validator for ModelFieldsValidator {
             }
         }
 
-        let extra = Extra {
+        let new_extra = Extra {
             data: Some(data_dict),
-            ..*extra
+            ..*state.extra()
         };
 
         let new_data = if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
@@ -351,9 +363,7 @@ impl Validator for ModelFieldsValidator {
                 ))
             } else {
                 prepare_result(
-                    field
-                        .validator
-                        .validate(py, field_value, &extra, definitions, recursion_guard),
+                    state.with_new_extra(new_extra, |state| field.validator.validate(py, field_value, state)),
                 )
             }
         } else {
@@ -364,9 +374,9 @@ impl Validator for ModelFieldsValidator {
             // unless the user explicitly set extra_behavior to 'allow'
             match self.extra_behavior {
                 ExtraBehavior::Allow => match self.extra_validator {
-                    Some(ref validator) => {
-                        prepare_result(validator.validate(py, field_value, &extra, definitions, recursion_guard))
-                    }
+                    Some(ref validator) => prepare_result(
+                        state.with_new_extra(new_extra, |state| validator.validate(py, field_value, state)),
+                    ),
                     None => get_updated_dict(field_value.to_object(py)),
                 },
                 ExtraBehavior::Forbid | ExtraBehavior::Ignore => {

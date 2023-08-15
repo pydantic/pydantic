@@ -3,11 +3,10 @@ use pyo3::types::{PyDict, PySet};
 
 use crate::errors::ValResult;
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
 use super::list::min_length_check;
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct SetValidator {
@@ -62,23 +61,11 @@ impl Validator for SetValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let collection = input.validate_set(extra.strict.unwrap_or(self.strict))?;
+        let collection = input.validate_set(state.strict_or(self.strict))?;
         let set = PySet::empty(py)?;
-        collection.validate_to_set(
-            py,
-            set,
-            input,
-            self.max_length,
-            "Set",
-            &self.item_validator,
-            extra,
-            definitions,
-            recursion_guard,
-        )?;
+        collection.validate_to_set(py, set, input, self.max_length, "Set", &self.item_validator, state)?;
         min_length_check!(input, "Set", self.min_length, set);
         Ok(set.into_py(py))
     }

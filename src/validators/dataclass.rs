@@ -10,13 +10,14 @@ use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
 
 use super::arguments::{json_get, json_slice, py_get, py_slice};
 use super::model::{create_class, force_setattr, Revalidate};
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{
+    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator,
+};
 
 #[derive(Debug, Clone)]
 struct Field {
@@ -132,9 +133,7 @@ impl Validator for DataclassArgsValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let args = input.validate_dataclass_args(&self.dataclass_name)?;
 
@@ -144,162 +143,157 @@ impl Validator for DataclassArgsValidator {
         let mut errors: Vec<ValLineError> = Vec::new();
         let mut used_keys: AHashSet<&str> = AHashSet::with_capacity(self.fields.len());
 
-        let extra = Extra {
-            data: Some(output_dict),
-            ..*extra
-        };
-
-        macro_rules! set_item {
-            ($field:ident, $value:expr) => {{
-                let py_name = $field.py_name.as_ref(py);
-                if $field.init_only {
-                    if let Some(ref mut init_only_args) = init_only_args {
-                        init_only_args.push($value);
-                    }
-                } else {
-                    output_dict.set_item(py_name, $value)?;
-                }
-            }};
-        }
-
-        macro_rules! process {
-            ($args:ident, $get_method:ident, $get_macro:ident, $slice_macro:ident) => {{
-                // go through fields getting the value from args or kwargs and validating it
-                for (index, field) in self.fields.iter().enumerate() {
-                    let mut pos_value = None;
-                    if let Some(args) = $args.args {
-                        if !field.kw_only {
-                            pos_value = $get_macro!(args, index);
-                        }
-                    }
-
-                    let mut kw_value = None;
-                    if let Some(kwargs) = $args.kwargs {
-                        if let Some((lookup_path, value)) = field.lookup_key.$get_method(kwargs)? {
-                            used_keys.insert(lookup_path.first_key());
-                            kw_value = Some((lookup_path, value));
-                        }
-                    }
-
-                    match (pos_value, kw_value) {
-                        // found both positional and keyword arguments, error
-                        (Some(_), Some((_, kw_value))) => {
-                            errors.push(ValLineError::new_with_loc(
-                                ErrorTypeDefaults::MultipleArgumentValues,
-                                kw_value,
-                                field.name.clone(),
-                            ));
-                        }
-                        // found a positional argument, validate it
-                        (Some(pos_value), None) => {
-                            match field
-                                .validator
-                                .validate(py, pos_value, &extra, definitions, recursion_guard)
-                            {
-                                Ok(value) => set_item!(field, value),
-                                Err(ValError::LineErrors(line_errors)) => {
-                                    errors.extend(
-                                        line_errors
-                                            .into_iter()
-                                            .map(|err| err.with_outer_location(index.into())),
-                                    );
-                                }
-                                Err(err) => return Err(err),
+        state.with_new_extra(
+            Extra {
+                data: Some(output_dict),
+                ..*state.extra()
+            },
+            |state| {
+                macro_rules! set_item {
+                    ($field:ident, $value:expr) => {{
+                        let py_name = $field.py_name.as_ref(py);
+                        if $field.init_only {
+                            if let Some(ref mut init_only_args) = init_only_args {
+                                init_only_args.push($value);
                             }
+                        } else {
+                            output_dict.set_item(py_name, $value)?;
                         }
-                        // found a keyword argument, validate it
-                        (None, Some((lookup_path, kw_value))) => {
-                            match field
-                                .validator
-                                .validate(py, kw_value, &extra, definitions, recursion_guard)
-                            {
-                                Ok(value) => set_item!(field, value),
-                                Err(ValError::LineErrors(line_errors)) => {
-                                    errors.extend(
-                                        line_errors.into_iter().map(|err| {
-                                            lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name)
-                                        }),
-                                    );
-                                }
-                                Err(err) => return Err(err),
-                            }
-                        }
-                        // found neither, check if there is a default value, otherwise error
-                        (None, None) => {
-                            if let Some(value) = field.validator.default_value(
-                                py,
-                                Some(field.name.as_str()),
-                                &extra,
-                                definitions,
-                                recursion_guard,
-                            )? {
-                                set_item!(field, value);
-                            } else {
-                                errors.push(field.lookup_key.error(
-                                    ErrorTypeDefaults::Missing,
-                                    input,
-                                    self.loc_by_alias,
-                                    &field.name,
-                                ));
-                            }
-                        }
-                    }
+                    }};
                 }
-                // if there are more args than positional_count, add an error for each one
-                if let Some(args) = $args.args {
-                    let len = args.len();
-                    if len > self.positional_count {
-                        for (index, item) in $slice_macro!(args, self.positional_count, len).iter().enumerate() {
-                            errors.push(ValLineError::new_with_loc(
-                                ErrorTypeDefaults::UnexpectedPositionalArgument,
-                                item,
-                                index + self.positional_count,
-                            ));
-                        }
-                    }
-                }
-                // if there are kwargs check any that haven't been processed yet
-                if let Some(kwargs) = $args.kwargs {
-                    if kwargs.len() != used_keys.len() {
-                        for (raw_key, value) in kwargs.iter() {
-                            match raw_key.strict_str() {
-                                Ok(either_str) => {
-                                    if !used_keys.contains(either_str.as_cow()?.as_ref()) {
-                                        // Unknown / extra field
-                                        match self.extra_behavior {
-                                            ExtraBehavior::Forbid => {
-                                                errors.push(ValLineError::new_with_loc(
-                                                    ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                                    value,
-                                                    raw_key.as_loc_item(),
-                                                ));
-                                            }
-                                            ExtraBehavior::Ignore => {}
-                                            ExtraBehavior::Allow => {
-                                                output_dict.set_item(either_str.as_py_string(py), value)?
-                                            }
-                                        }
-                                    }
+
+                macro_rules! process {
+                    ($args:ident, $get_method:ident, $get_macro:ident, $slice_macro:ident) => {{
+                        // go through fields getting the value from args or kwargs and validating it
+                        for (index, field) in self.fields.iter().enumerate() {
+                            let mut pos_value = None;
+                            if let Some(args) = $args.args {
+                                if !field.kw_only {
+                                    pos_value = $get_macro!(args, index);
                                 }
-                                Err(ValError::LineErrors(line_errors)) => {
-                                    for err in line_errors {
-                                        errors.push(
-                                            err.with_outer_location(raw_key.as_loc_item())
-                                                .with_type(ErrorTypeDefaults::InvalidKey),
+                            }
+
+                            let mut kw_value = None;
+                            if let Some(kwargs) = $args.kwargs {
+                                if let Some((lookup_path, value)) = field.lookup_key.$get_method(kwargs)? {
+                                    used_keys.insert(lookup_path.first_key());
+                                    kw_value = Some((lookup_path, value));
+                                }
+                            }
+
+                            match (pos_value, kw_value) {
+                                // found both positional and keyword arguments, error
+                                (Some(_), Some((_, kw_value))) => {
+                                    errors.push(ValLineError::new_with_loc(
+                                        ErrorTypeDefaults::MultipleArgumentValues,
+                                        kw_value,
+                                        field.name.clone(),
+                                    ));
+                                }
+                                // found a positional argument, validate it
+                                (Some(pos_value), None) => match field.validator.validate(py, pos_value, state) {
+                                    Ok(value) => set_item!(field, value),
+                                    Err(ValError::LineErrors(line_errors)) => {
+                                        errors.extend(
+                                            line_errors
+                                                .into_iter()
+                                                .map(|err| err.with_outer_location(index.into())),
                                         );
                                     }
+                                    Err(err) => return Err(err),
+                                },
+                                // found a keyword argument, validate it
+                                (None, Some((lookup_path, kw_value))) => {
+                                    match field.validator.validate(py, kw_value, state) {
+                                        Ok(value) => set_item!(field, value),
+                                        Err(ValError::LineErrors(line_errors)) => {
+                                            errors.extend(line_errors.into_iter().map(|err| {
+                                                lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name)
+                                            }));
+                                        }
+                                        Err(err) => return Err(err),
+                                    }
                                 }
-                                Err(err) => return Err(err),
+                                // found neither, check if there is a default value, otherwise error
+                                (None, None) => {
+                                    if let Some(value) =
+                                        field
+                                            .validator
+                                            .default_value(py, Some(field.name.as_str()), state)?
+                                    {
+                                        set_item!(field, value);
+                                    } else {
+                                        errors.push(field.lookup_key.error(
+                                            ErrorTypeDefaults::Missing,
+                                            input,
+                                            self.loc_by_alias,
+                                            &field.name,
+                                        ));
+                                    }
+                                }
                             }
                         }
-                    }
+                        // if there are more args than positional_count, add an error for each one
+                        if let Some(args) = $args.args {
+                            let len = args.len();
+                            if len > self.positional_count {
+                                for (index, item) in $slice_macro!(args, self.positional_count, len)
+                                    .iter()
+                                    .enumerate()
+                                {
+                                    errors.push(ValLineError::new_with_loc(
+                                        ErrorTypeDefaults::UnexpectedPositionalArgument,
+                                        item,
+                                        index + self.positional_count,
+                                    ));
+                                }
+                            }
+                        }
+                        // if there are kwargs check any that haven't been processed yet
+                        if let Some(kwargs) = $args.kwargs {
+                            if kwargs.len() != used_keys.len() {
+                                for (raw_key, value) in kwargs.iter() {
+                                    match raw_key.strict_str() {
+                                        Ok(either_str) => {
+                                            if !used_keys.contains(either_str.as_cow()?.as_ref()) {
+                                                // Unknown / extra field
+                                                match self.extra_behavior {
+                                                    ExtraBehavior::Forbid => {
+                                                        errors.push(ValLineError::new_with_loc(
+                                                            ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                                            value,
+                                                            raw_key.as_loc_item(),
+                                                        ));
+                                                    }
+                                                    ExtraBehavior::Ignore => {}
+                                                    ExtraBehavior::Allow => {
+                                                        output_dict.set_item(either_str.as_py_string(py), value)?
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        Err(ValError::LineErrors(line_errors)) => {
+                                            for err in line_errors {
+                                                errors.push(
+                                                    err.with_outer_location(raw_key.as_loc_item())
+                                                        .with_type(ErrorTypeDefaults::InvalidKey),
+                                                );
+                                            }
+                                        }
+                                        Err(err) => return Err(err),
+                                    }
+                                }
+                            }
+                        }
+                    }};
                 }
-            }};
-        }
-        match args {
-            GenericArguments::Py(a) => process!(a, py_get_dict_item, py_get, py_slice),
-            GenericArguments::Json(a) => process!(a, json_get, json_get, json_slice),
-        }
+                match args {
+                    GenericArguments::Py(a) => process!(a, py_get_dict_item, py_get, py_slice),
+                    GenericArguments::Json(a) => process!(a, json_get, json_get, json_slice),
+                }
+                Ok(())
+            },
+        )?;
         if errors.is_empty() {
             if let Some(init_only_args) = init_only_args {
                 Ok((output_dict, PyTuple::new(py, init_only_args)).to_object(py))
@@ -317,9 +311,7 @@ impl Validator for DataclassArgsValidator {
         obj: &'data PyAny,
         field_name: &'data str,
         field_value: &'data PyAny,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let dict: &PyDict = obj.downcast()?;
 
@@ -348,14 +340,13 @@ impl Validator for DataclassArgsValidator {
                     return Err(err.into());
                 }
             }
-            let next_extra = Extra {
-                data: Some(data_dict),
-                ..*extra
-            };
-            match field
-                .validator
-                .validate(py, field_value, &next_extra, definitions, recursion_guard)
-            {
+            match state.with_new_extra(
+                Extra {
+                    data: Some(data_dict),
+                    ..*state.extra()
+                },
+                |state| field.validator.validate(py, field_value, state),
+            ) {
                 Ok(output) => ok(output),
                 Err(ValError::LineErrors(line_errors)) => {
                     let errors = line_errors
@@ -479,13 +470,11 @@ impl Validator for DataclassValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        if let Some(self_instance) = extra.self_instance {
+        if let Some(self_instance) = state.extra().self_instance {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
-            return self.validate_init(py, self_instance, input, extra, definitions, recursion_guard);
+            return self.validate_init(py, self_instance, input, state);
         }
 
         // same logic as on models
@@ -493,16 +482,14 @@ impl Validator for DataclassValidator {
         if let Some(py_input) = input.input_is_instance(class) {
             if self.revalidate.should_revalidate(py_input, class) {
                 let input_dict: &PyAny = self.dataclass_to_dict(py, py_input)?;
-                let val_output = self
-                    .validator
-                    .validate(py, input_dict, extra, definitions, recursion_guard)?;
+                let val_output = self.validator.validate(py, input_dict, state)?;
                 let dc = create_class(self.class.as_ref(py))?;
                 self.set_dict_call(py, dc.as_ref(py), val_output, input)?;
                 Ok(dc)
             } else {
                 Ok(input.to_object(py))
             }
-        } else if extra.strict.unwrap_or(self.strict) && input.is_python() {
+        } else if state.strict_or(self.strict) && input.is_python() {
             Err(ValError::new(
                 ErrorType::DataclassExactType {
                     class_name: self.get_name().to_string(),
@@ -511,9 +498,7 @@ impl Validator for DataclassValidator {
                 input,
             ))
         } else {
-            let val_output = self
-                .validator
-                .validate(py, input, extra, definitions, recursion_guard)?;
+            let val_output = self.validator.validate(py, input, state)?;
             let dc = create_class(self.class.as_ref(py))?;
             self.set_dict_call(py, dc.as_ref(py), val_output, input)?;
             Ok(dc)
@@ -526,9 +511,7 @@ impl Validator for DataclassValidator {
         obj: &'data PyAny,
         field_name: &'data str,
         field_value: &'data PyAny,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         if self.frozen {
             return Err(ValError::new(ErrorTypeDefaults::FrozenInstance, field_value));
@@ -538,15 +521,9 @@ impl Validator for DataclassValidator {
 
         new_dict.set_item(field_name, field_value)?;
 
-        let val_assignment_result = self.validator.validate_assignment(
-            py,
-            new_dict,
-            field_name,
-            field_value,
-            extra,
-            definitions,
-            recursion_guard,
-        )?;
+        let val_assignment_result = self
+            .validator
+            .validate_assignment(py, new_dict, field_name, field_value, state)?;
 
         let (dc_dict, _): (&PyDict, PyObject) = val_assignment_result.extract(py)?;
 
@@ -590,19 +567,17 @@ impl DataclassValidator {
         py: Python<'data>,
         self_instance: &'s PyAny,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on the self_instance
         // instance anymore
-        let new_extra = Extra {
-            self_instance: None,
-            ..*extra
-        };
-        let val_output = self
-            .validator
-            .validate(py, input, &new_extra, definitions, recursion_guard)?;
+        let val_output = state.with_new_extra(
+            Extra {
+                self_instance: None,
+                ..*state.extra()
+            },
+            |state| self.validator.validate(py, input, state),
+        )?;
 
         self.set_dict_call(py, self_instance, val_output, input)?;
 
