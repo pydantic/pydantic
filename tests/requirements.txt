@@ -10,3 +10,4 @@ pytest-mock==3.11.1
 pytest-pretty==1.2.0
 pytest-timeout==2.1.0
 pytz==2023.3
+numpy==1.25.2; python_version >= "3.9" and python_version < "3.12"
