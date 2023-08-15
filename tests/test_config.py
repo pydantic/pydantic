@@ -732,7 +732,7 @@ def test_partial_creation_with_defer_build():
         a: int
         b: int
 
-    def create_partial(model: type[BaseModel], optionals: set[str]) -> type[BaseModel]:
+    def create_partial(model, optionals):
         override_fields = {}
         model.model_rebuild()
         for name, field in model.model_fields.items():
