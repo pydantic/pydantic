@@ -3777,7 +3777,14 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="normal">1232</span>
 <span class="normal">1233</span>
 <span class="normal">1234</span>
-<span class="normal">1235</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1235</span>
+<span class="normal">1236</span>
+<span class="normal">1237</span>
+<span class="normal">1238</span>
+<span class="normal">1239</span>
+<span class="normal">1240</span>
+<span class="normal">1241</span>
+<span class="normal">1242</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;usage docs: https://docs.pydantic.dev/2.0/usage/models/</span>
 
 <span class="sd">    A base class for creating Pydantic models.</span>
@@ -4467,6 +4474,13 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
                 <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">ValidationError</span><span class="o">.</span><span class="n">from_exception_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">[</span><span class="n">error</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="s1">&#39;frozen&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="n">error</span><span class="p">:</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">InitErrorDetails</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;frozen_field&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">name</span><span class="p">,),</span>
+                <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">ValidationError</span><span class="o">.</span><span class="n">from_exception_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">[</span><span class="n">error</span><span class="p">])</span>
 
         <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">property</span><span class="p">):</span>
@@ -5029,8 +5043,8 @@ allow <code>self</code> as a field name.</p>
 
   
   <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_config" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -7264,14 +7278,7 @@ in the copied model.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1069</span>
-<span class="normal">1070</span>
-<span class="normal">1071</span>
-<span class="normal">1072</span>
-<span class="normal">1073</span>
-<span class="normal">1074</span>
-<span class="normal">1075</span>
-<span class="normal">1076</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1076</span>
 <span class="normal">1077</span>
 <span class="normal">1078</span>
 <span class="normal">1079</span>
@@ -7338,7 +7345,14 @@ in the copied model.</p>
 <span class="normal">1140</span>
 <span class="normal">1141</span>
 <span class="normal">1142</span>
-<span class="normal">1143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
+<span class="normal">1143</span>
+<span class="normal">1144</span>
+<span class="normal">1145</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span>
+<span class="normal">1150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">PydanticDeprecatedSince20</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span>
@@ -7629,14 +7643,7 @@ fields.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1266</span>
-<span class="normal">1267</span>
-<span class="normal">1268</span>
-<span class="normal">1269</span>
-<span class="normal">1270</span>
-<span class="normal">1271</span>
-<span class="normal">1272</span>
-<span class="normal">1273</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1273</span>
 <span class="normal">1274</span>
 <span class="normal">1275</span>
 <span class="normal">1276</span>
@@ -7711,7 +7718,14 @@ fields.</p>
 <span class="normal">1345</span>
 <span class="normal">1346</span>
 <span class="normal">1347</span>
-<span class="normal">1348</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1348</span>
+<span class="normal">1349</span>
+<span class="normal">1350</span>
+<span class="normal">1351</span>
+<span class="normal">1352</span>
+<span class="normal">1353</span>
+<span class="normal">1354</span>
+<span class="normal">1355</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
