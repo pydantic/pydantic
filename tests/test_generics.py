@@ -2023,26 +2023,21 @@ def test_generic_subclass_with_extra_type_requires_all_params():
 
 
 def test_generic_subclass_with_extra_type_with_hint_message():
-    KE = TypeVar('KE')
-    KD = TypeVar('KD')
     E = TypeVar('E', bound=BaseModel)
     D = TypeVar('D')
-    Q = TypeVar('Q')
 
-    class BaseGenericClass(Generic[KE, KD, E, D, Q], BaseModel):
+    class BaseGenericClass(Generic[E, D], BaseModel):
         uid: str
         name: str
 
     with pytest.raises(
         TypeError,
         match=re.escape(
-            "All parameters must be present on typing.Generic; you should inherit from typing.Generic[~KE, ~KD, ~E, ~D, ~Q] (bases=(<class 'tests.test_generics.test_generic_subclass_with_extra_type_with_hint_message.<locals>.BaseGenericClass'>,)) Hint: Inherit BaseModel before typing.Generic"
+            "All parameters must be present on typing.Generic; you should inherit from typing.Generic[~E, ~D] (bases=(<class 'tests.test_generics.test_generic_subclass_with_extra_type_with_hint_message.<locals>.BaseGenericClass'>,)) Hint: Inherit BaseModel before typing.Generic"
         ),
     ):
 
-        class ChildGenericClass(
-            BaseGenericClass[KE, KD, E, Dict[str, Any], str],
-        ):
+        class ChildGenericClass(BaseGenericClass[E, Dict[str, Any]]):
             ...
 
 
