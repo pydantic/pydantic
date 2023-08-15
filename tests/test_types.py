@@ -4977,12 +4977,15 @@ def test_defaultdict_infer_default_factory() -> None:
     class Model(BaseModel):
         a: DefaultDict[int, List[int]]
         b: DefaultDict[int, int]
+        c: DefaultDict[int, set]
 
-    m = Model(a={}, b={})
+    m = Model(a={}, b={}, c={})
     assert m.a.default_factory is not None
     assert m.a.default_factory() == []
     assert m.b.default_factory is not None
     assert m.b.default_factory() == 0
+    assert m.c.default_factory is not None
+    assert m.c.default_factory() == set()
 
 
 def test_defaultdict_explicit_default_factory() -> None:
