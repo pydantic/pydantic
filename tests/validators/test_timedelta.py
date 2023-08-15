@@ -9,6 +9,11 @@ from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
 from ..conftest import Err, PyAndJson
 
+try:
+    import pandas
+except ImportError:
+    pandas = None
+
 
 @pytest.mark.parametrize(
     'input_value,expected',
@@ -259,3 +264,19 @@ def test_large_value():
     assert v.validate_python(f'{999_999_999}days, 12:34') == timedelta(days=999_999_999, hours=12, minutes=34)
     with pytest.raises(ValidationError, match='should be a valid timedelta, durations may not exceed 999,999,999 days'):
         v.validate_python(f'{999_999_999 + 1}days, 12:34')
+
+
+@pytest.mark.skipif(not pandas, reason='pandas not installed')
+def test_pandas():
+    v = SchemaValidator({'type': 'timedelta', 'ge': timedelta(hours=2)})
+    two_hours = pandas.Timestamp('2023-01-01T02:00:00Z') - pandas.Timestamp('2023-01-01T00:00:00Z')
+
+    assert v.validate_python(two_hours) == two_hours
+    assert v.validate_python(two_hours.to_pytimedelta()) == two_hours
+
+    one_55 = pandas.Timestamp('2023-01-01T01:55:00Z') - pandas.Timestamp('2023-01-01T00:00:00Z')
+    msg = r'Input should be greater than or equal to datetime.timedelta\(seconds=7200\)'
+    with pytest.raises(ValidationError, match=msg):
+        v.validate_python(one_55)
+    with pytest.raises(ValidationError, match=msg):
+        v.validate_python(one_55.to_pytimedelta())
