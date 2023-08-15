@@ -6,10 +6,9 @@ use regex::Regex;
 use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct StrValidator {
@@ -44,11 +43,10 @@ impl Validator for StrValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.validate_str(extra.strict.unwrap_or(self.strict))?.into_py(py))
+        let either_str = input.validate_str(state.strict_or(self.strict))?;
+        Ok(either_str.into_py(py))
     }
 
     fn different_strict_behavior(
@@ -87,11 +85,9 @@ impl Validator for StrConstrainedValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let either_str = input.validate_str(extra.strict.unwrap_or(self.strict))?;
+        let either_str = input.validate_str(state.strict_or(self.strict))?;
         let cow = either_str.as_cow()?;
         let mut str = cow.as_ref();
         if self.strip_whitespace {

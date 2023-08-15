@@ -10,7 +10,7 @@ use crate::tools::SchemaDict;
 use crate::ValidationError;
 
 use super::list::get_items_schema;
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, InputType, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, InputType, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct GeneratorValidator {
@@ -55,22 +55,13 @@ impl Validator for GeneratorValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let iterator = input.validate_iter()?;
-        let validator = self.item_validator.as_ref().map(|v| {
-            InternalValidator::new(
-                py,
-                "ValidatorIterator",
-                v,
-                definitions,
-                extra,
-                recursion_guard,
-                self.hide_input_in_errors,
-            )
-        });
+        let validator = self
+            .item_validator
+            .as_ref()
+            .map(|v| InternalValidator::new(py, "ValidatorIterator", v, state, self.hide_input_in_errors));
 
         let v_iterator = ValidatorIterator {
             iterator,
@@ -239,21 +230,20 @@ impl InternalValidator {
         py: Python,
         name: &str,
         validator: &CombinedValidator,
-        definitions: &[CombinedValidator],
-        extra: &Extra,
-        recursion_guard: &RecursionGuard,
+        state: &ValidationState,
         hide_input_in_errors: bool,
     ) -> Self {
+        let extra = state.extra();
         Self {
             name: name.to_string(),
             validator: validator.clone(),
-            definitions: definitions.to_vec(),
+            definitions: state.definitions.to_vec(),
             data: extra.data.map(|d| d.into_py(py)),
             strict: extra.strict,
             from_attributes: extra.from_attributes,
             context: extra.context.map(|d| d.into_py(py)),
             self_instance: extra.self_instance.map(|d| d.into_py(py)),
-            recursion_guard: recursion_guard.clone(),
+            recursion_guard: state.recursion_guard.clone(),
             validation_mode: extra.mode,
             hide_input_in_errors,
         }
@@ -276,16 +266,9 @@ impl InternalValidator {
             context: self.context.as_ref().map(|data| data.as_ref(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
         };
+        let mut state = ValidationState::new(extra, &self.definitions, &mut self.recursion_guard);
         self.validator
-            .validate_assignment(
-                py,
-                model,
-                field_name,
-                field_value,
-                &extra,
-                &self.definitions,
-                &mut self.recursion_guard,
-            )
+            .validate_assignment(py, model, field_name, field_value, &mut state)
             .map_err(|e| {
                 ValidationError::from_val_error(
                     py,
@@ -316,18 +299,17 @@ impl InternalValidator {
             context: self.context.as_ref().map(|data| data.as_ref(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
         };
-        self.validator
-            .validate(py, input, &extra, &self.definitions, &mut self.recursion_guard)
-            .map_err(|e| {
-                ValidationError::from_val_error(
-                    py,
-                    self.name.to_object(py),
-                    ErrorMode::Python,
-                    e,
-                    outer_location,
-                    self.hide_input_in_errors,
-                )
-            })
+        let mut state = ValidationState::new(extra, &self.definitions, &mut self.recursion_guard);
+        self.validator.validate(py, input, &mut state).map_err(|e| {
+            ValidationError::from_val_error(
+                py,
+                self.name.to_object(py),
+                ErrorMode::Python,
+                e,
+                outer_location,
+                self.hide_input_in_errors,
+            )
+        })
     }
 }
 

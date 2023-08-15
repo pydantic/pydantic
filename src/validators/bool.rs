@@ -5,9 +5,7 @@ use crate::build_tools::is_strict;
 use crate::errors::ValResult;
 use crate::input::Input;
 
-use crate::recursion_guard::RecursionGuard;
-
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct BoolValidator {
@@ -36,13 +34,12 @@ impl Validator for BoolValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         // TODO in theory this could be quicker if we used PyBool rather than going to a bool
         // and back again, might be worth profiling?
-        Ok(input.validate_bool(extra.strict.unwrap_or(self.strict))?.into_py(py))
+        let strict = state.strict_or(self.strict);
+        Ok(input.validate_bool(strict)?.into_py(py))
     }
 
     fn different_strict_behavior(

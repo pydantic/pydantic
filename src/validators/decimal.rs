@@ -9,10 +9,9 @@ use crate::errors::ValResult;
 use crate::errors::{ErrorType, InputValue};
 use crate::errors::{ErrorTypeDefaults, Number};
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct DecimalValidator {
@@ -79,12 +78,10 @@ impl Validator for DecimalValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let decimal = input.validate_decimal(
-            extra.strict.unwrap_or(self.strict),
+            state.strict_or(self.strict),
             // Safety: self and py both outlive this call
             unsafe { py.from_borrowed_ptr(self.decimal_type.as_ptr()) },
         )?;

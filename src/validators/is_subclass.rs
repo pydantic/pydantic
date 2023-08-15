@@ -4,10 +4,10 @@ use pyo3::types::{PyDict, PyType};
 
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::ValidationState;
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IsSubclassValidator {
@@ -48,9 +48,7 @@ impl Validator for IsSubclassValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        _state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         match input.input_is_subclass(self.class.as_ref(py))? {
             true => Ok(input.to_object(py)),

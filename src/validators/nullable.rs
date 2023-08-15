@@ -4,10 +4,10 @@ use pyo3::types::PyDict;
 
 use crate::errors::ValResult;
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::ValidationState;
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub struct NullableValidator {
@@ -37,13 +37,11 @@ impl Validator for NullableValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         match input.is_none() {
             true => Ok(py.None()),
-            false => self.validator.validate(py, input, extra, definitions, recursion_guard),
+            false => self.validator.validate(py, input, state),
         }
     }
 
