@@ -35,7 +35,7 @@ enum_dispatch = "0.3.8"
 serde = { version = "1.0.183", features = ["derive"] }
 # disabled for benchmarks since it makes microbenchmark performance more flakey
 mimalloc = { version = "0.1.30", optional = true, default-features = false, features = ["local_dynamic_tls"] }
-speedate = "0.11.0"
+speedate = "0.12.0"
 ahash = "0.8.0"
 url = "2.3.1"
 # idna is already required by url, added here to be explicit
