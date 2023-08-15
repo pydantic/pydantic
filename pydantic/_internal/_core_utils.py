@@ -313,7 +313,7 @@ class _WalkCoreSchema:
             schema['extra_validator'] = self.walk(extra_validator, f)
         replaced_fields: dict[str, core_schema.ModelField] = {}
         replaced_computed_fields: list[core_schema.ComputedField] = []
-        for computed_field in schema.get('computed_fields') or ():
+        for computed_field in schema.get('computed_fields', ()):
             replaced_field = computed_field.copy()
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
@@ -331,7 +331,7 @@ class _WalkCoreSchema:
         if extra_validator is not None:
             schema['extra_validator'] = self.walk(extra_validator, f)
         replaced_computed_fields: list[core_schema.ComputedField] = []
-        for computed_field in schema.get('computed_fields') or ():
+        for computed_field in schema.get('computed_fields', ()):
             replaced_field = computed_field.copy()
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
@@ -348,7 +348,7 @@ class _WalkCoreSchema:
     def handle_dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema, f: Walk) -> core_schema.CoreSchema:
         replaced_fields: list[core_schema.DataclassField] = []
         replaced_computed_fields: list[core_schema.ComputedField] = []
-        for computed_field in schema.get('computed_fields') or ():
+        for computed_field in schema.get('computed_fields', ()):
             replaced_field = computed_field.copy()
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
