@@ -34,7 +34,7 @@ impl BuildSerializer for TypedDictBuilder {
         let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_dict.len());
 
-        for (key, value) in fields_dict.iter() {
+        for (key, value) in fields_dict {
             let key_py: &PyString = key.downcast()?;
             let key: String = key_py.extract()?;
             let field_info: &PyDict = value.downcast()?;

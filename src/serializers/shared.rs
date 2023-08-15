@@ -390,7 +390,7 @@ pub(super) fn dataclass_to_dict(dc: &PyAny) -> PyResult<&PyDict> {
     let dict = PyDict::new(py);
 
     let field_type_marker = get_field_marker(py)?;
-    for (field_name, field) in dc_fields.iter() {
+    for (field_name, field) in dc_fields {
         let field_type = field.getattr(intern!(py, "_field_type"))?;
         if field_type.is(field_type_marker) {
             let field_name: &PyString = field_name.downcast()?;
