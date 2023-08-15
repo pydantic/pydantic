@@ -1,13 +1,11 @@
-use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDelta, PyDict};
+use pyo3::types::PyDict;
 use speedate::Duration;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
-use crate::input::{duration_as_pytimedelta, pytimedelta_as_duration, Input};
+use crate::input::{duration_as_pytimedelta, EitherTimedelta, Input};
 use crate::recursion_guard::RecursionGuard;
-use crate::tools::SchemaDict;
 
 use super::datetime::extract_microseconds_precision;
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
@@ -27,6 +25,16 @@ struct TimedeltaConstraints {
     gt: Option<Duration>,
 }
 
+fn get_constraint(schema: &PyDict, key: &str) -> PyResult<Option<Duration>> {
+    match schema.get_item(key) {
+        Some(value) => {
+            let either_timedelta = EitherTimedelta::try_from(value)?;
+            Ok(Some(either_timedelta.to_duration()?))
+        }
+        None => Ok(None),
+    }
+}
+
 impl BuildValidator for TimeDeltaValidator {
     const EXPECTED_TYPE: &'static str = "timedelta";
 
@@ -35,20 +43,11 @@ impl BuildValidator for TimeDeltaValidator {
         config: Option<&PyDict>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
-        let py: Python<'_> = schema.py();
         let constraints = TimedeltaConstraints {
-            le: schema
-                .get_as::<&PyDelta>(intern!(py, "le"))?
-                .map(pytimedelta_as_duration),
-            lt: schema
-                .get_as::<&PyDelta>(intern!(py, "lt"))?
-                .map(pytimedelta_as_duration),
-            ge: schema
-                .get_as::<&PyDelta>(intern!(py, "ge"))?
-                .map(pytimedelta_as_duration),
-            gt: schema
-                .get_as::<&PyDelta>(intern!(py, "gt"))?
-                .map(pytimedelta_as_duration),
+            le: get_constraint(schema, "le")?,
+            lt: get_constraint(schema, "lt")?,
+            ge: get_constraint(schema, "ge")?,
+            gt: get_constraint(schema, "gt")?,
         };
 
         Ok(Self {
@@ -78,7 +77,7 @@ impl Validator for TimeDeltaValidator {
         let timedelta = input.validate_timedelta(extra.strict.unwrap_or(self.strict), self.microseconds_precision)?;
         let py_timedelta = timedelta.try_into_py(py)?;
         if let Some(constraints) = &self.constraints {
-            let raw_timedelta = timedelta.as_raw();
+            let raw_timedelta = timedelta.to_duration()?;
 
             macro_rules! check_constraint {
                 ($constraint:ident, $error:ident) => {

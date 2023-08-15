@@ -4,13 +4,12 @@ use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString,
-    PyTime, PyTuple,
+    PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyFrozenSet, PyIterator, PyList, PySet, PyString, PyTime, PyTuple,
 };
 
 use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
-use crate::input::Int;
+use crate::input::{EitherTimedelta, Int};
 use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{PydanticSerializer, TypeSerializer};
@@ -176,8 +175,11 @@ pub(crate) fn infer_to_python_known(
                 iso_time.into_py(py)
             }
             ObType::Timedelta => {
-                let py_timedelta: &PyDelta = value.downcast()?;
-                extra.config.timedelta_mode.timedelta_to_json(py_timedelta)?
+                let either_delta = EitherTimedelta::try_from(value)?;
+                extra
+                    .config
+                    .timedelta_mode
+                    .either_delta_to_json(value.py(), &either_delta)?
             }
             ObType::Url => {
                 let py_url: PyUrl = value.extract()?;
@@ -450,11 +452,11 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             serializer.serialize_str(&iso_time)
         }
         ObType::Timedelta => {
-            let py_timedelta: &PyDelta = value.downcast().map_err(py_err_se_err)?;
+            let either_delta = EitherTimedelta::try_from(value).map_err(py_err_se_err)?;
             extra
                 .config
                 .timedelta_mode
-                .timedelta_serialize(py_timedelta, serializer)
+                .timedelta_serialize(value.py(), &either_delta, serializer)
         }
         ObType::Url => {
             let py_url: PyUrl = value.extract().map_err(py_err_se_err)?;
@@ -600,8 +602,8 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
             Ok(Cow::Owned(uuid))
         }
         ObType::Timedelta => {
-            let py_timedelta: &PyDelta = key.downcast()?;
-            extra.config.timedelta_mode.json_key(py_timedelta)
+            let either_delta = EitherTimedelta::try_from(key)?;
+            extra.config.timedelta_mode.json_key(key.py(), &either_delta)
         }
         ObType::Url => {
             let py_url: PyUrl = key.extract()?;

@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDelta, PyDict};
+use pyo3::types::PyDict;
 
 use crate::definitions::DefinitionsBuilder;
+use crate::input::EitherTimedelta;
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, BuildSerializer, CombinedSerializer, Extra, SerMode,
@@ -36,8 +37,11 @@ impl TypeSerializer for TimeDeltaSerializer {
         extra: &Extra,
     ) -> PyResult<PyObject> {
         match extra.mode {
-            SerMode::Json => match value.downcast::<PyDelta>() {
-                Ok(py_timedelta) => extra.config.timedelta_mode.timedelta_to_json(py_timedelta),
+            SerMode::Json => match EitherTimedelta::try_from(value) {
+                Ok(either_timedelta) => extra
+                    .config
+                    .timedelta_mode
+                    .either_delta_to_json(value.py(), &either_timedelta),
                 Err(_) => {
                     extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
                     infer_to_python(value, include, exclude, extra)
@@ -48,8 +52,8 @@ impl TypeSerializer for TimeDeltaSerializer {
     }
 
     fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
-        match key.downcast::<PyDelta>() {
-            Ok(py_timedelta) => extra.config.timedelta_mode.json_key(py_timedelta),
+        match EitherTimedelta::try_from(key) {
+            Ok(either_timedelta) => extra.config.timedelta_mode.json_key(key.py(), &either_timedelta),
             Err(_) => {
                 extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
                 infer_json_key(key, extra)
@@ -65,11 +69,13 @@ impl TypeSerializer for TimeDeltaSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<S::Ok, S::Error> {
-        match value.downcast::<PyDelta>() {
-            Ok(py_timedelta) => extra
-                .config
-                .timedelta_mode
-                .timedelta_serialize(py_timedelta, serializer),
+        match EitherTimedelta::try_from(value) {
+            Ok(either_timedelta) => {
+                extra
+                    .config
+                    .timedelta_mode
+                    .timedelta_serialize(value.py(), &either_timedelta, serializer)
+            }
             Err(_) => {
                 extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;
                 infer_serialize(value, serializer, include, exclude, extra)
