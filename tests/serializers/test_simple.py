@@ -133,6 +133,6 @@ def test_numpy():
 
     v = s.to_python(numpy.float64(1.0), mode='json')
     assert v == 1.0
-    assert type(v) == float
+    assert type(v) == float  # noqa: E721
 
     assert s.to_json(numpy.float64(1.0)) == b'1.0'
