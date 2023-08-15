@@ -29,7 +29,7 @@ pub(crate) fn infer_to_python(
     exclude: Option<&PyAny>,
     extra: &Extra,
 ) -> PyResult<PyObject> {
-    infer_to_python_known(&extra.ob_type_lookup.get_type(value), value, include, exclude, extra)
+    infer_to_python_known(extra.ob_type_lookup.get_type(value), value, include, exclude, extra)
 }
 
 // arbitrary ids to identify that we recursed through infer_to_{python,json}_known
@@ -37,7 +37,7 @@ pub(crate) fn infer_to_python(
 const INFER_DEF_REF_ID: usize = usize::MAX;
 
 pub(crate) fn infer_to_python_known(
-    ob_type: &ObType,
+    ob_type: ObType,
     value: &PyAny,
     include: Option<&PyAny>,
     exclude: Option<&PyAny>,
@@ -315,7 +315,7 @@ impl<'py> SerializeInfer<'py> {
 impl<'py> Serialize for SerializeInfer<'py> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         let ob_type = self.extra.ob_type_lookup.get_type(self.value);
-        infer_serialize_known(&ob_type, self.value, serializer, self.include, self.exclude, self.extra)
+        infer_serialize_known(ob_type, self.value, serializer, self.include, self.exclude, self.extra)
     }
 }
 
@@ -327,7 +327,7 @@ pub(crate) fn infer_serialize<S: Serializer>(
     extra: &Extra,
 ) -> Result<S::Ok, S::Error> {
     infer_serialize_known(
-        &extra.ob_type_lookup.get_type(value),
+        extra.ob_type_lookup.get_type(value),
         value,
         serializer,
         include,
@@ -337,7 +337,7 @@ pub(crate) fn infer_serialize<S: Serializer>(
 }
 
 pub(crate) fn infer_serialize_known<S: Serializer>(
-    ob_type: &ObType,
+    ob_type: ObType,
     value: &PyAny,
     serializer: S,
     include: Option<&PyAny>,
@@ -531,7 +531,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
                 let msg = format!(
                     "{}Unable to serialize unknown type: {}",
                     SERIALIZATION_ERR_MARKER,
-                    safe_repr(value)
+                    safe_repr(value.get_type()),
                 );
                 return Err(S::Error::custom(msg));
             }
@@ -542,7 +542,10 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
 }
 
 fn unknown_type_error(value: &PyAny) -> PyErr {
-    PydanticSerializationError::new_err(format!("Unable to serialize unknown type: {}", safe_repr(value)))
+    PydanticSerializationError::new_err(format!(
+        "Unable to serialize unknown type: {}",
+        safe_repr(value.get_type())
+    ))
 }
 
 fn serialize_unknown(value: &PyAny) -> Cow<str> {
@@ -557,10 +560,10 @@ fn serialize_unknown(value: &PyAny) -> Cow<str> {
 
 pub(crate) fn infer_json_key<'py>(key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
     let ob_type = extra.ob_type_lookup.get_type(key);
-    infer_json_key_known(&ob_type, key, extra)
+    infer_json_key_known(ob_type, key, extra)
 }
 
-pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
+pub(crate) fn infer_json_key_known<'py>(ob_type: ObType, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
     match ob_type {
         ObType::None => super::type_serializers::simple::none_json_key(),
         ObType::Int | ObType::IntSubclass | ObType::Float | ObType::FloatSubclass => {

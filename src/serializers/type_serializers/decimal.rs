@@ -38,7 +38,7 @@ impl TypeSerializer for DecimalSerializer {
     ) -> PyResult<PyObject> {
         let _py = value.py();
         match extra.ob_type_lookup.is_type(value, ObType::Decimal) {
-            IsType::Exact | IsType::Subclass => infer_to_python_known(&ObType::Decimal, value, include, exclude, extra),
+            IsType::Exact | IsType::Subclass => infer_to_python_known(ObType::Decimal, value, include, exclude, extra),
             IsType::False => {
                 extra.warnings.on_fallback_py(self.get_name(), value, extra)?;
                 infer_to_python(value, include, exclude, extra)
@@ -48,7 +48,7 @@ impl TypeSerializer for DecimalSerializer {
 
     fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
         match extra.ob_type_lookup.is_type(key, ObType::Decimal) {
-            IsType::Exact | IsType::Subclass => infer_json_key_known(&ObType::Decimal, key, extra),
+            IsType::Exact | IsType::Subclass => infer_json_key_known(ObType::Decimal, key, extra),
             IsType::False => {
                 extra.warnings.on_fallback_py(self.get_name(), key, extra)?;
                 infer_json_key(key, extra)
@@ -66,7 +66,7 @@ impl TypeSerializer for DecimalSerializer {
     ) -> Result<S::Ok, S::Error> {
         match extra.ob_type_lookup.is_type(value, ObType::Decimal) {
             IsType::Exact | IsType::Subclass => {
-                infer_serialize_known(&ObType::Decimal, value, serializer, include, exclude, extra)
+                infer_serialize_known(ObType::Decimal, value, serializer, include, exclude, extra)
             }
             IsType::False => {
                 extra.warnings.on_fallback_ser::<S>(self.get_name(), value, extra)?;

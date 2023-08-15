@@ -327,7 +327,12 @@ def test_json_key_fallback():
     assert to_json(x, fallback=fallback_func) == b'{"fallback:FoobarHash":1}'
 
 
-class BadRepr:
+class BedReprMeta(type):
+    def __repr__(self):
+        raise ValueError('bad repr')
+
+
+class BadRepr(metaclass=BedReprMeta):
     def __repr__(self):
         raise ValueError('bad repr')
 
@@ -338,7 +343,7 @@ class BadRepr:
 def test_bad_repr():
     b = BadRepr()
 
-    error_msg = '^Unable to serialize unknown type: <unprintable BadRepr object>$'
+    error_msg = '^Unable to serialize unknown type: <unprintable BedReprMeta object>$'
     with pytest.raises(PydanticSerializationError, match=error_msg):
         to_jsonable_python(b)
 
