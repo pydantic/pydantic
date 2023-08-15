@@ -4,10 +4,10 @@ use pyo3::types::PyDict;
 
 use crate::errors::ValResult;
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::ValidationState;
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub struct JsonValidator {
@@ -49,13 +49,11 @@ impl Validator for JsonValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let json_value = input.parse_json()?;
         match self.validator {
-            Some(ref validator) => match validator.validate(py, &json_value, extra, definitions, recursion_guard) {
+            Some(ref validator) => match validator.validate(py, &json_value, state) {
                 Ok(v) => Ok(v),
                 Err(err) => Err(err.duplicate(py)),
             },

@@ -12,12 +12,11 @@ use url::{ParseError, SyntaxViolation, Url};
 use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 use crate::url::{schema_is_special, PyMultiHostUrl, PyUrl};
 
 use super::literal::expected_repr_name;
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 type AllowedSchemas = Option<(AHashSet<String>, String)>;
 
@@ -64,11 +63,9 @@ impl Validator for UrlValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let mut lib_url = self.get_url(input, extra.strict.unwrap_or(self.strict))?;
+        let mut lib_url = self.get_url(input, state.strict_or(self.strict))?;
 
         if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
             if !allowed_schemes.contains(lib_url.scheme()) {
@@ -207,11 +204,9 @@ impl Validator for MultiHostUrlValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let mut multi_url = self.get_url(input, extra.strict.unwrap_or(self.strict))?;
+        let mut multi_url = self.get_url(input, state.strict_or(self.strict))?;
 
         if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
             if !allowed_schemes.contains(multi_url.scheme()) {

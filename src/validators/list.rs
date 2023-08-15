@@ -3,10 +3,9 @@ use pyo3::types::PyDict;
 
 use crate::errors::ValResult;
 use crate::input::{GenericIterable, Input};
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {
@@ -120,23 +119,12 @@ impl Validator for ListValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let seq = input.validate_list(extra.strict.unwrap_or(self.strict))?;
+        let seq = input.validate_list(state.strict_or(self.strict))?;
 
         let output = match self.item_validator {
-            Some(ref v) => seq.validate_to_vec(
-                py,
-                input,
-                self.max_length,
-                "List",
-                v,
-                extra,
-                definitions,
-                recursion_guard,
-            )?,
+            Some(ref v) => seq.validate_to_vec(py, input, self.max_length, "List", v, state)?,
             None => match seq {
                 GenericIterable::List(list) => {
                     length_check!(input, "List", self.min_length, self.max_length, list);

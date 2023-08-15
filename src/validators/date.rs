@@ -8,11 +8,10 @@ use crate::build_tools::{is_strict, py_schema_error_type};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::{EitherDate, Input};
 
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 use crate::validators::datetime::{NowConstraint, NowOp};
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct DateValidator {
@@ -43,11 +42,9 @@ impl Validator for DateValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let strict = extra.strict.unwrap_or(self.strict);
+        let strict = state.strict_or(self.strict);
         let date = match input.validate_date(strict) {
             Ok(date) => date,
             // if the error was a parsing error, in lax mode we allow datetimes at midnight

@@ -6,10 +6,10 @@ use pyo3::types::{PyDict, PyType};
 use crate::build_tools::py_schema_err;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::ValidationState;
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IsInstanceValidator {
@@ -61,9 +61,7 @@ impl Validator for IsInstanceValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        _state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         if !input.is_python() {
             return Err(ValError::InternalErr(PyNotImplementedError::new_err(

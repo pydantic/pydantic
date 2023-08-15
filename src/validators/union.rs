@@ -10,12 +10,11 @@ use crate::errors::{ErrorType, LocItem, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::py_gc::PyGcTraverse;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
 use super::custom_error::CustomError;
 use super::literal::LiteralLookup;
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct UnionValidator {
@@ -104,60 +103,52 @@ impl Validator for UnionValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         if self.ultra_strict_required {
             // do an ultra strict check first
-            let ultra_strict_extra = extra.as_strict(true);
-            if let Some(res) = self
-                .choices
-                .iter()
-                .map(|(validator, _label)| {
-                    validator.validate(py, input, &ultra_strict_extra, definitions, recursion_guard)
-                })
-                .find(ValResult::is_ok)
-            {
+            if let Some(res) = state.with_new_extra(state.extra().as_strict(true), |state| {
+                self.choices
+                    .iter()
+                    .map(|(validator, _label)| validator.validate(py, input, state))
+                    .find(ValResult::is_ok)
+            }) {
                 return res;
             }
         }
 
-        if extra.strict.unwrap_or(self.strict) {
+        if state.strict_or(self.strict) {
             let mut errors: Option<Vec<ValLineError>> = match self.custom_error {
                 None => Some(Vec::with_capacity(self.choices.len())),
                 _ => None,
             };
-            let strict_extra = extra.as_strict(false);
+            state.with_new_extra(state.extra().as_strict(false), |state| {
+                for (validator, label) in &self.choices {
+                    let line_errors = match validator.validate(py, input, state) {
+                        Err(ValError::LineErrors(line_errors)) => line_errors,
+                        otherwise => return otherwise,
+                    };
 
-            for (validator, label) in &self.choices {
-                let line_errors = match validator.validate(py, input, &strict_extra, definitions, recursion_guard) {
-                    Err(ValError::LineErrors(line_errors)) => line_errors,
-                    otherwise => return otherwise,
-                };
-
-                if let Some(ref mut errors) = errors {
-                    errors.extend(line_errors.into_iter().map(|err| {
-                        let case_label = label.as_deref().unwrap_or(validator.get_name());
-                        err.with_outer_location(case_label.into())
-                    }));
+                    if let Some(ref mut errors) = errors {
+                        errors.extend(line_errors.into_iter().map(|err| {
+                            let case_label = label.as_deref().unwrap_or(validator.get_name());
+                            err.with_outer_location(case_label.into())
+                        }));
+                    }
                 }
-            }
 
-            Err(self.or_custom_error(errors, input))
+                Err(self.or_custom_error(errors, input))
+            })
         } else {
             if self.strict_required {
                 // 1st pass: check if the value is an exact instance of one of the Union types,
                 // e.g. use validate in strict mode
-                let strict_extra = extra.as_strict(false);
-                if let Some(res) = self
-                    .choices
-                    .iter()
-                    .map(|(validator, _label)| {
-                        validator.validate(py, input, &strict_extra, definitions, recursion_guard)
-                    })
-                    .find(ValResult::is_ok)
-                {
+                if let Some(res) = state.with_new_extra(state.extra().as_strict(false), |state| {
+                    self.choices
+                        .iter()
+                        .map(|(validator, _label)| validator.validate(py, input, state))
+                        .find(ValResult::is_ok)
+                }) {
                     return res;
                 }
             }
@@ -169,7 +160,7 @@ impl Validator for UnionValidator {
 
             // 2nd pass: check if the value can be coerced into one of the Union types, e.g. use validate
             for (validator, label) in &self.choices {
-                let line_errors = match validator.validate(py, input, extra, definitions, recursion_guard) {
+                let line_errors = match validator.validate(py, input, state) {
                     Err(ValError::LineErrors(line_errors)) => line_errors,
                     success => return success,
                 };
@@ -329,9 +320,7 @@ impl Validator for TaggedUnionValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         match self.discriminator {
             Discriminator::LookupKey(ref lookup_key) => {
@@ -347,7 +336,7 @@ impl Validator for TaggedUnionValidator {
                         }
                     }};
                 }
-                let from_attributes = extra.from_attributes.unwrap_or(self.from_attributes);
+                let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
                 let dict = input.validate_model_fields(self.strict, from_attributes)?;
                 let tag = match dict {
                     GenericMapping::PyDict(dict) => find_validator!(py_get_dict_item, dict),
@@ -355,24 +344,19 @@ impl Validator for TaggedUnionValidator {
                     GenericMapping::PyMapping(mapping) => find_validator!(py_get_mapping_item, mapping),
                     GenericMapping::JsonObject(mapping) => find_validator!(json_get, mapping),
                 }?;
-                self.find_call_validator(py, tag, input, extra, definitions, recursion_guard)
+                self.find_call_validator(py, tag, input, state)
             }
             Discriminator::Function(ref func) => {
                 let tag = func.call1(py, (input.to_object(py),))?;
                 if tag.is_none(py) {
                     Err(self.tag_not_found(input))
                 } else {
-                    self.find_call_validator(py, tag.into_ref(py), input, extra, definitions, recursion_guard)
+                    self.find_call_validator(py, tag.into_ref(py), input, state)
                 }
             }
-            Discriminator::SelfSchema => self.find_call_validator(
-                py,
-                self.self_schema_tag(py, input)?.as_ref(),
-                input,
-                extra,
-                definitions,
-                recursion_guard,
-            ),
+            Discriminator::SelfSchema => {
+                self.find_call_validator(py, self.self_schema_tag(py, input)?.as_ref(), input, state)
+            }
         }
     }
 
@@ -450,12 +434,10 @@ impl TaggedUnionValidator {
         py: Python<'data>,
         tag: &'data PyAny,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         if let Ok(Some((tag, validator))) = self.lookup.validate(py, tag) {
-            return match validator.validate(py, input, extra, definitions, recursion_guard) {
+            return match validator.validate(py, input, state) {
                 Ok(res) => Ok(res),
                 Err(err) => Err(err.with_outer_location(LocItem::try_from(tag.to_object(py).into_ref(py))?)),
             };

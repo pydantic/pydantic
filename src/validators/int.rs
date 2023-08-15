@@ -6,10 +6,10 @@ use pyo3::types::PyDict;
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{Input, Int};
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::ValidationState;
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IntValidator {
@@ -48,11 +48,10 @@ impl Validator for IntValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        Ok(input.validate_int(extra.strict.unwrap_or(self.strict))?.into_py(py))
+        let either_int = input.validate_int(state.strict_or(self.strict))?;
+        Ok(either_int.into_py(py))
     }
 
     fn different_strict_behavior(
@@ -89,11 +88,9 @@ impl Validator for ConstrainedIntValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let either_int = input.validate_int(extra.strict.unwrap_or(self.strict))?;
+        let either_int = input.validate_int(state.strict_or(self.strict))?;
         let int_value = either_int.as_int()?;
 
         if let Some(ref multiple_of) = self.multiple_of {

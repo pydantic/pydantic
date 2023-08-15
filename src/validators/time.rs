@@ -7,12 +7,11 @@ use speedate::Time;
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{EitherTime, Input};
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
 use super::datetime::extract_microseconds_precision;
 use super::datetime::TZConstraint;
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct TimeValidator {
@@ -45,11 +44,9 @@ impl Validator for TimeValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let time = input.validate_time(extra.strict.unwrap_or(self.strict), self.microseconds_precision)?;
+        let time = input.validate_time(state.strict_or(self.strict), self.microseconds_precision)?;
         if let Some(constraints) = &self.constraints {
             let raw_time = time.as_raw()?;
 

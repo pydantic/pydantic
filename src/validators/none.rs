@@ -3,9 +3,8 @@ use pyo3::types::PyDict;
 
 use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
-use crate::recursion_guard::RecursionGuard;
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct NoneValidator;
@@ -29,9 +28,7 @@ impl Validator for NoneValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        _state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         match input.is_none() {
             true => Ok(py.None()),

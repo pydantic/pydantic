@@ -22,9 +22,8 @@ use pyo3::PyTypeInfo;
 use serde::{ser::Error, Serialize, Serializer};
 
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ValError, ValLineError, ValResult};
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::py_err;
-use crate::validators::{CombinedValidator, Extra, Validator};
+use crate::validators::{CombinedValidator, ValidationState, Validator};
 
 use super::parse_json::{JsonArray, JsonInput, JsonObject};
 use super::{py_error_on_minusone, Input};
@@ -157,15 +156,13 @@ fn validate_iter_to_vec<'a, 's>(
     capacity: usize,
     mut max_length_check: MaxLengthCheck<'a, impl Input<'a>>,
     validator: &'s CombinedValidator,
-    extra: &Extra,
-    definitions: &'a [CombinedValidator],
-    recursion_guard: &'s mut RecursionGuard,
+    state: &mut ValidationState,
 ) -> ValResult<'a, Vec<PyObject>> {
     let mut output: Vec<PyObject> = Vec::with_capacity(capacity);
     let mut errors: Vec<ValLineError> = Vec::new();
     for (index, item_result) in iter.enumerate() {
         let item = item_result.map_err(|e| any_next_error!(py, e, max_length_check.input, index))?;
-        match validator.validate(py, item, extra, definitions, recursion_guard) {
+        match validator.validate(py, item, state) {
             Ok(item) => {
                 max_length_check.incr()?;
                 output.push(item);
@@ -226,14 +223,12 @@ fn validate_iter_to_set<'a, 's>(
     field_type: &'static str,
     max_length: Option<usize>,
     validator: &'s CombinedValidator,
-    extra: &Extra,
-    definitions: &'a [CombinedValidator],
-    recursion_guard: &'s mut RecursionGuard,
+    state: &mut ValidationState,
 ) -> ValResult<'a, ()> {
     let mut errors: Vec<ValLineError> = Vec::new();
     for (index, item_result) in iter.enumerate() {
         let item = item_result.map_err(|e| any_next_error!(py, e, input, index))?;
-        match validator.validate(py, item, extra, definitions, recursion_guard) {
+        match validator.validate(py, item, state) {
             Ok(item) => {
                 set.build_add(item)?;
                 if let Some(max_length) = max_length {
@@ -315,9 +310,7 @@ impl<'a> GenericIterable<'a> {
         max_length: Option<usize>,
         field_type: &'static str,
         validator: &'s CombinedValidator,
-        extra: &Extra,
-        definitions: &'a [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'a, Vec<PyObject>> {
         let capacity = self
             .generic_len()
@@ -326,16 +319,7 @@ impl<'a> GenericIterable<'a> {
 
         macro_rules! validate {
             ($iter:expr) => {
-                validate_iter_to_vec(
-                    py,
-                    $iter,
-                    capacity,
-                    max_length_check,
-                    validator,
-                    extra,
-                    definitions,
-                    recursion_guard,
-                )
+                validate_iter_to_vec(py, $iter, capacity, max_length_check, validator, state)
             };
         }
 
@@ -360,24 +344,11 @@ impl<'a> GenericIterable<'a> {
         max_length: Option<usize>,
         field_type: &'static str,
         validator: &'s CombinedValidator,
-        extra: &Extra,
-        definitions: &'a [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'a, ()> {
         macro_rules! validate_set {
             ($iter:expr) => {
-                validate_iter_to_set(
-                    py,
-                    set,
-                    $iter,
-                    input,
-                    field_type,
-                    max_length,
-                    validator,
-                    extra,
-                    definitions,
-                    recursion_guard,
-                )
+                validate_iter_to_set(py, set, $iter, input, field_type, max_length, validator, state)
             };
         }
 

@@ -6,10 +6,9 @@ use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct BytesValidator {
@@ -45,11 +44,9 @@ impl Validator for BytesValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let either_bytes = input.validate_bytes(extra.strict.unwrap_or(self.strict))?;
+        let either_bytes = input.validate_bytes(state.strict_or(self.strict))?;
         Ok(either_bytes.into_py(py))
     }
 
@@ -84,11 +81,9 @@ impl Validator for BytesConstrainedValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let either_bytes = input.validate_bytes(extra.strict.unwrap_or(self.strict))?;
+        let either_bytes = input.validate_bytes(state.strict_or(self.strict))?;
         let len = either_bytes.len()?;
 
         if let Some(min_length) = self.min_length {

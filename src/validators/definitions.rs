@@ -5,10 +5,9 @@ use pyo3::types::{PyDict, PyList};
 use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct DefinitionsValidatorBuilder;
@@ -78,25 +77,23 @@ impl Validator for DefinitionRefValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         if let Some(id) = input.identity() {
-            if recursion_guard.contains_or_insert(id, self.validator_id) {
+            if state.recursion_guard.contains_or_insert(id, self.validator_id) {
                 // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
                 Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input))
             } else {
-                if recursion_guard.incr_depth() {
+                if state.recursion_guard.incr_depth() {
                     return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));
                 }
-                let output = validate(self.validator_id, py, input, extra, definitions, recursion_guard);
-                recursion_guard.remove(id, self.validator_id);
-                recursion_guard.decr_depth();
+                let output = validate(self.validator_id, py, input, state);
+                state.recursion_guard.remove(id, self.validator_id);
+                state.recursion_guard.decr_depth();
                 output
             }
         } else {
-            validate(self.validator_id, py, input, extra, definitions, recursion_guard)
+            validate(self.validator_id, py, input, state)
         }
     }
 
@@ -106,43 +103,23 @@ impl Validator for DefinitionRefValidator {
         obj: &'data PyAny,
         field_name: &'data str,
         field_value: &'data PyAny,
-        extra: &Extra,
-        definitions: &'data Definitions<CombinedValidator>,
-        recursion_guard: &'s mut RecursionGuard,
+        state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         if let Some(id) = obj.identity() {
-            if recursion_guard.contains_or_insert(id, self.validator_id) {
+            if state.recursion_guard.contains_or_insert(id, self.validator_id) {
                 // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
                 Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj))
             } else {
-                if recursion_guard.incr_depth() {
+                if state.recursion_guard.incr_depth() {
                     return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj));
                 }
-                let output = validate_assignment(
-                    self.validator_id,
-                    py,
-                    obj,
-                    field_name,
-                    field_value,
-                    extra,
-                    definitions,
-                    recursion_guard,
-                );
-                recursion_guard.remove(id, self.validator_id);
-                recursion_guard.decr_depth();
+                let output = validate_assignment(self.validator_id, py, obj, field_name, field_value, state);
+                state.recursion_guard.remove(id, self.validator_id);
+                state.recursion_guard.decr_depth();
                 output
             }
         } else {
-            validate_assignment(
-                self.validator_id,
-                py,
-                obj,
-                field_name,
-                field_value,
-                extra,
-                definitions,
-                recursion_guard,
-            )
+            validate_assignment(self.validator_id, py, obj, field_name, field_value, state)
         }
     }
 
@@ -176,12 +153,10 @@ fn validate<'s, 'data>(
     validator_id: usize,
     py: Python<'data>,
     input: &'data impl Input<'data>,
-    extra: &Extra,
-    definitions: &'data Definitions<CombinedValidator>,
-    recursion_guard: &'s mut RecursionGuard,
+    state: &mut ValidationState,
 ) -> ValResult<'data, PyObject> {
-    let validator = definitions.get(validator_id).unwrap();
-    validator.validate(py, input, extra, definitions, recursion_guard)
+    let validator = state.definitions.get(validator_id).unwrap();
+    validator.validate(py, input, state)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -191,10 +166,8 @@ fn validate_assignment<'data>(
     obj: &'data PyAny,
     field_name: &'data str,
     field_value: &'data PyAny,
-    extra: &Extra,
-    definitions: &'data Definitions<CombinedValidator>,
-    recursion_guard: &mut RecursionGuard,
+    state: &mut ValidationState,
 ) -> ValResult<'data, PyObject> {
-    let validator = definitions.get(validator_id).unwrap();
-    validator.validate_assignment(py, obj, field_name, field_value, extra, definitions, recursion_guard)
+    let validator = state.definitions.get(validator_id).unwrap();
+    validator.validate_assignment(py, obj, field_name, field_value, state)
 }

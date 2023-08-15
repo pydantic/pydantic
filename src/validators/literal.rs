@@ -11,10 +11,9 @@ use crate::build_tools::{py_schema_err, py_schema_error_type};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
-use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 struct BoolLiteral {
@@ -185,9 +184,7 @@ impl Validator for LiteralValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        _extra: &Extra,
-        _definitions: &'data Definitions<CombinedValidator>,
-        _recursion_guard: &'s mut RecursionGuard,
+        _state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         match self.lookup.validate(py, input)? {
             Some((_, v)) => Ok(v.clone()),
