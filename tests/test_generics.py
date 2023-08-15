@@ -2561,3 +2561,34 @@ def test_parametrize_with_basemodel():
 
     class Concrete(SimpleGenericModel[BaseModel]):
         pass
+
+
+def test_no_generic_base():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+
+    class B(A[T]):
+        b: T
+
+    class C(B[int]):
+        pass
+
+    assert C(a='1', b='2').model_dump() == {'a': 1, 'b': 2}
+    with pytest.raises(ValidationError) as exc_info:
+        C(a='a', b='b')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'a',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        },
+        {
+            'input': 'b',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        },
+    ]
