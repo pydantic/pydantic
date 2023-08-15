@@ -26,6 +26,7 @@ from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
+from pydantic.fields import FieldInfo
 from pydantic.type_adapter import TypeAdapter
 from pydantic.warnings import PydanticDeprecationWarning
 
@@ -712,3 +713,39 @@ def test_config_model_defer_build_ser_first():
 
     m = M2.model_validate({'b': {'a': 'foo'}})
     assert m.b.model_dump() == {'a': 'foo'}
+
+
+def test_defer_build_json_schema():
+    class M(BaseModel, defer_build=True):
+        a: int
+
+    assert M.model_json_schema() == {
+        'title': 'M',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+    }
+
+
+def test_partial_creation_with_defer_build():
+    class M(BaseModel):
+        a: int
+        b: int
+
+    def create_partial(model: type[BaseModel], optionals: set[str]) -> type[BaseModel]:
+        override_fields = {}
+        model.model_rebuild()
+        for name, field in model.model_fields.items():
+            if field.is_required() and name in optionals:
+                assert field.annotation is not None
+                override_fields[name] = ((field.annotation | None), FieldInfo.merge_field_infos(field, default=None))
+
+        return create_model(f'Partial{model.__name__}', __base__=model, **override_fields)
+
+    partial = create_partial(M, {'a'})
+
+    # Comment this away and the last assertion works
+    assert M.model_json_schema()['required'] == ['a', 'b']
+
+    # AssertionError: assert ['a', 'b'] == ['b']
+    assert partial.model_json_schema()['required'] == ['b']
