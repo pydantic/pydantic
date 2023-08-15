@@ -15,9 +15,14 @@ class BaseModel:
             setattr(self, name, value)
 
 
+@pytest.mark.parametrize('bool_case_label', [False, True])
+@pytest.mark.parametrize('int_case_label', [False, True])
 @pytest.mark.parametrize('input_value,expected_value', [(True, True), (False, False), (1, 1), (123, 123), (-42, -42)])
-def test_union_bool_int(input_value, expected_value):
-    s = SchemaSerializer(core_schema.union_schema([core_schema.bool_schema(), core_schema.int_schema()]))
+def test_union_bool_int(input_value, expected_value, bool_case_label, int_case_label):
+    bool_case = core_schema.bool_schema() if not bool_case_label else (core_schema.bool_schema(), 'my_bool_label')
+    int_case = core_schema.int_schema() if not int_case_label else (core_schema.int_schema(), 'my_int_label')
+    s = SchemaSerializer(core_schema.union_schema([bool_case, int_case]))
+
     assert s.to_python(input_value) == expected_value
     assert s.to_python(input_value, mode='json') == expected_value
     assert s.to_json(input_value) == json.dumps(expected_value).encode()
