@@ -165,7 +165,7 @@ impl BuildValidator for LiteralValidator {
         }
         let py = expected.py();
         let mut repr_args: Vec<String> = Vec::new();
-        for item in expected.iter() {
+        for item in expected {
             repr_args.push(item.repr()?.extract()?);
         }
         let (expected_repr, name) = expected_repr_name(repr_args, "literal");

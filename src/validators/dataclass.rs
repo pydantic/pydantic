@@ -629,7 +629,7 @@ impl DataclassValidator {
         let (dc_dict, post_init_kwargs): (&PyAny, &PyAny) = val_output.extract(py)?;
         if self.slots {
             let dc_dict: &PyDict = dc_dict.downcast()?;
-            for (key, value) in dc_dict.iter() {
+            for (key, value) in dc_dict {
                 force_setattr(py, dc, key, value)?;
             }
         } else {

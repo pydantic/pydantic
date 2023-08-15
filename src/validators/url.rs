@@ -532,7 +532,7 @@ fn get_allowed_schemas(schema: &PyDict, name: &'static str) -> PyResult<(Allowed
 
             let mut expected: AHashSet<String> = AHashSet::new();
             let mut repr_args = Vec::new();
-            for item in list.iter() {
+            for item in list {
                 let str = item.extract()?;
                 repr_args.push(format!("'{str}'"));
                 expected.insert(str);

@@ -8,4 +8,4 @@ This doesn't work for version of pydantic-core before v0.23.0 as before that we 
 
 If the output appears to stop prematurely, try looking in the developer console for more details.
 
-For pydantic-core versions prior to `2.2.0`, tests will freeze at  at 10-15% of the way through on Chrome due to a suspected V8 bug, see [pyodide/pyodide#3792](https://github.com/pyodide/pyodide/issues/3792) for more information. 
+For pydantic-core versions prior to `2.2.0`, tests will freeze at  at 10-15% of the way through on Chrome due to a suspected V8 bug, see [pyodide/pyodide#3792](https://github.com/pyodide/pyodide/issues/3792) for more information.
