@@ -92,7 +92,7 @@ class FieldInfo(_repr.Representation):
         title: The title of the field.
         description: The description of the field.
         examples: List of examples of the field.
-        exclude: Whether to exclude the field from the model schema.
+        exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Dictionary of extra JSON schema properties.
         frozen: Whether the field is frozen.
@@ -716,7 +716,7 @@ def Field(  # noqa: C901
         title: Human-readable title.
         description: Human-readable description.
         examples: Example values for this field.
-        exclude: Whether to exclude the field from the model schema.
+        exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Any additional JSON schema data for the schema property.
         frozen: Whether the field is frozen.
