@@ -3,7 +3,7 @@ use std::str::from_utf8;
 
 use pyo3::prelude::*;
 use pyo3::types::{
-    PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
+    PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
     PyMapping, PySequence, PySet, PyString, PyTime, PyTuple, PyType,
 };
 #[cfg(not(PyPy))]
@@ -667,8 +667,8 @@ impl<'a> Input<'a> for PyAny {
         &self,
         _microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<EitherTimedelta> {
-        if let Ok(dt) = self.downcast::<PyDelta>() {
-            Ok(dt.into())
+        if let Ok(either_dt) = EitherTimedelta::try_from(self) {
+            Ok(either_dt)
         } else {
             Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self))
         }
@@ -678,8 +678,8 @@ impl<'a> Input<'a> for PyAny {
         &self,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<EitherTimedelta> {
-        if let Ok(dt) = self.downcast::<PyDelta>() {
-            Ok(dt.into())
+        if let Ok(either_dt) = EitherTimedelta::try_from(self) {
+            Ok(either_dt)
         } else if let Ok(py_str) = self.downcast::<PyString>() {
             let str = py_string_str(py_str)?;
             bytes_as_timedelta(self, str.as_bytes(), microseconds_overflow_behavior)
