@@ -61,7 +61,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.5.0",
+    "pydantic-core==2.6.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -179,7 +179,7 @@ exclude=['pydantic/v1', 'tests/mypy/outputs']
 
 [tool.ruff.extend-per-file-ignores]
 "docs/**/*.py" = ['T']
-"tests/**/*.py" = ['T']
+"tests/**/*.py" = ['T', 'E721', 'F811']
 "tests/benchmarks/test_fastapi_startup.py" = ['UP006']
 
 [tool.ruff.pydocstyle]
