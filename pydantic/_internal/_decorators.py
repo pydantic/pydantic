@@ -493,7 +493,7 @@ class DecoratorInfos:
 
 
 def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:
-    """Look at a field or model validator function and determine if it whether it takes an info argument.
+    """Look at a field or model validator function and determine whether it takes an info argument.
 
     An error is raised if the function has an invalid signature.
 
