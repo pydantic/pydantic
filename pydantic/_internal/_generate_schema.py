@@ -1130,7 +1130,9 @@ class GenerateSchema:
 
             arguments_schema = core_schema.arguments_schema(
                 [
-                    self._generate_parameter_schema(field_name, annotation)
+                    self._generate_parameter_schema(
+                        field_name, annotation, default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty)
+                    )
                     for field_name, annotation in annotations.items()
                 ],
                 metadata=build_metadata_dict(js_prefer_positional_arguments=True),
