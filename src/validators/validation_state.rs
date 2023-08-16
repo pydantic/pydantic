@@ -37,11 +37,48 @@ impl<'a> ValidationState<'a> {
         f(&mut new_state)
     }
 
+    /// Temporarily rebinds the extra field by calling `f` to modify extra.
+    ///
+    /// When `ValidationStateWithReboundExtra` drops, the extra field is restored to its original value.
+    pub fn rebind_extra<'state>(
+        &'state mut self,
+        f: impl FnOnce(&mut Extra<'a>),
+    ) -> ValidationStateWithReboundExtra<'state, 'a> {
+        let old_extra = Extra { ..self.extra };
+        f(&mut self.extra);
+        ValidationStateWithReboundExtra { state: self, old_extra }
+    }
+
     pub fn extra(&self) -> &'_ Extra<'a> {
         &self.extra
     }
 
     pub fn strict_or(&self, default: bool) -> bool {
         self.extra.strict.unwrap_or(default)
+    }
+}
+
+pub struct ValidationStateWithReboundExtra<'state, 'a> {
+    state: &'state mut ValidationState<'a>,
+    old_extra: Extra<'a>,
+}
+
+impl<'a> std::ops::Deref for ValidationStateWithReboundExtra<'_, 'a> {
+    type Target = ValidationState<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        self.state
+    }
+}
+
+impl<'a> std::ops::DerefMut for ValidationStateWithReboundExtra<'_, 'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.state
+    }
+}
+
+impl Drop for ValidationStateWithReboundExtra<'_, '_> {
+    fn drop(&mut self) {
+        std::mem::swap(&mut self.state.extra, &mut self.old_extra);
     }
 }
