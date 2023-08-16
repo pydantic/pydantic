@@ -524,19 +524,22 @@ def test_v1_v2_custom_type_compatibility() -> None:
 
 
 def test_field_extra_arguments():
-    m = 'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead'
+    m = re.escape(
+        'Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. '
+        "(Extra keys: 'test', 'foo')"
+    )
     with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
-            x: str = Field('test', test='test')
+            x: str = Field('test', test='test', foo='bar')
 
     assert Model.model_json_schema(by_alias=True)['properties'] == {
-        'x': {'default': 'test', 'test': 'test', 'title': 'X', 'type': 'string'}
+        'x': {'default': 'test', 'foo': 'bar', 'test': 'test', 'title': 'X', 'type': 'string'}
     }
 
 
 def test_field_extra_does_not_rewrite_json_schema_extra():
-    m = 'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead'
+    m = 'Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead'
     with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
