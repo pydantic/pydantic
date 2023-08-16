@@ -479,6 +479,115 @@ except ValidationError as exc:
 
 This error is also raised for strict fields when the input value is not an instance of `datetime`.
 
+## `decimal_max_digits`
+
+This error is raised when the value provided for a `Decimal` has too many digits:
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(max_digits=3)
+
+
+try:
+    Model(x='42.1234')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_max_digits'
+```
+
+## `decimal_max_places`
+
+This error is raised when the value provided for a `Decimal` has too many digits after the decimal point:
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(decimal_places=3)
+
+
+try:
+    Model(x='42.1234')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_max_places'
+```
+
+## `decimal_parsing`
+
+This error is raised when the value provided for a `Decimal` could not be parsed as a decimal number:
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(decimal_places=3)
+
+
+try:
+    Model(x='test')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_parsing'
+```
+
+## `decimal_type`
+
+This error is raised when the value provided for a `Decimal` is of the wrong type:
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(decimal_places=3)
+
+
+try:
+    Model(x=[1, 2, 3])
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_type'
+```
+
+This error is also raised for strict fields when the input value is not an instance of `Decimal`.
+
+## `decimal_whole_digits`
+
+This error is raised when the value provided for a `Decimal` has more digits before the decimal point than `max_digits` - `decimal_places` (as long as both are specified):
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(max_digits=6, decimal_places=3)
+
+
+try:
+    Model(x='12345.6')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_whole_digits'
+```
+
+This error is also raised for strict fields when the input value is not an instance of `Decimal`.
+
 ## `dict_type`
 
 This error is raised when the input value's type is not `dict` for a `dict` field:
@@ -606,17 +715,14 @@ except ValidationError as exc:
 
 ## `frozen_field`
 
-This error is raised when `model_config['validate_assignment'] == True` and you attempt to assign
-a value to a field with `frozen=True`:
+This error is raised when you attempt to assign a value to a field with `frozen=True`:
 
 ```py
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 
 class Model(BaseModel):
     x: str = Field('test', frozen=True)
-
-    model_config = ConfigDict(validate_assignment=True)
 
 
 model = Model()

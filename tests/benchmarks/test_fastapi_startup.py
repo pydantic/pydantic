@@ -122,11 +122,18 @@ def test_fastapi_startup_perf(benchmark: Any):
 
 
 if __name__ == '__main__':
-    # run with `python tests/benchmarks/test_fastapi_startup.py`
+    # run with `pdm run tests/benchmarks/test_fastapi_startup.py`
     import cProfile
     import sys
+    import time
 
     INNER_DATA_MODEL_COUNT = 50
     OUTER_DATA_MODEL_COUNT = 50
     print(f'Python version: {sys.version}')
-    cProfile.run('test_fastapi_startup_perf(lambda f: f())', sort='tottime')
+    if sys.argv[-1] == 'cProfile':
+        cProfile.run('test_fastapi_startup_perf(lambda f: f())', sort='tottime')
+    else:
+        start = time.perf_counter()
+        test_fastapi_startup_perf(lambda f: f())
+        end = time.perf_counter()
+        print(f'Time taken: {end - start:.2f}s')

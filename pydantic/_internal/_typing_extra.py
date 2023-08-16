@@ -46,7 +46,7 @@ if sys.version_info < (3, 10):
 else:
 
     def origin_is_union(tp: type[Any] | None) -> bool:
-        return tp is typing.Union or tp is types.UnionType  # noqa: E721
+        return tp is typing.Union or tp is types.UnionType
 
     WithArgsTypes = typing._GenericAlias, types.GenericAlias, types.UnionType  # type: ignore[attr-defined]
 
@@ -388,7 +388,7 @@ else:
             if isinstance(obj, typing._allowed_types):  # type: ignore
                 return {}
             else:
-                raise TypeError('{!r} is not a module, class, method, ' 'or function.'.format(obj))
+                raise TypeError(f'{obj!r} is not a module, class, method, ' 'or function.')
         defaults = typing._get_defaults(obj)  # type: ignore
         hints = dict(hints)
         for name, value in hints.items():
