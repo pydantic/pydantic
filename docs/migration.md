@@ -786,7 +786,8 @@ class Model(BaseModel):
     x: MyInt
 ```
 
-Read more about it on the [Composing types via `Annotated`](../usage/types/custom/#composing-types-via-annotated) section.
+Read more about it in the [Composing types via `Annotated`](./usage/types/custom.md#composing-types-via-annotated)
+docs.
 
 For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.
 
@@ -802,7 +803,7 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 | `pydantic.error_wrappers.ValidationError` | `pydantic.ValidationError` |
 | `pydantic.utils.to_camel` | `pydantic.alias_generators.to_pascal` |
 | `pydantic.utils.to_lower_camel` | `pydantic.alias_generators.to_camel` |
-| `pydantic.PyObject` | [`pydantic.ImportString`](usage/types/string_types/#importstring) |
+| `pydantic.PyObject` | [`pydantic.ImportString`](usage/types/string_types.md#importstring) |
 
 ## Deprecated and moved in Pydantic V2
 
