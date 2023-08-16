@@ -5378,3 +5378,36 @@ def test_callable_json_schema_extra_dataclass():
     json_schema = adapter.json_schema()
     for key in 'abcdef':
         assert json_schema['properties'][key] == {'title': key.upper(), 'type': 'integer'}  # default is not present
+
+
+def test_model_rebuild_happens_even_with_parent_classes(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from pydantic import BaseModel
+
+class MyBaseModel(BaseModel):
+    pass
+
+class B(MyBaseModel):
+    b: A
+
+class A(MyBaseModel):
+    a: str
+    """
+    )
+    assert module.B.model_json_schema() == {
+        '$defs': {
+            'A': {
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+                'title': 'A',
+                'type': 'object',
+            }
+        },
+        'properties': {'b': {'$ref': '#/$defs/A'}},
+        'required': ['b'],
+        'title': 'B',
+        'type': 'object',
+    }
