@@ -56,6 +56,7 @@ PydanticErrorCodes = Literal[
     'multiple-field-serializers',
     'invalid_annotated_type',
     'type-adapter-config-unused',
+    'root-model-extra',
 ]
 
 
