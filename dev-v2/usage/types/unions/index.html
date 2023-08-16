@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#discriminated-unions-aka-tagged-unions" class="md-skip">
+        <a href="#union-mode" class="md-skip">
           Skip to content
         </a>
       
@@ -917,16 +917,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#discriminated-unions-aka-tagged-unions" class="md-nav__link">
-    Discriminated Unions (a.k.a. Tagged Unions)
+  <a href="#union-mode" class="md-nav__link">
+    Union Mode
   </a>
   
 </li>
       
         <li class="md-nav__item">
+  <a href="#discriminated-unions-aka-tagged-unions" class="md-nav__link">
+    Discriminated Unions (a.k.a. Tagged Unions)
+  </a>
+  
+    <nav class="md-nav" aria-label="Discriminated Unions (a.k.a. Tagged Unions)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#nested-discriminated-unions" class="md-nav__link">
     Nested Discriminated Unions
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2115,16 +2128,29 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#discriminated-unions-aka-tagged-unions" class="md-nav__link">
-    Discriminated Unions (a.k.a. Tagged Unions)
+  <a href="#union-mode" class="md-nav__link">
+    Union Mode
   </a>
   
 </li>
       
         <li class="md-nav__item">
+  <a href="#discriminated-unions-aka-tagged-unions" class="md-nav__link">
+    Discriminated Unions (a.k.a. Tagged Unions)
+  </a>
+  
+    <nav class="md-nav" aria-label="Discriminated Unions (a.k.a. Tagged Unions)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#nested-discriminated-unions" class="md-nav__link">
     Nested Discriminated Unions
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2186,7 +2212,51 @@
 <p><code>Optional[x]</code> can also be used to specify a required field that can take <code>None</code> as a value.</p>
 <p>See more details in <a href="../../models/#required-fields">Required fields</a>.</p>
 </div>
-<h4 id="discriminated-unions-aka-tagged-unions">Discriminated Unions (a.k.a. Tagged Unions)<a class="headerlink" href="#discriminated-unions-aka-tagged-unions" title="Permanent link">&para;</a></h4>
+<h4 id="union-mode">Union Mode<a class="headerlink" href="#union-mode" title="Permanent link">&para;</a></h4>
+<p>By default <code>Union</code> validation will try to return the variant which is the best match for the input.</p>
+<p>Consider for example the case of <code>Union[int, str]</code>. When <a href="../../strict_mode/"><code>strict</code> mode</a> is not enabled
+then <code>int</code> fields will accept <code>str</code> inputs. In the example below, the <code>id</code> field (which is <code>Union[int, str]</code>)
+will accept the string <code>'123'</code> as an input, and preserve it as a string:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;45&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; id=&#39;123&#39; age=45</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;45&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+<span class="c1">#&gt; &lt;class &#39;str&#39;&gt;</span>
+</code></pre></div>
+<p>This is known as <code>'smart'</code> mode for <code>Union</code> validation.</p>
+<p>At present only one other <code>Union</code> validation mode exists, called <code>'left_to_right'</code> validation. In this mode
+variants are attempted from left to right and the first successful validation is accepted as input.</p>
+<p>Consider the same example, this time with <code>union_mode='left_to_right'</code> set as a <a href="../../fields/"><code>Field</code></a>
+parameter on <code>id</code>. With this validation mode, the <code>int</code> variant will coerce strings of digits into <code>int</code>
+values:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">union_mode</span><span class="o">=</span><span class="s1">&#39;left_to_right&#39;</span><span class="p">)</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;45&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; id=123 age=45</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;45&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+<span class="c1">#&gt; &lt;class &#39;int&#39;&gt;</span>
+</code></pre></div>
+<h3 id="discriminated-unions-aka-tagged-unions">Discriminated Unions (a.k.a. Tagged Unions)<a class="headerlink" href="#discriminated-unions-aka-tagged-unions" title="Permanent link">&para;</a></h3>
 <p>When <code>Union</code> is used with multiple submodels, you sometimes know exactly which submodel needs to
 be checked and validated and want to enforce this.
 To do that you can set the same field - let's call it <code>my_discriminator</code> - in each of the submodels
