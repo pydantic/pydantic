@@ -571,13 +571,8 @@ impl DataclassValidator {
     ) -> ValResult<'data, PyObject> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on the self_instance
         // instance anymore
-        let val_output = state.with_new_extra(
-            Extra {
-                self_instance: None,
-                ..*state.extra()
-            },
-            |state| self.validator.validate(py, input, state),
-        )?;
+        let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
+        let val_output = self.validator.validate(py, input, state)?;
 
         self.set_dict_call(py, self_instance, val_output, input)?;
 

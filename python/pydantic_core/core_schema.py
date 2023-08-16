@@ -994,7 +994,7 @@ class DatetimeSchema(TypedDict, total=False):
     # defaults to current local utc offset from `time.localtime().tm_gmtoff`
     # value is restricted to -86_400 < offset < 86_400 by bounds in generate_self_schema.py
     now_utc_offset: int
-    microseconds_precision: Literal['truncate', 'error'] = ('truncate',)
+    microseconds_precision: Literal['truncate', 'error']  # default: 'truncate'
     ref: str
     metadata: Any
     serialization: SerSchema
@@ -2460,6 +2460,7 @@ class UnionSchema(TypedDict, total=False):
     custom_error_type: str
     custom_error_message: str
     custom_error_context: Dict[str, Union[str, int, float]]
+    mode: Literal['smart', 'left_to_right']  # default: 'smart'
     strict: bool
     ref: str
     metadata: Any
@@ -2473,6 +2474,7 @@ def union_schema(
     custom_error_type: str | None = None,
     custom_error_message: str | None = None,
     custom_error_context: dict[str, str | int] | None = None,
+    mode: Literal['smart', 'left_to_right'] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: Any = None,
@@ -2496,6 +2498,9 @@ def union_schema(
         custom_error_type: The custom error type to use if the validation fails
         custom_error_message: The custom error message to use if the validation fails
         custom_error_context: The custom error context to use if the validation fails
+        mode: How to select which choice to return
+            * `smart` (default) will try to return the choice which is the closest match to the input value
+            * `left_to_right` will return the first choice in `choices` which succeeds validation
         strict: Whether the underlying schemas should be validated with strict mode
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -2508,6 +2513,7 @@ def union_schema(
         custom_error_type=custom_error_type,
         custom_error_message=custom_error_message,
         custom_error_context=custom_error_context,
+        mode=mode,
         strict=strict,
         ref=ref,
         metadata=metadata,

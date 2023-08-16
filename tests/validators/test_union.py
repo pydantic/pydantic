@@ -431,3 +431,65 @@ def test_case_labels():
         },
         {'input': 1.5, 'loc': ('str',), 'msg': 'Input should be a valid string', 'type': 'string_type'},
     ]
+
+
+def test_left_to_right_doesnt_care_about_strict_check():
+    v = SchemaValidator(
+        core_schema.union_schema([core_schema.int_schema(), core_schema.json_schema()], mode='left_to_right')
+    )
+    assert 'strict_required' not in plain_repr(v)
+    assert 'ultra_strict_required' not in plain_repr(v)
+
+
+def test_left_to_right_union():
+    choices = [core_schema.int_schema(), core_schema.float_schema()]
+
+    # smart union prefers float
+    v = SchemaValidator(core_schema.union_schema(choices, mode='smart'))
+    out = v.validate_python(1.0)
+    assert out == 1.0
+    assert isinstance(out, float)
+
+    # left_to_right union will select int
+    v = SchemaValidator(core_schema.union_schema(choices, mode='left_to_right'))
+    out = v.validate_python(1)
+    assert out == 1
+    assert isinstance(out, int)
+
+    out = v.validate_python(1.0)
+    assert out == 1
+    assert isinstance(out, int)
+
+    # reversing them will select float
+    v = SchemaValidator(core_schema.union_schema(list(reversed(choices)), mode='left_to_right'))
+    out = v.validate_python(1.0)
+    assert out == 1.0
+    assert isinstance(out, float)
+
+    out = v.validate_python(1)
+    assert out == 1.0
+    assert isinstance(out, float)
+
+
+def test_left_to_right_union_strict():
+    choices = [core_schema.int_schema(), core_schema.float_schema()]
+
+    # left_to_right union will select not cast if int first (strict int will not accept float)
+    v = SchemaValidator(core_schema.union_schema(choices, mode='left_to_right', strict=True))
+    out = v.validate_python(1)
+    assert out == 1
+    assert isinstance(out, int)
+
+    out = v.validate_python(1.0)
+    assert out == 1.0
+    assert isinstance(out, float)
+
+    # reversing union will select float always (as strict float will accept int)
+    v = SchemaValidator(core_schema.union_schema(list(reversed(choices)), mode='left_to_right', strict=True))
+    out = v.validate_python(1.0)
+    assert out == 1.0
+    assert isinstance(out, float)
+
+    out = v.validate_python(1)
+    assert out == 1.0
+    assert isinstance(out, float)
