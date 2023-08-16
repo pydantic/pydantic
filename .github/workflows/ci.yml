@@ -393,17 +393,17 @@ jobs:
           - os: ubuntu
             platform: linux
             target: i686
-          # GCC 4.8.5 in manylinux2014 container doesn't support c11 atomic
-          # we use manylinux_2_24 container for aarch64 and armv7 targets instead,
           - os: ubuntu
             platform: linux
             target: aarch64
-            container: messense/manylinux_2_24-cross:aarch64
+            # mimalloc not supported on manylinux2014 cross-compile container
+            extra-build-args: --no-default-features
           - os: ubuntu
             platform: linux
             target: armv7
-            container: messense/manylinux_2_24-cross:armv7
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
+            # mimalloc not supported on manylinux2014 cross-compile container
+            extra-build-args: --no-default-features
           # musllinux
           - os: ubuntu
             platform: linux
@@ -416,13 +416,15 @@ jobs:
           - os: ubuntu
             platform: linux
             target: ppc64le
-            container: messense/manylinux_2_24-cross:ppc64le
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
+            # mimalloc not supported on manylinux2014 cross-compile container
+            extra-build-args: --no-default-features
           - os: ubuntu
             platform: linux
             target: s390x
-            container: messense/manylinux_2_24-cross:s390x
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
+            # mimalloc not supported on manylinux2014 cross-compile container
+            extra-build-args: --no-default-features
         exclude:
           # Optimized PGO builds for x86_64 manylinux and windows follow a different matrix,
           # maybe in future maturin-action can support this automatically
@@ -456,7 +458,7 @@ jobs:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux || 'auto' }}
           container: ${{ matrix.container }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12 pypy3.7 pypy3.8 pypy3.9 pypy3.10' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12 pypy3.7 pypy3.8 pypy3.9 pypy3.10' }} ${{ matrix.extra-build-args }}
           rust-toolchain: stable
           docker-options: -e CI
 
