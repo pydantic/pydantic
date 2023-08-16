@@ -309,7 +309,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         assert origin_type is not None
         # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
         # We also cannot use isinstance() since we have to compare types.
-        if sys.version_info >= (3, 10) and origin_type is types.UnionType:  # noqa: E721
+        if sys.version_info >= (3, 10) and origin_type is types.UnionType:
             return _UnionGenericAlias(origin_type, resolved_type_args)
         return origin_type[resolved_type_args]
 

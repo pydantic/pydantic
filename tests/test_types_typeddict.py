@@ -48,7 +48,7 @@ def fixture_typed_dict(TypedDictAll):
         foo: str
 
     if sys.version_info < (3, 12) and TypedDictAll.__module__ == 'typing':
-        pytest.skip('typing.TypedDict does not track required keys correctly on Python < 3.11')
+        pytest.skip('typing.TypedDict does not support all pydantic features in Python < 3.12')
 
     if hasattr(TestTypedDict, '__required_keys__'):
         return TypedDictAll
@@ -710,18 +710,18 @@ def test_recursive_generic_typeddict_in_function_3():
     ]
 
 
-@pytest.mark.xfail(reason='Needs https://github.com/pydantic/pydantic/pull/5944')
 def test_typeddict_alias_generator(TypedDict):
     def alias_generator(name: str) -> str:
         return 'alias_' + name
 
     class MyDict(TypedDict):
+        __pydantic_config__ = ConfigDict(alias_generator=alias_generator, extra='forbid')
         foo: str
 
     class Model(BaseModel):
         d: MyDict
 
-    ta = TypeAdapter(MyDict, config=ConfigDict(alias_generator=alias_generator))
+    ta = TypeAdapter(MyDict)
     model = ta.validate_python({'alias_foo': 'bar'})
 
     assert model['foo'] == 'bar'
