@@ -35,6 +35,7 @@ DATE_TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 TIMEDELTA_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 
+UNION_CONSTRAINTS = {'union_mode'}
 URL_CONSTRAINTS = {
     'max_length',
     'allowed_schemes',
@@ -75,6 +76,8 @@ for constraint in TIME_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('time',))
 for schema_type in (*TEXT_SCHEMA_TYPES, *SEQUENCE_SCHEMA_TYPES, *NUMERIC_SCHEMA_TYPES, 'typed-dict', 'model'):
     CONSTRAINTS_TO_ALLOWED_SCHEMAS['strict'].add(schema_type)
+for constraint in UNION_CONSTRAINTS:
+    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('union',))
 for constraint in URL_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('url', 'multi-host-url'))
 for constraint in BOOL_CONSTRAINTS:
@@ -147,7 +150,10 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
         allowed_schemas = CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint]
 
         if schema_type in allowed_schemas:
-            schema[constraint] = value
+            if constraint == 'union_mode' and schema_type == 'union':
+                schema['mode'] = value  # type: ignore  # schema is UnionSchema
+            else:
+                schema[constraint] = value
             continue
 
         if constraint == 'allow_inf_nan' and value is False:
