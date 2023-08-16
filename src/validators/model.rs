@@ -103,8 +103,8 @@ impl BuildValidator for ModelValidator {
 impl_py_gc_traverse!(ModelValidator { class, validator });
 
 impl Validator for ModelValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -147,8 +147,8 @@ impl Validator for ModelValidator {
         }
     }
 
-    fn validate_assignment<'s, 'data: 's>(
-        &'s self,
+    fn validate_assignment<'data>(
+        &self,
         py: Python<'data>,
         model: &'data PyAny,
         field_name: &'data str,

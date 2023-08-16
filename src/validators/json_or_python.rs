@@ -51,8 +51,8 @@ impl BuildValidator for JsonOrPython {
 impl_py_gc_traverse!(JsonOrPython { json, python });
 
 impl Validator for JsonOrPython {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,

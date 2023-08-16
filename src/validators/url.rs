@@ -59,8 +59,8 @@ impl BuildValidator for UrlValidator {
 impl_py_gc_traverse!(UrlValidator {});
 
 impl Validator for UrlValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -200,8 +200,8 @@ impl BuildValidator for MultiHostUrlValidator {
 impl_py_gc_traverse!(MultiHostUrlValidator {});
 
 impl Validator for MultiHostUrlValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
