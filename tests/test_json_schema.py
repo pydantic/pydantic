@@ -1614,7 +1614,9 @@ def test_enum_str_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
+    default_value = UserModel.model_json_schema()['properties']['friends']['default']
+    assert type(default_value) is str
+    assert default_value == MyEnum.FOO.value
 
 
 def test_enum_int_default():
@@ -1624,7 +1626,9 @@ def test_enum_int_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
+    default_value = UserModel.model_json_schema()['properties']['friends']['default']
+    assert type(default_value) is int
+    assert default_value == MyEnum.FOO.value
 
 
 def test_dict_default():
@@ -5315,7 +5319,7 @@ def test_multiple_parametrization_of_generic_model() -> None:
 
     for _ in range(sys.getrecursionlimit() + 1):
 
-        class ModelTest(BaseModel):  # noqa: F811
+        class ModelTest(BaseModel):
             c: Outer[Inner]
 
     ModelTest.model_json_schema()

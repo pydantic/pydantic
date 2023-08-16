@@ -283,7 +283,13 @@ class _WalkCoreSchema:
         return schema
 
     def handle_union_schema(self, schema: core_schema.UnionSchema, f: Walk) -> core_schema.CoreSchema:
-        schema['choices'] = [self.walk(v, f) for v in schema['choices']]
+        new_choices: list[CoreSchema | tuple[CoreSchema, str]] = []
+        for v in schema['choices']:
+            if isinstance(v, tuple):
+                new_choices.append((self.walk(v[0], f), v[1]))
+            else:
+                new_choices.append(self.walk(v, f))
+        schema['choices'] = new_choices
         return schema
 
     def handle_tagged_union_schema(self, schema: core_schema.TaggedUnionSchema, f: Walk) -> core_schema.CoreSchema:

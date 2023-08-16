@@ -188,7 +188,8 @@ class _ApplyInferredDiscriminator:
             schema = core_schema.union_schema([schema])
 
         # Reverse the choices list before extending the stack so that they get handled in the order they occur
-        self._choices_to_handle.extend(schema['choices'][::-1])
+        choices_schemas = [v[0] if isinstance(v, tuple) else v for v in schema['choices'][::-1]]
+        self._choices_to_handle.extend(choices_schemas)
         while self._choices_to_handle:
             choice = self._choices_to_handle.pop()
             self._handle_choice(choice)
@@ -237,7 +238,8 @@ class _ApplyInferredDiscriminator:
             self._handle_choice(choice['schema'])  # unwrap the nullable schema
         elif choice['type'] == 'union':
             # Reverse the choices list before extending the stack so that they get handled in the order they occur
-            self._choices_to_handle.extend(choice['choices'][::-1])
+            choices_schemas = [v[0] if isinstance(v, tuple) else v for v in choice['choices'][::-1]]
+            self._choices_to_handle.extend(choices_schemas)
         elif choice['type'] == 'definition-ref':
             if choice['schema_ref'] not in self.definitions:
                 raise ValueError(f"Missing definition for ref {choice['schema_ref']!r}")
@@ -315,7 +317,8 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'union':
             values = []
             for subchoice in choice['choices']:
-                subchoice_values = self._infer_discriminator_values_for_choice(subchoice, source_name=None)
+                subchoice_schema = subchoice[0] if isinstance(subchoice, tuple) else subchoice
+                subchoice_values = self._infer_discriminator_values_for_choice(subchoice_schema, source_name=None)
                 values.extend(subchoice_values)
             return values
 
@@ -422,7 +425,8 @@ class _ApplyInferredDiscriminator:
             # For example, this lets us handle `Union[Literal['key'], Union[Literal['Key'], Literal['KEY']]]`
             values: list[Any] = []
             for choice in schema['choices']:
-                choice_values = self._infer_discriminator_values_for_inner_schema(choice, source)
+                choice_schema = choice[0] if isinstance(choice, tuple) else choice
+                choice_values = self._infer_discriminator_values_for_inner_schema(choice_schema, source)
                 values.extend(choice_values)
             return values
 
