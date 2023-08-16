@@ -2022,6 +2022,27 @@ def test_generic_subclass_with_extra_type_requires_all_params():
             ...
 
 
+def test_generic_subclass_with_extra_type_with_hint_message():
+    E = TypeVar('E', bound=BaseModel)
+    D = TypeVar('D')
+
+    class BaseGenericClass(Generic[E, D], BaseModel):
+        uid: str
+        name: str
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            'All parameters must be present on typing.Generic; you should inherit from typing.Generic[~E, ~D].'
+            ' Note: `typing.Generic` must go last:'
+            ' `class ChildGenericClass(BaseGenericClass, typing.Generic[~E, ~D]): ...`'
+        ),
+    ):
+
+        class ChildGenericClass(BaseGenericClass[E, Dict[str, Any]]):
+            ...
+
+
 def test_multi_inheritance_generic_binding():
     T = TypeVar('T')
 
