@@ -1,9 +1,8 @@
 `Json`
 : a special type wrapper which loads JSON before parsing
 
-You can use `Json` data type to make Pydantic first load a raw JSON string.
-It can also optionally be used to parse the loaded object into another type base on
-the type `Json` is parameterised with:
+You can use `Json` data type to make Pydantic first load a raw JSON string. Use `round_trip=True` when dumping the model to get the original JSON back. It can also optionally be used to parse the loaded object into another type base on
+the type `Json` is parameterised with: 
 
 ```py
 from typing import Any, List
@@ -23,6 +22,13 @@ print(AnyJsonModel(json_obj='{"b": 1}'))
 #> json_obj={'b': 1}
 print(ConstrainedJsonModel(json_obj='[1, 2, 3]'))
 #> json_obj=[1, 2, 3]
+
+print(ConstrainedJsonModel(json_obj="[1, 2, 3]").model_dump_json())
+#> {"json_obj":[1,2,3]}
+print(ConstrainedJsonModel(json_obj="[1, 2, 3]").model_dump_json(round_trip=True))
+#> {"json_obj":"[1,2,3]"} 
+
+
 try:
     ConstrainedJsonModel(json_obj=12)
 except ValidationError as e:
