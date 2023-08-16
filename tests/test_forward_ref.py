@@ -1019,3 +1019,22 @@ def test_forward_ref_in_generic_separate_modules(create_module: Any) -> None:
     Bar = module_2.Bar
     Foo.model_rebuild(_types_namespace={'tp': typing, 'Bar': Bar})
     assert Foo(x={Bar: Bar}).x[Bar] is Bar
+
+
+def test_future_annotations_namespace(create_module):
+    forward = create_module(
+        """
+from __future__ import annotations
+
+from dataclasses import dataclass
+from uuid import UUID
+
+@dataclass
+class Item:
+    id: UUID
+    """
+    )
+
+    from pydantic import TypeAdapter
+
+    TypeAdapter(forward.Item)

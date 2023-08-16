@@ -28,7 +28,9 @@ if TYPE_CHECKING:
     IncEx = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any]]
 
 
-def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
+def _get_schema(
+    type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int, types_namespace: dict[str, Any] | None = None
+) -> CoreSchema:
     """`BaseModel` uses its own `__module__` to find out where it was defined
     and then look for symbols to resolve forward references in those globals.
     On the other hand this function can be called with arbitrary objects,
@@ -76,6 +78,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     local_ns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
     global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals.copy()
     global_ns.update(local_ns or {})
+    global_ns.update(types_namespace or {})
     gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
     schema = gen.generate_schema(type_)
     schema = gen.collect_definitions(schema)
@@ -164,7 +167,12 @@ class TypeAdapter(Generic[T]):
         try:
             core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
         except AttributeError:
-            core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
+            types_namespace = None
+            if hasattr(type, '__module__'):
+                types_namespace = sys.modules[type.__module__].__dict__
+            core_schema = _get_schema(
+                type, config_wrapper, parent_depth=_parent_depth + 1, types_namespace=types_namespace
+            )
 
         core_schema = _discriminated_union.apply_discriminators(_core_utils.flatten_schema_defs(core_schema))
         simplified_core_schema = _core_utils.inline_schema_defs(core_schema)
