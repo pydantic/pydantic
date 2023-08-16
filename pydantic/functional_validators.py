@@ -351,7 +351,7 @@ class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Proto
         ...
 
 
-class ModelWrapValidatorWithoutInfo(Protocol):
+class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
     """A @model_validator decorated function signature.
     This is used when `mode='wrap'` and the function does not have info argument.
     """
@@ -368,7 +368,7 @@ class ModelWrapValidatorWithoutInfo(Protocol):
         ...
 
 
-class ModelWrapValidator(Protocol):
+class ModelWrapValidator(Protocol[_ModelType]):
     """A @model_validator decorated function signature. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
@@ -423,7 +423,7 @@ have info argument.
 ModelAfterValidator = Callable[[_ModelType, _core_schema.ValidationInfo], _ModelType]
 """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
-_AnyModelWrapValidator = Union[ModelWrapValidator, ModelWrapValidatorWithoutInfo]
+_AnyModelWrapValidator = Union[ModelWrapValidator[_ModelType], ModelWrapValidatorWithoutInfo[_ModelType]]
 _AnyModeBeforeValidator = Union[ModelBeforeValidator, ModelBeforeValidatorWithoutInfo]
 _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
 
