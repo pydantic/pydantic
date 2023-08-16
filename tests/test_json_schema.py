@@ -1614,7 +1614,9 @@ def test_enum_str_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
+    default_value = UserModel.model_json_schema()['properties']['friends']['default']
+    assert type(default_value) is str
+    assert default_value == MyEnum.FOO.value
 
 
 def test_enum_int_default():
@@ -1624,7 +1626,9 @@ def test_enum_int_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
+    default_value = UserModel.model_json_schema()['properties']['friends']['default']
+    assert type(default_value) is int
+    assert default_value == MyEnum.FOO.value
 
 
 def test_dict_default():
@@ -5315,7 +5319,7 @@ def test_multiple_parametrization_of_generic_model() -> None:
 
     for _ in range(sys.getrecursionlimit() + 1):
 
-        class ModelTest(BaseModel):  # noqa: F811
+        class ModelTest(BaseModel):
             c: Outer[Inner]
 
     ModelTest.model_json_schema()
@@ -5378,3 +5382,49 @@ def test_callable_json_schema_extra_dataclass():
     json_schema = adapter.json_schema()
     for key in 'abcdef':
         assert json_schema['properties'][key] == {'title': key.upper(), 'type': 'integer'}  # default is not present
+
+
+def test_model_rebuild_happens_even_with_parent_classes(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from pydantic import BaseModel
+
+class MyBaseModel(BaseModel):
+    pass
+
+class B(MyBaseModel):
+    b: A
+
+class A(MyBaseModel):
+    a: str
+    """
+    )
+    assert module.B.model_json_schema() == {
+        '$defs': {
+            'A': {
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+                'title': 'A',
+                'type': 'object',
+            }
+        },
+        'properties': {'b': {'$ref': '#/$defs/A'}},
+        'required': ['b'],
+        'title': 'B',
+        'type': 'object',
+    }
+
+
+def test_enum_complex_value() -> None:
+    """https://github.com/pydantic/pydantic/issues/7045"""
+
+    class MyEnum(Enum):
+        foo = (1, 2)
+        bar = (2, 3)
+
+    ta = TypeAdapter(MyEnum)
+
+    # insert_assert(ta.json_schema())
+    assert ta.json_schema() == {'enum': [[1, 2], [2, 3]], 'title': 'MyEnum', 'type': 'array'}

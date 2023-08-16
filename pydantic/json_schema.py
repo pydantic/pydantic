@@ -41,7 +41,7 @@ from typing_extensions import Annotated, Literal, assert_never
 
 from pydantic._internal import _annotated_handlers, _internal_dataclass
 
-from ._internal import _core_metadata, _core_utils, _schema_generation_shared, _typing_extra
+from ._internal import _core_metadata, _core_utils, _mock_validator, _schema_generation_shared, _typing_extra
 from .config import JsonSchemaExtraCallable
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
@@ -709,6 +709,8 @@ class GenerateJsonSchema:
             The generated JSON schema.
         """
         expected = [v.value if isinstance(v, Enum) else v for v in schema['expected']]
+        # jsonify the expected values
+        expected = [to_jsonable_python(v) for v in expected]
 
         if len(expected) == 1:
             return {'const': expected[0]}
@@ -1010,9 +1012,11 @@ class GenerateJsonSchema:
         generated: list[JsonSchemaValue] = []
 
         choices = schema['choices']
-        for s in choices:
+        for choice in choices:
+            # choice will be a tuple if an explicit label was provided
+            choice_schema = choice[0] if isinstance(choice, tuple) else choice
             try:
-                generated.append(self.generate_inner(s))
+                generated.append(self.generate_inner(choice_schema))
             except PydanticOmit:
                 continue
             except PydanticInvalidForJsonSchema as exc:
@@ -1036,26 +1040,14 @@ class GenerateJsonSchema:
         for k, v in schema['choices'].items():
             if isinstance(k, Enum):
                 k = k.value
-            if not isinstance(v, (str, int)):
-                try:
-                    # Use str(k) since keys must be strings for json; while not technically correct,
-                    # it's the closest that can be represented in valid JSON
-                    generated[str(k)] = self.generate_inner(v).copy()
-                except PydanticOmit:
-                    continue
-                except PydanticInvalidForJsonSchema as exc:
-                    self.emit_warning('skipped-choice', exc.message)
-
-        # Populate the schema with any "indirect" references
-        for k, v in schema['choices'].items():
-            if isinstance(v, (str, int)):
-                while isinstance(schema['choices'][v], (str, int)):
-                    v = schema['choices'][v]
-                    assert isinstance(v, (int, str))
-                if str(v) in generated:
-                    # while it might seem unnecessary to check `if str(v) in generated`, a PydanticInvalidForJsonSchema
-                    # may have been raised above, which would mean that the schema we want to reference won't be present
-                    generated[str(k)] = generated[str(v)]
+            try:
+                # Use str(k) since keys must be strings for json; while not technically correct,
+                # it's the closest that can be represented in valid JSON
+                generated[str(k)] = self.generate_inner(v).copy()
+            except PydanticOmit:
+                continue
+            except PydanticInvalidForJsonSchema as exc:
+                self.emit_warning('skipped-choice', exc.message)
 
         one_of_choices = _deduplicate_schemas(generated.values())
         json_schema: JsonSchemaValue = {'oneOf': one_of_choices}
@@ -2127,6 +2119,9 @@ def model_json_schema(
         The generated JSON Schema.
     """
     schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
+    if isinstance(cls.__pydantic_validator__, _mock_validator.MockValidator):
+        cls.__pydantic_validator__.rebuild()
+    assert '__pydantic_core_schema__' in cls.__dict__, 'this is a bug! please report it'
     return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
 
 

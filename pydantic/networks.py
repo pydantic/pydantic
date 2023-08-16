@@ -247,7 +247,11 @@ class NameEmail(_repr.Representation):
         import_email_validator()
         return core_schema.general_after_validator_function(
             cls._validate,
-            core_schema.union_schema([core_schema.is_instance_schema(cls), core_schema.str_schema()]),
+            core_schema.union_schema(
+                [core_schema.is_instance_schema(cls), core_schema.str_schema()],
+                custom_error_type='name_email_type',
+                custom_error_message='Input is not a valid NameEmail',
+            ),
             serialization=core_schema.to_string_ser_schema(),
         )
 
