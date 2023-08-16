@@ -3,7 +3,7 @@ import warnings
 from typing import Any, Callable, Dict
 
 from ._internal._validators import import_string
-from .version import VERSION
+from .version import version_short
 
 MOVED_IN_V2 = {
     'pydantic.utils:version_info': 'pydantic.version:version_info',
@@ -288,7 +288,7 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         if import_path == 'pydantic:BaseSettings':
             raise PydanticImportError(
                 '`BaseSettings` has been moved to the `pydantic-settings` package. '
-                f'See https://docs.pydantic.dev/{VERSION}/migration/#basesettings-has-moved-to-pydantic-settings '
+                f'See https://docs.pydantic.dev/{version_short()}/migration/#basesettings-has-moved-to-pydantic-settings '
                 'for more details.'
             )
         if import_path in REMOVED_IN_V2:

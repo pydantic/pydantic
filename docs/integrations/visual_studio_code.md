@@ -164,7 +164,7 @@ that way Pylance and mypy will ignore errors in that line.
 
 #### Override the type of a variable
 
-You can also create a variable with the value you want to use and declare it's type explicitly with `Any`.
+You can also create a variable with the value you want to use and declare its type explicitly with `Any`.
 
 ```Python hl_lines="1 11-12"
 from typing import Any

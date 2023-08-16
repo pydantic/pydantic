@@ -92,7 +92,7 @@ class FieldInfo(_repr.Representation):
         title: The title of the field.
         description: The description of the field.
         examples: List of examples of the field.
-        exclude: Whether to exclude the field from the model schema.
+        exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Dictionary of extra JSON schema properties.
         frozen: Whether the field is frozen.
@@ -285,7 +285,13 @@ class FieldInfo(_repr.Representation):
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
                 new_field_info.frozen = final or field_info.frozen
-                new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                metadata: list[Any] = []
+                for a in extra_args:
+                    if not isinstance(a, FieldInfo):
+                        metadata.append(a)
+                    else:
+                        metadata.extend(a.metadata)
+                new_field_info.metadata = metadata
                 return new_field_info
 
         return cls(annotation=annotation, frozen=final or None)
@@ -356,7 +362,13 @@ class FieldInfo(_repr.Representation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
                 field_info = cls.merge_field_infos(*field_infos, annotation=first_arg, default=default)
-                field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                metadata: list[Any] = []
+                for a in extra_args:
+                    if not isinstance(a, FieldInfo):
+                        metadata.append(a)
+                    else:
+                        metadata.extend(a.metadata)
+                field_info.metadata = metadata
                 return field_info
 
             return cls(annotation=annotation, default=default, frozen=final or None)
@@ -689,6 +701,9 @@ def Field(  # noqa: C901
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (`int`, `float`, `Decimal`) and some apply only to `str`.
 
+    Note:
+        - Any `_Unset` objects will be replaced by the corresponding value defined in the `_DefaultValues` dictionary. If a key for the `_Unset` object is not found in the `_DefaultValues` dictionary, it will default to `None`
+
     Args:
         default: Default value if the field is not set.
         default_factory: A callable to generate the default value, such as :func:`~datetime.utcnow`.
@@ -701,11 +716,11 @@ def Field(  # noqa: C901
         title: Human-readable title.
         description: Human-readable description.
         examples: Example values for this field.
-        exclude: Whether to exclude the field from the model schema.
+        exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Any additional JSON schema data for the schema property.
         frozen: Whether the field is frozen.
-        validate_default: Run validation that isn't only checking existence of defaults. `True` by default.
+        validate_default: Run validation that isn't only checking existence of defaults. This can be set to `True` or `False`. If not set, it defaults to `None`.
         repr: A boolean indicating whether to include the field in the `__repr__` output.
         init_var: Whether the field should be included in the constructor of the dataclass.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.

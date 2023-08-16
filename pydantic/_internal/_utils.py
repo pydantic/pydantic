@@ -114,11 +114,6 @@ def update_not_none(mapping: dict[Any, Any], **update: Any) -> None:
     mapping.update({k: v for k, v in update.items() if v is not None})
 
 
-def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
-    """Return True if two floats are almost equal."""
-    return abs(value_1 - value_2) <= delta
-
-
 T = TypeVar('T')
 
 

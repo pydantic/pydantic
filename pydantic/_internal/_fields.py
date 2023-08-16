@@ -32,7 +32,7 @@ def get_type_hints_infer_globalns(
     global namespace from `obj.__module__` if it is not `None`.
 
     Args:
-        obj: The object to get it's type hints.
+        obj: The object to get its type hints.
         localns: The local namespaces.
         include_extras: Whether to recursively include annotation metadata.
 

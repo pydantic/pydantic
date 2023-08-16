@@ -45,7 +45,7 @@ def parametrize_root_model():
 
 def check_schema(schema: CoreSchema) -> None:
     # we assume the shape of the core schema here, which is not a guarantee
-    # pydantic makes to it's users but is useful to check here to make sure
+    # pydantic makes to its users but is useful to check here to make sure
     # we are doing the right thing internally
     assert schema['type'] == 'definitions'
     inner = schema['schema']

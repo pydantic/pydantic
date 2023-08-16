@@ -266,7 +266,8 @@ print(context['logs'])
 
 Validators won't run when the default value is used.
 This applies both to `@field_validator` validators and `Annotated` validators.
-You can force them to run with `Field(validate_defaults=True)`, but you are generally better off using a `@model_validator(mode='before')`.
+You can force them to run with `Field(validate_defaults=True)`. Setting `validate_default` to `True` has the closest behavior to using `always=True` in `validator` in Pydantic v1. However, you are generally better off using a `@model_validator(mode='before')` where the function is called before the inner validator is called.
+
 
 ```py
 from typing_extensions import Annotated

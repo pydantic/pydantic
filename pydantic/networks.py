@@ -4,7 +4,7 @@ from __future__ import annotations as _annotations
 import dataclasses as _dataclasses
 import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated, TypeAlias
@@ -124,10 +124,7 @@ RedisDsn = Annotated[
     UrlConstraints(allowed_schemes=['redis', 'rediss'], default_host='localhost', default_port=6379, default_path='/0'),
 ]
 """A type that will accept any Redis DSN."""
-MongoDsn = Union[
-    Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb'], default_port=27017)],
-    Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb+srv'])],
-]
+MongoDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)]
 """A type that will accept any MongoDB DSN."""
 KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)]
 """A type that will accept any Kafka DSN."""
@@ -250,7 +247,11 @@ class NameEmail(_repr.Representation):
         import_email_validator()
         return core_schema.general_after_validator_function(
             cls._validate,
-            core_schema.union_schema([core_schema.is_instance_schema(cls), core_schema.str_schema()]),
+            core_schema.union_schema(
+                [core_schema.is_instance_schema(cls), core_schema.str_schema()],
+                custom_error_type='name_email_type',
+                custom_error_message='Input is not a valid NameEmail',
+            ),
             serialization=core_schema.to_string_ser_schema(),
         )
 

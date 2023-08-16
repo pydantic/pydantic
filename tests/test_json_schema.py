@@ -1614,7 +1614,9 @@ def test_enum_str_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
+    default_value = UserModel.model_json_schema()['properties']['friends']['default']
+    assert type(default_value) is str
+    assert default_value == MyEnum.FOO.value
 
 
 def test_enum_int_default():
@@ -1624,7 +1626,9 @@ def test_enum_int_default():
     class UserModel(BaseModel):
         friends: MyEnum = MyEnum.FOO
 
-    assert UserModel.model_json_schema()['properties']['friends']['default'] is MyEnum.FOO.value
+    default_value = UserModel.model_json_schema()['properties']['friends']['default']
+    assert type(default_value) is int
+    assert default_value == MyEnum.FOO.value
 
 
 def test_dict_default():
@@ -5037,7 +5041,7 @@ def test_skip_json_schema_annotation() -> None:
 
 def test_skip_json_schema_exclude_default():
     class Model(BaseModel):
-        x: Annotated[Union[int, SkipJsonSchema[None]], Field(json_schema_extra=lambda s: s.pop('default'))] = None
+        x: Union[int, SkipJsonSchema[None]] = Field(default=None, json_schema_extra=lambda s: s.pop('default'))
 
     assert Model().x is None
     # insert_assert(Model.model_json_schema())
@@ -5315,7 +5319,7 @@ def test_multiple_parametrization_of_generic_model() -> None:
 
     for _ in range(sys.getrecursionlimit() + 1):
 
-        class ModelTest(BaseModel):  # noqa: F811
+        class ModelTest(BaseModel):
             c: Outer[Inner]
 
     ModelTest.model_json_schema()
@@ -5333,24 +5337,18 @@ def test_callable_json_schema_extra():
 
     class Model(BaseModel):
         a: int = Field(default=1, json_schema_extra=pop_default)
-        b: Annotated[int, Field(json_schema_extra=pop_default)] = 2
-        c: Annotated[int, Field(json_schema_extra=pop_default), Field(default=3)]
-        d: Annotated[int, Field(default=4), Field(json_schema_extra=pop_default)]
-        e: Annotated[int, Field(json_schema_extra=pop_default)] = Field(default=5)
-        f: Annotated[int, Field(default=6)] = Field(json_schema_extra=pop_default)
+        b: Annotated[int, Field(default=2), Field(json_schema_extra=pop_default)]
+        c: Annotated[int, Field(default=3)] = Field(json_schema_extra=pop_default)
 
-    assert Model().model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
-    assert Model(a=11, b=12, c=13, d=14, e=15, f=16).model_dump() == {
+    assert Model().model_dump() == {'a': 1, 'b': 2, 'c': 3}
+    assert Model(a=11, b=12, c=13).model_dump() == {
         'a': 11,
         'b': 12,
         'c': 13,
-        'd': 14,
-        'e': 15,
-        'f': 16,
     }
 
     json_schema = Model.model_json_schema()
-    for key in 'abcdef':
+    for key in 'abc':
         assert json_schema['properties'][key] == {'title': key.upper(), 'type': 'integer'}  # default is not present
 
 
@@ -5384,6 +5382,39 @@ def test_callable_json_schema_extra_dataclass():
     json_schema = adapter.json_schema()
     for key in 'abcdef':
         assert json_schema['properties'][key] == {'title': key.upper(), 'type': 'integer'}  # default is not present
+
+
+def test_model_rebuild_happens_even_with_parent_classes(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+from pydantic import BaseModel
+
+class MyBaseModel(BaseModel):
+    pass
+
+class B(MyBaseModel):
+    b: A
+
+class A(MyBaseModel):
+    a: str
+    """
+    )
+    assert module.B.model_json_schema() == {
+        '$defs': {
+            'A': {
+                'properties': {'a': {'title': 'A', 'type': 'string'}},
+                'required': ['a'],
+                'title': 'A',
+                'type': 'object',
+            }
+        },
+        'properties': {'b': {'$ref': '#/$defs/A'}},
+        'required': ['b'],
+        'title': 'B',
+        'type': 'object',
+    }
 
 
 def test_enum_complex_value() -> None:

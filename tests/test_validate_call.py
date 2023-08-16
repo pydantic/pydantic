@@ -4,7 +4,7 @@ import re
 import sys
 from datetime import datetime, timezone
 from functools import partial
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import pytest
 from pydantic_core import ArgsKwargs
@@ -703,3 +703,25 @@ def test_classmethod_order_error(decorator):
             @decorator
             def method(self, x: int):
                 pass
+
+
+def test_async_func() -> None:
+    @validate_call(validate_return=True)
+    async def foo(a: Any) -> int:
+        return a
+
+    res = asyncio.run(foo(1))
+    assert res == 1
+
+    with pytest.raises(ValidationError) as exc_info:
+        asyncio.run(foo('x'))
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': (),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        }
+    ]

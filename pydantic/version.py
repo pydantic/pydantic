@@ -7,6 +7,14 @@ VERSION = '2.1.1'
 """The version of Pydantic."""
 
 
+def version_short() -> str:
+    """Return the major.minor part of Pydantic version.
+
+    It return '2.1' if Pydantic version is '2.1.1'.
+    """
+    return '.'.join(VERSION.split('.')[:2])
+
+
 def version_info() -> str:
     """Return complete version information for Pydantic and its dependencies."""
     import platform
