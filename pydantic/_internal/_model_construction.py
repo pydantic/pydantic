@@ -138,16 +138,20 @@ class ModelMetaclass(ABCMeta):
                 if parameters and parent_parameters and not all(x in parameters for x in parent_parameters):
                     combined_parameters = parent_parameters + tuple(x for x in parameters if x not in parent_parameters)
                     parameters_str = ', '.join([str(x) for x in combined_parameters])
+                    generic_type_label = f'typing.Generic[{parameters_str}]'
+                    # Note: We raise an error here not because it is desirable, but because some cases are mishandled.
+                    # It would be nice to remove this error and still have things behave as expected, it's just
+                    # challenging because we are using a custom __class_getitem__ to parametrize generic models, and
+                    # not returning a typing._GenericAlias.
                     error_message = (
                         f'All parameters must be present on typing.Generic;'
-                        f' you should inherit from typing.Generic[{parameters_str}]'
+                        f' you should inherit from {generic_type_label}.'
                     )
                     if Generic not in bases:  # pragma: no cover
-                        # This branch will only be hit if I have misunderstood how `__parameters__` works.
-                        # If that is the case, and a user hits this, I could imagine it being very helpful
-                        # to have this extra detail in the reported traceback.
-                        error_message += f' (bases={bases})'
-                        error_message += ' Hint: Inherit BaseModel before typing.Generic'
+                        bases_str = ', '.join([x.__name__ for x in bases] + [generic_type_label])
+                        error_message += (
+                            f' Note: `typing.Generic` must go last: `class {cls.__name__}({bases_str}): ...`)'
+                        )
                     raise TypeError(error_message)
 
                 cls.__pydantic_generic_metadata__ = {

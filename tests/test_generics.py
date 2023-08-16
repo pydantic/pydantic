@@ -2033,7 +2033,9 @@ def test_generic_subclass_with_extra_type_with_hint_message():
     with pytest.raises(
         TypeError,
         match=re.escape(
-            "All parameters must be present on typing.Generic; you should inherit from typing.Generic[~E, ~D] (bases=(<class 'tests.test_generics.test_generic_subclass_with_extra_type_with_hint_message.<locals>.BaseGenericClass'>,)) Hint: Inherit BaseModel before typing.Generic"
+            'All parameters must be present on typing.Generic; you should inherit from typing.Generic[~E, ~D].'
+            ' Note: `typing.Generic` must go last:'
+            ' `class ChildGenericClass(BaseGenericClass, typing.Generic[~E, ~D]): ...`'
         ),
     ):
 
