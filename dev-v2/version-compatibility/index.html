@@ -2173,11 +2173,12 @@ We're sorry about this pain <img alt="🙏" class="twemoji" src="https://cdn.jsd
 <p>The following changes will <strong>NOT</strong> be considered breaking changes, and may occur in minor releases:</p>
 <ul>
 <li>Changing the format of <code>ref</code> as used in JSON Schema.</li>
-<li>Changing the <code>message</code> and <code>context</code> fields of <code>ValidationError</code> errors, <code>type</code> will not change &mdash; if you're programmatically parsing error messages, you should use <code>type</code>.</li>
+<li>Changing the <code>msg</code>, <code>ctx</code>, and <code>loc</code> fields of <code>ValidationError</code> errors. <code>type</code> will not change &mdash; if you're programmatically parsing error messages, you should use <code>type</code>.</li>
 <li>Adding new keys to <code>ValidationError</code> errors &mdash; e.g. we intend to add <code>line_number</code> and <code>column_number</code> to errors when validating JSON once we migrate to a new JSON parser.</li>
 <li>Adding new <code>ValidationError</code> errors.</li>
 <li>Changing <code>repr</code> even of public classes.</li>
 </ul>
+<p>In all cases we will aim to minimize churn and do so only when justified by the increase of quality of <code>pydantic</code> for users.</p>
 <h2 id="pydantic-v3-and-beyond">Pydantic V3 and beyond<a class="headerlink" href="#pydantic-v3-and-beyond" title="Permanent link">&para;</a></h2>
 <p>We expect to make new major releases roughly once a year going forward, although as mentioned above, any associated breaking changes should be trivial to fix compared to the V1-to-V2 transition.</p>
 
