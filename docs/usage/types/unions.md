@@ -43,7 +43,61 @@ print(user_03_uuid.int)
 
     See more details in [Required fields](../models.md#required-fields).
 
-#### Discriminated Unions (a.k.a. Tagged Unions)
+#### Union Mode
+
+By default `Union` validation will try to return the variant which is the best match for the input.
+
+Consider for example the case of `Union[int, str]`. When [`strict` mode](../strict_mode.md) is not enabled
+then `int` fields will accept `str` inputs. In the example below, the `id` field (which is `Union[int, str]`)
+will accept the string `'123'` as an input, and preserve it as a string:
+
+```py
+from typing import Union
+
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    id: Union[int, str]
+    age: int
+
+
+print(User(id='123', age='45'))
+#> id='123' age=45
+
+print(type(User(id='123', age='45').id))
+#> <class 'str'>
+```
+
+This is known as `'smart'` mode for `Union` validation.
+
+At present only one other `Union` validation mode exists, called `'left_to_right'` validation. In this mode
+variants are attempted from left to right and the first successful validation is accepted as input.
+
+Consider the same example, this time with `union_mode='left_to_right'` set as a [`Field`](../fields.md)
+parameter on `id`. With this validation mode, the `int` variant will coerce strings of digits into `int`
+values:
+
+```py
+from typing import Union
+
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    id: Union[int, str] = Field(..., union_mode='left_to_right')
+    age: int
+
+
+print(User(id='123', age='45'))
+#> id=123 age=45
+
+
+print(type(User(id='123', age='45').id))
+#> <class 'int'>
+```
+
+### Discriminated Unions (a.k.a. Tagged Unions)
 
 When `Union` is used with multiple submodels, you sometimes know exactly which submodel needs to
 be checked and validated and want to enforce this.

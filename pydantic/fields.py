@@ -13,7 +13,7 @@ from warnings import warn
 import annotated_types
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import Unpack
+from typing_extensions import Literal, Unpack
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
@@ -56,6 +56,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     allow_inf_nan: bool | None
     max_digits: int | None
     decimal_places: int | None
+    union_mode: Literal['smart', 'left_to_right'] | None
     discriminator: str | None
     json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None
     frozen: bool | None
@@ -161,6 +162,7 @@ class FieldInfo(_repr.Representation):
         'allow_inf_nan': None,
         'max_digits': None,
         'decimal_places': None,
+        'union_mode': None,
     }
 
     def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
@@ -692,6 +694,7 @@ def Field(  # noqa: C901
     decimal_places: int | None = _Unset,
     min_length: int | None = _Unset,
     max_length: int | None = _Unset,
+    union_mode: Literal['smart', 'left_to_right'] = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
     """Usage docs: https://docs.pydantic.dev/dev-v2/usage/fields
@@ -737,6 +740,8 @@ def Field(  # noqa: C901
         allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to numbers.
         max_digits: Maximum number of allow digits for strings.
         decimal_places: Maximum number of decimal places allowed for numbers.
+        union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
+            See [Union Mode](../usage/types/unions.md#union-mode) for details.
         extra: Include extra fields used by the JSON schema.
 
             !!! warning Deprecated
@@ -838,6 +843,7 @@ def Field(  # noqa: C901
         allow_inf_nan=allow_inf_nan,
         max_digits=max_digits,
         decimal_places=decimal_places,
+        union_mode=union_mode,
     )
 
 

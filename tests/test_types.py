@@ -4681,12 +4681,70 @@ def test_default_union_types():
     assert repr(DefaultModel(v=1).v) == '1'
     assert repr(DefaultModel(v='1').v) == "'1'"
 
-    # assert DefaultModel.model_json_schema() == {
-    #     'title': 'DefaultModel',
-    #     'type': 'object',
-    #     'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
-    #     'required': ['v'],
-    # }
+    assert DefaultModel.model_json_schema() == {
+        'title': 'DefaultModel',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
+        'required': ['v'],
+    }
+
+
+def test_default_union_types_left_to_right():
+    class DefaultModel(BaseModel):
+        v: Annotated[Union[int, bool, str], Field(union_mode='left_to_right')]
+
+    print(DefaultModel.__pydantic_core_schema__)
+
+    # int will coerce everything in left-to-right mode
+    assert repr(DefaultModel(v=True).v) == '1'
+    assert repr(DefaultModel(v=1).v) == '1'
+    assert repr(DefaultModel(v='1').v) == '1'
+
+    assert DefaultModel.model_json_schema() == {
+        'title': 'DefaultModel',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'anyOf': [{'type': t} for t in ('integer', 'boolean', 'string')]}},
+        'required': ['v'],
+    }
+
+
+def test_union_enum_int_left_to_right():
+    class BinaryEnum(IntEnum):
+        ZERO = 0
+        ONE = 1
+
+    # int will win over enum in this case
+    assert TypeAdapter(Union[BinaryEnum, int]).validate_python(0) is not BinaryEnum.ZERO
+
+    # in left to right mode, enum will validate successfully and take precedence
+    assert (
+        TypeAdapter(Annotated[Union[BinaryEnum, int], Field(union_mode='left_to_right')]).validate_python(0)
+        is BinaryEnum.ZERO
+    )
+
+
+def test_union_uuid_str_left_to_right():
+    IdOrSlug = Union[UUID, str]
+
+    # in smart mode JSON and python are currently validated differently in this
+    # case, because in Python this is a str but in JSON a str is also a UUID
+    assert TypeAdapter(IdOrSlug).validate_json('\"f4fe10b4-e0c8-4232-ba26-4acd491c2414\"') == UUID(
+        'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
+    )
+    assert (
+        TypeAdapter(IdOrSlug).validate_python('f4fe10b4-e0c8-4232-ba26-4acd491c2414')
+        == 'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
+    )
+
+    IdOrSlugLTR = Annotated[Union[UUID, str], Field(union_mode='left_to_right')]
+
+    # in left to right mode both JSON and python are validated as UUID
+    assert TypeAdapter(IdOrSlugLTR).validate_json('\"f4fe10b4-e0c8-4232-ba26-4acd491c2414\"') == UUID(
+        'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
+    )
+    assert TypeAdapter(IdOrSlugLTR).validate_python('f4fe10b4-e0c8-4232-ba26-4acd491c2414') == UUID(
+        'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
+    )
 
 
 def test_default_union_class():
