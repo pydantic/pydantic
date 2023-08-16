@@ -73,8 +73,8 @@ impl BuildValidator for DefinitionRefValidator {
 impl_py_gc_traverse!(DefinitionRefValidator {});
 
 impl Validator for DefinitionRefValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -97,8 +97,8 @@ impl Validator for DefinitionRefValidator {
         }
     }
 
-    fn validate_assignment<'s, 'data: 's>(
-        &'s self,
+    fn validate_assignment<'data>(
+        &self,
         py: Python<'data>,
         obj: &'data PyAny,
         field_name: &'data str,
@@ -149,7 +149,7 @@ impl Validator for DefinitionRefValidator {
     }
 }
 
-fn validate<'s, 'data>(
+fn validate<'data>(
     validator_id: usize,
     py: Python<'data>,
     input: &'data impl Input<'data>,

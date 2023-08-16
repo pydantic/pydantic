@@ -129,8 +129,8 @@ impl_py_gc_traverse!(Field { validator });
 impl_py_gc_traverse!(DataclassArgsValidator { fields });
 
 impl Validator for DataclassArgsValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -305,8 +305,8 @@ impl Validator for DataclassArgsValidator {
         }
     }
 
-    fn validate_assignment<'s, 'data: 's>(
-        &'s self,
+    fn validate_assignment<'data>(
+        &self,
         py: Python<'data>,
         obj: &'data PyAny,
         field_name: &'data str,
@@ -466,8 +466,8 @@ impl BuildValidator for DataclassValidator {
 impl_py_gc_traverse!(DataclassValidator { class, validator });
 
 impl Validator for DataclassValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -505,8 +505,8 @@ impl Validator for DataclassValidator {
         }
     }
 
-    fn validate_assignment<'s, 'data: 's>(
-        &'s self,
+    fn validate_assignment<'data>(
+        &self,
         py: Python<'data>,
         obj: &'data PyAny,
         field_name: &'data str,

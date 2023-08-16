@@ -40,8 +40,8 @@ impl BuildValidator for BytesValidator {
 impl_py_gc_traverse!(BytesValidator {});
 
 impl Validator for BytesValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -77,8 +77,8 @@ pub struct BytesConstrainedValidator {
 impl_py_gc_traverse!(BytesConstrainedValidator {});
 
 impl Validator for BytesConstrainedValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,

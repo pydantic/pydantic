@@ -683,8 +683,8 @@ pub enum CombinedValidator {
 #[enum_dispatch(CombinedValidator)]
 pub trait Validator: Send + Sync + Clone + Debug {
     /// Do the actual validation for this schema/type
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -702,8 +702,8 @@ pub trait Validator: Send + Sync + Clone + Debug {
 
     /// Validate assignment to a field of a model
     #[allow(clippy::too_many_arguments)]
-    fn validate_assignment<'s, 'data: 's>(
-        &'s self,
+    fn validate_assignment<'data>(
+        &self,
         _py: Python<'data>,
         _obj: &'data PyAny,
         _field_name: &'data str,

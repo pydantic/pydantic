@@ -115,8 +115,8 @@ impl BuildValidator for ListValidator {
 impl_py_gc_traverse!(ListValidator { item_validator });
 
 impl Validator for ListValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,

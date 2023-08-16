@@ -93,8 +93,8 @@ macro_rules! impl_validator {
         });
 
         impl Validator for $name {
-            fn validate<'s, 'data>(
-                &'s self,
+            fn validate<'data>(
+                &self,
                 py: Python<'data>,
                 input: &'data impl Input<'data>,
                 state: &mut ValidationState<'_>,
@@ -102,8 +102,8 @@ macro_rules! impl_validator {
                 let validate = |v, s: &mut ValidationState<'_>| self.validator.validate(py, v, s);
                 self._validate(validate, py, input.to_object(py).into_ref(py), state)
             }
-            fn validate_assignment<'s, 'data: 's>(
-                &'s self,
+            fn validate_assignment<'data>(
+                &self,
                 py: Python<'data>,
                 obj: &'data PyAny,
                 field_name: &'data str,
@@ -246,8 +246,8 @@ impl BuildValidator for FunctionPlainValidator {
 impl_py_gc_traverse!(FunctionPlainValidator { func, config });
 
 impl Validator for FunctionPlainValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -343,8 +343,8 @@ impl_py_gc_traverse!(FunctionWrapValidator {
 });
 
 impl Validator for FunctionWrapValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -366,8 +366,8 @@ impl Validator for FunctionWrapValidator {
         )
     }
 
-    fn validate_assignment<'s, 'data: 's>(
-        &'s self,
+    fn validate_assignment<'data>(
+        &self,
         py: Python<'data>,
         obj: &'data PyAny,
         field_name: &'data str,
