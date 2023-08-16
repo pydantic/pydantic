@@ -238,13 +238,8 @@ impl ModelValidator {
     ) -> ValResult<'data, PyObject> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on self_instance
         // anymore
-        let output = state.with_new_extra(
-            Extra {
-                self_instance: None,
-                ..*state.extra()
-            },
-            |state| self.validator.validate(py, input, state),
-        )?;
+        let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
+        let output = self.validator.validate(py, input, state)?;
 
         if self.root_model {
             let fields_set = if input.to_object(py).is(&PydanticUndefinedType::py_undefined()) {

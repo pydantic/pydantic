@@ -1,8 +1,10 @@
 use std::fmt::Write;
+use std::str::FromStr;
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
 use pyo3::{intern, PyTraverseError, PyVisit};
+use smallvec::SmallVec;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config};
@@ -16,14 +18,44 @@ use super::custom_error::CustomError;
 use super::literal::LiteralLookup;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
+#[derive(Debug, Clone, Copy)]
+enum UnionMode {
+    Smart {
+        strict_required: bool,
+        ultra_strict_required: bool,
+    },
+    LeftToRight,
+}
+
+impl UnionMode {
+    // construct smart with some default values
+    const fn default_smart() -> Self {
+        Self::Smart {
+            strict_required: true,
+            ultra_strict_required: false,
+        }
+    }
+}
+
+impl FromStr for UnionMode {
+    type Err = PyErr;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "smart" => Ok(Self::default_smart()),
+            "left_to_right" => Ok(Self::LeftToRight),
+            s => py_schema_err!("Invalid union mode: `{}`, expected `smart` or `left_to_right`", s),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct UnionValidator {
+    mode: UnionMode,
     choices: Vec<(CombinedValidator, Option<String>)>,
     custom_error: Option<CustomError>,
     strict: bool,
     name: String,
-    strict_required: bool,
-    ultra_strict_required: bool,
 }
 
 impl BuildValidator for UnionValidator {
@@ -53,6 +85,9 @@ impl BuildValidator for UnionValidator {
             .collect::<PyResult<Vec<(CombinedValidator, Option<String>)>>>()?;
 
         let auto_collapse = || schema.get_as_req(intern!(py, "auto_collapse")).unwrap_or(true);
+        let mode = schema
+            .get_as::<&str>(intern!(py, "mode"))?
+            .map_or(Ok(UnionMode::default_smart()), UnionMode::from_str)?;
         match choices.len() {
             0 => py_schema_err!("One or more union choices required"),
             1 if auto_collapse() => Ok(choices.into_iter().next().unwrap().0),
@@ -64,12 +99,11 @@ impl BuildValidator for UnionValidator {
                     .join(",");
 
                 Ok(Self {
+                    mode,
                     choices,
                     custom_error: CustomError::build(schema, config, definitions)?,
                     strict: is_strict(schema, config)?,
                     name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
-                    strict_required: true,
-                    ultra_strict_required: false,
                 }
                 .into())
             }
@@ -78,16 +112,93 @@ impl BuildValidator for UnionValidator {
 }
 
 impl UnionValidator {
-    fn or_custom_error<'s, 'data>(
+    fn validate_smart<'s, 'data>(
         &'s self,
-        errors: Option<Vec<ValLineError<'data>>>,
+        py: Python<'data>,
         input: &'data impl Input<'data>,
-    ) -> ValError<'data> {
-        if let Some(errors) = errors {
-            ValError::LineErrors(errors)
-        } else {
-            self.custom_error.as_ref().unwrap().as_val_error(input)
+        state: &mut ValidationState,
+        strict_required: bool,
+        ultra_strict_required: bool,
+    ) -> ValResult<'data, PyObject> {
+        if ultra_strict_required {
+            // do an ultra strict check first
+            let state = &mut state.rebind_extra(|extra| {
+                extra.strict = Some(true);
+                extra.ultra_strict = true;
+            });
+            if let Some(res) = self
+                .choices
+                .iter()
+                .map(|(validator, _label)| validator.validate(py, input, state))
+                .find(ValResult::is_ok)
+            {
+                return res;
+            }
         }
+
+        let mut errors = MaybeErrors::new(self.custom_error.as_ref());
+
+        if state.strict_or(self.strict) {
+            let state = &mut state.rebind_extra(|extra| extra.strict = Some(true));
+            for (validator, label) in &self.choices {
+                match validator.validate(py, input, state) {
+                    Err(ValError::LineErrors(lines)) => errors.push(validator, label.as_deref(), lines),
+                    otherwise => return otherwise,
+                };
+            }
+
+            Err(errors.into_val_error(input))
+        } else {
+            if strict_required {
+                // 1st pass: check if the value is an exact instance of one of the Union types,
+                // e.g. use validate in strict mode
+                let state = &mut state.rebind_extra(|extra| extra.strict = Some(true));
+                if let Some(res) = self
+                    .choices
+                    .iter()
+                    .map(|(validator, _label)| validator.validate(py, input, state))
+                    .find(ValResult::is_ok)
+                {
+                    return res;
+                }
+            }
+
+            // 2nd pass: check if the value can be coerced into one of the Union types, e.g. use validate
+            for (validator, label) in &self.choices {
+                match validator.validate(py, input, state) {
+                    Err(ValError::LineErrors(lines)) => errors.push(validator, label.as_deref(), lines),
+                    otherwise => return otherwise,
+                };
+            }
+
+            Err(errors.into_val_error(input))
+        }
+    }
+
+    fn validate_left_to_right<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data impl Input<'data>,
+        state: &mut ValidationState,
+    ) -> ValResult<'data, PyObject> {
+        let mut errors = MaybeErrors::new(self.custom_error.as_ref());
+
+        let mut rebound_state;
+        let state = if state.strict_or(self.strict) {
+            rebound_state = state.rebind_extra(|extra| extra.strict = Some(true));
+            &mut rebound_state
+        } else {
+            state
+        };
+
+        for (validator, label) in &self.choices {
+            match validator.validate(py, input, state) {
+                Err(ValError::LineErrors(lines)) => errors.push(validator, label.as_deref(), lines),
+                otherwise => return otherwise,
+            };
+        }
+
+        Err(errors.into_val_error(input))
     }
 }
 
@@ -105,75 +216,12 @@ impl Validator for UnionValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        if self.ultra_strict_required {
-            // do an ultra strict check first
-            if let Some(res) = state.with_new_extra(state.extra().as_strict(true), |state| {
-                self.choices
-                    .iter()
-                    .map(|(validator, _label)| validator.validate(py, input, state))
-                    .find(ValResult::is_ok)
-            }) {
-                return res;
-            }
-        }
-
-        if state.strict_or(self.strict) {
-            let mut errors: Option<Vec<ValLineError>> = match self.custom_error {
-                None => Some(Vec::with_capacity(self.choices.len())),
-                _ => None,
-            };
-            state.with_new_extra(state.extra().as_strict(false), |state| {
-                for (validator, label) in &self.choices {
-                    let line_errors = match validator.validate(py, input, state) {
-                        Err(ValError::LineErrors(line_errors)) => line_errors,
-                        otherwise => return otherwise,
-                    };
-
-                    if let Some(ref mut errors) = errors {
-                        errors.extend(line_errors.into_iter().map(|err| {
-                            let case_label = label.as_deref().unwrap_or(validator.get_name());
-                            err.with_outer_location(case_label.into())
-                        }));
-                    }
-                }
-
-                Err(self.or_custom_error(errors, input))
-            })
-        } else {
-            if self.strict_required {
-                // 1st pass: check if the value is an exact instance of one of the Union types,
-                // e.g. use validate in strict mode
-                if let Some(res) = state.with_new_extra(state.extra().as_strict(false), |state| {
-                    self.choices
-                        .iter()
-                        .map(|(validator, _label)| validator.validate(py, input, state))
-                        .find(ValResult::is_ok)
-                }) {
-                    return res;
-                }
-            }
-
-            let mut errors: Option<Vec<ValLineError>> = match self.custom_error {
-                None => Some(Vec::with_capacity(self.choices.len())),
-                _ => None,
-            };
-
-            // 2nd pass: check if the value can be coerced into one of the Union types, e.g. use validate
-            for (validator, label) in &self.choices {
-                let line_errors = match validator.validate(py, input, state) {
-                    Err(ValError::LineErrors(line_errors)) => line_errors,
-                    success => return success,
-                };
-
-                if let Some(ref mut errors) = errors {
-                    errors.extend(line_errors.into_iter().map(|err| {
-                        let case_label = label.as_deref().unwrap_or(validator.get_name());
-                        err.with_outer_location(case_label.into())
-                    }));
-                }
-            }
-
-            Err(self.or_custom_error(errors, input))
+        match self.mode {
+            UnionMode::Smart {
+                strict_required,
+                ultra_strict_required,
+            } => self.validate_smart(py, input, state, strict_required, ultra_strict_required),
+            UnionMode::LeftToRight => self.validate_left_to_right(py, input, state),
         }
     }
 
@@ -193,9 +241,76 @@ impl Validator for UnionValidator {
 
     fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         self.choices.iter_mut().try_for_each(|(v, _)| v.complete(definitions))?;
-        self.strict_required = self.different_strict_behavior(Some(definitions), false);
-        self.ultra_strict_required = self.different_strict_behavior(Some(definitions), true);
+        if let UnionMode::Smart {
+            ref mut strict_required,
+            ref mut ultra_strict_required,
+        } = self.mode
+        {
+            *strict_required = self
+                .choices
+                .iter()
+                .any(|(v, _)| v.different_strict_behavior(Some(definitions), false));
+            *ultra_strict_required = self
+                .choices
+                .iter()
+                .any(|(v, _)| v.different_strict_behavior(Some(definitions), true));
+        }
+
         Ok(())
+    }
+}
+
+struct ChoiceLineErrors<'a, 'data> {
+    choice: &'a CombinedValidator,
+    label: Option<&'a str>,
+    line_errors: Vec<ValLineError<'data>>,
+}
+
+enum MaybeErrors<'a, 'data> {
+    Custom(&'a CustomError),
+    Errors(SmallVec<[ChoiceLineErrors<'a, 'data>; 4]>),
+}
+
+impl<'a, 'data> MaybeErrors<'a, 'data> {
+    fn new(custom_error: Option<&'a CustomError>) -> Self {
+        match custom_error {
+            Some(custom_error) => Self::Custom(custom_error),
+            None => Self::Errors(SmallVec::new()),
+        }
+    }
+
+    fn push(&mut self, choice: &'a CombinedValidator, label: Option<&'a str>, line_errors: Vec<ValLineError<'data>>) {
+        match self {
+            Self::Custom(_) => {}
+            Self::Errors(errors) => errors.push(ChoiceLineErrors {
+                choice,
+                label,
+                line_errors,
+            }),
+        }
+    }
+
+    fn into_val_error(self, input: &'data impl Input<'data>) -> ValError<'data> {
+        match self {
+            Self::Custom(custom_error) => custom_error.as_val_error(input),
+            Self::Errors(errors) => ValError::LineErrors(
+                errors
+                    .into_iter()
+                    .flat_map(
+                        |ChoiceLineErrors {
+                             choice,
+                             label,
+                             line_errors,
+                         }| {
+                            line_errors.into_iter().map(move |err| {
+                                let case_label = label.unwrap_or(choice.get_name());
+                                err.with_outer_location(case_label.into())
+                            })
+                        },
+                    )
+                    .collect(),
+            ),
+        }
     }
 }
 

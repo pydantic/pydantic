@@ -275,6 +275,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
+ "smallvec",
  "speedate",
  "strum",
  "strum_macros",
