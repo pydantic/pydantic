@@ -51,8 +51,8 @@ impl BuildValidator for GeneratorValidator {
 impl_py_gc_traverse!(GeneratorValidator { item_validator });
 
 impl Validator for GeneratorValidator {
-    fn validate<'s, 'data>(
-        &'s self,
+    fn validate<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -249,8 +249,8 @@ impl InternalValidator {
         }
     }
 
-    pub fn validate_assignment<'s, 'data: 's>(
-        &'s mut self,
+    pub fn validate_assignment<'data>(
+        &mut self,
         py: Python<'data>,
         model: &'data PyAny,
         field_name: &'data str,
@@ -281,15 +281,12 @@ impl InternalValidator {
             })
     }
 
-    pub fn validate<'s, 'data>(
-        &'s mut self,
+    pub fn validate<'data>(
+        &mut self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         outer_location: Option<LocItem>,
-    ) -> PyResult<PyObject>
-    where
-        's: 'data,
-    {
+    ) -> PyResult<PyObject> {
         let extra = Extra {
             mode: self.validation_mode,
             data: self.data.as_ref().map(|data| data.as_ref(py)),
