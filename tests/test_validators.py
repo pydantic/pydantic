@@ -61,11 +61,15 @@ def test_annotated_validator_before() -> None:
 def test_annotated_validator_builtin() -> None:
     """https://github.com/pydantic/pydantic/issues/6752"""
     TruncatedFloat = Annotated[float, BeforeValidator(int)]
+    DateTimeFromIsoFormat = Annotated[datetime, BeforeValidator(datetime.fromisoformat)]
 
     class Model(BaseModel):
         x: TruncatedFloat
+        y: DateTimeFromIsoFormat
 
-    assert Model(x=1.234).x == 1
+    m = Model(x=1.234, y='2011-11-04T00:05:23')
+    assert m.x == 1
+    assert m.y == datetime(2011, 11, 4, 0, 5, 23)
 
 
 def test_annotated_validator_plain() -> None:

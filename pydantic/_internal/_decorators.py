@@ -493,7 +493,7 @@ class DecoratorInfos:
 
 
 def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:
-    """Look at a field or model validator function and determine if it whether it takes an info argument.
+    """Look at a field or model validator function and determine whether it takes an info argument.
 
     An error is raised if the function has an invalid signature.
 
@@ -504,10 +504,13 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
     Returns:
         Whether the validator takes an info argument.
     """
-    if getattr(validator, '__module__', None) == 'builtins':
-        # int, str, etc.
+    try:
+        sig = signature(validator)
+    except ValueError:
+        # builtins and some C extensions don't have signatures
+        # assume that they don't take an info argument and only take a single argument
+        # e.g. `str.strip` or `datetime.datetime`
         return False
-    sig = signature(validator)
     n_positional = count_positional_params(sig)
     if mode == 'wrap':
         if n_positional == 3:
