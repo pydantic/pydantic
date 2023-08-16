@@ -834,3 +834,9 @@ def test_name_email():
     assert str(Model(v='foo bar  <foobaR@example.com>').v) == 'foo bar <foobaR@example.com>'
     assert NameEmail('foo bar', 'foobaR@example.com') == NameEmail('foo bar', 'foobaR@example.com')
     assert NameEmail('foo bar', 'foobaR@example.com') != NameEmail('foo bar', 'different@example.com')
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=1)
+    assert exc_info.value.errors() == [
+        {'input': 1, 'loc': ('v',), 'msg': 'Input is not a valid NameEmail', 'type': 'name_email_type'}
+    ]

@@ -199,3 +199,12 @@ def test_recursive_generic_namedtuple():
             'type': 'int_parsing',
         }
     ]
+
+
+def test_namedtuple_defaults():
+    class NT(NamedTuple):
+        x: int
+        y: int = 33
+
+    assert TypeAdapter(NT).validate_python([1]) == (1, 33)
+    assert TypeAdapter(NT).validate_python({'x': 22}) == (22, 33)

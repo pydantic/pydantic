@@ -970,7 +970,7 @@ class GenerateSchema:
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
-        choices: list[core_schema.CoreSchema] = []
+        choices: list[CoreSchema | tuple[CoreSchema, str]] = []
         nullable = False
         for arg in args:
             if arg is None or arg is _typing_extra.NoneType:
@@ -979,7 +979,8 @@ class GenerateSchema:
                 choices.append(self.generate_schema(arg))
 
         if len(choices) == 1:
-            s = choices[0]
+            first_choice = choices[0]
+            s = first_choice[0] if isinstance(first_choice, tuple) else first_choice
         else:
             s = core_schema.union_schema(choices)
 
@@ -1130,7 +1131,9 @@ class GenerateSchema:
 
             arguments_schema = core_schema.arguments_schema(
                 [
-                    self._generate_parameter_schema(field_name, annotation)
+                    self._generate_parameter_schema(
+                        field_name, annotation, default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty)
+                    )
                     for field_name, annotation in annotations.items()
                 ],
                 metadata=build_metadata_dict(js_prefer_positional_arguments=True),
@@ -1436,6 +1439,7 @@ class GenerateSchema:
                 code='model-field-missing-annotation',
             )
 
+        return_type = replace_types(return_type, self._typevars_map)
         return_type_schema = self.generate_schema(return_type)
         # Apply serializers to computed field if there exist
         return_type_schema = self._apply_field_serializers(
