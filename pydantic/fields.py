@@ -785,7 +785,8 @@ def Field(  # noqa: C901
 
     if extra:
         warn(
-            'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
+            'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead. '
+            f'extra keys = {", ".join(extra.keys())}',
             DeprecationWarning,
         )
         if not json_schema_extra or json_schema_extra is _Unset:
