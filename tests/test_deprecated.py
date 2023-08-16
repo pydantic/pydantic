@@ -526,7 +526,7 @@ def test_v1_v2_custom_type_compatibility() -> None:
 def test_field_extra_arguments():
     m = (
         'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead. '
-        'extra keys = test, foo'
+        "(Extra keys: 'test', 'foo')"
     )
     with pytest.warns(PydanticDeprecatedSince20, match=m):
 
