@@ -18,10 +18,12 @@ Of course some apparently safe changes and bug fixes will inevitably break some 
 The following changes will **NOT** be considered breaking changes, and may occur in minor releases:
 
 * Changing the format of `ref` as used in JSON Schema.
-* Changing the `message` and `context` fields of `ValidationError` errors, `type` will not change &mdash; if you're programmatically parsing error messages, you should use `type`.
+* Changing the `msg`, `ctx`, and `loc` fields of `ValidationError` errors. `type` will not change &mdash; if you're programmatically parsing error messages, you should use `type`.
 * Adding new keys to `ValidationError` errors &mdash; e.g. we intend to add `line_number` and `column_number` to errors when validating JSON once we migrate to a new JSON parser.
 * Adding new `ValidationError` errors.
 * Changing `repr` even of public classes.
+
+In all cases we will aim to minimize churn and do so only when justified by the increase of quality of `pydantic` for users.
 
 ## Pydantic V3 and beyond
 
