@@ -4,7 +4,7 @@
 You can use `Json` data type to make Pydantic first load a raw JSON string. 
 Use `round_trip=True` when dumping the model to get the original JSON back. 
 It can also optionally be used to parse the loaded object into another type base on
-the type `Json` is parameterised with: 
+the type `Json` is parameterised with:
 
 ```py
 from typing import Any, List
