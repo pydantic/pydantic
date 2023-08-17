@@ -41,7 +41,7 @@ from typing_extensions import Annotated, Literal, assert_never
 
 from pydantic._internal import _annotated_handlers, _internal_dataclass
 
-from ._internal import _core_metadata, _core_utils, _mock_validator, _schema_generation_shared, _typing_extra
+from ._internal import _core_metadata, _core_utils, _mock_val_ser, _schema_generation_shared, _typing_extra
 from .config import JsonSchemaExtraCallable
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
@@ -2119,7 +2119,7 @@ def model_json_schema(
         The generated JSON Schema.
     """
     schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-    if isinstance(cls.__pydantic_validator__, _mock_validator.MockValidator):
+    if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
         cls.__pydantic_validator__.rebuild()
     assert '__pydantic_core_schema__' in cls.__dict__, 'this is a bug! please report it'
     return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
