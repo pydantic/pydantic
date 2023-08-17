@@ -98,7 +98,7 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
 
 
 class TypeAdapter(Generic[T]):
-    """usage docs: https://docs.pydantic.dev/2.0/usage/type_adapter/
+    """Usage docs: https://docs.pydantic.dev/2.2/usage/type_adapter/
 
     Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
