@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v211-2023-07-25" class="md-skip">
+        <a href="#v220-2023-08-17" class="md-skip">
           Skip to content
         </a>
       
@@ -543,6 +543,13 @@
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v220-2023-08-17" class="md-nav__link">
+    v2.2.0 (2023-08-17)
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v211-2023-07-25" class="md-nav__link">
@@ -2915,6 +2922,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v220-2023-08-17" class="md-nav__link">
+    v2.2.0 (2023-08-17)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v211-2023-07-25" class="md-nav__link">
     v2.1.1 (2023-07-25)
   </a>
@@ -3751,6 +3765,69 @@
 
   <h1>Changelog</h1>
 
+<h2 id="v220-2023-08-17">v2.2.0 (2023-08-17)<a class="headerlink" href="#v220-2023-08-17" title="Permanent link">&para;</a></h2>
+<p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.2.0"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
+<ul>
+<li>Split "pipx install" setup command into two commands on the documentation site by <a href="https://github.com/nomadmtb">@nomadmtb</a> in <a href="https://github.com/pydantic/pydantic/pull/6869">#6869</a></li>
+<li>Deprecate <code>Field.include</code> by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/6852">#6852</a></li>
+<li>Fix typo in default factory error msg by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/6880">#6880</a></li>
+<li>Simplify handling of typing.Annotated in GenerateSchema by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6887">#6887</a></li>
+<li>Re-enable fastapi tests in CI by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6883">#6883</a></li>
+<li>Make it harder to hit collisions with json schema defrefs by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6566">#6566</a></li>
+<li>Cleaner error for invalid input to <code>Path</code> fields by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/pydantic/pull/6903">#6903</a></li>
+<li><img alt="📝" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/1f4dd.svg" title=":memo:" /> support Coordinate Type by <a href="https://github.com/yezz123">@yezz123</a> in <a href="https://github.com/pydantic/pydantic/pull/6906">#6906</a></li>
+<li>Fix <code>ForwardRef</code> wrapper for py 3.10.0 (shim until bpo-45166) by <a href="https://github.com/randomir">@randomir</a> in <a href="https://github.com/pydantic/pydantic/pull/6919">#6919</a></li>
+<li>Fix misbehavior related to copying of RootModel by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6918">#6918</a></li>
+<li>Fix issue with recursion error caused by ParamSpec by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6923">#6923</a></li>
+<li>Add section about Constrained classes to the Migration Guide by <a href="https://github.com/Kludex">@Kludex</a> in <a href="https://github.com/pydantic/pydantic/pull/6924">#6924</a></li>
+<li>Use <code>main</code> branch for badge links by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/6925">#6925</a></li>
+<li>Add test for v1/v2 Annotated discrepancy by <a href="https://github.com/carlbordum">@carlbordum</a> in <a href="https://github.com/pydantic/pydantic/pull/6926">#6926</a></li>
+<li>Make the v1 mypy plugin work with both v1 and v2 by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6921">#6921</a></li>
+<li>Fix issue where generic models couldn't be parametrized with BaseModel by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6933">#6933</a></li>
+<li>Remove xfail for discriminated union with alias by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6938">#6938</a></li>
+<li>add field_serializer to computed_field by <a href="https://github.com/andresliszt">@andresliszt</a> in <a href="https://github.com/pydantic/pydantic/pull/6965">#6965</a></li>
+<li>Use union_schema with Type[Union[...]] by <a href="https://github.com/JeanArhancet">@JeanArhancet</a> in <a href="https://github.com/pydantic/pydantic/pull/6952">#6952</a></li>
+<li>Fix inherited typeddict attributes / config by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/6981">#6981</a></li>
+<li>fix dataclass annotated before validator called twice by <a href="https://github.com/davidhewitt">@davidhewitt</a> in <a href="https://github.com/pydantic/pydantic/pull/6998">#6998</a></li>
+<li>Update test-fastapi deselected tests by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/7014">#7014</a></li>
+<li>Fix validator doc format by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/7015">#7015</a></li>
+<li>Fix typo in docstring of model_json_schema by <a href="https://github.com/AdamVinch-Federated">@AdamVinch-Federated</a> in <a href="https://github.com/pydantic/pydantic/pull/7032">#7032</a></li>
+<li>remove unused "type ignores" with pyright by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/pydantic/pull/7026">#7026</a></li>
+<li>Add benchmark representing FastAPI startup time by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/7030">#7030</a></li>
+<li>Fix json_encoders for Enum subclasses by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/7029">#7029</a></li>
+<li>Update docstring of <code>ser_json_bytes</code> regarding base64 encoding by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/7052">#7052</a></li>
+<li>Allow <code>@validate_call</code> to work on async methods by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/7046">#7046</a></li>
+<li>Fix: mypy error with <code>Settings</code> and <code>SettingsConfigDict</code> by <a href="https://github.com/JeanArhancet">@JeanArhancet</a> in <a href="https://github.com/pydantic/pydantic/pull/7002">#7002</a></li>
+<li>Fix some typos (repeated words and it's/its) by <a href="https://github.com/eumiro">@eumiro</a> in <a href="https://github.com/pydantic/pydantic/pull/7063">#7063</a></li>
+<li>Fix the typo in docstring by <a href="https://github.com/harunyasar">@harunyasar</a> in <a href="https://github.com/pydantic/pydantic/pull/7062">#7062</a></li>
+<li>Docs: Fix broken URL in the pydantic-settings package recommendation by <a href="https://github.com/swetjen">@swetjen</a> in <a href="https://github.com/pydantic/pydantic/pull/6995">#6995</a></li>
+<li>Handle constraints being applied to schemas that don't accept it by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/6951">#6951</a></li>
+<li>Replace almost_equal_floats with math.isclose by <a href="https://github.com/eumiro">@eumiro</a> in <a href="https://github.com/pydantic/pydantic/pull/7082">#7082</a></li>
+<li>bump pydantic-core to 2.5.0 by <a href="https://github.com/davidhewitt">@davidhewitt</a> in <a href="https://github.com/pydantic/pydantic/pull/7077">#7077</a></li>
+<li>Add <code>short_version</code> and use it in links by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/7115">#7115</a></li>
+<li>📝 Add usage link to <code>RootModel</code> by <a href="https://github.com/Kludex">@Kludex</a> in <a href="https://github.com/pydantic/pydantic/pull/7113">#7113</a></li>
+<li>Revert "Fix default port for mongosrv DSNs (#6827)" by <a href="https://github.com/Kludex">@Kludex</a> in <a href="https://github.com/pydantic/pydantic/pull/7116">#7116</a></li>
+<li>Clarify validate_default and _Unset handling in usage docs and migration guide by <a href="https://github.com/benbenbang">@benbenbang</a> in <a href="https://github.com/pydantic/pydantic/pull/6950">#6950</a></li>
+<li>Tweak documentation of <code>Field.exclude</code> by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/7086">#7086</a></li>
+<li>Do not require <code>validate_assignment</code> to use <code>Field.frozen</code> by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/7103">#7103</a></li>
+<li>tweaks to <code>_core_utils</code> by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/pydantic/pull/7040">#7040</a></li>
+<li>Make DefaultDict working with set by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/7126">#7126</a></li>
+<li>Don't always require typing.Generic as a base for partially parametrized models by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7119">#7119</a></li>
+<li>Fix issue with JSON schema incorrectly using parent class core schema by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7020">#7020</a></li>
+<li>Fix xfailed test related to TypedDict and alias_generator by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6940">#6940</a></li>
+<li>Improve error message for NameEmail by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6939">#6939</a></li>
+<li>Fix generic computed fields by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/6988">#6988</a></li>
+<li>Reflect namedtuple default values during validation by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7144">#7144</a></li>
+<li>Update dependencies, fix pydantic-core usage, fix CI issues by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7150">#7150</a></li>
+<li>Add mypy 1.5.0 by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/7118">#7118</a></li>
+<li>Handle non-json native enum values by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/7056">#7056</a></li>
+<li>document <code>round_trip</code> in Json type documentation  by <a href="https://github.com/jc-louis">@jc-louis</a> in <a href="https://github.com/pydantic/pydantic/pull/7137">#7137</a></li>
+<li>Relax signature checks to better support builtins and C extension functions as validators by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/7101">#7101</a></li>
+<li>add union_mode='left_to_right' by <a href="https://github.com/davidhewitt">@davidhewitt</a> in <a href="https://github.com/pydantic/pydantic/pull/7151">#7151</a></li>
+<li>Include an error message hint for inherited ordering by <a href="https://github.com/yvalencia91">@yvalencia91</a> in <a href="https://github.com/pydantic/pydantic/pull/7124">#7124</a></li>
+<li>Fix one docs link and resolve some warnings for two others by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7153">#7153</a></li>
+<li>Include Field extra keys name in warning by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/7136">#7136</a></li>
+</ul>
 <h2 id="v211-2023-07-25">v2.1.1 (2023-07-25)<a class="headerlink" href="#v211-2023-07-25" title="Permanent link">&para;</a></h2>
 <p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.1.1"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
 <ul>

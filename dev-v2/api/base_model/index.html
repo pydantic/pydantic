@@ -3785,7 +3785,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="normal">1240</span>
 <span class="normal">1241</span>
 <span class="normal">1242</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;usage docs: https://docs.pydantic.dev/2.0/usage/models/</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.2/usage/models/</span>
 
 <span class="sd">    A base class for creating Pydantic models.</span>
 
@@ -4004,7 +4004,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="n">round_trip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/dev-v2/usage/serialization/#modelmodel_dump</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.2/usage/serialization/#modelmodel_dump</span>
 
 <span class="sd">        Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.</span>
 
@@ -4050,7 +4050,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="n">round_trip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/dev-v2/usage/serialization/#modelmodel_dump_json</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.2/usage/serialization/#modelmodel_dump_json</span>
 
 <span class="sd">        Generates a JSON representation of the model using Pydantic&#39;s `to_json` method.</span>
 
@@ -5043,8 +5043,8 @@ allow <code>self</code> as a field name.</p>
 
   
   <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_config" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -5808,7 +5808,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
     <span class="n">round_trip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/dev-v2/usage/serialization/#modelmodel_dump</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.2/usage/serialization/#modelmodel_dump</span>
 
 <span class="sd">    Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.</span>
 
@@ -6101,7 +6101,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
     <span class="n">round_trip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">warnings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/dev-v2/usage/serialization/#modelmodel_dump_json</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.2/usage/serialization/#modelmodel_dump_json</span>
 
 <span class="sd">    Generates a JSON representation of the model using Pydantic&#39;s `to_json` method.</span>
 
