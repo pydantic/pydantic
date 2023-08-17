@@ -467,8 +467,12 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
             return recurse(s, count_refs)
         ref = s['schema_ref']
         ref_counts[ref] += 1
-        if current_recursion_ref_count[ref] != 0:
-            involved_in_recursion[ref] = True
+
+        if ref_counts[ref] >= 2:
+            # If this model is involved in a recursion this should be detected
+            # on its second encounter, we can safely stop the walk here.
+            if current_recursion_ref_count[ref] != 0:
+                involved_in_recursion[ref] = True
             return s
 
         current_recursion_ref_count[ref] += 1
