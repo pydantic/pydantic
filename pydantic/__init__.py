@@ -117,6 +117,7 @@ __all__ = [
     'RedisDsn',
     'MongoDsn',
     'KafkaDsn',
+    'NatsDsn',
     'MySQLDsn',
     'MariaDBDsn',
     'validate_email',

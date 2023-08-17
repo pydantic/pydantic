@@ -39,6 +39,7 @@ __all__ = [
     'RedisDsn',
     'MongoDsn',
     'KafkaDsn',
+    'NatsDsn',
     'validate_email',
     'MySQLDsn',
     'MariaDBDsn',
@@ -132,8 +133,7 @@ MongoDsn = Union[
 KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)]
 """A type that will accept any Kafka DSN."""
 NatsDsn = Annotated[
-    MultiHostUrl,
-    UrlConstraints(allowed_schemes=['nats', 'tls', 'ws'], default_host='localhost', default_port=4222)
+    MultiHostUrl, UrlConstraints(allowed_schemes=['nats', 'tls', 'ws'], default_host='localhost', default_port=4222)
 ]
 """A type that will accept any NATS DSN.
 NATS is a connective technology built for the ever increasingly hyper-connected world.
