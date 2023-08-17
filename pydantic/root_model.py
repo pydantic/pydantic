@@ -7,6 +7,7 @@ from copy import copy, deepcopy
 
 from pydantic_core import PydanticUndefined
 
+from . import PydanticUserError
 from ._internal import _repr
 from .main import BaseModel, _object_setattr
 
@@ -42,6 +43,14 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     __pydantic_extra__ = None
 
     root: RootModelRootType
+
+    def __init_subclass__(cls, **kwargs):
+        extra = cls.model_config.get('extra')
+        if extra is not None:
+            raise PydanticUserError(
+                "`RootModel` does not support setting `model_config['extra']`", code='root-model-extra'
+            )
+        super().__init_subclass__(**kwargs)
 
     def __init__(__pydantic_self__, root: RootModelRootType = PydanticUndefined, **data) -> None:  # type: ignore
         __tracebackhide__ = True

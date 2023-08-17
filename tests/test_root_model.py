@@ -344,7 +344,6 @@ def test_root_model_base_model_equality():
     assert B(root=42) != R(42)
 
 
-@pytest.mark.xfail(reason='TODO: raise error for `extra` with `RootModel`')
 @pytest.mark.parametrize('extra_value', ['ignore', 'allow', 'forbid'])
 def test_extra_error(extra_value):
     with pytest.raises(PydanticUserError, match='extra'):
