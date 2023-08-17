@@ -4,7 +4,7 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
+from typing import Any, ContextManager, Iterable, NamedTuple, Optional, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr, IsPartialDict
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
@@ -738,7 +738,7 @@ def test_partial_creation_with_defer_build():
         for name, field in model.model_fields.items():
             if field.is_required() and name in optionals:
                 assert field.annotation is not None
-                override_fields[name] = ((field.annotation | None), FieldInfo.merge_field_infos(field, default=None))
+                override_fields[name] = (Optional[field.annotation], FieldInfo.merge_field_infos(field, default=None))
 
         return create_model(f'Partial{model.__name__}', __base__=model, **override_fields)
 
