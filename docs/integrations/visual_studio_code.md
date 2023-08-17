@@ -283,7 +283,7 @@ This is a limitation of dataclass transforms and cannot be fixed in pydantic.
 
     These details are only useful for other library authors, etc.
 
-This additional editor support works by implementing the proposed draft standard for [Dataclass Transform](https://github.com/microsoft/pyright/blob/master/specs/dataclass_transforms.md).
+This additional editor support works by implementing the proposed draft standard for [Dataclass Transform (PEP 681)](https://peps.python.org/pep-0681/).
 
 The proposed draft standard is written by Eric Traut, from the Microsoft team, the same author of the open source package Pyright (used by Pylance to provide Python support in VS Code).
 
