@@ -396,14 +396,11 @@ jobs:
           - os: ubuntu
             platform: linux
             target: aarch64
-            # mimalloc not supported on manylinux2014 cross-compile container
-            extra-build-args: --no-default-features
+
           - os: ubuntu
             platform: linux
             target: armv7
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
-            # mimalloc not supported on manylinux2014 cross-compile container
-            extra-build-args: --no-default-features
           # musllinux
           - os: ubuntu
             platform: linux
@@ -417,14 +414,10 @@ jobs:
             platform: linux
             target: ppc64le
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
-            # mimalloc not supported on manylinux2014 cross-compile container
-            extra-build-args: --no-default-features
           - os: ubuntu
             platform: linux
             target: s390x
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
-            # mimalloc not supported on manylinux2014 cross-compile container
-            extra-build-args: --no-default-features
         exclude:
           # Optimized PGO builds for x86_64 manylinux and windows follow a different matrix,
           # maybe in future maturin-action can support this automatically
