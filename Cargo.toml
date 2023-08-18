@@ -33,8 +33,6 @@ strum_macros = "0.25.2"
 serde_json = {version = "1.0.104", features = ["arbitrary_precision", "preserve_order"]}
 enum_dispatch = "0.3.8"
 serde = { version = "1.0.183", features = ["derive"] }
-# disabled for benchmarks since it makes microbenchmark performance more flakey
-mimalloc = { version = "0.1.30", optional = true, default-features = false, features = ["local_dynamic_tls"] }
 speedate = "0.12.0"
 smallvec = "1.11.0"
 ahash = "0.8.0"
@@ -53,7 +51,6 @@ crate-type = ["cdylib", "rlib"]
 [features]
 # must be enabled when building with `cargo build`, maturin enables this automatically
 extension-module = ["pyo3/extension-module"]
-default = ["mimalloc"]
 
 [profile.release]
 lto = "fat"
