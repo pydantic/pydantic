@@ -1606,6 +1606,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#root-model-extra" class="md-nav__link">
+    Cannot specify model_config['extra'] with RootModel
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2574,6 +2581,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#root-model-extra" class="md-nav__link">
+    Cannot specify model_config['extra'] with RootModel
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3329,7 +3343,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;invalid_annotated_type&#39;</span>
 </code></pre></div>
-<h2 id="type-adapter-config-unused"><code>config</code> is unused with TypeAdapter<a class="headerlink" href="#type-adapter-config-unused" title="Permanent link">&para;</a></h2>
+<h2 id="type-adapter-config-unused"><code>config</code> is unused with <code>TypeAdapter</code><a class="headerlink" href="#type-adapter-config-unused" title="Permanent link">&para;</a></h2>
 <p>You will get this error if you try to pass <code>config</code> to <code>TypeAdapter</code> when the type is a type that
 has its own config that cannot be overridden (currently this is only <code>BaseModel</code>, <code>TypedDict</code> and <code>dataclass</code>):</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
@@ -3360,6 +3374,20 @@ has its own config that cannot be overridden (currently this is only <code>BaseM
 
 
 <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">MyTypedDict</span><span class="p">)</span>  <span class="c1"># ok</span>
+</code></pre></div>
+<h2 id="root-model-extra">Cannot specify <code>model_config['extra']</code> with <code>RootModel</code><a class="headerlink" href="#root-model-extra" title="Permanent link">&para;</a></h2>
+<p>Because <code>RootModel</code> is not capable of storing or even accepting extra fields during initialization, we raise an error
+if you try to specify a value for the config setting <code>'extra'</code> when creating a subclass of <code>RootModel</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">RootModel</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">MyRootModel</span><span class="p">(</span><span class="n">RootModel</span><span class="p">):</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;extra&#39;</span><span class="p">:</span> <span class="s1">&#39;allow&#39;</span><span class="p">}</span>
+        <span class="n">root</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;root-model-extra&#39;</span>
 </code></pre></div>
 
 
