@@ -2381,14 +2381,16 @@ will still be used if the matching environment variable is not set.)</p>
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="n">auth_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;my_auth_key&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 
+    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;my_api_key&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+
     <span class="n">redis_dsn</span><span class="p">:</span> <span class="n">RedisDsn</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="s1">&#39;redis://user:pass@localhost:6379/1&#39;</span><span class="p">,</span>
-        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;service_redis_dsn&#39;</span><span class="p">,</span> <span class="s1">&#39;redis_url&#39;</span><span class="p">),</span>  <span class="c1"># (2)!</span>
+        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;service_redis_dsn&#39;</span><span class="p">,</span> <span class="s1">&#39;redis_url&#39;</span><span class="p">),</span>  <span class="c1"># (3)!</span>
     <span class="p">)</span>
     <span class="n">pg_dsn</span><span class="p">:</span> <span class="n">PostgresDsn</span> <span class="o">=</span> <span class="s1">&#39;postgres://user:pass@localhost:5432/foobar&#39;</span>
     <span class="n">amqp_dsn</span><span class="p">:</span> <span class="n">AmqpDsn</span> <span class="o">=</span> <span class="s1">&#39;amqp://user:pass@localhost:5672/&#39;</span>
 
-    <span class="n">special_function</span><span class="p">:</span> <span class="n">ImportString</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;math.cos&#39;</span>  <span class="c1"># (3)!</span>
+    <span class="n">special_function</span><span class="p">:</span> <span class="n">ImportString</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="s1">&#39;math.cos&#39;</span>  <span class="c1"># (4)!</span>
 
     <span class="c1"># to override domains:</span>
     <span class="c1"># export my_prefix_domains=&#39;[&quot;foo.com&quot;, &quot;bar.com&quot;]&#39;</span>
@@ -2398,13 +2400,14 @@ will still be used if the matching environment variable is not set.)</p>
     <span class="c1"># export my_prefix_more_settings=&#39;{&quot;foo&quot;: &quot;x&quot;, &quot;apple&quot;: 1}&#39;</span>
     <span class="n">more_settings</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">()</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;my_prefix_&#39;</span><span class="p">)</span>  <span class="c1"># (4)!</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;my_prefix_&#39;</span><span class="p">)</span>  <span class="c1"># (5)!</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">{</span>
 <span class="sd">    &#39;auth_key&#39;: &#39;xxx&#39;,</span>
+<span class="sd">    &#39;api_key&#39;: &#39;xxx&#39;,</span>
 <span class="sd">    &#39;redis_dsn&#39;: Url(&#39;redis://user:pass@localhost:6379/1&#39;),</span>
 <span class="sd">    &#39;pg_dsn&#39;: MultiHostUrl(&#39;postgres://user:pass@localhost:5432/foobar&#39;),</span>
 <span class="sd">    &#39;amqp_dsn&#39;: Url(&#39;amqp://user:pass@localhost:5672/&#39;),</span>
@@ -2420,6 +2423,13 @@ will still be used if the matching environment variable is not set.)</p>
    <code>my_auth_key</code> will be read instead of <code>auth_key</code>.</p>
 <p>Check the <a href="../fields/"><code>Field</code> documentation</a> for more information.</p>
 </li>
+<li>
+<p>The environment variable name is overridden using <code>alias</code>. In this case, the environment variable
+   <code>my_api_key</code> will be used for both validation and serialization instead of <code>api_key</code>.</p>
+</li>
+</ol>
+<p>Check the <a href="../fields/#field-aliases"><code>Field</code> documentation</a> for more information.</p>
+<ol>
 <li>
 <p>The <code>AliasChoices</code> class allows to have multiple environment variable names for a single field.
    The first environment variable that is found will be used.</p>
