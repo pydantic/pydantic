@@ -58,6 +58,47 @@ __all__ = 'BaseModel', 'create_model'
 _object_setattr = _model_construction.object_setattr
 
 
+def _recursive_model_construct(annotation: type, value: Any):
+    # Try treating the entire annotation as a BaseModel
+    try:
+        return annotation.model_construct(**value, _recursive=True)
+    except (AttributeError, TypeError):
+        pass
+    # If that doesn't work, we might have a special type we need to explode
+    origin = typing.get_origin(annotation)
+    # Early-exit so that issubclass doesn't throw
+    if origin is None:
+        return value
+    elif origin is types.UnionType or origin is typing.Union:
+        # TODO: union_mode/discriminators?
+        for possible_type in typing.get_args(annotation):
+            # The following could also probably be more explicit
+            result = _recursive_model_construct(possible_type, value)
+            if result != value:
+                return result
+    elif issubclass(origin, (str, bytes)):
+        return value
+    elif issubclass(origin, typing.Tuple):
+        args = typing.get_args(annotation)
+        if isinstance(args[-1], types.EllipsisType):
+            # format: tuple[T, ...]
+            member_type = args[0]
+            return tuple(_recursive_model_construct(member_type, v) for v in value)
+        else:
+            # format: tuple[A, B, C]
+            return tuple(_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args))
+    elif issubclass(origin, typing.Sequence):
+        member_type = typing.get_args(annotation)[0]
+        return [_recursive_model_construct(member_type, x) for x in value]
+    elif issubclass(origin, typing.Mapping):
+        # Unsure if we need to explode key_type as well as value_type
+        key_type, value_type = typing.get_args(annotation)
+        return {k: _recursive_model_construct(value_type, v) for k, v in value.items()}
+
+    # If none of the above, return the unchanged value
+    return value
+
+
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
     """Usage docs: https://docs.pydantic.dev/2.2/usage/models/
 
@@ -190,15 +231,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return self.__pydantic_fields_set__
 
     @classmethod
-    def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
+    def model_construct(
+        cls: type[Model], _fields_set: set[str] | None = None, _recursive: bool = False, **values: Any
+    ) -> Model:
         """Creates a new instance of the `Model` class with validated data.
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
-        Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
+        Behaves as if `Config.extra = 'allow'` was set since it adds all passed values.
 
         Args:
             _fields_set: The set of field names accepted for the Model instance.
+            _recursive: Whether to call `model_construct` on any annotated sub-model.
             values: Trusted or pre-validated data dictionary.
 
         Returns:
@@ -209,9 +253,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         defaults: dict[str, Any] = {}  # keeping this separate from `fields_values` helps us compute `_fields_set`
         for name, field in cls.model_fields.items():
             if field.alias and field.alias in values:
-                fields_values[name] = values.pop(field.alias)
+                if _recursive:
+                    fields_values[name] = _recursive_model_construct(field.annotation, values.pop(field.alias))
+                else:
+                    fields_values[name] = values.pop(field.alias)
             elif name in values:
-                fields_values[name] = values.pop(name)
+                if _recursive:
+                    fields_values[name] = _recursive_model_construct(field.annotation, values.pop(name))
+                else:
+                    fields_values[name] = values.pop(name)
             elif not field.is_required():
                 defaults[name] = field.get_default(call_default_factory=True)
         if _fields_set is None:

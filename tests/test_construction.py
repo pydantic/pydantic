@@ -1,5 +1,6 @@
 import pickle
-from typing import Any, List, Optional
+from collections.abc import Sequence
+from typing import Any, List, Optional, Union
 
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
@@ -60,6 +61,167 @@ def test_construct_keep_order():
     assert instance == instance_construct
     assert instance.model_dump() == instance_construct.model_dump()
     assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+
+def test_recursive_construct_simple():
+    class AnotherModel(BaseModel):
+        model: Model
+        c: int = 20
+
+    instance = AnotherModel(model=Model(a=1.3, b=321), c=9)
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+
+def test_recursive_construct_optional():
+    class AnotherModel(BaseModel):
+        model: Union[Model, None]
+        c: int = 20
+
+    instance = AnotherModel(model=Model(a=1.3, b=321), c=9)
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+    instance = AnotherModel(model=None, c=9)
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+    class AnotherModel(BaseModel):
+        model: Optional[Model]
+        c: int = 20
+
+    instance = AnotherModel(model=Model(a=1.3, b=321), c=9)
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+    instance = AnotherModel(model=None, c=9)
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+    class AnotherModel(BaseModel):
+        model: Model | None
+        c: int = 20
+
+    instance = AnotherModel(model=Model(a=1.3, b=321), c=9)
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+    instance = AnotherModel(model=None, c=9)
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+
+def test_recursive_construct_union():
+    class ModelWithExtra(BaseModel):
+        a: float
+        b: int
+        extra: str
+
+    class AnotherModel(BaseModel):
+        model: Union[Model, ModelWithExtra]
+        c: int
+
+    instance = AnotherModel(model=ModelWithExtra(a=1.3, b=321, extra='extra'), c=9)
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+
+    assert instance != instance_construct
+    assert isinstance(instance_construct.model, Model)  # First of the union was picked
+
+
+def test_recursive_construct_tuple():
+    class AnotherModel(BaseModel):
+        tup: tuple[int, Model]
+
+    instance = AnotherModel(tup=(10, Model(a=1.3, b=321)))
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+    # Don't complain when incorrect
+    incorrect_instance = {'tup': 'incorrect'}
+    instance_construct = AnotherModel.model_construct(**incorrect_instance, _recursive=True)
+
+    class AnotherModel(BaseModel):
+        tup: tuple[int, tuple[int, Model]]
+
+    instance = AnotherModel(tup=(10, (20, Model(a=1.3, b=321))))
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+    # Don't complain when incorrect
+    incorrect_instance = {'tup': (10, 'incorrect')}
+    instance_construct = AnotherModel.model_construct(**incorrect_instance, _recursive=True)
+
+    # Test tuple with ellipsis
+
+    class AnotherModel(BaseModel):
+        tup: tuple[Model, ...]
+
+    instance = AnotherModel(tup=(Model(a=1.3, b=321), Model(a=1.3, b=321)))
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+
+def test_recursive_construct_list():
+    # annotated list
+    class AnotherModel(BaseModel):
+        lis: list[Model]
+
+    instance = AnotherModel(lis=[Model(a=1.3, b=321), Model(a=2.3, b=322)])
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+    # list or nested list
+    class AnotherModel(BaseModel):
+        lis: list[Model | list[Model]]
+
+    instance = AnotherModel(lis=[Model(a=1.3, b=321), [Model(a=2.3, b=322)]])
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+    # generic list types
+    class AnotherModel(BaseModel):
+        lis: List[Model | Sequence[Model]]
+
+    instance = AnotherModel(lis=[Model(a=1.3, b=321), [Model(a=2.3, b=322)]])
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+
+def test_recursive_construct_fields_set():
+    class AnotherModel(BaseModel):
+        model: Model
+        c: int
+
+    instance = AnotherModel(model=Model(a=1.3, b=321), c=9)
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+
+    # Accounts for 'model' and 'c'
+    assert instance.model_fields_set == instance_construct.model_fields_set
+    # Accounts for 'a' and 'b'
+    assert instance.model.model_fields_set == instance_construct.model.model_fields_set
 
 
 def test_large_any_str():
