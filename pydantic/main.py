@@ -1,6 +1,7 @@
 """Logic for creating models."""
 from __future__ import annotations as _annotations
 
+import sys
 import types
 import typing
 import warnings
@@ -62,15 +63,15 @@ __all__ = 'BaseModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
 
-try:
+if sys.version_info >= (3, 10):
 
-    def _is_union(input):
-        return input is typing.Union or input is types.UnionType
+    def _is_union(origin):
+        return origin is typing.Union or origin is types.UnionType
 
-except AttributeError:
+else:
 
-    def _is_union(input):
-        return input is typing.Union
+    def _is_union(origin):
+        return origin is typing.Union
 
 
 def _recursive_model_construct(annotation: type | None, value: Any):
