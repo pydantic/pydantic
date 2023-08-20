@@ -2500,3 +2500,24 @@ def test_is_pydantic_dataclass():
 
     assert is_pydantic_dataclass(PydanticDataclass) is True
     assert is_pydantic_dataclass(StdLibDataclass) is False
+
+def test_can_inherit_stdlib_dataclasses_with_defaults():
+    @dataclasses.dataclass
+    class Base:
+        a: None = None
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model().a is None
+
+
+def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
+    @dataclasses.dataclass
+    class Base:
+        a: int = dataclasses.field(default=5)
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model().a == 5
