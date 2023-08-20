@@ -1,5 +1,5 @@
 import pickle
-import platform
+import sys
 from collections.abc import Sequence
 from typing import Any, List, Optional, Tuple, Union
 
@@ -186,7 +186,7 @@ def test_recursive_construct_list():
 
 
 @pytest.mark.skipif(
-    platform.python_version_tuple() < ('3', '10'),
+    sys.version_info < (3, 10),
     reason='A | B syntax is not implemented yet',
 )
 def test_recursive_construct_modern_union():
@@ -203,8 +203,8 @@ def test_recursive_construct_modern_union():
 
 
 @pytest.mark.skipif(
-    platform.python_version_tuple() < ('3', '10'),
-    reason='A | B syntax is not implemented yet',
+    sys.version_info < (3, 9),
+    reason='Generic indexing is not supported yet',
 )
 def test_recursive_construct_modern_generic():
     # generic list types
