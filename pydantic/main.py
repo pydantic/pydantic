@@ -15,7 +15,7 @@ from pydantic_core import PydanticUndefined
 try:
     from typing import get_args, get_origin
 except ImportError:
-    from typing_extensions import get_args, get_origin
+    from typing_extensions import get_args, get_origin  # type: ignore
 
 from ._internal import (
     _annotated_handlers,
@@ -82,7 +82,7 @@ def _recursive_model_construct(annotation: type | None, value: Any):
     try:
         if issubclass(annotation, BaseModel):
             return annotation.model_construct(**value, _recursive=True)
-    except TypeError:
+    except (TypeError, ValueError):
         pass
     # If that doesn't work, we might have a special type we need to explode
     origin = get_origin(annotation)
@@ -103,10 +103,10 @@ def _recursive_model_construct(annotation: type | None, value: Any):
         if isinstance(args[-1], type(Ellipsis)):
             # format: tuple[T, ...]
             member_type = args[0]
-            return tuple([_recursive_model_construct(member_type, v) for v in value])
+            return tuple(_recursive_model_construct(member_type, v) for v in value)
         else:
             # format: tuple[A, B, C]
-            return tuple([_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args)])
+            return tuple(_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args))
     elif issubclass(origin, typing.Sequence):
         member_type = get_args(annotation)[0]
         return [_recursive_model_construct(member_type, x) for x in value]
