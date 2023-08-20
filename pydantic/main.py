@@ -11,6 +11,11 @@ import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined
 
+try:
+    from typing import get_args, get_origin
+except ImportError:
+    from typing_extensions import get_args, get_origin
+
 from ._internal import (
     _annotated_handlers,
     _config,
@@ -57,30 +62,40 @@ __all__ = 'BaseModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
 
+try:
 
-def _recursive_model_construct(annotation: type, value: Any):
+    def _is_union(input):
+        return input is typing.Union or input is types.UnionType
+
+except AttributeError:
+
+    def _is_union(input):
+        return input is typing.Union
+
+
+def _recursive_model_construct(annotation: type | None, value: Any):
     # Try treating the entire annotation as a BaseModel
     try:
         return annotation.model_construct(**value, _recursive=True)
     except (AttributeError, TypeError):
         pass
     # If that doesn't work, we might have a special type we need to explode
-    origin = typing.get_origin(annotation)
+    origin = get_origin(annotation)
     # Early-exit so that issubclass doesn't throw
     if origin is None:
         return value
-    elif origin is types.UnionType or origin is typing.Union:
+    elif _is_union(origin):  # or origin is types.UnionType:
         # TODO: union_mode/discriminators?
-        for possible_type in typing.get_args(annotation):
+        for possible_type in get_args(annotation):
             # The following could also probably be more explicit
             result = _recursive_model_construct(possible_type, value)
             if result != value:
                 return result
-    elif issubclass(origin, (str, bytes)):
+    elif isinstance(origin, (str, bytes)):
         return value
     elif issubclass(origin, typing.Tuple):
-        args = typing.get_args(annotation)
-        if isinstance(args[-1], types.EllipsisType):
+        args = get_args(annotation)
+        if isinstance(args[-1], type(Ellipsis)):
             # format: tuple[T, ...]
             member_type = args[0]
             return tuple(_recursive_model_construct(member_type, v) for v in value)
@@ -88,11 +103,11 @@ def _recursive_model_construct(annotation: type, value: Any):
             # format: tuple[A, B, C]
             return tuple(_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args))
     elif issubclass(origin, typing.Sequence):
-        member_type = typing.get_args(annotation)[0]
+        member_type = get_args(annotation)[0]
         return [_recursive_model_construct(member_type, x) for x in value]
     elif issubclass(origin, typing.Mapping):
         # Unsure if we need to explode key_type as well as value_type
-        key_type, value_type = typing.get_args(annotation)
+        key_type, value_type = get_args(annotation)
         return {k: _recursive_model_construct(value_type, v) for k, v in value.items()}
 
     # If none of the above, return the unchanged value

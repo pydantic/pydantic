@@ -1,6 +1,7 @@
 import pickle
+import platform
 from collections.abc import Sequence
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
@@ -141,7 +142,7 @@ def test_recursive_construct_union():
 
 def test_recursive_construct_tuple():
     class AnotherModel(BaseModel):
-        tup: tuple[int, Model]
+        tup: Tuple[int, Model]
 
     instance = AnotherModel(tup=(10, Model(a=1.3, b=321)))
     instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
@@ -154,7 +155,7 @@ def test_recursive_construct_tuple():
     instance_construct = AnotherModel.model_construct(**incorrect_instance, _recursive=True)
 
     class AnotherModel(BaseModel):
-        tup: tuple[int, tuple[int, Model]]
+        tup: Tuple[int, Tuple[int, Model]]
 
     instance = AnotherModel(tup=(10, (20, Model(a=1.3, b=321))))
     instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
@@ -167,9 +168,8 @@ def test_recursive_construct_tuple():
     instance_construct = AnotherModel.model_construct(**incorrect_instance, _recursive=True)
 
     # Test tuple with ellipsis
-
     class AnotherModel(BaseModel):
-        tup: tuple[Model, ...]
+        tup: Tuple[Model, ...]
 
     instance = AnotherModel(tup=(Model(a=1.3, b=321), Model(a=1.3, b=321)))
     instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
@@ -181,7 +181,7 @@ def test_recursive_construct_tuple():
 def test_recursive_construct_list():
     # annotated list
     class AnotherModel(BaseModel):
-        lis: list[Model]
+        lis: List[Model]
 
     instance = AnotherModel(lis=[Model(a=1.3, b=321), Model(a=2.3, b=322)])
     instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
@@ -191,7 +191,7 @@ def test_recursive_construct_list():
 
     # list or nested list
     class AnotherModel(BaseModel):
-        lis: list[Model | list[Model]]
+        lis: List[Union[Model, List[Model]]]
 
     instance = AnotherModel(lis=[Model(a=1.3, b=321), [Model(a=2.3, b=322)]])
     instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
@@ -201,7 +201,24 @@ def test_recursive_construct_list():
 
     # generic list types
     class AnotherModel(BaseModel):
-        lis: List[Model | Sequence[Model]]
+        lis: Sequence[Union[Model, Sequence[Model]]]
+
+    instance = AnotherModel(lis=[Model(a=1.3, b=321), [Model(a=2.3, b=322)]])
+    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+
+@pytest.mark.skipif(
+    platform.python_version_tuple() < ('3', '10'),
+    reason='A | B syntax is not implemented yet',
+)
+def test_recursive_construct_modern_union():
+    """Make sure modern 'A | B' syntax works the same as 'Union[A, B]'"""
+
+    class AnotherModel(BaseModel):
+        lis: List[Model | List[Model]]
 
     instance = AnotherModel(lis=[Model(a=1.3, b=321), [Model(a=2.3, b=322)]])
     instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
