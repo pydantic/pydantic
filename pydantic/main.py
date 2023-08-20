@@ -103,10 +103,10 @@ def _recursive_model_construct(annotation: type | None, value: Any):
         if isinstance(args[-1], type(Ellipsis)):
             # format: tuple[T, ...]
             member_type = args[0]
-            return tuple(_recursive_model_construct(member_type, v) for v in value)
+            return tuple([_recursive_model_construct(member_type, v) for v in value])
         else:
             # format: tuple[A, B, C]
-            return tuple(_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args))
+            return tuple([_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args)])
     elif issubclass(origin, typing.Sequence):
         member_type = get_args(annotation)[0]
         return [_recursive_model_construct(member_type, x) for x in value]
