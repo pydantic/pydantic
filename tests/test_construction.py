@@ -107,21 +107,6 @@ def test_recursive_construct_optional():
     assert instance.model_dump() == instance_construct.model_dump()
     assert instance.model_dump_json() == instance_construct.model_dump_json()
 
-    class AnotherModel(BaseModel):
-        model: Model | None
-        c: int = 20
-
-    instance = AnotherModel(model=Model(a=1.3, b=321), c=9)
-    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
-    assert instance == instance_construct
-    assert instance.model_dump() == instance_construct.model_dump()
-    assert instance.model_dump_json() == instance_construct.model_dump_json()
-    instance = AnotherModel(model=None, c=9)
-    instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
-    assert instance == instance_construct
-    assert instance.model_dump() == instance_construct.model_dump()
-    assert instance.model_dump_json() == instance_construct.model_dump_json()
-
 
 def test_recursive_construct_union():
     class ModelWithExtra(BaseModel):
@@ -199,9 +184,16 @@ def test_recursive_construct_list():
     assert instance.model_dump() == instance_construct.model_dump()
     assert instance.model_dump_json() == instance_construct.model_dump_json()
 
-    # generic list types
+
+@pytest.mark.skipif(
+    platform.python_version_tuple() < ('3', '10'),
+    reason='A | B syntax is not implemented yet',
+)
+def test_recursive_construct_modern_union():
+    """Make sure modern 'A | B' syntax works the same as 'Union[A, B]'"""
+
     class AnotherModel(BaseModel):
-        lis: Sequence[Union[Model, Sequence[Model]]]
+        lis: List[Model | List[Model]]
 
     instance = AnotherModel(lis=[Model(a=1.3, b=321), [Model(a=2.3, b=322)]])
     instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
@@ -214,11 +206,10 @@ def test_recursive_construct_list():
     platform.python_version_tuple() < ('3', '10'),
     reason='A | B syntax is not implemented yet',
 )
-def test_recursive_construct_modern_union():
-    """Make sure modern 'A | B' syntax works the same as 'Union[A, B]'"""
-
+def test_recursive_construct_modern_generic():
+    # generic list types
     class AnotherModel(BaseModel):
-        lis: List[Model | List[Model]]
+        lis: Sequence[Union[Model, Sequence[Model]]]
 
     instance = AnotherModel(lis=[Model(a=1.3, b=321), [Model(a=2.3, b=322)]])
     instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)

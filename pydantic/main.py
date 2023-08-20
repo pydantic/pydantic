@@ -75,14 +75,18 @@ else:
 
 
 def _recursive_model_construct(annotation: type | None, value: Any):
+    # No annotation? Early exit
+    if annotation is None:
+        return value
     # Try treating the entire annotation as a BaseModel
     try:
-        return annotation.model_construct(**value, _recursive=True)
-    except (AttributeError, TypeError):
+        if issubclass(annotation, BaseModel):
+            return annotation.model_construct(**value, _recursive=True)
+    except TypeError:
         pass
     # If that doesn't work, we might have a special type we need to explode
     origin = get_origin(annotation)
-    # Early-exit so that issubclass doesn't throw
+    # Early-exit so that issubclass() doesn't throw
     if origin is None:
         return value
     elif _is_union(origin):  # or origin is types.UnionType:
