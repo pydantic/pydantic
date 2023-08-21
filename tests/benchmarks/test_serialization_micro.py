@@ -386,6 +386,7 @@ def test_to_string_direct(benchmark):
     benchmark(s.to_json, 123)
 
 
+@pytest.mark.benchmark(group='filter')
 def test_filter(benchmark):
     v = SchemaSerializer(core_schema.list_schema(core_schema.any_schema()))
     assert v.to_python(['a', 'b', 'c', 'd', 'e'], include={-1, -2}) == ['d', 'e']
