@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 
 from collections import deque
 from dataclasses import dataclass, field
-from functools import partial, partialmethod
+from functools import cached_property, partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
 from itertools import islice
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, Iterable, TypeVar, Union
@@ -19,12 +19,6 @@ from ._typing_extra import get_function_type_hints
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo
     from ..functional_validators import FieldValidatorModes
-
-try:
-    from functools import cached_property  # type: ignore
-except ImportError:
-    # python 3.7
-    cached_property = None
 
 
 @dataclass(**slots_true)
@@ -725,17 +719,10 @@ def unwrap_wrapped_function(
     Returns:
         The underlying function of the wrapped function.
     """
-    all: set[Any] = {property}
+    all: set[Any] = {property, cached_property}
 
     if unwrap_partial:
         all.update({partial, partialmethod})
-
-    try:
-        from functools import cached_property  # type: ignore
-    except ImportError:
-        cached_property = type('', (), {})
-    else:
-        all.add(cached_property)
 
     if unwrap_class_static_method:
         all.update({staticmethod, classmethod})

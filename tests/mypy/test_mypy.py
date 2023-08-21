@@ -102,14 +102,7 @@ cases = (
         ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
-        pytest.param(
-            'pyproject-default.toml',
-            'computed_fields.py',
-            marks=pytest.mark.skipif(
-                sys.version_info < (3, 8),
-                reason='cached_property is only available in Python 3.8+, errors are different with mypy 0.971',
-            ),
-        ),
+        ('pyproject-default.toml', 'computed_fields.py'),
     ]
 )
 

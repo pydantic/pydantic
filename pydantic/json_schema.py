@@ -1539,9 +1539,7 @@ class GenerateJsonSchema:
             if positional_possible:
                 return self.p_arguments_schema(p_only_arguments + kw_or_p_arguments, var_args_schema)
 
-        # TODO: When support for Python 3.7 is dropped, uncomment the block on `test_json_schema`
-        # to cover this test case.
-        raise PydanticInvalidForJsonSchema(  # pragma: no cover
+        raise PydanticInvalidForJsonSchema(
             'Unable to generate JSON schema for arguments validator with positional-only and keyword-only arguments'
         )
 

@@ -10,7 +10,7 @@ Pydantic has a few dependencies:
 * [`typing-extensions`](https://pypi.org/project/typing-extensions/): Backport of the standard library `typing` module.
 * [`annotated-types`](https://pypi.org/project/annotated-types/): Reusable constraint types to use with `typing.Annotated`.
 
-If you've got Python 3.7+ and `pip` installed, you're good to go.
+If you've got Python 3.8+ and `pip` installed, you're good to go.
 
 Pydantic is also available on [conda](https://www.anaconda.com) under the [conda-forge](https://conda-forge.org)
 channel:
