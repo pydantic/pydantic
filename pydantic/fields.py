@@ -6,12 +6,7 @@ import inspect
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
-
-try:
-    from functools import cached_property  # type: ignore
-except ImportError:
-    # python 3.7
-    cached_property = None
+from functools import cached_property
 from typing import Any, ClassVar
 from warnings import warn
 
