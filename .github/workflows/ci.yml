@@ -180,7 +180,7 @@ jobs:
       matrix:
         # test recent mypy versions on 3.10 and mypy 1.0.1 on all supported python versions
         # if you change the value in the lockfile add the old value to this list
-        mypy-version: ['1.0.1', 'lockfile', '1.2.0', '1.4.1', '1.5.0']
+        mypy-version: ['1.0.1', 'lockfile', '1.2.0', '1.4.1', '1.5.1']
         python-version: ['3.10']
         include:
           - mypy-version: 'lockfile'
@@ -208,7 +208,7 @@ jobs:
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        if [ ${{ matrix.mypy-version }} == '1.5.0' ]; then
+        if [ ${{ matrix.mypy-version }} == '1.5.1' ]; then
           # mypy 1.5.0 only supports 3.8 and newer, so adjust pyproject.toml
           sed -i "s/requires-python = '>=3.7'/requires-python = '>=3.8'/g" pyproject.toml
         fi
