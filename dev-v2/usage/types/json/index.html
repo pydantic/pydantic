@@ -80,11 +80,6 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
-        
-        <a href="#json_objb-1" class="md-skip">
-          Skip to content
-        </a>
-      
     </div>
     <div data-md-component="announce">
       
@@ -750,8 +745,6 @@
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
-      
-        
       
       
       <a href="./" class="md-nav__link md-nav__link--active">
@@ -2071,8 +2064,6 @@
   
   
   
-    
-  
   
 </nav>
                   </div>
@@ -2091,63 +2082,73 @@
   
 
 
+  <h1>JSON</h1>
+
 <dl>
 <dt><code>Json</code></dt>
 <dd>a special type wrapper which loads JSON before parsing</dd>
 </dl>
 <p>You can use the <code>Json</code> data type to make Pydantic first load a raw JSON string before
 validating the loaded data into the parametrized type:</p>
-<p>```py group='json'
-from typing import Any, List</p>
-<p>from pydantic import BaseModel, Json, ValidationError</p>
-<p>class AnyJsonModel(BaseModel):
-    json_obj: Json[Any]</p>
-<p>class ConstrainedJsonModel(BaseModel):
-    json_obj: Json[List[int]]</p>
-<p>print(AnyJsonModel(json_obj='{"b": 1}'))</p>
-<h1 id="json_objb-1">&gt; json_obj={'b': 1}<a class="headerlink" href="#json_objb-1" title="Permanent link">&para;</a></h1>
-<p>print(ConstrainedJsonModel(json_obj='[1, 2, 3]'))</p>
-<h1 id="json_obj1-2-3">&gt; json_obj=[1, 2, 3]<a class="headerlink" href="#json_obj1-2-3" title="Permanent link">&para;</a></h1>
-<p>try:
-    ConstrainedJsonModel(json_obj=12)
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for ConstrainedJsonModel
-    json_obj
-      JSON input should be string, bytes or bytearray [type=json_type, input_value=12, input_type=int]
-    """</p>
-<p>try:
-    ConstrainedJsonModel(json_obj='[a, b]')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for ConstrainedJsonModel
-    json_obj
-      Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value='[a, b]', input_type=str]
-    """</p>
-<p>try:
-    ConstrainedJsonModel(json_obj='["a", "b"]')
-except ValidationError as e:
-    print(e)
-    """
-    2 validation errors for ConstrainedJsonModel
-    json_obj.0
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
-    json_obj.1
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='b', input_type=str]
-    """
-<div class="highlight"><pre><span></span><code>When you dump the model using `model_dump` or `model_dump_json`, the dumped value will be the result of validation,
-not the original JSON string. However, you can use the argument `round_trip=True` to get the original JSON string back:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 
-```py group=&#39;json&#39;
-print(ConstrainedJsonModel(json_obj=&#39;[1, 2, 3]&#39;).model_dump_json())
-#&gt; {&quot;json_obj&quot;:[1,2,3]}
-print(
-    ConstrainedJsonModel(json_obj=&#39;[1, 2, 3]&#39;).model_dump_json(round_trip=True)
-)
-#&gt; {&quot;json_obj&quot;:&quot;[1,2,3]&quot;}
-</code></pre></div></p>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Json</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">AnyJsonModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">json_obj</span><span class="p">:</span> <span class="n">Json</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">ConstrainedJsonModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">json_obj</span><span class="p">:</span> <span class="n">Json</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">AnyJsonModel</span><span class="p">(</span><span class="n">json_obj</span><span class="o">=</span><span class="s1">&#39;{&quot;b&quot;: 1}&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; json_obj={&#39;b&#39;: 1}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ConstrainedJsonModel</span><span class="p">(</span><span class="n">json_obj</span><span class="o">=</span><span class="s1">&#39;[1, 2, 3]&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; json_obj=[1, 2, 3]</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ConstrainedJsonModel</span><span class="p">(</span><span class="n">json_obj</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for ConstrainedJsonModel</span>
+<span class="sd">    json_obj</span>
+<span class="sd">      JSON input should be string, bytes or bytearray [type=json_type, input_value=12, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ConstrainedJsonModel</span><span class="p">(</span><span class="n">json_obj</span><span class="o">=</span><span class="s1">&#39;[a, b]&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for ConstrainedJsonModel</span>
+<span class="sd">    json_obj</span>
+<span class="sd">      Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value=&#39;[a, b]&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ConstrainedJsonModel</span><span class="p">(</span><span class="n">json_obj</span><span class="o">=</span><span class="s1">&#39;[&quot;a&quot;, &quot;b&quot;]&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for ConstrainedJsonModel</span>
+<span class="sd">    json_obj.0</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;a&#39;, input_type=str]</span>
+<span class="sd">    json_obj.1</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;b&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>When you dump the model using <code>model_dump</code> or <code>model_dump_json</code>, the dumped value will be the result of validation,
+not the original JSON string. However, you can use the argument <code>round_trip=True</code> to get the original JSON string back:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">print</span><span class="p">(</span><span class="n">ConstrainedJsonModel</span><span class="p">(</span><span class="n">json_obj</span><span class="o">=</span><span class="s1">&#39;[1, 2, 3]&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="c1">#&gt; {&quot;json_obj&quot;:[1,2,3]}</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">ConstrainedJsonModel</span><span class="p">(</span><span class="n">json_obj</span><span class="o">=</span><span class="s1">&#39;[1, 2, 3]&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">round_trip</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="c1">#&gt; {&quot;json_obj&quot;:&quot;[1,2,3]&quot;}</span>
+</code></pre></div>
 
 
 
