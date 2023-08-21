@@ -2890,7 +2890,7 @@ def test_schema_generator_customize_type_constraints_order() -> None:
 
 
 def test_shadow_attribute() -> None:
-    """_summary_"""
+    """https://github.com/pydantic/pydantic/issues/7108"""
 
     class Model(BaseModel):
         foo: str
