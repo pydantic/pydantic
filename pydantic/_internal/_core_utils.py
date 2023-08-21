@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable, Hashable, Iterable, TypeVar, Union, cast
+from typing import Any, Callable, Hashable, Iterable, TypeVar, Union
 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypeAliasType, TypeGuard, get_args
@@ -29,7 +29,7 @@ CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
 
 _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
-_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozenset'}
+_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'set', 'frozenset'}
 
 
 def is_core_schema(
@@ -52,9 +52,7 @@ def is_function_with_inner_schema(
 
 def is_list_like_schema_with_items_schema(
     schema: CoreSchema,
-) -> TypeGuard[
-    core_schema.ListSchema | core_schema.TupleVariableSchema | core_schema.SetSchema | core_schema.FrozenSetSchema
-]:
+) -> TypeGuard[core_schema.ListSchema | core_schema.SetSchema | core_schema.FrozenSetSchema]:
     return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
@@ -248,23 +246,8 @@ class _WalkCoreSchema:
             schema['items_schema'] = self.walk(items_schema, f)
         return schema
 
-    def handle_tuple_variable_schema(
-        self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema = cast(core_schema.TupleVariableSchema, schema)
-        items_schema = schema.get('items_schema')
-        if items_schema is not None:
-            schema['items_schema'] = self.walk(items_schema, f)
-        return schema
-
-    def handle_tuple_positional_schema(
-        self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema, f: Walk
-    ) -> core_schema.CoreSchema:
-        schema = cast(core_schema.TuplePositionalSchema, schema)
-        schema['items_schema'] = [self.walk(v, f) for v in schema['items_schema']]
-        extra_schema = schema.get('extra_schema')
-        if extra_schema is not None:
-            schema['extra_schema'] = self.walk(extra_schema, f)
+    def handle_tuple_schema(self, schema: core_schema.TupleSchema, f: Walk) -> core_schema.CoreSchema:
+        schema['items_schema'] = [self.walk(x, f) for x in schema['items_schema']]
         return schema
 
     def handle_dict_schema(self, schema: core_schema.DictSchema, f: Walk) -> core_schema.CoreSchema:

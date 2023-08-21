@@ -545,34 +545,6 @@ def test_camel2snake(value: str, result: str) -> None:
 @pytest.mark.parametrize(
     'params,expected_extra_schema',
     (
-        pytest.param({}, {}, id='Positional tuple without extra_schema'),
-        pytest.param(
-            {'extra_schema': core_schema.float_schema()},
-            {'extra_schema': {'type': 'str'}},
-            id='Positional tuple with extra_schema',
-        ),
-    ),
-)
-def test_handle_tuple_positional_schema(params, expected_extra_schema):
-    schema = core_schema.tuple_positional_schema([core_schema.str_schema()], **params)
-
-    def walk(s, recurse):
-        # change extra_schema['type'] to 'str'
-        if s['type'] == 'float':
-            s['type'] = 'str'
-        return s
-
-    schema = _WalkCoreSchema().handle_tuple_positional_schema(schema, walk)
-    assert schema == {
-        **expected_extra_schema,
-        'items_schema': [{'type': 'str'}],
-        'type': 'tuple-positional',
-    }
-
-
-@pytest.mark.parametrize(
-    'params,expected_extra_schema',
-    (
         pytest.param({}, {}, id='Model fields without extra_validator'),
         pytest.param(
             {'extra_validator': core_schema.float_schema()},

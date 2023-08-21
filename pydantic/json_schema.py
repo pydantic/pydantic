@@ -781,7 +781,7 @@ class GenerateJsonSchema:
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
-    def tuple_positional_schema(self, schema: core_schema.TuplePositionalSchema) -> JsonSchemaValue:
+    def tuple_schema(self, schema: core_schema.TupleSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a positional tuple schema e.g. `Tuple[int, str, bool]`.
 
         Args:
@@ -790,29 +790,32 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema: JsonSchemaValue = {'type': 'array'}
-        json_schema['minItems'] = len(schema['items_schema'])
-        prefixItems = [self.generate_inner(item) for item in schema['items_schema']]
-        if prefixItems:
-            json_schema['prefixItems'] = prefixItems
-        if 'extra_schema' in schema:
-            json_schema['items'] = self.generate_inner(schema['extra_schema'])
+        items_schema = schema['items_schema']
+        variadic_item_index = schema.get('variadic_item_index')
+
+        if variadic_item_index is None:
+            prefix_items = [self.generate_inner(item) for item in items_schema]
+            suffix_items = []
+            min_items = len(items_schema)
+            max_items: int | None = len(items_schema)
         else:
-            json_schema['maxItems'] = len(schema['items_schema'])
-        self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
-        return json_schema
+            prefix_items = [self.generate_inner(item) for item in items_schema[:variadic_item_index]]
+            # Note the first suffix item might be repeated, but JSON schema can't express this
+            suffix_items = [self.generate_inner(item) for item in items_schema[variadic_item_index:]]
+            min_items = len(items_schema) - 1 or None  # don't specify min items for variable-length tuple with no min
+            max_items = None
 
-    def tuple_variable_schema(self, schema: core_schema.TupleVariableSchema) -> JsonSchemaValue:
-        """Generates a JSON schema that matches a variable tuple schema e.g. `Tuple[int, ...]`.
+        json_schema: JsonSchemaValue = {'type': 'array'}
+        if min_items is not None:
+            json_schema['minItems'] = min_items
+        if max_items is not None:
+            json_schema['maxItems'] = max_items
 
-        Args:
-            schema: The core schema.
+        if prefix_items:
+            json_schema['prefixItems'] = prefix_items
+        if suffix_items:
+            json_schema['items'] = self.get_flattened_anyof(suffix_items)
 
-        Returns:
-            The generated JSON schema.
-        """
-        items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
-        json_schema = {'type': 'array', 'items': items_schema}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 

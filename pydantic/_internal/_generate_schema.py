@@ -181,6 +181,10 @@ def apply_each_item_validators(
         if inner_schema is None:
             inner_schema = core_schema.any_schema()
         schema['items_schema'] = apply_validators(inner_schema, each_item_validators, field_name)
+    elif schema['type'] == 'tuple':
+        inner_schemas = schema['items_schema']
+        if len(inner_schemas) == 1 and schema.get('variadic_item_index') == 0:
+            schema['items_schema'] = [apply_validators(inner_schemas[0], each_item_validators, field_name)]
     elif schema['type'] == 'dict':
         # push down any `each_item=True` validators onto dict _values_
         # this is super arbitrary but it's the V1 behavior
