@@ -24,6 +24,7 @@ theme:
   features:
     - content.tabs.link
     - content.code.annotate
+    - content.code.copy
     - announce.dismiss
     - navigation.tabs
   logo: 'logo-white.svg'
