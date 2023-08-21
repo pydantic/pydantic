@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12-dev']
     steps:
       - uses: actions/checkout@v3
 
@@ -98,7 +98,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12-dev']
         include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
@@ -109,6 +109,8 @@ jobs:
             python-version: 'pypy3.8'
           - os: ubuntu
             python-version: 'pypy3.9'
+          - os: ubuntu
+            python-version: 'pypy3.10'
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -193,6 +195,8 @@ jobs:
             python-version: '3.9'
           - mypy-version: 'lockfile'
             python-version: '3.11'
+          - mypy-version: 'lockfile'
+            python-version: '3.12-dev'
 
     steps:
     - uses: actions/checkout@v3
@@ -285,7 +289,7 @@ jobs:
       matrix:
         # test the oldest supported version and main
         typing-extensions-version: ['4.6.1', 'main']
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12-dev']
         include:
           - typing-extensions-version: '4.6.1'
             python-version: '3.7'
