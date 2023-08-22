@@ -151,9 +151,9 @@ def collect_model_fields(  # noqa: C901
                 if base is generic_origin:
                     # Don't error when "shadowing" of attributes in parametrized generics
                     continue
-                raise NameError(
-                    f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
-                    f'you might want to use a different field name with "alias=\'{ann_name}\'".'
+                warnings.warn(
+                    f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; ',
+                    UserWarning,
                 )
 
         try:
