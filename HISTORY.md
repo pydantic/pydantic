@@ -1,3 +1,13 @@
+## v2.2.1 (2023-08-18)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.2.1)
+
+* Make `xfail`ing test for root model extra stop `xfail`ing by @dmontagu in [#6937](https://github.com/pydantic/pydantic/pull/6937)
+* Optimize recursion detection by stopping on the second visit for the same object by @mciucu in [#7160](https://github.com/pydantic/pydantic/pull/7160)
+* fix link in docs by @tlambert03 in [#7166](https://github.com/pydantic/pydantic/pull/7166)
+* Replace MiMalloc w/ default allocator by @adriangb in [pydantic/pydantic-core#900](https://github.com/pydantic/pydantic-core/pull/900)
+* Bump pydantic-core to 2.6.1 and prepare 2.2.1 release by @adriangb in [#7176](https://github.com/pydantic/pydantic/pull/7176)
+
 ## v2.2.0 (2023-08-17)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.2.0)
