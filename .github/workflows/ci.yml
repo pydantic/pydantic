@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12-dev']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v3
 
@@ -28,6 +28,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
+          allow-python-prereleases: true
 
       - name: install
         run: |
@@ -98,7 +99,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12-dev']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
@@ -125,6 +126,7 @@ jobs:
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
+        allow-python-prereleases: true
 
     - name: install deps
       run: |
@@ -196,7 +198,7 @@ jobs:
           - mypy-version: 'lockfile'
             python-version: '3.11'
           - mypy-version: 'lockfile'
-            python-version: '3.12-dev'
+            python-version: '3.12'
 
     steps:
     - uses: actions/checkout@v3
@@ -205,6 +207,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
+        allow-python-prereleases: true
 
     - name: install deps
       run: |
@@ -289,7 +292,7 @@ jobs:
       matrix:
         # test the oldest supported version and main
         typing-extensions-version: ['4.6.1', 'main']
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12-dev']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         include:
           - typing-extensions-version: '4.6.1'
             python-version: '3.7'
@@ -301,6 +304,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
+        allow-python-prereleases: true
 
     - name: install deps
       run: |
