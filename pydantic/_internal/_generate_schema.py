@@ -1308,7 +1308,7 @@ class GenerateSchema:
 
                 self = self._current_generate_schema
 
-                from pydantic.dataclasses import is_pydantic_dataclass
+                from ..dataclasses import is_pydantic_dataclass
 
                 if is_pydantic_dataclass(dataclass):
                     fields = dataclass.__pydantic_fields__
