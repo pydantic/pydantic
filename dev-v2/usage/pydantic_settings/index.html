@@ -2467,6 +2467,21 @@ or via the <code>_env_prefix</code> keyword argument on instantiation:</p>
 <li>Using <code>Field(validation_alias=...)</code> (see <code>auth_key</code> above)</li>
 </ul>
 <p>Check the <a href="../fields#field-aliases"><code>Field</code> aliases documentation</a> for more information about aliases.</p>
+<p><code>env_prefix</code> does not apply to fields with alias. It means the environment variable name is the same
+as field alis:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;my_prefix_&#39;</span><span class="p">)</span>
+
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="s1">&#39;xxx&#39;</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FooAlias&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+</code></pre></div>
+<ol>
+<li><code>env_prefix</code> will be ignored and the value will be read from <code>FooAlias</code> environment variable.</li>
+</ol>
 <h3 id="case-sensitivity">Case-sensitivity<a class="headerlink" href="#case-sensitivity" title="Permanent link">&para;</a></h3>
 <p>By default, environment variable names are case-insensitive.</p>
 <p>If you want to make environment variable names case-sensitive, you can set the <code>case_sensitive</code> config setting:</p>
