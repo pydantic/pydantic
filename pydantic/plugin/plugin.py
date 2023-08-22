@@ -18,7 +18,7 @@ class Step:
         self,
         schema: CoreSchema,
         config: CoreConfig | None = None,
-        plugin_settings: dict[str, Any] | None = None,
+        plugin_settings: dict[str, object] | None = None,
     ) -> None:
         self.schema = schema
         self.config = config
