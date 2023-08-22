@@ -240,7 +240,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
-        """Returns a copy of the model.
+        """Usage docs: https://docs.pydantic.dev/2.2/usage/serialization/#model_copy
+
+        Returns a copy of the model.
 
         Args:
             update: Values to change/add in the new model. Note: the data is not validated
