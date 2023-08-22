@@ -95,7 +95,7 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
       "type": "string"
     }
   },
-  "description": "\n    This is the description of the main model\n    ",
+  "description": "This is the description of the main model",
   "properties": {
     "foo_bar": {
       "$ref": "#/$defs/FooBar"
