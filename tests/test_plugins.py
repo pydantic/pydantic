@@ -71,7 +71,7 @@ def test_on_validate_json_on_error() -> None:
                     'loc': ('a',),
                     'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
                     'type': 'int_parsing',
-                    'url': 'https://errors.pydantic.dev/2.1/v/int_parsing',
+                    'url': 'https://errors.pydantic.dev/2.2/v/int_parsing',
                 },
             ]
 
@@ -141,7 +141,7 @@ def test_on_validate_python_on_error() -> None:
                     'loc': ('a',),
                     'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
                     'type': 'int_parsing',
-                    'url': 'https://errors.pydantic.dev/2.1/v/int_parsing',
+                    'url': 'https://errors.pydantic.dev/2.2/v/int_parsing',
                 },
             ]
 
