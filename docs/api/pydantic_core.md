@@ -4,6 +4,8 @@
         show_source: false
         members:
         - SchemaValidator
+        - SchemaValidator.validate_python
+        - SchemaValidator.validate_json
         - SchemaSerializer
         - ValidationError
         - ErrorDetails
@@ -25,3 +27,11 @@
         - list_all_errors
         - ErrorTypeInfo
         - __version__
+
+::: pydantic_core.SchemaValidator
+    options:
+        allow_inspection: false
+        show_source: false
+        members:
+        - validate_python
+        - validate_json
