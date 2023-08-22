@@ -153,3 +153,27 @@ def test_on_validate_python_on_error() -> None:
 
         with contextlib.suppress(ValidationError):
             Model.model_validate({'a': 'potato'})
+
+
+def test_using_pydantic_inside_plugin():
+    class TestPlugin(OnValidatePython):
+        def enter(
+            self,
+            input: Any,
+            *,
+            strict: bool | None = None,
+            from_attributes: bool | None = None,
+            context: dict[str, Any] | None = None,
+            self_instance: Any | None = None,
+        ) -> None:
+            from pydantic import TypeAdapter
+
+            assert TypeAdapter(int).validate_python(42)
+
+    plugin = Plugin(on_validate_python=TestPlugin)
+    with install_plugin(plugin):
+
+        class Model(BaseModel):
+            a: int
+
+        assert Model(a=42).model_dump() == {'a': 42}

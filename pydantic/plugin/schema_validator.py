@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import contextlib
 import functools
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, ClassVar, Iterator, TypeVar
 
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Final, Literal, ParamSpec
@@ -34,6 +34,8 @@ class _Plug:
     EVENTS: Final = {'validate_json': 'on_validate_json', 'validate_python': 'on_validate_python'}
     """Events for plugins."""
 
+    _in_call: ClassVar[set[str]] = set()
+
     def __init__(
         self, schema: CoreSchema, config: CoreConfig | None = None, plugin_settings: dict[str, Any] | None = None
     ) -> None:
@@ -62,27 +64,29 @@ class _Plug:
         return wrapper
 
     def prepare_enter(self, func: Callable[..., Any]) -> Callable[..., None]:
-        enter_calls = self.gather_calls(func, callback='enter')
+        enter_calls = self.gather_calls(func, callback_type='enter')
         return self.run_callbacks(enter_calls)
 
     def prepare_on_success(self, func: Callable[..., Any]) -> Callable[[Any], None]:
-        success_calls = self.gather_calls(func, callback='on_success')
+        success_calls = self.gather_calls(func, callback_type='on_success')
         return self.run_callbacks(success_calls)
 
     def prepare_on_error(self, func: Callable[..., Any]) -> Callable[[ValidationError], None]:
-        error_calls = self.gather_calls(func, callback='on_error')
+        error_calls = self.gather_calls(func, callback_type='on_error')
         return self.run_callbacks(error_calls)
 
     def run_callbacks(self, callbacks: list[Callable[..., None]]) -> Callable[..., None]:
         def wrapper(*args: Any, **kwargs: Any) -> None:
             for callback in callbacks:
-                with contextlib.suppress(NotImplementedError):
-                    callback(*args, **kwargs)
+                with contextlib.suppress(NotImplementedError), self.run_once(callback) as callback_once:
+                    if callback_once is None:
+                        continue
+                    callback_once(*args, **kwargs)
 
         return wrapper
 
     def gather_calls(
-        self, func: Callable[..., Any], callback: Literal['enter', 'on_success', 'on_error']
+        self, func: Callable[..., Any], callback_type: Literal['enter', 'on_success', 'on_error']
     ) -> list[Callable[..., None]]:
         try:
             step = self.EVENTS[func.__name__]
@@ -94,9 +98,21 @@ class _Plug:
             with contextlib.suppress(AttributeError, TypeError):
                 step_type: type[Step] = getattr(plugin, step)
                 on_step = step_type(self.schema, self.config, self.plugin_settings)
-                calls.append(getattr(on_step, callback))
+                calls.append(getattr(on_step, callback_type))
 
         return calls
+
+    @contextlib.contextmanager
+    def run_once(self, func: Callable[..., Any]) -> Iterator[Callable[..., Any] | None]:
+        _callback_key = func.__qualname__
+
+        if _callback_key in self._in_call:
+            yield None
+            return
+
+        self._in_call.add(_callback_key)
+        yield func
+        self._in_call.remove(_callback_key)
 
 
 class PluggableSchemaValidator:
