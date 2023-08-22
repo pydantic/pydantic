@@ -2915,7 +2915,7 @@ To exclude a field from <strong>every</strong> member of a list or tuple, the di
 <p>The same holds for the <code>model_dump_json</code> method.</p>
 <h3 id="model-and-field-level-include-and-exclude">Model- and field-level include and exclude<a class="headerlink" href="#model-and-field-level-include-and-exclude" title="Permanent link">&para;</a></h3>
 <p>In addition to the explicit arguments <code>exclude</code> and <code>include</code> passed to <code>model_dump</code> and <code>model_dump_json</code> methods,
-we can also pass the <code>exclude</code> arguments directly to the <code>Field</code> constructor:</p>
+we can also pass the <code>exclude: bool</code> arguments directly to the <code>Field</code> constructor:</p>
 <p>Setting <code>exclude</code> on the field constructor (<code>Field(..., exclude=True)</code>) takes priority over the
 <code>exclude</code>/<code>include</code> on <code>model_dump</code> and <code>model_dump_json</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
@@ -2929,82 +2929,28 @@ we can also pass the <code>exclude</code> arguments directly to the <code>Field<
 
 <span class="k">class</span> <span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">user</span><span class="p">:</span> <span class="n">User</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">})</span>
     <span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
 <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span>
     <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span>
-    <span class="n">user</span><span class="o">=</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s1">&#39;JohnDoe&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;hashedpassword&#39;</span><span class="p">),</span>
     <span class="n">value</span><span class="o">=</span><span class="mi">9876543210</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;}</span>
-<span class="c1"># TODO: this is wrong! not all of &quot;user&quot; should be excluded</span>
-<span class="c1"># TODO: do we need to fix the type of the argument to Field? Or do we want to just remove that functionality?</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}))</span>  <span class="c1"># (1)!</span>
 <span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;}</span>
 </code></pre></div>
 <ol>
 <li><code>value</code> excluded from the output because it excluded in <code>Field</code>.</li>
 </ol>
-<p>Note that while merging settings, <code>exclude</code> entries are merged by computing the "union" of keys, while <code>include</code>
-entries are merged by computing the "intersection" of keys.</p>
-<p>The resulting merged exclude settings:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># overridden by explicit exclude</span>
-    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
-    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span>
-    <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span>
-    <span class="n">user</span><span class="o">=</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s1">&#39;JohnDoe&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;hashedpassword&#39;</span><span class="p">),</span>
-    <span class="n">value</span><span class="o">=</span><span class="mi">9876543210</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;username&#39;</span><span class="p">}}))</span>
-<span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
-</code></pre></div>
-<p>are the same as using merged include settings as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretStr</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">password</span><span class="p">:</span> <span class="n">SecretStr</span>
-
-
-<span class="k">class</span> <span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
-    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span>
-    <span class="nb">id</span><span class="o">=</span><span class="s1">&#39;1234567890&#39;</span><span class="p">,</span>
-    <span class="n">user</span><span class="o">=</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s1">&#39;JohnDoe&#39;</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="s1">&#39;hashedpassword&#39;</span><span class="p">),</span>
-    <span class="n">value</span><span class="o">=</span><span class="mi">9876543210</span><span class="p">,</span>
-<span class="p">)</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;user&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">}}))</span>
-<span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;, &#39;user&#39;: {&#39;id&#39;: 42}}</span>
-</code></pre></div>
 <h2 id="model_copy"><code>model_copy(...)</code><a class="headerlink" href="#model_copy" title="Permanent link">&para;</a></h2>
-<p><code>model_copy()</code> allows models to be duplicated (with optional updates), which is particularly useful when working with
-frozen models. See the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_copy">API docs for <code>model_copy</code></a> for more
-information.</p>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_copy"><code>pydantic.main.BaseModel.model_copy</code></a><br></p>
+</details>
+<p><code>model_copy()</code> allows models to be duplicated (with optional updates), which is particularly useful when working with frozen models.</p>
 <p>Example:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
