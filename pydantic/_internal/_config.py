@@ -75,7 +75,7 @@ class ConfigWrapper:
     protected_namespaces: tuple[str, ...]
     hide_input_in_errors: bool
     defer_build: bool
-    plugin_settings: dict[str, Any] | None
+    plugin_settings: dict[str, object] | None
     schema_generator: type[GenerateSchema] | None
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):

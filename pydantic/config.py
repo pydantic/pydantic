@@ -195,7 +195,7 @@ class ConfigDict(TypedDict, total=False):
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
     """
 
-    plugin_settings: dict[str, Any] | None
+    plugin_settings: dict[str, object] | None
     """A `dict` of settings for plugins. Defaults to `None`.
 
     See [Pydantic Plugins](../integrations/plugins.md) for details.
