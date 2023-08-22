@@ -33,7 +33,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic._internal._mock_validator import MockValidator
-from pydantic.dataclasses import rebuild_dataclass
+from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
 
@@ -2487,3 +2487,16 @@ def test_annotated_before_validator_called_once(decorator1):
     assert count == 0
     TypeAdapter(A).validate_python({'a': 123})
     assert count == 1
+
+
+def test_is_pydantic_dataclass():
+    @pydantic.dataclasses.dataclass
+    class PydanticDataclass:
+        a: int
+
+    @dataclasses.dataclass
+    class StdLibDataclass:
+        b: int
+
+    assert is_pydantic_dataclass(PydanticDataclass) is True
+    assert is_pydantic_dataclass(StdLibDataclass) is False

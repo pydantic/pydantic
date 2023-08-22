@@ -6,7 +6,7 @@ import sys
 import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
 
-from typing_extensions import Literal, dataclass_transform
+from typing_extensions import Literal, TypeGuard, dataclass_transform
 
 from ._internal import _config, _decorators, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
@@ -276,3 +276,15 @@ def rebuild_dataclass(
             raise_errors=raise_errors,
             types_namespace=types_namespace,
         )
+
+
+def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
+    """Whether a class is a pydantic dataclass.
+
+    Args:
+        _cls: The class.
+
+    Returns:
+        `True` if the class is a pydantic dataclass, `False` otherwise.
+    """
+    return dataclasses.is_dataclass(_cls) and '__pydantic_validator__' in _cls.__dict__

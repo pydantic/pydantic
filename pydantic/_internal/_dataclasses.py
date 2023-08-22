@@ -259,15 +259,3 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
         and not hasattr(_cls, '__pydantic_validator__')
         and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
     )
-
-
-def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
-    """Whether a class is a pydantic dataclass.
-
-    Args:
-        cls: The class.
-
-    Returns:
-        `True` if the class is a pydantic dataclass, `False` otherwise.
-    """
-    return dataclasses.is_dataclass(_cls) and '__pydantic_validator__' in _cls.__dict__
