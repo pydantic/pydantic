@@ -12,6 +12,25 @@ from pydantic.plugin import OnValidateJson, OnValidatePython, Plugin
 from pydantic.plugin._loader import plugins
 
 
+@pytest.fixture
+def unimport_pydantic():
+    # Force an actual import of anything that is part of pydantic
+    unimported_modules = {}
+    if 'pydantic' in sys.modules:
+        unimported_modules['pydantic'] = sys.modules.pop('pydantic')
+    pydantic_modules = set()
+    for module_name in sys.modules:
+        if module_name.startswith('pydantic.'):
+            pydantic_modules.add(module_name)
+    for module_name in pydantic_modules:
+        unimported_modules[module_name] = sys.modules.pop(module_name)
+
+    yield
+
+    for module_name, module in unimported_modules.items():
+        sys.modules[module_name] = module
+
+
 @contextlib.contextmanager
 def install_plugin(plugin: Plugin) -> Generator[None, None, None]:
     plugins.add(plugin)
@@ -181,24 +200,11 @@ def test_using_pydantic_inside_plugin():
         assert Model(a=42).model_dump() == {'a': 42}
 
 
-@pytest.mark.parametrize(
-    'defer_import',
-    [pytest.param(False, id='error without `defer_import`'), pytest.param(False, id='pass with `defer_import`')],
-)
-def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPatch, defer_import: bool):
-    # Force an actual import of anything that is part of pydantic
-    if 'pydantic' in sys.modules:
-        del sys.modules['pydantic']
-    pydantic_modules = set()
-    for module_name in sys.modules:
-        if module_name.startswith('pydantic.'):
-            pydantic_modules.add(module_name)
-    for module_name in pydantic_modules:
-        del sys.modules[module_name]
-
+def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPatch, unimport_pydantic):
     def fake_distributions():
-        class EntryPoint:
+        class FakeEntryPoint:
             group = 'pydantic'
+            value = 'pydantic.tests.Plugin'
 
             def load(self):
                 # Emulate performing the same import that caused loading plugin while importing a plugin module
@@ -206,21 +212,17 @@ def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPat
 
                 return Plugin(on_validate_python=OnValidatePython)
 
-            @property
-            def extras(self) -> list[str]:
-                return ['defer_import'] if defer_import else []
+        class FakeDistribution:
+            entry_points = [FakeEntryPoint()]
 
-        class Distribution:
-            entry_points = [EntryPoint()]
+        return [FakeDistribution()]
 
-        return [Distribution()]
+    if sys.version_info >= (3, 8):
+        monkeypatch.setattr('importlib.metadata.distributions', fake_distributions)
+    else:
+        monkeypatch.setattr('importlib_metadata.distributions', fake_distributions)
 
-    monkeypatch.setattr('importlib.metadata.distributions', fake_distributions)
-
-    if not defer_import:
-        with pytest.raises(ImportError, match='configure plugin entrypoint'):
-            from pydantic import BaseModel
-        return
+    from pydantic import BaseModel
 
     class Model(BaseModel):
         a: int

@@ -27,7 +27,6 @@ events.
 from __future__ import annotations
 
 import sys
-from dataclasses import dataclass
 
 from typing_extensions import Final
 
@@ -40,39 +39,32 @@ else:
 
 
 GROUP: Final[str] = 'pydantic'
-DEFER_IMPORT_FLAG: Final[str] = 'defer_import'
+
+plugins: set[Plugin]
+
+_plugins: dict[str, Plugin] = {}
 
 
-@dataclass(frozen=True)
-class DeferredPluginLoad:
-    entry_point: importlib_metadata.EntryPoint
-
-
-def load_plugins() -> set[Plugin | DeferredPluginLoad]:
+def load_plugins():
     """Load plugins for pydantic.
 
     Inspired by:
-    - https://github.com/pytest-dev/pytest/blob/5c0e5aa39916e6a49962e662002c23f578e897c9/src/pluggy/_manager.py#L352-L377
+    - https://github.com/pytest-dev/pytest/blob/5c0e5aa399(16e6a49962e662002c23f578e897c9/src/pluggy/_manager.py#L352-L377
     """
-    plugins: set[Plugin | DeferredPluginLoad] = set()
+    global _plugins
     for dist in importlib_metadata.distributions():
         for entry_point in dist.entry_points:
             if entry_point.group == GROUP:
-                plugin: Plugin | DeferredPluginLoad
-                if DEFER_IMPORT_FLAG in entry_point.extras:
-                    plugin = DeferredPluginLoad(entry_point=entry_point)
-                else:
-                    try:
-                        plugin = entry_point.load()
-                    except ImportError as e:
-                        # TODO: Use `e.add_note()` after Python 3.10 support is dropped
-                        raise ImportError(
-                            f'{e}, configure plugin entrypoint with "{DEFER_IMPORT_FLAG}" extra argument, e.g.'
-                            f' "pydantic_plugin:plugin [{DEFER_IMPORT_FLAG}]" to avoid circular imports of "pydantic"'
-                            ' itself'
-                        )
-                plugins.add(plugin)
-    return plugins
+                if entry_point.value in _plugins:
+                    continue
+                _plugins[entry_point.value] = entry_point.load()
 
 
-plugins = load_plugins()
+def __getattr__(attr_name: str) -> object:
+    global _plugins
+
+    if attr_name != 'plugins':
+        raise AttributeError(f'module {__name__!r} has no attribute {attr_name!r}')
+
+    load_plugins()
+    return set(_plugins.values())
