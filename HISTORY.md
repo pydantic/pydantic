@@ -1,3 +1,23 @@
+## v2.3.0 (2023-08-23)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.3.0)
+
+* 🔥 Remove orphaned changes file from repo by @lig in https://github.com/pydantic/pydantic/pull/7168
+* Add copy button on documentation by @Kludex in https://github.com/pydantic/pydantic/pull/7190
+* Fix docs on JSON type by @Kludex in https://github.com/pydantic/pydantic/pull/7189
+* Update mypy 1.5.0 to 1.5.1 in CI by @hramezani in https://github.com/pydantic/pydantic/pull/7191
+* fix download links badge by @samuelcolvin in https://github.com/pydantic/pydantic/pull/7200
+* add 2.2.1 to changelog by @samuelcolvin in https://github.com/pydantic/pydantic/pull/7212
+* Make ModelWrapValidator protocols generic by @dmontagu in https://github.com/pydantic/pydantic/pull/7154
+* Correct `Field(..., exclude: bool)` docs by @samuelcolvin in https://github.com/pydantic/pydantic/pull/7214
+* Make shadowing attributes a warning instead of an error by @adriangb in https://github.com/pydantic/pydantic/pull/7193
+* Document `Base64Str` and `Base64Bytes` by @Kludex in https://github.com/pydantic/pydantic/pull/7192
+* Fix `config.defer_build` for serialization first cases by @samuelcolvin in https://github.com/pydantic/pydantic/pull/7024
+* clean Model docstrings in JSON Schema by @samuelcolvin in https://github.com/pydantic/pydantic/pull/7210
+* fix #7228 (typo): docs in `validators.md` to correct `validate_default` kwarg by @lmmx in https://github.com/pydantic/pydantic/pull/7229
+* ✅ Implement `tzinfo.fromutc` method for `TzInfo` in `pydantic-core` by @lig in https://github.com/pydantic/pydantic/pull/7019
+* Support __get_validators__ by @hramezani in https://github.com/pydantic/pydantic/pull/7197
+
 ## v2.2.1 (2023-08-18)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.2.1)
