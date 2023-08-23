@@ -2,10 +2,14 @@ use pyo3::intern;
 use pyo3::prelude::*;
 
 use pyo3::exceptions::PyValueError;
+use pyo3::pyclass::CompareOp;
 use pyo3::types::{PyDate, PyDateTime, PyDelta, PyDeltaAccess, PyDict, PyTime, PyTzInfo};
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 use speedate::{Date, DateTime, Duration, ParseError, Time, TimeConfig};
 use std::borrow::Cow;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::Hash;
+use std::hash::Hasher;
 
 use strum::EnumMessage;
 
@@ -222,7 +226,7 @@ impl<'a> EitherTime<'a> {
 fn time_as_tzinfo<'py>(py: Python<'py>, time: &Time) -> PyResult<Option<&'py PyTzInfo>> {
     match time.tz_offset {
         Some(offset) => {
-            let tz_info = TzInfo::new(offset);
+            let tz_info: TzInfo = offset.try_into()?;
             let py_tz_info = Py::new(py, tz_info)?.to_object(py).into_ref(py);
             Ok(Some(py_tz_info.extract()?))
         }
@@ -508,11 +512,11 @@ pub struct TzInfo {
 #[pymethods]
 impl TzInfo {
     #[new]
-    fn new(seconds: i32) -> Self {
-        Self { seconds }
+    fn py_new(seconds: f32) -> PyResult<Self> {
+        Self::try_from(seconds.trunc() as i32)
     }
 
-    fn utcoffset<'p>(&self, py: Python<'p>, _dt: &PyAny) -> PyResult<&'p PyDelta> {
+    fn utcoffset<'py>(&self, py: Python<'py>, _dt: &PyAny) -> PyResult<&'py PyDelta> {
         PyDelta::new(py, 0, self.seconds, 0, true)
     }
 
@@ -524,17 +528,43 @@ impl TzInfo {
         None
     }
 
+    fn fromutc<'py>(&self, dt: &'py PyDateTime) -> PyResult<&'py PyAny> {
+        let py = dt.py();
+        dt.call_method1("__add__", (self.utcoffset(py, py.None().as_ref(py))?,))
+    }
+
     fn __repr__(&self) -> String {
         format!("TzInfo({})", self.__str__())
     }
 
     fn __str__(&self) -> String {
         if self.seconds == 0 {
-            "UTC".to_string()
-        } else {
-            let mins = self.seconds / 60;
-            format!("{:+03}:{:02}", mins / 60, (mins % 60).abs())
+            return "UTC".to_string();
         }
+
+        let (mins, seconds) = (self.seconds / 60, self.seconds % 60);
+        let mut result = format!(
+            "{}{:02}:{:02}",
+            if self.seconds.signum() >= 0 { "+" } else { "-" },
+            (mins / 60).abs(),
+            (mins % 60).abs()
+        );
+
+        if seconds != 0 {
+            result.push_str(&format!(":{:02}", seconds.abs()));
+        }
+
+        result
+    }
+
+    fn __hash__(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.seconds.hash(&mut hasher);
+        hasher.finish()
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> bool {
+        op.matches(self.seconds.cmp(&other.seconds))
     }
 
     fn __deepcopy__(&self, py: Python, _memo: &PyDict) -> PyResult<Py<Self>> {
@@ -545,5 +575,19 @@ impl TzInfo {
         let args = (self.seconds,);
         let cls = Py::new(py, self.clone())?.getattr(py, "__class__")?;
         Ok((cls, args).into_py(py))
+    }
+}
+
+impl TryFrom<i32> for TzInfo {
+    type Error = PyErr;
+
+    fn try_from(seconds: i32) -> PyResult<Self> {
+        if seconds.abs() >= 86400 {
+            Err(PyValueError::new_err(format!(
+                "TzInfo offset must be strictly between -86400 and 86400 (24 hours) seconds, got {seconds}"
+            )))
+        } else {
+            Ok(Self { seconds })
+        }
     }
 }
