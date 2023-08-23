@@ -20,8 +20,8 @@ from pydantic import (
 from .conftest import Err
 
 
-def create_tz(minutes):
-    return timezone(timedelta(minutes=minutes))
+def create_tz(minutes, seconds=0):
+    return timezone(timedelta(minutes=minutes, seconds=seconds))
 
 
 @pytest.fixture(scope='module', params=[FutureDate, Annotated[date, FutureDate()]])
@@ -167,6 +167,7 @@ def datetime_model_fixture():
         ('2012-04-23T10:20:30.400+02:30', datetime(2012, 4, 23, 10, 20, 30, 400_000, create_tz(150))),
         ('2012-04-23T10:20:30.400+02:00', datetime(2012, 4, 23, 10, 20, 30, 400_000, create_tz(120))),
         ('2012-04-23T10:20:30.400-02:00', datetime(2012, 4, 23, 10, 20, 30, 400_000, create_tz(-120))),
+        ('1900-04-23T10:20:30.400+00:19:32', datetime(1900, 4, 23, 10, 20, 30, 400_000, create_tz(19, 32)))
         (b'2012-04-23T10:20:30.400-02:00', datetime(2012, 4, 23, 10, 20, 30, 400_000, create_tz(-120))),
         (datetime(2017, 5, 5), datetime(2017, 5, 5)),
         (0, datetime(1970, 1, 1, 0, 0, 0, tzinfo=timezone.utc)),
