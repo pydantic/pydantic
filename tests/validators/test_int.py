@@ -421,7 +421,9 @@ def test_int_subclass() -> None:
     assert type(v_strict) == int
 
     assert v.validate_python(IntSubclass(1136885225876639845)) == 1136885225876639845
+    assert v.validate_python(IntSubclass(i64_max + 7)) == i64_max + 7
     assert v.validate_python(IntSubclass(1136885225876639845), strict=True) == 1136885225876639845
+    assert v.validate_python(IntSubclass(i64_max + 7), strict=True) == i64_max + 7
 
 
 def test_int_subclass_constraint() -> None:
