@@ -4,6 +4,7 @@ use pyo3::types::{PyDict, PyString};
 
 use ahash::AHashMap;
 
+use crate::build_tools::py_schema_err;
 use crate::build_tools::{py_schema_error_type, schema_or_config, ExtraBehavior};
 use crate::definitions::DefinitionsBuilder;
 use crate::tools::SchemaDict;
@@ -34,6 +35,14 @@ impl BuildSerializer for TypedDictBuilder {
         let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_dict.len());
 
+        let extra_serializer = match (schema.get_item(intern!(py, "extras_schema")), &fields_mode) {
+            (Some(v), FieldsMode::TypedDictAllow) => {
+                Some(CombinedSerializer::build(v.extract()?, config, definitions)?)
+            }
+            (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
+            (_, _) => None,
+        };
+
         for (key, value) in fields_dict {
             let key_py: &PyString = key.downcast()?;
             let key: String = key_py.extract()?;
@@ -56,6 +65,6 @@ impl BuildSerializer for TypedDictBuilder {
 
         let computed_fields = ComputedFields::new(schema, config, definitions)?;
 
-        Ok(GeneralFieldsSerializer::new(fields, fields_mode, computed_fields).into())
+        Ok(GeneralFieldsSerializer::new(fields, fields_mode, extra_serializer, computed_fields).into())
     }
 }

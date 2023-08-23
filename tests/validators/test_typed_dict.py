@@ -186,9 +186,9 @@ def test_forbid_extra():
 
 
 def test_allow_extra_invalid():
-    with pytest.raises(SchemaError, match='extra_validator can only be used if extra_behavior=allow'):
+    with pytest.raises(SchemaError, match='extras_schema can only be used if extra_behavior=allow'):
         SchemaValidator(
-            {'type': 'typed-dict', 'fields': {}, 'extra_validator': {'type': 'int'}, 'extra_behavior': 'ignore'}
+            {'type': 'typed-dict', 'fields': {}, 'extras_schema': {'type': 'int'}, 'extra_behavior': 'ignore'}
         )
 
 
@@ -1089,21 +1089,21 @@ class TestOnError:
     ],
 )
 @pytest.mark.parametrize(
-    'extra_validator_kw, expected_extra_value',
-    [({}, '123'), ({'extra_validator': None}, '123'), ({'extra_validator': core_schema.int_schema()}, 123)],
-    ids=['extra_validator=unset', 'extra_validator=None', 'extra_validator=int'],
+    'extras_schema_kw, expected_extra_value',
+    [({}, '123'), ({'extras_schema': None}, '123'), ({'extras_schema': core_schema.int_schema()}, 123)],
+    ids=['extras_schema=unset', 'extras_schema=None', 'extras_schema=int'],
 )
 def test_extra_behavior_allow(
     config: Union[core_schema.CoreConfig, None],
     schema_extra_behavior_kw: Dict[str, Any],
-    extra_validator_kw: Dict[str, Any],
+    extras_schema_kw: Dict[str, Any],
     expected_extra_value: Any,
 ):
     v = SchemaValidator(
         core_schema.typed_dict_schema(
             {'f': core_schema.typed_dict_field(core_schema.str_schema())},
             **schema_extra_behavior_kw,
-            **extra_validator_kw,
+            **extras_schema_kw,
             config=config,
         )
     )
@@ -1173,7 +1173,7 @@ def test_leak_typed_dict():
 
         schema = core_schema.general_plain_validator_function(validate)
         schema = core_schema.typed_dict_schema(
-            {'f': core_schema.typed_dict_field(schema)}, extra_behavior='allow', extra_validator=schema
+            {'f': core_schema.typed_dict_field(schema)}, extra_behavior='allow', extras_schema=schema
         )
 
         # If any of the Rust validators don't implement traversal properly,

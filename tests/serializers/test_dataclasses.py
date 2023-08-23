@@ -6,7 +6,7 @@ from typing import ClassVar
 
 import pytest
 
-from pydantic_core import SchemaSerializer, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 on_pypy = platform.python_implementation() == 'PyPy'
 # pypy doesn't seem to maintain order of `__dict__`
@@ -164,3 +164,31 @@ def test_slots_mixed():
     s = SchemaSerializer(schema)
     assert s.to_python(dc) == {'x': 1, 'x2': 2}
     assert s.to_json(dc) == b'{"x":1,"x2":2}'
+
+
+@pytest.mark.xfail(reason='dataclasses do not serialize extras')
+def test_extra_custom_serializer():
+    @dataclasses.dataclass
+    class Model:
+        pass
+
+    schema = core_schema.dataclass_schema(
+        Model,
+        core_schema.dataclass_args_schema(
+            'Model',
+            [],
+            extra_behavior='allow',
+            # extras_schema=core_schema.any_schema(
+            #     serialization=core_schema.plain_serializer_function_ser_schema(
+            #         lambda v: v + ' bam!',
+            #     )
+            # )
+        ),
+        [],
+    )
+    s = SchemaSerializer(schema)
+    v = SchemaValidator(schema)
+
+    m = v.validate_python({'extra': 'extra'})
+
+    assert s.to_python(m) == {'extra': 'extra bam!'}

@@ -264,7 +264,7 @@ def test_positional_empty(py_and_json: PyAndJson):
 
 
 def test_positional_empty_extra(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'tuple-positional', 'items_schema': [], 'extra_schema': {'type': 'int'}})
+    v = py_and_json({'type': 'tuple-positional', 'items_schema': [], 'extras_schema': {'type': 'int'}})
     assert v.validate_test([]) == ()
     assert v.validate_python(()) == ()
     assert v.validate_test([1]) == (1,)
@@ -408,7 +408,7 @@ def test_tuple_fix_extra(input_value, expected, cache):
         {
             'type': 'tuple-positional',
             'items_schema': [{'type': 'int'}, {'type': 'str'}],
-            'extra_schema': {'type': 'str'},
+            'extras_schema': {'type': 'str'},
         }
     )
 
@@ -422,7 +422,7 @@ def test_tuple_fix_extra(input_value, expected, cache):
 
 def test_tuple_fix_extra_any():
     v = SchemaValidator(
-        {'type': 'tuple-positional', 'items_schema': [{'type': 'str'}], 'extra_schema': {'type': 'any'}}
+        {'type': 'tuple-positional', 'items_schema': [{'type': 'str'}], 'extras_schema': {'type': 'any'}}
     )
     assert v.validate_python([b'1']) == ('1',)
     assert v.validate_python([b'1', 2]) == ('1', 2)

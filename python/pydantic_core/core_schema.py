@@ -1366,7 +1366,7 @@ def list_schema(
 class TuplePositionalSchema(TypedDict, total=False):
     type: Required[Literal['tuple-positional']]
     items_schema: Required[List[CoreSchema]]
-    extra_schema: CoreSchema
+    extras_schema: CoreSchema
     strict: bool
     ref: str
     metadata: Any
@@ -1376,7 +1376,7 @@ class TuplePositionalSchema(TypedDict, total=False):
 def tuple_positional_schema(
     items_schema: list[CoreSchema],
     *,
-    extra_schema: CoreSchema | None = None,
+    extras_schema: CoreSchema | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: Any = None,
@@ -1397,7 +1397,7 @@ def tuple_positional_schema(
 
     Args:
         items_schema: The value must be a tuple with items that match these schemas
-        extra_schema: The value must be a tuple with items that match this schema
+        extras_schema: The value must be a tuple with items that match this schema
             This was inspired by JSON schema's `prefixItems` and `items` fields.
             In python's `typing.Tuple`, you can't specify a type for "extra" items -- they must all be the same type
             if the length is variable. So this field won't be set from a `typing.Tuple` annotation on a pydantic model.
@@ -1409,7 +1409,7 @@ def tuple_positional_schema(
     return _dict_not_none(
         type='tuple-positional',
         items_schema=items_schema,
-        extra_schema=extra_schema,
+        extras_schema=extras_schema,
         strict=strict,
         ref=ref,
         metadata=metadata,
@@ -2829,7 +2829,7 @@ class TypedDictSchema(TypedDict, total=False):
     fields: Required[Dict[str, TypedDictField]]
     computed_fields: List[ComputedField]
     strict: bool
-    extra_validator: CoreSchema
+    extras_schema: CoreSchema
     # all these values can be set via config, equivalent fields have `typed_dict_` prefix
     extra_behavior: ExtraBehavior
     total: bool  # default: True
@@ -2845,7 +2845,7 @@ def typed_dict_schema(
     *,
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
-    extra_validator: CoreSchema | None = None,
+    extras_schema: CoreSchema | None = None,
     extra_behavior: ExtraBehavior | None = None,
     total: bool | None = None,
     populate_by_name: bool | None = None,
@@ -2871,7 +2871,7 @@ def typed_dict_schema(
         fields: The fields to use for the typed dict
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the typed dict is strict
-        extra_validator: The extra validator to use for the typed dict
+        extras_schema: The extra validator to use for the typed dict
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         extra_behavior: The extra behavior to use for the typed dict
@@ -2884,7 +2884,7 @@ def typed_dict_schema(
         fields=fields,
         computed_fields=computed_fields,
         strict=strict,
-        extra_validator=extra_validator,
+        extras_schema=extras_schema,
         extra_behavior=extra_behavior,
         total=total,
         populate_by_name=populate_by_name,
@@ -2948,7 +2948,7 @@ class ModelFieldsSchema(TypedDict, total=False):
     model_name: str
     computed_fields: List[ComputedField]
     strict: bool
-    extra_validator: CoreSchema
+    extras_schema: CoreSchema
     # all these values can be set via config, equivalent fields have `typed_dict_` prefix
     extra_behavior: ExtraBehavior
     populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
@@ -2964,7 +2964,7 @@ def model_fields_schema(
     model_name: str | None = None,
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
-    extra_validator: CoreSchema | None = None,
+    extras_schema: CoreSchema | None = None,
     extra_behavior: ExtraBehavior | None = None,
     populate_by_name: bool | None = None,
     from_attributes: bool | None = None,
@@ -2991,7 +2991,7 @@ def model_fields_schema(
         model_name: The name of the model, used for error messages, defaults to "Model"
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the typed dict is strict
-        extra_validator: The extra validator to use for the typed dict
+        extras_schema: The extra validator to use for the typed dict
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         extra_behavior: The extra behavior to use for the typed dict
@@ -3005,7 +3005,7 @@ def model_fields_schema(
         model_name=model_name,
         computed_fields=computed_fields,
         strict=strict,
-        extra_validator=extra_validator,
+        extras_schema=extras_schema,
         extra_behavior=extra_behavior,
         populate_by_name=populate_by_name,
         from_attributes=from_attributes,

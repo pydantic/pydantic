@@ -35,7 +35,7 @@ impl_py_gc_traverse!(TypedDictField { validator });
 pub struct TypedDictValidator {
     fields: Vec<TypedDictField>,
     extra_behavior: ExtraBehavior,
-    extra_validator: Option<Box<CombinedValidator>>,
+    extras_validator: Option<Box<CombinedValidator>>,
     strict: bool,
     loc_by_alias: bool,
 }
@@ -61,9 +61,9 @@ impl BuildValidator for TypedDictValidator {
 
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
-        let extra_validator = match (schema.get_item(intern!(py, "extra_validator")), &extra_behavior) {
+        let extras_validator = match (schema.get_item(intern!(py, "extras_schema")), &extra_behavior) {
             (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(v, config, definitions)?)),
-            (Some(_), _) => return py_schema_err!("extra_validator can only be used if extra_behavior=allow"),
+            (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
 
@@ -129,7 +129,7 @@ impl BuildValidator for TypedDictValidator {
         Ok(Self {
             fields,
             extra_behavior,
-            extra_validator,
+            extras_validator,
             strict,
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
         }
@@ -139,7 +139,7 @@ impl BuildValidator for TypedDictValidator {
 
 impl_py_gc_traverse!(TypedDictValidator {
     fields,
-    extra_validator
+    extras_validator
 });
 
 impl Validator for TypedDictValidator {
@@ -261,7 +261,7 @@ impl Validator for TypedDictValidator {
                             ExtraBehavior::Ignore => {}
                             ExtraBehavior::Allow => {
                             let py_key = either_str.as_py_string(py);
-                                if let Some(ref validator) = self.extra_validator {
+                                if let Some(ref validator) = self.extras_validator {
                                     match validator.validate(py, value, state) {
                                         Ok(value) => {
                                             output_dict.set_item(py_key, value)?;
@@ -314,7 +314,7 @@ impl Validator for TypedDictValidator {
         self.fields
             .iter_mut()
             .try_for_each(|f| f.validator.complete(definitions))?;
-        match &mut self.extra_validator {
+        match &mut self.extras_validator {
             Some(v) => v.complete(definitions),
             None => Ok(()),
         }
