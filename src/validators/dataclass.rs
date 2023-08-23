@@ -38,6 +38,7 @@ pub struct DataclassArgsValidator {
     dataclass_name: String,
     validator_name: String,
     extra_behavior: ExtraBehavior,
+    extras_validator: Option<Box<CombinedValidator>>,
     loc_by_alias: bool,
 }
 
@@ -54,6 +55,12 @@ impl BuildValidator for DataclassArgsValidator {
         let populate_by_name = schema_or_config_same(schema, config, intern!(py, "populate_by_name"))?.unwrap_or(false);
 
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
+
+        let extras_validator = match (schema.get_item(intern!(py, "extras_schema")), &extra_behavior) {
+            (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(v, config, definitions)?)),
+            (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
+            (_, _) => None,
+        };
 
         let fields_schema: &PyList = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: Vec<Field> = Vec::with_capacity(fields_schema.len());
@@ -118,6 +125,7 @@ impl BuildValidator for DataclassArgsValidator {
             dataclass_name,
             validator_name,
             extra_behavior,
+            extras_validator,
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
         }
         .into())
@@ -267,7 +275,22 @@ impl Validator for DataclassArgsValidator {
                                                     }
                                                     ExtraBehavior::Ignore => {}
                                                     ExtraBehavior::Allow => {
-                                                        output_dict.set_item(either_str.as_py_string(py), value)?
+                                                        if let Some(ref validator) = self.extras_validator {
+                                                            match validator.validate(py, value, state) {
+                                                                Ok(value) => output_dict
+                                                                    .set_item(either_str.as_py_string(py), value)?,
+                                                                Err(ValError::LineErrors(line_errors)) => {
+                                                                    for err in line_errors {
+                                                                        errors.push(err.with_outer_location(
+                                                                            raw_key.as_loc_item(),
+                                                                        ));
+                                                                    }
+                                                                }
+                                                                Err(err) => return Err(err),
+                                                            }
+                                                        } else {
+                                                            output_dict.set_item(either_str.as_py_string(py), value)?
+                                                        }
                                                     }
                                                 }
                                             }

@@ -875,7 +875,7 @@ def test_tuple_many_variable(benchmark):
 
 @pytest.mark.benchmark(group='tuple-many')
 def test_tuple_many_positional(benchmark):
-    v = SchemaValidator({'type': 'tuple-positional', 'items_schema': [], 'extra_schema': {'type': 'int'}})
+    v = SchemaValidator({'type': 'tuple-positional', 'items_schema': [], 'extras_schema': {'type': 'int'}})
     assert v.validate_python(list(range(10))) == tuple(range(10))
 
     benchmark(v.validate_python, list(range(10)))

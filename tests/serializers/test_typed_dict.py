@@ -318,3 +318,18 @@ def test_function_wrap_field_serializer_to_json_no_info():
         )
     )
     assert json.loads(s.to_json(Model(x=1000))) == {'x': '1_000'}
+
+
+def test_extra_custom_serializer():
+    schema = core_schema.typed_dict_schema(
+        {},
+        extra_behavior='allow',
+        extras_schema=core_schema.any_schema(
+            serialization=core_schema.plain_serializer_function_ser_schema(lambda v: v + ' bam!')
+        ),
+    )
+    s = SchemaSerializer(schema)
+
+    m = {'extra': 'extra'}
+
+    assert s.to_python(m) == {'extra': 'extra bam!'}
