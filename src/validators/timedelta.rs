@@ -1,5 +1,5 @@
 use pyo3::prelude::*;
-use pyo3::types::PyDict;
+use pyo3::types::{PyDelta, PyDeltaAccess, PyDict};
 use speedate::Duration;
 
 use crate::build_tools::is_strict;
@@ -83,9 +83,7 @@ impl Validator for TimeDeltaValidator {
                             return Err(ValError::new(
                                 ErrorType::$error {
                                     context: None,
-                                    $constraint: duration_as_pytimedelta(py, constraint)?
-                                        .repr()?
-                                        .to_string()
+                                    $constraint: pydelta_to_human_readable(duration_as_pytimedelta(py, constraint)?)
                                         .into(),
                                 },
                                 py_timedelta.as_ref(),
@@ -118,4 +116,44 @@ impl Validator for TimeDeltaValidator {
     fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         Ok(())
     }
+}
+fn pydelta_to_human_readable(py_delta: &PyDelta) -> String {
+    let total_seconds = py_delta.get_seconds();
+    let hours = total_seconds / 3600;
+    let minutes = (total_seconds % 3600) / 60;
+    let seconds = total_seconds % 60;
+    let microseconds = py_delta.get_microseconds();
+    let days = py_delta.get_days();
+
+    let mut formatted_duration = Vec::new();
+
+    if days != 0 {
+        formatted_duration.push(format!("{} day{}", days, if days != 1 { "s" } else { "" }));
+    }
+
+    if hours != 0 {
+        formatted_duration.push(format!("{} hour{}", hours, if hours != 1 { "s" } else { "" }));
+    }
+
+    if minutes != 0 {
+        formatted_duration.push(format!("{} minute{}", minutes, if minutes != 1 { "s" } else { "" }));
+    }
+
+    if seconds != 0 {
+        formatted_duration.push(format!("{} second{}", seconds, if seconds != 1 { "s" } else { "" }));
+    }
+
+    if microseconds != 0 {
+        formatted_duration.push(format!(
+            "{} microsecond{}",
+            microseconds,
+            if microseconds != 1 { "s" } else { "" }
+        ));
+    }
+
+    if formatted_duration.is_empty() {
+        formatted_duration.push("0 seconds".to_string());
+    }
+
+    formatted_duration.join(" and ")
 }
