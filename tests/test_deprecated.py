@@ -542,8 +542,13 @@ def test_v1_get_validators():
         def validate2(cls, v, i):
             return date.today().replace(month=1, day=1)
 
-    class Model(BaseModel):
-        x: CustomDate
+    with pytest.warns(
+        PydanticDeprecatedSince20,
+        match='^`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+    ):
+
+        class Model(BaseModel):
+            x: CustomDate
 
     with pytest.raises(ValidationError, match='Value error, Invalid year'):
         Model(x=date(1999, 1, 1))
@@ -562,8 +567,13 @@ def test_v1_get_validators_invalid_validator():
         def has_wrong_arguments(cls):
             pass
 
-    class InvalidValidatorModel(BaseModel):
-        x: InvalidValidator
+    with pytest.warns(
+        PydanticDeprecatedSince20,
+        match='^`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+    ):
+
+        class InvalidValidatorModel(BaseModel):
+            x: InvalidValidator
 
     with pytest.raises(TypeError, match='takes 1 positional argument but 3 were given'):
         InvalidValidatorModel(x=1)

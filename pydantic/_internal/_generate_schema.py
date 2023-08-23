@@ -593,6 +593,10 @@ class GenerateSchema:
             validators = getattr(obj, '__get_validators__', None)
             if validators is None:
                 return None
+            warn(
+                '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+                PydanticDeprecatedSince20,
+            )
             schema = core_schema.chain_schema([core_schema.general_plain_validator_function(v) for v in validators()])
         else:
             if len(inspect.signature(get_schema).parameters) == 1:
