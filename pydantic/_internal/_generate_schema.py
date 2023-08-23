@@ -587,16 +587,25 @@ class GenerateSchema:
         else:
             ref_mode = 'to-def'
 
+        schema: CoreSchema
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         if get_schema is None:
-            return None
-
-        schema: CoreSchema
-        if len(inspect.signature(get_schema).parameters) == 1:
-            # (source) -> CoreSchema
-            schema = get_schema(source)
+            validators = getattr(obj, '__get_validators__', None)
+            if validators is None:
+                return None
+            warn(
+                '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+                PydanticDeprecatedSince20,
+            )
+            schema = core_schema.chain_schema([core_schema.general_plain_validator_function(v) for v in validators()])
         else:
-            schema = get_schema(source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode))
+            if len(inspect.signature(get_schema).parameters) == 1:
+                # (source) -> CoreSchema
+                schema = get_schema(source)
+            else:
+                schema = get_schema(
+                    source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode)
+                )
 
         schema = self._unpack_refs_defs(schema)
 
