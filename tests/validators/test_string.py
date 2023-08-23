@@ -233,7 +233,7 @@ def test_lax_subclass(FruitEnum, kwargs):
     assert v.validate_python(b'foobar') == 'foobar'
     p = v.validate_python(FruitEnum.pear)
     assert p == 'pear'
-    assert type(p) is str  # noqa: E721
+    assert type(p) is str
     assert repr(p) == "'pear'"
 
 
