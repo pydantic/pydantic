@@ -16,7 +16,7 @@
 * clean Model docstrings in JSON Schema by @samuelcolvin in https://github.com/pydantic/pydantic/pull/7210
 * fix #7228 (typo): docs in `validators.md` to correct `validate_default` kwarg by @lmmx in https://github.com/pydantic/pydantic/pull/7229
 * ✅ Implement `tzinfo.fromutc` method for `TzInfo` in `pydantic-core` by @lig in https://github.com/pydantic/pydantic/pull/7019
-* Support __get_validators__ by @hramezani in https://github.com/pydantic/pydantic/pull/7197
+* Support `__get_validators__` by @hramezani in https://github.com/pydantic/pydantic/pull/7197
 
 ## v2.2.1 (2023-08-18)
 
