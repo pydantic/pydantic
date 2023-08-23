@@ -189,7 +189,7 @@ def test_tuple_positional_omit():
         {
             'type': 'tuple-positional',
             'items_schema': [{'type': 'int'}, {'type': 'int'}],
-            'extra_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'},
+            'extras_schema': {'type': 'default', 'schema': {'type': 'int'}, 'on_error': 'omit'},
         }
     )
     assert v.validate_python((1, '2')) == (1, 2)

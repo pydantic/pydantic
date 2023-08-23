@@ -55,7 +55,7 @@ impl BuildSerializer for DataclassArgsBuilder {
 
         let computed_fields = ComputedFields::new(schema, config, definitions)?;
 
-        Ok(GeneralFieldsSerializer::new(fields, fields_mode, computed_fields).into())
+        Ok(GeneralFieldsSerializer::new(fields, fields_mode, None, computed_fields).into())
     }
 }
 

@@ -159,8 +159,8 @@ impl BuildSerializer for TuplePositionalSerializer {
         let py = schema.py();
         let items: &PyList = schema.get_as_req(intern!(py, "items_schema"))?;
 
-        let extra_serializer = match schema.get_as::<&PyDict>(intern!(py, "extra_schema"))? {
-            Some(extra_schema) => CombinedSerializer::build(extra_schema, config, definitions)?,
+        let extra_serializer = match schema.get_as::<&PyDict>(intern!(py, "extras_schema"))? {
+            Some(extras_schema) => CombinedSerializer::build(extras_schema, config, definitions)?,
             None => AnySerializer::build(schema, config, definitions)?,
         };
         let items_serializers: Vec<CombinedSerializer> = items

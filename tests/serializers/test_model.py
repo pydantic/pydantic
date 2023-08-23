@@ -2,7 +2,7 @@ import dataclasses
 import json
 import platform
 from random import randint
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Dict
 
 try:
     from functools import cached_property
@@ -915,3 +915,27 @@ def test_extra_config_nested_model():
     s_repr = plain_repr(s)
     assert 'has_extra:true,root_model:false,name:"InnerModel"' in s_repr
     assert 'has_extra:false,root_model:false,name:"OuterModel"' in s_repr
+
+
+def test_extra_custom_serializer():
+    class Model:
+        __slots__ = ('__pydantic_extra__', '__dict__')
+        __pydantic_extra__: Dict[str, Any]
+
+    schema = core_schema.model_schema(
+        Model,
+        core_schema.model_fields_schema(
+            {},
+            extra_behavior='allow',
+            extras_schema=core_schema.any_schema(
+                serialization=core_schema.plain_serializer_function_ser_schema(lambda v: v + ' bam!')
+            ),
+        ),
+        extra_behavior='allow',
+    )
+    s = SchemaSerializer(schema)
+
+    m = Model()
+    m.__pydantic_extra__ = {'extra': 'extra'}
+
+    assert s.to_python(m) == {'extra': 'extra bam!'}

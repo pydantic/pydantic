@@ -210,9 +210,9 @@ def test_forbid_extra():
 
 
 def test_allow_extra_invalid():
-    with pytest.raises(SchemaError, match='extra_validator can only be used if extra_behavior=allow'):
+    with pytest.raises(SchemaError, match='extras_schema can only be used if extra_behavior=allow'):
         SchemaValidator(
-            {'type': 'model-fields', 'fields': {}, 'extra_validator': {'type': 'int'}, 'extra_behavior': 'ignore'}
+            {'type': 'model-fields', 'fields': {}, 'extras_schema': {'type': 'int'}, 'extra_behavior': 'ignore'}
         )
 
 
@@ -358,7 +358,7 @@ def test_validate_assignment_allow_extra_validate():
         {
             'type': 'model-fields',
             'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
-            'extra_validator': {'type': 'int'},
+            'extras_schema': {'type': 'int'},
             'extra_behavior': 'allow',
         }
     )
@@ -1659,19 +1659,19 @@ def test_frozen_field():
     ],
 )
 @pytest.mark.parametrize(
-    'extra_validator_kw, expected_extra_value',
-    [({}, '123'), ({'extra_validator': None}, '123'), ({'extra_validator': core_schema.int_schema()}, 123)],
-    ids=['extra_validator=unset', 'extra_validator=None', 'extra_validator=int'],
+    'extras_schema_kw, expected_extra_value',
+    [({}, '123'), ({'extras_schema': None}, '123'), ({'extras_schema': core_schema.int_schema()}, 123)],
+    ids=['extras_schema=unset', 'extras_schema=None', 'extras_schema=int'],
 )
 def test_extra_behavior_allow(
     config: Union[core_schema.CoreConfig, None],
     schema_extra_behavior_kw: Dict[str, Any],
-    extra_validator_kw: Dict[str, Any],
+    extras_schema_kw: Dict[str, Any],
     expected_extra_value: Any,
 ):
     v = SchemaValidator(
         core_schema.model_fields_schema(
-            {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw, **extra_validator_kw
+            {'f': core_schema.model_field(core_schema.str_schema())}, **schema_extra_behavior_kw, **extras_schema_kw
         ),
         config=config,
     )

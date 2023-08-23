@@ -358,7 +358,7 @@ def test_function_positional_tuple():
                     serialization=core_schema.plain_serializer_function_ser_schema(partial(f, 'b'), info_arg=True)
                 ),
             ],
-            'extra_schema': core_schema.any_schema(
+            'extras_schema': core_schema.any_schema(
                 serialization=core_schema.plain_serializer_function_ser_schema(partial(f, 'extra'), info_arg=True)
             ),
         }
@@ -396,7 +396,7 @@ def test_tuple_pos_dict_key():
     s = SchemaSerializer(
         core_schema.dict_schema(
             core_schema.tuple_positional_schema(
-                [core_schema.int_schema(), core_schema.str_schema()], extra_schema=core_schema.int_schema()
+                [core_schema.int_schema(), core_schema.str_schema()], extras_schema=core_schema.int_schema()
             ),
             core_schema.int_schema(),
         )
