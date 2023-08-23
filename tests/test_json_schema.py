@@ -1696,6 +1696,25 @@ def test_model_subclass_metadata():
 
 
 @pytest.mark.parametrize(
+    'docstring,description',
+    [
+        ('foobar', 'foobar'),
+        ('\n     foobar\n    ', 'foobar'),
+        ('foobar\n    ', 'foobar\n    '),
+        ('foo\n    bar\n    ', 'foo\nbar'),
+        ('\n    foo\n    bar\n    ', 'foo\nbar'),
+    ],
+)
+def test_docstring(docstring, description):
+    class A(BaseModel):
+        x: int
+
+    A.__doc__ = docstring
+
+    assert A.model_json_schema()['description'] == description
+
+
+@pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
         ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),

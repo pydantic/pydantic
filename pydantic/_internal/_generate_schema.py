@@ -219,7 +219,7 @@ def modify_model_json_schema(
         original_schema['title'] = cls.__name__
     docstring = cls.__doc__
     if docstring and 'description' not in original_schema:
-        original_schema['description'] = docstring
+        original_schema['description'] = inspect.cleandoc(docstring)
     return json_schema
 
 
