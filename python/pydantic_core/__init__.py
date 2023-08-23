@@ -18,6 +18,7 @@ from ._pydantic_core import (
     SchemaSerializer,
     SchemaValidator,
     Some,
+    TzInfo,
     Url,
     ValidationError,
     __version__,
@@ -59,6 +60,7 @@ __all__ = [
     'PydanticUseDefault',
     'PydanticSerializationError',
     'PydanticSerializationUnexpectedValue',
+    'TzInfo',
     'to_json',
     'to_jsonable_python',
 ]
