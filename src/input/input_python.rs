@@ -303,7 +303,9 @@ impl<'a> Input<'a> for PyAny {
             if PyBool::is_exact_type_of(self) {
                 Err(ValError::new(ErrorTypeDefaults::IntType, self))
             } else {
-                Ok(EitherInt::Py(self))
+                // force to an int to upcast to a pure python int
+                let int = self.extract::<i64>()?;
+                Ok(EitherInt::I64(int))
             }
         } else {
             Err(ValError::new(ErrorTypeDefaults::IntType, self))
@@ -314,7 +316,12 @@ impl<'a> Input<'a> for PyAny {
         if PyInt::is_exact_type_of(self) {
             Ok(EitherInt::Py(self))
         } else if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::IntParsing)? {
+            // Try strings before subclasses of int as that will be far more common
             str_as_int(self, &cow_str)
+        } else if PyInt::is_type_of(self) {
+            // force to an int to upcast to a pure python int to maintain current behaviour
+            let int = self.extract::<i64>()?;
+            Ok(EitherInt::I64(int))
         } else if let Ok(float) = self.extract::<f64>() {
             float_as_int(self, float)
         } else {
