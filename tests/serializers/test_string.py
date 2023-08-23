@@ -72,6 +72,6 @@ def test_subclass_str(schema_type, input_value, expected):
 
     v = s.to_python(input_value, mode='json')
     assert v == expected
-    assert type(v) == str  # noqa: E721
+    assert type(v) == str
 
     assert s.to_json(input_value) == json.dumps(expected).encode('utf-8')

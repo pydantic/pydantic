@@ -70,7 +70,7 @@ def test_int_to_float():
     s = SchemaSerializer(core_schema.float_schema())
     v_plain = s.to_python(1)
     assert v_plain == 1
-    assert type(v_plain) == int  # noqa: E721
+    assert type(v_plain) == int
 
     v_plain_subclass = s.to_python(IntSubClass(1))
     assert v_plain_subclass == IntSubClass(1)
@@ -78,11 +78,11 @@ def test_int_to_float():
 
     v_json = s.to_python(1, mode='json')
     assert v_json == 1.0
-    assert type(v_json) == float  # noqa: E721
+    assert type(v_json) == float
 
     v_json_subclass = s.to_python(IntSubClass(1), mode='json')
     assert v_json_subclass == 1
-    assert type(v_json_subclass) == float  # noqa: E721
+    assert type(v_json_subclass) == float
 
     assert s.to_json(1) == b'1.0'
     assert s.to_json(IntSubClass(1)) == b'1.0'
@@ -95,12 +95,12 @@ def test_int_to_float_key():
     s = SchemaSerializer(core_schema.dict_schema(core_schema.float_schema(), core_schema.float_schema()))
     v_plain = s.to_python({1: 1})
     assert v_plain == {1: 1}
-    assert type(list(v_plain.keys())[0]) == int  # noqa: E721
-    assert type(v_plain[1]) == int  # noqa: E721
+    assert type(list(v_plain.keys())[0]) == int
+    assert type(v_plain[1]) == int
 
     v_json = s.to_python({1: 1}, mode='json')
     assert v_json == {'1': 1.0}
-    assert type(v_json['1']) == float  # noqa: E721
+    assert type(v_json['1']) == float
 
     assert s.to_json({1: 1}) == b'{"1":1.0}'
 
@@ -133,6 +133,6 @@ def test_numpy():
 
     v = s.to_python(numpy.float64(1.0), mode='json')
     assert v == 1.0
-    assert type(v) == float  # noqa: E721
+    assert type(v) == float
 
     assert s.to_json(numpy.float64(1.0)) == b'1.0'

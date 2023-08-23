@@ -86,7 +86,7 @@ def test_subclass_bytes(schema_type, input_value, expected_json):
 
     v = s.to_python(input_value, mode='json')
     assert v == expected_json
-    assert type(v) == str  # noqa: E721
+    assert type(v) == str
 
     assert s.to_json(input_value) == json.dumps(expected_json).encode('utf-8')
 
