@@ -304,8 +304,7 @@ impl<'a> Input<'a> for PyAny {
                 Err(ValError::new(ErrorTypeDefaults::IntType, self))
             } else {
                 // force to an int to upcast to a pure python int
-                let int = self.extract::<i64>()?;
-                Ok(EitherInt::I64(int))
+                EitherInt::upcast(self)
             }
         } else {
             Err(ValError::new(ErrorTypeDefaults::IntType, self))
@@ -320,8 +319,7 @@ impl<'a> Input<'a> for PyAny {
             str_as_int(self, &cow_str)
         } else if PyInt::is_type_of(self) {
             // force to an int to upcast to a pure python int to maintain current behaviour
-            let int = self.extract::<i64>()?;
-            Ok(EitherInt::I64(int))
+            EitherInt::upcast(self)
         } else if let Ok(float) = self.extract::<f64>() {
             float_as_int(self, float)
         } else {
