@@ -162,6 +162,12 @@ def test_list_error(input_value, index):
             infinite_generator(),
             Err('List should have at most 44 items after validation, not 45 [type=too_long,'),
         ),
+        (
+            {'max_length': 4, 'items_schema': {'type': 'int'}},
+            [0, 1, 2, 3, 4, 5, 6, 7, 8],
+            Err('List should have at most 4 items after validation, not 9 [type=too_long,'),
+        ),
+        ({}, infinite_generator(), Err('List should have at most 10 items after validation, not 11 [type=too_long,')),
     ],
 )
 def test_list_length_constraints(kwargs: Dict[str, Any], input_value, expected):
@@ -391,9 +397,9 @@ def test_max_length_fail_fast(error_in_func: bool) -> None:
         {
             'type': 'too_long',
             'loc': (),
-            'msg': 'List should have at most 10 items after validation, not 11',
+            'msg': 'List should have at most 10 items after validation, not 15',
             'input': data,
-            'ctx': {'field_type': 'List', 'max_length': 10, 'actual_length': 11},
+            'ctx': {'field_type': 'List', 'max_length': 10, 'actual_length': 15},
         }
     )
 

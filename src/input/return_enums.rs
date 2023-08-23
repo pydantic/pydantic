@@ -105,31 +105,54 @@ struct MaxLengthCheck<'a, INPUT> {
     max_length: Option<usize>,
     field_type: &'a str,
     input: &'a INPUT,
+    known_input_length: usize,
 }
 
 impl<'a, INPUT: Input<'a>> MaxLengthCheck<'a, INPUT> {
-    fn new(max_length: Option<usize>, field_type: &'a str, input: &'a INPUT) -> Self {
+    fn new(max_length: Option<usize>, field_type: &'a str, input: &'a INPUT, known_input_length: usize) -> Self {
         Self {
             current_length: 0,
             max_length,
             field_type,
             input,
+            known_input_length,
         }
     }
 
     fn incr(&mut self) -> ValResult<'a, ()> {
-        if let Some(max_length) = self.max_length {
-            self.current_length += 1;
-            if self.current_length > max_length {
-                return Err(ValError::new(
-                    ErrorType::TooLong {
-                        field_type: self.field_type.to_string(),
-                        max_length,
-                        actual_length: self.current_length,
-                        context: None,
-                    },
-                    self.input,
-                ));
+        match self.max_length {
+            Some(max_length) => {
+                self.current_length += 1;
+                if self.current_length > max_length {
+                    let biggest_length = if self.known_input_length > self.current_length {
+                        self.known_input_length
+                    } else {
+                        self.current_length
+                    };
+                    return Err(ValError::new(
+                        ErrorType::TooLong {
+                            field_type: self.field_type.to_string(),
+                            max_length,
+                            actual_length: biggest_length,
+                            context: None,
+                        },
+                        self.input,
+                    ));
+                }
+            }
+            None => {
+                self.current_length += 1;
+                if self.current_length > self.known_input_length {
+                    return Err(ValError::new(
+                        ErrorType::TooLong {
+                            field_type: self.field_type.to_string(),
+                            max_length: self.known_input_length,
+                            actual_length: self.current_length,
+                            context: None,
+                        },
+                        self.input,
+                    ));
+                }
             }
         }
         Ok(())
@@ -315,7 +338,7 @@ impl<'a> GenericIterable<'a> {
         let capacity = self
             .generic_len()
             .unwrap_or_else(|| max_length.unwrap_or(DEFAULT_CAPACITY));
-        let max_length_check = MaxLengthCheck::new(max_length, field_type, input);
+        let max_length_check = MaxLengthCheck::new(max_length, field_type, input, capacity);
 
         macro_rules! validate {
             ($iter:expr) => {
@@ -371,7 +394,10 @@ impl<'a> GenericIterable<'a> {
         field_type: &'static str,
         max_length: Option<usize>,
     ) -> ValResult<'a, Vec<PyObject>> {
-        let max_length_check = MaxLengthCheck::new(max_length, field_type, input);
+        let capacity = self
+            .generic_len()
+            .unwrap_or_else(|| max_length.unwrap_or(DEFAULT_CAPACITY));
+        let max_length_check = MaxLengthCheck::new(max_length, field_type, input, capacity);
 
         match self {
             GenericIterable::List(collection) => {
