@@ -84,7 +84,9 @@ except ValidationError as e:
 
 ## Base64 encoding support
 
-Internally, pydantic uses the `pydantic.types.EncodedBytes` and `pydantic.types.EncodedStr` annotations with `pydantic.types.Base64Encoder` to implement base64 encoding/decoding in the `Base64Bytes` and `Base64Str` types, respectively.
+Internally, Pydantic uses the [`EncodedBytes`][pydantic.types.EncodedBytes] and [`EncodedStr`][pydantic.types.EncodedStr]
+annotations with [`Base64Encoder`][pydantic.types.Base64Encoder] to implement base64 encoding/decoding in the
+[`Base64Bytes`][pydantic.types.Base64Bytes] and [`Base64Str`][pydantic.types.Base64Str] types, respectively.
 
 ```py
 from typing import Optional
