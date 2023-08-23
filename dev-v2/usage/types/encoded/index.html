@@ -2213,7 +2213,9 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="base64-encoding-support">Base64 encoding support<a class="headerlink" href="#base64-encoding-support" title="Permanent link">&para;</a></h2>
-<p>Internally, pydantic uses the <code>pydantic.types.EncodedBytes</code> and <code>pydantic.types.EncodedStr</code> annotations with <code>pydantic.types.Base64Encoder</code> to implement base64 encoding/decoding in the <code>Base64Bytes</code> and <code>Base64Str</code> types, respectively.</p>
+<p>Internally, Pydantic uses the <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.EncodedBytes"><code>EncodedBytes</code></a> and <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.EncodedStr"><code>EncodedStr</code></a>
+annotations with <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64Encoder"><code>Base64Encoder</code></a> to implement base64 encoding/decoding in the
+<a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64Bytes"><code>Base64Bytes</code></a> and <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64Str"><code>Base64Str</code></a> types, respectively.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64Bytes</span><span class="p">,</span> <span class="n">Base64Str</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>

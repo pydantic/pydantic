@@ -1965,6 +1965,20 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.types.Base64Bytes" class="md-nav__link">
+    Base64Bytes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.types.Base64Str" class="md-nav__link">
+    Base64Str
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.types.Strict" class="md-nav__link">
     Strict
   </a>
@@ -2762,6 +2776,20 @@
         <li class="md-nav__item">
   <a href="#pydantic.types.NewPath" class="md-nav__link">
     NewPath
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.types.Base64Bytes" class="md-nav__link">
+    Base64Bytes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.types.Base64Str" class="md-nav__link">
+    Base64Str
   </a>
   
 </li>
@@ -3642,6 +3670,56 @@
   <div class="doc doc-contents ">
   
       <p>A path for a new file or directory that must not already exist.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pydantic.types.Base64Bytes" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">Base64Bytes</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.types.Base64Bytes" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">Base64Bytes</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">bytes</span><span class="p">,</span> <span class="n">EncodedBytes</span><span class="p">(</span><span class="n">encoder</span><span class="o">=</span><span class="n">Base64Encoder</span><span class="p">)</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A bytes type that is encoded and decoded using the base64 encoder.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pydantic.types.Base64Str" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">Base64Str</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.types.Base64Str" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">Base64Str</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="nb">str</span><span class="p">,</span> <span class="n">EncodedStr</span><span class="p">(</span><span class="n">encoder</span><span class="o">=</span><span class="n">Base64Encoder</span><span class="p">)</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A str type that is encoded and decoded using the base64 encoder.</p>
   </div>
 
 </div>
