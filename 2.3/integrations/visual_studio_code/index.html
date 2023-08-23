@@ -1,0 +1,3237 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data validation using Python type hints">
+      
+      
+      
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/visual_studio_code/">
+      
+      
+        <link rel="prev" href="../hypothesis/">
+      
+      
+        <link rel="next" href="../datamodel_code_generator/">
+      
+      
+      <link rel="icon" href="../../favicon.png">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.3">
+    
+    
+      
+        <title>Visual Studio Code - Pydantic</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.0e669242.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.85d0ee34.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../extra/terminal.css">
+    
+      <link rel="stylesheet" href="../../extra/tweaks.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#configure-vs-code" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+              </button>
+            
+            
+  <!-- the following line is displayed in the announcement bar -->
+<!-- keep length under 164 characters (less HTML tags) to fit on 1280px desktop window -->
+<a href="https://docs.pydantic.dev/2.0/blog/pydantic-v2-final/">Pydantic V2</a> is here 🚀! Upgrading an existing app? See the <a href="https://docs.pydantic.dev/2.0/migration/">Migration Guide</a> for tips on essential changes from Pydantic V1!
+
+          </div>
+          
+            <script>var content,el=document.querySelector("[data-md-component=announce]");el&&(content=el.querySelector(".md-typeset"),__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0))</script>
+          
+        </aside>
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Pydantic" class="md-header__button md-logo" aria-label="Pydantic" data-md-component="logo">
+      
+  <img src="../../logo-white.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Pydantic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Visual Studio Code
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pydantic/pydantic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pydantic/pydantic
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../.." class="md-tabs__link">
+          
+  
+  Get Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../usage/models/" class="md-tabs__link">
+          
+  
+  Usage
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../errors/errors/" class="md-tabs__link">
+          
+  
+  Error Messages
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../mypy/" class="md-tabs__link">
+          
+  
+  Integrations
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../blog/pydantic-v2-final/" class="md-tabs__link">
+          
+  
+  Blog
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/base_model/" class="md-tabs__link">
+          
+  
+  API Documentation
+
+        </a>
+      </li>
+    
+  
+
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Pydantic" class="md-nav__button md-logo" aria-label="Pydantic" data-md-component="logo">
+      
+  <img src="../../logo-white.svg" alt="logo">
+
+    </a>
+    Pydantic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pydantic/pydantic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pydantic/pydantic
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+        
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Get Started
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Get Started
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Welcome to Pydantic
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../why/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Why use Pydantic
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../help_with_pydantic/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Help with Pydantic
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../migration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Migration Guide
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../version-compatibility/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Version Compatibility
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../changelog/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Changelog
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Usage
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Usage
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/models/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Models
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+        
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Field Types
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            Field Types
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Types Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/standard_types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Standard Library Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/booleans/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Booleans
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/bytesize/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ByteSize
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/callables/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Callables
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/datetime/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Datetimes
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/dicts_mapping/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dicts and Mapping
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/encoded/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Encoded Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/enums/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Enums and Choices
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/file_types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    File Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/json/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    JSON
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/list_types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Lists and Tuples
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/number_types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Number Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/secrets/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Secret Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/sequence_iterable/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sequence, Iterable & Iterator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/set_types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Sets and frozenset
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/strict_types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Strict Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/string_types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    String Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/typevars/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Type and TypeVar
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/types_fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Types with Fields
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/unions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Unions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/urls/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    URLs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/uuids/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    UUIDs
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/encoded/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Encoded
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/custom/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Custom Data Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_26" >
+        
+          <label class="md-nav__link" for="__nav_2_2_26" id="__nav_2_2_26_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Extra Types
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_26_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_26">
+            <span class="md-nav__icon md-icon"></span>
+            Extra Types
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/extra_types/extra_types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extra Types Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/extra_types/color_types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Color Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/extra_types/payment_cards/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Payment Card Numbers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/extra_types/phone_numbers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phone Numbers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/extra_types/routing_numbers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Routing Numbers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/extra_types/mac_address/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MAC Address
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/types/extra_types/coordinate/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Coordinate
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/validators/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validators
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/model_config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Model Config
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fields
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/json_schema/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    JSON Schema
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/serialization/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Serialization
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/computed_fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Computed Fields
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/dataclasses/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Dataclasses
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/type_adapter/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TypeAdapter
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/validation_decorator/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation Decorator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/postponed_annotations/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Postponed Annotations
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/strict_mode/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Strict Mode
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/conversion_table/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Conversion Table
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/pydantic_settings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Settings Management
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Error Messages
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Error Messages
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../errors/errors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Error Handling
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../errors/validation_errors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Validation Errors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../errors/usage_errors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Usage Errors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Integrations
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Integrations
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mypy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Mypy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pycharm/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PyCharm
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hypothesis/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Hypothesis
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Visual Studio Code
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Visual Studio Code
+  </span>
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configure-vs-code" class="md-nav__link">
+    Configure VS Code
+  </a>
+  
+    <nav class="md-nav" aria-label="Configure VS Code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-pylance" class="md-nav__link">
+    Install Pylance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-your-environment" class="md-nav__link">
+    Configure your environment
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-pylance" class="md-nav__link">
+    Configure Pylance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-mypy" class="md-nav__link">
+    Configure mypy
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips-and-tricks" class="md-nav__link">
+    Tips and tricks
+  </a>
+  
+    <nav class="md-nav" aria-label="Tips and tricks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strict-errors" class="md-nav__link">
+    Strict errors
+  </a>
+  
+    <nav class="md-nav" aria-label="Strict errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disable-type-checks-in-a-line" class="md-nav__link">
+    Disable type checks in a line
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#override-the-type-of-a-variable" class="md-nav__link">
+    Override the type of a variable
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#override-the-type-of-a-value-with-cast" class="md-nav__link">
+    Override the type of a value with cast
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config-in-class-arguments" class="md-nav__link">
+    Config in class arguments
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-default-with-field" class="md-nav__link">
+    Adding a default with Field
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-details" class="md-nav__link">
+    Technical Details
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datamodel_code_generator/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    datamodel-code-generator
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../devtools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    devtools
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rich/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Rich
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Blog
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            Blog
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/pydantic-v2-final/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pydantic V2 Is Here!
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/pydantic-v2-alpha/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pydantic V2 Pre Release
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/pydantic-v2/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pydantic V2 Plan
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API Documentation
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+        
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Pydantic
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            Pydantic
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/base_model/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BaseModel
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/root_model/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    RootModel
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/dataclasses/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pydantic Dataclasses
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/type_adapter/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    TypeAdapter
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/validate_call/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    validate_call
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/fields/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Fields
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Config
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/json_schema/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    json_schema
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/errors/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Errors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/functional_validators/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Functional Validators
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/functional_serializers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Functional Serializers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/types/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pydantic Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/networks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Network Types
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/version/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Version Information
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Pydantic Core
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Pydantic Core
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pydantic_core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pydantic_core
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pydantic_core_schema/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pydantic_core.core_schema
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+        
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Pydantic Settings
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            Pydantic Settings
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pydantic_settings/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pydantic_settings
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
+        
+          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Pydantic Extra Types
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_4">
+            <span class="md-nav__icon md-icon"></span>
+            Pydantic Extra Types
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pydantic_extra_types_color/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pydantic_extra_types.color
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pydantic_extra_types_country/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pydantic_extra_types.country
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pydantic_extra_types_payment/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pydantic_extra_types.payment
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pydantic_extra_types.phone_numbers
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/pydantic_extra_types_routing_number/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    pydantic_extra_types.routing_number
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#configure-vs-code" class="md-nav__link">
+    Configure VS Code
+  </a>
+  
+    <nav class="md-nav" aria-label="Configure VS Code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#install-pylance" class="md-nav__link">
+    Install Pylance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-your-environment" class="md-nav__link">
+    Configure your environment
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-pylance" class="md-nav__link">
+    Configure Pylance
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configure-mypy" class="md-nav__link">
+    Configure mypy
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips-and-tricks" class="md-nav__link">
+    Tips and tricks
+  </a>
+  
+    <nav class="md-nav" aria-label="Tips and tricks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#strict-errors" class="md-nav__link">
+    Strict errors
+  </a>
+  
+    <nav class="md-nav" aria-label="Strict errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#disable-type-checks-in-a-line" class="md-nav__link">
+    Disable type checks in a line
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#override-the-type-of-a-variable" class="md-nav__link">
+    Override the type of a variable
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#override-the-type-of-a-value-with-cast" class="md-nav__link">
+    Override the type of a value with cast
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config-in-class-arguments" class="md-nav__link">
+    Config in class arguments
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-default-with-field" class="md-nav__link">
+    Adding a default with Field
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-details" class="md-nav__link">
+    Technical Details
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+  
+                  
+
+  
+  
+
+
+  <h1>Visual Studio Code</h1>
+
+<p>Pydantic works well with any editor or IDE out of the box because it's made on top of standard Python type annotations.</p>
+<p>When using <a href="https://code.visualstudio.com/">Visual Studio Code (VS Code)</a>, there are some <strong>additional editor features</strong> supported, comparable to the ones provided by the <a href="../pycharm/">PyCharm plugin</a>.</p>
+<p>This means that you will have <strong>autocompletion</strong> (or "IntelliSense") and <strong>error checks</strong> for types and required arguments even while creating new Pydantic model instances.</p>
+<p><img alt="pydantic autocompletion in VS Code" src="../../img/vs_code_01.png" /></p>
+<h2 id="configure-vs-code">Configure VS Code<a class="headerlink" href="#configure-vs-code" title="Permanent link">&para;</a></h2>
+<p>To take advantage of these features, you need to make sure you configure VS Code correctly, using the recommended settings.</p>
+<p>In case you have a different configuration, here's a short overview of the steps.</p>
+<h3 id="install-pylance">Install Pylance<a class="headerlink" href="#install-pylance" title="Permanent link">&para;</a></h3>
+<p>You should use the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance">Pylance</a> extension for VS Code. It is the recommended, next-generation, official VS Code plug-in for Python.</p>
+<p>Pylance is installed as part of the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python Extension for VS Code</a> by default, so it should probably just work. Otherwise, you can double check it's installed and enabled in your editor.</p>
+<h3 id="configure-your-environment">Configure your environment<a class="headerlink" href="#configure-your-environment" title="Permanent link">&para;</a></h3>
+<p>Then you need to make sure your editor knows the <a href="https://code.visualstudio.com/docs/python/python-tutorial#_install-and-use-packages">Python environment</a> (probably a virtual environment) for your Python project.</p>
+<p>This would be the environment in where you installed Pydantic.</p>
+<h3 id="configure-pylance">Configure Pylance<a class="headerlink" href="#configure-pylance" title="Permanent link">&para;</a></h3>
+<p>With the default configurations, you will get support for autocompletion, but Pylance might not check for type errors.</p>
+<p>You can enable type error checks from Pylance with these steps:</p>
+<ul>
+<li>Open the "User Settings"</li>
+<li>Search for <code>Type Checking Mode</code></li>
+<li>You will find an option under <code>Python › Analysis: Type Checking Mode</code></li>
+<li>Set it to <code>basic</code> or <code>strict</code> (by default it's <code>off</code>)</li>
+</ul>
+<p><img alt="Type Checking Mode set to strict in VS Code" src="../../img/vs_code_02.png" /></p>
+<p>Now you will not only get autocompletion when creating new Pydantic model instances but also error checks for <strong>required arguments</strong>.</p>
+<p><img alt="Required arguments error checks in VS Code" src="../../img/vs_code_03.png" /></p>
+<p>And you will also get error checks for <strong>invalid data types</strong>.</p>
+<p><img alt="Invalid data types error checks in VS Code" src="../../img/vs_code_04.png" /></p>
+<div class="admonition note">
+<p class="admonition-title">Technical Details</p>
+<p>Pylance is the VS Code extension, it's closed source, but free to use. Underneath, Pylance uses an open source tool (also from Microsoft) called <a href="https://github.com/microsoft/pyright">Pyright</a> that does all the heavy lifting.</p>
+<p>You can read more about it in the <a href="https://github.com/microsoft/pylance-release/blob/main/FAQ.md#what-is-the-relationship-between-pylance-pyright-and-the-python-extension">Pylance Frequently Asked Questions</a>.</p>
+</div>
+<h3 id="configure-mypy">Configure mypy<a class="headerlink" href="#configure-mypy" title="Permanent link">&para;</a></h3>
+<p>You might also want to configure mypy in VS Code to get mypy error checks inline in your editor (alternatively/additionally to Pylance).</p>
+<p>This would include the errors detected by the <a href="../mypy/">Pydantic mypy plugin</a>, if you configured it.</p>
+<p>To enable mypy in VS Code, do the following:</p>
+<ul>
+<li>Open the "User Settings"</li>
+<li>Search for <code>Mypy Enabled</code></li>
+<li>You will find an option under <code>Python › Linting: Mypy Enabled</code></li>
+<li>Check the box (by default it's unchecked)</li>
+</ul>
+<p><img alt="mypy enabled in VS Code" src="../../img/vs_code_05.png" /></p>
+<h2 id="tips-and-tricks">Tips and tricks<a class="headerlink" href="#tips-and-tricks" title="Permanent link">&para;</a></h2>
+<p>Here are some additional tips and tricks to improve your developer experience when using VS Code with Pydantic.</p>
+<h3 id="strict-errors">Strict errors<a class="headerlink" href="#strict-errors" title="Permanent link">&para;</a></h3>
+<p>The way this additional editor support works is that Pylance will treat your Pydantic models as if they were Python's pure <code>dataclasses</code>.</p>
+<p>And it will show <strong>strict type error checks</strong> about the data types passed in arguments when creating a new Pydantic model instance.</p>
+<p>In this example you can see that it shows that a <code>str</code> of <code>'23'</code> is not a valid <code>int</code> for the argument <code>age</code>.</p>
+<p><img alt="VS Code strict type errors" src="../../img/vs_code_06.png" /></p>
+<p>It would expect <code>age=23</code> instead of <code>age='23'</code>.</p>
+<p>Nevertheless, the design, and one of the main features of Pydantic, is that it is very <strong>lenient with data types</strong>.</p>
+<p>It will actually accept the <code>str</code> with value <code>'23'</code> and will convert it to an <code>int</code> with value <code>23</code>.</p>
+<p>These strict error checks are <strong>very useful</strong> most of the time and can help you <strong>detect many bugs early</strong>. But there are cases, like with <code>age='23'</code>, where they could be inconvenient by reporting a "false positive" error.</p>
+<hr />
+<p>This example above with <code>age='23'</code> is intentionally simple, to show the error and the differences in types.</p>
+<p>But more common cases where these strict errors would be inconvenient would be when using more sophisticated data types, like <code>int</code> values for <code>datetime</code> fields, or <code>dict</code> values for Pydantic sub-models.</p>
+<p>For example, this is valid for Pydantic:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">Quest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+<span class="hll">    <span class="n">knight</span><span class="p">:</span> <span class="n">Knight</span>
+</span>
+
+<span class="n">quest</span> <span class="o">=</span> <span class="n">Quest</span><span class="p">(</span>
+    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;To seek the Holy Grail&#39;</span><span class="p">,</span> <span class="n">knight</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">}</span>
+<span class="hll"><span class="p">)</span>
+</span></code></pre></div>
+<p>The type of the field <code>knight</code> is declared with the class <code>Knight</code> (a Pydantic model) and the code is passing a literal <code>dict</code> instead. This is still valid for Pydantic, and the <code>dict</code> would be automatically converted to a <code>Knight</code> instance.</p>
+<p>Nevertheless, it would be detected as a type error:</p>
+<p><img alt="VS Code strict type errors with model" src="../../img/vs_code_07.png" /></p>
+<p>In those cases, there are several ways to disable or ignore strict errors in very specific places, while still preserving them in the rest of the code.</p>
+<p>Below are several techniques to achieve it.</p>
+<h4 id="disable-type-checks-in-a-line">Disable type checks in a line<a class="headerlink" href="#disable-type-checks-in-a-line" title="Permanent link">&para;</a></h4>
+<p>You can disable the errors for a specific line using a comment of:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># type: ignore</span>
+</code></pre></div>
+<p>or (to be specific to pylance/pyright):</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># pyright: ignore</span>
+</code></pre></div>
+<p>(<a href="https://github.com/microsoft/pyright">pyright</a> is the language server used by Pylance.).</p>
+<p>coming back to the example with <code>age='23'</code>, it would be:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+
+
+<span class="hll"><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;23&#39;</span><span class="p">)</span>  <span class="c1"># pyright: ignore</span>
+</span></code></pre></div>
+<p>that way Pylance and mypy will ignore errors in that line.</p>
+<p><strong>Pros</strong>: it's a simple change in that line to remove errors there.</p>
+<p><strong>Cons</strong>: any other error in that line will also be omitted, including type checks, misspelled arguments, required arguments not provided, etc.</p>
+<h4 id="override-the-type-of-a-variable">Override the type of a variable<a class="headerlink" href="#override-the-type-of-a-variable" title="Permanent link">&para;</a></h4>
+<p>You can also create a variable with the value you want to use and declare its type explicitly with <code>Any</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+
+<span class="hll">
+</span><span class="hll"><span class="n">age_str</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s1">&#39;23&#39;</span>
+</span><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">age_str</span><span class="p">)</span>
+</code></pre></div>
+<p>that way Pylance and mypy will interpret the variable <code>age_str</code> as if they didn't know its type, instead of knowing it has a type of <code>str</code> when an <code>int</code> was expected (and then showing the corresponding error).</p>
+<p><strong>Pros</strong>: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments.</p>
+<p><strong>Cons</strong>: it requires importing <code>Any</code> and a new variable in a new line for each argument that needs ignoring errors.</p>
+<h4 id="override-the-type-of-a-value-with-cast">Override the type of a value with <code>cast</code><a class="headerlink" href="#override-the-type-of-a-value-with-cast" title="Permanent link">&para;</a></h4>
+<p>The same idea from the previous example can be put on the same line with the help of <code>cast()</code>.</p>
+<p>This way, the type declaration of the value is overridden inline, without requiring another variable.</p>
+<div class="highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
+</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+
+<span class="hll">
+</span><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">))</span>
+</code></pre></div>
+<p><code>cast(Any, '23')</code> doesn't affect the value, it's still just <code>'23'</code>, but now Pylance and mypy will assume it is of type <code>Any</code>, which means, they will act as if they didn't know the type of the value.</p>
+<p>So, this is the equivalent of the previous example, without the additional variable.</p>
+<p><strong>Pros</strong>: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments. There's no need for additional variables.</p>
+<p><strong>Cons</strong>: it requires importing <code>Any</code> and <code>cast</code>, and if you are not used to using <code>cast()</code>, it could seem strange at first.</p>
+<h3 id="config-in-class-arguments">Config in class arguments<a class="headerlink" href="#config-in-class-arguments" title="Permanent link">&para;</a></h3>
+<p>Pydantic has a rich set of <a href="../../usage/model_config/">Model Configurations</a> available.</p>
+<p>These configurations can be set in an internal <code>class Config</code> on each model:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+</code></pre></div>
+<p>or passed as keyword arguments when defining the model class:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="hll"><span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+</span>    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+</code></pre></div>
+<p>The specific configuration <strong><code>frozen</code></strong> (in beta) has a special meaning.</p>
+<p>It prevents other code from changing a model instance once it's created, keeping it <strong>"frozen"</strong>.</p>
+<p>When using the second version to declare <code>frozen=True</code> (with <strong>keyword arguments</strong> in the class definition),
+Pylance can use it to help you check in your code and <strong>detect errors</strong> when something is trying to set values
+in a model that is "frozen".</p>
+<p><img alt="VS Code strict type errors with model" src="../../img/vs_code_08.png" /></p>
+<h2 id="adding-a-default-with-field">Adding a default with <code>Field</code><a class="headerlink" href="#adding-a-default-with-field" title="Permanent link">&para;</a></h2>
+<p>Pylance/pyright requires <code>default</code> to be a keyword argument to <code>Field</code> in order to infer that the field is optional.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">)</span>  <span class="c1"># this is okay</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
+        <span class="mi">23</span>
+    <span class="p">)</span>  <span class="c1"># this works fine at runtime but will case an error for pyright</span>
+
+
+<span class="n">lance</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">()</span>  <span class="c1"># error: Argument missing for parameter &quot;age&quot;</span>
+</code></pre></div>
+<p>This is a limitation of dataclass transforms and cannot be fixed in pydantic.</p>
+<h2 id="technical-details">Technical Details<a class="headerlink" href="#technical-details" title="Permanent link">&para;</a></h2>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>As a Pydantic user, you don't need the details below. Feel free to skip the rest of this section.</p>
+<p>These details are only useful for other library authors, etc.</p>
+</div>
+<p>This additional editor support works by implementing the proposed draft standard for <a href="https://peps.python.org/pep-0681/">Dataclass Transform (PEP 681)</a>.</p>
+<p>The proposed draft standard is written by Eric Traut, from the Microsoft team, the same author of the open source package Pyright (used by Pylance to provide Python support in VS Code).</p>
+<p>The intention of the standard is to provide a way for libraries like Pydantic and others to tell editors and tools that they (the editors) should treat these libraries (e.g. Pydantic) as if they were <code>dataclasses</code>, providing autocompletion, type checks, etc.</p>
+<p>The draft standard also includes an <a href="https://github.com/microsoft/pyright/blob/master/specs/dataclass_transforms.md#alternate-form">Alternate Form</a> for early adopters, like Pydantic, to add support for it right away, even before the new draft standard is finished and approved.</p>
+<p>This new draft standard, with the Alternate Form, is already supported by Pyright, so it can be used via Pylance in VS Code.</p>
+<p>As it is being proposed as an official standard for Python, other editors can also easily add support for it.</p>
+<p>And authors of other libraries similar to Pydantic can also easily adopt the standard right away (using the "Alternate Form") and get the benefits of these additional editor features.</p>
+
+
+
+
+
+                
+  <script src="/flarelytics/client.js"></script>
+
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.dfff1995.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.78eede0e.min.js"></script>
+      
+        <script src="../../extra/fluff.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+<!-- start announce block -->
+{% block announce %}
+  {% include 'announce.html' ignore missing %}
+{% endblock %}
+<!-- end announce block -->
+{% block content %}
+  {{ super() }}
+  <script src="/flarelytics/client.js"></script>
+{% endblock %}
