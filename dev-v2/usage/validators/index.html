@@ -2563,7 +2563,7 @@ That is, it goes from right to left running all "before" validators (or calling 
 <h2 id="validation-of-default-values">Validation of default values<a class="headerlink" href="#validation-of-default-values" title="Permanent link">&para;</a></h2>
 <p>Validators won't run when the default value is used.
 This applies both to <code>@field_validator</code> validators and <code>Annotated</code> validators.
-You can force them to run with <code>Field(validate_defaults=True)</code>. Setting <code>validate_default</code> to <code>True</code> has the closest behavior to using <code>always=True</code> in <code>validator</code> in Pydantic v1. However, you are generally better off using a <code>@model_validator(mode='before')</code> where the function is called before the inner validator is called.</p>
+You can force them to run with <code>Field(validate_default=True)</code>. Setting <code>validate_default</code> to <code>True</code> has the closest behavior to using <code>always=True</code> in <code>validator</code> in Pydantic v1. However, you are generally better off using a <code>@model_validator(mode='before')</code> where the function is called before the inner validator is called.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">field_validator</span>
