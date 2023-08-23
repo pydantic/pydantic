@@ -56,8 +56,6 @@ jobs:
         pdm use -f $PYTHON
         pdm install -G docs
 
-    - run: pdm info && pdm list
-
     - run: pdm run python -c 'import docs.plugins.main'
 
     # Adding local symlinks gets nice source locations like

@@ -3,12 +3,11 @@ from __future__ import annotations
 
 import contextlib
 import functools
-from typing import Any, Callable, ClassVar, Iterator, TypeVar, cast
+from typing import Any, Callable, ClassVar, Iterator, TypeVar
 
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Final, Literal, ParamSpec
 
-from ._loader import DeferredPluginLoad, plugins
 from .plugin import Plugin, Step
 
 P = ParamSpec('P')
@@ -23,16 +22,10 @@ def create_schema_validator(
     Returns:
         If plugins are installed then return `PluggableSchemaValidator`, otherwise return `SchemaValidator`.
     """
+    from ._loader import plugins
+
     if plugins:
-        loaded_plugins: set[tuple[DeferredPluginLoad, Plugin]] = set()
-        for plugin in plugins:
-            if isinstance(plugin, DeferredPluginLoad):
-                # TODO: Remove `cast`` after Python 3.7 support is dropped
-                loaded_plugins.add((plugin, cast(Plugin, plugin.entry_point.load())))
-        for deferred_plugin, loaded_plugin in loaded_plugins:
-            plugins.remove(deferred_plugin)
-            plugins.add(loaded_plugin)
-        return PluggableSchemaValidator(schema, config, plugin_settings)  # type: ignore
+        return PluggableSchemaValidator(schema, config, plugins, plugin_settings)  # type: ignore
     return SchemaValidator(schema, config)
 
 
@@ -45,10 +38,15 @@ class _Plug:
     _in_call: ClassVar[set[str]] = set()
 
     def __init__(
-        self, schema: CoreSchema, config: CoreConfig | None = None, plugin_settings: dict[str, Any] | None = None
+        self,
+        schema: CoreSchema,
+        config: CoreConfig | None = None,
+        plugins: set[Plugin] | None = None,
+        plugin_settings: dict[str, Any] | None = None,
     ) -> None:
         self.schema = schema
         self.config = config
+        self.plugins: set[Plugin] = plugins if plugins is not None else set()
         self.plugin_settings = plugin_settings
 
     def __call__(self, func: Callable[P, R]) -> Callable[P, R]:
@@ -102,7 +100,7 @@ class _Plug:
             raise RuntimeError(f'Unknown event for {func.__name__}') from exc
 
         calls: list[Callable[..., None]] = []
-        for plugin in plugins:
+        for plugin in self.plugins:
             with contextlib.suppress(AttributeError, TypeError):
                 step_type: type[Step] = getattr(plugin, step)
                 on_step = step_type(self.schema, self.config, self.plugin_settings)
@@ -127,11 +125,15 @@ class PluggableSchemaValidator:
     """Pluggable schema validator."""
 
     def __init__(
-        self, schema: CoreSchema, config: CoreConfig | None = None, plugin_settings: dict[str, Any] | None = None
+        self,
+        schema: CoreSchema,
+        config: CoreConfig | None,
+        plugins: set[Plugin],
+        plugin_settings: dict[str, Any] | None = None,
     ) -> None:
         self.schema_validator = SchemaValidator(schema, config)
 
-        self.plug = _Plug(schema, config, plugin_settings)
+        self.plug = _Plug(schema, config, plugins, plugin_settings)
 
         self.validate_json = self.plug(self.schema_validator.validate_json)
         self.validate_python = self.plug(self.schema_validator.validate_python)

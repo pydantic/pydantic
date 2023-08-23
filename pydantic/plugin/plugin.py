@@ -1,4 +1,4 @@
-"""Usage docs: https://docs.pydantic.dev/dev-v2/integrations/plugins#build-a-plugin
+"""Usage docs: https://docs.pydantic.dev/2.2/integrations/plugins#build-a-plugin
 
 Plugin interface for Pydantic plugins, and related types.
 """
@@ -70,10 +70,7 @@ class OnValidateJson(Step):
 
 @dataclass(frozen=True)
 class Plugin:
-    """Usage docs: https://docs.pydantic.dev/2.2/integrations/plugins/
-
-    Plugin interface for Pydantic plugins.
-    """
+    """Plugin interface for Pydantic plugins"""
 
     on_validate_python: type[OnValidatePython] | None = None
     on_validate_json: type[OnValidateJson] | None = None
