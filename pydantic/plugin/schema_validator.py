@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import contextlib
 import functools
-from typing import Any, Callable, ClassVar, Iterator, TypeVar
+from typing import Any, Callable, ClassVar, Iterator, TypeVar, cast
 
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Final, Literal, ParamSpec
 
-from ._loader import plugins
-from .plugin import Step
+from ._loader import DeferredPluginLoad, plugins
+from .plugin import Plugin, Step
 
 P = ParamSpec('P')
 R = TypeVar('R')
@@ -24,6 +24,14 @@ def create_schema_validator(
         If plugins are installed then return `PluggableSchemaValidator`, otherwise return `SchemaValidator`.
     """
     if plugins:
+        loaded_plugins: set[tuple[DeferredPluginLoad, Plugin]] = set()
+        for plugin in plugins:
+            if isinstance(plugin, DeferredPluginLoad):
+                # TODO: Remove `cast`` after Python 3.7 support is dropped
+                loaded_plugins.add((plugin, cast(Plugin, plugin.entry_point.load())))
+        for deferred_plugin, loaded_plugin in loaded_plugins:
+            plugins.remove(deferred_plugin)
+            plugins.add(loaded_plugin)
         return PluggableSchemaValidator(schema, config, plugin_settings)  # type: ignore
     return SchemaValidator(schema, config)
 

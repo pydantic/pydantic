@@ -16,15 +16,24 @@ The entry point group is `pydantic`, and the name of the entry point is the name
 
 Plugins are loaded in the order they are found, and the order they are found is not guaranteed.
 
+Using Pydantic itself in a plugin could cause an `ImportError`. To avoid such an error Pydantic allows to defer plugin
+importing. To enable deferred plugin import add `defer_import` extra argument to plugin configuration in `pyproject.toml`:
+
+```toml
+[project.entry-points.pydantic]
+pydantic_plugin = "pydantic_plugin:plugin [defer_import]"
+```
+
 As a user, you can modify the behavior of the plugin in a `BaseModel` using the `plugin_settings`
-class keyword argument. This argument takes a dictionary of settings that will be passed to the
-plugin. The plugin can then use these settings to modify its behavior.
+class keyword argument. This argument takes a dictionary of settings that will be passed to all plugins as is.
+The plugin can then use these settings to modify its behavior. It is recommended for plugins to separate their settings
+into their own dedicates keys in a plugin specific key in the `plugin_settings` dictionary.
 
 ```py test="skip"
 from pydantic import BaseModel
 
 
-class Foo(BaseModel, plugin_settings=dict(observe='all')):
+class Foo(BaseModel, plugin_settings={'my-plugin': {'observe': 'all'}}):
     ...
 ```
 
