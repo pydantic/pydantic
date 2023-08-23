@@ -68,9 +68,12 @@ class OnValidateJson(Step):
         raise NotImplementedError()
 
 
-@dataclass
+@dataclass(frozen=True)
 class Plugin:
-    """Plugin interface for Pydantic plugins."""
+    """Usage docs: https://docs.pydantic.dev/2.2/integrations/plugins/
+
+    Plugin interface for Pydantic plugins.
+    """
 
     on_validate_python: type[OnValidatePython] | None = None
     on_validate_json: type[OnValidateJson] | None = None
