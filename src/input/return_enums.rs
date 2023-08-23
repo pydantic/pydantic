@@ -820,6 +820,15 @@ pub enum EitherInt<'a> {
 }
 
 impl<'a> EitherInt<'a> {
+    pub fn upcast(py_any: &'a PyAny) -> ValResult<Self> {
+        // Safety: we know that py_any is a python int
+        if let Ok(int_64) = py_any.extract::<i64>() {
+            Ok(Self::I64(int_64))
+        } else {
+            let big_int: BigInt = py_any.extract()?;
+            Ok(Self::BigInt(big_int))
+        }
+    }
     pub fn into_i64(self, py: Python<'a>) -> ValResult<'a, i64> {
         match self {
             EitherInt::I64(i) => Ok(i),
