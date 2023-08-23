@@ -15,7 +15,7 @@ repos:
   - id: codespell
     additional_dependencies:
       - tomli
-
+    exclude: '^pdm\.lock$'
 - repo: local
   hooks:
   - id: lint
