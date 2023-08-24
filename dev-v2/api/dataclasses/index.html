@@ -2216,6 +2216,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#pydantic.dataclasses.is_pydantic_dataclass" class="md-nav__link">
+    is_pydantic_dataclass()
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2789,6 +2796,13 @@
         <li class="md-nav__item">
   <a href="#pydantic.dataclasses.rebuild_dataclass" class="md-nav__link">
     rebuild_dataclass()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.dataclasses.is_pydantic_dataclass" class="md-nav__link">
+    is_pydantic_dataclass()
   </a>
   
 </li>
@@ -3568,6 +3582,99 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
             <span class="n">raise_errors</span><span class="o">=</span><span class="n">raise_errors</span><span class="p">,</span>
             <span class="n">types_namespace</span><span class="o">=</span><span class="n">types_namespace</span><span class="p">,</span>
         <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="pydantic.dataclasses.is_pydantic_dataclass" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">is_pydantic_dataclass</span>
+
+
+<a href="#pydantic.dataclasses.is_pydantic_dataclass" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">is_pydantic_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Whether a class is a pydantic dataclass.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>__cls</code></td>
+          <td>
+                <code>type[<span title="typing.Any">Any</span>]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The class.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="typing_extensions.TypeGuard">TypeGuard</span>[type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p><code>True</code> if the class is a pydantic dataclass, <code>False</code> otherwise.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+      <details class="quote">
+        <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_pydantic_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">TypeGuard</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether a class is a pydantic dataclass.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        __cls: The class.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        `True` if the class is a pydantic dataclass, `False` otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">is_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;__pydantic_validator__&#39;</span> <span class="ow">in</span> <span class="n">__cls</span><span class="o">.</span><span class="vm">__dict__</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
