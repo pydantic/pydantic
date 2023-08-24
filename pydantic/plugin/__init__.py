@@ -1,5 +1,5 @@
 """The plugin module is used to create plugins for pydantic."""
 
-from .plugin import OnValidateJson, OnValidatePython, Plugin, Step
+from .plugin import EventHandler, OnValidateJson, OnValidatePython, Plugin
 
-__all__ = ['Plugin', 'OnValidateJson', 'OnValidatePython', 'Step']
+__all__ = ['EventHandler', 'OnValidateJson', 'OnValidatePython', 'Plugin']

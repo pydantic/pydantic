@@ -202,6 +202,24 @@ def test_using_pydantic_inside_plugin():
 
 def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPatch, unimport_pydantic):
     def fake_distributions():
+        class FakeOnValidatePython(OnValidatePython):
+            def on_enter(
+                self,
+                input: Any,
+                *,
+                strict: bool | None = None,
+                from_attributes: bool | None = None,
+                context: dict[str, Any] | None = None,
+                self_instance: Any | None = None,
+            ) -> None:
+                pass
+
+            def on_success(self, result: Any) -> None:
+                pass
+
+            def on_error(self, error: ValidationError) -> None:
+                pass
+
         class FakeEntryPoint:
             group = 'pydantic'
             value = 'pydantic.tests.Plugin'
@@ -210,7 +228,7 @@ def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPat
                 # Emulate performing the same import that caused loading plugin while importing a plugin module
                 from pydantic import BaseModel  # noqa: F401
 
-                return Plugin(on_validate_python=OnValidatePython)
+                return Plugin(on_validate_python=FakeOnValidatePython)
 
         class FakeDistribution:
             entry_points = [FakeEntryPoint()]
