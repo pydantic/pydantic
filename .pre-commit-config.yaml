@@ -24,6 +24,12 @@ repos:
     types: [python]
     language: system
     pass_filenames: false
+  - id: usage_docs
+    name: Usage docs links
+    entry: pdm run ./tests/check_usage_docs.py
+    files: '^pydantic/'
+    types: [python]
+    language: system
   - id: typecheck
     name: Typecheck
     entry: pdm run pyright pydantic
