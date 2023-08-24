@@ -175,7 +175,7 @@ flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
 target-version = "py37"
-exclude=['pydantic/v1', 'tests/mypy/outputs']
+exclude=['pydantic/v1', 'tests/mypy/outputs', 'release']
 
 [tool.ruff.extend-per-file-ignores]
 "docs/**/*.py" = ['T']
