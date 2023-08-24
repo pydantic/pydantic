@@ -18,20 +18,16 @@ repos:
     exclude: '^pdm\.lock$'
 - repo: local
   hooks:
-  - id: ruff
-    name: Ruff
-    entry: ruff
-    args: [ --fix ]
-    types: [ python ]
+  - id: lint
+    name: Lint
+    entry: make lint
+    types: [python]
     language: system
-  - id: black
-    name: black
-    entry: black
-    language: system
-    types: [ python ]
+    pass_filenames: false
   - id: usage_docs
     name: Usage docs links
     entry: pdm run ./tests/check_usage_docs.py
+    files: '^pydantic/'
     types: [python]
     language: system
   - id: typecheck
