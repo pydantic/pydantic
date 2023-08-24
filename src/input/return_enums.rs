@@ -224,12 +224,11 @@ impl BuildSet for &PySet {
 
 impl BuildSet for &PyFrozenSet {
     fn build_add(&self, item: PyObject) -> PyResult<()> {
-        unsafe {
-            py_error_on_minusone(
-                self.py(),
-                ffi::PySet_Add(self.as_ptr(), item.to_object(self.py()).as_ptr()),
-            )
-        }
+        py_error_on_minusone(self.py(), unsafe {
+            // Safety: self.as_ptr() the _only_ pointer to the `frozenset`, and it's allowed
+            // to mutate this via the C API when nothing else can refer to it.
+            ffi::PySet_Add(self.as_ptr(), item.to_object(self.py()).as_ptr())
+        })
     }
 
     fn build_len(&self) -> usize {
@@ -492,57 +491,32 @@ impl<'py> Iterator for MappingGenericIterator<'py> {
     type Item = ValResult<'py, (&'py PyAny, &'py PyAny)>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let item = match self.iter.next() {
-            Some(Err(e)) => return Some(Err(mapping_err(e, self.iter.py(), self.input))),
-            Some(Ok(item)) => item,
-            None => return None,
-        };
-        let tuple: &PyTuple = match item.downcast() {
-            Ok(tuple) => tuple,
-            Err(_) => {
-                return Some(Err(ValError::new(
+        Some(match self.iter.next()? {
+            Ok(item) => item.extract().map_err(|_| {
+                ValError::new(
                     ErrorType::MappingType {
                         error: MAPPING_TUPLE_ERROR.into(),
                         context: None,
                     },
                     self.input,
-                )))
-            }
-        };
-        if tuple.len() != 2 {
-            return Some(Err(ValError::new(
-                ErrorType::MappingType {
-                    error: MAPPING_TUPLE_ERROR.into(),
-                    context: None,
-                },
-                self.input,
-            )));
-        };
-        #[cfg(PyPy)]
-        let key = tuple.get_item(0).unwrap();
-        #[cfg(PyPy)]
-        let value = tuple.get_item(1).unwrap();
-        #[cfg(not(PyPy))]
-        let key = unsafe { tuple.get_item_unchecked(0) };
-        #[cfg(not(PyPy))]
-        let value = unsafe { tuple.get_item_unchecked(1) };
-        Some(Ok((key, value)))
+                )
+            }),
+            Err(e) => Err(mapping_err(e, self.iter.py(), self.input)),
+        })
     }
-    // size_hint is omitted as it isn't needed
 }
 
 pub struct AttributesGenericIterator<'py> {
     object: &'py PyAny,
-    attributes: &'py PyList,
-    index: usize,
+    // PyO3 should export this type upstream
+    attributes_iterator: <&'py PyList as IntoIterator>::IntoIter,
 }
 
 impl<'py> AttributesGenericIterator<'py> {
     pub fn new(py_any: &'py PyAny) -> ValResult<'py, Self> {
         Ok(Self {
             object: py_any,
-            attributes: py_any.dir(),
-            index: 0,
+            attributes_iterator: py_any.dir().into_iter(),
         })
     }
 }
@@ -553,37 +527,31 @@ impl<'py> Iterator for AttributesGenericIterator<'py> {
     fn next(&mut self) -> Option<Self::Item> {
         // loop until we find an attribute who's name does not start with underscore,
         // or we get to the end of the list of attributes
-        while self.index < self.attributes.len() {
-            #[cfg(PyPy)]
-            let name: &PyAny = self.attributes.get_item(self.index).unwrap();
-            #[cfg(not(PyPy))]
-            let name: &PyAny = unsafe { self.attributes.get_item_unchecked(self.index) };
-            self.index += 1;
-            // from benchmarks this is 14x faster than using the python `startswith` method
-            let name_cow = match name.downcast::<PyString>() {
-                Ok(name) => name.to_string_lossy(),
-                Err(e) => return Some(Err(e.into())),
-            };
-            if !name_cow.as_ref().starts_with('_') {
-                // getattr is most likely to fail due to an exception in a @property, skip
-                if let Ok(attr) = self.object.getattr(name_cow.as_ref()) {
-                    // we don't want bound methods to be included, is there a better way to check?
-                    // ref https://stackoverflow.com/a/18955425/949890
-                    let is_bound = matches!(attr.hasattr(intern!(attr.py(), "__self__")), Ok(true));
-                    // the PyFunction::is_type_of(attr) catches `staticmethod`, but also any other function,
-                    // I think that's better than including static methods in the yielded attributes,
-                    // if someone really wants fields, they can use an explicit field, or a function to modify input
-                    #[cfg(not(PyPy))]
-                    if !is_bound && !PyFunction::is_type_of(attr) {
-                        return Some(Ok((name, attr)));
-                    }
-                    // MASSIVE HACK! PyFunction doesn't exist for PyPy,
-                    // is_instance_of::<PyFunction> crashes with a null pointer, hence this hack, see
-                    // https://github.com/pydantic/pydantic-core/pull/161#discussion_r917257635
-                    #[cfg(PyPy)]
-                    if !is_bound && attr.get_type().to_string() != "<class 'function'>" {
-                        return Some(Ok((name, attr)));
-                    }
+        let name = self.attributes_iterator.next()?;
+        // from benchmarks this is 14x faster than using the python `startswith` method
+        let name_cow = match name.downcast::<PyString>() {
+            Ok(name) => name.to_string_lossy(),
+            Err(e) => return Some(Err(e.into())),
+        };
+        if !name_cow.as_ref().starts_with('_') {
+            // getattr is most likely to fail due to an exception in a @property, skip
+            if let Ok(attr) = self.object.getattr(name_cow.as_ref()) {
+                // we don't want bound methods to be included, is there a better way to check?
+                // ref https://stackoverflow.com/a/18955425/949890
+                let is_bound = matches!(attr.hasattr(intern!(attr.py(), "__self__")), Ok(true));
+                // the PyFunction::is_type_of(attr) catches `staticmethod`, but also any other function,
+                // I think that's better than including static methods in the yielded attributes,
+                // if someone really wants fields, they can use an explicit field, or a function to modify input
+                #[cfg(not(PyPy))]
+                if !is_bound && !PyFunction::is_type_of(attr) {
+                    return Some(Ok((name, attr)));
+                }
+                // MASSIVE HACK! PyFunction doesn't exist for PyPy,
+                // is_instance_of::<PyFunction> crashes with a null pointer, hence this hack, see
+                // https://github.com/pydantic/pydantic-core/pull/161#discussion_r917257635
+                #[cfg(PyPy)]
+                if !is_bound && attr.get_type().to_string() != "<class 'function'>" {
+                    return Some(Ok((name, attr)));
                 }
             }
         }
@@ -621,12 +589,7 @@ pub enum GenericIterator {
 
 impl From<JsonArray> for GenericIterator {
     fn from(array: JsonArray) -> Self {
-        let length = array.len();
-        let json_iter = GenericJsonIterator {
-            array,
-            length,
-            index: 0,
-        };
+        let json_iter = GenericJsonIterator { array, index: 0 };
         Self::JsonArray(json_iter)
     }
 }
@@ -674,14 +637,15 @@ impl GenericPyIterator {
 #[derive(Debug, Clone)]
 pub struct GenericJsonIterator {
     array: JsonArray,
-    length: usize,
     index: usize,
 }
 
 impl GenericJsonIterator {
     pub fn next(&mut self, _py: Python) -> PyResult<Option<(&JsonInput, usize)>> {
-        if self.index < self.length {
-            let next = unsafe { self.array.get_unchecked(self.index) };
+        if self.index < self.array.len() {
+            // panic here is impossible due to bounds check above; compiler should be
+            // able to optimize it away even
+            let next = &self.array[self.index];
             let a = (next, self.index);
             self.index += 1;
             Ok(Some(a))
@@ -940,13 +904,7 @@ impl<'a> EitherFloat<'a> {
     pub fn as_f64(self) -> f64 {
         match self {
             EitherFloat::F64(f) => f,
-
-            EitherFloat::Py(f) => {
-                {
-                    // Safety: known to be a python float
-                    unsafe { ffi::PyFloat_AS_DOUBLE(f.as_ptr()) }
-                }
-            }
+            EitherFloat::Py(f) => f.value(),
         }
     }
 }

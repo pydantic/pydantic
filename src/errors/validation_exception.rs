@@ -3,11 +3,10 @@ use std::fmt::{Display, Write};
 use std::str::from_utf8;
 
 use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
-use pyo3::ffi::Py_ssize_t;
+use pyo3::intern;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{ffi, intern};
 use serde::ser::{Error, SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
@@ -173,22 +172,27 @@ impl ValidationError {
     #[pyo3(signature = (*, include_url = true, include_context = true))]
     pub fn errors(&self, py: Python, include_url: bool, include_context: bool) -> PyResult<Py<PyList>> {
         let url_prefix = get_url_prefix(py, include_url);
-        // taken approximately from the pyo3, but modified to return the error during iteration
-        // https://github.com/PyO3/pyo3/blob/a3edbf4fcd595f0e234c87d4705eb600a9779130/src/types/list.rs#L27-L55
-        unsafe {
-            let ptr = ffi::PyList_New(self.line_errors.len() as Py_ssize_t);
-
-            // We create the `Py` pointer here for two reasons:
-            // - panics if the ptr is null
-            // - its Drop cleans up the list if user code or the asserts panic.
-            let list: Py<PyList> = Py::from_owned_ptr(py, ptr);
-
-            for (index, line_error) in (0_isize..).zip(&self.line_errors) {
-                let item = line_error.as_dict(py, url_prefix, include_context, &self.error_mode)?;
-                ffi::PyList_SET_ITEM(ptr, index, item.into_ptr());
-            }
-
-            Ok(list)
+        let mut iteration_error = None;
+        let list = PyList::new(
+            py,
+            // PyList::new takes ExactSizeIterator, so if an error occurs during iteration we
+            // fill the list with None before returning the error; the list will then be thrown
+            // away safely.
+            self.line_errors.iter().map(|e| -> PyObject {
+                if iteration_error.is_some() {
+                    return py.None();
+                }
+                e.as_dict(py, url_prefix, include_context, &self.error_mode)
+                    .unwrap_or_else(|err| {
+                        iteration_error = Some(err);
+                        py.None()
+                    })
+            }),
+        );
+        if let Some(err) = iteration_error {
+            Err(err)
+        } else {
+            Ok(list.into())
         }
     }
 
