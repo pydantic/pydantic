@@ -187,6 +187,8 @@ impl<'a> Input<'a> for PyAny {
             let str = py_str.to_str()?;
             serde_json::from_str(str).map_err(|e| map_json_err(self, e))
         } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
+            // Safety: from_slice does not run arbitrary Python code and the GIL is held so the
+            // bytes array will not be mutated while from_slice is reading it
             serde_json::from_slice(unsafe { py_byte_array.as_bytes() }).map_err(|e| map_json_err(self, e))
         } else {
             Err(ValError::new(ErrorTypeDefaults::JsonType, self))
@@ -235,13 +237,15 @@ impl<'a> Input<'a> for PyAny {
             };
             Ok(str.into())
         } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
-            // see https://docs.rs/pyo3/latest/pyo3/types/struct.PyByteArray.html#method.as_bytes
-            // for why this is marked unsafe
-            let str = match from_utf8(unsafe { py_byte_array.as_bytes() }) {
-                Ok(s) => s,
+            // Safety: the gil is held while from_utf8 is running so py_byte_array is not mutated,
+            // and we immediately copy the bytes into a new Python string
+            let s = match from_utf8(unsafe { py_byte_array.as_bytes() }) {
+                // Why Python not Rust? to avoid an unnecessary allocation on the Rust side, the
+                // final output needs to be Python anyway.
+                Ok(s) => PyString::new(self.py(), s),
                 Err(_) => return Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
             };
-            Ok(str.into())
+            Ok(s.into())
         } else {
             Err(ValError::new(ErrorTypeDefaults::StringType, self))
         }
@@ -337,9 +341,8 @@ impl<'a> Input<'a> for PyAny {
         }
     }
     fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        if PyFloat::is_exact_type_of(self) {
-            // Safety: self is PyFloat
-            Ok(EitherFloat::Py(unsafe { self.downcast_unchecked::<PyFloat>() }))
+        if let Ok(py_float) = self.downcast_exact::<PyFloat>() {
+            Ok(EitherFloat::Py(py_float))
         } else if let Ok(float) = self.extract::<f64>() {
             // bools are cast to floats as either 0.0 or 1.0, so check for bool type in this specific case
             if (float == 0.0 || float == 1.0) && PyBool::is_exact_type_of(self) {
@@ -353,9 +356,8 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        if PyFloat::is_exact_type_of(self) {
-            // Safety: self is PyFloat
-            Ok(EitherFloat::Py(unsafe { self.downcast_unchecked::<PyFloat>() }))
+        if let Ok(py_float) = self.downcast_exact() {
+            Ok(EitherFloat::Py(py_float))
         } else if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::FloatParsing)? {
             str_as_float(self, &cow_str)
         } else if let Ok(float) = self.extract::<f64>() {

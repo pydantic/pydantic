@@ -1,9 +1,8 @@
-use pyo3::ffi::PyTypeObject;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFloat, PyFrozenSet, PyInt, PyIterator, PyList,
-    PySet, PyString, PyTime, PyTuple,
+    PySet, PyString, PyTime, PyTuple, PyType,
 };
 use pyo3::{intern, AsPyPointer, PyTypeInfo};
 
@@ -100,7 +99,7 @@ impl ObTypeLookup {
     }
 
     pub fn is_type(&self, value: &PyAny, expected_ob_type: ObType) -> IsType {
-        match self.ob_type_is_expected(Some(value), value.get_type_ptr(), &expected_ob_type) {
+        match self.ob_type_is_expected(Some(value), value.get_type(), &expected_ob_type) {
             IsType::False => {
                 if expected_ob_type == self.fallback_isinstance(value) {
                     IsType::Subclass
@@ -112,12 +111,8 @@ impl ObTypeLookup {
         }
     }
 
-    fn ob_type_is_expected(
-        &self,
-        op_value: Option<&PyAny>,
-        type_ptr: *mut PyTypeObject,
-        expected_ob_type: &ObType,
-    ) -> IsType {
+    fn ob_type_is_expected(&self, op_value: Option<&PyAny>, py_type: &PyType, expected_ob_type: &ObType) -> IsType {
+        let type_ptr = py_type.as_ptr();
         let ob_type = type_ptr as usize;
         let ans = match expected_ob_type {
             ObType::None => self.none == ob_type,
@@ -168,28 +163,26 @@ impl ObTypeLookup {
             // this allows for subtypes of the supported class types,
             // if we didn't successfully confirm the type, we try again with the next base type pointer provided
             // it's not null
-            let base_type_ptr = unsafe { (*type_ptr).tp_base };
-            if base_type_ptr.is_null() {
-                IsType::False
-            } else {
-                // as bellow, we don't want to tests for dataclass etc. again, so we pass None as op_value
-                match self.ob_type_is_expected(None, base_type_ptr, expected_ob_type) {
+            match get_base_type(py_type) {
+                // as below, we don't want to tests for dataclass etc. again, so we pass None as op_value
+                Some(base_type) => match self.ob_type_is_expected(None, base_type, expected_ob_type) {
                     IsType::False => IsType::False,
                     _ => IsType::Subclass,
-                }
+                },
+                None => IsType::False,
             }
         }
     }
 
     pub fn get_type(&self, value: &PyAny) -> ObType {
-        match self.lookup_by_ob_type(Some(value), value.get_type_ptr()) {
+        match self.lookup_by_ob_type(Some(value), value.get_type()) {
             ObType::Unknown => self.fallback_isinstance(value),
             ob_type => ob_type,
         }
     }
 
-    fn lookup_by_ob_type(&self, op_value: Option<&PyAny>, type_ptr: *mut PyTypeObject) -> ObType {
-        let ob_type = type_ptr as usize;
+    fn lookup_by_ob_type(&self, op_value: Option<&PyAny>, py_type: &PyType) -> ObType {
+        let ob_type = py_type.as_ptr() as usize;
         // this should be pretty fast, but still order is a bit important, so the most common types should come first
         // thus we don't follow the order of ObType
         if ob_type == self.none {
@@ -246,7 +239,7 @@ impl ObTypeLookup {
             ObType::PydanticSerializable
         } else if is_dataclass(op_value) {
             ObType::Dataclass
-        } else if self.is_enum(op_value, type_ptr) {
+        } else if self.is_enum(op_value, py_type) {
             ObType::Enum
         } else if ob_type == self.generator_object.as_ptr() as usize || is_generator(op_value) {
             ObType::Generator
@@ -255,25 +248,19 @@ impl ObTypeLookup {
         } else {
             // this allows for subtypes of the supported class types,
             // if `ob_type` didn't match any member of self, we try again with the next base type pointer
-            let base_type_ptr = unsafe { (*type_ptr).tp_base };
-            if base_type_ptr.is_null() {
-                ObType::Unknown
-            } else {
+            match get_base_type(py_type) {
                 // we don't want to tests for dataclass etc. again, so we pass None as op_value
-                self.lookup_by_ob_type(None, base_type_ptr)
+                Some(base_type) => self.lookup_by_ob_type(None, base_type),
+                None => ObType::Unknown,
             }
         }
     }
 
-    fn is_enum(&self, op_value: Option<&PyAny>, type_ptr: *mut PyTypeObject) -> bool {
+    fn is_enum(&self, op_value: Option<&PyAny>, py_type: &PyType) -> bool {
         // only test on the type itself, not base types
         if op_value.is_some() {
-            // see https://github.com/PyO3/pyo3/issues/2905 for details
-            #[cfg(all(PyPy, not(Py_3_9)))]
-            let meta_type = unsafe { (*type_ptr).ob_type };
-            #[cfg(any(not(PyPy), Py_3_9))]
-            let meta_type = unsafe { (*type_ptr).ob_base.ob_base.ob_type };
-            meta_type as usize == self.enum_object.as_ptr() as usize
+            let meta_type = py_type.get_type();
+            meta_type.is(&self.enum_object)
         } else {
             false
         }
@@ -433,4 +420,10 @@ impl PartialEq for ObType {
             }
         }
     }
+}
+
+fn get_base_type(py_type: &PyType) -> Option<&PyType> {
+    let base_type_ptr = unsafe { (*py_type.as_type_ptr()).tp_base };
+    // Safety: `base_type_ptr` must be a valid pointer to a Python type object, or null.
+    unsafe { py_type.py().from_borrowed_ptr_or_opt(base_type_ptr.cast()) }
 }
