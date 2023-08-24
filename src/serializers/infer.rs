@@ -133,8 +133,8 @@ pub(crate) fn infer_to_python_known(
                 .map(|s| s.into_py(py))?,
             ObType::Bytearray => {
                 let py_byte_array: &PyByteArray = value.downcast()?;
-                // see https://docs.rs/pyo3/latest/pyo3/types/struct.PyByteArray.html#method.as_bytes
-                // for why this is marked unsafe
+                // Safety: the GIL is held while bytes_to_string is running; it doesn't run
+                // arbitrary Python code, so py_byte_array cannot be mutated.
                 let bytes = unsafe { py_byte_array.as_bytes() };
                 extra
                     .config
@@ -428,8 +428,12 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         }
         ObType::Bytearray => {
             let py_byte_array: &PyByteArray = value.downcast().map_err(py_err_se_err)?;
-            let bytes = unsafe { py_byte_array.as_bytes() };
-            extra.config.bytes_mode.serialize_bytes(bytes, serializer)
+            // Safety: the GIL is held while serialize_bytes is running; it doesn't run
+            // arbitrary Python code, so py_byte_array cannot be mutated.
+            extra
+                .config
+                .bytes_mode
+                .serialize_bytes(unsafe { py_byte_array.as_bytes() }, serializer)
         }
         ObType::Dict => serialize_dict!(value.downcast::<PyDict>().map_err(py_err_se_err)?),
         ObType::List => serialize_seq_filter!(PyList),
@@ -581,8 +585,15 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: ObType, key: &'py PyAny, extra:
             .bytes_to_string(key.py(), key.downcast::<PyBytes>()?.as_bytes()),
         ObType::Bytearray => {
             let py_byte_array: &PyByteArray = key.downcast()?;
-            let bytes = unsafe { py_byte_array.as_bytes() };
-            extra.config.bytes_mode.bytes_to_string(key.py(), bytes)
+            // Safety: the GIL is held while serialize_bytes is running; it doesn't run
+            // arbitrary Python code, so py_byte_array cannot be mutated during the call.
+            //
+            // We copy the bytes into a new buffer immediately afterwards
+            extra
+                .config
+                .bytes_mode
+                .bytes_to_string(key.py(), unsafe { py_byte_array.as_bytes() })
+                .map(|cow| Cow::Owned(cow.into_owned()))
         }
         ObType::Datetime => {
             let py_dt: &PyDateTime = key.downcast()?;
