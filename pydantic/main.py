@@ -13,9 +13,9 @@ import typing_extensions
 from pydantic_core import PydanticUndefined
 
 try:
-    from typing import get_args, get_origin
+    from typing import get_args, get_origin  # type: ignore
 except ImportError:
-    from typing_extensions import get_args, get_origin  # type: ignore
+    from typing_extensions import get_args, get_origin
 
 from ._internal import (
     _annotated_handlers,
@@ -273,15 +273,15 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         defaults: dict[str, Any] = {}  # keeping this separate from `fields_values` helps us compute `_fields_set`
         for name, field in cls.model_fields.items():
             if field.alias and field.alias in values:
+                value = values.pop(field.alias)
                 if _recursive:
-                    fields_values[name] = _recursive_model_construct(field.annotation, values.pop(field.alias))
-                else:
-                    fields_values[name] = values.pop(field.alias)
+                    value = _recursive_model_construct(field.annotation, value)
+                fields_values[field.alias] = value
             elif name in values:
+                value = values.pop(name)
                 if _recursive:
-                    fields_values[name] = _recursive_model_construct(field.annotation, values.pop(name))
-                else:
-                    fields_values[name] = values.pop(name)
+                    value = _recursive_model_construct(field.annotation, value)
+                fields_values[name] = value
             elif not field.is_required():
                 defaults[name] = field.get_default(call_default_factory=True)
         if _fields_set is None:
