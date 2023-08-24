@@ -27,6 +27,7 @@ events.
 from __future__ import annotations
 
 import sys
+import warnings
 
 from typing_extensions import Final
 
@@ -66,5 +67,10 @@ def __getattr__(attr_name: str) -> object:
     if attr_name != 'plugins':
         raise AttributeError(f'module {__name__!r} has no attribute {attr_name!r}')
 
-    load_plugins()
+    try:
+        load_plugins()
+    except Exception as e:
+        warnings.warn(f'Error while loading Pydantic plugins: {e}')
+        raise
+
     return set(_plugins.values())
