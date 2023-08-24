@@ -276,7 +276,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 value = values.pop(field.alias)
                 if _recursive:
                     value = _recursive_model_construct(field.annotation, value)
-                fields_values[field.alias] = value
+                fields_values[name] = value
             elif name in values:
                 value = values.pop(name)
                 if _recursive:
