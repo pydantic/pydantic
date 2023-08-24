@@ -1,3 +1,33 @@
+## v2.3.0 (2023-08-23)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.3.0)
+
+* 🔥 Remove orphaned changes file from repo by @lig in [#7168](https://github.com/pydantic/pydantic/pull/7168)
+* Add copy button on documentation by @Kludex in [#7190](https://github.com/pydantic/pydantic/pull/7190)
+* Fix docs on JSON type by @Kludex in [#7189](https://github.com/pydantic/pydantic/pull/7189)
+* Update mypy 1.5.0 to 1.5.1 in CI by @hramezani in [#7191](https://github.com/pydantic/pydantic/pull/7191)
+* fix download links badge by @samuelcolvin in [#7200](https://github.com/pydantic/pydantic/pull/7200)
+* add 2.2.1 to changelog by @samuelcolvin in [#7212](https://github.com/pydantic/pydantic/pull/7212)
+* Make ModelWrapValidator protocols generic by @dmontagu in [#7154](https://github.com/pydantic/pydantic/pull/7154)
+* Correct `Field(..., exclude: bool)` docs by @samuelcolvin in [#7214](https://github.com/pydantic/pydantic/pull/7214)
+* Make shadowing attributes a warning instead of an error by @adriangb in [#7193](https://github.com/pydantic/pydantic/pull/7193)
+* Document `Base64Str` and `Base64Bytes` by @Kludex in [#7192](https://github.com/pydantic/pydantic/pull/7192)
+* Fix `config.defer_build` for serialization first cases by @samuelcolvin in [#7024](https://github.com/pydantic/pydantic/pull/7024)
+* clean Model docstrings in JSON Schema by @samuelcolvin in [#7210](https://github.com/pydantic/pydantic/pull/7210)
+* fix [#7228](https://github.com/pydantic/pydantic/pull/7228) (typo): docs in `validators.md` to correct `validate_default` kwarg by @lmmx in [#7229](https://github.com/pydantic/pydantic/pull/7229)
+* ✅ Implement `tzinfo.fromutc` method for `TzInfo` in `pydantic-core` by @lig in [#7019](https://github.com/pydantic/pydantic/pull/7019)
+* Support `__get_validators__` by @hramezani in [#7197](https://github.com/pydantic/pydantic/pull/7197)
+
+## v2.2.1 (2023-08-18)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.2.1)
+
+* Make `xfail`ing test for root model extra stop `xfail`ing by @dmontagu in [#6937](https://github.com/pydantic/pydantic/pull/6937)
+* Optimize recursion detection by stopping on the second visit for the same object by @mciucu in [#7160](https://github.com/pydantic/pydantic/pull/7160)
+* fix link in docs by @tlambert03 in [#7166](https://github.com/pydantic/pydantic/pull/7166)
+* Replace MiMalloc w/ default allocator by @adriangb in [pydantic/pydantic-core#900](https://github.com/pydantic/pydantic-core/pull/900)
+* Bump pydantic-core to 2.6.1 and prepare 2.2.1 release by @adriangb in [#7176](https://github.com/pydantic/pydantic/pull/7176)
+
 ## v2.2.0 (2023-08-17)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.2.0)

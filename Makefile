@@ -11,6 +11,7 @@ sources = pydantic tests docs/plugins
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
 install: .pdm .pre-commit
+	pdm info
 	pdm install --group :all
 	pre-commit install --install-hooks
 

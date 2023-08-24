@@ -1356,7 +1356,9 @@ class EncodedStr(EncodedBytes):
 
 
 Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
+"""A bytes type that is encoded and decoded using the base64 encoder."""
 Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
+"""A str type that is encoded and decoded using the base64 encoder."""
 
 
 __getattr__ = getattr_migration(__name__)

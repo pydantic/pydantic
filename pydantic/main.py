@@ -18,7 +18,7 @@ from ._internal import (
     _fields,
     _forward_ref,
     _generics,
-    _mock_validator,
+    _mock_val_ser,
     _model_construction,
     _repr,
     _typing_extra,
@@ -134,8 +134,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         model_fields = {}
         __pydantic_decorators__ = _decorators.DecoratorInfos()
         # Prevent `BaseModel` from being instantiated directly:
-        __pydantic_validator__ = _mock_validator.MockValidator(
+        __pydantic_validator__ = _mock_val_ser.MockValSer(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
+            val_or_ser='validator',
+            code='base-model-instantiated',
+        )
+        __pydantic_serializer__ = _mock_val_ser.MockValSer(
+            'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
+            val_or_ser='serializer',
             code='base-model-instantiated',
         )
 
@@ -240,7 +246,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
-        """Returns a copy of the model.
+        """Usage docs: https://docs.pydantic.dev/2.2/usage/serialization/#model_copy
+
+        Returns a copy of the model.
 
         Args:
             update: Values to change/add in the new model. Note: the data is not validated

@@ -1504,13 +1504,6 @@ class DisplayGen(Generic[T1, T2]):
         self.t1 = t1
         self.t2 = t2
 
-    @classmethod
-    def __get_validators__(cls):
-        def validator(v):
-            return v
-
-        yield validator
-
 
 @pytest.mark.parametrize(
     'type_,expected',

@@ -32,7 +32,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic._internal._mock_validator import MockValidator
+from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
@@ -1530,8 +1530,8 @@ def test_cyclic_reference_dataclass(create_module):
     D2 = module.D2
 
     # Confirm D1 and D2 require rebuilding
-    assert isinstance(D1.__pydantic_validator__, MockValidator)
-    assert isinstance(D2.__pydantic_validator__, MockValidator)
+    assert isinstance(D1.__pydantic_validator__, MockValSer)
+    assert isinstance(D2.__pydantic_validator__, MockValSer)
 
     # Note: the rebuilds of D1 and D2 happen automatically, and works since it grabs the locals here as the namespace,
     # which contains D1 and D2
@@ -1597,7 +1597,7 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
     rebuild_dataclass(D1, _types_namespace={'D2': module.D2, 'D1': D1})
 
     # Confirm D2 still requires a rebuild (it will happen automatically)
-    assert isinstance(module.D2.__pydantic_validator__, MockValidator)
+    assert isinstance(module.D2.__pydantic_validator__, MockValSer)
 
     instance = D1(d2=module.D2(d1=D1(d2=module.D2(d1=D1()))))
 
