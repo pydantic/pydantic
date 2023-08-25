@@ -2513,7 +2513,6 @@ def test_can_inherit_stdlib_dataclasses_with_defaults():
     assert Model().a is None
 
 
-@pytest.mark.xfail(raises=ValidationError, require=True)
 def test_can_inherit_stdlib_dataclasses_default_factories_and_use_them():
     """This test documents that default factories are not supported"""
 
@@ -2524,7 +2523,8 @@ def test_can_inherit_stdlib_dataclasses_default_factories_and_use_them():
     class Model(BaseModel, Base):
         pass
 
-    assert Model().a == 'TEST'
+    with pytest.raises(ValidationError):
+        assert Model().a == 'TEST'
 
 
 def test_can_inherit_stdlib_dataclasses_default_factories_and_provide_a_value():
