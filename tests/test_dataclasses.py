@@ -2501,6 +2501,7 @@ def test_is_pydantic_dataclass():
     assert is_pydantic_dataclass(PydanticDataclass) is True
     assert is_pydantic_dataclass(StdLibDataclass) is False
 
+
 def test_can_inherit_stdlib_dataclasses_with_defaults():
     @dataclasses.dataclass
     class Base:
@@ -2510,6 +2511,18 @@ def test_can_inherit_stdlib_dataclasses_with_defaults():
         pass
 
     assert Model().a is None
+
+
+@pytest.mark.xfail(raises=ValidationError, require=True)
+def test_can_inherit_stdlib_dataclasses_default_factories_and_use_them():
+    @dataclasses.dataclass
+    class Base:
+        a: str = dataclasses.field(default_factory=lambda: 'TEST')
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model().a == 'TEST'
 
 
 def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
