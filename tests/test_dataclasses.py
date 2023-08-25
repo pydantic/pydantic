@@ -2515,6 +2515,8 @@ def test_can_inherit_stdlib_dataclasses_with_defaults():
 
 @pytest.mark.xfail(raises=ValidationError, require=True)
 def test_can_inherit_stdlib_dataclasses_default_factories_and_use_them():
+    """This test documents that default factories are not supported"""
+
     @dataclasses.dataclass
     class Base:
         a: str = dataclasses.field(default_factory=lambda: 'TEST')
@@ -2523,6 +2525,17 @@ def test_can_inherit_stdlib_dataclasses_default_factories_and_use_them():
         pass
 
     assert Model().a == 'TEST'
+
+
+def test_can_inherit_stdlib_dataclasses_default_factories_and_provide_a_value():
+    @dataclasses.dataclass
+    class Base:
+        a: str = dataclasses.field(default_factory=lambda: 'TEST')
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model(a='NOT_THE_SAME').a == 'NOT_THE_SAME'
 
 
 def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
