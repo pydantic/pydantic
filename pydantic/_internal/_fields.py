@@ -147,9 +147,17 @@ def collect_model_fields(  # noqa: C901
         # "... shadows an attribute" errors
         generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
         for base in bases:
+            dataclass_fields = {
+                field.name for field in (dataclasses.fields(base) if dataclasses.is_dataclass(base) else ())
+            }
             if hasattr(base, ann_name):
                 if base is generic_origin:
                     # Don't error when "shadowing" of attributes in parametrized generics
+                    continue
+
+                if ann_name in dataclass_fields:
+                    # Don't error when inheriting stdlib dataclasses whose fields are "shadowed" by defaults being set
+                    # on the class instance.
                     continue
                 warnings.warn(
                     f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; ',

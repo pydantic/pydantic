@@ -2500,3 +2500,50 @@ def test_is_pydantic_dataclass():
 
     assert is_pydantic_dataclass(PydanticDataclass) is True
     assert is_pydantic_dataclass(StdLibDataclass) is False
+
+
+def test_can_inherit_stdlib_dataclasses_with_defaults():
+    @dataclasses.dataclass
+    class Base:
+        a: None = None
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model().a is None
+
+
+def test_can_inherit_stdlib_dataclasses_default_factories_and_use_them():
+    """This test documents that default factories are not supported"""
+
+    @dataclasses.dataclass
+    class Base:
+        a: str = dataclasses.field(default_factory=lambda: 'TEST')
+
+    class Model(BaseModel, Base):
+        pass
+
+    with pytest.raises(ValidationError):
+        assert Model().a == 'TEST'
+
+
+def test_can_inherit_stdlib_dataclasses_default_factories_and_provide_a_value():
+    @dataclasses.dataclass
+    class Base:
+        a: str = dataclasses.field(default_factory=lambda: 'TEST')
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model(a='NOT_THE_SAME').a == 'NOT_THE_SAME'
+
+
+def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
+    @dataclasses.dataclass
+    class Base:
+        a: int = dataclasses.field(default=5)
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model().a == 5
