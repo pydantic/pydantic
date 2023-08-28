@@ -48,6 +48,10 @@ impl ComputedFields {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> PyResult<()> {
+        if extra.round_trip {
+            // Do not serialize computed fields
+            return Ok(());
+        }
         for computed_fields in &self.0 {
             computed_fields.to_python(model, output_dict, filter, include, exclude, extra)?;
         }
@@ -63,6 +67,10 @@ impl ComputedFields {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> Result<(), S::Error> {
+        if extra.round_trip {
+            // Do not serialize computed fields
+            return Ok(());
+        }
         for computed_field in &self.0 {
             let property_name_py = computed_field.property_name_py.as_ref(model.py());
             if let Some((next_include, next_exclude)) = filter

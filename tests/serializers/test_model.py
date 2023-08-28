@@ -570,6 +570,9 @@ def test_property():
     assert s.to_python(Model(width=3, height=4), mode='json') == {'width': 3, 'height': 4, 'area': '12'}
     assert s.to_json(Model(width=3, height=4)) == b'{"width":3,"height":4,"area":"12"}'
 
+    assert s.to_python(Model(width=3, height=4), round_trip=True) == {'width': 3, 'height': 4}
+    assert s.to_json(Model(width=3, height=4), round_trip=True) == b'{"width":3,"height":4}'
+
 
 def test_property_alias():
     @dataclasses.dataclass
