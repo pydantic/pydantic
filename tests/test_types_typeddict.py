@@ -890,3 +890,18 @@ def test_schema_generator() -> None:
     ta = TypeAdapter(Model)
 
     assert ta.validate_python(dict(x=1))['x'] == '1'
+
+
+def test_grandparent_config():
+    class MyTypedDict(TypedDict):
+        __pydantic_config__ = ConfigDict(str_to_lower=True)
+        x: str
+
+    class MyMiddleTypedDict(MyTypedDict):
+        y: str
+
+    class MySubTypedDict(MyMiddleTypedDict):
+        z: str
+
+    validated_data = TypeAdapter(MySubTypedDict).validate_python({'x': 'ABC', 'y': 'DEF', 'z': 'GHI'})
+    assert validated_data == {'x': 'abc', 'y': 'def', 'z': 'ghi'}
