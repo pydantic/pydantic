@@ -75,6 +75,17 @@ else:
         return origin is typing.Union
 
 
+def _handle_union(args, value):
+    # TODO: union_mode/discriminators?
+    for possible_type in args:
+        result = _recursive_model_construct(possible_type, value)
+        if result != value:
+            return result
+
+    # Otherwise, no union member matched
+    return value
+
+
 def _recursive_model_construct(annotation: type | None, value: Any):
     # No annotation? Early exit
     if annotation is None:
@@ -100,33 +111,29 @@ def _recursive_model_construct(annotation: type | None, value: Any):
     if origin is Literal:
         return value
     elif _is_union(origin):
-        # TODO: union_mode/discriminators?
-        for possible_type in args:
-            # The following could also probably be more explicit
-            result = _recursive_model_construct(possible_type, value)
-            if result != value:
-                return result
-        # In the case that no union matched, simply return original value
-        return value
+        return _handle_union(args, value)
     # Then we check to see if the annotation describes it as a Base/RootModel
     elif issubclass(origin, BaseModel):
-        try:
-            return origin.model_construct(**value, _recursive=True)  # treat like BaseModel
-        except TypeError:
+        if origin.__pydantic_root_model__:  # my saviour
             return origin.model_construct(value, _recursive=True)  # treat like RootModel
+        else:
+            try:
+                return origin.model_construct(**value, _recursive=True)  # treat like BaseModel
+            except TypeError:
+                return value
     # Then we check for subclasses of mappings/sequences/sets
     # But if there are no arguments to the annotation, we have to treat the value generically anyway
     elif len(args) == 0:
         return value
-    elif issubclass(origin, typing.MutableSequence):
-        member_type = args[0]
-        return origin([_recursive_model_construct(member_type, x) for x in value])  # type: ignore
-    elif issubclass(origin, typing.Sequence) and not issubclass(origin, (str, bytes)):
+    elif issubclass(origin, typing.Tuple):
         if isinstance(args[-1], type(Ellipsis)):  # tuple[T, ...]
             member_type = args[0]
-            return origin(_recursive_model_construct(member_type, v) for v in value)  # type: ignore
+            return type(value)(_recursive_model_construct(member_type, v) for v in value)
         else:  # tuple[A, B, C]
-            return origin(_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args))  # type: ignore
+            return type(value)(_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args))
+    elif issubclass(origin, typing.Sequence) and not issubclass(origin, (str, bytes)):
+        member_type = args[0]
+        return [_recursive_model_construct(member_type, v) for v in value]
     elif issubclass(origin, typing.Mapping):
         # NOTE: do we want to recurse key? Key must be hashable, and by default BaseModels are not; furthermore, dumping
         # a model to a dict makes it unhashable even if you implement __hash__ on the model itself. However, there might
@@ -134,16 +141,16 @@ def _recursive_model_construct(annotation: type | None, value: Any):
         # outputs to a 'HashableDict' or similar, in which case this might be desired... but we could also just wait
         # until such a feature is required before implementing it.
         key_type, value_type = args
-        return origin(  # type: ignore
+        return type(value)(
             {
                 _recursive_model_construct(key_type, k): _recursive_model_construct(value_type, v)
                 for k, v in value.items()
             }
         )
-    # elif issubclass(origin, typing.AbstractSet):
-    #     # NOTE: we have a similar conundrum with set, where it's unlikely that it will be used, but not impossible...
-    #     member_type = args[0]
-    #     return origin(_recursive_model_construct(member_type, v) for v in value)  # type: ignore
+    elif issubclass(origin, typing.AbstractSet):
+        # NOTE: we have a similar conundrum with set, where it's unlikely that it will be used, but not impossible...
+        member_type = args[0]
+        return origin(_recursive_model_construct(member_type, v) for v in value)  # type: ignore
     else:
         # Return the unchanged value
         return value

@@ -536,6 +536,7 @@ by adding `_recursive=True` to the function signature:
 
 ```py
 from pydantic import BaseModel
+from typing_extensions import List
 
 
 class User(BaseModel):
@@ -546,7 +547,7 @@ class User(BaseModel):
 
 class Server(BaseModel):
     host: User
-    users: list[User]
+    users: List[User]
 
 
 host_user = User(id=123, age=32)
