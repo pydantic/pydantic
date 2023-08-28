@@ -32,8 +32,8 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic._internal._mock_validator import MockValidator
-from pydantic.dataclasses import rebuild_dataclass
+from pydantic._internal._mock_val_ser import MockValSer
+from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
 
@@ -1530,8 +1530,8 @@ def test_cyclic_reference_dataclass(create_module):
     D2 = module.D2
 
     # Confirm D1 and D2 require rebuilding
-    assert isinstance(D1.__pydantic_validator__, MockValidator)
-    assert isinstance(D2.__pydantic_validator__, MockValidator)
+    assert isinstance(D1.__pydantic_validator__, MockValSer)
+    assert isinstance(D2.__pydantic_validator__, MockValSer)
 
     # Note: the rebuilds of D1 and D2 happen automatically, and works since it grabs the locals here as the namespace,
     # which contains D1 and D2
@@ -1597,7 +1597,7 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
     rebuild_dataclass(D1, _types_namespace={'D2': module.D2, 'D1': D1})
 
     # Confirm D2 still requires a rebuild (it will happen automatically)
-    assert isinstance(module.D2.__pydantic_validator__, MockValidator)
+    assert isinstance(module.D2.__pydantic_validator__, MockValSer)
 
     instance = D1(d2=module.D2(d1=D1(d2=module.D2(d1=D1()))))
 
@@ -2487,3 +2487,63 @@ def test_annotated_before_validator_called_once(decorator1):
     assert count == 0
     TypeAdapter(A).validate_python({'a': 123})
     assert count == 1
+
+
+def test_is_pydantic_dataclass():
+    @pydantic.dataclasses.dataclass
+    class PydanticDataclass:
+        a: int
+
+    @dataclasses.dataclass
+    class StdLibDataclass:
+        b: int
+
+    assert is_pydantic_dataclass(PydanticDataclass) is True
+    assert is_pydantic_dataclass(StdLibDataclass) is False
+
+
+def test_can_inherit_stdlib_dataclasses_with_defaults():
+    @dataclasses.dataclass
+    class Base:
+        a: None = None
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model().a is None
+
+
+def test_can_inherit_stdlib_dataclasses_default_factories_and_use_them():
+    """This test documents that default factories are not supported"""
+
+    @dataclasses.dataclass
+    class Base:
+        a: str = dataclasses.field(default_factory=lambda: 'TEST')
+
+    class Model(BaseModel, Base):
+        pass
+
+    with pytest.raises(ValidationError):
+        assert Model().a == 'TEST'
+
+
+def test_can_inherit_stdlib_dataclasses_default_factories_and_provide_a_value():
+    @dataclasses.dataclass
+    class Base:
+        a: str = dataclasses.field(default_factory=lambda: 'TEST')
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model(a='NOT_THE_SAME').a == 'NOT_THE_SAME'
+
+
+def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
+    @dataclasses.dataclass
+    class Base:
+        a: int = dataclasses.field(default=5)
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model().a == 5

@@ -20,7 +20,7 @@ from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_sc
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
-from ._mock_validator import set_dataclass_mock_validator
+from ._mock_val_ser import set_dataclass_mock_validator
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 
 if typing.TYPE_CHECKING:
@@ -259,15 +259,3 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
         and not hasattr(_cls, '__pydantic_validator__')
         and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
     )
-
-
-def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
-    """Whether a class is a pydantic dataclass.
-
-    Args:
-        cls: The class.
-
-    Returns:
-        `True` if the class is a pydantic dataclass, `False` otherwise.
-    """
-    return dataclasses.is_dataclass(_cls) and '__pydantic_validator__' in _cls.__dict__

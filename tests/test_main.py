@@ -2887,3 +2887,38 @@ def test_schema_generator_customize_type_constraints_order() -> None:
             'ctx': {'max_length': 1},
         }
     ]
+
+
+def test_shadow_attribute() -> None:
+    """https://github.com/pydantic/pydantic/issues/7108"""
+
+    class Model(BaseModel):
+        foo: str
+
+        @classmethod
+        def __pydantic_init_subclass__(cls, **kwargs: Any):
+            super().__pydantic_init_subclass__(**kwargs)
+            for key in cls.model_fields.keys():
+                setattr(cls, key, getattr(cls, key, '') + ' edited!')
+
+    class One(Model):
+        foo: str = 'abc'
+
+    with pytest.warns(UserWarning, match=r'"foo" shadows an attribute in parent ".*One"'):
+
+        class Two(One):
+            foo: str
+
+    with pytest.warns(UserWarning, match=r'"foo" shadows an attribute in parent ".*One"'):
+
+        class Three(One):
+            foo: str = 'xyz'
+
+    # unlike dataclasses BaseModel does not preserve the value of defaults
+    # so when we access the attribute in `Model.__pydantic_init_subclass__` there is no default
+    # and hence we append `edited!` to an empty string
+    # we've talked about changing this but this is the current behavior as of this test
+    assert getattr(Model, 'foo', None) is None
+    assert getattr(One, 'foo', None) == ' edited!'
+    assert getattr(Two, 'foo', None) == ' edited! edited!'
+    assert getattr(Three, 'foo', None) == ' edited! edited!'

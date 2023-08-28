@@ -1,7 +1,7 @@
 import platform
 import re
 import sys
-from datetime import timedelta
+from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, Iterable, List, Type
@@ -521,6 +521,62 @@ def test_v1_v2_custom_type_compatibility() -> None:
     ta = TypeAdapter(MyType)
     assert ta.validate_python('123') == 123
     assert ta.json_schema() == {'anyOf': [{'type': 'string'}, {'type': 'number'}]}
+
+
+def test_v1_get_validators():
+    class CustomDate(date):
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate1
+            yield cls.validate2
+
+        @classmethod
+        def validate1(cls, v, i):
+            print(v)
+
+            if v.year < 2000:
+                raise ValueError('Invalid year')
+            return v
+
+        @classmethod
+        def validate2(cls, v, i):
+            return date.today().replace(month=1, day=1)
+
+    with pytest.warns(
+        PydanticDeprecatedSince20,
+        match='^`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+    ):
+
+        class Model(BaseModel):
+            x: CustomDate
+
+    with pytest.raises(ValidationError, match='Value error, Invalid year'):
+        Model(x=date(1999, 1, 1))
+
+    m = Model(x=date.today())
+    assert m.x.day == 1
+
+
+def test_v1_get_validators_invalid_validator():
+    class InvalidValidator:
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.has_wrong_arguments
+
+        @classmethod
+        def has_wrong_arguments(cls):
+            pass
+
+    with pytest.warns(
+        PydanticDeprecatedSince20,
+        match='^`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+    ):
+
+        class InvalidValidatorModel(BaseModel):
+            x: InvalidValidator
+
+    with pytest.raises(TypeError, match='takes 1 positional argument but 3 were given'):
+        InvalidValidatorModel(x=1)
 
 
 def test_field_extra_arguments():

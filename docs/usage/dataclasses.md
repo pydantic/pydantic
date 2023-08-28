@@ -356,6 +356,34 @@ print(repr(m))
 #> Model(dc=DC(a=ArbitraryType(value=3), b='qwe'), other='other')
 ```
 
+### Checking if a dataclass is a pydantic dataclass
+
+Pydantic dataclasses are still considered dataclasses, so using `dataclasses.is_dataclass` will return `True`. To check if a type is specifically a pydantic dataclass you can use `pydantic.dataclasses.is_pydantic_dataclass`.
+
+```py
+import dataclasses
+
+import pydantic
+
+
+@dataclasses.dataclass
+class StdLibDataclass:
+    id: int
+
+
+PydanticDataclass = pydantic.dataclasses.dataclass(StdLibDataclass)
+
+print(dataclasses.is_dataclass(StdLibDataclass))
+#> True
+print(pydantic.dataclasses.is_pydantic_dataclass(StdLibDataclass))
+#> False
+
+print(dataclasses.is_dataclass(PydanticDataclass))
+#> True
+print(pydantic.dataclasses.is_pydantic_dataclass(PydanticDataclass))
+#> True
+```
+
 ## Initialization hooks
 
 When you initialize a dataclass, it is possible to execute code *before* or *after* validation

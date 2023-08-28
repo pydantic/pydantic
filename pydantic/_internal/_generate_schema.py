@@ -219,7 +219,7 @@ def modify_model_json_schema(
         original_schema['title'] = cls.__name__
     docstring = cls.__doc__
     if docstring and 'description' not in original_schema:
-        original_schema['description'] = docstring
+        original_schema['description'] = inspect.cleandoc(docstring)
     return json_schema
 
 
@@ -587,16 +587,25 @@ class GenerateSchema:
         else:
             ref_mode = 'to-def'
 
+        schema: CoreSchema
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         if get_schema is None:
-            return None
-
-        schema: CoreSchema
-        if len(inspect.signature(get_schema).parameters) == 1:
-            # (source) -> CoreSchema
-            schema = get_schema(source)
+            validators = getattr(obj, '__get_validators__', None)
+            if validators is None:
+                return None
+            warn(
+                '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+                PydanticDeprecatedSince20,
+            )
+            schema = core_schema.chain_schema([core_schema.general_plain_validator_function(v) for v in validators()])
         else:
-            schema = get_schema(source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode))
+            if len(inspect.signature(get_schema).parameters) == 1:
+                # (source) -> CoreSchema
+                schema = get_schema(source)
+            else:
+                schema = get_schema(
+                    source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode)
+                )
 
         schema = self._unpack_refs_defs(schema)
 
@@ -1308,7 +1317,7 @@ class GenerateSchema:
 
                 self = self._current_generate_schema
 
-                from ._dataclasses import is_pydantic_dataclass
+                from ..dataclasses import is_pydantic_dataclass
 
                 if is_pydantic_dataclass(dataclass):
                     fields = dataclass.__pydantic_fields__

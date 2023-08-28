@@ -4,7 +4,7 @@
 You can use the `Json` data type to make Pydantic first load a raw JSON string before
 validating the loaded data into the parametrized type:
 
-```py group='json'
+```py group="json"
 from typing import Any, List
 
 from pydantic import BaseModel, Json, ValidationError
@@ -59,7 +59,7 @@ except ValidationError as e:
 When you dump the model using `model_dump` or `model_dump_json`, the dumped value will be the result of validation,
 not the original JSON string. However, you can use the argument `round_trip=True` to get the original JSON string back:
 
-```py group='json'
+```py group="json"
 print(ConstrainedJsonModel(json_obj='[1, 2, 3]').model_dump_json())
 #> {"json_obj":[1,2,3]}
 print(

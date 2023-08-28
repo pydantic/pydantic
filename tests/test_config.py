@@ -4,10 +4,10 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
+from typing import Any, ContextManager, Iterable, NamedTuple, Optional, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr, IsPartialDict
-from pydantic_core import SchemaError, SchemaValidator
+from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 
 from pydantic import (
     BaseConfig,
@@ -22,10 +22,11 @@ from pydantic import (
     validate_call,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
-from pydantic._internal._mock_validator import MockValidator
+from pydantic._internal._mock_val_ser import MockValSer
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
+from pydantic.fields import FieldInfo
 from pydantic.type_adapter import TypeAdapter
 from pydantic.warnings import PydanticDeprecationWarning
 
@@ -676,12 +677,14 @@ def test_config_model_defer_build():
     class MyModel(BaseModel, defer_build=True):
         x: int
 
-    assert isinstance(MyModel.__pydantic_validator__, MockValidator)
+    assert isinstance(MyModel.__pydantic_validator__, MockValSer)
+    assert isinstance(MyModel.__pydantic_serializer__, MockValSer)
 
     m = MyModel(x=1)
     assert m.x == 1
 
     assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
+    assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
 
 
 def test_config_model_defer_build_nested():
@@ -691,9 +694,58 @@ def test_config_model_defer_build_nested():
     class MyModel(BaseModel):
         y: MyNestedModel
 
-    assert isinstance(MyNestedModel.__pydantic_validator__, MockValidator)
+    assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
+    assert isinstance(MyNestedModel.__pydantic_serializer__, MockValSer)
 
     m = MyModel(y={'x': 1})
     assert m.model_dump() == {'y': {'x': 1}}
 
-    assert isinstance(MyNestedModel.__pydantic_validator__, MockValidator)
+    assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
+    assert isinstance(MyNestedModel.__pydantic_serializer__, MockValSer)
+
+
+def test_config_model_defer_build_ser_first():
+    class M1(BaseModel, defer_build=True):
+        a: str
+
+    class M2(BaseModel, defer_build=True):
+        b: M1
+
+    m = M2.model_validate({'b': {'a': 'foo'}})
+    assert m.b.model_dump() == {'a': 'foo'}
+
+
+def test_defer_build_json_schema():
+    class M(BaseModel, defer_build=True):
+        a: int
+
+    assert M.model_json_schema() == {
+        'title': 'M',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+    }
+
+
+def test_partial_creation_with_defer_build():
+    class M(BaseModel):
+        a: int
+        b: int
+
+    def create_partial(model, optionals):
+        override_fields = {}
+        model.model_rebuild()
+        for name, field in model.model_fields.items():
+            if field.is_required() and name in optionals:
+                assert field.annotation is not None
+                override_fields[name] = (Optional[field.annotation], FieldInfo.merge_field_infos(field, default=None))
+
+        return create_model(f'Partial{model.__name__}', __base__=model, **override_fields)
+
+    partial = create_partial(M, {'a'})
+
+    # Comment this away and the last assertion works
+    assert M.model_json_schema()['required'] == ['a', 'b']
+
+    # AssertionError: assert ['a', 'b'] == ['b']
+    assert partial.model_json_schema()['required'] == ['b']

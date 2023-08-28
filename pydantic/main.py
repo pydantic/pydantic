@@ -25,7 +25,7 @@ from ._internal import (
     _fields,
     _forward_ref,
     _generics,
-    _mock_validator,
+    _mock_val_ser,
     _model_construction,
     _repr,
     _typing_extra,
@@ -157,7 +157,7 @@ def _recursive_model_construct(annotation: type | None, value: Any):
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.2/usage/models/
+    """Usage docs: https://docs.pydantic.dev/2.3/usage/models/
 
     A base class for creating Pydantic models.
 
@@ -232,8 +232,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         model_fields = {}
         __pydantic_decorators__ = _decorators.DecoratorInfos()
         # Prevent `BaseModel` from being instantiated directly:
-        __pydantic_validator__ = _mock_validator.MockValidator(
+        __pydantic_validator__ = _mock_val_ser.MockValSer(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
+            val_or_ser='validator',
+            code='base-model-instantiated',
+        )
+        __pydantic_serializer__ = _mock_val_ser.MockValSer(
+            'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
+            val_or_ser='serializer',
             code='base-model-instantiated',
         )
 
@@ -347,7 +353,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
-        """Returns a copy of the model.
+        """Usage docs: https://docs.pydantic.dev/2.3/usage/serialization/#model_copy
+
+        Returns a copy of the model.
 
         Args:
             update: Values to change/add in the new model. Note: the data is not validated
@@ -385,7 +393,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.2/usage/serialization/#modelmodel_dump
+        """Usage docs: https://docs.pydantic.dev/2.3/usage/serialization/#modelmodel_dump
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -431,7 +439,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.2/usage/serialization/#modelmodel_dump_json
+        """Usage docs: https://docs.pydantic.dev/2.3/usage/serialization/#modelmodel_dump_json
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 

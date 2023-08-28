@@ -28,7 +28,7 @@ ExtraValues = Literal['allow', 'ignore', 'forbid']
 
 
 class ConfigDict(TypedDict, total=False):
-    """Usage docs: https://docs.pydantic.dev/2.2/usage/model_config/
+    """Usage docs: https://docs.pydantic.dev/2.3/usage/model_config/
 
     A TypedDict for configuring Pydantic behaviour.
     """
