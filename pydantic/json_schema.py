@@ -35,7 +35,7 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import CoreConfig, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
+from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Annotated, Literal, assert_never
 
@@ -44,6 +44,7 @@ from ._internal import (
     _config,
     _core_metadata,
     _core_utils,
+    _decorators,
     _internal_dataclass,
     _mock_val_ser,
     _schema_generation_shared,
@@ -1182,10 +1183,12 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-        json_schema = self._named_required_fields_schema(named_required_fields)
-        config: CoreConfig | None = schema.get('config', None)
 
-        extra = (config or {}).get('extra_fields_behavior', 'ignore')
+        config = _get_typed_dict_config(schema)
+        with self._config_wrapper_stack.push(config):
+            json_schema = self._named_required_fields_schema(named_required_fields)
+
+        extra = config.get('extra', 'ignore')
         if extra == 'forbid':
             json_schema['additionalProperties'] = False
         elif extra == 'allow':
@@ -2341,3 +2344,14 @@ else:
 
         def __hash__(self) -> int:
             return hash(type(self))
+
+
+def _get_typed_dict_config(schema: core_schema.TypedDictSchema) -> ConfigDict:
+    metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+    cls = metadata.get('pydantic_typed_dict_cls')
+    if cls is not None:
+        try:
+            return _decorators.get_attribute_from_bases(cls, '__pydantic_config__')
+        except AttributeError:
+            pass
+    return {}

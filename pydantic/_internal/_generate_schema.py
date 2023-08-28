@@ -1069,7 +1069,9 @@ class GenerateSchema:
                         field_name, field_info, decorators, required=required
                     )
 
-                metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls)])
+                metadata = build_metadata_dict(
+                    js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls)], typed_dict_cls=typed_dict_cls
+                )
 
                 td_schema = core_schema.typed_dict_schema(
                     fields,

@@ -30,6 +30,8 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
     # prefer positional over keyword arguments for an 'arguments' schema.
     pydantic_js_prefer_positional_arguments: bool | None
 
+    pydantic_typed_dict_cls: type[Any] | None  # TODO: Consider moving this into the pydantic-core TypedDictSchema
+
 
 class CoreMetadataHandler:
     """Because the metadata field in pydantic_core is of type `Any`, we can't assume much about its contents.
@@ -67,6 +69,7 @@ def build_metadata_dict(
     js_functions: list[GetJsonSchemaFunction] | None = None,
     js_annotation_functions: list[GetJsonSchemaFunction] | None = None,
     js_prefer_positional_arguments: bool | None = None,
+    typed_dict_cls: type[Any] | None = None,
     initial_metadata: Any | None = None,
 ) -> Any:
     """Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent
@@ -79,6 +82,7 @@ def build_metadata_dict(
         pydantic_js_functions=js_functions or [],
         pydantic_js_annotation_functions=js_annotation_functions or [],
         pydantic_js_prefer_positional_arguments=js_prefer_positional_arguments,
+        pydantic_typed_dict_cls=typed_dict_cls,
     )
     metadata = {k: v for k, v in metadata.items() if v is not None}
 
