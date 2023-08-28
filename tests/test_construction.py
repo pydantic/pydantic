@@ -6,7 +6,7 @@ from typing import Any, List, Optional, Tuple, Union
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, PydanticDeprecatedSince20, RootModel
 
 
 class Model(BaseModel):
@@ -180,6 +180,21 @@ def test_recursive_construct_list():
 
     instance = AnotherModel(lis=[Model(a=1.3, b=321), [Model(a=2.3, b=322)]])
     instance_construct = AnotherModel.model_construct(**instance.model_dump(), _recursive=True)
+    assert instance == instance_construct
+    assert instance.model_dump() == instance_construct.model_dump()
+    assert instance.model_dump_json() == instance_construct.model_dump_json()
+
+
+def test_recursive_construct_rootmodel():
+    class TestInstance(RootModel):
+        root: dict[str, str]
+
+    class TestContainer(BaseModel):
+        data: list[TestInstance]
+
+    instance = TestContainer(data=[TestInstance({'some': 'data'})])
+    instance_construct = TestContainer.model_construct(**instance.model_dump(), _recursive=True)
+
     assert instance == instance_construct
     assert instance.model_dump() == instance_construct.model_dump()
     assert instance.model_dump_json() == instance_construct.model_dump_json()

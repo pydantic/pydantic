@@ -530,8 +530,8 @@ For example, in the example above, if `_fields_set` was not provided,
 Note that for subclasses of [`RootModel`](#rootmodel-and-custom-root-types), the root value can be passed to `model_construct`
 positionally, instead of using a keyword argument.
 
-By default, `model_construct()` is not recursive, meaning it will only construct the outermost model - any subfields 
-that are *annotated* as Pydantic models are not constructed as models themselves. This behavior can instead be enabled 
+By default, `model_construct()` is not recursive, meaning it will only construct the outermost model - any subfields
+that are *annotated* as Pydantic models are not constructed as models themselves. This behavior can instead be enabled
 by adding `_recursive=True` to the function signature:
 
 ```py
@@ -553,16 +553,16 @@ host_user = User(id=123, age=32)
 client_user = User(id=456, age=64, name='Terrence West')
 
 # Create a validated instance of the server
-server_instance = Server(host=host_user, users=[client_user])
+server = Server(host=host_user, users=[client_user])
 
 # Create a non-validated copy of the server WITHOUT recursion
-server_copy = Server.model_construct(**server_instance.model_dump())
+server_copy = Server.model_construct(**server.model_dump())
 print(repr(server_copy))
 #> Server(host={'id': 123, 'age': 32, 'name': 'John Doe'}, users=[{'id': 456, 'age': 64, 'name': 'Terrence West'}])
 assert not isinstance(server_copy.host, User)
 
 # Create a non-validated copy of the server WITH recursion
-server_copy = Server.model_construct(**server_instance.model_dump(), _recursive=True)
+server_copy = Server.model_construct(**server.model_dump(), _recursive=True)
 print(repr(server_copy))
 #> Server(host=User(id=123, age=32, name='John Doe'), users=[User(id=456, age=64, name='Terrence West')])
 assert isinstance(server_copy.host, User)

@@ -11,6 +11,7 @@ from typing import Any, ClassVar
 import pydantic_core
 import typing_extensions
 from pydantic_core import PydanticUndefined
+from typing_extensions import Literal
 
 try:
     from typing import get_args, get_origin  # type: ignore
@@ -44,7 +45,7 @@ if typing.TYPE_CHECKING:
     from pathlib import Path
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
-    from typing_extensions import Literal, Unpack
+    from typing_extensions import Unpack
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .fields import Field as _Field
@@ -78,45 +79,74 @@ def _recursive_model_construct(annotation: type | None, value: Any):
     # No annotation? Early exit
     if annotation is None:
         return value
-    # Try treating the entire annotation as a BaseModel
-    try:
-        if issubclass(annotation, BaseModel):
-            return annotation.model_construct(**value, _recursive=True)
-    except (TypeError, ValueError):
-        pass
-    # If that doesn't work, we might have a special type we need to explode
-    origin = get_origin(annotation)
-    # Early-exit so that issubclass() doesn't throw
-    if origin is None:
+
+    # If value is already a BaseModel, just return that
+    # NOTE: if we see this, we assume that all of the children of the supplied BaseModel have been recursed through and
+    # converted to BaseModels, OR that the user manually provided this value and would like us to *not* recurse through
+    # its children and instead leave it "as-is". Depending on the circumstance, the user might want either behavior, so
+    # perhaps this could be toggled with another parameter/setting.
+    if isinstance(value, BaseModel):
         return value
-    elif _is_union(origin):  # or origin is types.UnionType:
+
+    # Try to get a "parent" class if we're dealing with a structural type like list, dict, sequence, etc.
+    # Otherwise just treat the annotation itself as the parent
+    origin = get_origin(annotation)
+    origin = annotation if origin is None else origin
+
+    # Get all of the classes in the brackets, if there are any
+    args = get_args(annotation)
+
+    # Union and Literal don't play well with isinstance/issubclass, so we check them early
+    if origin is Literal:
+        return value
+    elif _is_union(origin):
         # TODO: union_mode/discriminators?
-        for possible_type in get_args(annotation):
+        for possible_type in args:
             # The following could also probably be more explicit
             result = _recursive_model_construct(possible_type, value)
             if result != value:
                 return result
-    elif isinstance(origin, (str, bytes)):
+        # In the case that no union matched, simply return original value
         return value
-    elif issubclass(origin, typing.Tuple):
-        args = get_args(annotation)
-        if isinstance(args[-1], type(Ellipsis)):
-            # format: tuple[T, ...]
+    # Then we check to see if the annotation describes it as a Base/RootModel
+    elif issubclass(origin, BaseModel):
+        try:
+            return origin.model_construct(**value, _recursive=True)  # treat like BaseModel
+        except TypeError:
+            return origin.model_construct(value, _recursive=True)  # treat like RootModel
+    # Then we check for subclasses of mappings/sequences/sets
+    # But if there are no arguments to the annotation, we have to treat the value generically anyway
+    elif len(args) == 0:
+        return value
+    elif issubclass(origin, typing.MutableSequence):
+        member_type = args[0]
+        return origin([_recursive_model_construct(member_type, x) for x in value])  # type: ignore
+    elif issubclass(origin, typing.Sequence) and not issubclass(origin, (str, bytes)):
+        if isinstance(args[-1], type(Ellipsis)):  # tuple[T, ...]
             member_type = args[0]
-            return tuple(_recursive_model_construct(member_type, v) for v in value)
-        else:
-            # format: tuple[A, B, C]
-            return tuple(_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args))
-    elif issubclass(origin, typing.Sequence):
-        member_type = get_args(annotation)[0]
-        return [_recursive_model_construct(member_type, x) for x in value]
+            return origin(_recursive_model_construct(member_type, v) for v in value)  # type: ignore
+        else:  # tuple[A, B, C]
+            return origin(_recursive_model_construct(member_type, value[i]) for i, member_type in enumerate(args))  # type: ignore
     elif issubclass(origin, typing.Mapping):
-        # Unsure if we need to explode key_type as well as value_type
-        key_type, value_type = get_args(annotation)
-        return {k: _recursive_model_construct(value_type, v) for k, v in value.items()}
-
-    # If none of the above, return the unchanged value
-    return value
+        # NOTE: do we want to recurse key? Key must be hashable, and by default BaseModels are not; furthermore, dumping
+        # a model to a dict makes it unhashable even if you implement __hash__ on the model itself. However, there might
+        # be a few crazy cases where people both override __hash__ and  overwrite pydantic's serialization so that it
+        # outputs to a 'HashableDict' or similar, in which case this might be desired... but we could also just wait
+        # until such a feature is required before implementing it.
+        key_type, value_type = args
+        return origin(  # type: ignore
+            {
+                _recursive_model_construct(key_type, k): _recursive_model_construct(value_type, v)
+                for k, v in value.items()
+            }
+        )
+    # elif issubclass(origin, typing.AbstractSet):
+    #     # NOTE: we have a similar conundrum with set, where it's unlikely that it will be used, but not impossible...
+    #     member_type = args[0]
+    #     return origin(_recursive_model_construct(member_type, v) for v in value)  # type: ignore
+    else:
+        # Return the unchanged value
+        return value
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):

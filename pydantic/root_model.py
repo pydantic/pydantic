@@ -65,12 +65,15 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     __init__.__pydantic_base_init__ = True
 
     @classmethod
-    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
+    def model_construct(
+        cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None, _recursive: bool = False
+    ) -> Model:
         """Create a new model using the provided root object and update fields set.
 
         Args:
             root: The root object of the model.
             _fields_set: The set of fields to be updated.
+            _recursive: Whether to call `model_construct` on any annotated sub-model.
 
         Returns:
             The new model.
@@ -78,7 +81,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
         Raises:
             NotImplemented: If the model is not a subclass of `RootModel`.
         """
-        return super().model_construct(root=root, _fields_set=_fields_set)
+        return super().model_construct(root=root, _fields_set=_fields_set, _recursive=_recursive)
 
     def __getstate__(self) -> dict[Any, Any]:
         return {
