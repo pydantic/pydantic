@@ -114,7 +114,7 @@ def _recursive_model_construct(annotation: type | None, value: Any):
         return _handle_union(args, value)
     # Then we check to see if the annotation describes it as a Base/RootModel
     elif issubclass(origin, BaseModel):
-        if origin.__pydantic_root_model__:  # my saviour
+        if origin.__pydantic_root_model__:
             return origin.model_construct(value, _recursive=True)  # treat like RootModel
         else:
             try:
