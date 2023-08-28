@@ -1692,6 +1692,7 @@ def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601']
 
         duration: timedelta = timedelta(minutes=5)
 
+    # insert_assert(Model.model_json_schema(mode='serialization'))
     assert Model.model_json_schema(mode='serialization') == {
         'properties': properties,
         'required': ['duration'],
@@ -1700,7 +1701,6 @@ def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601']
     }
 
 
-# test ser_json_bytes
 @pytest.mark.parametrize(
     'ser_json_bytes,properties',
     [
@@ -1737,6 +1737,7 @@ def test_dataclass_default_timedelta(
     class Dataclass:
         duration: timedelta = timedelta(minutes=5)
 
+    # insert_assert(TypeAdapter(Dataclass).json_schema(mode='serialization'))
     assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
         'properties': properties,
         'required': ['duration'],
@@ -1745,7 +1746,6 @@ def test_dataclass_default_timedelta(
     }
 
 
-# test ser_json_bytes
 @pytest.mark.parametrize(
     'ser_json_bytes,properties',
     [
@@ -1758,7 +1758,7 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     class Dataclass:
         data: bytes = b'foobar'
 
-    # insert_assert(Model.model_json_schema(mode='serialization'))
+    # insert_assert(TypeAdapter(Dataclass).json_schema(mode='serialization'))
     assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
         'properties': properties,
         'required': ['data'],
@@ -1782,6 +1782,7 @@ def test_typeddict_default_timedelta(
 
         duration: Annotated[timedelta, Field(timedelta(minutes=5))]
 
+    # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
     assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
         'properties': properties,
         'required': ['duration'],
@@ -1790,7 +1791,6 @@ def test_typeddict_default_timedelta(
     }
 
 
-# test ser_json_bytes
 @pytest.mark.parametrize(
     'ser_json_bytes,properties',
     [
@@ -1804,7 +1804,7 @@ def test_typeddict_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
 
         data: Annotated[bytes, Field(b'foobar')]
 
-    # insert_assert(Model.model_json_schema(mode='serialization'))
+    # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
     assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
         'properties': properties,
         'required': ['data'],
