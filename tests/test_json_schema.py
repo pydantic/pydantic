@@ -1679,6 +1679,50 @@ def test_model_default():
     }
 
 
+@pytest.mark.parametrize(
+    'ser_json_timedelta,properties',
+    [
+        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+    ],
+)
+def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: dict[str, Any]):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_timedelta=ser_json_timedelta)
+
+        duration: timedelta = timedelta(minutes=5)
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': properties,
+        'required': ['duration'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+# test ser_json_bytes
+@pytest.mark.parametrize(
+    'ser_json_bytes,properties',
+    [
+        ('base64', {'data': {'default': 'Zm9vYmFy', 'format': 'base64url', 'title': 'Data', 'type': 'string'}}),
+        ('utf8', {'data': {'default': 'foobar', 'format': 'binary', 'title': 'Data', 'type': 'string'}}),
+    ],
+)
+def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properties: dict[str, Any]):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_bytes=ser_json_bytes)
+
+        data: bytes = b'foobar'
+
+    # insert_assert(Model.model_json_schema(mode='serialization'))
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': properties,
+        'required': ['data'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_model_subclass_metadata():
     class A(BaseModel):
         """A Model docstring"""

@@ -1,10 +1,21 @@
 from __future__ import annotations as _annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, cast
+from contextlib import contextmanager, nullcontext
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ContextManager,
+    Iterator,
+    cast,
+)
 
 from pydantic_core import core_schema
-from typing_extensions import Literal, Self
+from typing_extensions import (
+    Literal,
+    Self,
+)
 
 from ..config import ConfigDict, ExtraValues, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
@@ -167,6 +178,34 @@ class ConfigWrapper:
     def __repr__(self):
         c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
         return f'ConfigWrapper({c})'
+
+
+class ConfigWrapperStack:
+    """A stack of `ConfigWrapper` instances."""
+
+    def __init__(self, config_wrapper: ConfigWrapper):
+        self._config_wrapper_stack: list[ConfigWrapper] = [config_wrapper]
+
+    @property
+    def tail(self) -> ConfigWrapper:
+        return self._config_wrapper_stack[-1]
+
+    def push(self, config_wrapper: ConfigWrapper | ConfigDict | None) -> ContextManager[None]:
+        if config_wrapper is None:
+            return nullcontext()
+
+        if not isinstance(config_wrapper, ConfigWrapper):
+            config_wrapper = ConfigWrapper(config_wrapper, check=False)
+
+        @contextmanager
+        def _context_manager() -> Iterator[None]:
+            self._config_wrapper_stack.append(config_wrapper)
+            try:
+                yield
+            finally:
+                self._config_wrapper_stack.pop()
+
+        return _context_manager()
 
 
 config_defaults = ConfigDict(

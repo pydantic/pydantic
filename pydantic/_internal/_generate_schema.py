@@ -8,7 +8,7 @@ import re
 import sys
 import typing
 import warnings
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from copy import copy
 from enum import Enum
 from functools import partial
@@ -20,7 +20,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ContextManager,
     Dict,
     ForwardRef,
     Iterable,
@@ -45,7 +44,7 @@ from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
-from ._config import ConfigWrapper
+from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import (
     CoreMetadataHandler,
     build_metadata_dict,
@@ -258,34 +257,6 @@ def _add_custom_serialization_from_json_encoders(
         return schema
 
     return schema
-
-
-class ConfigWrapperStack:
-    """A stack of `ConfigWrapper` instances."""
-
-    def __init__(self, config_wrapper: ConfigWrapper):
-        self._config_wrapper_stack: list[ConfigWrapper] = [config_wrapper]
-
-    @property
-    def tail(self) -> ConfigWrapper:
-        return self._config_wrapper_stack[-1]
-
-    def push(self, config_wrapper: ConfigWrapper | ConfigDict | None) -> ContextManager[None]:
-        if config_wrapper is None:
-            return nullcontext()
-
-        if not isinstance(config_wrapper, ConfigWrapper):
-            config_wrapper = ConfigWrapper(config_wrapper, check=False)
-
-        @contextmanager
-        def _context_manager() -> Iterator[None]:
-            self._config_wrapper_stack.append(config_wrapper)
-            try:
-                yield
-            finally:
-                self._config_wrapper_stack.pop()
-
-        return _context_manager()
 
 
 class GenerateSchema:
