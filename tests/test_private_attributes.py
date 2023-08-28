@@ -27,6 +27,29 @@ def test_private_attribute():
     assert m.__dict__ == {}
 
 
+def test_private_attribute_double_leading_underscore():
+    default = {'a': {}}
+
+    class Model(BaseModel):
+        __foo = PrivateAttr(default)
+
+    assert set(Model.__private_attributes__) == {'_Model__foo'}
+
+    m = Model()
+
+    with pytest.raises(AttributeError, match='__foo'):
+        m.__foo
+    assert m._Model__foo == default
+    assert m._Model__foo is not default
+    assert m._Model__foo['a'] is not default['a']
+
+    m._Model__foo = None
+    assert m._Model__foo is None
+
+    assert m.model_dump() == {}
+    assert m.__dict__ == {}
+
+
 def test_private_attribute_nested():
     class SubModel(BaseModel):
         _foo = PrivateAttr(42)
