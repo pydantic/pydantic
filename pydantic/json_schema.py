@@ -35,13 +35,7 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import (
-    CoreConfig,
-    CoreSchema,
-    PydanticOmit,
-    core_schema,
-    to_jsonable_python,
-)
+from pydantic_core import CoreConfig, CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Annotated, Literal, assert_never
 
@@ -62,10 +56,7 @@ if TYPE_CHECKING:
     from . import ConfigDict
     from ._internal._core_utils import CoreSchemaField, CoreSchemaOrField
     from ._internal._dataclasses import PydanticDataclass
-    from ._internal._schema_generation_shared import (
-        GetJsonSchemaFunction,
-        GetJsonSchemaHandler,
-    )
+    from ._internal._schema_generation_shared import GetJsonSchemaFunction, GetJsonSchemaHandler
     from .main import BaseModel
 
 
@@ -91,10 +82,7 @@ validating. This flag provides a way to indicate whether you want the JSON schem
 for validation inputs, or that will be matched by serialization outputs.
 """
 
-_MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {
-    'validation': 'Input',
-    'serialization': 'Output',
-}
+_MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serialization': 'Output'}
 
 
 def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
@@ -311,6 +299,10 @@ class GenerateJsonSchema:
         # of a single instance of a schema generator
         self._used = False
 
+    @property
+    def config(self) -> _config.ConfigWrapper:
+        return self._config_wrapper_stack.tail
+
     def build_schema_type_to_method(
         self,
     ) -> dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]]:
@@ -338,9 +330,8 @@ class GenerateJsonSchema:
         return mapping
 
     def generate_definitions(
-        self,
-        inputs: Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema]],
-    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], dict[DefsRef, JsonSchemaValue],]:
+        self, inputs: Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema]]
+    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], JsonSchemaValue], dict[DefsRef, JsonSchemaValue]]:
         """Generates JSON schema definitions from a list of core schemas, pairing the generated definitions with a
         mapping that links the input keys to the definition references.
 
@@ -670,8 +661,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        config = self._config_wrapper_stack.tail
-        json_schema = {'type': 'string', 'format': 'base64url' if config.ser_json_bytes == 'base64' else 'binary'}
+        json_schema = {'type': 'string', 'format': 'base64url' if self.config.ser_json_bytes == 'base64' else 'binary'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.bytes)
         return json_schema
 
@@ -719,8 +709,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        config = self._config_wrapper_stack.tail
-        if config.ser_json_timedelta == 'float':
+        if self.config.ser_json_timedelta == 'float':
             return {'type': 'number'}
         return {'type': 'string', 'format': 'duration'}
 
@@ -1548,9 +1537,7 @@ class GenerateJsonSchema:
         )
 
     def kw_arguments_schema(
-        self,
-        arguments: list[core_schema.ArgumentsParameter],
-        var_kwargs_schema: CoreSchema | None,
+        self, arguments: list[core_schema.ArgumentsParameter], var_kwargs_schema: CoreSchema | None
     ) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a function's keyword arguments.
 
@@ -1587,9 +1574,7 @@ class GenerateJsonSchema:
         return json_schema
 
     def p_arguments_schema(
-        self,
-        arguments: list[core_schema.ArgumentsParameter],
-        var_args_schema: CoreSchema | None,
+        self, arguments: list[core_schema.ArgumentsParameter], var_args_schema: CoreSchema | None
     ) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a function's positional arguments.
 
@@ -1680,11 +1665,7 @@ class GenerateJsonSchema:
         content_core_schema = schema.get('schema') or core_schema.any_schema()
         content_json_schema = self.generate_inner(content_core_schema)
         if self.mode == 'validation':
-            return {
-                'type': 'string',
-                'contentMediaType': 'application/json',
-                'contentSchema': content_json_schema,
-            }
+            return {'type': 'string', 'contentMediaType': 'application/json', 'contentSchema': content_json_schema}
         else:
             # self.mode == 'serialization'
             return content_json_schema
@@ -1759,8 +1740,7 @@ class GenerateJsonSchema:
         return ref_json_schema
 
     def ser_schema(
-        self,
-        schema: core_schema.SerSchema | core_schema.IncExSeqSerSchema | core_schema.IncExDictSerSchema,
+        self, schema: core_schema.SerSchema | core_schema.IncExSeqSerSchema | core_schema.IncExDictSerSchema
     ) -> JsonSchemaValue | None:
         """Generates a JSON schema that matches a schema that defines a serialized object.
 
@@ -1977,7 +1957,7 @@ class GenerateJsonSchema:
         Returns:
             The encoded default value.
         """
-        config = self._config_wrapper_stack.tail
+        config = self.config
         return pydantic_core.to_jsonable_python(
             dft,
             timedelta_mode=config.ser_json_timedelta,
@@ -1985,10 +1965,7 @@ class GenerateJsonSchema:
         )
 
     def update_with_validations(
-        self,
-        json_schema: JsonSchemaValue,
-        core_schema: CoreSchema,
-        mapping: dict[str, str],
+        self, json_schema: JsonSchemaValue, core_schema: CoreSchema, mapping: dict[str, str]
     ) -> None:
         """Update the json_schema with the corresponding validations specified in the core_schema,
         using the provided mapping to translate keys in core_schema to the appropriate keys for a JSON schema.
@@ -2176,7 +2153,7 @@ def models_json_schema(
     description: str | None = None,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], JsonSchemaValue,], JsonSchemaValue,]:
+) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], JsonSchemaValue], JsonSchemaValue]:
     """Utility function to generate a JSON Schema for multiple models.
 
     Args:
@@ -2266,9 +2243,7 @@ class WithJsonSchema:
     mode: Literal['validation', 'serialization'] | None = None
 
     def __get_pydantic_json_schema__(
-        self,
-        core_schema: core_schema.CoreSchema,
-        handler: _annotated_handlers.GetJsonSchemaHandler,
+        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         mode = self.mode or handler.mode
         if mode != handler.mode:
@@ -2298,9 +2273,7 @@ class Examples:
     mode: Literal['validation', 'serialization'] | None = None
 
     def __get_pydantic_json_schema__(
-        self,
-        core_schema: core_schema.CoreSchema,
-        handler: _annotated_handlers.GetJsonSchemaHandler,
+        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         mode = self.mode or handler.mode
         json_schema = handler(core_schema)
