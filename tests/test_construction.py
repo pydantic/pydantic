@@ -1,7 +1,7 @@
 import pickle
 import sys
 from collections.abc import Sequence
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pytest
 from pydantic_core import PydanticUndefined, ValidationError
@@ -187,10 +187,10 @@ def test_recursive_construct_list():
 
 def test_recursive_construct_rootmodel():
     class TestInstance(RootModel):
-        root: dict[str, str]
+        root: Dict[str, str]
 
     class TestContainer(BaseModel):
-        data: list[TestInstance]
+        data: List[TestInstance]
 
     instance = TestContainer(data=[TestInstance({'some': 'data'})])
     instance_construct = TestContainer.model_construct(**instance.model_dump(), _recursive=True)

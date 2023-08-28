@@ -6,7 +6,7 @@ groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "t
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:89a3e358b106e547e004dccb68df8e1d0e62119adbc9531016881b02d300e8fd"
+content_hash = "sha256:4a7497db6a32d447968857717fbd34a0204415521935f0406a9f570cd62ea8a5"
 
 [[package]]
 name = "annotated-types"
