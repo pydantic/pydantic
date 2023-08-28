@@ -67,6 +67,7 @@ from ._decorators import (
     ModelValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
     ValidatorDecoratorInfo,
+    get_attribute_from_bases,
     inspect_field_serializer,
     inspect_model_serializer,
     inspect_validator,
@@ -1057,11 +1058,10 @@ class GenerateSchema:
                     code='typed-dict-version',
                 )
 
-            config: ConfigDict | None = None
-            for base in (typed_dict_cls, *typed_dict_cls.__orig_bases__):
-                config = getattr(base, '__pydantic_config__', None)
-                if config is not None:
-                    break
+            try:
+                config: ConfigDict | None = get_attribute_from_bases(typed_dict_cls, '__pydantic_config__')
+            except AttributeError:
+                config = None
 
             with self._config_wrapper_stack.push(config):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
