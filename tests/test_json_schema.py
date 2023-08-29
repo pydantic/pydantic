@@ -2484,7 +2484,7 @@ def test_tuple_with_extra_schema():
     assert Model.model_json_schema() == {
         'properties': {
             'x': {
-                'maxItems': 2,
+                'items': {'type': 'integer'},
                 'minItems': 2,
                 'prefixItems': [{'type': 'integer'}, {'type': 'string'}],
                 'title': 'X',

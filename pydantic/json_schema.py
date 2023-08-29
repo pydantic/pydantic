@@ -795,8 +795,8 @@ class GenerateJsonSchema:
         prefixItems = [self.generate_inner(item) for item in schema['items_schema']]
         if prefixItems:
             json_schema['prefixItems'] = prefixItems
-        if 'extra_schema' in schema:
-            json_schema['items'] = self.generate_inner(schema['extra_schema'])
+        if 'extras_schema' in schema:
+            json_schema['items'] = self.generate_inner(schema['extras_schema'])
         else:
             json_schema['maxItems'] = len(schema['items_schema'])
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
