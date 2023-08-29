@@ -1383,10 +1383,10 @@ class GenerateJsonSchema:
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
         json_schema = self._named_required_fields_schema(named_required_fields)
-        extra_validator = schema.get('extra_validator', None)
-        if extra_validator is not None:
+        extras_schema = schema.get('extras_schema', None)
+        if extras_schema is not None:
             schema_to_update = self.resolve_schema_to_update(json_schema)
-            schema_to_update['additionalProperties'] = self.generate_inner(extra_validator)
+            schema_to_update['additionalProperties'] = self.generate_inner(extras_schema)
         return json_schema
 
     def field_is_present(self, field: CoreSchemaField) -> bool:

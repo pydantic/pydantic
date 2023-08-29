@@ -481,7 +481,7 @@ class GenerateSchema:
 
             model_validators = decorators.model_validators.values()
 
-            extra_validator = None
+            extras_schema = None
             if core_config.get('extra_fields_behavior') == 'allow':
                 for tp in (cls, *cls.__mro__):
                     extras_annotation = cls.__annotations__.get('__pydantic_extra__', None)
@@ -496,7 +496,7 @@ class GenerateSchema:
                             required=True,
                         )[1]
                         if extra_items_type is not Any:
-                            extra_validator = self.generate_schema(extra_items_type)
+                            extras_schema = self.generate_schema(extra_items_type)
                             break
 
             with self._config_wrapper_stack.push(config_wrapper):
@@ -522,7 +522,7 @@ class GenerateSchema:
                             self._computed_field_schema(d, decorators.field_serializers)
                             for d in computed_fields.values()
                         ],
-                        extra_validator=extra_validator,
+                        extras_schema=extras_schema,
                         model_name=cls.__name__,
                     )
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values(), None)
