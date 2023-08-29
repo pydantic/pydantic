@@ -262,9 +262,9 @@ class _WalkCoreSchema:
     ) -> core_schema.CoreSchema:
         schema = cast(core_schema.TuplePositionalSchema, schema)
         schema['items_schema'] = [self.walk(v, f) for v in schema['items_schema']]
-        extra_schema = schema.get('extra_schema')
-        if extra_schema is not None:
-            schema['extra_schema'] = self.walk(extra_schema, f)
+        extras_schema = schema.get('extras_schema')
+        if extras_schema is not None:
+            schema['extras_schema'] = self.walk(extras_schema, f)
         return schema
 
     def handle_dict_schema(self, schema: core_schema.DictSchema, f: Walk) -> core_schema.CoreSchema:
@@ -314,9 +314,9 @@ class _WalkCoreSchema:
         return schema
 
     def handle_model_fields_schema(self, schema: core_schema.ModelFieldsSchema, f: Walk) -> core_schema.CoreSchema:
-        extra_validator = schema.get('extra_validator')
-        if extra_validator is not None:
-            schema['extra_validator'] = self.walk(extra_validator, f)
+        extras_schema = schema.get('extras_schema')
+        if extras_schema is not None:
+            schema['extras_schema'] = self.walk(extras_schema, f)
         replaced_fields: dict[str, core_schema.ModelField] = {}
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
@@ -333,9 +333,9 @@ class _WalkCoreSchema:
         return schema
 
     def handle_typed_dict_schema(self, schema: core_schema.TypedDictSchema, f: Walk) -> core_schema.CoreSchema:
-        extra_validator = schema.get('extra_validator')
-        if extra_validator is not None:
-            schema['extra_validator'] = self.walk(extra_validator, f)
+        extras_schema = schema.get('extras_schema')
+        if extras_schema is not None:
+            schema['extras_schema'] = self.walk(extras_schema, f)
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
             replaced_field = computed_field.copy()

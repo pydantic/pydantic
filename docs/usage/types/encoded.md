@@ -86,7 +86,8 @@ except ValidationError as e:
 
 Internally, Pydantic uses the [`EncodedBytes`][pydantic.types.EncodedBytes] and [`EncodedStr`][pydantic.types.EncodedStr]
 annotations with [`Base64Encoder`][pydantic.types.Base64Encoder] to implement base64 encoding/decoding in the
-[`Base64Bytes`][pydantic.types.Base64Bytes] and [`Base64Str`][pydantic.types.Base64Str] types, respectively.
+[`Base64Bytes`][pydantic.types.Base64Bytes], [`Base64UrlBytes`][pydantic.types.Base64UrlBytes],
+[`Base64Str`][pydantic.types.Base64Str], and [`Base64UrlStr`][pydantic.types.Base64Str] types.
 
 ```py
 from typing import Optional
@@ -131,3 +132,45 @@ except ValidationError as e:
       Base64 decoding error: 'Incorrect padding' [type=base64_decode, input_value=b'undecodable', input_type=bytes]
     """
 ```
+
+If you need url-safe base64 encoding, you can use the `Base64UrlBytes` and `Base64UrlStr` types. The following snippet
+demonstrates the difference in alphabets used by the url-safe and non-url-safe encodings:
+
+```py
+from pydantic import (
+    Base64Bytes,
+    Base64Str,
+    Base64UrlBytes,
+    Base64UrlStr,
+    BaseModel,
+)
+
+
+class Model(BaseModel):
+    base64_bytes: Base64Bytes
+    base64_str: Base64Str
+    base64url_bytes: Base64UrlBytes
+    base64url_str: Base64UrlStr
+
+
+# Initialize the model with base64 data
+m = Model(
+    base64_bytes=b'SHc/dHc+TXc==',
+    base64_str='SHc/dHc+TXc==',
+    base64url_bytes=b'SHc_dHc-TXc==',
+    base64url_str='SHc_dHc-TXc==',
+)
+print(m)
+"""
+base64_bytes=b'Hw?tw>Mw' base64_str='Hw?tw>Mw' base64url_bytes=b'Hw?tw>Mw' base64url_str='Hw?tw>Mw'
+"""
+```
+
+!!! note
+    Under the hood, `Base64Bytes` and `Base64Str` use the standard library `base64.encodebytes` and `base64.decodebytes`
+    functions, while `Base64UrlBytes` and `Base64UrlStr` use the `base64.urlsafe_b64encode` and
+    `base64.urlsafe_b64decode` functions.
+
+    As a result, the `Base64UrlBytes` and `Base64UrlStr` types can be used to faithfully decode "vanilla" base64 data
+    (using `'+'` and `'/'`), but the reverse is not true — attempting to decode url-safe base64 data using the
+    `Base64Bytes` and `Base64Str` types may fail or produce an incorrect decoding.

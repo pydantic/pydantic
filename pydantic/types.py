@@ -96,6 +96,8 @@ __all__ = (
     'Base64Encoder',
     'Base64Bytes',
     'Base64Str',
+    'Base64UrlBytes',
+    'Base64UrlStr',
     'GetPydanticSchema',
     'StringConstraints',
 )
@@ -1233,7 +1235,7 @@ class EncoderProtocol(Protocol):
 
 
 class Base64Encoder(EncoderProtocol):
-    """Base64 encoder."""
+    """Standard (non-URL-safe) Base64 encoder."""
 
     @classmethod
     def decode(cls, data: bytes) -> bytes:
@@ -1270,6 +1272,46 @@ class Base64Encoder(EncoderProtocol):
             The JSON format for the encoded data.
         """
         return 'base64'
+
+
+class Base64UrlEncoder(EncoderProtocol):
+    """URL-safe Base64 encoder."""
+
+    @classmethod
+    def decode(cls, data: bytes) -> bytes:
+        """Decode the data from base64 encoded bytes to original bytes data.
+
+        Args:
+            data: The data to decode.
+
+        Returns:
+            The decoded data.
+        """
+        try:
+            return base64.urlsafe_b64decode(data)
+        except ValueError as e:
+            raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
+
+    @classmethod
+    def encode(cls, value: bytes) -> bytes:
+        """Encode the data from bytes to a base64 encoded bytes.
+
+        Args:
+            value: The data to encode.
+
+        Returns:
+            The encoded data.
+        """
+        return base64.urlsafe_b64encode(value)
+
+    @classmethod
+    def get_json_format(cls) -> Literal['base64url']:
+        """Get the JSON format for the encoded data.
+
+        Returns:
+            The JSON format for the encoded data.
+        """
+        return 'base64url'
 
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
@@ -1356,9 +1398,13 @@ class EncodedStr(EncodedBytes):
 
 
 Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
-"""A bytes type that is encoded and decoded using the base64 encoder."""
+"""A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder."""
 Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
-"""A str type that is encoded and decoded using the base64 encoder."""
+"""A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder."""
+Base64UrlBytes = Annotated[bytes, EncodedBytes(encoder=Base64UrlEncoder)]
+"""A bytes type that is encoded and decoded using the URL-safe base64 encoder."""
+Base64UrlStr = Annotated[str, EncodedStr(encoder=Base64UrlEncoder)]
+"""A str type that is encoded and decoded using the URL-safe base64 encoder."""
 
 
 __getattr__ = getattr_migration(__name__)
