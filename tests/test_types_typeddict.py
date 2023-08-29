@@ -21,6 +21,7 @@ from pydantic import (
     PydanticUserError,
     ValidationError,
 )
+from pydantic._internal._decorators import get_attribute_from_bases
 from pydantic.functional_serializers import field_serializer, model_serializer
 from pydantic.functional_validators import field_validator, model_validator
 from pydantic.type_adapter import TypeAdapter
@@ -905,3 +906,16 @@ def test_grandparent_config():
 
     validated_data = TypeAdapter(MySubTypedDict).validate_python({'x': 'ABC', 'y': 'DEF', 'z': 'GHI'})
     assert validated_data == {'x': 'abc', 'y': 'def', 'z': 'ghi'}
+
+
+def test_typeddict_mro():
+    class A(TypedDict):
+        x = 1
+
+    class B(A):
+        x = 2
+
+    class C(B):
+        pass
+
+    assert get_attribute_from_bases(C, 'x') == 2
