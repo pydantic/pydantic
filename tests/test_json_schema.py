@@ -1679,6 +1679,140 @@ def test_model_default():
     }
 
 
+@pytest.mark.parametrize(
+    'ser_json_timedelta,properties',
+    [
+        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+    ],
+)
+def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_timedelta=ser_json_timedelta)
+
+        duration: timedelta = timedelta(minutes=5)
+
+    # insert_assert(Model.model_json_schema(mode='serialization'))
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': properties,
+        'required': ['duration'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(
+    'ser_json_bytes,properties',
+    [
+        ('base64', {'data': {'default': 'Zm9vYmFy', 'format': 'base64url', 'title': 'Data', 'type': 'string'}}),
+        ('utf8', {'data': {'default': 'foobar', 'format': 'binary', 'title': 'Data', 'type': 'string'}}),
+    ],
+)
+def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properties: typing.Dict[str, Any]):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_bytes=ser_json_bytes)
+
+        data: bytes = b'foobar'
+
+    # insert_assert(Model.model_json_schema(mode='serialization'))
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': properties,
+        'required': ['data'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(
+    'ser_json_timedelta,properties',
+    [
+        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+    ],
+)
+def test_dataclass_default_timedelta(
+    ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]
+):
+    @dataclass(config=ConfigDict(ser_json_timedelta=ser_json_timedelta))
+    class Dataclass:
+        duration: timedelta = timedelta(minutes=5)
+
+    # insert_assert(TypeAdapter(Dataclass).json_schema(mode='serialization'))
+    assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
+        'properties': properties,
+        'required': ['duration'],
+        'title': 'Dataclass',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(
+    'ser_json_bytes,properties',
+    [
+        ('base64', {'data': {'default': 'Zm9vYmFy', 'format': 'base64url', 'title': 'Data', 'type': 'string'}}),
+        ('utf8', {'data': {'default': 'foobar', 'format': 'binary', 'title': 'Data', 'type': 'string'}}),
+    ],
+)
+def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properties: typing.Dict[str, Any]):
+    @dataclass(config=ConfigDict(ser_json_bytes=ser_json_bytes))
+    class Dataclass:
+        data: bytes = b'foobar'
+
+    # insert_assert(TypeAdapter(Dataclass).json_schema(mode='serialization'))
+    assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
+        'properties': properties,
+        'required': ['data'],
+        'title': 'Dataclass',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(
+    'ser_json_timedelta,properties',
+    [
+        ('float', {'duration': {'default': 300.0, 'title': 'Duration', 'type': 'number'}}),
+        ('iso8601', {'duration': {'default': 'PT300S', 'format': 'duration', 'title': 'Duration', 'type': 'string'}}),
+    ],
+)
+def test_typeddict_default_timedelta(
+    ser_json_timedelta: Literal['float', 'iso8601'], properties: typing.Dict[str, Any]
+):
+    class MyTypedDict(TypedDict):
+        __pydantic_config__ = ConfigDict(ser_json_timedelta=ser_json_timedelta)
+
+        duration: Annotated[timedelta, Field(timedelta(minutes=5))]
+
+    # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
+    assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
+        'properties': properties,
+        'required': ['duration'],
+        'title': 'MyTypedDict',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(
+    'ser_json_bytes,properties',
+    [
+        ('base64', {'data': {'default': 'Zm9vYmFy', 'format': 'base64url', 'title': 'Data', 'type': 'string'}}),
+        ('utf8', {'data': {'default': 'foobar', 'format': 'binary', 'title': 'Data', 'type': 'string'}}),
+    ],
+)
+def test_typeddict_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properties: typing.Dict[str, Any]):
+    class MyTypedDict(TypedDict):
+        __pydantic_config__ = ConfigDict(ser_json_bytes=ser_json_bytes)
+
+        data: Annotated[bytes, Field(b'foobar')]
+
+    # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
+    assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
+        'properties': properties,
+        'required': ['data'],
+        'title': 'MyTypedDict',
+        'type': 'object',
+    }
+
+
 def test_model_subclass_metadata():
     class A(BaseModel):
         """A Model docstring"""
