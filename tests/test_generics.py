@@ -2613,3 +2613,15 @@ def test_no_generic_base():
             'type': 'int_parsing',
         },
     ]
+
+
+def test_reverse_order_generic_hashability():
+    T = TypeVar('T')
+
+    class Model(Generic[T], BaseModel):
+        x: T
+        model_config = dict(frozen=True)
+
+    m1 = Model[int](x=1)
+    m2 = Model[int](x=1)
+    assert len({m1, m2}) == 1

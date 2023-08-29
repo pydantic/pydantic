@@ -309,6 +309,11 @@ def mro(tp: type[Any]) -> tuple[type[Any], ...]:
             # GenericAlias and some other cases
             pass
 
+    bases = get_bases(tp)
+    return (tp,) + mro_for_bases(bases)
+
+
+def mro_for_bases(bases: tuple[type[Any], ...]) -> tuple[type[Any], ...]:
     def merge_seqs(seqs: list[deque[type[Any]]]) -> Iterable[type[Any]]:
         while True:
             non_empty = [seq for seq in seqs if seq]
@@ -332,14 +337,11 @@ def mro(tp: type[Any]) -> tuple[type[Any], ...]:
                 if seq[0] == candidate:
                     seq.popleft()
 
-    bases = get_bases(tp)
     seqs = [deque(mro(base)) for base in bases] + [deque(bases)]
-    res = tuple(merge_seqs(seqs))
-
-    return (tp,) + res
+    return tuple(merge_seqs(seqs))
 
 
-def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
+def get_attribute_from_bases(tp: type[Any] | tuple[type[Any], ...], name: str) -> Any:
     """Get the attribute from the next class in the MRO that has it,
     aiming to simulate calling the method on the actual class.
 
@@ -349,7 +351,7 @@ def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
     from its bases (as done here).
 
     Args:
-        tp: The type or class to search for the attribute.
+        tp: The type or class to search for the attribute. If a tuple, this is treated as a set of base classes.
         name: The name of the attribute to retrieve.
 
     Returns:
@@ -358,13 +360,19 @@ def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
     Raises:
         AttributeError: If the attribute is not found in any class in the MRO.
     """
-    try:
-        return getattr(tp, name)
-    except AttributeError as e:
-        for base in reversed(mro(tp)):
+    if isinstance(tp, tuple):
+        for base in mro_for_bases(tp):
             if hasattr(base, name):
                 return getattr(base, name)
-        raise e
+        raise AttributeError(f'{name} not found in {tp}')
+    else:
+        try:
+            return getattr(tp, name)
+        except AttributeError as e:
+            for base in mro(tp):
+                if hasattr(base, name):
+                    return getattr(base, name)
+            raise e
 
 
 def get_attribute_from_base_dicts(tp: type[Any], name: str) -> Any:

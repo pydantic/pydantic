@@ -17,7 +17,12 @@ from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
-from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
+from ._decorators import (
+    ComputedFieldInfo,
+    DecoratorInfos,
+    PydanticDescriptorProxy,
+    get_attribute_from_bases,
+)
 from ._discriminated_union import apply_discriminators
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
@@ -374,16 +379,11 @@ def set_default_hash_func(namespace: dict[str, Any], bases: tuple[type[Any], ...
     if '__hash__' in namespace:
         return
 
-    base_hash_func = None
-    for base in bases:
-        base_hash_func = getattr(base, '__hash__', PydanticUndefined)
-        if base_hash_func is not PydanticUndefined:
-            break
-
-    if base_hash_func is None:
-        # This will be the case for `BaseModel` since it defines `__eq__` but not `__hash__`.
-        # In this case, we generate a standard hash function, generally for use with frozen models.
-
+    base_hash_func = get_attribute_from_bases(bases, '__hash__')
+    if base_hash_func in {None, object.__hash__}:
+        # If `__hash__` is None _or_ `object.__hash__`, we generate a hash function.
+        # It will be `None` if not overridden from BaseModel, but may be `object.__hash__` if there is another
+        # parent class earlier in the bases which doesn't override `__hash__` (e.g. `typing.Generic`).
         def hash_func(self: Any) -> int:
             return hash(self.__class__) + hash(tuple(self.__dict__.values()))
 
