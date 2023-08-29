@@ -18,14 +18,10 @@ cd .. && pip install . && cd fastapi
 # To skip a specific test, add '--deselect path/to/test.py::test_name' to the end of this command
 #
 # To update the list of deselected tests, remove all deselections, run the tests, and re-add any remaining failures
-./scripts/test.sh \
-  --deselect tests/test_tutorial/test_body_updates/test_tutorial001.py \
-  --deselect tests/test_tutorial/test_body_updates/test_tutorial001_py310.py \
-  --deselect tests/test_tutorial/test_body_updates/test_tutorial001_py39.py \
-  --deselect tests/test_tutorial/test_dataclasses/test_tutorial003.py \
-  --deselect tests/test_tutorial/test_path_operation_advanced_configurations/test_tutorial004.py \
-  --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005.py \
-  --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005_py310.py \
-  --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005_py39.py \
-  --deselect tests/test_multi_body_errors.py::test_jsonable_encoder_requiring_error \
-  --deselect tests/test_multi_body_errors.py::test_put_incorrect_body_multiple \
+./scripts/test.sh -vv \
+  --deselect tests/test_openapi_separate_input_output_schemas.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_body_updates/test_tutorial001.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_dataclasses/test_tutorial003.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_path_operation_advanced_configurations/test_tutorial004.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_separate_openapi_schemas/test_tutorial001.py::test_openapi_schema \
