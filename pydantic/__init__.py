@@ -179,6 +179,8 @@ __all__ = [
     'Base64Encoder',
     'Base64Bytes',
     'Base64Str',
+    'Base64UrlBytes',
+    'Base64UrlStr',
     'SkipValidation',
     'InstanceOf',
     'WithJsonSchema',
