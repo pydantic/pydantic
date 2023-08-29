@@ -124,7 +124,7 @@ except ValidationError as exc:
     print(exc)
     """
     1 validation error for list[int]
-      List should have at most 10 items after validation, not 11 [type=too_long, input_value=[1, 1, 1, 1, 1, 1, 1, 1, ... 1, 1, 1, 1, 1, 1, 1, 1], input_type=list]
+      List should have at most 10 items after validation, not 100 [type=too_long, input_value=[1, 1, 1, 1, 1, 1, 1, 1, ... 1, 1, 1, 1, 1, 1, 1, 1], input_type=list]
     """
 
 
