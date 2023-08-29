@@ -3206,6 +3206,16 @@ def test_path_like_strict():
     }
 
 
+def test_path_strict_override():
+    class Model(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        x: Path = Field(strict=False)
+
+    m = Model(x='/foo/bar')
+    assert m.x == Path('/foo/bar')
+
+
 def test_path_validation_fails():
     class Model(BaseModel):
         foo: Path

@@ -29,6 +29,7 @@ from typing_extensions import get_args, get_origin
 
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import FieldInfo
+from pydantic.types import Strict
 
 from ..config import ConfigDict
 from ..json_schema import JsonSchemaValue, update_json_schema
@@ -241,6 +242,11 @@ def path_schema_prepare_pydantic_annotations(
         python_schema=core_schema.is_instance_schema(source_type),
     )
 
+    strict: bool | None = None
+    for annotation in annotations:
+        if isinstance(annotation, Strict):
+            strict = annotation.strict
+
     schema = core_schema.lax_or_strict_schema(
         lax_schema=core_schema.union_schema(
             [
@@ -253,6 +259,7 @@ def path_schema_prepare_pydantic_annotations(
         ),
         strict_schema=instance_schema,
         serialization=core_schema.to_string_ser_schema(),
+        strict=strict,
     )
 
     return (
