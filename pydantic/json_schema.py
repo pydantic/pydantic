@@ -83,8 +83,6 @@ validating. This flag provides a way to indicate whether you want the JSON schem
 for validation inputs, or that will be matched by serialization outputs.
 """
 
-_MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serialization': 'Output'}
-
 
 def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
     """Update a JSON schema by providing a dictionary of updates.
@@ -276,7 +274,7 @@ class GenerateJsonSchema:
         self.definitions: dict[DefsRef, JsonSchemaValue] = {}
         self._config_wrapper_stack = _config.ConfigWrapperStack(_config.ConfigWrapper({}))
 
-        self.mode: JsonSchemaMode = 'validation'
+        self._mode: JsonSchemaMode = 'validation'
 
         # The following includes a mapping of a fully-unique defs ref choice to a list of preferred
         # alternatives, which are generally simpler, such as only including the class name.
@@ -303,6 +301,13 @@ class GenerateJsonSchema:
     @property
     def config(self) -> _config.ConfigWrapper:
         return self._config_wrapper_stack.tail
+
+    @property
+    def mode(self) -> JsonSchemaMode:
+        if self.config.json_schema_mode_override is not None:
+            return self.config.json_schema_mode_override
+        else:
+            return self._mode
 
     def build_schema_type_to_method(
         self,
@@ -363,14 +368,14 @@ class GenerateJsonSchema:
             )
 
         for key, mode, schema in inputs:
-            self.mode = mode
+            self._mode = mode
             self.generate_inner(schema)
 
         definitions_remapping = self._build_definitions_remapping()
 
         json_schemas_map: dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef] = {}
         for key, mode, schema in inputs:
-            self.mode = mode
+            self._mode = mode
             json_schema = self.generate_inner(schema)
             json_schemas_map[(key, mode)] = definitions_remapping.remap_json_schema(json_schema)
 
@@ -392,7 +397,7 @@ class GenerateJsonSchema:
         Raises:
             PydanticUserError: If the JSON schema generator has already been used to generate a JSON schema.
         """
-        self.mode = mode
+        self._mode = mode
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
@@ -1442,15 +1447,13 @@ class GenerateJsonSchema:
         Returns:
             `True` if the field should be marked as required in the generated JSON schema, `False` otherwise.
         """
-        if self.mode == 'serialization':
+        if self.mode == 'serialization' and self.config.json_schema_serialization_defaults_required:
             return not field.get('serialization_exclude')
-        elif self.mode == 'validation':
+        else:
             if field['type'] == 'typed-dict-field':
                 return field.get('required', total)
             else:
                 return field['schema']['type'] != 'default'
-        else:
-            assert_never(self.mode)
 
     def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a dataclass's constructor arguments.
@@ -1845,15 +1848,19 @@ class GenerateJsonSchema:
         components = [re.sub(r'(?:[^.[\]]+\.)+((?:[^.[\]]+))', r'\1', x) for x in components]
         short_ref = ''.join(components)
 
-        mode_title = _MODE_TITLE_MAPPING[mode]
+        mode_suffix = (
+            self.config.json_schema_serialization_suffix
+            if mode == 'serialization'
+            else self.config.json_schema_validation_suffix
+        )
 
         # It is important that the generated defs_ref values be such that at least one choice will not
         # be generated for any other core_ref. Currently, this should be the case because we include
         # the id of the source type in the core_ref
         name = DefsRef(self.normalize_name(short_ref))
-        name_mode = DefsRef(self.normalize_name(short_ref) + f'-{mode_title}')
+        name_mode = DefsRef(self.normalize_name(short_ref) + f'{mode_suffix}')
         module_qualname = DefsRef(self.normalize_name(core_ref_no_id))
-        module_qualname_mode = DefsRef(f'{module_qualname}-{mode_title}')
+        module_qualname_mode = DefsRef(f'{module_qualname}{mode_suffix}')
         module_qualname_id = DefsRef(self.normalize_name(core_ref))
         occurrence_index = self._collision_index.get(module_qualname_id)
         if occurrence_index is None:

@@ -76,6 +76,10 @@ class ConfigWrapper:
     hide_input_in_errors: bool
     defer_build: bool
     schema_generator: type[GenerateSchema] | None
+    json_schema_serialization_defaults_required: bool
+    json_schema_mode_override: Literal['validation', 'serialization', None]
+    json_schema_validation_suffix: str
+    json_schema_serialization_suffix: str
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -239,6 +243,10 @@ config_defaults = ConfigDict(
     json_encoders=None,
     defer_build=False,
     schema_generator=None,
+    json_schema_serialization_defaults_required=False,
+    json_schema_mode_override=None,
+    json_schema_validation_suffix='-Input',
+    json_schema_serialization_suffix='-Output',
 )
 
 

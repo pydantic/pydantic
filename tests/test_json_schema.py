@@ -521,7 +521,6 @@ def test_decimal_json_schema():
             'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
             'b': {'default': '12.34', 'title': 'B', 'type': 'string'},
         },
-        'required': ['a', 'b'],
         'title': 'Model',
         'type': 'object',
     }
@@ -1695,7 +1694,6 @@ def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601']
     # insert_assert(Model.model_json_schema(mode='serialization'))
     assert Model.model_json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['duration'],
         'title': 'Model',
         'type': 'object',
     }
@@ -1717,7 +1715,6 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
     # insert_assert(Model.model_json_schema(mode='serialization'))
     assert Model.model_json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['data'],
         'title': 'Model',
         'type': 'object',
     }
@@ -1740,7 +1737,6 @@ def test_dataclass_default_timedelta(
     # insert_assert(TypeAdapter(Dataclass).json_schema(mode='serialization'))
     assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['duration'],
         'title': 'Dataclass',
         'type': 'object',
     }
@@ -1761,7 +1757,6 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     # insert_assert(TypeAdapter(Dataclass).json_schema(mode='serialization'))
     assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['data'],
         'title': 'Dataclass',
         'type': 'object',
     }
@@ -1785,7 +1780,6 @@ def test_typeddict_default_timedelta(
     # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
     assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['duration'],
         'title': 'MyTypedDict',
         'type': 'object',
     }
@@ -1807,7 +1801,6 @@ def test_typeddict_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
     assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['data'],
         'title': 'MyTypedDict',
         'type': 'object',
     }
@@ -1928,7 +1921,6 @@ def test_constraints_schema_serialization(kwargs, type_, expected_extra):
         'title': 'Foo',
         'type': 'object',
         'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
-        'required': ['a'],
     }
 
     expected_schema['properties']['a'].update(expected_extra)
@@ -4755,7 +4747,7 @@ def test_serialization_schema_with_exclude():
     }
     assert Model.model_json_schema(mode='serialization', schema_generator=MyGenerateJsonSchema) == {
         'properties': {'x': {'title': 'X', 'type': 'integer'}, 'y': {'title': 'Y', 'type': 'integer'}},
-        'required': ['x'],
+        'required': ['x', 'y'],
         'title': 'Model',
         'type': 'object',
     }
