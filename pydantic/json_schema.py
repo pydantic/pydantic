@@ -301,7 +301,7 @@ class GenerateJsonSchema:
         self._used = False
 
     @property
-    def config(self) -> _config.ConfigWrapper:
+    def _config(self) -> _config.ConfigWrapper:
         return self._config_wrapper_stack.tail
 
     def build_schema_type_to_method(
@@ -662,7 +662,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        json_schema = {'type': 'string', 'format': 'base64url' if self.config.ser_json_bytes == 'base64' else 'binary'}
+        json_schema = {'type': 'string', 'format': 'base64url' if self._config.ser_json_bytes == 'base64' else 'binary'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.bytes)
         return json_schema
 
@@ -710,7 +710,7 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
-        if self.config.ser_json_timedelta == 'float':
+        if self._config.ser_json_timedelta == 'float':
             return {'type': 'number'}
         return {'type': 'string', 'format': 'duration'}
 
@@ -1960,7 +1960,7 @@ class GenerateJsonSchema:
         Returns:
             The encoded default value.
         """
-        config = self.config
+        config = self._config
         return pydantic_core.to_jsonable_python(
             dft,
             timedelta_mode=config.ser_json_timedelta,
