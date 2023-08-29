@@ -50,6 +50,8 @@ from pydantic import (
     AwareDatetime,
     Base64Bytes,
     Base64Str,
+    Base64UrlBytes,
+    Base64UrlStr,
     BaseModel,
     ByteSize,
     ConfigDict,
@@ -3206,6 +3208,16 @@ def test_path_like_strict():
     }
 
 
+def test_path_strict_override():
+    class Model(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        x: Path = Field(strict=False)
+
+    m = Model(x='/foo/bar')
+    assert m.x == Path('/foo/bar')
+
+
 def test_path_validation_fails():
     class Model(BaseModel):
         foo: Path
@@ -4872,6 +4884,13 @@ def test_custom_generic_containers():
         pytest.param(
             Base64Str, bytearray(b'Zm9vIGJhcg=='), 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-bytearray-input'
         ),
+        pytest.param(
+            Base64Bytes,
+            b'BCq+6+1/Paun/Q==',
+            b'\x04*\xbe\xeb\xed\x7f=\xab\xa7\xfd',
+            b'BCq+6+1/Paun/Q==\n',
+            id='Base64Bytes-bytes-alphabet-vanilla',
+        ),
     ],
 )
 def test_base64(field_type, input_data, expected_value, serialized_data):
@@ -4930,6 +4949,99 @@ def test_base64_invalid(field_type, input_data):
             'ctx': {'error': 'Incorrect padding'},
             'input': input_data,
             'loc': ('base64_value',),
+            'msg': "Base64 decoding error: 'Incorrect padding'",
+            'type': 'base64_decode',
+        },
+    ]
+
+
+@pytest.mark.parametrize(
+    ('field_type', 'input_data', 'expected_value', 'serialized_data'),
+    [
+        pytest.param(Base64UrlBytes, b'Zm9vIGJhcg==\n', b'foo bar', b'Zm9vIGJhcg==', id='Base64UrlBytes-reversible'),
+        pytest.param(Base64UrlStr, 'Zm9vIGJhcg==\n', 'foo bar', 'Zm9vIGJhcg==', id='Base64UrlStr-reversible'),
+        pytest.param(Base64UrlBytes, b'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64UrlBytes-bytes-input'),
+        pytest.param(Base64UrlBytes, 'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==', id='Base64UrlBytes-str-input'),
+        pytest.param(
+            Base64UrlBytes, bytearray(b'Zm9vIGJhcg=='), b'foo bar', b'Zm9vIGJhcg==', id='Base64UrlBytes-bytearray-input'
+        ),
+        pytest.param(Base64UrlStr, b'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==', id='Base64UrlStr-bytes-input'),
+        pytest.param(Base64UrlStr, 'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==', id='Base64UrlStr-str-input'),
+        pytest.param(
+            Base64UrlStr, bytearray(b'Zm9vIGJhcg=='), 'foo bar', 'Zm9vIGJhcg==', id='Base64UrlStr-bytearray-input'
+        ),
+        pytest.param(
+            Base64UrlBytes,
+            b'BCq-6-1_Paun_Q==',
+            b'\x04*\xbe\xeb\xed\x7f=\xab\xa7\xfd',
+            b'BCq-6-1_Paun_Q==',
+            id='Base64UrlBytes-bytes-alphabet-url',
+        ),
+        pytest.param(
+            Base64UrlBytes,
+            b'BCq+6+1/Paun/Q==',
+            b'\x04*\xbe\xeb\xed\x7f=\xab\xa7\xfd',
+            b'BCq-6-1_Paun_Q==',
+            id='Base64UrlBytes-bytes-alphabet-vanilla',
+        ),
+    ],
+)
+def test_base64url(field_type, input_data, expected_value, serialized_data):
+    class Model(BaseModel):
+        base64url_value: field_type
+        base64url_value_or_none: Optional[field_type] = None
+
+    m = Model(base64url_value=input_data)
+    assert m.base64url_value == expected_value
+
+    m = Model.model_construct(base64url_value=expected_value)
+    assert m.base64url_value == expected_value
+
+    assert m.model_dump() == {
+        'base64url_value': serialized_data,
+        'base64url_value_or_none': None,
+    }
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'base64url_value': {
+                'format': 'base64url',
+                'title': 'Base64Url Value',
+                'type': 'string',
+            },
+            'base64url_value_or_none': {
+                'anyOf': [{'type': 'string', 'format': 'base64url'}, {'type': 'null'}],
+                'default': None,
+                'title': 'Base64Url Value Or None',
+            },
+        },
+        'required': ['base64url_value'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(
+    ('field_type', 'input_data'),
+    [
+        pytest.param(Base64UrlBytes, b'Zm9vIGJhcg', id='Base64UrlBytes-invalid-base64-bytes'),
+        pytest.param(Base64UrlBytes, 'Zm9vIGJhcg', id='Base64UrlBytes-invalid-base64-str'),
+        pytest.param(Base64UrlStr, b'Zm9vIGJhcg', id='Base64UrlStr-invalid-base64-bytes'),
+        pytest.param(Base64UrlStr, 'Zm9vIGJhcg', id='Base64UrlStr-invalid-base64-str'),
+    ],
+)
+def test_base64url_invalid(field_type, input_data):
+    class Model(BaseModel):
+        base64url_value: field_type
+
+    with pytest.raises(ValidationError) as e:
+        Model(base64url_value=input_data)
+
+    assert e.value.errors(include_url=False) == [
+        {
+            'ctx': {'error': 'Incorrect padding'},
+            'input': input_data,
+            'loc': ('base64url_value',),
             'msg': "Base64 decoding error: 'Incorrect padding'",
             'type': 'base64_decode',
         },

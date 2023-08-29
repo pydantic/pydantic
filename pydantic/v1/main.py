@@ -161,9 +161,9 @@ class ModelMetaclass(ABCMeta):
 
         for f in fields.values():
             f.set_config(config)
-            extra_validators = vg.get_validators(f.name)
-            if extra_validators:
-                f.class_validators.update(extra_validators)
+            extras_schemas = vg.get_validators(f.name)
+            if extras_schemas:
+                f.class_validators.update(extras_schemas)
                 # re-run prepare to add extra validators
                 f.populate_validators()
 
