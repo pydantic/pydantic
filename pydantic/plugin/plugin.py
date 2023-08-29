@@ -61,7 +61,7 @@ class OnValidateJson(EventHandler, Protocol):
     """`on_validate_json` event handler Protocol."""
 
     @abstractmethod
-    def enter(
+    def on_enter(
         self,
         input: str | bytes | bytearray,
         *,
