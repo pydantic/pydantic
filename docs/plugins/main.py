@@ -61,15 +61,15 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
 
 
 def add_changelog() -> None:
-    history = (PROJECT_ROOT / 'HISTORY.md').read_text()
+    history = (PROJECT_ROOT / 'HISTORY.md').read_text(encoding='utf-8')
     history = re.sub(r'(\s)@([\w\-]+)', r'\1[@\2](https://github.com/\2)', history, flags=re.I)
     history = re.sub(r'\[GitHub release]\(', r'[:simple-github: GitHub release](', history)
     history = re.sub('@@', '@', history)
     new_file = DOCS_DIR / 'changelog.md'
 
     # avoid writing file unless the content has changed to avoid infinite build loop
-    if not new_file.is_file() or new_file.read_text() != history:
-        new_file.write_text(history)
+    if not new_file.is_file() or new_file.read_text(encoding='utf-8') != history:
+        new_file.write_text(history, encoding='utf-8')
 
 
 MIN_MINOR_VERSION = 7

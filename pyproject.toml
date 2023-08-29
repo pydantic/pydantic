@@ -114,7 +114,7 @@ mypy = [
     "pydantic-settings>=2.0.0",
 ]
 memray = [
-    "pytest-memray",
+    "pytest-memray; platform_system != 'Windows'",
 ]
 
 [tool.pdm.resolution.overrides]
