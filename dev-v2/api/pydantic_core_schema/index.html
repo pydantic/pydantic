@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.3">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.5">
     
     
       
@@ -9073,7 +9073,7 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <div class="highlight"><pre><span></span><code><span class="n">tuple_positional_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">extra_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">extras_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -9119,7 +9119,7 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
           </td>
         </tr>
         <tr>
-          <td><code>extra_schema</code></td>
+          <td><code>extras_schema</code></td>
           <td>
                 <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span> | None</code>
           </td>
@@ -9240,7 +9240,7 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 <span class="normal">1417</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">tuple_positional_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">extra_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">extras_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9261,7 +9261,7 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 
 <span class="sd">    Args:</span>
 <span class="sd">        items_schema: The value must be a tuple with items that match these schemas</span>
-<span class="sd">        extra_schema: The value must be a tuple with items that match this schema</span>
+<span class="sd">        extras_schema: The value must be a tuple with items that match this schema</span>
 <span class="sd">            This was inspired by JSON schema&#39;s `prefixItems` and `items` fields.</span>
 <span class="sd">            In python&#39;s `typing.Tuple`, you can&#39;t specify a type for &quot;extra&quot; items -- they must all be the same type</span>
 <span class="sd">            if the length is variable. So this field won&#39;t be set from a `typing.Tuple` annotation on a pydantic model.</span>
@@ -9273,7 +9273,7 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span>
         <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;tuple-positional&#39;</span><span class="p">,</span>
         <span class="n">items_schema</span><span class="o">=</span><span class="n">items_schema</span><span class="p">,</span>
-        <span class="n">extra_schema</span><span class="o">=</span><span class="n">extra_schema</span><span class="p">,</span>
+        <span class="n">extras_schema</span><span class="o">=</span><span class="n">extras_schema</span><span class="p">,</span>
         <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
         <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
         <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
@@ -15053,7 +15053,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     <span class="o">*</span><span class="p">,</span>
     <span class="n">computed_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">extra_validator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">extras_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">extra_behavior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">total</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">populate_by_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -15130,7 +15130,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
           </td>
         </tr>
         <tr>
-          <td><code>extra_validator</code></td>
+          <td><code>extras_schema</code></td>
           <td>
                 <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span> | None</code>
           </td>
@@ -15289,7 +15289,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     <span class="o">*</span><span class="p">,</span>
     <span class="n">computed_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ComputedField</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">extra_validator</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">extras_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">extra_behavior</span><span class="p">:</span> <span class="n">ExtraBehavior</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">total</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">populate_by_name</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -15315,7 +15315,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="sd">        fields: The fields to use for the typed dict</span>
 <span class="sd">        computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model</span>
 <span class="sd">        strict: Whether the typed dict is strict</span>
-<span class="sd">        extra_validator: The extra validator to use for the typed dict</span>
+<span class="sd">        extras_schema: The extra validator to use for the typed dict</span>
 <span class="sd">        ref: optional unique identifier of the schema, used to reference the schema in other places</span>
 <span class="sd">        metadata: Any other information you want to include with the schema, not used by pydantic-core</span>
 <span class="sd">        extra_behavior: The extra behavior to use for the typed dict</span>
@@ -15328,7 +15328,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
         <span class="n">fields</span><span class="o">=</span><span class="n">fields</span><span class="p">,</span>
         <span class="n">computed_fields</span><span class="o">=</span><span class="n">computed_fields</span><span class="p">,</span>
         <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
-        <span class="n">extra_validator</span><span class="o">=</span><span class="n">extra_validator</span><span class="p">,</span>
+        <span class="n">extras_schema</span><span class="o">=</span><span class="n">extras_schema</span><span class="p">,</span>
         <span class="n">extra_behavior</span><span class="o">=</span><span class="n">extra_behavior</span><span class="p">,</span>
         <span class="n">total</span><span class="o">=</span><span class="n">total</span><span class="p">,</span>
         <span class="n">populate_by_name</span><span class="o">=</span><span class="n">populate_by_name</span><span class="p">,</span>
@@ -15561,7 +15561,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">computed_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">extra_validator</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">extras_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">extra_behavior</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">populate_by_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">from_attributes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -15652,7 +15652,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
           </td>
         </tr>
         <tr>
-          <td><code>extra_validator</code></td>
+          <td><code>extras_schema</code></td>
           <td>
                 <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span> | None</code>
           </td>
@@ -15814,7 +15814,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">computed_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ComputedField</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">extra_validator</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">extras_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">extra_behavior</span><span class="p">:</span> <span class="n">ExtraBehavior</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">populate_by_name</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">from_attributes</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -15841,7 +15841,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="sd">        model_name: The name of the model, used for error messages, defaults to &quot;Model&quot;</span>
 <span class="sd">        computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model</span>
 <span class="sd">        strict: Whether the typed dict is strict</span>
-<span class="sd">        extra_validator: The extra validator to use for the typed dict</span>
+<span class="sd">        extras_schema: The extra validator to use for the typed dict</span>
 <span class="sd">        ref: optional unique identifier of the schema, used to reference the schema in other places</span>
 <span class="sd">        metadata: Any other information you want to include with the schema, not used by pydantic-core</span>
 <span class="sd">        extra_behavior: The extra behavior to use for the typed dict</span>
@@ -15855,7 +15855,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
         <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
         <span class="n">computed_fields</span><span class="o">=</span><span class="n">computed_fields</span><span class="p">,</span>
         <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span>
-        <span class="n">extra_validator</span><span class="o">=</span><span class="n">extra_validator</span><span class="p">,</span>
+        <span class="n">extras_schema</span><span class="o">=</span><span class="n">extras_schema</span><span class="p">,</span>
         <span class="n">extra_behavior</span><span class="o">=</span><span class="n">extra_behavior</span><span class="p">,</span>
         <span class="n">populate_by_name</span><span class="o">=</span><span class="n">populate_by_name</span><span class="p">,</span>
         <span class="n">from_attributes</span><span class="o">=</span><span class="n">from_attributes</span><span class="p">,</span>

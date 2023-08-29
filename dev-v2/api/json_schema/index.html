@@ -20,7 +20,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.3">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.5">
     
     
       
@@ -7226,8 +7226,8 @@ method.</p>
     <span class="n">prefixItems</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">[</span><span class="s1">&#39;items_schema&#39;</span><span class="p">]]</span>
     <span class="k">if</span> <span class="n">prefixItems</span><span class="p">:</span>
         <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;prefixItems&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prefixItems</span>
-    <span class="k">if</span> <span class="s1">&#39;extra_schema&#39;</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">:</span>
-        <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;extra_schema&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="s1">&#39;extras_schema&#39;</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">:</span>
+        <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;items&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;extras_schema&#39;</span><span class="p">])</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;maxItems&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;items_schema&#39;</span><span class="p">])</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">update_with_validations</span><span class="p">(</span><span class="n">json_schema</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ValidationsMapping</span><span class="o">.</span><span class="n">array</span><span class="p">)</span>
@@ -9807,10 +9807,10 @@ this method.</p>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;serialization&#39;</span><span class="p">:</span>
         <span class="n">named_required_fields</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_name_required_computed_fields</span><span class="p">(</span><span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;computed_fields&#39;</span><span class="p">,</span> <span class="p">[])))</span>
     <span class="n">json_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_named_required_fields_schema</span><span class="p">(</span><span class="n">named_required_fields</span><span class="p">)</span>
-    <span class="n">extra_validator</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;extra_validator&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">extra_validator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">extras_schema</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;extras_schema&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">extras_schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">schema_to_update</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolve_schema_to_update</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span>
-        <span class="n">schema_to_update</span><span class="p">[</span><span class="s1">&#39;additionalProperties&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">extra_validator</span><span class="p">)</span>
+        <span class="n">schema_to_update</span><span class="p">[</span><span class="s1">&#39;additionalProperties&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">extras_schema</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">json_schema</span>
 </code></pre></div></td></tr></table></div>
       </details>
