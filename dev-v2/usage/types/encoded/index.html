@@ -2864,7 +2864,8 @@
 <h2 id="base64-encoding-support">Base64 encoding support<a class="headerlink" href="#base64-encoding-support" title="Permanent link">&para;</a></h2>
 <p>Internally, Pydantic uses the <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.EncodedBytes"><code>EncodedBytes</code></a> and <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.EncodedStr"><code>EncodedStr</code></a>
 annotations with <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64Encoder"><code>Base64Encoder</code></a> to implement base64 encoding/decoding in the
-<a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64Bytes"><code>Base64Bytes</code></a> and <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64Str"><code>Base64Str</code></a> types, respectively.</p>
+<a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64Bytes"><code>Base64Bytes</code></a>, <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64UrlBytes"><code>Base64UrlBytes</code></a>,
+<a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64Str"><code>Base64Str</code></a>, and <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Base64Str"><code>Base64UrlStr</code></a> types.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64Bytes</span><span class="p">,</span> <span class="n">Base64Str</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -2907,6 +2908,45 @@ annotations with <a class="autorefs autorefs-internal" href="../../../api/types/
 <span class="sd">      Base64 decoding error: &#39;Incorrect padding&#39; [type=base64_decode, input_value=b&#39;undecodable&#39;, input_type=bytes]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<p>If you need url-safe base64 encoding, you can use the <code>Base64UrlBytes</code> and <code>Base64UrlStr</code> types. The following snippet
+demonstrates the difference in alphabets used by the url-safe and non-url-safe encodings:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Base64Bytes</span><span class="p">,</span>
+    <span class="n">Base64Str</span><span class="p">,</span>
+    <span class="n">Base64UrlBytes</span><span class="p">,</span>
+    <span class="n">Base64UrlStr</span><span class="p">,</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">base64_bytes</span><span class="p">:</span> <span class="n">Base64Bytes</span>
+    <span class="n">base64_str</span><span class="p">:</span> <span class="n">Base64Str</span>
+    <span class="n">base64url_bytes</span><span class="p">:</span> <span class="n">Base64UrlBytes</span>
+    <span class="n">base64url_str</span><span class="p">:</span> <span class="n">Base64UrlStr</span>
+
+
+<span class="c1"># Initialize the model with base64 data</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span>
+    <span class="n">base64_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;SHc/dHc+TXc==&#39;</span><span class="p">,</span>
+    <span class="n">base64_str</span><span class="o">=</span><span class="s1">&#39;SHc/dHc+TXc==&#39;</span><span class="p">,</span>
+    <span class="n">base64url_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;SHc_dHc-TXc==&#39;</span><span class="p">,</span>
+    <span class="n">base64url_str</span><span class="o">=</span><span class="s1">&#39;SHc_dHc-TXc==&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">base64_bytes=b&#39;Hw?tw&gt;Mw&#39; base64_str=&#39;Hw?tw&gt;Mw&#39; base64url_bytes=b&#39;Hw?tw&gt;Mw&#39; base64url_str=&#39;Hw?tw&gt;Mw&#39;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Under the hood, <code>Base64Bytes</code> and <code>Base64Str</code> use the standard library <code>base64.encodebytes</code> and <code>base64.decodebytes</code>
+functions, while <code>Base64UrlBytes</code> and <code>Base64UrlStr</code> use the <code>base64.urlsafe_b64encode</code> and
+<code>base64.urlsafe_b64decode</code> functions.</p>
+<p>As a result, the <code>Base64UrlBytes</code> and <code>Base64UrlStr</code> types can be used to faithfully decode "vanilla" base64 data
+(using <code>'+'</code> and <code>'/'</code>), but the reverse is not true — attempting to decode url-safe base64 data using the
+<code>Base64Bytes</code> and <code>Base64Str</code> types may fail or produce an incorrect decoding.</p>
+</div>
 
 
 
