@@ -795,7 +795,7 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 
 | Pydantic V1 | Pydantic V2 |
 | --- | --- |
-| `pydantic.BaseSettings` | [`pydantic-settings.BaseSettings`](#basesettings-has-moved-to-pydantic-settings) |
+| `pydantic.BaseSettings` | [`pydantic_settings.BaseSettings`](#basesettings-has-moved-to-pydantic-settings) |
 | `pydantic.color` | `pydantic_extra_types.color` |
 | `pydantic.types.PaymentCardBrand` | [`pydantic_extra_types.PaymentCardBrand`](#color-and-payment-card-numbers-moved-to-pydantic-extra-types) |
 | `pydantic.types.PaymentCardNumber` | [`pydantic_extra_types.PaymentCardNumber`](#color-and-payment-card-numbers-moved-to-pydantic-extra-types) |
