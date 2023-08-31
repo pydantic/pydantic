@@ -7,7 +7,8 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Type, Union
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 from ._migration import getattr_migration
-from .deprecated.config import BaseConfig, Extra
+from .deprecated.config import BaseConfig
+from .deprecated.config import Extra as _Extra
 from .warnings import PydanticDeprecatedSince20
 
 if TYPE_CHECKING:
@@ -22,6 +23,13 @@ JsonSchemaExtraCallable: TypeAlias = Union[
     Callable[[Dict[str, Any]], None],
     Callable[[Dict[str, Any], Type[Any]], None],
 ]
+
+with warnings.catch_warnings():
+    # The relevant deprecation warning is still raised on attribute access,
+    # so it is okay to suppress the one coming from the @deprecated decorator here.
+    warnings.filterwarnings('ignore', category=PydanticDeprecatedSince20)
+
+    Extra = _Extra()
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
 
