@@ -272,7 +272,7 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
         return namespace['model_post_init']
 
     for base in bases:
-        model_post_init = getattr(base, 'model_post_init')
+        model_post_init = getattr(base, 'model_post_init', None)
         if model_post_init is not None:
             return model_post_init
 
