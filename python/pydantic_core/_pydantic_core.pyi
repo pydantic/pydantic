@@ -631,7 +631,7 @@ class MultiHostUrl(SupportsAllComparisons):
         fragment: Optional[str] = None,
     ) -> Self:
         """
-        Build a new `MultiHostUul` instance from its component parts.
+        Build a new `MultiHostUrl` instance from its component parts.
 
         This method takes either `hosts` - a list of `MultiHostHost` typed dicts, or the individual components
         `username`, `password`, `host` and `port`.
