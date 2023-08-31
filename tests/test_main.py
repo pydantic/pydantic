@@ -1979,6 +1979,27 @@ def test_post_init_not_called_without_override():
         BaseModel.model_post_init = original_base_model_post_init
 
 
+def test_model_post_init_subclass_private_attrs():
+    """https://github.com/pydantic/pydantic/issues/7293"""
+    calls = []
+
+    class A(BaseModel):
+        a: int = 1
+
+        def model_post_init(self, __context: Any) -> None:
+            calls.append(f'{self.__class__.__name__}.model_post_init')
+
+    class B(A):
+        pass
+
+    class C(B):
+        _private: bool = True
+
+    C()
+
+    assert calls == ['C.model_post_init']
+
+
 def test_deeper_recursive_model():
     class A(BaseModel):
         b: 'B'

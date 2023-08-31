@@ -104,9 +104,9 @@ class ModelMetaclass(ABCMeta):
                 namespace, config_wrapper.ignored_types, class_vars, base_field_names
             )
             if private_attributes:
-                if 'model_post_init' in namespace:
+                original_model_post_init = get_model_post_init(namespace, bases)
+                if original_model_post_init is not None:
                     # if there are private_attributes and a model_post_init function, we handle both
-                    original_model_post_init = namespace['model_post_init']
 
                     def wrapped_model_post_init(self: BaseModel, __context: Any) -> None:
                         """We need to both initialize private attributes and call the user-defined model_post_init
@@ -264,6 +264,18 @@ def init_private_attributes(self: BaseModel, __context: Any) -> None:
         if default is not PydanticUndefined:
             pydantic_private[name] = default
     object_setattr(self, '__pydantic_private__', pydantic_private)
+
+
+def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...]) -> Callable[..., Any] | None:
+    """Get the `model_post_init` method from the namespace or the class bases, or `None` if not defined."""
+    if 'model_post_init' in namespace:
+        return namespace['model_post_init']
+
+    for base in bases:
+        # Or use cls.__mro__ instead of bases?
+        model_post_init = getattr(base, 'model_post_init')
+        if model_post_init is not None:
+            return model_post_init
 
 
 def inspect_namespace(  # noqa C901
