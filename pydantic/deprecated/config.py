@@ -50,7 +50,9 @@ class BaseConfig(metaclass=_ConfigMetaclass):
         return super().__init_subclass__(**kwargs)
 
 
-@deprecated('Extra is deprecated. Use literal values instead (e.g. `extra=\'allow\'`)', category=PydanticDeprecatedSince20)
+@deprecated(
+    "Extra is deprecated. Use literal values instead (e.g. `extra='allow'`)", category=PydanticDeprecatedSince20
+)
 class Extra:
     allow: Literal['allow'] = 'allow'
     ignore: Literal['ignore'] = 'ignore'
