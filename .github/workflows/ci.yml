@@ -131,14 +131,14 @@ jobs:
 
     - run: 'pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
-    - run: mkdir coverage
+    - run: mkdir coverage-files
 
     - name: test without deps
       # speed up by skipping this step on pypy
       if: "!startsWith(matrix.python-version, 'pypy')"
       run: make test
       env:
-        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
+        COVERAGE_FILE: coverage-files/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: install extra deps
@@ -147,14 +147,14 @@ jobs:
     - name: test with deps
       run: make test
       env:
-        COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
+        COVERAGE_FILE: coverage-files/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-with-deps
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-with-deps
 
     - name: store coverage files
       uses: actions/upload-artifact@v3
       with:
-        name: coverage
-        path: coverage
+        name: coverage-files
+        path: coverage-files
 
   test-fastapi:
     # If some tests start failing due to out-of-date schemas/validation errors/etc.,
@@ -217,12 +217,12 @@ jobs:
         fi
         pdm list
 
-    - run: mkdir coverage
+    - run: mkdir coverage-files
 
     - name: run mypy tests
       run: pdm run coverage run -m pytest tests/mypy --test-mypy
       env:
-        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
+        COVERAGE_FILE: coverage-files/.coverage.linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
 
     - name: install node for pyright
@@ -242,8 +242,8 @@ jobs:
     - name: store coverage files
       uses: actions/upload-artifact@v3
       with:
-        name: coverage
-        path: coverage
+        name: coverage-files
+        path: coverage-files
 
   coverage-combine:
     needs: [test, test-mypy]
@@ -259,13 +259,13 @@ jobs:
       - name: get coverage files
         uses: actions/download-artifact@v3
         with:
-          name: coverage
-          path: coverage
+          name: coverage-files
+          path: coverage-files
 
       - run: pip install coverage[toml]
 
-      - run: ls -la coverage
-      - run: coverage combine coverage
+      - run: ls -la coverage-files
+      - run: coverage combine coverage-files
       - run: coverage report
       - run: coverage html --show-contexts --title "pydantic coverage for ${{ github.sha }}"
 
