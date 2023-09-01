@@ -29,7 +29,7 @@ from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
-    id: int = Field(default_factory=lambda: uuid4().hex)
+    id: str = Field(default_factory=lambda: uuid4().hex)
 ```
 
 !!! info
@@ -37,6 +37,20 @@ class User(BaseModel):
 
 !!! note
     If you use `typing.Optional`, it doesn't mean that the field has a default value of `None`!
+
+## Using `Annotated`
+
+The `Field` function can also be used together with `Annotated`.
+
+```py
+from typing import Annotated
+
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    id: Annotated[str, Field(default_factory=lambda: uuid4().hex)
+```
 
 ## Field aliases
 
@@ -387,6 +401,21 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
     ```
 
     See the [JSON Schema Draft 2020-12] for more details.
+
+!!! warning "Constraints on compound types"
+    In case you use field constraints with compound types, an error can happen in some cases. To avoid potential issues,
+    you can use `Annotated`:
+
+    ```py
+    from typing import Annotated
+
+    from pydantic import BaseModel, Field
+
+
+    class Foo(BaseModel):
+        positive: int | None = Field(gt=0)  # Can error in some cases, not recommended
+        non_negative: Annotated[int, Field(ge=0)] | None
+    ```
 
 ## String Constraints
 
