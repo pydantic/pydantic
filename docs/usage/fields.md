@@ -49,7 +49,7 @@ from pydantic import BaseModel
 
 
 class User(BaseModel):
-    id: Annotated[str, Field(default_factory=lambda: uuid4().hex)
+    id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
 ```
 
 ## Field aliases
