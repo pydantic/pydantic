@@ -204,10 +204,12 @@ def generate_dataclass_signature(cls: type[StandardDataclass]) -> Signature:
 
             # Replace the field name with the alias if present
             name = param.name
-            if param_default.validation_alias is None and isinstance(param_default.alias, str):
-                name = param_default.alias
-            elif isinstance(param_default.validation_alias, str):
-                name = param_default.validation_alias
+            alias = param_default.alias
+            validation_alias = param_default.validation_alias
+            if validation_alias is None and isinstance(alias, str) and alias.isidentifier():
+                name = alias
+            elif isinstance(validation_alias, str) and validation_alias.isidentifier():
+                name = validation_alias
 
             # Replace the field default
             default = param_default.default
