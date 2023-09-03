@@ -5,7 +5,7 @@ import re
 import sys
 import traceback
 from collections.abc import Hashable
-from dataclasses import InitVar
+from dataclasses import FrozenInstanceError, InitVar
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
@@ -2547,3 +2547,28 @@ def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
         pass
 
     assert Model().a == 5
+
+
+def test_alias_with_dashes():
+    """Test for fix issue #7226."""
+    # WITH
+    data = {'some-var': 'some_value'}
+
+    @pydantic.dataclasses.dataclass
+    class Example:
+        some_var: str = Field(..., alias='some-var')
+
+    @pydantic.dataclasses.dataclass(frozen=True)
+    class FrozenExample:
+        some_frozen_var: str = Field(..., alias='some-var')
+
+    # WHEN
+    obj = Example(**data)
+    frozen_obj = FrozenExample(**data)
+    with pytest.raises(FrozenInstanceError) as exc_info:
+        frozen_obj.some_frozen_var = 'some_other_value'
+    # THEN
+    assert obj.some_var == data['some-var']
+    assert obj.some_var == data['some-var']
+    assert frozen_obj.some_frozen_var == data['some-var']
+    assert exc_info.value.args[0] == "cannot assign to field 'some_frozen_var'"
