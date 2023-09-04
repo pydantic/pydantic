@@ -22,6 +22,7 @@ from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mock_validator
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._utils import is_valid_identifier
 
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
@@ -204,10 +205,12 @@ def generate_dataclass_signature(cls: type[StandardDataclass]) -> Signature:
 
             # Replace the field name with the alias if present
             name = param.name
-            if param_default.validation_alias is None and isinstance(param_default.alias, str):
-                name = param_default.alias
-            elif isinstance(param_default.validation_alias, str):
-                name = param_default.validation_alias
+            alias = param_default.alias
+            validation_alias = param_default.validation_alias
+            if validation_alias is None and isinstance(alias, str) and is_valid_identifier(alias):
+                name = alias
+            elif isinstance(validation_alias, str) and is_valid_identifier(validation_alias):
+                name = validation_alias
 
             # Replace the field default
             default = param_default.default

@@ -2547,3 +2547,14 @@ def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
         pass
 
     assert Model().a == 5
+
+
+def test_alias_with_dashes():
+    """Test for fix issue #7226."""
+
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        some_var: str = Field(alias='some-var')
+
+    obj = Foo(**{'some-var': 'some_value'})
+    assert obj.some_var == 'some_value'
