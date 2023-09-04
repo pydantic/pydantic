@@ -407,15 +407,15 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
     you can use `Annotated`:
 
     ```py
-    from typing import Annotated
+    from typing_extensions import Annotated
 
     from pydantic import BaseModel, Field
 
 
     class Foo(BaseModel):
+        positive: Optional[Annotated[int, Field(gt=0)]]
         # Can error in some cases, not recommended:
-        positive: int | None = Field(gt=0)
-        non_negative: Annotated[int, Field(ge=0)] | None
+        non_negative: Optional[int] = Field(ge=0)
     ```
 
 ## String Constraints
