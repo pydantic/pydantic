@@ -2551,11 +2551,9 @@ def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
 
 def test_alias_with_dashes():
     """Test for fix issue #7226."""
-    data = {'some-var': 'some_value'}
-
     @pydantic.dataclasses.dataclass
     class Foo:
-        some_var: str = Field(..., alias='some-var')
+        some_var: str = Field(alias='some-var')
 
-    obj = Foo(**data)
-    assert obj.some_var == data['some-var']
+    obj = Foo(**{'some-var': 'some_value'})
+    assert obj.some_var == 'some_value'
