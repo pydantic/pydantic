@@ -43,7 +43,7 @@ class User(BaseModel):
 The `Field` function can also be used together with `Annotated`.
 
 ```py
-from typing import Annotated
+from typing_extensions import Annotated
 
 from pydantic import BaseModel
 
