@@ -154,7 +154,8 @@ markdown_extensions:
 - admonition
 - pymdownx.details
 - pymdownx.superfences
-- pymdownx.highlight
+- pymdownx.highlight:
+    pygments_lang_class: true
 - pymdownx.extra
 - pymdownx.emoji:
     emoji_index: !!python/name:materialx.emoji.twemoji
