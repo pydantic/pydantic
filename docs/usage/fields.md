@@ -44,8 +44,9 @@ The `Field` function can also be used together with `Annotated`.
 
 ```py
 from typing_extensions import Annotated
+from uuid import uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
@@ -407,6 +408,8 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
     you can use `Annotated`:
 
     ```py
+    from typing import Optional
+
     from typing_extensions import Annotated
 
     from pydantic import BaseModel, Field
