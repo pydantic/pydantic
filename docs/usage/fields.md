@@ -43,10 +43,10 @@ class User(BaseModel):
 The `Field` function can also be used together with `Annotated`.
 
 ```py
-from typing_extensions import Annotated
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
 class User(BaseModel):
