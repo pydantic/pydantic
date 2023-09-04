@@ -1481,6 +1481,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-annotated" class="md-nav__link">
+    Using Annotated
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-aliases" class="md-nav__link">
     Field aliases
   </a>
@@ -2866,6 +2873,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-annotated" class="md-nav__link">
+    Using Annotated
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#field-aliases" class="md-nav__link">
     Field aliases
   </a>
@@ -3015,7 +3029,7 @@
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)</span>
 </code></pre></div>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
@@ -3025,6 +3039,18 @@
 <p class="admonition-title">Note</p>
 <p>If you use <code>typing.Optional</code>, it doesn't mean that the field has a default value of <code>None</code>!</p>
 </div>
+<h2 id="using-annotated">Using <code>Annotated</code><a class="headerlink" href="#using-annotated" title="Permanent link">&para;</a></h2>
+<p>The <code>Field</code> function can also be used together with <code>Annotated</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">uuid4</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">)]</span>
+</code></pre></div>
 <h2 id="field-aliases">Field aliases<a class="headerlink" href="#field-aliases" title="Permanent link">&para;</a></h2>
 <p>For validation and serialization, you can define an alias for a field.</p>
 <p>There are three ways to define an alias:</p>
@@ -3336,6 +3362,23 @@ In the <code>'last_name'</code> field, we are using the alias <code>'names'</cod
 </code></pre></div>
 <p>See the <a href="https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types">JSON Schema Draft 2020-12</a> for more details.</p>
 </details>
+<div class="admonition warning">
+<p class="admonition-title">Constraints on compound types</p>
+<p>In case you use field constraints with compound types, an error can happen in some cases. To avoid potential issues,
+you can use <code>Annotated</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">positive</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)]]</span>
+    <span class="c1"># Can error in some cases, not recommended:</span>
+    <span class="n">non_negative</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</code></pre></div>
+</div>
 <h2 id="string-constraints">String Constraints<a class="headerlink" href="#string-constraints" title="Permanent link">&para;</a></h2>
 <p>There are fields that can be used to constrain strings:</p>
 <ul>
