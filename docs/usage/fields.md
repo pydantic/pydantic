@@ -45,8 +45,9 @@ The `Field` function can also be used together with `Annotated`.
 ```py
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
 from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field
 
 
 class User(BaseModel):
