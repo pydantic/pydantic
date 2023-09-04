@@ -2554,8 +2554,8 @@ def test_alias_with_dashes():
     data = {'some-var': 'some_value'}
 
     @pydantic.dataclasses.dataclass
-    class Example:
+    class Foo:
         some_var: str = Field(..., alias='some-var')
 
-    obj = Example(**data)
+    obj = Foo(**data)
     assert obj.some_var == data['some-var']
