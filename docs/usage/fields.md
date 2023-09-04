@@ -413,7 +413,8 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
 
 
     class Foo(BaseModel):
-        positive: int | None = Field(gt=0)  # Can error in some cases, not recommended
+        # Can error in some cases, not recommended:
+        positive: int | None = Field(gt=0)
         non_negative: Annotated[int, Field(ge=0)] | None
     ```
 
