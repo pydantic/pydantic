@@ -747,12 +747,10 @@ def test_computed_field_override_raises():
     class Model(BaseModel):
         name: str = 'foo'
 
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(ValueError, match='you can't override a field with a computed field') as e:
 
         class SubModel(Model):
             @computed_field
             @property
             def name(self) -> str:
                 return 'bar'
-
-    assert e.value.args == ("you can't override a field with a computed field",)
