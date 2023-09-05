@@ -29,7 +29,6 @@ from typing import (
     Sequence,
     Set,
     Tuple,
-    Type,
     TypeVar,
     Union,
 )
@@ -4029,11 +4028,11 @@ def test_secret_str_min_max_length():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'string_too_short',
+            'type': 'too_short',
             'loc': ('password',),
-            'msg': 'String should have at least 6 characters',
+            'msg': 'Value should have at least 6 items after validation, not 0',
             'input': '',
-            'ctx': {'min_length': 6},
+            'ctx': {'field_type': 'Value', 'min_length': 6, 'actual_length': 0},
         }
     ]
 
@@ -4043,11 +4042,11 @@ def test_secret_str_min_max_length():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'string_too_long',
+            'type': 'too_long',
             'loc': ('password',),
-            'msg': 'String should have at most 10 characters',
+            'msg': 'Value should have at most 10 items after validation, not 20',
             'input': '11111111111111111111',
-            'ctx': {'max_length': 10},
+            'ctx': {'field_type': 'Value', 'max_length': 10, 'actual_length': 20},
         }
     ]
 
@@ -4126,11 +4125,11 @@ def test_secret_bytes_min_max_length():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'bytes_too_short',
+            'type': 'too_short',
             'loc': ('password',),
-            'msg': 'Data should have at least 6 bytes',
+            'msg': 'Value should have at least 6 items after validation, not 0',
             'input': b'',
-            'ctx': {'min_length': 6},
+            'ctx': {'field_type': 'Value', 'min_length': 6, 'actual_length': 0},
         }
     ]
 
@@ -4140,11 +4139,11 @@ def test_secret_bytes_min_max_length():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'bytes_too_long',
+            'type': 'too_long',
             'loc': ('password',),
-            'msg': 'Data should have at most 10 bytes',
+            'msg': 'Value should have at most 10 items after validation, not 20',
             'input': b'11111111111111111111',
-            'ctx': {'max_length': 10},
+            'ctx': {'field_type': 'Value', 'max_length': 10, 'actual_length': 20},
         }
     ]
 
@@ -5276,12 +5275,7 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
 
     class PdDecimalMarker:
         def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(PdDecimal, handler(source_type))
-
-        def __prepare_pydantic_annotations__(
-            self, _source: Any, annotations: Tuple[Any, ...], _config: ConfigDict
-        ) -> Tuple[Any, Iterable[Any]]:
-            return Decimal, [self, *annotations]
+            return core_schema.no_info_after_validator_function(PdDecimal, handler.generate_schema(Decimal))
 
     class Model(BaseModel):
         x: Annotated[PdDecimal, PdDecimalMarker(), annotated_types.Gt(0)]
@@ -5289,14 +5283,14 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
     assert isinstance(Model(x=1).x, PdDecimal)
     with pytest.raises(ValidationError) as exc_info:
         Model(x=-1)
-    # insert_assert(exc_info.value.errors(include_url=False))
+
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'greater_than',
             'loc': ('x',),
             'msg': 'Input should be greater than 0',
             'input': -1,
-            'ctx': {'gt': Decimal('0')},
+            'ctx': {'gt': 0},
         }
     ]
 
@@ -5350,17 +5344,16 @@ def test_transform_schema():
 
 
 def test_transform_schema_for_first_party_class():
-    # Here, first party means you can define the `__prepare_pydantic_annotations__` method on the class directly.
+    # Here, first party means you can define the `__get_pydantic_core_schema__` method on the class directly.
     class LowercaseStr(str):
         @classmethod
-        def __prepare_pydantic_annotations__(
-            cls, _source: Type[Any], annotations: Tuple[Any, ...], _config: ConfigDict
-        ) -> Tuple[Any, Iterable[Any]]:
-            def get_pydantic_core_schema(source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-                schema = handler(source)
-                return core_schema.no_info_after_validator_function(lambda v: v.lower(), schema)
-
-            return str, (*annotations, GetPydanticSchema(get_pydantic_core_schema))
+        def __get_pydantic_core_schema__(
+            cls,
+            source_type: Any,
+            handler: GetCoreSchemaHandler,
+        ) -> CoreSchema:
+            schema = handler(str)
+            return core_schema.no_info_after_validator_function(lambda v: v.lower(), schema)
 
     class Model(BaseModel):
         lower: LowercaseStr = Field(min_length=1)
@@ -5369,13 +5362,41 @@ def test_transform_schema_for_first_party_class():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(lower='')
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'min_length': 1},
-            'input': '',
+            'type': 'too_short',
             'loc': ('lower',),
-            'msg': 'String should have at least 1 characters',
-            'type': 'string_too_short',
+            'msg': 'Value should have at least 1 item after validation, not 0',
+            'input': '',
+            'ctx': {'field_type': 'Value', 'min_length': 1, 'actual_length': 0},
+        }
+    ]
+
+
+def test_constraint_dataclass() -> None:
+    @dataclass(order=True)
+    # need to make it inherit from int so that
+    # because the PydanticKnownError requires it to be a number
+    # but it's not really relevant to this test
+    class MyDataclass(int):
+        x: int
+
+    ta = TypeAdapter(Annotated[MyDataclass, annotated_types.Gt(MyDataclass(0))])
+
+    assert ta.validate_python(MyDataclass(1)) == MyDataclass(1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(MyDataclass(0))
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'greater_than',
+            'loc': (),
+            'msg': 'Input should be greater than 0',
+            'input': MyDataclass(0),
+            'ctx': {'gt': MyDataclass(0)},
         }
     ]
 
@@ -5383,47 +5404,61 @@ def test_transform_schema_for_first_party_class():
 def test_transform_schema_for_third_party_class():
     # Here, third party means you can't define methods on the class directly, so have to use annotations.
 
-    class DatetimeWrapper:
+    class IntWrapper:
         # This is pretending to be a third-party class. This example is specifically inspired by pandas.Timestamp,
         # which can receive an item of type `datetime` as an input to its `__init__`.
         # The important thing here is we are not defining any custom methods on this type directly.
-        def __init__(self, t: datetime):
+        def __init__(self, t: int) -> None:
             self.t = t
 
-    class _DatetimeWrapperAnnotation:
+        def __eq__(self, value: object) -> bool:
+            if isinstance(value, IntWrapper):
+                return self.t == value.t
+            elif isinstance(value, int):
+                return self.t == value
+            return False
+
+        def __gt__(self, value: object) -> bool:
+            if isinstance(value, IntWrapper):
+                return self.t > value.t
+            elif isinstance(value, int):
+                return self.t > value
+            return NotImplemented
+
+    class _IntWrapperAnnotation:
         # This is an auxiliary class that, when used as the first annotation for DatetimeWrapper,
         # ensures pydantic can produce a valid schema.
         @classmethod
-        def __prepare_pydantic_annotations__(
-            cls, _source: Type[Any], annotations: Tuple[Any, ...], _config: ConfigDict
-        ) -> Tuple[Any, Iterable[Any]]:
-            def get_pydantic_core_schema(source: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-                schema = handler(source)
-                return core_schema.no_info_after_validator_function(lambda v: DatetimeWrapper(v), schema)
+        def __get_pydantic_core_schema__(
+            cls,
+            source_type: Any,
+            handler: GetCoreSchemaHandler,
+        ) -> CoreSchema:
+            schema = handler.generate_schema(int)
+            return core_schema.no_info_after_validator_function(IntWrapper, schema)
 
-            return datetime, list(annotations) + [GetPydanticSchema(get_pydantic_core_schema)]
-
-    # Giving a name to Annotated[DatetimeWrapper, _DatetimeWrapperAnnotation] makes it easier to use in code
-    # where I want a field of type `DatetimeWrapper` that works as desired with pydantic.
-    PydanticDatetimeWrapper = Annotated[DatetimeWrapper, _DatetimeWrapperAnnotation]
+    # Giving a name to Annotated[IntWrapper, _IntWrapperAnnotation] makes it easier to use in code
+    # where I want a field of type `IntWrapper` that works as desired with pydantic.
+    PydanticDatetimeWrapper = Annotated[IntWrapper, _IntWrapperAnnotation]
 
     class Model(BaseModel):
         # The reason all of the above is necessary is specifically so that we get good behavior
-        timestamp: Annotated[PydanticDatetimeWrapper, annotated_types.Gt(datetime.fromisoformat('2020-01-01 00:00:00'))]
+        x: Annotated[PydanticDatetimeWrapper, annotated_types.Gt(123)]
 
-    m = Model(timestamp='2021-01-01 00:00:00')
-    assert isinstance(m.timestamp, DatetimeWrapper)
-    assert repr(m.timestamp.t) == 'datetime.datetime(2021, 1, 1, 0, 0)'
+    m = Model(x=1234)
+    assert isinstance(m.x, IntWrapper)
+    assert repr(m.x.t) == '1234'
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(timestamp='2019-01-01 00:00:00')
+        Model(x=1)
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'gt': '2020-01-01T00:00:00'},
-            'input': '2019-01-01 00:00:00',
-            'loc': ('timestamp',),
-            'msg': 'Input should be greater than 2020-01-01T00:00:00',
             'type': 'greater_than',
+            'loc': ('x',),
+            'msg': 'Input should be greater than 123',
+            'input': 1,
+            'ctx': {'gt': 123},
         }
     ]
 
@@ -5583,10 +5618,10 @@ def test_constraints_arbitrary_type() -> None:
             return f'CustomType({self.v})'
 
     class Model(BaseModel):
-        gt: Annotated[CustomType, annotated_types.Gt(CustomType(0))]
-        ge: Annotated[CustomType, annotated_types.Ge(CustomType(0))]
-        lt: Annotated[CustomType, annotated_types.Lt(CustomType(0))]
-        le: Annotated[CustomType, annotated_types.Le(CustomType(0))]
+        gt: Annotated[CustomType, annotated_types.Gt(0)]
+        ge: Annotated[CustomType, annotated_types.Ge(0)]
+        lt: Annotated[CustomType, annotated_types.Lt(0)]
+        le: Annotated[CustomType, annotated_types.Le(0)]
         multiple_of: Annotated[CustomType, annotated_types.MultipleOf(2)]
         min_length: Annotated[CustomType, annotated_types.MinLen(1)]
         max_length: Annotated[CustomType, annotated_types.MaxLen(1)]
@@ -5621,30 +5656,30 @@ def test_constraints_arbitrary_type() -> None:
         {
             'type': 'greater_than',
             'loc': ('gt',),
-            'msg': 'Input should be greater than CustomType(0)',
+            'msg': 'Input should be greater than 0',
             'input': CustomType(-1),
-            'ctx': {'gt': 'CustomType(0)'},
+            'ctx': {'gt': 0},
         },
         {
             'type': 'greater_than_equal',
             'loc': ('ge',),
-            'msg': 'Input should be greater than or equal to CustomType(0)',
+            'msg': 'Input should be greater than or equal to 0',
             'input': CustomType(-1),
-            'ctx': {'ge': 'CustomType(0)'},
+            'ctx': {'ge': 0},
         },
         {
             'type': 'less_than',
             'loc': ('lt',),
-            'msg': 'Input should be less than CustomType(0)',
+            'msg': 'Input should be less than 0',
             'input': CustomType(1),
-            'ctx': {'lt': 'CustomType(0)'},
+            'ctx': {'lt': 0},
         },
         {
             'type': 'less_than_equal',
             'loc': ('le',),
-            'msg': 'Input should be less than or equal to CustomType(0)',
+            'msg': 'Input should be less than or equal to 0',
             'input': CustomType(1),
-            'ctx': {'le': 'CustomType(0)'},
+            'ctx': {'le': 0},
         },
         {
             'type': 'multiple_of',

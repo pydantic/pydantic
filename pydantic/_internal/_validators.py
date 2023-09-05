@@ -226,25 +226,25 @@ def ip_v6_interface_validator(__input_value: Any) -> IPv6Interface:
 
 def greater_than_validator(x: Any, gt: Any) -> Any:
     if not (x > gt):
-        raise PydanticKnownError('greater_than', {'gt': str(gt)})
+        raise PydanticKnownError('greater_than', {'gt': gt})
     return x
 
 
 def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
     if not (x >= ge):
-        raise PydanticKnownError('greater_than_equal', {'ge': str(ge)})
+        raise PydanticKnownError('greater_than_equal', {'ge': ge})
     return x
 
 
 def less_than_validator(x: Any, lt: Any) -> Any:
     if not (x < lt):
-        raise PydanticKnownError('less_than', {'lt': str(lt)})
+        raise PydanticKnownError('less_than', {'lt': lt})
     return x
 
 
 def less_than_or_equal_validator(x: Any, le: Any) -> Any:
     if not (x <= le):
-        raise PydanticKnownError('less_than_equal', {'le': str(le)})
+        raise PydanticKnownError('less_than_equal', {'le': le})
     return x
 
 

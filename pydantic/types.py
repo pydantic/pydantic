@@ -17,7 +17,6 @@ from typing import (
     FrozenSet,
     Generic,
     Hashable,
-    Iterable,
     Iterator,
     List,
     Set,
@@ -28,19 +27,17 @@ from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
-from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, deprecated
 
 from ._internal import (
     _annotated_handlers,
     _fields,
     _internal_dataclass,
-    _known_annotated_metadata,
     _utils,
     _validators,
 )
 from ._migration import getattr_migration
-from .config import ConfigDict
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
@@ -666,20 +663,6 @@ class _SecretField(Generic[SecretType]):
         """
         return self._secret_value
 
-    @classmethod
-    def __prepare_pydantic_annotations__(
-        cls, source: type[Any], annotations: tuple[Any, ...], _config: ConfigDict
-    ) -> tuple[Any, Iterable[Any]]:
-        metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-        _known_annotated_metadata.check_metadata(metadata, {'min_length', 'max_length'}, cls)
-        return (
-            source,
-            (
-                _SecretFieldValidator(source, **metadata),
-                *remaining_annotations,
-            ),
-        )
-
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
 
@@ -698,80 +681,66 @@ class _SecretField(Generic[SecretType]):
     def _display(self) -> SecretType:
         raise NotImplementedError
 
-
-def _secret_display(value: str | bytes) -> str:
-    if isinstance(value, bytes):
-        value = value.decode()
-    return '**********' if value else ''
-
-
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
-class _SecretFieldValidator:
-    field_type: type[_SecretField[Any]]
-    min_length: int | None = None
-    max_length: int | None = None
-    inner_schema: CoreSchema = _dataclasses.field(init=False)
-
-    def validate(self, value: _SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
-        error_prefix: Literal['string', 'bytes'] = 'string' if issubclass(self.field_type, SecretStr) else 'bytes'
-        if self.min_length is not None and len(value) < self.min_length:
-            short_kind: core_schema.ErrorType = f'{error_prefix}_too_short'  # type: ignore[assignment]
-            raise PydanticKnownError(short_kind, {'min_length': self.min_length})
-        if self.max_length is not None and len(value) > self.max_length:
-            long_kind: core_schema.ErrorType = f'{error_prefix}_too_long'  # type: ignore[assignment]
-            raise PydanticKnownError(long_kind, {'max_length': self.max_length})
-
-        if isinstance(value, self.field_type):
-            return value
-        else:
-            return self.field_type(value)  # type: ignore[arg-type]
-
-    def serialize(
-        self, value: _SecretField[SecretType], info: core_schema.SerializationInfo
-    ) -> str | _SecretField[SecretType]:
-        if info.mode == 'json':
-            # we want the output to always be string without the `b'` prefix for bytes,
-            # hence we just use `secret_display`
-            return _secret_display(value.get_secret_value())
-        else:
-            return value
-
-    def __get_pydantic_json_schema__(
-        self, _core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        schema = self.inner_schema.copy()
-        if self.min_length is not None:
-            schema['min_length'] = self.min_length  # type: ignore
-        if self.max_length is not None:
-            schema['max_length'] = self.max_length  # type: ignore
-        json_schema = handler(schema)
-        _utils.update_not_none(
-            json_schema,
-            type='string',
-            writeOnly=True,
-            format='password',
-        )
-        return json_schema
-
+    @classmethod
     def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+        cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        self.inner_schema = handler(str if issubclass(self.field_type, SecretStr) else bytes)
-        error_kind = 'string_type' if issubclass(self.field_type, SecretStr) else 'bytes_type'
-        return core_schema.general_after_validator_function(
-            self.validate,
-            core_schema.union_schema(
-                [core_schema.is_instance_schema(self.field_type), self.inner_schema],
-                strict=True,
-                custom_error_type=error_kind,
-            ),
+        if issubclass(source, SecretStr):
+            field_type = str
+            inner_schema = core_schema.str_schema()
+        else:
+            assert issubclass(source, SecretBytes)
+            field_type = bytes
+            inner_schema = core_schema.bytes_schema()
+        error_kind = 'string_type' if field_type is str else 'bytes_type'
+
+        def serialize(
+            value: _SecretField[SecretType], info: core_schema.SerializationInfo
+        ) -> str | _SecretField[SecretType]:
+            if info.mode == 'json':
+                # we want the output to always be string without the `b'` prefix for bytes,
+                # hence we just use `secret_display`
+                return _secret_display(value.get_secret_value())
+            else:
+                return value
+
+        def get_json_schema(
+            _core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            json_schema = handler(inner_schema)
+            _utils.update_not_none(
+                json_schema,
+                type='string',
+                writeOnly=True,
+                format='password',
+            )
+            return json_schema
+
+        s = core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(source),
+                core_schema.no_info_after_validator_function(
+                    source,  # construct the type
+                    inner_schema,
+                ),
+            ],
+            strict=True,
+            custom_error_type=error_kind,
             serialization=core_schema.plain_serializer_function_ser_schema(
-                self.serialize,
+                serialize,
                 info_arg=True,
                 return_schema=core_schema.str_schema(),
                 when_used='json',
             ),
         )
+        s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(get_json_schema)
+        return s
+
+
+def _secret_display(value: str | bytes) -> str:
+    if isinstance(value, bytes):
+        value = value.decode()
+    return '**********' if value else ''
 
 
 class SecretStr(_SecretField[str]):
@@ -1437,10 +1406,6 @@ class GetPydanticSchema:
 
     get_pydantic_core_schema: Callable[[Any, _annotated_handlers.GetCoreSchemaHandler], CoreSchema] | None = None
     get_pydantic_json_schema: Callable[[Any, _annotated_handlers.GetJsonSchemaHandler], JsonSchemaValue] | None = None
-    # Note: if we find a use, we could uncomment the following as a way to specify `__prepare_pydantic_annotations__`:
-    # prepare_pydantic_annotations: Callable[
-    #   [Any, tuple[Any, ...], ConfigDict], tuple[Any, Iterable[Any]]
-    # ] | None = None
 
     # Note: we may want to consider adding a convenience staticmethod `def for_type(type_: Any) -> GetPydanticSchema:`
     #   which returns `GetPydanticSchema(lambda _s, h: h(type_))`
