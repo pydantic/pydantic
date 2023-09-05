@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from ..fields import FieldInfo
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
+    from ._decorators import DecoratorInfos
 
 
 def get_type_hints_infer_globalns(
