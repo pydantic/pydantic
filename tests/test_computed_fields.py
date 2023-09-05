@@ -741,3 +741,16 @@ def test_generic_computed_field():
 
     with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
         B[int]().model_dump()
+
+
+def test_computed_field_override_raises():
+    class Model(BaseModel):
+        name: str = 'foo'
+
+    with pytest.raises(ValueError, match="you can't override a field with a computed field"):
+
+        class SubModel(Model):
+            @computed_field
+            @property
+            def name(self) -> str:
+                return 'bar'
