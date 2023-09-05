@@ -1,17 +1,20 @@
 from __future__ import annotations
 
-import dataclasses
 from collections import defaultdict
 from copy import copy
 from functools import partial
-from typing import Any, Iterable
+from typing import TYPE_CHECKING, Any, Callable, Iterable
 
 import annotated_types as at
-from pydantic_core import CoreSchema, PydanticCustomError
+from pydantic_core import CoreSchema, PydanticCustomError, to_jsonable_python
 from pydantic_core import core_schema as cs
 
 from . import _validators
 from ._fields import PydanticGeneralMetadata, PydanticMetadata
+
+if TYPE_CHECKING:
+    from ._annotated_handlers import GetJsonSchemaHandler
+
 
 STRICT = {'strict'}
 SEQUENCE_CONSTRAINTS = {'min_length', 'max_length'}
@@ -82,6 +85,21 @@ for constraint in URL_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('url', 'multi-host-url'))
 for constraint in BOOL_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('bool',))
+
+
+def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
+    def update_js_schema(s: cs.CoreSchema, handler: GetJsonSchemaHandler) -> dict[str, Any]:
+        js_schema = handler(s)
+        js_schema.update(f())
+        return js_schema
+
+    s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(update_js_schema)
+
+
+def as_jsonable_value(v: Any) -> Any:
+    if type(v) not in (int, str, float, bytes, bool, type(None)):
+        return to_jsonable_python(v)
+    return v
 
 
 def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
@@ -170,10 +188,12 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 ]
             )
         elif constraint == 'gt':
-            return cs.no_info_after_validator_function(
+            s = cs.no_info_after_validator_function(
                 partial(_validators.greater_than_validator, gt=value),
                 schema,
             )
+            add_js_update_schema(s, lambda: {'gt': as_jsonable_value(value)})
+            return s
         elif constraint == 'ge':
             return cs.no_info_after_validator_function(
                 partial(_validators.greater_than_or_equal_validator, ge=value),
@@ -195,15 +215,19 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
                 schema,
             )
         elif constraint == 'min_length':
-            return cs.no_info_after_validator_function(
+            s = cs.no_info_after_validator_function(
                 partial(_validators.min_length_validator, min_length=value),
                 schema,
             )
+            add_js_update_schema(s, lambda: {'minLength': (as_jsonable_value(value))})
+            return s
         elif constraint == 'max_length':
-            return cs.no_info_after_validator_function(
+            s = cs.no_info_after_validator_function(
                 partial(_validators.max_length_validator, max_length=value),
                 schema,
             )
+            add_js_update_schema(s, lambda: {'maxLength': (as_jsonable_value(value))})
+            return s
         elif constraint == 'strip_whitespace':
             return cs.chain_schema(
                 [
@@ -323,9 +347,22 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
         if isinstance(annotation, PydanticGeneralMetadata):
             res.update(annotation.__dict__)
         elif isinstance(annotation, PydanticMetadata):
-            res.update(dataclasses.asdict(annotation))  # type: ignore[call-overload]
-        elif isinstance(annotation, (at.MinLen, at.MaxLen, at.Gt, at.Ge, at.Lt, at.Le, at.MultipleOf)):
-            res.update(dataclasses.asdict(annotation))  # type: ignore[call-overload]
+            res.update(annotation.__dict__)
+        # we don't use dataclasses.asdict because that recursively calls asdict on the field values
+        elif isinstance(annotation, at.MinLen):
+            res.update({'min_length': annotation.min_length})
+        elif isinstance(annotation, at.MaxLen):
+            res.update({'max_length': annotation.max_length})
+        elif isinstance(annotation, at.Gt):
+            res.update({'gt': annotation.gt})
+        elif isinstance(annotation, at.Ge):
+            res.update({'ge': annotation.ge})
+        elif isinstance(annotation, at.Lt):
+            res.update({'lt': annotation.lt})
+        elif isinstance(annotation, at.Le):
+            res.update({'le': annotation.le})
+        elif isinstance(annotation, at.MultipleOf):
+            res.update({'multiple_of': annotation.multiple_of})
         elif isinstance(annotation, type) and issubclass(annotation, PydanticMetadata):
             # also support PydanticMetadata classes being used without initialisation,
             # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
