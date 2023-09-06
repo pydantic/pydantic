@@ -2810,57 +2810,49 @@ types:</p>
 <ul>
 <li>
 <p><code>datetime</code> fields will accept values of type:</p>
-</li>
-<li>
-<p><code>datetime</code>; an existing <code>datetime</code> object</p>
-</li>
-<li><code>int</code> or <code>float</code>; assumed as Unix time, i.e. seconds (if &gt;= <code>-2e10</code> and &lt;= <code>2e10</code>) or milliseconds
-    (if &lt; <code>-2e10</code>or &gt; <code>2e10</code>) since 1 January 1970</li>
-<li>
-<p><code>str</code>; the following formats are accepted:</p>
 <ul>
+<li><code>datetime</code>; an existing <code>datetime</code> object</li>
+<li><code>int</code> or <code>float</code>; assumed as Unix time, i.e. seconds (if &gt;= <code>-2e10</code> and &lt;= <code>2e10</code>) or milliseconds
+  (if &lt; <code>-2e10</code>or &gt; <code>2e10</code>) since 1 January 1970</li>
+<li><code>str</code>; the following formats are accepted:<ul>
 <li><code>YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]</code></li>
 <li><code>int</code> or <code>float</code> as a string (assumed as Unix time)</li>
 </ul>
 </li>
+</ul>
+</li>
 <li>
 <p><code>date</code> fields will accept values of type:</p>
-</li>
-<li>
-<p><code>date</code>; an existing <code>date</code> object</p>
-</li>
-<li><code>int</code> or <code>float</code>; handled the same as described for <code>datetime</code> above</li>
-<li>
-<p><code>str</code>; the following formats are accepted:</p>
 <ul>
+<li><code>date</code>; an existing <code>date</code> object</li>
+<li><code>int</code> or <code>float</code>; handled the same as described for <code>datetime</code> above</li>
+<li><code>str</code>; the following formats are accepted:<ul>
 <li><code>YYYY-MM-DD</code></li>
 <li><code>int</code> or <code>float</code> as a string (assumed as Unix time)</li>
 </ul>
 </li>
+</ul>
+</li>
 <li>
 <p><code>time</code> fields will accept values of type:</p>
-</li>
-<li>
-<p><code>time</code>; an existing <code>time</code> object</p>
-</li>
-<li>
-<p><code>str</code>; the following formats are accepted:</p>
 <ul>
+<li><code>time</code>; an existing <code>time</code> object</li>
+<li><code>str</code>; the following formats are accepted:<ul>
 <li><code>HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]</code></li>
+</ul>
+</li>
 </ul>
 </li>
 <li>
 <p><code>timedelta</code> fields will accept values of type:</p>
-</li>
-<li>
-<p><code>timedelta</code>; an existing <code>timedelta</code> object</p>
-</li>
-<li><code>int</code> or <code>float</code>; assumed to be seconds</li>
-<li>
-<p><code>str</code>; the following formats are accepted:</p>
 <ul>
+<li><code>timedelta</code>; an existing <code>timedelta</code> object</li>
+<li><code>int</code> or <code>float</code>; assumed to be seconds</li>
+<li><code>str</code>; the following formats are accepted:<ul>
 <li><code>[-][DD ][HH:MM]SS[.ffffff]</code></li>
 <li><code>[±]P[DD]DT[HH]H[MM]M[SS]S</code> (<a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a> format for timedelta)</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
