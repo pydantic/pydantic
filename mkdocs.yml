@@ -42,6 +42,7 @@ extra_css:
   - 'extra/tweaks.css'
 extra_javascript:
   - 'extra/fluff.js'
+  - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
 
 nav:
 - Get Started:
