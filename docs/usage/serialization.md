@@ -671,15 +671,17 @@ That being said, setting `exclude` on the field constructor (`Field(..., exclude
 over the `exclude_unset`, `exclude_none`, and `exclude_default` parameters on `model_dump` and `model_dump_json`:
 
 ```py
-from pydantic import BaseModel, Field
 from typing import Optional
+
+from pydantic import BaseModel, Field
 
 
 class Person(BaseModel):
     name: str
     age: Optional[int] = Field(None, exclude=False)
 
-person = Person(name="Jeremy")
+
+person = Person(name='Jeremy')
 
 print(person.model_dump())
 #> {'name': 'Jeremy', 'age': None}
