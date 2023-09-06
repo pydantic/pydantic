@@ -14,37 +14,34 @@ types:
 
 * `datetime` fields will accept values of type:
 
-  * `datetime`; an existing `datetime` object
-  * `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and <= `2e10`) or milliseconds
-    (if < `-2e10`or > `2e10`) since 1 January 1970
-  * `str`; the following formats are accepted:
-    * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
-    * `int` or `float` as a string (assumed as Unix time)
+    * `datetime`; an existing `datetime` object
+    * `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and <= `2e10`) or milliseconds
+      (if < `-2e10`or > `2e10`) since 1 January 1970
+    * `str`; the following formats are accepted:
+        * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+        * `int` or `float` as a string (assumed as Unix time)
 
 * `date` fields will accept values of type:
 
-  * `date`; an existing `date` object
-  * `int` or `float`; handled the same as described for `datetime` above
-  * `str`; the following formats are accepted:
-
-    * `YYYY-MM-DD`
-    * `int` or `float` as a string (assumed as Unix time)
+    * `date`; an existing `date` object
+    * `int` or `float`; handled the same as described for `datetime` above
+    * `str`; the following formats are accepted:
+        * `YYYY-MM-DD`
+        * `int` or `float` as a string (assumed as Unix time)
 
 * `time` fields will accept values of type:
 
-  * `time`; an existing `time` object
-  * `str`; the following formats are accepted:
-
-    * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+    * `time`; an existing `time` object
+    * `str`; the following formats are accepted:
+        * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
 
 * `timedelta` fields will accept values of type:
 
-  * `timedelta`; an existing `timedelta` object
-  * `int` or `float`; assumed to be seconds
-  * `str`; the following formats are accepted:
-
-    * `[-][DD ][HH:MM]SS[.ffffff]`
-    * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
+    * `timedelta`; an existing `timedelta` object
+    * `int` or `float`; assumed to be seconds
+    * `str`; the following formats are accepted:
+        * `[-][DD ][HH:MM]SS[.ffffff]`
+        * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
 ```py
 from datetime import date, datetime, time, timedelta
