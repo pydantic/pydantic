@@ -667,7 +667,39 @@ print(t.model_dump(include={'id': True, 'value': True}))  # (1)!
 
 1. `value` excluded from the output because it excluded in `Field`.
 
+That being said, setting `exclude` on the field constructor (`Field(..., exclude=True)`) does not take priority
+over the `exclude_unset`, `exclude_none`, and `exclude_default` parameters on `model_dump` and `model_dump_json`:
+
+```py
+from pydantic import BaseModel, Field
+from typing import Optional
+
+
+class Person(BaseModel):
+    name: str
+    age: Optional[int] = Field(None, exclude=False)
+
+person = Person(name="Jeremy")
+
+print(person.model_dump())
+#> {'name': 'Jeremy', 'age': None}
+print(person.model_dump(exclude_none=True))  # (1)!
+#> {'name': 'Jeremy'}
+print(person.model_dump(exclude_unset=True))  # (2)!
+#> {'name': 'Jeremy'}
+print(person.model_dump(exclude_defaults=True))  # (3)!
+#> {'name': 'Jeremy'}
+```
+
+1. `age` excluded from the output because `exclude_none` was set to True, and `age` is `None`.
+2. `age` excluded from the output because `exclude_unset` was set to True, and `age` was not set in the Person constructor.
+3. `age` excluded from the output because `exclude_defaults` was set to True, and `age` takes the default value of `None`.
+
+
 ## `model_copy(...)`
+
+??? api "API Documentation"
+    [`pydantic.main.BaseModel.model_copy`][pydantic.main.BaseModel.model_copy]<br>
 
 `model_copy()` allows models to be duplicated (with optional updates), which is particularly useful when working with frozen models.
 
