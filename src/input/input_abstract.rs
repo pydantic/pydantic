@@ -152,17 +152,17 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.strict_float()
     }
 
-    fn validate_decimal(&'a self, strict: bool, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
+    fn validate_decimal(&'a self, strict: bool, py: Python<'a>) -> ValResult<&'a PyAny> {
         if strict {
-            self.strict_decimal(decimal_type)
+            self.strict_decimal(py)
         } else {
-            self.lax_decimal(decimal_type)
+            self.lax_decimal(py)
         }
     }
-    fn strict_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny>;
+    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
-        self.strict_decimal(decimal_type)
+    fn lax_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
+        self.strict_decimal(py)
     }
 
     fn validate_dict(&'a self, strict: bool) -> ValResult<GenericMapping<'a>> {

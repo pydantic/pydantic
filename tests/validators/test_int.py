@@ -58,7 +58,9 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         (Decimal('1'), 1),
+        (Decimal('1' + '0' * 1_000), int('1' + '0' * 1_000)),  # a large decimal
         (Decimal('1.0'), 1),
+        (1.0, 1),
         (i64_max, i64_max),
         (str(i64_max), i64_max),
         (str(i64_max * 2), i64_max * 2),
@@ -66,6 +68,14 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
         (-i64_max + 1, -i64_max + 1),
         (i64_max * 2, i64_max * 2),
         (-i64_max * 2, -i64_max * 2),
+        pytest.param(
+            1.00000000001,
+            Err(
+                'Input should be a valid integer, got a number with a fractional part '
+                '[type=int_from_float, input_value=1.00000000001, input_type=float]'
+            ),
+            id='decimal-remainder',
+        ),
         pytest.param(
             Decimal('1.001'),
             Err(
@@ -437,3 +447,14 @@ def test_int_subclass_constraint() -> None:
 
     with pytest.raises(ValidationError, match='Input should be greater than 0'):
         v.validate_python(IntSubclass(0))
+
+
+class FloatSubclass(float):
+    pass
+
+
+def test_float_subclass() -> None:
+    v = SchemaValidator({'type': 'int'})
+    v_lax = v.validate_python(FloatSubclass(1))
+    assert v_lax == 1
+    assert type(v_lax) == int

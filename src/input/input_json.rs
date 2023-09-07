@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString, PyType};
+use pyo3::types::{PyDict, PyString};
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 use strum::EnumMessage;
 
@@ -178,13 +178,12 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
 
-    fn strict_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
-        let py = decimal_type.py();
+    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
         match self {
-            JsonInput::Float(f) => create_decimal(PyString::new(py, &f.to_string()), self, decimal_type),
+            JsonInput::Float(f) => create_decimal(PyString::new(py, &f.to_string()), self, py),
 
             JsonInput::String(..) | JsonInput::Int(..) | JsonInput::Uint(..) | JsonInput::BigInt(..) => {
-                create_decimal(self.to_object(py).into_ref(py), self, decimal_type)
+                create_decimal(self.to_object(py).into_ref(py), self, py)
             }
             _ => Err(ValError::new(ErrorTypeDefaults::DecimalType, self)),
         }
@@ -439,9 +438,8 @@ impl<'a> Input<'a> for String {
         str_as_float(self, self)
     }
 
-    fn strict_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
-        let py = decimal_type.py();
-        create_decimal(self.to_object(py).into_ref(py), self, decimal_type)
+    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
+        create_decimal(self.to_object(py).into_ref(py), self, py)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
