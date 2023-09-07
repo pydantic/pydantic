@@ -49,11 +49,10 @@ jobs:
       with:
         # cloudflare pages build containers run 3.8, hence using it here
         python-version: '3.8'
-        cache: true
 
     - name: install dependencies
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip $PYTHON
         pdm install -G docs
         pdm run python -m ensurepip
         pdm run python -m pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
