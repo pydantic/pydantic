@@ -42,6 +42,7 @@ extra_css:
   - 'extra/tweaks.css'
 extra_javascript:
   - 'extra/fluff.js'
+  - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
 
 nav:
 - Get Started:
@@ -154,7 +155,8 @@ markdown_extensions:
 - admonition
 - pymdownx.details
 - pymdownx.superfences
-- pymdownx.highlight
+- pymdownx.highlight:
+    pygments_lang_class: true
 - pymdownx.extra
 - pymdownx.emoji:
     emoji_index: !!python/name:materialx.emoji.twemoji

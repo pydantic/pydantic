@@ -24,7 +24,7 @@ we hope you'll find the improvements and additions in Pydantic V2 useful.
 
 If you're new to Pydantic: Pydantic is an open-source Python library that provides powerful data parsing and validation &mdash;
 including type coercion and useful error messages when typing issues arise &mdash; and settings management capabilities.
-See [the docs](/) for examples of Pydantic at work.
+See [the docs](../index.md) for examples of Pydantic at work.
 
 ## Getting started with the Pydantic V2 alpha
 
@@ -59,7 +59,7 @@ Thank you for your support, and we look forward to your feedback.
 ## Headlines
 
 Here are some of the most interesting new features in the current Pydantic V2 alpha release.
-For background on plans behind these features, see the earlier [Pydantic V2 Plan](/blog/pydantic-V2/) blog post.
+For background on plans behind these features, see the earlier [Pydantic V2 Plan](pydantic-v2.md) blog post.
 
 The biggest change to Pydantic V2 is [`pydantic-core`](https://github.com/pydantic/pydantic-core) &mdash;
 all validation logic has been rewritten in Rust and moved to a separate package, `pydantic-core`.
