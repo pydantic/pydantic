@@ -55,6 +55,9 @@ jobs:
       run: |
         pdm use -f $PYTHON
         pdm install -G docs
+        pdm run pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs-material/mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
+      env:
+        MKDOCS_TOKEN: ${{ secrets.MKDOCS_TOKEN }}
 
     - run: pdm run python -c 'import docs.plugins.main'
 
@@ -68,7 +71,7 @@ jobs:
         ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
         ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
-    - run: pdm run mkdocs build
+    - run: pdm run mkdocs build -v
 
   test-memray:
     name: test memray
