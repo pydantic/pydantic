@@ -1,4 +1,5 @@
 use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::sync::GILOnceCell;
 use pyo3::types::{IntoPyDict, PyDict, PyTuple, PyType};
 use pyo3::{intern, AsPyPointer};
 use pyo3::{prelude::*, PyTypeInfo};
@@ -13,6 +14,21 @@ use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
+static DECIMAL_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+
+pub fn get_decimal_type(py: Python) -> Py<PyType> {
+    DECIMAL_TYPE
+        .get_or_init(py, || {
+            py.import("decimal")
+                .and_then(|decimal_module| decimal_module.getattr("Decimal"))
+                .unwrap()
+                .extract::<&PyType>()
+                .unwrap()
+                .into()
+        })
+        .clone()
+}
+
 #[derive(Debug, Clone)]
 pub struct DecimalValidator {
     strict: bool,
@@ -25,7 +41,6 @@ pub struct DecimalValidator {
     gt: Option<Py<PyAny>>,
     max_digits: Option<u64>,
     decimal_places: Option<u64>,
-    decimal_type: Py<PyType>,
 }
 
 impl BuildValidator for DecimalValidator {
@@ -55,10 +70,6 @@ impl BuildValidator for DecimalValidator {
             ge: schema.get_as(intern!(py, "ge"))?,
             gt: schema.get_as(intern!(py, "gt"))?,
             max_digits,
-            decimal_type: py
-                .import(intern!(py, "decimal"))?
-                .getattr(intern!(py, "Decimal"))?
-                .extract()?,
         }
         .into())
     }
@@ -69,8 +80,7 @@ impl_py_gc_traverse!(DecimalValidator {
     le,
     lt,
     ge,
-    gt,
-    decimal_type
+    gt
 });
 
 impl Validator for DecimalValidator {
@@ -80,11 +90,7 @@ impl Validator for DecimalValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let decimal = input.validate_decimal(
-            state.strict_or(self.strict),
-            // Safety: self and py both outlive this call
-            unsafe { py.from_borrowed_ptr(self.decimal_type.as_ptr()) },
-        )?;
+        let decimal = input.validate_decimal(state.strict_or(self.strict), py)?;
 
         if !self.allow_inf_nan || self.check_digits {
             if !decimal.call_method0(intern!(py, "is_finite"))?.extract()? {
@@ -244,19 +250,23 @@ impl Validator for DecimalValidator {
 pub(crate) fn create_decimal<'a>(
     arg: &'a PyAny,
     input: &'a impl Input<'a>,
-    decimal_type: &'a PyType,
+    py: Python<'a>,
 ) -> ValResult<'a, &'a PyAny> {
-    decimal_type.call1((arg,)).map_err(|e| {
-        let decimal_exception = match arg
-            .py()
-            .import("decimal")
-            .and_then(|decimal_module| decimal_module.getattr("DecimalException"))
-        {
-            Ok(decimal_exception) => decimal_exception,
-            Err(e) => return ValError::InternalErr(e),
-        };
-        handle_decimal_new_error(arg.py(), input.as_error_value(), e, decimal_exception)
-    })
+    let decimal_type_obj: Py<PyType> = get_decimal_type(py);
+    decimal_type_obj
+        .call1(py, (arg,))
+        .map_err(|e| {
+            let decimal_exception = match arg
+                .py()
+                .import("decimal")
+                .and_then(|decimal_module| decimal_module.getattr("DecimalException"))
+            {
+                Ok(decimal_exception) => decimal_exception,
+                Err(e) => return ValError::InternalErr(e),
+            };
+            handle_decimal_new_error(arg.py(), input.as_error_value(), e, decimal_exception)
+        })
+        .map(|v| v.into_ref(py))
 }
 
 fn handle_decimal_new_error<'a>(
