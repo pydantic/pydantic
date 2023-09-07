@@ -56,6 +56,7 @@ jobs:
         pdm use -f $PYTHON
         pdm install -G docs
         pdm run pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
+
       env:
         MKDOCS_TOKEN: ${{ secrets.MKDOCS_TOKEN }}
 
@@ -71,7 +72,9 @@ jobs:
         ln -s .venv/lib/python*/site-packages/pydantic_settings pydantic_settings
         ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
-    - run: pdm run mkdocs build -v
+    - run: |
+        pdm run python -c 'from materialx.emoji import twemoji'
+        pdm run mkdocs build -v
 
   test-memray:
     name: test memray
