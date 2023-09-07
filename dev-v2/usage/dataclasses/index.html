@@ -19,8 +19,11 @@
         <link rel="next" href="../type_adapter/">
       
       
+        
+      
+      
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.5">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.8+insiders-4.40.4">
     
     
       
@@ -28,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.0e669242.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.c4d31a9e.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.85d0ee34.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.da3f46a0.min.css">
       
       
 
@@ -62,7 +65,6 @@
 
     
     
-    
   </head>
   
   
@@ -75,9 +77,6 @@
     
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink">
   
-    
-    
-      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -154,9 +153,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
       </label>
     
@@ -164,15 +163,18 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
       </label>
     
   
 </form>
       
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -423,8 +425,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Get Started
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -433,7 +441,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
-            Get Started
+            
+  
+    Get Started
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -447,8 +459,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Welcome to Pydantic
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -467,8 +485,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Why use Pydantic
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -487,8 +511,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Help with Pydantic
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -507,8 +537,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Installation
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -527,8 +563,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Migration Guide
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -547,8 +589,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Version Compatibility
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -567,8 +615,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Contributing
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -587,8 +641,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Changelog
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -626,8 +686,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Usage
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -636,7 +702,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Usage
+            
+  
+    Usage
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -650,8 +720,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Models
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -680,8 +756,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Field Types
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -690,7 +772,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_2">
             <span class="md-nav__icon md-icon"></span>
-            Field Types
+            
+  
+    Field Types
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -704,8 +790,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Types Overview
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -724,8 +816,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Standard Library Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -744,8 +842,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Booleans
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -764,8 +868,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     ByteSize
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -784,8 +894,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Callables
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -804,8 +920,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Datetimes
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -824,8 +946,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Dicts and Mapping
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -844,8 +972,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Encoded Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -864,8 +998,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Enums and Choices
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -884,8 +1024,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     File Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -904,8 +1050,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     JSON
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -924,8 +1076,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Lists and Tuples
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -944,8 +1102,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Number Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -964,8 +1128,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Secret Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -984,8 +1154,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Sequence, Iterable & Iterator
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1004,8 +1180,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Sets and frozenset
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1024,8 +1206,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Strict Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1044,8 +1232,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     String Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1064,8 +1258,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Type and TypeVar
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1084,8 +1284,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Types with Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1104,8 +1310,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Unions
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1124,8 +1336,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     URLs
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1144,8 +1362,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     UUIDs
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1164,8 +1388,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Encoded
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1184,8 +1414,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Custom Data Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1214,8 +1450,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Extra Types
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1224,7 +1466,11 @@
         <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_26_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_2_26">
             <span class="md-nav__icon md-icon"></span>
-            Extra Types
+            
+  
+    Extra Types
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1238,8 +1484,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Extra Types Overview
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1258,8 +1510,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Color Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1278,8 +1536,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Payment Card Numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1298,8 +1562,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Phone Numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1318,8 +1588,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Routing Numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1338,8 +1614,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     MAC Address
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1358,8 +1640,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Coordinate
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1394,8 +1682,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Validators
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1414,8 +1708,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Model Config
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1434,8 +1734,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1454,8 +1760,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     JSON Schema
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1474,8 +1786,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Serialization
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1494,8 +1812,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Computed Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1521,8 +1845,14 @@
           
   
   <span class="md-ellipsis">
+    
+  
     Dataclasses
+  
+
+    
   </span>
+  
   
 
           <span class="md-nav__icon md-icon"></span>
@@ -1532,8 +1862,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Dataclasses
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1555,28 +1891,44 @@
       
         <li class="md-nav__item">
   <a href="#dataclass-config" class="md-nav__link">
-    Dataclass config
+    <span class="md-ellipsis">
+      
+        Dataclass config
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#nested-dataclasses" class="md-nav__link">
-    Nested dataclasses
+    <span class="md-ellipsis">
+      
+        Nested dataclasses
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#generic-dataclasses" class="md-nav__link">
-    Generic dataclasses
+    <span class="md-ellipsis">
+      
+        Generic dataclasses
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#stdlib-dataclasses-and-pydantic-dataclasses" class="md-nav__link">
-    Stdlib dataclasses and Pydantic dataclasses
+    <span class="md-ellipsis">
+      
+        Stdlib dataclasses and Pydantic dataclasses
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Stdlib dataclasses and Pydantic dataclasses">
@@ -1584,28 +1936,44 @@
         
           <li class="md-nav__item">
   <a href="#inherit-from-stdlib-dataclasses" class="md-nav__link">
-    Inherit from stdlib dataclasses
+    <span class="md-ellipsis">
+      
+        Inherit from stdlib dataclasses
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#use-of-stdlib-dataclasses-with-basemodel" class="md-nav__link">
-    Use of stdlib dataclasses with BaseModel
+    <span class="md-ellipsis">
+      
+        Use of stdlib dataclasses with BaseModel
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#use-custom-types" class="md-nav__link">
-    Use custom types
+    <span class="md-ellipsis">
+      
+        Use custom types
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#checking-if-a-dataclass-is-a-pydantic-dataclass" class="md-nav__link">
-    Checking if a dataclass is a pydantic dataclass
+    <span class="md-ellipsis">
+      
+        Checking if a dataclass is a pydantic dataclass
+      
+    </span>
   </a>
   
 </li>
@@ -1617,7 +1985,11 @@
       
         <li class="md-nav__item">
   <a href="#initialization-hooks" class="md-nav__link">
-    Initialization hooks
+    <span class="md-ellipsis">
+      
+        Initialization hooks
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Initialization hooks">
@@ -1625,7 +1997,11 @@
         
           <li class="md-nav__item">
   <a href="#difference-with-stdlib-dataclasses" class="md-nav__link">
-    Difference with stdlib dataclasses
+    <span class="md-ellipsis">
+      
+        Difference with stdlib dataclasses
+      
+    </span>
   </a>
   
 </li>
@@ -1637,7 +2013,11 @@
       
         <li class="md-nav__item">
   <a href="#json-dumping" class="md-nav__link">
-    JSON dumping
+    <span class="md-ellipsis">
+      
+        JSON dumping
+      
+    </span>
   </a>
   
 </li>
@@ -1661,8 +2041,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     TypeAdapter
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1681,8 +2067,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Validation Decorator
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1701,8 +2093,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Postponed Annotations
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1721,8 +2119,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Strict Mode
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1741,8 +2145,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Conversion Table
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1761,8 +2171,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Settings Management
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1798,8 +2214,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Error Messages
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1808,7 +2230,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            Error Messages
+            
+  
+    Error Messages
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1822,8 +2248,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Error Handling
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1842,8 +2274,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Validation Errors
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1862,8 +2300,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Usage Errors
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1899,8 +2343,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Integrations
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1909,7 +2359,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            Integrations
+            
+  
+    Integrations
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1923,8 +2377,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Mypy
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1943,8 +2403,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     PyCharm
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1963,8 +2429,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Hypothesis
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1983,8 +2455,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Visual Studio Code
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2003,8 +2481,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     datamodel-code-generator
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2023,8 +2507,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     devtools
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2043,8 +2533,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Rich
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2080,8 +2576,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Blog
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2090,7 +2592,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
-            Blog
+            
+  
+    Blog
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2104,8 +2610,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic V2 Is Here!
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2124,8 +2636,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic V2 Pre Release
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2144,8 +2662,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic V2 Plan
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2181,8 +2705,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     API Documentation
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2191,7 +2721,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
-            API Documentation
+            
+  
+    API Documentation
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2215,8 +2749,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2225,7 +2765,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_1">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic
+            
+  
+    Pydantic
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2239,8 +2783,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     BaseModel
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2259,8 +2809,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     RootModel
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2279,8 +2835,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Dataclasses
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2299,8 +2861,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     TypeAdapter
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2319,8 +2887,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     validate_call
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2339,8 +2913,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2359,8 +2939,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Config
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2379,8 +2965,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     json_schema
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2399,8 +2991,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Errors
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2419,8 +3017,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Functional Validators
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2439,8 +3043,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Functional Serializers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2459,8 +3069,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2479,8 +3095,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Network Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2499,8 +3121,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Version Information
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2537,8 +3165,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Core
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2547,7 +3181,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_2">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic Core
+            
+  
+    Pydantic Core
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2561,8 +3199,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_core
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2581,8 +3225,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_core.core_schema
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2619,8 +3269,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Settings
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2629,7 +3285,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_3">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic Settings
+            
+  
+    Pydantic Settings
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2643,8 +3303,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_settings
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2681,8 +3347,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Extra Types
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2691,7 +3363,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_4">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic Extra Types
+            
+  
+    Pydantic Extra Types
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2705,8 +3381,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.color
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2725,8 +3407,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.country
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2745,8 +3433,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.payment
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2765,8 +3459,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.phone_numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2785,8 +3485,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.routing_number
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2838,28 +3544,44 @@
       
         <li class="md-nav__item">
   <a href="#dataclass-config" class="md-nav__link">
-    Dataclass config
+    <span class="md-ellipsis">
+      
+        Dataclass config
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#nested-dataclasses" class="md-nav__link">
-    Nested dataclasses
+    <span class="md-ellipsis">
+      
+        Nested dataclasses
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#generic-dataclasses" class="md-nav__link">
-    Generic dataclasses
+    <span class="md-ellipsis">
+      
+        Generic dataclasses
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#stdlib-dataclasses-and-pydantic-dataclasses" class="md-nav__link">
-    Stdlib dataclasses and Pydantic dataclasses
+    <span class="md-ellipsis">
+      
+        Stdlib dataclasses and Pydantic dataclasses
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Stdlib dataclasses and Pydantic dataclasses">
@@ -2867,28 +3589,44 @@
         
           <li class="md-nav__item">
   <a href="#inherit-from-stdlib-dataclasses" class="md-nav__link">
-    Inherit from stdlib dataclasses
+    <span class="md-ellipsis">
+      
+        Inherit from stdlib dataclasses
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#use-of-stdlib-dataclasses-with-basemodel" class="md-nav__link">
-    Use of stdlib dataclasses with BaseModel
+    <span class="md-ellipsis">
+      
+        Use of stdlib dataclasses with BaseModel
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#use-custom-types" class="md-nav__link">
-    Use custom types
+    <span class="md-ellipsis">
+      
+        Use custom types
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#checking-if-a-dataclass-is-a-pydantic-dataclass" class="md-nav__link">
-    Checking if a dataclass is a pydantic dataclass
+    <span class="md-ellipsis">
+      
+        Checking if a dataclass is a pydantic dataclass
+      
+    </span>
   </a>
   
 </li>
@@ -2900,7 +3638,11 @@
       
         <li class="md-nav__item">
   <a href="#initialization-hooks" class="md-nav__link">
-    Initialization hooks
+    <span class="md-ellipsis">
+      
+        Initialization hooks
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Initialization hooks">
@@ -2908,7 +3650,11 @@
         
           <li class="md-nav__item">
   <a href="#difference-with-stdlib-dataclasses" class="md-nav__link">
-    Difference with stdlib dataclasses
+    <span class="md-ellipsis">
+      
+        Difference with stdlib dataclasses
+      
+    </span>
   </a>
   
 </li>
@@ -2920,7 +3666,11 @@
       
         <li class="md-nav__item">
   <a href="#json-dumping" class="md-nav__link">
-    JSON dumping
+    <span class="md-ellipsis">
+      
+        JSON dumping
+      
+    </span>
   </a>
   
 </li>
@@ -2935,6 +3685,7 @@
           
           
             <div class="md-content" data-md-component="content">
+              
               <article class="md-content__inner md-typeset">
                 
   
@@ -2952,7 +3703,7 @@
 </details>
 <p>If you don't want to use Pydantic's <code>BaseModel</code> you can instead get the same data validation on standard
 <a href="https://docs.python.org/3/library/dataclasses.html">dataclasses</a> (introduced in Python 3.7).</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
@@ -2989,7 +3740,7 @@ order to perform validation and, where necessary coercion.</p>
 <p>To perform validation or generate a JSON schema on a Pydantic dataclass, you should now wrap the dataclass
 with a <a href="../type_adapter/"><code>TypeAdapter</code></a> and make use of its methods.</p>
 <p>Fields that require a <code>default_factory</code> can be specified by either a <code>pydantic.Field</code> or a <code>dataclasses.field</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
@@ -3055,7 +3806,7 @@ keyword argument <code>config</code> which has the same meaning as <a href="../m
 <li>Apply config to the dataclass decorator as a dict</li>
 <li>Use <code>ConfigDict</code> as the config</li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -3084,7 +3835,7 @@ unexpected fields while parsing data; they just won't be stored on the instance.
 </div>
 <h2 id="nested-dataclasses">Nested dataclasses<a class="headerlink" href="#nested-dataclasses" title="Permanent link">&para;</a></h2>
 <p>Nested dataclasses are supported both in dataclasses and normal models.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnyUrl</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnyUrl</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -3105,7 +3856,7 @@ unexpected fields while parsing data; they just won't be stored on the instance.
 <p>When used as fields, dataclasses (Pydantic or vanilla) should use dicts as validation inputs.</p>
 <h2 id="generic-dataclasses">Generic dataclasses<a class="headerlink" href="#generic-dataclasses" title="Permanent link">&para;</a></h2>
 <p>Pydantic supports generic dataclasses, including those with type variables.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
@@ -3129,7 +3880,7 @@ unexpected fields while parsing data; they just won't be stored on the instance.
 <h3 id="inherit-from-stdlib-dataclasses">Inherit from stdlib dataclasses<a class="headerlink" href="#inherit-from-stdlib-dataclasses" title="Permanent link">&para;</a></h3>
 <p>Stdlib dataclasses (nested or not) can also be inherited and Pydantic will automatically validate
 all the inherited fields.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
 <span class="kn">import</span> <span class="nn">pydantic</span>
 
@@ -3167,7 +3918,7 @@ all the inherited fields.</p>
 <p>Bear in mind that stdlib dataclasses (nested or not) are <strong>automatically converted</strong> into Pydantic
 dataclasses when mixed with <code>BaseModel</code>! Furthermore the generated Pydantic dataclass will have
 the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen</code>, ...) as the original one.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
@@ -3220,7 +3971,7 @@ the <strong>exact same configuration</strong> (<code>order</code>, <code>frozen<
 <p>Since stdlib dataclasses are automatically converted to add validation, using
 custom types may cause some unexpected behavior.
 In this case you can simply add <code>arbitrary_types_allowed</code> in the config!</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 <span class="kn">from</span> <span class="nn">pydantic.errors</span> <span class="kn">import</span> <span class="n">PydanticSchemaGenerationError</span>
@@ -3273,7 +4024,7 @@ In this case you can simply add <code>arbitrary_types_allowed</code> in the conf
 </code></pre></div>
 <h3 id="checking-if-a-dataclass-is-a-pydantic-dataclass">Checking if a dataclass is a pydantic dataclass<a class="headerlink" href="#checking-if-a-dataclass-is-a-pydantic-dataclass" title="Permanent link">&para;</a></h3>
 <p>Pydantic dataclasses are still considered dataclasses, so using <code>dataclasses.is_dataclass</code> will return <code>True</code>. To check if a type is specifically a pydantic dataclass you can use <code>pydantic.dataclasses.is_pydantic_dataclass</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
 <span class="kn">import</span> <span class="nn">pydantic</span>
 
@@ -3298,7 +4049,7 @@ In this case you can simply add <code>arbitrary_types_allowed</code> in the conf
 <h2 id="initialization-hooks">Initialization hooks<a class="headerlink" href="#initialization-hooks" title="Permanent link">&para;</a></h2>
 <p>When you initialize a dataclass, it is possible to execute code <em>before</em> or <em>after</em> validation
 with the help of the <a href="../validators/#model-validators"><code>@model_validator</code></a> decorator <code>mode</code> parameter.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">model_validator</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
@@ -3346,7 +4097,7 @@ Here is the order:</p>
 <li><code>__post_init__</code>.</li>
 <li><code>model_validator(mode='after')</code></li>
 </ul>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">InitVar</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">InitVar</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
@@ -3374,7 +4125,7 @@ Here is the order:</p>
 <h2 id="json-dumping">JSON dumping<a class="headerlink" href="#json-dumping" title="Permanent link">&para;</a></h2>
 <p>Pydantic dataclasses do not feature a <code>.model_dump_json()</code> function. To dump them as JSON, you will need to
 make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</a> as follows:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">RootModel</span>
@@ -3392,7 +4143,7 @@ make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</
 <span class="nb">print</span><span class="p">(</span><span class="n">RootModel</span><span class="p">[</span><span class="n">User</span><span class="p">](</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
 </code></pre></div>
 <p>JSON output:</p>
-<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span>
 <span class="w">  </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;John Doe&quot;</span><span class="p">,</span>
 <span class="w">  </span><span class="nt">&quot;friends&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
@@ -3400,6 +4151,7 @@ make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</
 <span class="w">  </span><span class="p">]</span>
 <span class="p">}</span>
 </code></pre></div>
+
 
 
 
@@ -3414,6 +4166,7 @@ make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</
           
   <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
 
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
       </main>
@@ -3427,7 +4180,7 @@ make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</
   
     Made with
     <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-      Material for MkDocs
+      Material for MkDocs Insiders
     </a>
   
 </div>
@@ -3441,12 +4194,14 @@ make use of the <a href="../models/#rootmodel-and-custom-root-types">RootModel</
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.dfff1995.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.f2da59ea.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.78eede0e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7e51e09.min.js"></script>
       
         <script src="../../extra/fluff.js"></script>
+      
+        <script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
       
     
   </body>

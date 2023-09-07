@@ -19,8 +19,11 @@
         <link rel="next" href="../fields/">
       
       
+        
+      
+      
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.5">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.8+insiders-4.40.4">
     
     
       
@@ -28,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.0e669242.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.c4d31a9e.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.85d0ee34.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.da3f46a0.min.css">
       
       
 
@@ -62,7 +65,6 @@
 
     
     
-    
   </head>
   
   
@@ -75,9 +77,6 @@
     
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink">
   
-    
-    
-      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -154,9 +153,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
       </label>
     
@@ -164,15 +163,18 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
       </label>
     
   
 </form>
       
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -423,8 +425,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Get Started
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -433,7 +441,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
-            Get Started
+            
+  
+    Get Started
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -447,8 +459,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Welcome to Pydantic
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -467,8 +485,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Why use Pydantic
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -487,8 +511,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Help with Pydantic
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -507,8 +537,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Installation
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -527,8 +563,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Migration Guide
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -547,8 +589,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Version Compatibility
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -567,8 +615,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Contributing
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -587,8 +641,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Changelog
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -626,8 +686,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Usage
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -636,7 +702,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Usage
+            
+  
+    Usage
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -650,8 +720,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Models
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -680,8 +756,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Field Types
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -690,7 +772,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_2">
             <span class="md-nav__icon md-icon"></span>
-            Field Types
+            
+  
+    Field Types
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -704,8 +790,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Types Overview
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -724,8 +816,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Standard Library Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -744,8 +842,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Booleans
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -764,8 +868,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     ByteSize
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -784,8 +894,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Callables
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -804,8 +920,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Datetimes
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -824,8 +946,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Dicts and Mapping
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -844,8 +972,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Encoded Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -864,8 +998,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Enums and Choices
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -884,8 +1024,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     File Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -904,8 +1050,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     JSON
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -924,8 +1076,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Lists and Tuples
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -944,8 +1102,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Number Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -964,8 +1128,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Secret Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -984,8 +1154,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Sequence, Iterable & Iterator
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1004,8 +1180,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Sets and frozenset
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1024,8 +1206,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Strict Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1044,8 +1232,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     String Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1064,8 +1258,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Type and TypeVar
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1084,8 +1284,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Types with Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1104,8 +1310,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Unions
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1124,8 +1336,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     URLs
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1144,8 +1362,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     UUIDs
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1164,8 +1388,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Encoded
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1184,8 +1414,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Custom Data Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1214,8 +1450,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Extra Types
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1224,7 +1466,11 @@
         <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_26_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_2_26">
             <span class="md-nav__icon md-icon"></span>
-            Extra Types
+            
+  
+    Extra Types
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1238,8 +1484,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Extra Types Overview
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1258,8 +1510,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Color Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1278,8 +1536,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Payment Card Numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1298,8 +1562,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Phone Numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1318,8 +1588,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Routing Numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1338,8 +1614,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     MAC Address
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1358,8 +1640,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Coordinate
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1394,8 +1682,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Validators
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1421,8 +1715,14 @@
           
   
   <span class="md-ellipsis">
+    
+  
     Model Config
+  
+
+    
   </span>
+  
   
 
           <span class="md-nav__icon md-icon"></span>
@@ -1432,8 +1732,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Model Config
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1455,28 +1761,44 @@
       
         <li class="md-nav__item">
   <a href="#options" class="md-nav__link">
-    Options
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#change-behaviour-globally" class="md-nav__link">
-    Change behaviour globally
+    <span class="md-ellipsis">
+      
+        Change behaviour globally
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#alias-generator" class="md-nav__link">
-    Alias Generator
+    <span class="md-ellipsis">
+      
+        Alias Generator
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#alias-precedence" class="md-nav__link">
-    Alias Precedence
+    <span class="md-ellipsis">
+      
+        Alias Precedence
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Alias Precedence">
@@ -1484,7 +1806,11 @@
         
           <li class="md-nav__item">
   <a href="#alias-priority" class="md-nav__link">
-    Alias Priority
+    <span class="md-ellipsis">
+      
+        Alias Priority
+      
+    </span>
   </a>
   
 </li>
@@ -1496,35 +1822,55 @@
       
         <li class="md-nav__item">
   <a href="#extra-attributes" class="md-nav__link">
-    Extra Attributes
+    <span class="md-ellipsis">
+      
+        Extra Attributes
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#populate-by-name" class="md-nav__link">
-    Populate by Name
+    <span class="md-ellipsis">
+      
+        Populate by Name
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#validate-assignment" class="md-nav__link">
-    Validate Assignment
+    <span class="md-ellipsis">
+      
+        Validate Assignment
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#revalidate-instances" class="md-nav__link">
-    Revalidate instances
+    <span class="md-ellipsis">
+      
+        Revalidate instances
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#strict-mode" class="md-nav__link">
-    Strict Mode
+    <span class="md-ellipsis">
+      
+        Strict Mode
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Strict Mode">
@@ -1532,7 +1878,11 @@
         
           <li class="md-nav__item">
   <a href="#arbitrary-types-allowed" class="md-nav__link">
-    Arbitrary Types Allowed
+    <span class="md-ellipsis">
+      
+        Arbitrary Types Allowed
+      
+    </span>
   </a>
   
 </li>
@@ -1544,14 +1894,22 @@
       
         <li class="md-nav__item">
   <a href="#protected-namespaces" class="md-nav__link">
-    Protected Namespaces
+    <span class="md-ellipsis">
+      
+        Protected Namespaces
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#hide-input-in-errors" class="md-nav__link">
-    Hide Input in Errors
+    <span class="md-ellipsis">
+      
+        Hide Input in Errors
+      
+    </span>
   </a>
   
 </li>
@@ -1575,8 +1933,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1595,8 +1959,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     JSON Schema
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1615,8 +1985,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Serialization
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1635,8 +2011,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Computed Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1655,8 +2037,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Dataclasses
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1675,8 +2063,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     TypeAdapter
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1695,8 +2089,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Validation Decorator
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1715,8 +2115,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Postponed Annotations
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1735,8 +2141,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Strict Mode
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1755,8 +2167,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Conversion Table
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1775,8 +2193,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Settings Management
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1812,8 +2236,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Error Messages
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1822,7 +2252,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            Error Messages
+            
+  
+    Error Messages
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1836,8 +2270,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Error Handling
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1856,8 +2296,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Validation Errors
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1876,8 +2322,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Usage Errors
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1913,8 +2365,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Integrations
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1923,7 +2381,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            Integrations
+            
+  
+    Integrations
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1937,8 +2399,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Mypy
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1957,8 +2425,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     PyCharm
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1977,8 +2451,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Hypothesis
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1997,8 +2477,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Visual Studio Code
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2017,8 +2503,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     datamodel-code-generator
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2037,8 +2529,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     devtools
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2057,8 +2555,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Rich
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2094,8 +2598,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Blog
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2104,7 +2614,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
-            Blog
+            
+  
+    Blog
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2118,8 +2632,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic V2 Is Here!
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2138,8 +2658,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic V2 Pre Release
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2158,8 +2684,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic V2 Plan
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2195,8 +2727,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     API Documentation
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2205,7 +2743,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
-            API Documentation
+            
+  
+    API Documentation
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2229,8 +2771,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2239,7 +2787,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_1">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic
+            
+  
+    Pydantic
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2253,8 +2805,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     BaseModel
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2273,8 +2831,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     RootModel
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2293,8 +2857,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Dataclasses
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2313,8 +2883,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     TypeAdapter
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2333,8 +2909,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     validate_call
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2353,8 +2935,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2373,8 +2961,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Config
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2393,8 +2987,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     json_schema
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2413,8 +3013,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Errors
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2433,8 +3039,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Functional Validators
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2453,8 +3065,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Functional Serializers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2473,8 +3091,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2493,8 +3117,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Network Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2513,8 +3143,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Version Information
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2551,8 +3187,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Core
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2561,7 +3203,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_2">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic Core
+            
+  
+    Pydantic Core
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2575,8 +3221,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_core
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2595,8 +3247,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_core.core_schema
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2633,8 +3291,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Settings
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2643,7 +3307,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_3">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic Settings
+            
+  
+    Pydantic Settings
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2657,8 +3325,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_settings
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2695,8 +3369,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Extra Types
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2705,7 +3385,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_4">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic Extra Types
+            
+  
+    Pydantic Extra Types
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2719,8 +3403,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.color
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2739,8 +3429,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.country
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2759,8 +3455,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.payment
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2779,8 +3481,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.phone_numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2799,8 +3507,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.routing_number
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2852,28 +3566,44 @@
       
         <li class="md-nav__item">
   <a href="#options" class="md-nav__link">
-    Options
+    <span class="md-ellipsis">
+      
+        Options
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#change-behaviour-globally" class="md-nav__link">
-    Change behaviour globally
+    <span class="md-ellipsis">
+      
+        Change behaviour globally
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#alias-generator" class="md-nav__link">
-    Alias Generator
+    <span class="md-ellipsis">
+      
+        Alias Generator
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#alias-precedence" class="md-nav__link">
-    Alias Precedence
+    <span class="md-ellipsis">
+      
+        Alias Precedence
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Alias Precedence">
@@ -2881,7 +3611,11 @@
         
           <li class="md-nav__item">
   <a href="#alias-priority" class="md-nav__link">
-    Alias Priority
+    <span class="md-ellipsis">
+      
+        Alias Priority
+      
+    </span>
   </a>
   
 </li>
@@ -2893,35 +3627,55 @@
       
         <li class="md-nav__item">
   <a href="#extra-attributes" class="md-nav__link">
-    Extra Attributes
+    <span class="md-ellipsis">
+      
+        Extra Attributes
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#populate-by-name" class="md-nav__link">
-    Populate by Name
+    <span class="md-ellipsis">
+      
+        Populate by Name
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#validate-assignment" class="md-nav__link">
-    Validate Assignment
+    <span class="md-ellipsis">
+      
+        Validate Assignment
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#revalidate-instances" class="md-nav__link">
-    Revalidate instances
+    <span class="md-ellipsis">
+      
+        Revalidate instances
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#strict-mode" class="md-nav__link">
-    Strict Mode
+    <span class="md-ellipsis">
+      
+        Strict Mode
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="Strict Mode">
@@ -2929,7 +3683,11 @@
         
           <li class="md-nav__item">
   <a href="#arbitrary-types-allowed" class="md-nav__link">
-    Arbitrary Types Allowed
+    <span class="md-ellipsis">
+      
+        Arbitrary Types Allowed
+      
+    </span>
   </a>
   
 </li>
@@ -2941,14 +3699,22 @@
       
         <li class="md-nav__item">
   <a href="#protected-namespaces" class="md-nav__link">
-    Protected Namespaces
+    <span class="md-ellipsis">
+      
+        Protected Namespaces
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#hide-input-in-errors" class="md-nav__link">
-    Hide Input in Errors
+    <span class="md-ellipsis">
+      
+        Hide Input in Errors
+      
+    </span>
   </a>
   
 </li>
@@ -2963,6 +3729,7 @@
           
           
             <div class="md-content" data-md-component="content">
+              
               <article class="md-content__inner md-typeset">
                 
   
@@ -2984,7 +3751,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <p class="admonition-title">Note</p>
 <p>Before <strong>v2.0</strong>, the <code>Config</code> class was used. This is still supported, but deprecated.</p>
 </div>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3004,7 +3771,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>Also, you can specify config options as model class kwargs:
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
@@ -3025,7 +3792,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <li>See the <a href="#extra-attributes">Extra Attributes</a> section for more details.</li>
 </ol>
 <p>Similarly, if using the <code>@dataclass</code> decorator from <em>pydantic</em>:
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
@@ -3055,7 +3822,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <li>
 <p>If using the <code>dataclass</code> from the standard library or <code>TypedDict</code>, you should use <code>__pydantic_config__</code> instead.
    See:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
@@ -3076,7 +3843,7 @@ and as an argument to <a class="autorefs autorefs-internal" href="../../api/type
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
 <p>If you wish to change the behaviour of Pydantic globally, you can create your own custom <code>BaseModel</code>
 with custom <code>model_config</code> since the config is inherited:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3096,7 +3863,7 @@ with custom <code>model_config</code> since the config is inherited:</p>
    This means that <code>Model</code> will have <code>extra='allow'</code> by default.</li>
 </ol>
 <p>If you add a <code>model_config</code> to the <code>Model</code> class, it will <em>merge</em> with the <code>model_config</code> from <code>Parent</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">Parent</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3118,7 +3885,7 @@ with custom <code>model_config</code> since the config is inherited:</p>
 <h2 id="alias-generator">Alias Generator<a class="headerlink" href="#alias-generator" title="Permanent link">&para;</a></h2>
 <p>If data source field names do not match your code style (e. g. CamelCase fields),
 you can automatically generate aliases using <code>alias_generator</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">def</span> <span class="nf">to_camel</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -3143,7 +3910,7 @@ e.g. <code>CamelCase</code>. If you'd like instead to use lower camel case e.g. 
 instead use the <code>to_lower_camel</code> function.</p>
 <h2 id="alias-precedence">Alias Precedence<a class="headerlink" href="#alias-precedence" title="Permanent link">&para;</a></h2>
 <p>If you specify an <code>alias</code> on the <code>Field</code>, it will take precedence over the generated alias by default:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">def</span> <span class="nf">to_camel</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -3180,7 +3947,7 @@ See more about the different field aliases under <a href="../fields/#field-alias
 <li><code>ignore</code> - Ignore any extra attributes.</li>
 </ul>
 <p>The default value is <code>'ignore'</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3198,7 +3965,7 @@ See more about the different field aliases under <a href="../fields/#field-alias
 <li>The <code>age</code> argument is ignored.</li>
 </ol>
 <p>Instead, with <code>extra='allow'</code>, the <code>age</code> argument is included:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3215,7 +3982,7 @@ See more about the different field aliases under <a href="../fields/#field-alias
 <li>The <code>age</code> argument is included.</li>
 </ol>
 <p>With <code>extra='forbid'</code>, an error is raised:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3237,7 +4004,7 @@ See more about the different field aliases under <a href="../fields/#field-alias
 <h2 id="populate-by-name">Populate by Name<a class="headerlink" href="#populate-by-name" title="Permanent link">&para;</a></h2>
 <p>In case you set an alias, you can still populate the model by the original name.</p>
 <p>You need to set <code>populate_by_name=True</code> in the <code>model_config</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3262,7 +4029,7 @@ See more about the different field aliases under <a href="../fields/#field-alias
 <h2 id="validate-assignment">Validate Assignment<a class="headerlink" href="#validate-assignment" title="Permanent link">&para;</a></h2>
 <p>The default behavior of Pydantic is to validate the data when the model is created.</p>
 <p>In case the user changes the data after the model is created, the model is <em>not</em> revalidated.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3281,7 +4048,7 @@ See more about the different field aliases under <a href="../fields/#field-alias
 <li>The validation does not happen when the data is changed.</li>
 </ol>
 <p>In case you want to revalidate the model when the data is changed, you can use <code>validate_assignment=True</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># (1)!</span>
@@ -3308,7 +4075,7 @@ See more about the different field aliases under <a href="../fields/#field-alias
 </ol>
 <h2 id="revalidate-instances">Revalidate instances<a class="headerlink" href="#revalidate-instances" title="Permanent link">&para;</a></h2>
 <p>By default, model and dataclass instances are not revalidated during validation.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3347,7 +4114,7 @@ See more about the different field aliases under <a href="../fields/#field-alias
 </ol>
 <p>If you want to revalidate instances during validation, you can set <code>revalidate_instances</code> to <code>'always'</code>
 in the model's config.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -3392,7 +4159,7 @@ in the model's config.</p>
 </ol>
 <p>It's also possible to set <code>revalidate_instances</code> to <code>'subclass-instances'</code> to only revalidate instances
 of subclasses of the model.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3435,7 +4202,7 @@ of subclasses of the model.</p>
 does not match the field's type annotation.</p>
 <p>To configure strict mode for all fields on a model, you can
 <a href="../../api/config/#pydantic.config.ConfigDict">set <code>model_config = ConfigDict(strict=True)</code></a> on the model.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3449,7 +4216,7 @@ does not match the field's type annotation.</p>
 modes.</p>
 <h3 id="arbitrary-types-allowed">Arbitrary Types Allowed<a class="headerlink" href="#arbitrary-types-allowed" title="Permanent link">&para;</a></h3>
 <p>You can allow arbitrary types using the <code>arbitrary_types_allowed</code> setting in the model's config:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="c1"># This is not a pydantic model, it&#39;s an arbitrary class</span>
@@ -3502,7 +4269,7 @@ modes.</p>
 <h2 id="protected-namespaces">Protected Namespaces<a class="headerlink" href="#protected-namespaces" title="Permanent link">&para;</a></h2>
 <p>Pydantic prevents collisions between model attributes and <code>BaseModel</code>'s own methods by
 namespacing them with the prefix <code>model_</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">warnings</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3522,7 +4289,7 @@ namespacing them with the prefix <code>model_</code>.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>You can customize this behavior using the <code>protected_namespaces</code> setting:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">warnings</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">warnings</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
@@ -3548,7 +4315,7 @@ namespacing them with the prefix <code>model_</code>.</p>
 </code></pre></div>
 <p>While Pydantic will only emit a warning when an item is in a protected namespace but does not actually have a collision,
 an error <em>is</em> raised if there is an actual collision with an existing attribute:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 <span class="k">try</span><span class="p">:</span>
 
@@ -3563,7 +4330,7 @@ an error <em>is</em> raised if there is an actual collision with an existing att
 </code></pre></div>
 <h2 id="hide-input-in-errors">Hide Input in Errors<a class="headerlink" href="#hide-input-in-errors" title="Permanent link">&para;</a></h2>
 <p><em>Pydantic</em> shows the input value and type when it raises <code>ValidationError</code> during the validation.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3581,7 +4348,7 @@ an error <em>is</em> raised if there is an actual collision with an existing att
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>You can hide the input value and type by setting the <code>hide_input_in_errors</code> config to <code>True</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3605,6 +4372,7 @@ an error <em>is</em> raised if there is an actual collision with an existing att
 
 
 
+
                 
   <script src="/flarelytics/client.js"></script>
 
@@ -3614,6 +4382,7 @@ an error <em>is</em> raised if there is an actual collision with an existing att
           
   <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
 
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
       </main>
@@ -3627,7 +4396,7 @@ an error <em>is</em> raised if there is an actual collision with an existing att
   
     Made with
     <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-      Material for MkDocs
+      Material for MkDocs Insiders
     </a>
   
 </div>
@@ -3641,12 +4410,14 @@ an error <em>is</em> raised if there is an actual collision with an existing att
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.dfff1995.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.f2da59ea.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.78eede0e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7e51e09.min.js"></script>
       
         <script src="../../extra/fluff.js"></script>
+      
+        <script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
       
     
   </body>

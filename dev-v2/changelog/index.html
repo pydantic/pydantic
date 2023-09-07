@@ -19,8 +19,11 @@
         <link rel="next" href="../usage/models/">
       
       
+        
+      
+      
       <link rel="icon" href="../favicon.png">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.5">
+      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.8+insiders-4.40.4">
     
     
       
@@ -28,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.0e669242.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.c4d31a9e.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.85d0ee34.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.da3f46a0.min.css">
       
       
 
@@ -62,7 +65,6 @@
 
     
     
-    
   </head>
   
   
@@ -75,9 +77,6 @@
     
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink">
   
-    
-    
-      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
@@ -154,9 +153,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
       </label>
     
@@ -164,15 +163,18 @@
     
     
     
-    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
       </label>
     
   
 </form>
       
+    
+    
+      <script>var media,input,key,value,palette=__md_get("__palette");if(palette&&palette.color){"(prefers-color-scheme)"===palette.color.media&&(media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']"),palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent"));for([key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
     
     
     
@@ -425,8 +427,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Get Started
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -435,7 +443,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_1">
             <span class="md-nav__icon md-icon"></span>
-            Get Started
+            
+  
+    Get Started
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -449,8 +461,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Welcome to Pydantic
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -469,8 +487,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Why use Pydantic
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -489,8 +513,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Help with Pydantic
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -509,8 +539,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Installation
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -529,8 +565,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Migration Guide
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -549,8 +591,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Version Compatibility
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -569,8 +617,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Contributing
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -596,8 +650,14 @@
           
   
   <span class="md-ellipsis">
+    
+  
     Changelog
+  
+
+    
   </span>
+  
   
 
           <span class="md-nav__icon md-icon"></span>
@@ -607,8 +667,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Changelog
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -630,245 +696,385 @@
       
         <li class="md-nav__item">
   <a href="#v230-2023-08-23" class="md-nav__link">
-    v2.3.0 (2023-08-23)
+    <span class="md-ellipsis">
+      
+        v2.3.0 (2023-08-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v221-2023-08-18" class="md-nav__link">
-    v2.2.1 (2023-08-18)
+    <span class="md-ellipsis">
+      
+        v2.2.1 (2023-08-18)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v220-2023-08-17" class="md-nav__link">
-    v2.2.0 (2023-08-17)
+    <span class="md-ellipsis">
+      
+        v2.2.0 (2023-08-17)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v211-2023-07-25" class="md-nav__link">
-    v2.1.1 (2023-07-25)
+    <span class="md-ellipsis">
+      
+        v2.1.1 (2023-07-25)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v210-2023-07-25" class="md-nav__link">
-    v2.1.0 (2023-07-25)
+    <span class="md-ellipsis">
+      
+        v2.1.0 (2023-07-25)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v203-2023-07-05" class="md-nav__link">
-    v2.0.3 (2023-07-05)
+    <span class="md-ellipsis">
+      
+        v2.0.3 (2023-07-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v202-2023-07-05" class="md-nav__link">
-    v2.0.2 (2023-07-05)
+    <span class="md-ellipsis">
+      
+        v2.0.2 (2023-07-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v201-2023-07-04" class="md-nav__link">
-    v2.0.1 (2023-07-04)
+    <span class="md-ellipsis">
+      
+        v2.0.1 (2023-07-04)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20-2023-06-30" class="md-nav__link">
-    v2.0 (2023-06-30)
+    <span class="md-ellipsis">
+      
+        v2.0 (2023-06-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20b3-2023-06-16" class="md-nav__link">
-    v2.0b3 (2023-06-16)
+    <span class="md-ellipsis">
+      
+        v2.0b3 (2023-06-16)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20b2-2023-06-03" class="md-nav__link">
-    v2.0b2 (2023-06-03)
+    <span class="md-ellipsis">
+      
+        v2.0b2 (2023-06-03)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20b1-2023-06-01" class="md-nav__link">
-    v2.0b1 (2023-06-01)
+    <span class="md-ellipsis">
+      
+        v2.0b1 (2023-06-01)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20a4-2023-05-05" class="md-nav__link">
-    v2.0a4 (2023-05-05)
+    <span class="md-ellipsis">
+      
+        v2.0a4 (2023-05-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20a3-2023-04-20" class="md-nav__link">
-    v2.0a3 (2023-04-20)
+    <span class="md-ellipsis">
+      
+        v2.0a3 (2023-04-20)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20a2-2023-04-12" class="md-nav__link">
-    v2.0a2 (2023-04-12)
+    <span class="md-ellipsis">
+      
+        v2.0a2 (2023-04-12)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20a1-2023-04-03" class="md-nav__link">
-    v2.0a1 (2023-04-03)
+    <span class="md-ellipsis">
+      
+        v2.0a1 (2023-04-03)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v11012-2023-07-24" class="md-nav__link">
-    v1.10.12 (2023-07-24)
+    <span class="md-ellipsis">
+      
+        v1.10.12 (2023-07-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v11011-2023-07-04" class="md-nav__link">
-    v1.10.11 (2023-07-04)
+    <span class="md-ellipsis">
+      
+        v1.10.11 (2023-07-04)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v11010-2023-06-30" class="md-nav__link">
-    v1.10.10 (2023-06-30)
+    <span class="md-ellipsis">
+      
+        v1.10.10 (2023-06-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1109-2023-06-07" class="md-nav__link">
-    v1.10.9 (2023-06-07)
+    <span class="md-ellipsis">
+      
+        v1.10.9 (2023-06-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1108-2023-05-23" class="md-nav__link">
-    v1.10.8 (2023-05-23)
+    <span class="md-ellipsis">
+      
+        v1.10.8 (2023-05-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1107-2023-03-22" class="md-nav__link">
-    v1.10.7 (2023-03-22)
+    <span class="md-ellipsis">
+      
+        v1.10.7 (2023-03-22)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1106-2023-03-08" class="md-nav__link">
-    v1.10.6 (2023-03-08)
+    <span class="md-ellipsis">
+      
+        v1.10.6 (2023-03-08)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1105-2023-02-15" class="md-nav__link">
-    v1.10.5 (2023-02-15)
+    <span class="md-ellipsis">
+      
+        v1.10.5 (2023-02-15)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1104-2022-12-30" class="md-nav__link">
-    v1.10.4 (2022-12-30)
+    <span class="md-ellipsis">
+      
+        v1.10.4 (2022-12-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1103-2022-12-29" class="md-nav__link">
-    v1.10.3 (2022-12-29)
+    <span class="md-ellipsis">
+      
+        v1.10.3 (2022-12-29)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1102-2022-09-05" class="md-nav__link">
-    v1.10.2 (2022-09-05)
+    <span class="md-ellipsis">
+      
+        v1.10.2 (2022-09-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1101-2022-08-31" class="md-nav__link">
-    v1.10.1 (2022-08-31)
+    <span class="md-ellipsis">
+      
+        v1.10.1 (2022-08-31)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1100-2022-08-30" class="md-nav__link">
-    v1.10.0 (2022-08-30)
+    <span class="md-ellipsis">
+      
+        v1.10.0 (2022-08-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1100b1-2022-08-24" class="md-nav__link">
-    v1.10.0b1 (2022-08-24)
+    <span class="md-ellipsis">
+      
+        v1.10.0b1 (2022-08-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1100a2-2022-08-24" class="md-nav__link">
-    v1.10.0a2 (2022-08-24)
+    <span class="md-ellipsis">
+      
+        v1.10.0a2 (2022-08-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1100a1-2022-08-22" class="md-nav__link">
-    v1.10.0a1 (2022-08-22)
+    <span class="md-ellipsis">
+      
+        v1.10.0a1 (2022-08-22)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v192-2022-08-11" class="md-nav__link">
-    v1.9.2 (2022-08-11)
+    <span class="md-ellipsis">
+      
+        v1.9.2 (2022-08-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v191-2022-05-19" class="md-nav__link">
-    v1.9.1 (2022-05-19)
+    <span class="md-ellipsis">
+      
+        v1.9.1 (2022-05-19)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v190-2021-12-31" class="md-nav__link">
-    v1.9.0 (2021-12-31)
+    <span class="md-ellipsis">
+      
+        v1.9.0 (2021-12-31)
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="v1.9.0 (2021-12-31)">
@@ -876,28 +1082,44 @@
         
           <li class="md-nav__item">
   <a href="#highlights" class="md-nav__link">
-    Highlights
+    <span class="md-ellipsis">
+      
+        Highlights
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#v190-2021-12-31-changes" class="md-nav__link">
-    v1.9.0 (2021-12-31) Changes
+    <span class="md-ellipsis">
+      
+        v1.9.0 (2021-12-31) Changes
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#v190a2-2021-12-24-changes" class="md-nav__link">
-    v1.9.0a2 (2021-12-24) Changes
+    <span class="md-ellipsis">
+      
+        v1.9.0a2 (2021-12-24) Changes
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#v190a1-2021-12-18-changes" class="md-nav__link">
-    v1.9.0a1 (2021-12-18) Changes
+    <span class="md-ellipsis">
+      
+        v1.9.0a1 (2021-12-18) Changes
+      
+    </span>
   </a>
   
 </li>
@@ -909,21 +1131,33 @@
       
         <li class="md-nav__item">
   <a href="#v182-2021-05-11" class="md-nav__link">
-    v1.8.2 (2021-05-11)
+    <span class="md-ellipsis">
+      
+        v1.8.2 (2021-05-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v181-2021-03-03" class="md-nav__link">
-    v1.8.1 (2021-03-03)
+    <span class="md-ellipsis">
+      
+        v1.8.1 (2021-03-03)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v18-2021-02-26" class="md-nav__link">
-    v1.8 (2021-02-26)
+    <span class="md-ellipsis">
+      
+        v1.8 (2021-02-26)
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="v1.8 (2021-02-26)">
@@ -931,14 +1165,22 @@
         
           <li class="md-nav__item">
   <a href="#highlights_1" class="md-nav__link">
-    Highlights
+    <span class="md-ellipsis">
+      
+        Highlights
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#changes" class="md-nav__link">
-    Changes
+    <span class="md-ellipsis">
+      
+        Changes
+      
+    </span>
   </a>
   
 </li>
@@ -950,35 +1192,55 @@
       
         <li class="md-nav__item">
   <a href="#v174-2021-05-11" class="md-nav__link">
-    v1.7.4 (2021-05-11)
+    <span class="md-ellipsis">
+      
+        v1.7.4 (2021-05-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v173-2020-11-30" class="md-nav__link">
-    v1.7.3 (2020-11-30)
+    <span class="md-ellipsis">
+      
+        v1.7.3 (2020-11-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v172-2020-11-01" class="md-nav__link">
-    v1.7.2 (2020-11-01)
+    <span class="md-ellipsis">
+      
+        v1.7.2 (2020-11-01)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v171-2020-10-28" class="md-nav__link">
-    v1.7.1 (2020-10-28)
+    <span class="md-ellipsis">
+      
+        v1.7.1 (2020-10-28)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v17-2020-10-26" class="md-nav__link">
-    v1.7 (2020-10-26)
+    <span class="md-ellipsis">
+      
+        v1.7 (2020-10-26)
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="v1.7 (2020-10-26)">
@@ -986,14 +1248,22 @@
         
           <li class="md-nav__item">
   <a href="#highlights_2" class="md-nav__link">
-    Highlights
+    <span class="md-ellipsis">
+      
+        Highlights
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#changes_1" class="md-nav__link">
-    Changes
+    <span class="md-ellipsis">
+      
+        Changes
+      
+    </span>
   </a>
   
 </li>
@@ -1005,462 +1275,726 @@
       
         <li class="md-nav__item">
   <a href="#v162-2021-05-11" class="md-nav__link">
-    v1.6.2 (2021-05-11)
+    <span class="md-ellipsis">
+      
+        v1.6.2 (2021-05-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v161-2020-07-15" class="md-nav__link">
-    v1.6.1 (2020-07-15)
+    <span class="md-ellipsis">
+      
+        v1.6.1 (2020-07-15)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v16-2020-07-11" class="md-nav__link">
-    v1.6 (2020-07-11)
+    <span class="md-ellipsis">
+      
+        v1.6 (2020-07-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v151-2020-04-23" class="md-nav__link">
-    v1.5.1 (2020-04-23)
+    <span class="md-ellipsis">
+      
+        v1.5.1 (2020-04-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v15-2020-04-18" class="md-nav__link">
-    v1.5 (2020-04-18)
+    <span class="md-ellipsis">
+      
+        v1.5 (2020-04-18)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v14-2020-01-24" class="md-nav__link">
-    v1.4 (2020-01-24)
+    <span class="md-ellipsis">
+      
+        v1.4 (2020-01-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v13-2019-12-21" class="md-nav__link">
-    v1.3 (2019-12-21)
+    <span class="md-ellipsis">
+      
+        v1.3 (2019-12-21)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v12-2019-11-28" class="md-nav__link">
-    v1.2 (2019-11-28)
+    <span class="md-ellipsis">
+      
+        v1.2 (2019-11-28)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v111-2019-11-20" class="md-nav__link">
-    v1.1.1 (2019-11-20)
+    <span class="md-ellipsis">
+      
+        v1.1.1 (2019-11-20)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v11-2019-11-07" class="md-nav__link">
-    v1.1 (2019-11-07)
+    <span class="md-ellipsis">
+      
+        v1.1 (2019-11-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v10-2019-10-23" class="md-nav__link">
-    v1.0 (2019-10-23)
+    <span class="md-ellipsis">
+      
+        v1.0 (2019-10-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v10b2-2019-10-07" class="md-nav__link">
-    v1.0b2 (2019-10-07)
+    <span class="md-ellipsis">
+      
+        v1.0b2 (2019-10-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v10b1-2019-10-01" class="md-nav__link">
-    v1.0b1 (2019-10-01)
+    <span class="md-ellipsis">
+      
+        v1.0b1 (2019-10-01)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0322-2019-08-17" class="md-nav__link">
-    v0.32.2 (2019-08-17)
+    <span class="md-ellipsis">
+      
+        v0.32.2 (2019-08-17)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0321-2019-08-08" class="md-nav__link">
-    v0.32.1 (2019-08-08)
+    <span class="md-ellipsis">
+      
+        v0.32.1 (2019-08-08)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v032-2019-08-06" class="md-nav__link">
-    v0.32 (2019-08-06)
+    <span class="md-ellipsis">
+      
+        v0.32 (2019-08-06)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0311-2019-07-31" class="md-nav__link">
-    v0.31.1 (2019-07-31)
+    <span class="md-ellipsis">
+      
+        v0.31.1 (2019-07-31)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v031-2019-07-24" class="md-nav__link">
-    v0.31 (2019-07-24)
+    <span class="md-ellipsis">
+      
+        v0.31 (2019-07-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0301-2019-07-15" class="md-nav__link">
-    v0.30.1 (2019-07-15)
+    <span class="md-ellipsis">
+      
+        v0.30.1 (2019-07-15)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v030-2019-07-07" class="md-nav__link">
-    v0.30 (2019-07-07)
+    <span class="md-ellipsis">
+      
+        v0.30 (2019-07-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v029-2019-06-19" class="md-nav__link">
-    v0.29 (2019-06-19)
+    <span class="md-ellipsis">
+      
+        v0.29 (2019-06-19)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v028-2019-06-06" class="md-nav__link">
-    v0.28 (2019-06-06)
+    <span class="md-ellipsis">
+      
+        v0.28 (2019-06-06)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v027-2019-05-30" class="md-nav__link">
-    v0.27 (2019-05-30)
+    <span class="md-ellipsis">
+      
+        v0.27 (2019-05-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0270a1-2019-05-26" class="md-nav__link">
-    v0.27.0a1 (2019-05-26)
+    <span class="md-ellipsis">
+      
+        v0.27.0a1 (2019-05-26)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v026-2019-05-22" class="md-nav__link">
-    v0.26 (2019-05-22)
+    <span class="md-ellipsis">
+      
+        v0.26 (2019-05-22)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v025-2019-05-05" class="md-nav__link">
-    v0.25 (2019-05-05)
+    <span class="md-ellipsis">
+      
+        v0.25 (2019-05-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v024-2019-04-23" class="md-nav__link">
-    v0.24 (2019-04-23)
+    <span class="md-ellipsis">
+      
+        v0.24 (2019-04-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v023-2019-04-04" class="md-nav__link">
-    v0.23 (2019-04-04)
+    <span class="md-ellipsis">
+      
+        v0.23 (2019-04-04)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v022-2019-03-29" class="md-nav__link">
-    v0.22 (2019-03-29)
+    <span class="md-ellipsis">
+      
+        v0.22 (2019-03-29)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0210-2019-03-15" class="md-nav__link">
-    v0.21.0 (2019-03-15)
+    <span class="md-ellipsis">
+      
+        v0.21.0 (2019-03-15)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0201-2019-02-26" class="md-nav__link">
-    v0.20.1 (2019-02-26)
+    <span class="md-ellipsis">
+      
+        v0.20.1 (2019-02-26)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0200-2019-02-18" class="md-nav__link">
-    v0.20.0 (2019-02-18)
+    <span class="md-ellipsis">
+      
+        v0.20.0 (2019-02-18)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0200a1-2019-02-13" class="md-nav__link">
-    v0.20.0a1 (2019-02-13)
+    <span class="md-ellipsis">
+      
+        v0.20.0a1 (2019-02-13)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0190-2019-02-04" class="md-nav__link">
-    v0.19.0 (2019-02-04)
+    <span class="md-ellipsis">
+      
+        v0.19.0 (2019-02-04)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0182-2019-01-22" class="md-nav__link">
-    v0.18.2 (2019-01-22)
+    <span class="md-ellipsis">
+      
+        v0.18.2 (2019-01-22)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0181-2019-01-17" class="md-nav__link">
-    v0.18.1 (2019-01-17)
+    <span class="md-ellipsis">
+      
+        v0.18.1 (2019-01-17)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0180-2019-01-13" class="md-nav__link">
-    v0.18.0 (2019-01-13)
+    <span class="md-ellipsis">
+      
+        v0.18.0 (2019-01-13)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0170-2018-12-27" class="md-nav__link">
-    v0.17.0 (2018-12-27)
+    <span class="md-ellipsis">
+      
+        v0.17.0 (2018-12-27)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0161-2018-12-10" class="md-nav__link">
-    v0.16.1 (2018-12-10)
+    <span class="md-ellipsis">
+      
+        v0.16.1 (2018-12-10)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0160-2018-12-03" class="md-nav__link">
-    v0.16.0 (2018-12-03)
+    <span class="md-ellipsis">
+      
+        v0.16.0 (2018-12-03)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0150-2018-11-18" class="md-nav__link">
-    v0.15.0 (2018-11-18)
+    <span class="md-ellipsis">
+      
+        v0.15.0 (2018-11-18)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0140-2018-10-02" class="md-nav__link">
-    v0.14.0 (2018-10-02)
+    <span class="md-ellipsis">
+      
+        v0.14.0 (2018-10-02)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0131-2018-09-21" class="md-nav__link">
-    v0.13.1 (2018-09-21)
+    <span class="md-ellipsis">
+      
+        v0.13.1 (2018-09-21)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0130-2018-08-25" class="md-nav__link">
-    v0.13.0 (2018-08-25)
+    <span class="md-ellipsis">
+      
+        v0.13.0 (2018-08-25)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0121-2018-07-31" class="md-nav__link">
-    v0.12.1 (2018-07-31)
+    <span class="md-ellipsis">
+      
+        v0.12.1 (2018-07-31)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0120-2018-07-31" class="md-nav__link">
-    v0.12.0 (2018-07-31)
+    <span class="md-ellipsis">
+      
+        v0.12.0 (2018-07-31)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0112-2018-07-05" class="md-nav__link">
-    v0.11.2 (2018-07-05)
+    <span class="md-ellipsis">
+      
+        v0.11.2 (2018-07-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0111-2018-07-02" class="md-nav__link">
-    v0.11.1 (2018-07-02)
+    <span class="md-ellipsis">
+      
+        v0.11.1 (2018-07-02)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0110-2018-06-28" class="md-nav__link">
-    v0.11.0 (2018-06-28)
+    <span class="md-ellipsis">
+      
+        v0.11.0 (2018-06-28)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0100-2018-06-11" class="md-nav__link">
-    v0.10.0 (2018-06-11)
+    <span class="md-ellipsis">
+      
+        v0.10.0 (2018-06-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v091-2018-05-10" class="md-nav__link">
-    v0.9.1 (2018-05-10)
+    <span class="md-ellipsis">
+      
+        v0.9.1 (2018-05-10)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v090-2018-04-28" class="md-nav__link">
-    v0.9.0 (2018-04-28)
+    <span class="md-ellipsis">
+      
+        v0.9.0 (2018-04-28)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v080-2018-03-25" class="md-nav__link">
-    v0.8.0 (2018-03-25)
+    <span class="md-ellipsis">
+      
+        v0.8.0 (2018-03-25)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v071-2018-02-07" class="md-nav__link">
-    v0.7.1 (2018-02-07)
+    <span class="md-ellipsis">
+      
+        v0.7.1 (2018-02-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v070-2018-02-06" class="md-nav__link">
-    v0.7.0 (2018-02-06)
+    <span class="md-ellipsis">
+      
+        v0.7.0 (2018-02-06)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v064-2018-02-01" class="md-nav__link">
-    v0.6.4 (2018-02-01)
+    <span class="md-ellipsis">
+      
+        v0.6.4 (2018-02-01)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v063-2017-11-26" class="md-nav__link">
-    v0.6.3 (2017-11-26)
+    <span class="md-ellipsis">
+      
+        v0.6.3 (2017-11-26)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v062-2017-11-13" class="md-nav__link">
-    v0.6.2 (2017-11-13)
+    <span class="md-ellipsis">
+      
+        v0.6.2 (2017-11-13)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v061-2017-11-08" class="md-nav__link">
-    v0.6.1 (2017-11-08)
+    <span class="md-ellipsis">
+      
+        v0.6.1 (2017-11-08)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v060-2017-11-07" class="md-nav__link">
-    v0.6.0 (2017-11-07)
+    <span class="md-ellipsis">
+      
+        v0.6.0 (2017-11-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v050-2017-10-23" class="md-nav__link">
-    v0.5.0 (2017-10-23)
+    <span class="md-ellipsis">
+      
+        v0.5.0 (2017-10-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v040-2017-07-08" class="md-nav__link">
-    v0.4.0 (2017-07-08)
+    <span class="md-ellipsis">
+      
+        v0.4.0 (2017-07-08)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v030-2017-06-21" class="md-nav__link">
-    v0.3.0 (2017-06-21)
+    <span class="md-ellipsis">
+      
+        v0.3.0 (2017-06-21)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v021-2017-06-07" class="md-nav__link">
-    v0.2.1 (2017-06-07)
+    <span class="md-ellipsis">
+      
+        v0.2.1 (2017-06-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v020-2017-06-07" class="md-nav__link">
-    v0.2.0 (2017-06-07)
+    <span class="md-ellipsis">
+      
+        v0.2.0 (2017-06-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v010-2017-06-03" class="md-nav__link">
-    v0.1.0 (2017-06-03)
+    <span class="md-ellipsis">
+      
+        v0.1.0 (2017-06-03)
+      
+    </span>
   </a>
   
 </li>
@@ -1501,8 +2035,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Usage
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1511,7 +2051,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
-            Usage
+            
+  
+    Usage
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1525,8 +2069,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Models
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1555,8 +2105,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Field Types
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -1565,7 +2121,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_2">
             <span class="md-nav__icon md-icon"></span>
-            Field Types
+            
+  
+    Field Types
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -1579,8 +2139,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Types Overview
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1599,8 +2165,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Standard Library Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1619,8 +2191,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Booleans
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1639,8 +2217,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     ByteSize
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1659,8 +2243,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Callables
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1679,8 +2269,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Datetimes
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1699,8 +2295,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Dicts and Mapping
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1719,8 +2321,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Encoded Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1739,8 +2347,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Enums and Choices
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1759,8 +2373,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     File Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1779,8 +2399,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     JSON
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1799,8 +2425,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Lists and Tuples
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1819,8 +2451,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Number Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1839,8 +2477,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Secret Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1859,8 +2503,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Sequence, Iterable & Iterator
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1879,8 +2529,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Sets and frozenset
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1899,8 +2555,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Strict Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1919,8 +2581,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     String Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1939,8 +2607,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Type and TypeVar
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1959,8 +2633,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Types with Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1979,8 +2659,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Unions
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -1999,8 +2685,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     URLs
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2019,8 +2711,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     UUIDs
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2039,8 +2737,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Encoded
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2059,8 +2763,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Custom Data Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2089,8 +2799,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Extra Types
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2099,7 +2815,11 @@
         <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_26_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2_2_26">
             <span class="md-nav__icon md-icon"></span>
-            Extra Types
+            
+  
+    Extra Types
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2113,8 +2833,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Extra Types Overview
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2133,8 +2859,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Color Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2153,8 +2885,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Payment Card Numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2173,8 +2911,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Phone Numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2193,8 +2937,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Routing Numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2213,8 +2963,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     MAC Address
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2233,8 +2989,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Coordinate
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2269,8 +3031,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Validators
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2289,8 +3057,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Model Config
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2309,8 +3083,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2329,8 +3109,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     JSON Schema
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2349,8 +3135,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Serialization
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2369,8 +3161,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Computed Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2389,8 +3187,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Dataclasses
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2409,8 +3213,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     TypeAdapter
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2429,8 +3239,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Validation Decorator
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2449,8 +3265,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Postponed Annotations
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2469,8 +3291,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Strict Mode
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2489,8 +3317,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Conversion Table
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2509,8 +3343,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Settings Management
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2546,8 +3386,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Error Messages
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2556,7 +3402,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
-            Error Messages
+            
+  
+    Error Messages
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2570,8 +3420,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Error Handling
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2590,8 +3446,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Validation Errors
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2610,8 +3472,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Usage Errors
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2647,8 +3515,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Integrations
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2657,7 +3531,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
-            Integrations
+            
+  
+    Integrations
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2671,8 +3549,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Mypy
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2691,8 +3575,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     PyCharm
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2711,8 +3601,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Hypothesis
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2731,8 +3627,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Visual Studio Code
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2751,8 +3653,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     datamodel-code-generator
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2771,8 +3679,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     devtools
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2791,8 +3705,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Rich
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2828,8 +3748,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Blog
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2838,7 +3764,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
-            Blog
+            
+  
+    Blog
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2852,8 +3782,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic V2 Is Here!
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2872,8 +3808,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic V2 Pre Release
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2892,8 +3834,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic V2 Plan
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -2929,8 +3877,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     API Documentation
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2939,7 +3893,11 @@
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
-            API Documentation
+            
+  
+    API Documentation
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2963,8 +3921,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -2973,7 +3937,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_1">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic
+            
+  
+    Pydantic
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -2987,8 +3955,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     BaseModel
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3007,8 +3981,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     RootModel
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3027,8 +4007,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Dataclasses
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3047,8 +4033,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     TypeAdapter
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3067,8 +4059,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     validate_call
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3087,8 +4085,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Fields
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3107,8 +4111,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Config
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3127,8 +4137,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     json_schema
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3147,8 +4163,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Errors
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3167,8 +4189,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Functional Validators
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3187,8 +4215,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Functional Serializers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3207,8 +4241,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3227,8 +4267,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Network Types
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3247,8 +4293,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     Version Information
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3285,8 +4337,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Core
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -3295,7 +4353,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_2">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic Core
+            
+  
+    Pydantic Core
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3309,8 +4371,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_core
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3329,8 +4397,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_core.core_schema
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3367,8 +4441,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Settings
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -3377,7 +4457,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_3">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic Settings
+            
+  
+    Pydantic Settings
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3391,8 +4475,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_settings
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3429,8 +4519,14 @@
             
   
   <span class="md-ellipsis">
+    
+  
     Pydantic Extra Types
+  
+
+    
   </span>
+  
   
 
             <span class="md-nav__icon md-icon"></span>
@@ -3439,7 +4535,11 @@
         <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_6_4">
             <span class="md-nav__icon md-icon"></span>
-            Pydantic Extra Types
+            
+  
+    Pydantic Extra Types
+  
+
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
             
@@ -3453,8 +4553,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.color
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3473,8 +4579,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.country
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3493,8 +4605,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.payment
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3513,8 +4631,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.phone_numbers
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3533,8 +4657,14 @@
         
   
   <span class="md-ellipsis">
+    
+  
     pydantic_extra_types.routing_number
+  
+
+    
   </span>
+  
   
 
       </a>
@@ -3586,245 +4716,385 @@
       
         <li class="md-nav__item">
   <a href="#v230-2023-08-23" class="md-nav__link">
-    v2.3.0 (2023-08-23)
+    <span class="md-ellipsis">
+      
+        v2.3.0 (2023-08-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v221-2023-08-18" class="md-nav__link">
-    v2.2.1 (2023-08-18)
+    <span class="md-ellipsis">
+      
+        v2.2.1 (2023-08-18)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v220-2023-08-17" class="md-nav__link">
-    v2.2.0 (2023-08-17)
+    <span class="md-ellipsis">
+      
+        v2.2.0 (2023-08-17)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v211-2023-07-25" class="md-nav__link">
-    v2.1.1 (2023-07-25)
+    <span class="md-ellipsis">
+      
+        v2.1.1 (2023-07-25)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v210-2023-07-25" class="md-nav__link">
-    v2.1.0 (2023-07-25)
+    <span class="md-ellipsis">
+      
+        v2.1.0 (2023-07-25)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v203-2023-07-05" class="md-nav__link">
-    v2.0.3 (2023-07-05)
+    <span class="md-ellipsis">
+      
+        v2.0.3 (2023-07-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v202-2023-07-05" class="md-nav__link">
-    v2.0.2 (2023-07-05)
+    <span class="md-ellipsis">
+      
+        v2.0.2 (2023-07-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v201-2023-07-04" class="md-nav__link">
-    v2.0.1 (2023-07-04)
+    <span class="md-ellipsis">
+      
+        v2.0.1 (2023-07-04)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20-2023-06-30" class="md-nav__link">
-    v2.0 (2023-06-30)
+    <span class="md-ellipsis">
+      
+        v2.0 (2023-06-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20b3-2023-06-16" class="md-nav__link">
-    v2.0b3 (2023-06-16)
+    <span class="md-ellipsis">
+      
+        v2.0b3 (2023-06-16)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20b2-2023-06-03" class="md-nav__link">
-    v2.0b2 (2023-06-03)
+    <span class="md-ellipsis">
+      
+        v2.0b2 (2023-06-03)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20b1-2023-06-01" class="md-nav__link">
-    v2.0b1 (2023-06-01)
+    <span class="md-ellipsis">
+      
+        v2.0b1 (2023-06-01)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20a4-2023-05-05" class="md-nav__link">
-    v2.0a4 (2023-05-05)
+    <span class="md-ellipsis">
+      
+        v2.0a4 (2023-05-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20a3-2023-04-20" class="md-nav__link">
-    v2.0a3 (2023-04-20)
+    <span class="md-ellipsis">
+      
+        v2.0a3 (2023-04-20)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20a2-2023-04-12" class="md-nav__link">
-    v2.0a2 (2023-04-12)
+    <span class="md-ellipsis">
+      
+        v2.0a2 (2023-04-12)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v20a1-2023-04-03" class="md-nav__link">
-    v2.0a1 (2023-04-03)
+    <span class="md-ellipsis">
+      
+        v2.0a1 (2023-04-03)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v11012-2023-07-24" class="md-nav__link">
-    v1.10.12 (2023-07-24)
+    <span class="md-ellipsis">
+      
+        v1.10.12 (2023-07-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v11011-2023-07-04" class="md-nav__link">
-    v1.10.11 (2023-07-04)
+    <span class="md-ellipsis">
+      
+        v1.10.11 (2023-07-04)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v11010-2023-06-30" class="md-nav__link">
-    v1.10.10 (2023-06-30)
+    <span class="md-ellipsis">
+      
+        v1.10.10 (2023-06-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1109-2023-06-07" class="md-nav__link">
-    v1.10.9 (2023-06-07)
+    <span class="md-ellipsis">
+      
+        v1.10.9 (2023-06-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1108-2023-05-23" class="md-nav__link">
-    v1.10.8 (2023-05-23)
+    <span class="md-ellipsis">
+      
+        v1.10.8 (2023-05-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1107-2023-03-22" class="md-nav__link">
-    v1.10.7 (2023-03-22)
+    <span class="md-ellipsis">
+      
+        v1.10.7 (2023-03-22)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1106-2023-03-08" class="md-nav__link">
-    v1.10.6 (2023-03-08)
+    <span class="md-ellipsis">
+      
+        v1.10.6 (2023-03-08)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1105-2023-02-15" class="md-nav__link">
-    v1.10.5 (2023-02-15)
+    <span class="md-ellipsis">
+      
+        v1.10.5 (2023-02-15)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1104-2022-12-30" class="md-nav__link">
-    v1.10.4 (2022-12-30)
+    <span class="md-ellipsis">
+      
+        v1.10.4 (2022-12-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1103-2022-12-29" class="md-nav__link">
-    v1.10.3 (2022-12-29)
+    <span class="md-ellipsis">
+      
+        v1.10.3 (2022-12-29)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1102-2022-09-05" class="md-nav__link">
-    v1.10.2 (2022-09-05)
+    <span class="md-ellipsis">
+      
+        v1.10.2 (2022-09-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1101-2022-08-31" class="md-nav__link">
-    v1.10.1 (2022-08-31)
+    <span class="md-ellipsis">
+      
+        v1.10.1 (2022-08-31)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1100-2022-08-30" class="md-nav__link">
-    v1.10.0 (2022-08-30)
+    <span class="md-ellipsis">
+      
+        v1.10.0 (2022-08-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1100b1-2022-08-24" class="md-nav__link">
-    v1.10.0b1 (2022-08-24)
+    <span class="md-ellipsis">
+      
+        v1.10.0b1 (2022-08-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1100a2-2022-08-24" class="md-nav__link">
-    v1.10.0a2 (2022-08-24)
+    <span class="md-ellipsis">
+      
+        v1.10.0a2 (2022-08-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v1100a1-2022-08-22" class="md-nav__link">
-    v1.10.0a1 (2022-08-22)
+    <span class="md-ellipsis">
+      
+        v1.10.0a1 (2022-08-22)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v192-2022-08-11" class="md-nav__link">
-    v1.9.2 (2022-08-11)
+    <span class="md-ellipsis">
+      
+        v1.9.2 (2022-08-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v191-2022-05-19" class="md-nav__link">
-    v1.9.1 (2022-05-19)
+    <span class="md-ellipsis">
+      
+        v1.9.1 (2022-05-19)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v190-2021-12-31" class="md-nav__link">
-    v1.9.0 (2021-12-31)
+    <span class="md-ellipsis">
+      
+        v1.9.0 (2021-12-31)
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="v1.9.0 (2021-12-31)">
@@ -3832,28 +5102,44 @@
         
           <li class="md-nav__item">
   <a href="#highlights" class="md-nav__link">
-    Highlights
+    <span class="md-ellipsis">
+      
+        Highlights
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#v190-2021-12-31-changes" class="md-nav__link">
-    v1.9.0 (2021-12-31) Changes
+    <span class="md-ellipsis">
+      
+        v1.9.0 (2021-12-31) Changes
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#v190a2-2021-12-24-changes" class="md-nav__link">
-    v1.9.0a2 (2021-12-24) Changes
+    <span class="md-ellipsis">
+      
+        v1.9.0a2 (2021-12-24) Changes
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#v190a1-2021-12-18-changes" class="md-nav__link">
-    v1.9.0a1 (2021-12-18) Changes
+    <span class="md-ellipsis">
+      
+        v1.9.0a1 (2021-12-18) Changes
+      
+    </span>
   </a>
   
 </li>
@@ -3865,21 +5151,33 @@
       
         <li class="md-nav__item">
   <a href="#v182-2021-05-11" class="md-nav__link">
-    v1.8.2 (2021-05-11)
+    <span class="md-ellipsis">
+      
+        v1.8.2 (2021-05-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v181-2021-03-03" class="md-nav__link">
-    v1.8.1 (2021-03-03)
+    <span class="md-ellipsis">
+      
+        v1.8.1 (2021-03-03)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v18-2021-02-26" class="md-nav__link">
-    v1.8 (2021-02-26)
+    <span class="md-ellipsis">
+      
+        v1.8 (2021-02-26)
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="v1.8 (2021-02-26)">
@@ -3887,14 +5185,22 @@
         
           <li class="md-nav__item">
   <a href="#highlights_1" class="md-nav__link">
-    Highlights
+    <span class="md-ellipsis">
+      
+        Highlights
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#changes" class="md-nav__link">
-    Changes
+    <span class="md-ellipsis">
+      
+        Changes
+      
+    </span>
   </a>
   
 </li>
@@ -3906,35 +5212,55 @@
       
         <li class="md-nav__item">
   <a href="#v174-2021-05-11" class="md-nav__link">
-    v1.7.4 (2021-05-11)
+    <span class="md-ellipsis">
+      
+        v1.7.4 (2021-05-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v173-2020-11-30" class="md-nav__link">
-    v1.7.3 (2020-11-30)
+    <span class="md-ellipsis">
+      
+        v1.7.3 (2020-11-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v172-2020-11-01" class="md-nav__link">
-    v1.7.2 (2020-11-01)
+    <span class="md-ellipsis">
+      
+        v1.7.2 (2020-11-01)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v171-2020-10-28" class="md-nav__link">
-    v1.7.1 (2020-10-28)
+    <span class="md-ellipsis">
+      
+        v1.7.1 (2020-10-28)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v17-2020-10-26" class="md-nav__link">
-    v1.7 (2020-10-26)
+    <span class="md-ellipsis">
+      
+        v1.7 (2020-10-26)
+      
+    </span>
   </a>
   
     <nav class="md-nav" aria-label="v1.7 (2020-10-26)">
@@ -3942,14 +5268,22 @@
         
           <li class="md-nav__item">
   <a href="#highlights_2" class="md-nav__link">
-    Highlights
+    <span class="md-ellipsis">
+      
+        Highlights
+      
+    </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
   <a href="#changes_1" class="md-nav__link">
-    Changes
+    <span class="md-ellipsis">
+      
+        Changes
+      
+    </span>
   </a>
   
 </li>
@@ -3961,462 +5295,726 @@
       
         <li class="md-nav__item">
   <a href="#v162-2021-05-11" class="md-nav__link">
-    v1.6.2 (2021-05-11)
+    <span class="md-ellipsis">
+      
+        v1.6.2 (2021-05-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v161-2020-07-15" class="md-nav__link">
-    v1.6.1 (2020-07-15)
+    <span class="md-ellipsis">
+      
+        v1.6.1 (2020-07-15)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v16-2020-07-11" class="md-nav__link">
-    v1.6 (2020-07-11)
+    <span class="md-ellipsis">
+      
+        v1.6 (2020-07-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v151-2020-04-23" class="md-nav__link">
-    v1.5.1 (2020-04-23)
+    <span class="md-ellipsis">
+      
+        v1.5.1 (2020-04-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v15-2020-04-18" class="md-nav__link">
-    v1.5 (2020-04-18)
+    <span class="md-ellipsis">
+      
+        v1.5 (2020-04-18)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v14-2020-01-24" class="md-nav__link">
-    v1.4 (2020-01-24)
+    <span class="md-ellipsis">
+      
+        v1.4 (2020-01-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v13-2019-12-21" class="md-nav__link">
-    v1.3 (2019-12-21)
+    <span class="md-ellipsis">
+      
+        v1.3 (2019-12-21)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v12-2019-11-28" class="md-nav__link">
-    v1.2 (2019-11-28)
+    <span class="md-ellipsis">
+      
+        v1.2 (2019-11-28)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v111-2019-11-20" class="md-nav__link">
-    v1.1.1 (2019-11-20)
+    <span class="md-ellipsis">
+      
+        v1.1.1 (2019-11-20)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v11-2019-11-07" class="md-nav__link">
-    v1.1 (2019-11-07)
+    <span class="md-ellipsis">
+      
+        v1.1 (2019-11-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v10-2019-10-23" class="md-nav__link">
-    v1.0 (2019-10-23)
+    <span class="md-ellipsis">
+      
+        v1.0 (2019-10-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v10b2-2019-10-07" class="md-nav__link">
-    v1.0b2 (2019-10-07)
+    <span class="md-ellipsis">
+      
+        v1.0b2 (2019-10-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v10b1-2019-10-01" class="md-nav__link">
-    v1.0b1 (2019-10-01)
+    <span class="md-ellipsis">
+      
+        v1.0b1 (2019-10-01)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0322-2019-08-17" class="md-nav__link">
-    v0.32.2 (2019-08-17)
+    <span class="md-ellipsis">
+      
+        v0.32.2 (2019-08-17)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0321-2019-08-08" class="md-nav__link">
-    v0.32.1 (2019-08-08)
+    <span class="md-ellipsis">
+      
+        v0.32.1 (2019-08-08)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v032-2019-08-06" class="md-nav__link">
-    v0.32 (2019-08-06)
+    <span class="md-ellipsis">
+      
+        v0.32 (2019-08-06)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0311-2019-07-31" class="md-nav__link">
-    v0.31.1 (2019-07-31)
+    <span class="md-ellipsis">
+      
+        v0.31.1 (2019-07-31)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v031-2019-07-24" class="md-nav__link">
-    v0.31 (2019-07-24)
+    <span class="md-ellipsis">
+      
+        v0.31 (2019-07-24)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0301-2019-07-15" class="md-nav__link">
-    v0.30.1 (2019-07-15)
+    <span class="md-ellipsis">
+      
+        v0.30.1 (2019-07-15)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v030-2019-07-07" class="md-nav__link">
-    v0.30 (2019-07-07)
+    <span class="md-ellipsis">
+      
+        v0.30 (2019-07-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v029-2019-06-19" class="md-nav__link">
-    v0.29 (2019-06-19)
+    <span class="md-ellipsis">
+      
+        v0.29 (2019-06-19)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v028-2019-06-06" class="md-nav__link">
-    v0.28 (2019-06-06)
+    <span class="md-ellipsis">
+      
+        v0.28 (2019-06-06)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v027-2019-05-30" class="md-nav__link">
-    v0.27 (2019-05-30)
+    <span class="md-ellipsis">
+      
+        v0.27 (2019-05-30)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0270a1-2019-05-26" class="md-nav__link">
-    v0.27.0a1 (2019-05-26)
+    <span class="md-ellipsis">
+      
+        v0.27.0a1 (2019-05-26)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v026-2019-05-22" class="md-nav__link">
-    v0.26 (2019-05-22)
+    <span class="md-ellipsis">
+      
+        v0.26 (2019-05-22)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v025-2019-05-05" class="md-nav__link">
-    v0.25 (2019-05-05)
+    <span class="md-ellipsis">
+      
+        v0.25 (2019-05-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v024-2019-04-23" class="md-nav__link">
-    v0.24 (2019-04-23)
+    <span class="md-ellipsis">
+      
+        v0.24 (2019-04-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v023-2019-04-04" class="md-nav__link">
-    v0.23 (2019-04-04)
+    <span class="md-ellipsis">
+      
+        v0.23 (2019-04-04)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v022-2019-03-29" class="md-nav__link">
-    v0.22 (2019-03-29)
+    <span class="md-ellipsis">
+      
+        v0.22 (2019-03-29)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0210-2019-03-15" class="md-nav__link">
-    v0.21.0 (2019-03-15)
+    <span class="md-ellipsis">
+      
+        v0.21.0 (2019-03-15)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0201-2019-02-26" class="md-nav__link">
-    v0.20.1 (2019-02-26)
+    <span class="md-ellipsis">
+      
+        v0.20.1 (2019-02-26)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0200-2019-02-18" class="md-nav__link">
-    v0.20.0 (2019-02-18)
+    <span class="md-ellipsis">
+      
+        v0.20.0 (2019-02-18)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0200a1-2019-02-13" class="md-nav__link">
-    v0.20.0a1 (2019-02-13)
+    <span class="md-ellipsis">
+      
+        v0.20.0a1 (2019-02-13)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0190-2019-02-04" class="md-nav__link">
-    v0.19.0 (2019-02-04)
+    <span class="md-ellipsis">
+      
+        v0.19.0 (2019-02-04)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0182-2019-01-22" class="md-nav__link">
-    v0.18.2 (2019-01-22)
+    <span class="md-ellipsis">
+      
+        v0.18.2 (2019-01-22)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0181-2019-01-17" class="md-nav__link">
-    v0.18.1 (2019-01-17)
+    <span class="md-ellipsis">
+      
+        v0.18.1 (2019-01-17)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0180-2019-01-13" class="md-nav__link">
-    v0.18.0 (2019-01-13)
+    <span class="md-ellipsis">
+      
+        v0.18.0 (2019-01-13)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0170-2018-12-27" class="md-nav__link">
-    v0.17.0 (2018-12-27)
+    <span class="md-ellipsis">
+      
+        v0.17.0 (2018-12-27)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0161-2018-12-10" class="md-nav__link">
-    v0.16.1 (2018-12-10)
+    <span class="md-ellipsis">
+      
+        v0.16.1 (2018-12-10)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0160-2018-12-03" class="md-nav__link">
-    v0.16.0 (2018-12-03)
+    <span class="md-ellipsis">
+      
+        v0.16.0 (2018-12-03)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0150-2018-11-18" class="md-nav__link">
-    v0.15.0 (2018-11-18)
+    <span class="md-ellipsis">
+      
+        v0.15.0 (2018-11-18)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0140-2018-10-02" class="md-nav__link">
-    v0.14.0 (2018-10-02)
+    <span class="md-ellipsis">
+      
+        v0.14.0 (2018-10-02)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0131-2018-09-21" class="md-nav__link">
-    v0.13.1 (2018-09-21)
+    <span class="md-ellipsis">
+      
+        v0.13.1 (2018-09-21)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0130-2018-08-25" class="md-nav__link">
-    v0.13.0 (2018-08-25)
+    <span class="md-ellipsis">
+      
+        v0.13.0 (2018-08-25)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0121-2018-07-31" class="md-nav__link">
-    v0.12.1 (2018-07-31)
+    <span class="md-ellipsis">
+      
+        v0.12.1 (2018-07-31)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0120-2018-07-31" class="md-nav__link">
-    v0.12.0 (2018-07-31)
+    <span class="md-ellipsis">
+      
+        v0.12.0 (2018-07-31)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0112-2018-07-05" class="md-nav__link">
-    v0.11.2 (2018-07-05)
+    <span class="md-ellipsis">
+      
+        v0.11.2 (2018-07-05)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0111-2018-07-02" class="md-nav__link">
-    v0.11.1 (2018-07-02)
+    <span class="md-ellipsis">
+      
+        v0.11.1 (2018-07-02)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0110-2018-06-28" class="md-nav__link">
-    v0.11.0 (2018-06-28)
+    <span class="md-ellipsis">
+      
+        v0.11.0 (2018-06-28)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v0100-2018-06-11" class="md-nav__link">
-    v0.10.0 (2018-06-11)
+    <span class="md-ellipsis">
+      
+        v0.10.0 (2018-06-11)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v091-2018-05-10" class="md-nav__link">
-    v0.9.1 (2018-05-10)
+    <span class="md-ellipsis">
+      
+        v0.9.1 (2018-05-10)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v090-2018-04-28" class="md-nav__link">
-    v0.9.0 (2018-04-28)
+    <span class="md-ellipsis">
+      
+        v0.9.0 (2018-04-28)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v080-2018-03-25" class="md-nav__link">
-    v0.8.0 (2018-03-25)
+    <span class="md-ellipsis">
+      
+        v0.8.0 (2018-03-25)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v071-2018-02-07" class="md-nav__link">
-    v0.7.1 (2018-02-07)
+    <span class="md-ellipsis">
+      
+        v0.7.1 (2018-02-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v070-2018-02-06" class="md-nav__link">
-    v0.7.0 (2018-02-06)
+    <span class="md-ellipsis">
+      
+        v0.7.0 (2018-02-06)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v064-2018-02-01" class="md-nav__link">
-    v0.6.4 (2018-02-01)
+    <span class="md-ellipsis">
+      
+        v0.6.4 (2018-02-01)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v063-2017-11-26" class="md-nav__link">
-    v0.6.3 (2017-11-26)
+    <span class="md-ellipsis">
+      
+        v0.6.3 (2017-11-26)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v062-2017-11-13" class="md-nav__link">
-    v0.6.2 (2017-11-13)
+    <span class="md-ellipsis">
+      
+        v0.6.2 (2017-11-13)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v061-2017-11-08" class="md-nav__link">
-    v0.6.1 (2017-11-08)
+    <span class="md-ellipsis">
+      
+        v0.6.1 (2017-11-08)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v060-2017-11-07" class="md-nav__link">
-    v0.6.0 (2017-11-07)
+    <span class="md-ellipsis">
+      
+        v0.6.0 (2017-11-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v050-2017-10-23" class="md-nav__link">
-    v0.5.0 (2017-10-23)
+    <span class="md-ellipsis">
+      
+        v0.5.0 (2017-10-23)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v040-2017-07-08" class="md-nav__link">
-    v0.4.0 (2017-07-08)
+    <span class="md-ellipsis">
+      
+        v0.4.0 (2017-07-08)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v030-2017-06-21" class="md-nav__link">
-    v0.3.0 (2017-06-21)
+    <span class="md-ellipsis">
+      
+        v0.3.0 (2017-06-21)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v021-2017-06-07" class="md-nav__link">
-    v0.2.1 (2017-06-07)
+    <span class="md-ellipsis">
+      
+        v0.2.1 (2017-06-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v020-2017-06-07" class="md-nav__link">
-    v0.2.0 (2017-06-07)
+    <span class="md-ellipsis">
+      
+        v0.2.0 (2017-06-07)
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#v010-2017-06-03" class="md-nav__link">
-    v0.1.0 (2017-06-03)
+    <span class="md-ellipsis">
+      
+        v0.1.0 (2017-06-03)
+      
+    </span>
   </a>
   
 </li>
@@ -4431,6 +6029,7 @@
           
           
             <div class="md-content" data-md-component="content">
+              
               <article class="md-content__inner md-typeset">
                 
   
@@ -5901,6 +7500,7 @@ for their kind support.</p>
 
 
 
+
                 
   <script src="/flarelytics/client.js"></script>
 
@@ -5910,6 +7510,7 @@ for their kind support.</p>
           
   <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
 
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
       </main>
@@ -5923,7 +7524,7 @@ for their kind support.</p>
   
     Made with
     <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-      Material for MkDocs
+      Material for MkDocs Insiders
     </a>
   
 </div>
@@ -5937,12 +7538,14 @@ for their kind support.</p>
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs"], "search": "../assets/javascripts/workers/search.dfff1995.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "announce.dismiss", "navigation.tabs"], "search": "../assets/javascripts/workers/search.f2da59ea.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.78eede0e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7e51e09.min.js"></script>
       
         <script src="../extra/fluff.js"></script>
+      
+        <script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
       
     
   </body>
