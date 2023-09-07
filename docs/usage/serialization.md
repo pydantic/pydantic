@@ -693,7 +693,7 @@ print(person.model_dump(exclude_defaults=True))  # (3)!
 #> {'name': 'Jeremy'}
 ```
 
-1. `age` excluded from the output because `exclude_none` was set to True, and `age` is `None`.
+1. `age` excluded from the output because `exclude_none` was set to `True`, and `age` is `None`.
 2. `age` excluded from the output because `exclude_unset` was set to True, and `age` was not set in the Person constructor.
 3. `age` excluded from the output because `exclude_defaults` was set to True, and `age` takes the default value of `None`.
 
