@@ -73,6 +73,8 @@ jobs:
         ln -s .venv/lib/python*/site-packages/pydantic_extra_types pydantic_extra_types
 
     - run: |
+        ls /home/runner/work/pydantic/pydantic/__pypackages__/3.8/lib/
+        pdm run python -c 'import materialx;print(materialx)'
         pdm run python -c 'from materialx.emoji import twemoji'
         pdm run mkdocs build -v
 
