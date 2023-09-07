@@ -74,7 +74,7 @@ jobs:
         run: |
           pdm use -f $PYTHON
           pdm install -G docs
-          pdm run pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs-material/mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
+          pdm run pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
         env:
           MKDOCS_TOKEN: ${{ secrets.MKDOCS_TOKEN }}
 
