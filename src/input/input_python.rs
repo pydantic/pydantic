@@ -13,7 +13,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::{extract_i64, safe_repr};
-use crate::validators::decimal::create_decimal;
+use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::{ArgsKwargs, PyMultiHostUrl, PyUrl};
 
 use super::datetime::{
@@ -21,7 +21,7 @@ use super::datetime::{
     float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime,
     EitherTime,
 };
-use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int};
+use super::shared::{decimal_as_int, float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int};
 use super::{
     py_string_str, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments,
     GenericIterable, GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
@@ -324,6 +324,10 @@ impl<'a> Input<'a> for PyAny {
         } else if PyInt::is_type_of(self) {
             // force to an int to upcast to a pure python int to maintain current behaviour
             EitherInt::upcast(self)
+        } else if PyFloat::is_exact_type_of(self) {
+            float_as_int(self, self.extract::<f64>()?)
+        } else if let Ok(decimal) = self.strict_decimal(self.py()) {
+            decimal_as_int(self.py(), self, decimal)
         } else if let Ok(float) = self.extract::<f64>() {
             float_as_int(self, float)
         } else {
@@ -367,7 +371,9 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
+    fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
+        let decimal_type_obj: Py<PyType> = get_decimal_type(py);
+        let decimal_type = decimal_type_obj.as_ref(py);
         // Fast path for existing decimal objects
         if self.is_exact_instance(decimal_type) {
             return Ok(self);
@@ -375,7 +381,7 @@ impl<'a> Input<'a> for PyAny {
 
         // Try subclasses of decimals, they will be upcast to Decimal
         if self.is_instance(decimal_type)? {
-            return create_decimal(self, self, decimal_type);
+            return create_decimal(self, self, py);
         }
 
         Err(ValError::new(
@@ -387,7 +393,9 @@ impl<'a> Input<'a> for PyAny {
         ))
     }
 
-    fn lax_decimal(&'a self, decimal_type: &'a PyType) -> ValResult<&'a PyAny> {
+    fn lax_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
+        let decimal_type_obj: Py<PyType> = get_decimal_type(py);
+        let decimal_type = decimal_type_obj.as_ref(py);
         // Fast path for existing decimal objects
         if self.is_exact_instance(decimal_type) {
             return Ok(self);
@@ -395,12 +403,12 @@ impl<'a> Input<'a> for PyAny {
 
         if self.is_instance_of::<PyString>() || (self.is_instance_of::<PyInt>() && !self.is_instance_of::<PyBool>()) {
             // checking isinstance for str / int / bool is fast compared to decimal / float
-            create_decimal(self, self, decimal_type)
+            create_decimal(self, self, py)
         } else if self.is_instance(decimal_type)? {
             // upcast subclasses to decimal
-            return create_decimal(self, self, decimal_type);
+            return create_decimal(self, self, py);
         } else if self.is_instance_of::<PyFloat>() {
-            create_decimal(self.str()?, self, decimal_type)
+            create_decimal(self.str()?, self, py)
         } else {
             Err(ValError::new(ErrorTypeDefaults::DecimalType, self))
         }
