@@ -4,7 +4,7 @@
 : `bytes` are accepted as-is, `bytearray` is converted using `bytes(v)`, and `str` is converted using `v.encode()`.
 
 `SecretBytes`
-: Like `bytes`, but where the value is kept partially secret; see [Secrets](secrets.md).
+: Like `bytes`, but where the value is kept partially secret.
 
 `ByteSize`
 : Converts a string representing a number of bytes with units (such as `'1KB'` or `'11.5MiB'`) into an integer.

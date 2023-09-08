@@ -833,23 +833,24 @@ def _secret_display(value: str | bytes) -> str:
 
 
 class SecretStr(_SecretField[str]):
-    """A string that is displayed as `**********` in reprs and can be used for passwords.
+    """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks..
 
-    Example:
-        ```py
-        from pydantic import BaseModel, SecretStr
+    It displays '**********' instead of the string value on `repr()` and `str()` calls.
 
-        class User(BaseModel):
-            username: str
-            password: SecretStr
+    ```py
+    from pydantic import BaseModel, SecretStr
 
-        user = User(username='scolvin', password='password1')
+    class User(BaseModel):
+        username: str
+        password: SecretStr
 
-        print(user)
-        #> username='scolvin' password=SecretStr('**********')
-        print(user.password.get_secret_value())
-        #> password1
-        ```
+    user = User(username='scolvin', password='password1')
+
+    print(user)
+    #> username='scolvin' password=SecretStr('**********')
+    print(user.password.get_secret_value())
+    #> password1
+    ```
     """
 
     def _display(self) -> str:
@@ -857,7 +858,24 @@ class SecretStr(_SecretField[str]):
 
 
 class SecretBytes(_SecretField[bytes]):
-    """A bytes that is displayed as `**********` in reprs and can be used for passwords."""
+    """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks..
+
+    It displays b'**********' instead of the string value on `repr()` and `str()` calls.
+
+    ```py
+    from pydantic import BaseModel, SecretBytes
+
+    class User(BaseModel):
+        username: str
+        password: SecretBytes
+
+
+    user = User(username='scolvin', password=b'password1')
+    #> username='scolvin' password=SecretBytes(b'**********')
+    print(user.password.get_secret_value())
+    #> b'password1'
+    ```
+    """
 
     def _display(self) -> bytes:
         return _secret_display(self.get_secret_value()).encode()
