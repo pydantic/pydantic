@@ -181,6 +181,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/examples/secrets/</loc>
+         <lastmod>2023-09-08</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/integrations/datamodel_code_generator/</loc>
          <lastmod>2023-09-08</lastmod>
          <changefreq>daily</changefreq>
@@ -342,11 +347,6 @@
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/usage/types/number_types/</loc>
-         <lastmod>2023-09-08</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.pydantic.dev/latest/usage/types/secrets/</loc>
          <lastmod>2023-09-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
