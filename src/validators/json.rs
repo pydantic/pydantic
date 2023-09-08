@@ -55,7 +55,7 @@ impl Validator for JsonValidator {
         match self.validator {
             Some(ref validator) => match validator.validate(py, &json_value, state) {
                 Ok(v) => Ok(v),
-                Err(err) => Err(err.duplicate(py)),
+                Err(err) => Err(err.into_owned(py)),
             },
             None => Ok(json_value.to_object(py)),
         }

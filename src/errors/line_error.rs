@@ -62,10 +62,10 @@ impl<'a> ValError<'a> {
     }
 
     /// a bit like clone but change the lifetime to match py
-    pub fn duplicate<'py>(&self, py: Python<'py>) -> ValError<'py> {
+    pub fn into_owned(self, py: Python<'_>) -> ValError<'_> {
         match self {
-            ValError::LineErrors(errors) => errors.iter().map(|e| e.duplicate(py)).collect::<Vec<_>>().into(),
-            ValError::InternalErr(err) => ValError::InternalErr(err.clone_ref(py)),
+            ValError::LineErrors(errors) => errors.into_iter().map(|e| e.into_owned(py)).collect::<Vec<_>>().into(),
+            ValError::InternalErr(err) => ValError::InternalErr(err),
             ValError::Omit => ValError::Omit,
             ValError::UseDefault => ValError::UseDefault,
         }
@@ -129,28 +129,26 @@ impl<'a> ValLineError<'a> {
         self
     }
 
-    /// a bit like clone but change the lifetime to match py, used by ValError.duplicate above
-    pub fn duplicate<'py>(&'a self, py: Python<'py>) -> ValLineError<'py> {
+    /// a bit like clone but change the lifetime to match py, used by ValError.into_owned above
+    pub fn into_owned(self, py: Python<'_>) -> ValLineError<'_> {
         ValLineError {
-            error_type: self.error_type.clone(),
-            input_value: InputValue::<'py>::from(self.input_value.to_object(py)),
-            location: self.location.clone(),
+            error_type: self.error_type,
+            input_value: match self.input_value {
+                InputValue::PyAny(input) => InputValue::PyAny(input.to_object(py).into_ref(py)),
+                InputValue::JsonInput(input) => InputValue::JsonInput(input),
+                InputValue::String(input) => InputValue::PyAny(input.to_object(py).into_ref(py)),
+            },
+            location: self.location,
         }
     }
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
+#[derive(Clone)]
 pub enum InputValue<'a> {
     PyAny(&'a PyAny),
-    JsonInput(&'a JsonInput),
+    JsonInput(JsonInput),
     String(&'a str),
-    PyObject(PyObject),
-}
-
-impl<'a> From<PyObject> for InputValue<'a> {
-    fn from(py_object: PyObject) -> Self {
-        Self::PyObject(py_object)
-    }
 }
 
 impl<'a> ToPyObject for InputValue<'a> {
@@ -159,7 +157,6 @@ impl<'a> ToPyObject for InputValue<'a> {
             Self::PyAny(input) => input.into_py(py),
             Self::JsonInput(input) => input.to_object(py),
             Self::String(input) => input.into_py(py),
-            Self::PyObject(py_obj) => py_obj.into_py(py),
         }
     }
 }

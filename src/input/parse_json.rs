@@ -1,9 +1,11 @@
 use std::fmt;
+use std::sync::Arc;
 
 use num_bigint::BigInt;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use serde::de::{Deserialize, DeserializeSeed, Error as SerdeError, MapAccess, SeqAccess, Visitor};
+use smallvec::SmallVec;
 
 use crate::lazy_index_map::LazyIndexMap;
 
@@ -20,8 +22,8 @@ pub enum JsonInput {
     Array(JsonArray),
     Object(JsonObject),
 }
-pub type JsonArray = Vec<JsonInput>;
-pub type JsonObject = LazyIndexMap<String, JsonInput>;
+pub type JsonArray = Arc<SmallVec<[JsonInput; 8]>>;
+pub type JsonObject = Arc<LazyIndexMap<String, JsonInput>>;
 
 impl ToPyObject for JsonInput {
     fn to_object(&self, py: Python<'_>) -> PyObject {
@@ -111,13 +113,13 @@ impl<'de> Deserialize<'de> for JsonInput {
             where
                 V: SeqAccess<'de>,
             {
-                let mut vec = Vec::new();
+                let mut vec = SmallVec::new();
 
                 while let Some(elem) = visitor.next_element()? {
                     vec.push(elem);
                 }
 
-                Ok(JsonInput::Array(vec))
+                Ok(JsonInput::Array(JsonArray::new(vec)))
             }
 
             fn visit_map<V>(self, mut visitor: V) -> Result<JsonInput, V::Error>
@@ -171,9 +173,9 @@ impl<'de> Deserialize<'de> for JsonInput {
                         while let Some((key, value)) = visitor.next_entry()? {
                             values.insert(key, value);
                         }
-                        Ok(JsonInput::Object(values))
+                        Ok(JsonInput::Object(Arc::new(values)))
                     }
-                    None => Ok(JsonInput::Object(LazyIndexMap::new())),
+                    None => Ok(JsonInput::Object(Arc::new(LazyIndexMap::new()))),
                 }
             }
         }
