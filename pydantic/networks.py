@@ -185,7 +185,6 @@ else:
         class Model(BaseModel):
             email: EmailStr
 
-
         print(Model(email='contact@mail.com'))
         #> email='contact@mail.com'
         ```
@@ -231,10 +230,8 @@ class NameEmail(_repr.Representation):
     ```py
     from pydantic import BaseModel, NameEmail
 
-
     class User(BaseModel):
         email: NameEmail
-
 
     user = User(email='Fred Bloggs <fred.bloggs@example.com>')
     print(user.email)
