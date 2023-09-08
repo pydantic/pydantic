@@ -699,6 +699,7 @@ FilePath = Annotated[Path, PathType('file')]
 
 ```py
 from pathlib import Path
+
 from pydantic import BaseModel, FilePath, ValidationError
 
 class Model(BaseModel):
@@ -745,7 +746,7 @@ class Model(BaseModel):
     f: DirectoryPath
 
 path = Path('directory/')
-path.mkdir()
+path.mkdir(exist_ok=False)
 m = Model(f='directory/')
 print(m.model_dump())
 #> {'f': PosixPath('directory')}
