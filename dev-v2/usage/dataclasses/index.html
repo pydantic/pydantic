@@ -3845,10 +3845,10 @@ keyword argument <code>config</code> which has the same meaning as <a href="../m
 </ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Pydantic dataclasses do not support <a href="../model_config/#extra-attributes"><code>extra='allow'</code></a>, where extra fields passed
-to the initializer would be stored as extra attributes on the dataclass.</p>
-<p><code>extra='ignore'</code> is still supported for the purpose of ignoring
-unexpected fields while parsing data; they just won't be stored on the instance.</p>
+<p>Pydantic dataclasses support <a href="../model_config/#extra-attributes"><code>extra</code></a> configuration to <code>ignore</code>, <code>forbid</code>, or
+<code>allow</code> extra fields passed to the initializer. However, some default behavior of stdlib dataclasses may prevail.
+For example, any extra fields present on a Pydantic dataclass using <code>extra='allow'</code> are omitted when the dataclass
+is <code>print</code>ed.</p>
 </div>
 <h2 id="nested-dataclasses">Nested dataclasses<a class="headerlink" href="#nested-dataclasses" title="Permanent link">&para;</a></h2>
 <p>Nested dataclasses are supported both in dataclasses and normal models.</p>
