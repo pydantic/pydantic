@@ -16,7 +16,6 @@ The following sections describe the types supported by Pydantic.
 * [Datetimes](datetime.md) &mdash; `datetime`, `date`, `time`, and `timedelta` types.
 * [Dicts and Mapping Types](dicts_mapping.md) &mdash; `dict` types and mapping types.
 * [Enums and Choices](enums.md) &mdash; uses Python's standard `enum` classes to define choices.
-* [File Types](file_types.md) &mdash; types for handling files and paths.
 * [JSON](json.md) &mdash; a type that allows you to store JSON data in your model.
 * [Lists and Tuples](list_types.md) &mdash; `list` and `tuple` types.
 * [Number Types](number_types.md) &mdash; `int`, `float`, `Decimal`, and other number types.

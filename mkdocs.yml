@@ -66,7 +66,6 @@ nav:
     - Dicts and Mapping: usage/types/dicts_mapping.md
     - Encoded Types: usage/types/encoded.md
     - Enums and Choices: usage/types/enums.md
-    - File Types: usage/types/file_types.md
     - JSON: usage/types/json.md
     - Lists and Tuples: usage/types/list_types.md
     - Number Types: usage/types/number_types.md
@@ -208,6 +207,7 @@ plugins:
       'usage/types.md': 'usage/types/types.md'
       'usage/types/secrets.md': 'examples/secrets.md'
       'usage/types/string_types.md': 'api/types.md'
+      'usage/types/file_types.md': 'api/types.md'
       'api/main.md': 'api/base_model.md'
       'api/color.md': 'api/pydantic_extra_types_color.md'
       'api/alias_generators.md': 'api/config.md'

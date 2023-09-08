@@ -53,7 +53,7 @@ Pydantic supports many common types from the Python standard library. If you nee
 | `enum.IntEnum` | Checks that the value is a valid `IntEnum` instance. See [Enums and Choices](enums.md) for more details. |
 | Subclass of `enum.IntEnum` | Checks that the value is a valid member of the integer `enum`. See [Enums and Choices](enums.md) for more details. |
 | `decimal.Decimal` | Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`. See [Number Types](number_types.md) for more details. |
-| `pathlib.Path` | Simply uses the type itself for validation by passing the value to `Path(v)`. See [File Types](file_types.md) for other, more strict path types. |
+| `pathlib.Path` | Simply uses the type itself for validation by passing the value to `Path(v)`. |
 | `uuid.UUID` | Strings and bytes (converted to strings) are passed to `UUID(v)`, with a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`. See [UUIDs](uuids.md) for other, more strict UUID types. |
 | `ByteSize` | Converts a bytes string with units to bytes. See [ByteSize](bytesize.md) for more details. |
 
