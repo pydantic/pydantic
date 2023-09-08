@@ -9,16 +9,65 @@ enums inheriting from `str` are converted using `v.value`, and all other types c
 
 ## EmailStr
 
-`EmailStr` requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed.
-The input string must be a valid email address, and the output is a simple string
+??? api "API Documentation"
+    [`pydantic.networks.EmailStr`][pydantic.networks.EmailStr]<br>
+
+!!! warning
+    To use this type, you need to install the optional [`email-validator`][email-validator] package:
+
+    ```bash
+    pip install email-validator
+    ```
+
+The input string must be a valid email address.
+
+```py
+from pydantic import BaseModel, EmailStr
+
+class Model(BaseModel):
+    email: EmailStr
+
+print(Model(email='contact@mail.com'))
+#> email='contact@mail.com'
+```
 
 ## NameEmail
 
-`NameEmail` requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed.
-The input string must be either a valid email address or in the format `Fred Bloggs <fred.bloggs@example.com>`,
-and the output is a `NameEmail` object which has two properties: `name` and `email`.
-For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`.
-For `fred.bloggs@example.com` it would be `"fred.bloggs"`.
+??? api "API Documentation"
+    [`pydantic.networks.NameEmail`][pydantic.networks.NameEmail]<br>
+
+!!! warning
+    To use this type, you need to install the optional [`email-validator`][email-validator] package:
+
+    ```bash
+    pip install email-validator
+    ```
+
+
+The input string must be a valid email address as specified by the [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322#section-3.4).
+
+The `NameEmail` has two properties: `name` and `email`. In case the name is not provided, it's inferred from the email address.
+
+```py
+from pydantic import BaseModel, NameEmail
+
+
+class User(BaseModel):
+    email: NameEmail
+
+
+user = User(email='Fred Bloggs <fred.bloggs@example.com>')
+print(user.email)
+#> Fred Bloggs <fred.bloggs@example.com>
+print(user.email.name)
+#> Fred Bloggs
+
+user = User(email='fred.bloggs@example.com')
+print(user.email)
+#> fred.bloggs <fred.bloggs@example.com>
+print(user.email.name)
+#> fred.bloggs
+```
 
 ## ImportString
 
@@ -103,3 +152,5 @@ The following arguments are available when using the `constr` type function
 - `min_length: int = None`: minimum length of the string
 - `max_length: int = None`: maximum length of the string
 - `pattern: str = None`: regex to validate the string against
+
+[email-validator]: https://github.com/JoshData/python-email-validator

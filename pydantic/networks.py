@@ -168,7 +168,9 @@ if TYPE_CHECKING:
 else:
 
     class EmailStr:
-        """Validate email addresses.
+        """Usage docs: https://docs.pydantic.dev/2.3/usage/types/string_types/#emailstr
+
+        Validate email addresses.
 
         Example:
             ```py
@@ -204,7 +206,9 @@ else:
 
 
 class NameEmail(_repr.Representation):
-    """Validate a name and email address combination.
+    """Usage docs: https://docs.pydantic.dev/2.3/usage/types/string_types/#nameemail
+
+    Validate a name and email address combination.
 
     Example:
         ```py
@@ -398,13 +402,13 @@ pretty_email_regex = _build_pretty_email_regex()
 
 
 def validate_email(value: str) -> tuple[str, str]:
-    """Email address validation using https://pypi.org/project/email-validator/.
+    """Email address validation using [email-validator](https://pypi.org/project/email-validator/).
 
     Note:
         Note that:
 
         * Raw IP address (literal) domain parts are not allowed.
-        * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed.
+        * `"John Doe <local_part@domain.com>"` style "pretty" email addresses are processed.
         * Spaces are striped from the beginning and end of addresses, but no error is raised.
     """
     if email_validator is None:
