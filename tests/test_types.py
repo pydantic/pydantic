@@ -5308,6 +5308,16 @@ def test_skip_validation(optional):
     assert my_function('2') == "'2'"
 
 
+def test_skip_validation_model_reference():
+    class ModelA(BaseModel):
+        x: int
+
+    class ModelB(BaseModel):
+        y: SkipValidation[ModelA]
+
+    assert ModelB(y=123).y == 123
+
+
 def test_skip_validation_serialization():
     class A(BaseModel):
         x: SkipValidation[int]
