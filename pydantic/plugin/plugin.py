@@ -77,5 +77,5 @@ class OnValidateJson(EventHandler, Protocol):
 class Plugin:
     """Plugin interface for Pydantic plugins"""
 
-    on_validate_python: OnValidatePython | None = None
-    on_validate_json: OnValidateJson | None = None
+    on_validate_python: type[OnValidatePython] | None = None
+    on_validate_json: type[OnValidateJson] | None = None
