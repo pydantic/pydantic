@@ -21,6 +21,7 @@ class Model(BaseModel):
     def dump_secret(self, v):
         return v.get_secret_value()
 
+
 model = Model(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
 print(model)
 #> password=SecretStr('**********') password_bytes=SecretBytes(b'**********')

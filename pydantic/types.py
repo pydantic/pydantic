@@ -869,7 +869,6 @@ class SecretBytes(_SecretField[bytes]):
         username: str
         password: SecretBytes
 
-
     user = User(username='scolvin', password=b'password1')
     #> username='scolvin' password=SecretBytes(b'**********')
     print(user.password.get_secret_value())
