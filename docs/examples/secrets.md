@@ -3,18 +3,14 @@
 
 # Serialize `SecretStr` and `SecretBytes` as plain-text
 
-By default, `SecretStr` and `SecretBytes` will be serialized as `**********` when serializing to json.
+By default, [`SecretStr`][pydantic.types.SecretStr] and [`SecretBytes`][pydantic.types.SecretBytes]
+will be serialized as `**********` when serializing to json.
 
-You can use the `field_serializer` to dump the secret as plain-text when serializing to json.
+You can use the [`field_serializer`][pydantic.functional_serializers.field_serializer] to dump the
+secret as plain-text when serializing to json.
 
 ```py
-from pydantic import (
-    BaseModel,
-    SecretBytes,
-    SecretStr,
-    ValidationError,
-    field_serializer,
-)
+from pydantic import BaseModel, SecretBytes, SecretStr, field_serializer
 
 
 class Model(BaseModel):
