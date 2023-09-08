@@ -1,5 +1,5 @@
 !!! warning "🚧 Work in Progress"
-    This page is in work in progress.
+    This page is a work in progress.
 
 # Serialize `SecretStr` and `SecretBytes` as plain-text
 
