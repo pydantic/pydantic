@@ -700,10 +700,8 @@ FilePath = Annotated[Path, PathType('file')]
 ```py
 from pydantic import BaseModel, FilePath, ValidationError
 
-
 class Model(BaseModel):
     f: FilePath
-
 
 m = Model(f='docs/usage/types/file_types.md')
 print(m.model_dump())
@@ -736,10 +734,8 @@ DirectoryPath = Annotated[Path, PathType('dir')]
 ```py
 from pydantic import BaseModel, DirectoryPath, ValidationError
 
-
 class Model(BaseModel):
     f: DirectoryPath
-
 
 m = Model(f='docs/usage/types/')
 print(m.model_dump())
