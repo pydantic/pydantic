@@ -31,7 +31,8 @@ impl<'a> Input<'a> for JsonInput {
     }
 
     fn as_error_value(&'a self) -> InputValue<'a> {
-        InputValue::JsonInput(self)
+        // cloning JsonInput is cheap due to use of Arc
+        InputValue::JsonInput(self.clone())
     }
 
     fn is_none(&self) -> bool {
@@ -262,7 +263,7 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::String(s) => Ok(string_to_vec(s).into()),
             JsonInput::Object(object) => {
                 // return keys iterator to match python's behavior
-                let keys: Vec<JsonInput> = object.keys().map(|k| JsonInput::String(k.clone())).collect();
+                let keys: JsonArray = JsonArray::new(object.keys().map(|k| JsonInput::String(k.clone())).collect());
                 Ok(keys.into())
             }
             _ => Err(ValError::new(ErrorTypeDefaults::IterableType, self)),
@@ -550,5 +551,5 @@ impl<'a> Input<'a> for String {
 }
 
 fn string_to_vec(s: &str) -> JsonArray {
-    s.chars().map(|c| JsonInput::String(c.to_string())).collect()
+    JsonArray::new(s.chars().map(|c| JsonInput::String(c.to_string())).collect())
 }
