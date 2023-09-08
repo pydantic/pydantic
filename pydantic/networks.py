@@ -168,21 +168,28 @@ if TYPE_CHECKING:
 else:
 
     class EmailStr:
-        """Usage docs: https://docs.pydantic.dev/2.3/usage/types/string_types/#emailstr
+        """
+        Info:
+            To use this type, you need to install the optional
+            [`email-validator`](https://github.com/JoshData/python-email-validator) package:
+
+            ```bash
+            pip install email-validator
+            ```
 
         Validate email addresses.
 
-        Example:
-            ```py
-            from pydantic import BaseModel, EmailStr
+        ```py
+        from pydantic import BaseModel, EmailStr
 
-            class Model(BaseModel):
-                email: EmailStr
+        class Model(BaseModel):
+            email: EmailStr
 
-            print(Model(email='contact@mail.com'))
-            #> email='contact@mail.com'
-            ```
-        """
+
+        print(Model(email='contact@mail.com'))
+        #> email='contact@mail.com'
+        ```
+        """  # noqa: D212
 
         @classmethod
         def __get_pydantic_core_schema__(
@@ -206,25 +213,42 @@ else:
 
 
 class NameEmail(_repr.Representation):
-    """Usage docs: https://docs.pydantic.dev/2.3/usage/types/string_types/#nameemail
+    """
+    Info:
+        To use this type, you need to install the optional
+        [`email-validator`](https://github.com/JoshData/python-email-validator) package:
 
-    Validate a name and email address combination.
-
-    Example:
-        ```py
-        from pydantic import BaseModel, NameEmail
-
-        class User(BaseModel):
-            email: NameEmail
-
-        print(User(email='John Doe <john.doe@mail.com>'))
-        #> email=NameEmail(name='John Doe', email='john.doe@mail.com')
+        ```bash
+        pip install email-validator
         ```
 
-    Attributes:
-        name: The name.
-        email: The email address.
-    """
+    Validate a name and email address combination, as specified by
+    [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322#section-3.4).
+
+    The `NameEmail` has two properties: `name` and `email`.
+    In case the `name` is not provided, it's inferred from the email address.
+
+    ```py
+    from pydantic import BaseModel, NameEmail
+
+
+    class User(BaseModel):
+        email: NameEmail
+
+
+    user = User(email='Fred Bloggs <fred.bloggs@example.com>')
+    print(user.email)
+    #> Fred Bloggs <fred.bloggs@example.com>
+    print(user.email.name)
+    #> Fred Bloggs
+
+    user = User(email='fred.bloggs@example.com')
+    print(user.email)
+    #> fred.bloggs <fred.bloggs@example.com>
+    print(user.email.name)
+    #> fred.bloggs
+    ```
+    """  # noqa: D212
 
     __slots__ = 'name', 'email'
 

@@ -669,6 +669,9 @@ print(t.model_dump(include={'id': True, 'value': True}))  # (1)!
 
 ## `model_copy(...)`
 
+??? api "API Documentation"
+    [`pydantic.main.BaseModel.model_copy`][pydantic.main.BaseModel.model_copy]<br>
+
 `model_copy()` allows models to be duplicated (with optional updates), which is particularly useful when working with frozen models.
 
 Example:

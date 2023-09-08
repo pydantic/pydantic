@@ -73,7 +73,6 @@ nav:
     - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
     - Strict Types: usage/types/strict_types.md
-    - String Types: usage/types/string_types.md
     - Type and TypeVar: usage/types/typevars.md
     - Types with Fields: usage/types/types_fields.md
     - Unions: usage/types/unions.md
