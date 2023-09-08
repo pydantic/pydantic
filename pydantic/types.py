@@ -746,7 +746,7 @@ class Model(BaseModel):
     f: DirectoryPath
 
 path = Path('directory/')
-path.mkdir(exist_ok=False)
+path.mkdir(exist_ok=True)
 m = Model(f='directory/')
 print(m.model_dump())
 #> {'f': PosixPath('directory')}
