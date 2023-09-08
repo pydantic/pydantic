@@ -206,6 +206,8 @@ plugins:
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
       'usage/types.md': 'usage/types/types.md'
+      'usage/types/secrets.md': 'examples/secrets.md'
+      'usage/types/string_types.md': 'api/types.md'
       'api/main.md': 'api/base_model.md'
       'api/color.md': 'api/pydantic_extra_types_color.md'
       'api/alias_generators.md': 'api/config.md'

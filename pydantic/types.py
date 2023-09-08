@@ -833,9 +833,9 @@ def _secret_display(value: str | bytes) -> str:
 
 
 class SecretStr(_SecretField[str]):
-    """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks..
+    """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays '**********' instead of the string value on `repr()` and `str()` calls.
+    It displays `'**********'` instead of the string value on `repr()` and `str()` calls.
 
     ```py
     from pydantic import BaseModel, SecretStr
@@ -858,9 +858,9 @@ class SecretStr(_SecretField[str]):
 
 
 class SecretBytes(_SecretField[bytes]):
-    """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks..
+    """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    It displays b'**********' instead of the string value on `repr()` and `str()` calls.
+    It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
 
     ```py
     from pydantic import BaseModel, SecretBytes
