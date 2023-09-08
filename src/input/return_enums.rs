@@ -625,8 +625,8 @@ impl GenericPyIterator {
         }
     }
 
-    pub fn input<'a>(&'a self, py: Python<'a>) -> &'a PyAny {
-        self.obj.as_ref(py)
+    pub fn input_as_error_value<'py>(&self, py: Python<'py>) -> InputValue<'py> {
+        InputValue::PyAny(self.obj.clone_ref(py).into_ref(py))
     }
 
     pub fn index(&self) -> usize {
@@ -654,9 +654,8 @@ impl GenericJsonIterator {
         }
     }
 
-    pub fn input<'a>(&'a self, py: Python<'a>) -> &'a PyAny {
-        let input = JsonInput::Array(self.array.clone());
-        input.to_object(py).into_ref(py)
+    pub fn input_as_error_value<'py>(&self, _py: Python<'py>) -> InputValue<'py> {
+        InputValue::JsonInput(JsonInput::Array(self.array.clone()))
     }
 
     pub fn index(&self) -> usize {

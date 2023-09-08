@@ -22,7 +22,7 @@ use super::line_error::ValLineError;
 use super::location::Location;
 use super::types::{ErrorMode, ErrorType};
 use super::value_exception::PydanticCustomError;
-use super::ValError;
+use super::{InputValue, ValError};
 
 #[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
 #[derive(Clone)]
@@ -128,11 +128,11 @@ fn get_url_prefix(py: Python, include_url: bool) -> Option<&str> {
 }
 
 // used to convert a validation error back to ValError for wrap functions
-impl<'a> IntoPy<ValError<'a>> for ValidationError {
-    fn into_py(self, py: Python) -> ValError<'a> {
+impl ValidationError {
+    pub(crate) fn into_val_error(self, py: Python<'_>) -> ValError<'_> {
         self.line_errors
             .into_iter()
-            .map(|e| e.into_py(py))
+            .map(|e| e.into_val_line_error(py))
             .collect::<Vec<_>>()
             .into()
     }
@@ -322,13 +322,13 @@ impl<'a> IntoPy<PyLineError> for ValLineError<'a> {
     }
 }
 
-/// opposite of above, used to extract line errors from a validation error for wrap functions
-impl<'a> IntoPy<ValLineError<'a>> for PyLineError {
-    fn into_py(self, _py: Python) -> ValLineError<'a> {
+impl PyLineError {
+    /// Used to extract line errors from a validation error for wrap functions
+    fn into_val_line_error(self, py: Python<'_>) -> ValLineError<'_> {
         ValLineError {
             error_type: self.error_type,
             location: self.location,
-            input_value: self.input_value.into(),
+            input_value: InputValue::PyAny(self.input_value.into_ref(py)),
         }
     }
 }

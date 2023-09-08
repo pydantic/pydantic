@@ -127,14 +127,14 @@ impl ValidatorIterator {
                         Some(validator) => {
                             if let Some(max_length) = max_length {
                                 if index >= max_length {
-                                    let val_error = ValError::new(
+                                    let val_error = ValError::new_custom_input(
                                         ErrorType::TooLong {
                                             field_type: "Generator".to_string(),
                                             max_length,
                                             actual_length: index + 1,
                                             context: None,
                                         },
-                                        $iter.input(py),
+                                        $iter.input_as_error_value(py),
                                     );
                                     return Err(ValidationError::from_val_error(
                                         py,
@@ -153,14 +153,14 @@ impl ValidatorIterator {
                     None => {
                         if let Some(min_length) = min_length {
                             if $iter.index() < min_length {
-                                let val_error = ValError::new(
+                                let val_error = ValError::new_custom_input(
                                     ErrorType::TooShort {
                                         field_type: "Generator".to_string(),
                                         min_length,
                                         actual_length: $iter.index(),
                                         context: None,
                                     },
-                                    $iter.input(py),
+                                    $iter.input_as_error_value(py),
                                 );
                                 return Err(ValidationError::from_val_error(
                                     py,
