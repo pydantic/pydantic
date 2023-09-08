@@ -1228,32 +1228,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../usage/types/string_types/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    
-  
-    String Types
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../usage/types/typevars/" class="md-nav__link">
         
   
@@ -1444,9 +1418,9 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_26" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_25" >
         
-          <label class="md-nav__link" for="__nav_2_2_26" id="__nav_2_2_26_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_2_25" id="__nav_2_2_25_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1463,8 +1437,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_26_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_2_26">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_25_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_25">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -4390,11 +4364,15 @@
   <div class="doc doc-contents ">
 
   
-      <p>Validate email addresses.</p>
 
-<details class="example" open>
-  <summary>Example</summary>
-  <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span>
+<details class="info" open>
+  <summary>Info</summary>
+  <p>To use this type, you need to install the optional
+<a href="https://github.com/JoshData/python-email-validator"><code>email-validator</code></a> package:</p>
+<div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>email-validator
+</code></pre></div>
+</details>      <p>Validate email addresses.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span>
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">email</span><span class="p">:</span> <span class="n">EmailStr</span>
@@ -4402,7 +4380,7 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="s1">&#39;contact@mail.com&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; email=&#39;contact@mail.com&#39;</span>
 </code></pre></div>
-</details>
+
 
 
   
@@ -4442,58 +4420,41 @@
         Bases: <code><span title="pydantic._internal._repr">_repr</span>.<span title="pydantic._internal._repr.Representation">Representation</span></code></p>
 
   
-      <p>Validate a name and email address combination.</p>
 
-<details class="example" open>
-  <summary>Example</summary>
-  <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NameEmail</span>
+<details class="info" open>
+  <summary>Info</summary>
+  <p>To use this type, you need to install the optional
+<a href="https://github.com/JoshData/python-email-validator"><code>email-validator</code></a> package:</p>
+<div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>email-validator
+</code></pre></div>
+</details>      <p>Validate a name and email address combination, as specified by
+<a href="https://datatracker.ietf.org/doc/html/rfc5322#section-3.4">RFC 5322</a>.</p>
+<p>The <code>NameEmail</code> has two properties: <code>name</code> and <code>email</code>.
+In case the <code>name</code> is not provided, it's inferred from the email address.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">NameEmail</span>
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">email</span><span class="p">:</span> <span class="n">NameEmail</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="s1">&#39;John Doe &lt;john.doe@mail.com&gt;&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; email=NameEmail(name=&#39;John Doe&#39;, email=&#39;john.doe@mail.com&#39;)</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="s1">&#39;Fred Bloggs &lt;fred.bloggs@example.com&gt;&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">)</span>
+<span class="c1">#&gt; Fred Bloggs &lt;fred.bloggs@example.com&gt;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="c1">#&gt; Fred Bloggs</span>
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">email</span><span class="o">=</span><span class="s1">&#39;fred.bloggs@example.com&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="p">)</span>
+<span class="c1">#&gt; fred.bloggs &lt;fred.bloggs@example.com&gt;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">email</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="c1">#&gt; fred.bloggs</span>
 </code></pre></div>
-</details>
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>name</code></td>
-          <td>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The name.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>email</code></td>
-          <td>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The email address.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
 
 
           <details class="quote">
             <summary>Source code in <code>pydantic/networks.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
 </code></pre></div></td></tr></table></div>
@@ -4648,58 +4609,58 @@
 
   <div class="doc doc-contents ">
   
-      <p>Email address validation using https://pypi.org/project/email-validator/.</p>
+      <p>Email address validation using <a href="https://pypi.org/project/email-validator/">email-validator</a>.</p>
 
 <details class="note" open>
   <summary>Note</summary>
   <p>Note that:</p>
 <ul>
 <li>Raw IP address (literal) domain parts are not allowed.</li>
-<li>"John Doe <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#108;&#111;&#99;&#97;&#108;&#95;&#112;&#97;&#114;&#116;&#64;&#100;&#111;&#109;&#97;&#105;&#110;&#46;&#99;&#111;&#109;">&#108;&#111;&#99;&#97;&#108;&#95;&#112;&#97;&#114;&#116;&#64;&#100;&#111;&#109;&#97;&#105;&#110;&#46;&#99;&#111;&#109;</a>" style "pretty" email addresses are processed.</li>
+<li><code>"John Doe &lt;local_part@domain.com&gt;"</code> style "pretty" email addresses are processed.</li>
 <li>Spaces are striped from the beginning and end of addresses, but no error is raised.</li>
 </ul>
 </details>
       <details class="quote">
         <summary>Source code in <code>pydantic/networks.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span>
-<span class="normal">405</span>
-<span class="normal">406</span>
-<span class="normal">407</span>
-<span class="normal">408</span>
-<span class="normal">409</span>
-<span class="normal">410</span>
-<span class="normal">411</span>
-<span class="normal">412</span>
-<span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span>
-<span class="normal">418</span>
-<span class="normal">419</span>
-<span class="normal">420</span>
-<span class="normal">421</span>
-<span class="normal">422</span>
-<span class="normal">423</span>
-<span class="normal">424</span>
-<span class="normal">425</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">425</span>
 <span class="normal">426</span>
 <span class="normal">427</span>
 <span class="normal">428</span>
 <span class="normal">429</span>
 <span class="normal">430</span>
-<span class="normal">431</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Email address validation using https://pypi.org/project/email-validator/.</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Email address validation using [email-validator](https://pypi.org/project/email-validator/).</span>
 
 <span class="sd">    Note:</span>
 <span class="sd">        Note that:</span>
 
 <span class="sd">        * Raw IP address (literal) domain parts are not allowed.</span>
-<span class="sd">        * &quot;John Doe &lt;local_part@domain.com&gt;&quot; style &quot;pretty&quot; email addresses are processed.</span>
+<span class="sd">        * `&quot;John Doe &lt;local_part@domain.com&gt;&quot;` style &quot;pretty&quot; email addresses are processed.</span>
 <span class="sd">        * Spaces are striped from the beginning and end of addresses, but no error is raised.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">email_validator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
