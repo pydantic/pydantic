@@ -24,8 +24,10 @@ The input string must be a valid email address.
 ```py
 from pydantic import BaseModel, EmailStr
 
+
 class Model(BaseModel):
     email: EmailStr
+
 
 print(Model(email='contact@mail.com'))
 #> email='contact@mail.com'
@@ -46,7 +48,7 @@ print(Model(email='contact@mail.com'))
 
 The input string must be a valid email address as specified by the [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322#section-3.4).
 
-The `NameEmail` has two properties: `name` and `email`. In case the name is not provided, it's inferred from the email address.
+The `NameEmail` has two properties: `name` and `email`. In case the `name` is not provided, it's inferred from the email address.
 
 ```py
 from pydantic import BaseModel, NameEmail
