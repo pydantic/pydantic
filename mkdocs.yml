@@ -70,7 +70,6 @@ nav:
     - JSON: usage/types/json.md
     - Lists and Tuples: usage/types/list_types.md
     - Number Types: usage/types/number_types.md
-    - Secret Types: usage/types/secrets.md
     - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
     - Strict Types: usage/types/strict_types.md
@@ -102,6 +101,8 @@ nav:
   - 'Strict Mode': usage/strict_mode.md
   - 'Conversion Table': usage/conversion_table.md
   - 'Settings Management': usage/pydantic_settings.md
+- Examples:
+  - Secrets: examples/secrets.md
 - Error Messages:
   - Error Handling: errors/errors.md
   - Validation Errors: errors/validation_errors.md
@@ -205,6 +206,8 @@ plugins:
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
       'usage/types.md': 'usage/types/types.md'
+      'usage/types/secrets.md': 'examples/secrets.md'
+      'usage/types/string_types.md': 'api/types.md'
       'api/main.md': 'api/base_model.md'
       'api/color.md': 'api/pydantic_extra_types_color.md'
       'api/alias_generators.md': 'api/config.md'
