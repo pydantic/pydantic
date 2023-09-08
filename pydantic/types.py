@@ -695,73 +695,84 @@ class PathType:
 
 
 FilePath = Annotated[Path, PathType('file')]
-"""A path that must point to a file.
+'''A path that must point to a file.
 
 ```py
+from pathlib import Path
 from pydantic import BaseModel, FilePath, ValidationError
 
 class Model(BaseModel):
     f: FilePath
 
-m = Model(f='docs/usage/types/file_types.md')
+path = Path('text.txt')
+path.touch()
+m = Model(f='text.txt')
 print(m.model_dump())
-#> {'f': PosixPath('docs/usage/types/file_types.md')}
+#> {'f': PosixPath('text.txt')}
 
+path = Path('directory')
+path.mkdir()
 try:
-    Model(f='docs/usage/types/')  # directory
+    Model(f='directory/')  # directory
 except ValidationError as e:
     print(e)
-    '''
+    """
     1 validation error for Model
     f
-      Path does not point to a file [type=path_not_file, input_value='docs/usage/types/', input_type=str]
-    '''
+      Path does not point to a file [type=path_not_file, input_value='directory', input_type=str]
+    """
 
 try:
-    Model(f='docs/usage/types/not-exists-file')
+    Model(f='not-exists-file')
 except ValidationError as e:
     print(e)
-    '''
+    """
     1 validation error for Model
     f
-      Path does not point to a file [type=path_not_file, input_value='docs/usage/types/not-exists-file', input_type=str]
-    '''
+      Path does not point to a file [type=path_not_file, input_value='not-exists-file', input_type=str]
+    """
 ```
-"""
+'''
 DirectoryPath = Annotated[Path, PathType('dir')]
-"""A path that must point to a directory.
+'''A path that must point to a directory.
 
 ```py
+from pathlib import Path
+
 from pydantic import BaseModel, DirectoryPath, ValidationError
 
 class Model(BaseModel):
     f: DirectoryPath
 
-m = Model(f='docs/usage/types/')
+path = Path('directory/')
+path.mkdir()
+m = Model(f='directory/')
 print(m.model_dump())
-#> {'f': PosixPath('docs/usage/types')}
+#> {'f': PosixPath('directory')}
 
+path = Path('file.txt')
+path.touch()
 try:
-    Model(f='docs/usage/types/file_types.md')  # file
+    Model(f='file.txt')  # file
 except ValidationError as e:
     print(e)
-    '''
+    """
     1 validation error for Model
     f
-      Path does not point to a directory [type=path_not_directory, input_value='docs/usage/types/file_types.md', input_type=str]
-    '''
+      Path does not point to a directory [type=path_not_directory, input_value='file.txt', input_type=str]
+    """
 
 try:
-    Model(f='docs/usage/not-exists-directory')
+    Model(f='not-exists-directory')
 except ValidationError as e:
     print(e)
-    '''
+    """
     1 validation error for Model
     f
-      Path does not point to a directory [type=path_not_directory, input_value='docs/usage/not-exists-directory', input_type=str]
-    '''
+      Path does not point to a directory [type=path_not_directory, input_value='not-exists-directory', input_type=str]
+    """
 ```
-"""
+'''
 NewPath = Annotated[Path, PathType('new')]
 """A path for a new file or directory that must not already exist."""
 
