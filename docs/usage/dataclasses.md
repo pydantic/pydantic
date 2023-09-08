@@ -138,11 +138,10 @@ class MyDataclass2:
 1. You can read more about `validate_assignment` in [model_config](model_config.md#validate-assignment).
 
 !!! note
-    Pydantic dataclasses do not support [`extra='allow'`](model_config.md#extra-attributes), where extra fields passed
-    to the initializer would be stored as extra attributes on the dataclass.
-
-    `extra='ignore'` is still supported for the purpose of ignoring
-    unexpected fields while parsing data; they just won't be stored on the instance.
+    Pydantic dataclasses support [`extra`](model_config.md#extra-attributes) configuration to `ignore`, `forbid`, or
+    `allow` extra fields passed to the initializer. However, some default behavior of stdlib dataclasses may prevail.
+    For example, any extra fields present on a Pydantic dataclass using `extra='allow'` are omitted when the dataclass
+    is `print`ed.
 
 ## Nested dataclasses
 
