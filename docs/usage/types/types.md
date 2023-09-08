@@ -24,7 +24,6 @@ The following sections describe the types supported by Pydantic.
 * [Sequence, Iterable, & Iterator](sequence_iterable.md) &mdash; iterable types including `Sequence`, `Iterable`, and `Iterator`.
 * [Sets and frozenset](set_types.md) &mdash; `set` and `frozenset` types.
 * [Strict Types](strict_types.md) &mdash; types that enable you to prevent coercion from compatible types.
-* [String Types](string_types.md) &mdash; `str` types.
 * [Type and TypeVar](typevars.md) &mdash; `Type` and `TypeVar` types.
 * [Types with Fields](types_fields.md) &mdash; types that allow you to define fields.
 * [Unions](unions.md) &mdash; allows a model attribute to accept different types.
