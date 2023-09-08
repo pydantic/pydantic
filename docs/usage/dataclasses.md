@@ -140,7 +140,8 @@ class MyDataclass2:
 !!! note
     Pydantic dataclasses support [`extra`](model_config.md#extra-attributes) configuration to `ignore`, `forbid`, or
     `allow` extra fields passed to the initializer. However, some default behavior of stdlib dataclasses may prevail.
-    For example, extra fields are omitted when `print`ing a Pydantic dataclass with allowed extra fields.
+    For example, any extra fields present on a Pydantic dataclass using `extra='allow'` are omitted when the dataclass
+    is `print`ed.
 
 ## Nested dataclasses
 
