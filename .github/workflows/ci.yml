@@ -51,12 +51,12 @@ jobs:
         python-version: '3.8'
 
     - name: install dependencies
+      # Unlike the docs build, we don't use mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
+      # Because the secret for accessing the library is not accessible from forks, but we still want to run
+      # this job on public CI runs.
       run: |
         pdm venv create --with-pip $PYTHON
         pdm install -G docs
-        pdm run python -m pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
-      env:
-        MKDOCS_TOKEN: ${{ secrets.MKDOCS_TOKEN }}
 
     - run: pdm run python -c 'import docs.plugins.main'
 
