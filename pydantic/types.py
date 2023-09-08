@@ -710,11 +710,12 @@ path.touch()
 m = Model(f='text.txt')
 print(m.model_dump())
 #> {'f': PosixPath('text.txt')}
+path.unlink()
 
 path = Path('directory')
 path.mkdir()
 try:
-    Model(f='directory/')  # directory
+    Model(f='directory')  # directory
 except ValidationError as e:
     print(e)
     '''
@@ -722,6 +723,7 @@ except ValidationError as e:
     f
       Path does not point to a file [type=path_not_file, input_value='directory', input_type=str]
     '''
+path.rmdir()
 
 try:
     Model(f='not-exists-file')
@@ -746,10 +748,11 @@ class Model(BaseModel):
     f: DirectoryPath
 
 path = Path('directory/')
-path.mkdir(exist_ok=True)
+path.mkdir()
 m = Model(f='directory/')
 print(m.model_dump())
 #> {'f': PosixPath('directory')}
+path.rmdir()
 
 path = Path('file.txt')
 path.touch()
@@ -762,6 +765,7 @@ except ValidationError as e:
     f
       Path does not point to a directory [type=path_not_directory, input_value='file.txt', input_type=str]
     '''
+path.unlink()
 
 try:
     Model(f='not-exists-directory')
