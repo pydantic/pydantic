@@ -20,7 +20,6 @@ The following sections describe the types supported by Pydantic.
 * [JSON](json.md) &mdash; a type that allows you to store JSON data in your model.
 * [Lists and Tuples](list_types.md) &mdash; `list` and `tuple` types.
 * [Number Types](number_types.md) &mdash; `int`, `float`, `Decimal`, and other number types.
-* [Secret Types](secrets.md) &mdash; types for storing sensitive information that you do not want to be visible in logging or tracebacks.
 * [Sequence, Iterable, & Iterator](sequence_iterable.md) &mdash; iterable types including `Sequence`, `Iterable`, and `Iterator`.
 * [Sets and frozenset](set_types.md) &mdash; `set` and `frozenset` types.
 * [Strict Types](strict_types.md) &mdash; types that enable you to prevent coercion from compatible types.
