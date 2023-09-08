@@ -331,11 +331,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/usage/types/file_types/</loc>
-         <lastmod>2023-09-08</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.pydantic.dev/latest/usage/types/json/</loc>
          <lastmod>2023-09-08</lastmod>
          <changefreq>daily</changefreq>
