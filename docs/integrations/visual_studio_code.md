@@ -219,7 +219,7 @@ So, this is the equivalent of the previous example, without the additional varia
 
 ### Config in class arguments
 
-Pydantic has a rich set of [Model Configurations](../usage/model_config.md) available.
+Pydantic has a rich set of [Model Configurations](api/config.md) available.
 
 These configurations can be set in an internal `class Config` on each model:
 

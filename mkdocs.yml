@@ -98,7 +98,7 @@ nav:
   - 'Conversion Table': usage/conversion_table.md
   - 'Settings Management': usage/pydantic_settings.md
 - Concepts:
-  - Model Config: usage/model_config.md
+  - Model Config: concepts/model_config.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
