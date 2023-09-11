@@ -660,13 +660,13 @@ my_dog = Dog(**init_kwargs)
 my_dog.model_dump(**model_dump_settings)
 ```
 
-{{ exclude_table }}
+{{ exclude_overrides_table }}
 
 Using the same case with the `Dog` class defined above, this table shows the expected behavior when using combinations 
 of `exclude` at the `Field` constructor level and `exclude_none`, `exclude_defaults`, and `exclude_unset` for the 
 `model_dump` and `model_dump_json` methods.
 
-{{ exclude_x_table }}
+{{ exclude_variants_table }}
 
 
 ## `model_copy(...)`

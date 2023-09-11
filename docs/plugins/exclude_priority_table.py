@@ -10,6 +10,7 @@ from .utils import generate_table_heading, generate_table_row
 class ExcludeSetting:
     name: str
     value: Union[bool, set]
+    md_str: Optional[str] = None
 
     open_nowrap_span: str = '<span style="white-space: nowrap;">'
     close_nowrap_span: str = '</span>'
@@ -19,24 +20,25 @@ class ExcludeSetting:
         o = self.open_nowrap_span
         c = self.close_nowrap_span
 
-        return f'{o}`{self.name}={self.value}`{c}'
+        return self.md_str or f'{o}`{self.name}={self.value}`{c}'
 
     @property
     def kwargs_dict(self) -> Dict[str, Union[str, bool, set]]:
-        return {self.name: self.value}
+        return {self.name: self.value} if self.name != 'not_specified' else {}
 
 
 field_exclude_settings: List[ExcludeSetting] = [
     ExcludeSetting(name='exclude', value=False),
     ExcludeSetting(name='exclude', value=True),
 ]
-model_dump_exclude_settings: List[ExcludeSetting] = [
+model_dump_exclude_overrides_settings: List[ExcludeSetting] = [
     ExcludeSetting(name='exclude', value={'name'}),
     ExcludeSetting(name='exclude', value={}),
     ExcludeSetting(name='include', value={'name'}),
     ExcludeSetting(name='include', value={}),
 ]
-model_dump_exclude_x_settings: List[ExcludeSetting] = [
+model_dump_exclude_variants_settings: List[ExcludeSetting] = [
+    ExcludeSetting(name='not_specified', value={}, md_str='<not specified>'),
     ExcludeSetting(name='exclude_none', value=True),
     ExcludeSetting(name='exclude_defaults', value=True),
     ExcludeSetting(name='exclude_unset', value=True),
@@ -86,13 +88,13 @@ def build_exclude_priority_table(
     return table
 
 
-exclude_table = build_exclude_priority_table(
+exclude_overrides_table = build_exclude_priority_table(
     field_settings=field_exclude_settings,
-    model_dump_settings=model_dump_exclude_settings,
+    model_dump_settings=model_dump_exclude_overrides_settings,
     constructor_kwargs=[{'name': 'Ralph'}],
 )
-exclude_x_table = build_exclude_priority_table(
+exclude_variants_table = build_exclude_priority_table(
     field_settings=field_exclude_settings,
-    model_dump_settings=model_dump_exclude_x_settings,
+    model_dump_settings=model_dump_exclude_variants_settings,
     constructor_kwargs=[{'name': 'Ralph'}, {'name': 'Unspecified'}, {'name': None}, {}],
 )
