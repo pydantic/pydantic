@@ -16,6 +16,8 @@ from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
 from .conversion_table import conversion_table
+from .exclude_priority_table import exclude_table, exclude_x_table
+from .utils import generate_table_heading, generate_table_row
 
 logger = logging.getLogger('mkdocs.plugin')
 THIS_DIR = Path(__file__).parent
@@ -55,6 +57,8 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     elif md := devtools_example(markdown, page):
         return md
     elif md := install_pydantic_extra_types(markdown, page):
+        return md
+    elif md := build_exclude_priority_table(markdown, page):
         return md
     else:
         return markdown
@@ -225,14 +229,6 @@ def render_why(markdown: str, page: Page) -> str | None:
     return re.sub(r'{{ *organisations *}}', '\n\n'.join(elements), markdown)
 
 
-def _generate_table_row(col_values: list[str]) -> str:
-    return f'| {" | ".join(col_values)} |\n'
-
-
-def _generate_table_heading(col_names: list[str]) -> str:
-    return _generate_table_row(col_names) + _generate_table_row(['-'] * len(col_names))
-
-
 def build_schema_mappings(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'usage/schema.md':
         return None
@@ -244,7 +240,7 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
         'Defined in',
         'Notes',
     ]
-    table_text = _generate_table_heading(col_names)
+    table_text = generate_table_heading(col_names)
 
     with (THIS_DIR / 'schema_mappings.toml').open('rb') as f:
         table = tomli.load(f)
@@ -258,7 +254,7 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
         if additional and not isinstance(additional, str):
             additional = json.dumps(additional)
         cols = [f'`{py_type}`', f'`{json_type}`', f'`{additional}`' if additional else '', defined_in, notes]
-        table_text += _generate_table_row(cols)
+        table_text += generate_table_row(cols)
 
     return re.sub(r'{{ *schema_mappings_table *}}', table_text, markdown)
 
@@ -279,6 +275,16 @@ def build_conversion_table(markdown: str, page: Page) -> str | None:
         table_markdown = conversion_table.filtered(predicate).as_markdown()
         table_markdown = textwrap.indent(table_markdown, '    ')
         markdown = re.sub(rf'{{{{ *conversion_table_{table_id} *}}}}', table_markdown, markdown)
+
+    return markdown
+
+
+def build_exclude_priority_table(markdown: str, page: Page) -> str | None:
+    if page.file.src_uri != 'usage/serialization.md':
+        return None
+
+    markdown = re.sub(r'{{ *exclude_table *}}', exclude_table, markdown)
+    markdown = re.sub(r'{{ *exclude_x_table *}}', exclude_x_table, markdown)
 
     return markdown
 

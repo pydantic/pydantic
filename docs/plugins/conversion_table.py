@@ -17,6 +17,8 @@ from typing_extensions import TypedDict
 
 from pydantic import ByteSize, InstanceOf
 
+from .utils import generate_table_heading, generate_table_row
+
 
 @dataclass
 class Row:
@@ -77,15 +79,9 @@ class ConversionTable:
             row.condition if row.condition else '',
         ]
 
-    @staticmethod
-    def row_as_markdown(cols: list[str]) -> str:
-        return f'| {" | ".join(cols)} |'
-
     def as_markdown(self) -> str:
-        lines = [self.row_as_markdown(self.col_names), self.row_as_markdown(['-'] * len(self.col_names))]
-        for row in self.rows:
-            lines.append(self.row_as_markdown(self.col_values(row)))
-        return '\n'.join(lines)
+        table_heading = generate_table_heading(self.col_names)
+        return ''.join([table_heading, *[generate_table_row(row) for row in self.rows]])
 
     @staticmethod
     def row_sort_key(row: Row) -> Any:

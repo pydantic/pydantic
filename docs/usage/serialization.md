@@ -698,6 +698,44 @@ print(person.model_dump(exclude_defaults=True))  # (3)!
 3. `age` excluded from the output because `exclude_defaults` was set to `True`, and `age` takes the default value of `None`.
 
 
+See the tables below regarding expected behavior for `Field` and `model_dump()` level `include` and `exclude`.
+
+First, imagine a case where we have the following class definition:
+
+```py
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
+
+class Dog(BaseModel):
+    name: Optional[str] = Field(default=None)
+
+
+my_dog = Dog(name='Ralph')
+```
+
+Assuming we specify the `Field` level `exclude` setting as specified by the row in the table
+and a `model_dump` setting specified by the column in the table, the result of `my_dog.model_dump(<<settings>>)` is shown in the intersecting cell.
+
+{{ exclude_table }}
+
+In this more complex case, we revise our constructor call to the following, without the `name` argument.
+```py
+from typing import Optional
+
+from pydantic import BaseModel, Field
+
+
+class Dog(BaseModel):
+    name: Optional[str] = Field(default=None)
+
+my_dog = Dog()
+```
+
+{{ exclude_x_table }}
+
+
 ## `model_copy(...)`
 
 ??? api "API Documentation"
