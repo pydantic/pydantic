@@ -77,6 +77,30 @@ class ConfigDict(TypedDict, total=False):
     !!! note
         The name of this configuration setting was changed in **v2.0** from
         `allow_population_by_alias` to `populate_by_name`.
+
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class User(BaseModel):
+        model_config = ConfigDict(populate_by_name=True)
+
+        name: str = Field(alias='full_name')  # (1)!
+        age: int
+
+
+    user = User(full_name='John Doe', age=20)  # (2)!
+    print(user)
+    #> name='John Doe' age=20
+    user = User(name='John Doe', age=20)  # (3)!
+    print(user)
+    #> name='John Doe' age=20
+    ```
+
+    1. The field `'name'` has an alias `'full_name'`.
+    2. The model is populated by the alias `'full_name'`.
+    3. The model is populated by the field name `'name'`.
     """
 
     use_enum_values: bool
@@ -87,6 +111,62 @@ class ConfigDict(TypedDict, total=False):
 
     validate_assignment: bool
     arbitrary_types_allowed: bool
+    """
+    Whether arbitrary types are allowed for field types. Defaults to `False`.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+    # This is not a pydantic model, it's an arbitrary class
+    class Pet:
+        def __init__(self, name: str):
+            self.name = name
+
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        pet: Pet
+        owner: str
+
+
+    pet = Pet(name='Hedwig')
+    # A simple check of instance type is used to validate the data
+    model = Model(owner='Harry', pet=pet)
+    print(model)
+    #> pet=<__main__.Pet object at 0x0123456789ab> owner='Harry'
+    print(model.pet)
+    #> <__main__.Pet object at 0x0123456789ab>
+    print(model.pet.name)
+    #> Hedwig
+    print(type(model.pet))
+    #> <class '__main__.Pet'>
+    try:
+        # If the value is not an instance of the type, it's invalid
+        Model(owner='Harry', pet='Hedwig')
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        pet
+        Input should be an instance of Pet [type=is_instance_of, input_value='Hedwig', input_type=str]
+        '''
+    # Nothing in the instance of the arbitrary type is checked
+    # Here name probably should have been a str, but it's not validated
+    pet2 = Pet(name=42)
+    model2 = Model(owner='Harry', pet=pet2)
+    print(model2)
+    #> pet=<__main__.Pet object at 0x0123456789ab> owner='Harry'
+    print(model2.pet)
+    #> <__main__.Pet object at 0x0123456789ab>
+    print(model2.pet.name)
+    #> 42
+    print(type(model2.pet))
+    #> <class '__main__.Pet'>
+    ```
+    """
+
     from_attributes: bool
     """
     Whether to build models and look up discriminators of tagged unions using python object attributes.
@@ -176,14 +256,99 @@ class ConfigDict(TypedDict, total=False):
     A `tuple` of strings that prevent model to have field which conflict with them.
     Defaults to `('model_', )`).
 
-    See [Protected Namespaces](../usage/model_config.md#protected-namespaces) for details.
+    Pydantic prevents collisions between model attributes and `BaseModel`'s own methods by
+    namespacing them with the prefix `model_`.
+
+    You can customize this behavior using the `protected_namespaces` setting:
+
+    ```py
+    import warnings
+
+    from pydantic import BaseModel, ConfigDict
+
+    warnings.filterwarnings('error')  # Raise warnings as errors
+
+    try:
+
+        class Model(BaseModel):
+            model_prefixed_field: str
+            also_protect_field: str
+
+            model_config = ConfigDict(
+                protected_namespaces=('protect_me_', 'also_protect_')
+            )
+
+    except UserWarning as e:
+        print(e)
+        '''
+        Field "also_protect_field" has conflict with protected namespace "also_protect_".
+
+        You may be able to resolve this warning by setting `model_config['protected_namespaces'] = ('protect_me_',)`.
+        '''
+    ```
+
+    While Pydantic will only emit a warning when an item is in a protected namespace but does not actually have a collision,
+    an error _is_ raised if there is an actual collision with an existing attribute:
+
+    ```py
+    from pydantic import BaseModel
+
+    try:
+
+        class Model(BaseModel):
+            model_validate: str
+
+    except NameError as e:
+        print(e)
+        '''
+        Field "model_validate" conflicts with member <bound method BaseModel.model_validate of <class 'pydantic.main.BaseModel'>> of protected namespace "model_".
+        '''
+    ```
     """
 
     hide_input_in_errors: bool
     """
     Whether to hide inputs when printing errors. Defaults to `False`.
 
-    See [Hide Input in Errors](../usage/model_config.md#hide-input-in-errors).
+    Pydantic shows the input value and type when it raises `ValidationError` during the validation.
+
+    ```py
+    from pydantic import BaseModel, ValidationError
+
+    class Model(BaseModel):
+        a: str
+
+    try:
+        Model(a=123)
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        a
+        Input should be a valid string [type=string_type, input_value=123, input_type=int]
+        '''
+    ```
+
+    You can hide the input value and type by setting the `hide_input_in_errors` config to `True`.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, ValidationError
+
+    class Model(BaseModel):
+        a: str
+
+        model_config = ConfigDict(hide_input_in_errors=True)
+
+    try:
+        Model(a=123)
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        a
+        Input should be a valid string [type=string_type]
+        '''
+    ```
     """
 
     defer_build: bool
