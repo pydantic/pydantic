@@ -1611,9 +1611,7 @@ class EncodedStr(EncodedBytes):
 
 
     # Initialize the model with encoded data
-    m = Model(
-        my_encoded_str="**encoded**: some str",
-    )
+    m = Model(my_encoded_str='**encoded**: some str')
 
     # Access decoded value
     print(m.my_encoded_str)
@@ -1629,7 +1627,7 @@ class EncodedStr(EncodedBytes):
 
     # Validate encoded data
     try:
-        Model(my_encoded_str="**undecodable**")
+        Model(my_encoded_str='**undecodable**')
     except ValidationError as e:
         print(e)
         '''
@@ -1684,17 +1682,15 @@ Note:
 ```py
 from pydantic import Base64Bytes, BaseModel, ValidationError
 
-
 class Model(BaseModel):
     base64_bytes: Base64Bytes
 
-
 # Initialize the model with base64 data
-m = Model(base64_bytes=b"VGhpcyBpcyB0aGUgd2F5")
+m = Model(base64_bytes=b'VGhpcyBpcyB0aGUgd2F5')
 
 # Access decoded value
 print(m.base64_bytes)
-# > b'This is the way'
+#> b'This is the way'
 
 # Serialize into the base64 form
 print(m.model_dump())
@@ -1728,17 +1724,15 @@ Note:
 ```py
 from pydantic import Base64Str, BaseModel, ValidationError
 
-
 class Model(BaseModel):
     base64_str: Base64Str
-
 
 # Initialize the model with base64 data
 m = Model(base64_str='VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y')
 
 # Access decoded value
 print(m.base64_str)
-# > These aren't the droids you're looking for
+#> These aren't the droids you're looking for
 
 # Serialize into the base64 form
 print(m.model_dump())
@@ -1750,7 +1744,7 @@ print(m.model_dump())
 
 # Validate base64 data
 try:
-    print(Model(base64_str="undecodable").base64_str)
+    print(Model(base64_str='undecodable').base64_str)
 except ValidationError as e:
     print(e)
     '''
@@ -1773,10 +1767,8 @@ Note:
 ```py
 from pydantic import Base64UrlBytes, BaseModel
 
-
 class Model(BaseModel):
     base64url_bytes: Base64UrlBytes
-
 
 # Initialize the model with base64 data
 m = Model(base64url_bytes=b'SHc_dHc-TXc==')
@@ -1798,10 +1790,8 @@ Note:
 ```py
 from pydantic import Base64UrlStr, BaseModel
 
-
 class Model(BaseModel):
     base64url_str: Base64UrlStr
-
 
 # Initialize the model with base64 data
 m = Model(base64url_str='SHc_dHc-TXc==')
