@@ -125,6 +125,10 @@ def plugin(version: str) -> type[Plugin]:
     return PydanticPlugin
 
 
+class _DeferAnalysis(Exception):
+    pass
+
+
 class PydanticPlugin(Plugin):
     """The Pydantic mypy plugin."""
 
@@ -351,7 +355,10 @@ class PydanticModelField:
             # however this plugin is called very late, so all types should be fully ready.
             # Also, it is tricky to avoid eager expansion of Self types here (e.g. because
             # we serialize attributes).
-            return expand_type(self.type, {self.info.self_type.id: fill_typevars(current_info)})
+            expanded_type = expand_type(self.type, {self.info.self_type.id: fill_typevars(current_info)})
+            if isinstance(self.type, UnionType) and not isinstance(expanded_type, UnionType):
+                raise _DeferAnalysis()
+            return expanded_type
         return self.type
 
     def to_var(self, current_info: TypeInfo, use_alias: bool) -> Var:
@@ -442,7 +449,11 @@ class PydanticModelTransformer:
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings)
         self.add_model_construct_method(fields, config, is_settings)
-        self.set_frozen(fields, frozen=config.frozen is True)
+        try:
+            self.set_frozen(fields, frozen=config.frozen is True)
+        except _DeferAnalysis:
+            if not self._api.final_iteration:
+                self._api.defer()
 
         self.adjust_decorator_signatures()
 
