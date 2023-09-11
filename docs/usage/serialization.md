@@ -730,6 +730,7 @@ from pydantic import BaseModel, Field
 class Dog(BaseModel):
     name: Optional[str] = Field(default=None)
 
+
 my_dog = Dog()
 ```
 
