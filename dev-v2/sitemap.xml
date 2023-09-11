@@ -221,11 +221,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/usage/computed_fields/</loc>
-         <lastmod>2023-09-11</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.pydantic.dev/latest/usage/conversion_table/</loc>
          <lastmod>2023-09-11</lastmod>
          <changefreq>daily</changefreq>
