@@ -24,7 +24,7 @@ class ExcludeSetting:
 
     @property
     def kwargs_dict(self) -> Dict[str, Union[str, bool, set]]:
-        return {self.name: self.value} if self.name != 'not_specified' else {}
+        return {} if self.name == 'not_specified' else {self.name: self.value}
 
 
 field_exclude_settings: List[ExcludeSetting] = [
@@ -38,7 +38,7 @@ model_dump_exclude_overrides_settings: List[ExcludeSetting] = [
     ExcludeSetting(name='include', value={}),
 ]
 model_dump_exclude_variants_settings: List[ExcludeSetting] = [
-    ExcludeSetting(name='not_specified', value={}, md_str='<not specified>'),
+    ExcludeSetting(name='not_specified', value={}, md_str='`<not specified>`'),  # special case
     ExcludeSetting(name='exclude_none', value=True),
     ExcludeSetting(name='exclude_defaults', value=True),
     ExcludeSetting(name='exclude_unset', value=True),
