@@ -646,18 +646,18 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-# differ by table row / col
-init_kwargs = {}
-field_settings = {}
-model_dump_settings = {}
+# differs by table row / col
+init_kws = {}
+field_kws = {}
+model_dump_kws = {}
 
 
 class Dog(BaseModel):
-    name: Optional[str] = Field(default='Unspecified', **field_settings)
+    name: Optional[str] = Field(default='Unspecified', **field_kws)
 
 
-my_dog = Dog(**init_kwargs)
-my_dog.model_dump(**model_dump_settings)
+my_dog = Dog(**init_kws)
+my_dog.model_dump(**model_dump_kws)
 ```
 
 {{ exclude_overrides_table }}

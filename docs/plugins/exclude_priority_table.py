@@ -6,21 +6,22 @@ from pydantic import BaseModel, Field
 from .utils import generate_table_heading, generate_table_row
 
 
+def _no_wrap(s: str) -> str:
+    open_nowrap_span: str = '<span style="white-space: nowrap;">'
+    close_nowrap_span: str = '</span>'
+
+    return f'{open_nowrap_span}{s}{close_nowrap_span}'
+
+
 @dataclass
 class ExcludeSetting:
     name: str
     value: Union[bool, set]
     md_str: Optional[str] = None
 
-    open_nowrap_span: str = '<span style="white-space: nowrap;">'
-    close_nowrap_span: str = '</span>'
-
     @property
     def markdown_str(self) -> str:
-        o = self.open_nowrap_span
-        c = self.close_nowrap_span
-
-        return self.md_str or f'{o}`{self.name}={self.value}`{c}'
+        return self.md_str or f'{self.name}={self.value}'
 
     @property
     def kwargs_dict(self) -> Dict[str, Union[str, bool, set]]:
@@ -68,19 +69,18 @@ def build_exclude_priority_table(
             rows.append(
                 generate_table_row(
                     col_values=[
-                        f'`{kwargs_}`' if idx == 0 else '',
-                        model_dump_setting.markdown_str,
-                        *[f'`{x}`' for x in col_values],
+                        _no_wrap(f'`{kwargs_}`') if idx == 0 else '',
+                        _no_wrap(f'`{str(model_dump_setting.kwargs_dict)}`'),
+                        *[_no_wrap(f'`{str(x)}`') for x in col_values],
                     ]
                 )
             )
 
     table_heading = generate_table_heading(
         col_names=[
-            '<br></br>`__init__` **kwargs**',
-            '<br></br>`model_dump` **Setting**',
-            f'`Field` **Setting**<br></br>{field_settings[0].markdown_str}',
-            *[f'<br></br>{x.markdown_str}' for x in field_settings[1:]],
+            '`init_kws`',
+            '`model_dump_kws`',
+            *[f'`model_dump` with {_no_wrap(f"`Field({x.markdown_str})`")}' for x in field_settings],
         ]
     )
     table = ''.join([table_heading, *rows])
