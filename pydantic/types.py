@@ -1471,7 +1471,66 @@ class Base64UrlEncoder(EncoderProtocol):
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class EncodedBytes:
-    """A bytes type that is encoded and decoded using the specified encoder."""
+    """A bytes type that is encoded and decoded using the specified encoder.
+
+    `EncodedBytes` needs an encoder that implements `EncoderProtocol` to operate.
+
+    ```
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, EncodedBytes, EncoderProtocol, ValidationError
+
+
+    class MyEncoder(EncoderProtocol):
+        @classmethod
+        def decode(cls, data: bytes) -> bytes:
+            if data == b"**undecodable**":
+                raise ValueError("Cannot decode data")
+            return data[13:]
+
+        @classmethod
+        def encode(cls, value: bytes) -> bytes:
+            return b"**encoded**: " + value
+
+        @classmethod
+        def get_json_format(cls) -> str:
+            return "my-encoder"
+
+
+    MyEncodedBytes = Annotated[bytes, EncodedBytes(encoder=MyEncoder)]
+
+
+    class Model(BaseModel):
+        my_encoded_bytes: MyEncodedBytes
+
+
+    # Initialize the model with encoded data
+    m = Model(my_encoded_bytes=b"**encoded**: some bytes")
+
+    # Access decoded value
+    print(m.my_encoded_bytes)
+    # > b'some bytes'
+
+    # Serialize into the encoded form
+    print(m.model_dump())
+    '''
+    {
+        'my_encoded_bytes': b'**encoded**: some bytes',
+    }
+    '''
+
+    # Validate encoded data
+    try:
+        Model(my_encoded_bytes=b"**undecodable**")
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        my_encoded_bytes
+        Value error, Cannot decode data [type=value_error, input_value=b'**undecodable**', input_type=bytes]
+        '''
+    ```
+    """
 
     encoder: type[EncoderProtocol]
 
