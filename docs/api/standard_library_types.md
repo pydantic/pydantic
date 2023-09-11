@@ -1,3 +1,6 @@
+---
+description: Support for common types from the Python standard library.
+---
 
 # bool
 
