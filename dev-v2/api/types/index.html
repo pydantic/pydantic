@@ -986,32 +986,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../usage/types/encoded/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    
-  
-    Encoded Types
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../usage/types/enums/" class="md-nav__link">
         
   
@@ -1324,32 +1298,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../usage/types/encoded/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    
-  
-    Encoded
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../usage/types/custom/" class="md-nav__link">
         
   
@@ -1384,9 +1332,9 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_23" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_21" >
         
-          <label class="md-nav__link" for="__nav_2_2_23" id="__nav_2_2_23_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_2_21" id="__nav_2_2_21_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1403,8 +1351,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_23_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_2_23">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -5804,6 +5752,40 @@
   <div class="doc doc-contents ">
   
       <p>A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.</p>
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>Under the hood, <code>Base64Bytes</code> use standard library <code>base64.encodebytes</code> and <code>base64.decodebytes</code> functions.</p>
+<p>As a result, attempting to decode url-safe base64 data using the <code>Base64Bytes</code> type may fail or produce an incorrect
+decoding.</p>
+</details>      <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64Bytes</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">base64_bytes</span><span class="p">:</span> <span class="n">Base64Bytes</span>
+
+<span class="c1"># Initialize the model with base64 data</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">base64_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;VGhpcyBpcyB0aGUgd2F5&#39;</span><span class="p">)</span>
+
+<span class="c1"># Access decoded value</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">base64_bytes</span><span class="p">)</span>
+<span class="c1">#&gt; b&#39;This is the way&#39;</span>
+
+<span class="c1"># Serialize into the base64 form</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;base64_bytes&#39;: b&#39;VGhpcyBpcyB0aGUgd2F5</span>
+<span class="s1">&#39;}</span>
+
+<span class="c1"># Validate base64 data</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">base64_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;undecodable&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">base64_bytes</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    base64_bytes</span>
+<span class="sd">      Base64 decoding error: &#39;Incorrect padding&#39; [type=base64_decode, input_value=b&#39;undecodable&#39;, input_type=bytes]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+</code></pre></div>
   </div>
 
 </div>
@@ -5829,6 +5811,40 @@
   <div class="doc doc-contents ">
   
       <p>A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.</p>
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>Under the hood, <code>Base64Bytes</code> use standard library <code>base64.encodebytes</code> and <code>base64.decodebytes</code> functions.</p>
+<p>As a result, attempting to decode url-safe base64 data using the <code>Base64Str</code> type may fail or produce an incorrect
+decoding.</p>
+</details>      <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64Str</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">base64_str</span><span class="p">:</span> <span class="n">Base64Str</span>
+
+<span class="c1"># Initialize the model with base64 data</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">base64_str</span><span class="o">=</span><span class="s1">&#39;VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y&#39;</span><span class="p">)</span>
+
+<span class="c1"># Access decoded value</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">base64_str</span><span class="p">)</span>
+<span class="c1">#&gt; These aren&#39;t the droids you&#39;re looking for</span>
+
+<span class="c1"># Serialize into the base64 form</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;base64_str&#39;: &#39;VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y</span>
+<span class="s1">&#39;}</span>
+
+<span class="c1"># Validate base64 data</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">base64_str</span><span class="o">=</span><span class="s1">&#39;undecodable&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">base64_str</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    base64_str</span>
+<span class="sd">      Base64 decoding error: &#39;Incorrect padding&#39; [type=base64_decode, input_value=&#39;undecodable&#39;, input_type=str]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+</code></pre></div>
   </div>
 
 </div>
@@ -5854,6 +5870,23 @@
   <div class="doc doc-contents ">
   
       <p>A bytes type that is encoded and decoded using the URL-safe base64 encoder.</p>
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>Under the hood, <code>Base64UrlBytes</code> use standard library <code>base64.urlsafe_b64encode</code> and <code>base64.urlsafe_b64decode</code>
+functions.</p>
+<p>As a result, the <code>Base64UrlBytes</code> type can be used to faithfully decode "vanilla" base64 data
+(using <code>'+'</code> and <code>'/'</code>).</p>
+</details>      <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64UrlBytes</span><span class="p">,</span> <span class="n">BaseModel</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">base64url_bytes</span><span class="p">:</span> <span class="n">Base64UrlBytes</span>
+
+<span class="c1"># Initialize the model with base64 data</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">base64url_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;SHc_dHc-TXc==&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; base64url_bytes=b&#39;Hw?tw&gt;Mw&#39;</span>
+</code></pre></div>
   </div>
 
 </div>
@@ -5879,6 +5912,22 @@
   <div class="doc doc-contents ">
   
       <p>A str type that is encoded and decoded using the URL-safe base64 encoder.</p>
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>Under the hood, <code>Base64UrlStr</code> use standard library <code>base64.urlsafe_b64encode</code> and <code>base64.urlsafe_b64decode</code>
+functions.</p>
+<p>As a result, the <code>Base64UrlStr</code> type can be used to faithfully decode "vanilla" base64 data (using <code>'+'</code> and <code>'/'</code>).</p>
+</details>      <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Base64UrlStr</span><span class="p">,</span> <span class="n">BaseModel</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">base64url_str</span><span class="p">:</span> <span class="n">Base64UrlStr</span>
+
+<span class="c1"># Initialize the model with base64 data</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">base64url_str</span><span class="o">=</span><span class="s1">&#39;SHc_dHc-TXc==&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; base64url_str=&#39;Hw?tw&gt;Mw&#39;</span>
+</code></pre></div>
   </div>
 
 </div>
@@ -8162,6 +8211,53 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
   
       <p>A bytes type that is encoded and decoded using the specified encoder.</p>
+<p><code>EncodedBytes</code> needs an encoder that implements <code>EncoderProtocol</code> to operate.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EncodedBytes</span><span class="p">,</span> <span class="n">EncoderProtocol</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="k">class</span> <span class="nc">MyEncoder</span><span class="p">(</span><span class="n">EncoderProtocol</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;**undecodable**&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot decode data&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="mi">13</span><span class="p">:]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">b</span><span class="s1">&#39;**encoded**: &#39;</span> <span class="o">+</span> <span class="n">value</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_json_format</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;my-encoder&#39;</span>
+
+<span class="n">MyEncodedBytes</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">EncodedBytes</span><span class="p">(</span><span class="n">encoder</span><span class="o">=</span><span class="n">MyEncoder</span><span class="p">)]</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_encoded_bytes</span><span class="p">:</span> <span class="n">MyEncodedBytes</span>
+
+<span class="c1"># Initialize the model with encoded data</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_encoded_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;**encoded**: some bytes&#39;</span><span class="p">)</span>
+
+<span class="c1"># Access decoded value</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">my_encoded_bytes</span><span class="p">)</span>
+<span class="c1">#&gt; b&#39;some bytes&#39;</span>
+
+<span class="c1"># Serialize into the encoded form</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;my_encoded_bytes&#39;: b&#39;**encoded**: some bytes&#39;}</span>
+
+<span class="c1"># Validate encoded data</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">my_encoded_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;**undecodable**&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    my_encoded_bytes</span>
+<span class="sd">      Value error, Cannot decode data [type=value_error, input_value=b&#39;**undecodable**&#39;, input_type=bytes]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+</code></pre></div>
 
 
 
@@ -8245,16 +8341,16 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1494</span>
-<span class="normal">1495</span>
-<span class="normal">1496</span>
-<span class="normal">1497</span>
-<span class="normal">1498</span>
-<span class="normal">1499</span>
-<span class="normal">1500</span>
-<span class="normal">1501</span>
-<span class="normal">1502</span>
-<span class="normal">1503</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1545</span>
+<span class="normal">1546</span>
+<span class="normal">1547</span>
+<span class="normal">1548</span>
+<span class="normal">1549</span>
+<span class="normal">1550</span>
+<span class="normal">1551</span>
+<span class="normal">1552</span>
+<span class="normal">1553</span>
+<span class="normal">1554</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -8338,16 +8434,16 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1505</span>
-<span class="normal">1506</span>
-<span class="normal">1507</span>
-<span class="normal">1508</span>
-<span class="normal">1509</span>
-<span class="normal">1510</span>
-<span class="normal">1511</span>
-<span class="normal">1512</span>
-<span class="normal">1513</span>
-<span class="normal">1514</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1556</span>
+<span class="normal">1557</span>
+<span class="normal">1558</span>
+<span class="normal">1559</span>
+<span class="normal">1560</span>
+<span class="normal">1561</span>
+<span class="normal">1562</span>
+<span class="normal">1563</span>
+<span class="normal">1564</span>
+<span class="normal">1565</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -8388,6 +8484,53 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
   
       <p>A str type that is encoded and decoded using the specified encoder.</p>
+<p><code>EncodedStr</code> needs an encoder that implements <code>EncoderProtocol</code> to operate.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EncodedStr</span><span class="p">,</span> <span class="n">EncoderProtocol</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="k">class</span> <span class="nc">MyEncoder</span><span class="p">(</span><span class="n">EncoderProtocol</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;**undecodable**&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Cannot decode data&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span><span class="p">[</span><span class="mi">13</span><span class="p">:]</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">encode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">b</span><span class="s1">&#39;**encoded**: &#39;</span> <span class="o">+</span> <span class="n">value</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">get_json_format</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s1">&#39;my-encoder&#39;</span>
+
+<span class="n">MyEncodedStr</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">EncodedStr</span><span class="p">(</span><span class="n">encoder</span><span class="o">=</span><span class="n">MyEncoder</span><span class="p">)]</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_encoded_str</span><span class="p">:</span> <span class="n">MyEncodedStr</span>
+
+<span class="c1"># Initialize the model with encoded data</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">my_encoded_str</span><span class="o">=</span><span class="s1">&#39;**encoded**: some str&#39;</span><span class="p">)</span>
+
+<span class="c1"># Access decoded value</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">my_encoded_str</span><span class="p">)</span>
+<span class="c1">#&gt; some str</span>
+
+<span class="c1"># Serialize into the encoded form</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;my_encoded_str&#39;: &#39;**encoded**: some str&#39;}</span>
+
+<span class="c1"># Validate encoded data</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">my_encoded_str</span><span class="o">=</span><span class="s1">&#39;**undecodable**&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    my_encoded_str</span>
+<span class="sd">      Value error, Cannot decode data [type=value_error, input_value=&#39;**undecodable**&#39;, input_type=str]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+</code></pre></div>
 
 
 
@@ -8471,16 +8614,16 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1532</span>
-<span class="normal">1533</span>
-<span class="normal">1534</span>
-<span class="normal">1535</span>
-<span class="normal">1536</span>
-<span class="normal">1537</span>
-<span class="normal">1538</span>
-<span class="normal">1539</span>
-<span class="normal">1540</span>
-<span class="normal">1541</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1634</span>
+<span class="normal">1635</span>
+<span class="normal">1636</span>
+<span class="normal">1637</span>
+<span class="normal">1638</span>
+<span class="normal">1639</span>
+<span class="normal">1640</span>
+<span class="normal">1641</span>
+<span class="normal">1642</span>
+<span class="normal">1643</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -8564,16 +8707,16 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1543</span>
-<span class="normal">1544</span>
-<span class="normal">1545</span>
-<span class="normal">1546</span>
-<span class="normal">1547</span>
-<span class="normal">1548</span>
-<span class="normal">1549</span>
-<span class="normal">1550</span>
-<span class="normal">1551</span>
-<span class="normal">1552</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1645</span>
+<span class="normal">1646</span>
+<span class="normal">1647</span>
+<span class="normal">1648</span>
+<span class="normal">1649</span>
+<span class="normal">1650</span>
+<span class="normal">1651</span>
+<span class="normal">1652</span>
+<span class="normal">1653</span>
+<span class="normal">1654</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>

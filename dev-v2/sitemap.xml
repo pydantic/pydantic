@@ -321,11 +321,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/usage/types/encoded/</loc>
-         <lastmod>2023-09-11</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.pydantic.dev/latest/usage/types/enums/</loc>
          <lastmod>2023-09-11</lastmod>
          <changefreq>daily</changefreq>
