@@ -1483,17 +1483,17 @@ class EncodedBytes:
     class MyEncoder(EncoderProtocol):
         @classmethod
         def decode(cls, data: bytes) -> bytes:
-            if data == b"**undecodable**":
-                raise ValueError("Cannot decode data")
+            if data == b'**undecodable**':
+                raise ValueError('Cannot decode data')
             return data[13:]
 
         @classmethod
         def encode(cls, value: bytes) -> bytes:
-            return b"**encoded**: " + value
+            return b'**encoded**: ' + value
 
         @classmethod
         def get_json_format(cls) -> str:
-            return "my-encoder"
+            return 'my-encoder'
 
     MyEncodedBytes = Annotated[bytes, EncodedBytes(encoder=MyEncoder)]
 
@@ -1501,7 +1501,7 @@ class EncodedBytes:
         my_encoded_bytes: MyEncodedBytes
 
     # Initialize the model with encoded data
-    m = Model(my_encoded_bytes=b"**encoded**: some bytes")
+    m = Model(my_encoded_bytes=b'**encoded**: some bytes')
 
     # Access decoded value
     print(m.my_encoded_bytes)
@@ -1517,7 +1517,7 @@ class EncodedBytes:
 
     # Validate encoded data
     try:
-        Model(my_encoded_bytes=b"**undecodable**")
+        Model(my_encoded_bytes=b'**undecodable**')
     except ValidationError as e:
         print(e)
         '''
@@ -1585,17 +1585,17 @@ class EncodedStr(EncodedBytes):
     class MyEncoder(EncoderProtocol):
         @classmethod
         def decode(cls, data: bytes) -> bytes:
-            if data == b"**undecodable**":
-                raise ValueError("Cannot decode data")
+            if data == b'**undecodable**':
+                raise ValueError('Cannot decode data')
             return data[13:]
 
         @classmethod
         def encode(cls, value: bytes) -> bytes:
-            return b"**encoded**: " + value
+            return b'**encoded**: ' + value
 
         @classmethod
         def get_json_format(cls) -> str:
-            return "my-encoder"
+            return 'my-encoder'
 
     MyEncodedStr = Annotated[str, EncodedStr(encoder=MyEncoder)]
 
@@ -1686,11 +1686,7 @@ print(m.base64_bytes)
 
 # Serialize into the base64 form
 print(m.model_dump())
-'''
-{
-    'base64_bytes': b'VGhpcyBpcyB0aGUgd2F5\n',
-}
-'''
+#> {'base64_bytes': b'VGhpcyBpcyB0aGUgd2F5\n'}
 
 # Validate base64 data
 try:
