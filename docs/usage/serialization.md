@@ -634,105 +634,37 @@ The same holds for the `model_dump_json` method.
 ### Model- and field-level include and exclude
 
 In addition to the explicit arguments `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
-we can also pass the `exclude: bool` arguments directly to the `Field` constructor:
+we can also pass the `exclude: bool` arguments directly to the `Field` constructor.
 
-Setting `exclude` on the field constructor (`Field(..., exclude=True)`) takes priority over the
-`exclude`/`include` on `model_dump` and `model_dump_json`:
+The table below shows the expected behavior when using combinations of `exclude` at the `Field` constructor level
+and `exclude` and `include` for the `model_dump` and `model_dump_json` methods.
 
-```py
-from pydantic import BaseModel, Field, SecretStr
-
-
-class User(BaseModel):
-    id: int
-    username: str
-    password: SecretStr = Field(..., exclude=True)
-
-
-class Transaction(BaseModel):
-    id: str
-    value: int = Field(exclude=True)
-
-
-t = Transaction(
-    id='1234567890',
-    value=9876543210,
-)
-
-print(t.model_dump())
-#> {'id': '1234567890'}
-print(t.model_dump(include={'id': True, 'value': True}))  # (1)!
-#> {'id': '1234567890'}
-```
-
-1. `value` excluded from the output because it excluded in `Field`.
-
-That being said, setting `exclude` on the field constructor (`Field(..., exclude=True)`) does not take priority
-over the `exclude_unset`, `exclude_none`, and `exclude_default` parameters on `model_dump` and `model_dump_json`:
+Imagine a case where we have the following class definition + instance creation:
 
 ```py
 from typing import Optional
 
 from pydantic import BaseModel, Field
 
-
-class Person(BaseModel):
-    name: str
-    age: Optional[int] = Field(None, exclude=False)
-
-
-person = Person(name='Jeremy')
-
-print(person.model_dump())
-#> {'name': 'Jeremy', 'age': None}
-print(person.model_dump(exclude_none=True))  # (1)!
-#> {'name': 'Jeremy'}
-print(person.model_dump(exclude_unset=True))  # (2)!
-#> {'name': 'Jeremy'}
-print(person.model_dump(exclude_defaults=True))  # (3)!
-#> {'name': 'Jeremy'}
-```
-
-1. `age` excluded from the output because `exclude_none` was set to `True`, and `age` is `None`.
-2. `age` excluded from the output because `exclude_unset` was set to `True`, and `age` was not set in the Person constructor.
-3. `age` excluded from the output because `exclude_defaults` was set to `True`, and `age` takes the default value of `None`.
-
-
-See the tables below regarding expected behavior for `Field` and `model_dump()` level `include` and `exclude`.
-
-First, imagine a case where we have the following class definition:
-
-```py
-from typing import Optional
-
-from pydantic import BaseModel, Field
+# differ by table row / col
+init_kwargs = {}
+field_settings = {}
+model_dump_settings = {}
 
 
 class Dog(BaseModel):
-    name: Optional[str] = Field(default=None)
+    name: Optional[str] = Field(default='Unspecified', **field_settings)
 
 
-my_dog = Dog(name='Ralph')
+my_dog = Dog(**init_kwargs)
+my_dog.model_dump(**model_dump_settings)
 ```
-
-Assuming we specify the `Field` level `exclude` setting as specified by the row in the table
-and a `model_dump` setting specified by the column in the table, the result of `my_dog.model_dump(<<settings>>)` is shown in the intersecting cell.
 
 {{ exclude_table }}
 
-In this more complex case, we revise our constructor call to the following, without the `name` argument.
-```py
-from typing import Optional
-
-from pydantic import BaseModel, Field
-
-
-class Dog(BaseModel):
-    name: Optional[str] = Field(default=None)
-
-
-my_dog = Dog()
-```
+Using the same case with the `Dog` class defined above, this table shows the expected behavior when using combinations 
+of `exclude` at the `Field` constructor level and `exclude_none`, `exclude_defaults`, and `exclude_unset` for the 
+`model_dump` and `model_dump_json` methods.
 
 {{ exclude_x_table }}
 
