@@ -81,7 +81,7 @@ class ConversionTable:
 
     def as_markdown(self) -> str:
         table_heading = generate_table_heading(self.col_names)
-        return ''.join([table_heading, *[generate_table_row(row) for row in self.rows]])
+        return ''.join([table_heading, *[generate_table_row(self.col_values(row)) for row in self.rows]])
 
     @staticmethod
     def row_sort_key(row: Row) -> Any:

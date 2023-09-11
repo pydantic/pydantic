@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -10,27 +10,32 @@ from .utils import generate_table_heading, generate_table_row
 class ExcludeSetting:
     name: str
     value: Union[bool, set]
+    open_nowrap_span: str = '<span style="white-space: nowrap;">'
+    close_nowrap_span: str = '</span>'
 
     @property
     def markdown_str(self) -> str:
-        return f'`{self.name}={self.value}`'
+        o = self.open_nowrap_span
+        c = self.close_nowrap_span
+
+        return f'{o}`{self.name}={self.value}`{c}'
 
     @property
-    def kwargs_dict(self) -> dict[str, Union[str, bool, set]]:
+    def kwargs_dict(self) -> Dict[str, Union[str, bool, set]]:
         return {self.name: self.value}
 
 
-field_exclude_settings: list[ExcludeSetting] = [
+field_exclude_settings: List[ExcludeSetting] = [
     ExcludeSetting(name='exclude', value=True),
     ExcludeSetting(name='exclude', value=False),
 ]
-model_dump_exclude_settings: list[ExcludeSetting] = [
+model_dump_exclude_settings: List[ExcludeSetting] = [
     ExcludeSetting(name='exclude', value={'name'}),
     ExcludeSetting(name='exclude', value={}),
     ExcludeSetting(name='include', value={'name'}),
     ExcludeSetting(name='include', value={}),
 ]
-model_dump_exclude_x_settings: list[ExcludeSetting] = [
+model_dump_exclude_x_settings: List[ExcludeSetting] = [
     ExcludeSetting(name='exclude_none', value=True),
     ExcludeSetting(name='exclude_none', value=False),
     ExcludeSetting(name='exclude_defaults', value=True),
@@ -41,7 +46,7 @@ model_dump_exclude_x_settings: list[ExcludeSetting] = [
 
 
 def build_exclude_priority_table(
-    field_settings: list[ExcludeSetting], model_dump_settings: list[ExcludeSetting], constructor_kwargs: dict[str, Any]
+    field_settings: List[ExcludeSetting], model_dump_settings: List[ExcludeSetting], constructor_kwargs: Dict[str, Any]
 ) -> str:
     rows = []
     for field_setting in field_settings:
