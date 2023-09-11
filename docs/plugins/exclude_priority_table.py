@@ -27,8 +27,8 @@ class ExcludeSetting:
 
 
 field_exclude_settings: List[ExcludeSetting] = [
-    ExcludeSetting(name='exclude', value=True),
     ExcludeSetting(name='exclude', value=False),
+    ExcludeSetting(name='exclude', value=True),
 ]
 model_dump_exclude_settings: List[ExcludeSetting] = [
     ExcludeSetting(name='exclude', value={'name'}),
@@ -38,38 +38,47 @@ model_dump_exclude_settings: List[ExcludeSetting] = [
 ]
 model_dump_exclude_x_settings: List[ExcludeSetting] = [
     ExcludeSetting(name='exclude_none', value=True),
-    ExcludeSetting(name='exclude_none', value={}),
     ExcludeSetting(name='exclude_defaults', value=True),
-    ExcludeSetting(name='exclude_defaults', value=False),
     ExcludeSetting(name='exclude_unset', value=True),
-    ExcludeSetting(name='exclude_unset', value=False),
 ]
 
 
 def build_exclude_priority_table(
-        field_settings: List[ExcludeSetting], model_dump_settings: List[ExcludeSetting],
-        constructor_kwargs: Dict[str, Any]
+    field_settings: List[ExcludeSetting],
+    model_dump_settings: List[ExcludeSetting],
+    constructor_kwargs: List[Dict[str, Any]],
 ) -> str:
     rows = []
-    for model_dump_setting in model_dump_settings:
-        col_values = []
-        for field_setting in field_settings:
-            class Dog(BaseModel):
-                """Example class for explanation of `exclude` priority."""
+    for kwargs_ in constructor_kwargs:
+        for idx, model_dump_setting in enumerate(model_dump_settings):
+            col_values = []
+            for field_setting in field_settings:
 
-                name: Optional[str] = Field(default=None, **field_setting.kwargs_dict)
+                class Dog(BaseModel):
+                    """Example class for explanation of `exclude` priority."""
 
-            my_dog = Dog(**constructor_kwargs)
-            result = my_dog.model_dump(**model_dump_setting.kwargs_dict)
-            col_values.append(result)
+                    name: Optional[str] = Field(default='Unspecified', **field_setting.kwargs_dict)
 
-        rows.append(generate_table_row(col_values=[model_dump_setting.markdown_str, *[f'`{x}`' for x in col_values]]))
+                my_dog = Dog(**kwargs_)
+                result = my_dog.model_dump(**model_dump_setting.kwargs_dict)
+                col_values.append(result)
+
+            rows.append(
+                generate_table_row(
+                    col_values=[
+                        f'`{kwargs_}`' if idx == 0 else '',
+                        model_dump_setting.markdown_str,
+                        *[f'`{x}`' for x in col_values],
+                    ]
+                )
+            )
 
     table_heading = generate_table_heading(
         col_names=[
-            f'<br></br>`model_dump` **Setting**',
+            '<br></br>`__init__` **kwargs**',
+            '<br></br>`model_dump` **Setting**',
             f'`Field` **Setting**<br></br>{field_settings[0].markdown_str}',
-            *[f'<br></br>{x.markdown_str}' for x in field_settings[1:]]
+            *[f'<br></br>{x.markdown_str}' for x in field_settings[1:]],
         ]
     )
     table = ''.join([table_heading, *rows])
@@ -80,8 +89,10 @@ def build_exclude_priority_table(
 exclude_table = build_exclude_priority_table(
     field_settings=field_exclude_settings,
     model_dump_settings=model_dump_exclude_settings,
-    constructor_kwargs={'name': 'Ralph'},
+    constructor_kwargs=[{'name': 'Ralph'}],
 )
 exclude_x_table = build_exclude_priority_table(
-    field_settings=field_exclude_settings, model_dump_settings=model_dump_exclude_x_settings, constructor_kwargs={}
+    field_settings=field_exclude_settings,
+    model_dump_settings=model_dump_exclude_x_settings,
+    constructor_kwargs=[{'name': 'Ralph'}, {'name': 'Unspecified'}, {'name': None}, {}],
 )
