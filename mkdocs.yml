@@ -64,7 +64,6 @@ nav:
     - Callables: usage/types/callables.md
     - Datetimes: usage/types/datetime.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
-    - Encoded Types: usage/types/encoded.md
     - Enums and Choices: usage/types/enums.md
     - JSON: usage/types/json.md
     - Lists and Tuples: usage/types/list_types.md
@@ -77,7 +76,6 @@ nav:
     - Unions: usage/types/unions.md
     - URLs: usage/types/urls.md
     - UUIDs: usage/types/uuids.md
-    - Encoded: usage/types/encoded.md
     - Custom Data Types: usage/types/custom.md
     - Extra Types:
       - Extra Types Overview: usage/types/extra_types/extra_types.md
