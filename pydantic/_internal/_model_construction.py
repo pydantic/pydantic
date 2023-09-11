@@ -22,6 +22,7 @@ from ._decorators import (
     DecoratorInfos,
     PydanticDescriptorProxy,
     get_attribute_from_bases,
+    mro_for_bases,
 )
 from ._discriminated_union import apply_discriminators
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
@@ -274,7 +275,10 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
     from ..main import BaseModel
 
     model_post_init = get_attribute_from_bases(bases, 'model_post_init')
-    if model_post_init is not BaseModel.model_post_init:
+    for base in mro_for_bases(bases):
+        # Using `__dict__` instead of `getattr` to avoid getting the `model_post_init` from `BaseModel`
+        model_post_init = base.__dict__.get('model_post_init')
+    if model_post_init is not None and model_post_init is not BaseModel.model_post_init:
         return model_post_init
 
 
