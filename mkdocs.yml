@@ -90,7 +90,6 @@ nav:
   - 'Fields': usage/fields.md
   - 'JSON Schema': usage/json_schema.md
   - 'Serialization': usage/serialization.md
-  - 'Computed Fields': usage/computed_fields.md
   - 'Dataclasses': usage/dataclasses.md
   - 'TypeAdapter': usage/type_adapter.md
   - 'Validation Decorator': usage/validation_decorator.md
