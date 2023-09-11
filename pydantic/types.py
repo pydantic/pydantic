@@ -1509,11 +1509,7 @@ class EncodedBytes:
 
     # Serialize into the encoded form
     print(m.model_dump())
-    '''
-    {
-        'my_encoded_bytes': b'**encoded**: some bytes',
-    }
-    '''
+    #> {'my_encoded_bytes': b'**encoded**: some bytes'}
 
     # Validate encoded data
     try:
@@ -1523,7 +1519,7 @@ class EncodedBytes:
         '''
         1 validation error for Model
         my_encoded_bytes
-        Value error, Cannot decode data [type=value_error, input_value=b'**undecodable**', input_type=bytes]
+          Value error, Cannot decode data [type=value_error, input_value=b'**undecodable**', input_type=bytes]
         '''
     ```
     """
@@ -1611,11 +1607,7 @@ class EncodedStr(EncodedBytes):
 
     # Serialize into the encoded form
     print(m.model_dump())
-    '''
-    {
-        'my_encoded_str': '**encoded**: some str',
-    }
-    '''
+    #> {'my_encoded_str': '**encoded**: some str'}
 
     # Validate encoded data
     try:
@@ -1625,7 +1617,7 @@ class EncodedStr(EncodedBytes):
         '''
         1 validation error for Model
         my_encoded_str
-        Value error, Cannot decode data [type=value_error, input_value='**undecodable**', input_type=str]
+          Value error, Cannot decode data [type=value_error, input_value='**undecodable**', input_type=str]
         '''
     ```
     """
