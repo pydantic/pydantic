@@ -1480,7 +1480,6 @@ class EncodedBytes:
 
     from pydantic import BaseModel, EncodedBytes, EncoderProtocol, ValidationError
 
-
     class MyEncoder(EncoderProtocol):
         @classmethod
         def decode(cls, data: bytes) -> bytes:
@@ -1496,20 +1495,17 @@ class EncodedBytes:
         def get_json_format(cls) -> str:
             return "my-encoder"
 
-
     MyEncodedBytes = Annotated[bytes, EncodedBytes(encoder=MyEncoder)]
-
 
     class Model(BaseModel):
         my_encoded_bytes: MyEncodedBytes
-
 
     # Initialize the model with encoded data
     m = Model(my_encoded_bytes=b"**encoded**: some bytes")
 
     # Access decoded value
     print(m.my_encoded_bytes)
-    # > b'some bytes'
+    #> b'some bytes'
 
     # Serialize into the encoded form
     print(m.model_dump())
@@ -1586,7 +1582,6 @@ class EncodedStr(EncodedBytes):
 
     from pydantic import BaseModel, EncodedStr, EncoderProtocol, ValidationError
 
-
     class MyEncoder(EncoderProtocol):
         @classmethod
         def decode(cls, data: bytes) -> bytes:
@@ -1602,20 +1597,17 @@ class EncodedStr(EncodedBytes):
         def get_json_format(cls) -> str:
             return "my-encoder"
 
-
     MyEncodedStr = Annotated[str, EncodedStr(encoder=MyEncoder)]
-
 
     class Model(BaseModel):
         my_encoded_str: MyEncodedStr
-
 
     # Initialize the model with encoded data
     m = Model(my_encoded_str='**encoded**: some str')
 
     # Access decoded value
     print(m.my_encoded_str)
-    # > some str
+    #> some str
 
     # Serialize into the encoded form
     print(m.model_dump())
@@ -1702,7 +1694,7 @@ print(m.model_dump())
 
 # Validate base64 data
 try:
-    print(Model(base64_bytes=b"undecodable").base64_bytes)
+    print(Model(base64_bytes=b'undecodable').base64_bytes)
 except ValidationError as e:
     print(e)
     '''
@@ -1736,11 +1728,7 @@ print(m.base64_str)
 
 # Serialize into the base64 form
 print(m.model_dump())
-'''
-{
-    'base64_str': 'VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y\n',
-}
-'''
+#> {'base64_str': 'VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y\n'}
 
 # Validate base64 data
 try:
@@ -1773,9 +1761,7 @@ class Model(BaseModel):
 # Initialize the model with base64 data
 m = Model(base64url_bytes=b'SHc_dHc-TXc==')
 print(m)
-'''
-base64_bytes=b'Hw?tw>Mw' base64_str='Hw?tw>Mw' base64url_bytes=b'Hw?tw>Mw' base64url_str='Hw?tw>Mw'
-'''
+#> base64url_bytes=b'Hw?tw>Mw'
 ```
 """
 Base64UrlStr = Annotated[str, EncodedStr(encoder=Base64UrlEncoder)]
@@ -1796,9 +1782,7 @@ class Model(BaseModel):
 # Initialize the model with base64 data
 m = Model(base64url_str='SHc_dHc-TXc==')
 print(m)
-'''
-base64_bytes=b'Hw?tw>Mw' base64_str='Hw?tw>Mw' base64url_bytes=b'Hw?tw>Mw' base64url_str='Hw?tw>Mw'
-'''
+#> base64url_str='Hw?tw>Mw'
 ```
 """
 
