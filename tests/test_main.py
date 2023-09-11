@@ -2018,7 +2018,7 @@ def test_model_post_init_correct_mro():
 
     C()
 
-    assert calls == ["B.model_post_init"]
+    assert calls == ['B.model_post_init']
 
 
 def test_deeper_recursive_model():
