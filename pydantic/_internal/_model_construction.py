@@ -271,10 +271,11 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
     if 'model_post_init' in namespace:
         return namespace['model_post_init']
 
-    for base in bases:
-        model_post_init = getattr(base, 'model_post_init', None)
-        if model_post_init is not None:
-            return model_post_init
+    from ..main import BaseModel
+
+    model_post_init = get_attribute_from_bases(bases, 'model_post_init')
+    if model_post_init is not BaseModel.model_post_init:
+        return model_post_init
 
 
 def inspect_namespace(  # noqa C901
