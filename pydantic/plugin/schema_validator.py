@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import contextlib
 import functools
+import warnings
 from enum import Enum
 from typing import Any, Callable, Iterator, TypeVar
 
@@ -149,7 +150,12 @@ class _PluginAPI:
                 with self.run_once(callback) as callback_once:
                     if callback_once is None:
                         continue
-                    callback_once(*args, **kwargs)
+                    try:
+                        callback_once(*args, **kwargs)
+                    except ImportError as e:
+                        warnings.warn(
+                            f'ImportError while running a Pydantic plugin {callback.__code__.co_filename!r}: {e}'
+                        )
 
         return wrapper
 

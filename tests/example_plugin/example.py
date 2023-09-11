@@ -1,6 +1,9 @@
-from pydantic import BaseModel, create_model
+from pydantic import BaseModel
 
-Model: type[BaseModel] = create_model('Model')
+
+class Model(BaseModel):
+    pass
+
 
 m = Model()
 

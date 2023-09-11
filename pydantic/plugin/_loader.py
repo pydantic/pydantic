@@ -53,12 +53,14 @@ def load_plugins():
     - https://github.com/pytest-dev/pytest/blob/5c0e5aa399(16e6a49962e662002c23f578e897c9/src/pluggy/_manager.py#L352-L377
     """
     global _plugins
+
     for dist in importlib_metadata.distributions():
         for entry_point in dist.entry_points:
-            if entry_point.group == GROUP:
-                if entry_point.value in _plugins:
-                    continue
-                _plugins[entry_point.value] = entry_point.load()
+            if entry_point.group != GROUP:
+                continue
+            if entry_point.value in _plugins:
+                continue
+            _plugins[entry_point.value] = entry_point.load()
 
 
 def __getattr__(attr_name: str) -> object:

@@ -250,24 +250,6 @@ def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPat
 
 def test_fresh_import_using_example_plugin(monkeypatch: pytest.MonkeyPatch, unimport_pydantic):
     def fake_distributions():
-        class FakeOnValidatePython(OnValidatePython):
-            def on_enter(
-                self,
-                input: Any,
-                *,
-                strict: bool | None = None,
-                from_attributes: bool | None = None,
-                context: dict[str, Any] | None = None,
-                self_instance: Any | None = None,
-            ) -> None:
-                pass
-
-            def on_success(self, result: Any) -> None:
-                pass
-
-            def on_error(self, error: ValidationError) -> None:
-                pass
-
         class ExampleEntryPoint:
             group = 'pydantic'
             value = 'pydantic.tests.example_plugin.plugin:plugin'
@@ -286,6 +268,13 @@ def test_fresh_import_using_example_plugin(monkeypatch: pytest.MonkeyPatch, unim
         monkeypatch.setattr('importlib.metadata.distributions', fake_distributions)
     else:
         monkeypatch.setattr('importlib_metadata.distributions', fake_distributions)
+
+    with pytest.warns(UserWarning, match='ImportError while running a Pydantic plugin'):
+        from .example_plugin import example_func
+
+    from pydantic.plugin._loader import plugins
+
+    assert len(plugins) == 1
 
     from .example_plugin import example_func
 
