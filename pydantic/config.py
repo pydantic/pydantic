@@ -63,12 +63,10 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict
 
-
     class User(BaseModel):
         model_config = ConfigDict(extra='ignore')  # (1)!
 
         name: str
-
 
     user = User(name='John Doe', age=20)  # (2)!
     print(user)
@@ -83,12 +81,10 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict
 
-
     class User(BaseModel):
         model_config = ConfigDict(extra='allow')
 
         name: str
-
 
     user = User(name='John Doe', age=20)  # (1)!
     print(user)
@@ -102,12 +98,10 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict, ValidationError
 
-
     class User(BaseModel):
         model_config = ConfigDict(extra='forbid')
 
         name: str
-
 
     try:
         User(name='John Doe', age=20)
@@ -116,7 +110,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         1 validation error for User
         age
-        Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
+          Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
         '''
     ```
     """
@@ -212,7 +206,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         1 validation error for User
         name
-        Input should be a valid string [type=string_type, input_value=123, input_type=int]
+          Input should be a valid string [type=string_type, input_value=123, input_type=int]
         '''
     ```
     """
@@ -223,7 +217,6 @@ class ConfigDict(TypedDict, total=False):
 
     ```py
     from pydantic import BaseModel, ConfigDict, ValidationError
-
 
     # This is not a pydantic model, it's an arbitrary class
     class Pet:
@@ -255,7 +248,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         1 validation error for Model
         pet
-        Input should be an instance of Pet [type=is_instance_of, input_value='Hedwig', input_type=str]
+          Input should be an instance of Pet [type=is_instance_of, input_value='Hedwig', input_type=str]
         '''
     # Nothing in the instance of the arbitrary type is checked
     # Here name probably should have been a str, but it's not validated
@@ -422,7 +415,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         1 validation error for Transaction
         user.hobbies.0
-        Input should be a valid string [type=string_type, input_value=1, input_type=int]
+          Input should be a valid string [type=string_type, input_value=1, input_type=int]
         '''
 
     my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
@@ -572,7 +565,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         1 validation error for Model
         a
-        Input should be a valid string [type=string_type, input_value=123, input_type=int]
+          Input should be a valid string [type=string_type, input_value=123, input_type=int]
         '''
     ```
 
@@ -593,7 +586,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         1 validation error for Model
         a
-        Input should be a valid string [type=string_type]
+          Input should be a valid string [type=string_type]
         '''
     ```
     """

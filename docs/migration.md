@@ -218,7 +218,7 @@ dataclasses without having to subclass `BaseModel`. Pydantic V2 introduces the f
     * `schema_extra` → `json_schema_extra`
     * `validate_all` → `validate_default`
 
-See [Model Config](usage/model_config.md) for more details.
+See the [API Reference](api/config.md) for more details.
 
 ### Changes to validators
 
