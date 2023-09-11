@@ -278,8 +278,8 @@ def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...])
     for base in mro_for_bases(bases):
         # Using `__dict__` instead of `getattr` to avoid getting the `model_post_init` from `BaseModel`
         model_post_init = base.__dict__.get('model_post_init')
-    if model_post_init is not None and model_post_init is not BaseModel.model_post_init:
-        return model_post_init
+        if model_post_init is not None and model_post_init is not BaseModel.model_post_init:
+            return model_post_init
 
 
 def inspect_namespace(  # noqa C901
