@@ -1517,7 +1517,7 @@ class EncodedBytes:
         return hash(self.encoder)
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_dataclasses.dataclass()
 class EncodedStr(EncodedBytes):
     """A str type that is encoded and decoded using the specified encoder."""
 
@@ -1551,6 +1551,9 @@ class EncodedStr(EncodedBytes):
             The encoded data.
         """
         return super().encode(value=value.encode()).decode()
+
+    def __hash__(self) -> int:
+        return hash(self.encoder)
 
 
 Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
