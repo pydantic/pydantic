@@ -1475,7 +1475,7 @@ class EncodedBytes:
 
     `EncodedBytes` needs an encoder that implements `EncoderProtocol` to operate.
 
-    ```
+    ```py
     from typing_extensions import Annotated
 
     from pydantic import BaseModel, EncodedBytes, EncoderProtocol, ValidationError
@@ -1577,7 +1577,68 @@ class EncodedBytes:
 
 
 class EncodedStr(EncodedBytes):
-    """A str type that is encoded and decoded using the specified encoder."""
+    """A str type that is encoded and decoded using the specified encoder.
+
+    `EncodedStr` needs an encoder that implements `EncoderProtocol` to operate.
+
+    ```py
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, EncodedStr, EncoderProtocol, ValidationError
+
+
+    class MyEncoder(EncoderProtocol):
+        @classmethod
+        def decode(cls, data: bytes) -> bytes:
+            if data == b"**undecodable**":
+                raise ValueError("Cannot decode data")
+            return data[13:]
+
+        @classmethod
+        def encode(cls, value: bytes) -> bytes:
+            return b"**encoded**: " + value
+
+        @classmethod
+        def get_json_format(cls) -> str:
+            return "my-encoder"
+
+
+    MyEncodedStr = Annotated[str, EncodedStr(encoder=MyEncoder)]
+
+
+    class Model(BaseModel):
+        my_encoded_str: MyEncodedStr
+
+
+    # Initialize the model with encoded data
+    m = Model(
+        my_encoded_str="**encoded**: some str",
+    )
+
+    # Access decoded value
+    print(m.my_encoded_str)
+    # > some str
+
+    # Serialize into the encoded form
+    print(m.model_dump())
+    '''
+    {
+        'my_encoded_str': '**encoded**: some str',
+    }
+    '''
+
+    # Validate encoded data
+    try:
+        Model(my_encoded_str="**undecodable**")
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        my_encoded_str
+        Value error, Cannot decode data [type=value_error, input_value='**undecodable**', input_type=str]
+        '''
+    ```
+    """
 
     def __get_pydantic_core_schema__(
         self, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
@@ -1612,13 +1673,144 @@ class EncodedStr(EncodedBytes):
 
 
 Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
-"""A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder."""
+"""A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
+
+Note:
+    Under the hood, `Base64Bytes` use standard library `base64.encodebytes` and `base64.decodebytes` functions.
+
+    As a result, attempting to decode url-safe base64 data using the `Base64Bytes` type may fail or produce an incorrect
+    decoding.
+
+```py
+from pydantic import Base64Bytes, BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    base64_bytes: Base64Bytes
+
+
+# Initialize the model with base64 data
+m = Model(base64_bytes=b"VGhpcyBpcyB0aGUgd2F5")
+
+# Access decoded value
+print(m.base64_bytes)
+# > b'This is the way'
+
+# Serialize into the base64 form
+print(m.model_dump())
+'''
+{
+    'base64_bytes': b'VGhpcyBpcyB0aGUgd2F5\n',
+}
+'''
+
+# Validate base64 data
+try:
+    print(Model(base64_bytes=b"undecodable").base64_bytes)
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for Model
+    base64_bytes
+      Base64 decoding error: 'Incorrect padding' [type=base64_decode, input_value=b'undecodable', input_type=bytes]
+    '''
+```
+"""
 Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
-"""A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder."""
+"""A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
+
+Note:
+    Under the hood, `Base64Bytes` use standard library `base64.encodebytes` and `base64.decodebytes` functions.
+
+    As a result, attempting to decode url-safe base64 data using the `Base64Str` type may fail or produce an incorrect
+    decoding.
+
+```py
+from pydantic import Base64Str, BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    base64_str: Base64Str
+
+
+# Initialize the model with base64 data
+m = Model(base64_str='VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y')
+
+# Access decoded value
+print(m.base64_str)
+# > These aren't the droids you're looking for
+
+# Serialize into the base64 form
+print(m.model_dump())
+'''
+{
+    'base64_str': 'VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y\n',
+}
+'''
+
+# Validate base64 data
+try:
+    print(Model(base64_str="undecodable").base64_str)
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for Model
+    base64_str
+      Base64 decoding error: 'Incorrect padding' [type=base64_decode, input_value='undecodable', input_type=str]
+    '''
+```
+"""
 Base64UrlBytes = Annotated[bytes, EncodedBytes(encoder=Base64UrlEncoder)]
-"""A bytes type that is encoded and decoded using the URL-safe base64 encoder."""
+"""A bytes type that is encoded and decoded using the URL-safe base64 encoder.
+
+Note:
+    Under the hood, `Base64UrlBytes` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
+    functions.
+
+    As a result, the `Base64UrlBytes` type can be used to faithfully decode "vanilla" base64 data
+    (using `'+'` and `'/'`).
+
+```py
+from pydantic import Base64UrlBytes, BaseModel
+
+
+class Model(BaseModel):
+    base64url_bytes: Base64UrlBytes
+
+
+# Initialize the model with base64 data
+m = Model(base64url_bytes=b'SHc_dHc-TXc==')
+print(m)
+'''
+base64_bytes=b'Hw?tw>Mw' base64_str='Hw?tw>Mw' base64url_bytes=b'Hw?tw>Mw' base64url_str='Hw?tw>Mw'
+'''
+```
+"""
 Base64UrlStr = Annotated[str, EncodedStr(encoder=Base64UrlEncoder)]
-"""A str type that is encoded and decoded using the URL-safe base64 encoder."""
+"""A str type that is encoded and decoded using the URL-safe base64 encoder.
+
+Note:
+    Under the hood, `Base64UrlStr` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
+    functions.
+
+    As a result, the `Base64UrlStr` type can be used to faithfully decode "vanilla" base64 data (using `'+'` and `'/'`).
+
+```py
+from pydantic import Base64UrlStr, BaseModel
+
+
+class Model(BaseModel):
+    base64url_str: Base64UrlStr
+
+
+# Initialize the model with base64 data
+m = Model(base64url_str='SHc_dHc-TXc==')
+print(m)
+'''
+base64_bytes=b'Hw?tw>Mw' base64_str='Hw?tw>Mw' base64url_bytes=b'Hw?tw>Mw' base64url_str='Hw?tw>Mw'
+'''
+```
+"""
 
 
 __getattr__ = getattr_migration(__name__)
