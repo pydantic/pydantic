@@ -59,7 +59,6 @@ nav:
   - Field Types:
     - Types Overview: usage/types/types.md
     - Standard Library Types: usage/types/standard_types.md
-    - Booleans: usage/types/booleans.md
     - ByteSize: usage/types/bytesize.md
     - Callables: usage/types/callables.md
     - Datetimes: usage/types/datetime.md
@@ -129,6 +128,7 @@ nav:
     - Errors: api/errors.md
     - 'Functional Validators': api/functional_validators.md
     - 'Functional Serializers': api/functional_serializers.md
+    - 'Standard Library Types': api/standard_library_types.md
     - 'Pydantic Types': api/types.md
     - 'Network Types': api/networks.md
     - 'Version Information': api/version.md
