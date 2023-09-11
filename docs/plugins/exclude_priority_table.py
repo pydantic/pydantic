@@ -50,7 +50,7 @@ def build_exclude_priority_table(
 ) -> str:
     rows = []
     for field_setting in field_settings:
-        col_values = [field_setting.markdown_str]
+        col_values = []
         for model_dump_setting in model_dump_settings:
 
             class Dog(BaseModel):
@@ -62,7 +62,7 @@ def build_exclude_priority_table(
             result = my_dog.model_dump(**model_dump_setting.kwargs_dict)
             col_values.append(result)
 
-        rows.append(generate_table_row(col_values=[f'`{x}`' for x in col_values]))
+        rows.append(generate_table_row(col_values=[field_setting.markdown_str, *[f'`{x}`' for x in col_values]]))
 
     table_heading = generate_table_heading(col_names=['Field Setting', *[x.markdown_str for x in model_dump_settings]])
     table = ''.join([table_heading, *rows])
