@@ -86,7 +86,6 @@ nav:
       - MAC Address: usage/types/extra_types/mac_address.md
       - Coordinate: usage/types/extra_types/coordinate.md
   - usage/validators.md
-  - 'Model Config': usage/model_config.md
   - 'Fields': usage/fields.md
   - 'JSON Schema': usage/json_schema.md
   - 'Serialization': usage/serialization.md
@@ -98,6 +97,8 @@ nav:
   - 'Strict Mode': usage/strict_mode.md
   - 'Conversion Table': usage/conversion_table.md
   - 'Settings Management': usage/pydantic_settings.md
+- Concepts:
+  - Model Config: usage/model_config.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:

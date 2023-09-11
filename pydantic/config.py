@@ -52,11 +52,73 @@ class ConfigDict(TypedDict, total=False):
 
     extra: ExtraValues | None
     """
-    Whether to ignore, allow, or forbid extra attributes during model initialization.
+    Whether to ignore, allow, or forbid extra attributes during model initialization. Defaults to `'ignore'`.
 
-    The value must be a [`ExtraValues`][pydantic.config.ExtraValues] string. Defaults to `'ignore'`.
+    You can configure how pydantic handles the attributes that are not defined in the model:
 
-    See [Extra Attributes](../usage/model_config.md#extra-attributes) for details.
+    * `allow` - Allow any extra attributes.
+    * `forbid` - Forbid any extra attributes.
+    * `ignore` - Ignore any extra attributes.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict
+
+
+    class User(BaseModel):
+        model_config = ConfigDict(extra='ignore')  # (1)!
+
+        name: str
+
+
+    user = User(name='John Doe', age=20)  # (2)!
+    print(user)
+    #> name='John Doe'
+    ```
+
+    1. This is the default behaviour.
+    2. The `age` argument is ignored.
+
+    Instead, with `extra='allow'`, the `age` argument is included:
+
+    ```py
+    from pydantic import BaseModel, ConfigDict
+
+
+    class User(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        name: str
+
+
+    user = User(name='John Doe', age=20)  # (1)!
+    print(user)
+    #> name='John Doe' age=20
+    ```
+
+    1. The `age` argument is included.
+
+    With `extra='forbid'`, an error is raised:
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+    class User(BaseModel):
+        model_config = ConfigDict(extra='forbid')
+
+        name: str
+
+
+    try:
+        User(name='John Doe', age=20)
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for User
+        age
+        Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]
+        '''
+    ```
     """
 
     frozen: bool
@@ -82,13 +144,11 @@ class ConfigDict(TypedDict, total=False):
     ```py
     from pydantic import BaseModel, ConfigDict, Field
 
-
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
         name: str = Field(alias='full_name')  # (1)!
         age: int
-
 
     user = User(full_name='John Doe', age=20)  # (2)!
     print(user)
@@ -110,6 +170,53 @@ class ConfigDict(TypedDict, total=False):
     """
 
     validate_assignment: bool
+    """
+    Whether to validate the data when the model is changed. Defaults to `False`.
+
+    The default behavior of Pydantic is to validate the data when the model is created.
+
+    In case the user changes the data after the model is created, the model is _not_ revalidated.
+
+    ```py
+    from pydantic import BaseModel
+
+    class User(BaseModel):
+        name: str
+
+    user = User(name='John Doe')  # (1)!
+    print(user)
+    #> name='John Doe'
+    user.name = 123  # (1)!
+    print(user)
+    #> name=123
+    ```
+
+    1. The validation happens only when the model is created.
+    2. The validation does not happen when the data is changed.
+
+    In case you want to revalidate the model when the data is changed, you can use `validate_assignment=True`:
+
+    ```py
+    from pydantic import BaseModel, ValidationError
+
+    class User(BaseModel, validate_assignment=True):  # (1)!
+        name: str
+
+    user = User(name='John Doe')  # (2)!
+    print(user)
+    #> name='John Doe'
+    try:
+        user.name = 123  # (3)!
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for User
+        name
+        Input should be a valid string [type=string_type, input_value=123, input_type=int]
+        '''
+    ```
+    """
+
     arbitrary_types_allowed: bool
     """
     Whether arbitrary types are allowed for field types. Defaults to `False`.
@@ -123,13 +230,11 @@ class ConfigDict(TypedDict, total=False):
         def __init__(self, name: str):
             self.name = name
 
-
     class Model(BaseModel):
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
         pet: Pet
         owner: str
-
 
     pet = Pet(name='Hedwig')
     # A simple check of instance type is used to validate the data
@@ -179,7 +284,35 @@ class ConfigDict(TypedDict, total=False):
     """
     A callable that takes a field name and returns an alias for it.
 
-    See [Alias Generator](../usage/model_config.md#alias-generator) for details.
+    If data source field names do not match your code style (e. g. CamelCase fields),
+    you can automatically generate aliases using `alias_generator`:
+
+    ```py
+    from pydantic import BaseModel, ConfigDict
+
+
+    def to_camel(string: str) -> str:
+        return ''.join(word.capitalize() for word in string.split('_'))
+
+
+    class Voice(BaseModel):
+        model_config = ConfigDict(alias_generator=to_camel)
+
+        name: str
+        language_code: str
+
+
+    voice = Voice(Name='Filiz', LanguageCode='tr-TR')
+    print(voice.language_code)
+    #> tr-TR
+    print(voice.model_dump(by_alias=True))
+    #> {'Name': 'Filiz', 'LanguageCode': 'tr-TR'}
+    ```
+
+    Note:
+        Here camel case refers to ["upper camel case"](https://en.wikipedia.org/wiki/Camel_case) aka pascal case
+        e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`,
+        instead use the `to_lower_camel` function.
     """
 
     ignored_types: tuple[type, ...]
@@ -223,7 +356,121 @@ class ConfigDict(TypedDict, total=False):
     - `'subclass-instances'` will revalidate models and dataclasses during validation if the instance is a
         subclass of the model or dataclass
 
-    See [Revalidate Instances](../usage/model_config.md#revalidate-instances) for details.
+    By default, model and dataclass instances are not revalidated during validation.
+
+    ```py upgrade="skip"
+    from typing import List
+
+    from pydantic import BaseModel
+
+    class User(BaseModel, revalidate_instances='never'):  # (1)!
+        hobbies: List[str]
+
+    class SubUser(User):
+        sins: List[str]
+
+    class Transaction(BaseModel):
+        user: User
+
+    my_user = User(hobbies=['reading'])
+    t = Transaction(user=my_user)
+    print(t)
+    #> user=User(hobbies=['reading'])
+
+    my_user.hobbies = [1]  # (2)!
+    t = Transaction(user=my_user)  # (3)!
+    print(t)
+    #> user=User(hobbies=[1])
+
+    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+    t = Transaction(user=my_sub_user)
+    print(t)
+    #> user=SubUser(hobbies=['scuba diving'], sins=['lying'])
+    ```
+
+    1. `revalidate_instances` is set to `'never'` by **default.
+    2. The assignment is not validated, unless you set `validate_assignment` to `True` in the model's config.
+    3. Since `revalidate_instances` is set to `never`, this is not revalidated.
+
+    If you want to revalidate instances during validation, you can set `revalidate_instances` to `'always'`
+    in the model's config.
+
+    ```py upgrade="skip"
+    from typing import List
+
+    from pydantic import BaseModel, ValidationError
+
+    class User(BaseModel, revalidate_instances='always'):  # (1)!
+        hobbies: List[str]
+
+    class SubUser(User):
+        sins: List[str]
+
+    class Transaction(BaseModel):
+        user: User
+
+    my_user = User(hobbies=['reading'])
+    t = Transaction(user=my_user)
+    print(t)
+    #> user=User(hobbies=['reading'])
+
+    my_user.hobbies = [1]
+    try:
+        t = Transaction(user=my_user)  # (2)!
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Transaction
+        user.hobbies.0
+        Input should be a valid string [type=string_type, input_value=1, input_type=int]
+        '''
+
+    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+    t = Transaction(user=my_sub_user)
+    print(t)  # (3)!
+    #> user=User(hobbies=['scuba diving'])
+    ```
+
+    1. `revalidate_instances` is set to `'always'`.
+    2. The model is revalidated, since `revalidate_instances` is set to `'always'`.
+    3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
+
+    It's also possible to set `revalidate_instances` to `'subclass-instances'` to only revalidate instances
+    of subclasses of the model.
+
+    ```py upgrade="skip"
+    from typing import List
+
+    from pydantic import BaseModel
+
+    class User(BaseModel, revalidate_instances='subclass-instances'):  # (1)!
+        hobbies: List[str]
+
+    class SubUser(User):
+        sins: List[str]
+
+    class Transaction(BaseModel):
+        user: User
+
+    my_user = User(hobbies=['reading'])
+    t = Transaction(user=my_user)
+    print(t)
+    #> user=User(hobbies=['reading'])
+
+    my_user.hobbies = [1]
+    t = Transaction(user=my_user)  # (2)!
+    print(t)
+    #> user=User(hobbies=[1])
+
+    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+    t = Transaction(user=my_sub_user)
+    print(t)  # (3)!
+    #> user=User(hobbies=['scuba diving'])
+    ```
+
+    1. `revalidate_instances` is set to `'subclass-instances'`.
+    2. This is not revalidated, since `my_user` is not a subclass of `User`.
+    3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
     """
 
     ser_json_timedelta: Literal['iso8601', 'float']
