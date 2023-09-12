@@ -1566,7 +1566,7 @@ class EncodedBytes:
         return field_schema
 
     def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             function=self.decode,
@@ -1655,7 +1655,7 @@ class EncodedStr(EncodedBytes):
     """
 
     def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             function=self.decode_str,
