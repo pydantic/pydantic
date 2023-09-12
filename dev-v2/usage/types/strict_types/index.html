@@ -884,32 +884,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../bytesize/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    
-  
-    ByteSize
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../callables/" class="md-nav__link">
         
   
@@ -1400,9 +1374,9 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_21" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_20" >
         
-          <label class="md-nav__link" for="__nav_2_2_21" id="__nav_2_2_21_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2_2_20" id="__nav_2_2_20_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1419,8 +1393,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_21_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_2_2_21">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_20_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_2_20">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -3500,6 +3474,19 @@
 <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">license_plate</span><span class="o">=</span><span class="s1">&#39;ABC-123&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 <span class="c1">#&gt; license_plate=&#39;ABC-123&#39;</span>
+</code></pre></div>
+<p>However, for the sake of improved integration with type checkers, we now discourage the use of <code>conbytes</code> and other
+function calls used to return constrained types. Instead, you can use <a class="autorefs autorefs-internal" href="../../../api/types/#pydantic.types.Strict"><code>pydantic.types.Strict</code></a> and
+[<code>annotated_types.Len</code>][https://github.com/annotated-types/annotated-types#minlen-maxlen-len] as annotations to achieve these constraints:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">annotated_types</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Strict</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="c1"># Instead of `my_bytes: conbytes(strict=True, min_length=10, max_length=20)`, use:</span>
+    <span class="n">my_bytes</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Strict</span><span class="p">(),</span> <span class="n">annotated_types</span><span class="o">.</span><span class="n">Len</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">)]</span>
 </code></pre></div>
 
 
