@@ -4041,16 +4041,14 @@ This is equivalent to implementing <code>__get_validators__</code> in Pydantic V
 <p>Notice that type checkers will not complain about assigning <code>'abc'</code> to <code>Username</code> like they did in the previous example because they do not consider <code>Username</code> to be a distinct type from <code>str</code>.</p>
 <h3 id="handling-third-party-types">Handling third-party types<a class="headerlink" href="#handling-third-party-types" title="Permanent link">&para;</a></h3>
 <p>Another use case for the pattern in the previous section is to handle third party types.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">Any</span><span class="p">,</span>
-    <span class="n">Callable</span><span class="p">,</span>
-<span class="p">)</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
     <span class="n">GetJsonSchemaHandler</span><span class="p">,</span>
     <span class="n">ValidationError</span><span class="p">,</span>
 <span class="p">)</span>
@@ -4074,7 +4072,7 @@ This is equivalent to implementing <code>__get_validators__</code> in Pydantic V
     <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">_source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
-        <span class="n">_handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">],</span>
+        <span class="n">_handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        We return a pydantic_core.CoreSchema that behaves in the following ways:</span>
@@ -4361,12 +4359,12 @@ This is less important for custom types, but crucial for annotated metadata that
 </code></pre></div>
 <h3 id="generic-containers">Generic containers<a class="headerlink" href="#generic-containers" title="Permanent link">&para;</a></h3>
 <p>The same idea can be applied to create generic container types, like a custom <code>Sequence</code> type:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TypeVar</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">get_args</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span>
 
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
 
@@ -4383,7 +4381,7 @@ This is less important for custom types, but crucial for annotated metadata that
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">]</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
         <span class="n">instance_schema</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">is_instance_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
 
