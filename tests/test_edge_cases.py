@@ -29,6 +29,7 @@ from typing_extensions import Annotated, Literal, TypedDict, get_args
 from pydantic import (
     BaseModel,
     ConfigDict,
+    GetCoreSchemaHandler,
     PydanticDeprecatedSince20,
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
@@ -1890,10 +1891,7 @@ def test_custom_generic_validators():
             self.t2 = t2
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls,
-            source: Any,
-        ):
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler):
             schema = core_schema.is_instance_schema(cls)
 
             args = get_args(source)
