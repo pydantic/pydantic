@@ -59,7 +59,7 @@ nav:
   - Field Types:
     - Types Overview: usage/types/types.md
     - Standard Library Types: usage/types/standard_types.md
-    - ByteSize: usage/types/bytesize.md
+    - Booleans: usage/types/booleans.md
     - Callables: usage/types/callables.md
     - Datetimes: usage/types/datetime.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
@@ -89,7 +89,6 @@ nav:
   - 'Fields': usage/fields.md
   - 'JSON Schema': usage/json_schema.md
   - 'Serialization': usage/serialization.md
-  - 'Computed Fields': usage/computed_fields.md
   - 'Dataclasses': usage/dataclasses.md
   - 'TypeAdapter': usage/type_adapter.md
   - 'Validation Decorator': usage/validation_decorator.md
@@ -128,7 +127,6 @@ nav:
     - Errors: api/errors.md
     - 'Functional Validators': api/functional_validators.md
     - 'Functional Serializers': api/functional_serializers.md
-    - 'Standard Library Types': api/standard_library_types.md
     - 'Pydantic Types': api/types.md
     - 'Network Types': api/networks.md
     - 'Version Information': api/version.md
