@@ -95,8 +95,8 @@ print(m)
 ```
 
 However, for the sake of improved integration with type checkers, we now discourage the use of `conbytes` and other
-function calls used to return constrained types. Instead, you can use `pydantic.types.Strict` and `annotated_types.Len`
-as annotations to achieve these constraints:
+function calls used to return constrained types. Instead, you can use [`pydantic.types.Strict`][pydantic.types.Strict] and
+[`annotated_types.Len`][https://github.com/annotated-types/annotated-types#minlen-maxlen-len] as annotations to achieve these constraints:
 
 ```py
 import annotated_types
