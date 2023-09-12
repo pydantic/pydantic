@@ -1,9 +1,9 @@
 ---
-description: Support for Boolean types.
+description: Support for common types from the Python standard library.
 ---
 
-`bool`
-: see below for details on how bools are validated and what values are permitted
+# bool
+
 
 A standard `bool` field will raise a `ValidationError` if the value is not one of the following:
 
@@ -15,7 +15,7 @@ A standard `bool` field will raise a `ValidationError` if the value is not one o
 
 !!! note
     If you want stricter boolean logic (e.g. a field which only permits `True` and `False`) you can
-    use [`StrictBool`](standard_types.md#strict-types).
+    use [`StrictBool`](../usage/types/standard_types.md#strict-types).
 
 Here is a script demonstrating some of these behaviors:
 
