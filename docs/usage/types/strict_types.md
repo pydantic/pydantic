@@ -93,3 +93,19 @@ m = Model(license_plate='ABC-123')
 print(m)
 #> license_plate='ABC-123'
 ```
+
+However, for the sake of improved integration with type checkers, we now discourage the use of `conbytes` and other
+function calls used to return constrained types. Instead, you can use `pydantic.types.Strict` and `annotated_types.Len`
+as annotations to achieve these constraints:
+
+```py
+import annotated_types
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Strict
+
+
+class MyModel(BaseModel):
+    # Instead of `my_bytes: conbytes(strict=True, min_length=10, max_length=20)`, use:
+    my_bytes: Annotated[bytes, Strict(), annotated_types.Len(10, 20)]
+```

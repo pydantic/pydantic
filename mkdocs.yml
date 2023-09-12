@@ -60,7 +60,6 @@ nav:
     - Types Overview: usage/types/types.md
     - Standard Library Types: usage/types/standard_types.md
     - Booleans: usage/types/booleans.md
-    - ByteSize: usage/types/bytesize.md
     - Callables: usage/types/callables.md
     - Datetimes: usage/types/datetime.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
