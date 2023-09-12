@@ -109,8 +109,7 @@ Models possess the following methods and attributes:
 * `model_post_init()`: perform additional initialization after the model is initialized.
 * `model_rebuild()`: rebuild the model schema, which also supports building recursive generic models.
     See [Rebuild model schema](#rebuild-model-schema).
-* `model_validate()`: a utility for loading any object into a model with error handling if the object is not a
-    dictionary. See [Helper functions](#helper-functions).
+* `model_validate()`: a utility for loading any object into a model. See [Helper functions](#helper-functions).
 * `model_validate_json()`: a utility for validating the given JSON data against the Pydantic model. See
     [Helper functions](#helper-functions).
 
@@ -402,7 +401,7 @@ except ValidationError as e:
 
 *Pydantic* provides two `classmethod` helper functions on models for parsing data:
 
-* **`model_validate`**: this is very similar to the `__init__` method of the model, except it takes a dict
+* **`model_validate`**: this is very similar to the `__init__` method of the model, except it takes a dict or an object
   rather than keyword arguments. If the object passed is not a dict a `ValidationError` will be raised.
 * **`model_validate_json`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `model_validate`.
 
