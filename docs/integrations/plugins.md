@@ -1,3 +1,7 @@
+!!! warning "Experimental feature"
+    Plugins support is experimental and is subject to change.
+    The Plugins API should not be considered stable!
+
 Pydantic allows users to create plugins that can be used to extend the functionality of the library.
 
 Plugins are installed via Python entry points. You can read more about entry points in the
@@ -60,7 +64,7 @@ from pydantic.plugin import Plugin
 
 
 class OnValidatePython(_OnValidatePython):
-    def enter(
+    def on_enter(
         self,
         input: Any,
         *,
