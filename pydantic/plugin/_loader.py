@@ -71,8 +71,11 @@ def __getattr__(attr_name: str) -> object:
 
     try:
         load_plugins()
-    except Exception as e:
-        warnings.warn(f'Error while loading Pydantic plugins: {e}')
+    except ImportError:
+        warnings.warn(
+            'Import error while loading a Pydantic plugin could be caused by a circular import,'
+            ' avoid module level imports from the same package in your plugin'
+        )
         raise
 
     return set(_plugins.values())
