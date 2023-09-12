@@ -11,7 +11,6 @@ The following sections describe the types supported by Pydantic.
 
 * [Standard Library Types](standard_types.md) &mdash; types from the Python standard library.
 * [Booleans](booleans.md) &mdash; `bool` types.
-* [ByteSize](bytesize.md) &mdash; a type that allows handling byte string representations in your model.
 * [Callables](callables.md) &mdash; `Callable` types.
 * [Datetimes](datetime.md) &mdash; `datetime`, `date`, `time`, and `timedelta` types.
 * [Dicts and Mapping Types](dicts_mapping.md) &mdash; `dict` types and mapping types.
