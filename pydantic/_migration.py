@@ -270,6 +270,9 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         Returns:
             The object.
         """
+        if name == '__path__':
+            raise AttributeError('no "__path__" attribute')
+
         import_path = f'{module}:{name}'
         if import_path in MOVED_IN_V2.keys():
             new_location = MOVED_IN_V2[import_path]

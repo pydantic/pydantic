@@ -1,7 +1,6 @@
 """Private logic related to fields (the `Field()` function and `FieldInfo` class), and arguments to `Annotated`."""
 from __future__ import annotations as _annotations
 
-import dataclasses
 import sys
 import warnings
 from copy import copy
@@ -94,6 +93,7 @@ def collect_model_fields(  # noqa: C901
             - If there is a field other than `root` in `RootModel`.
             - If a field shadows an attribute in the parent model.
     """
+    import dataclasses
     from ..fields import FieldInfo
 
     type_hints = get_cls_type_hints_lenient(cls, types_namespace)
@@ -237,6 +237,7 @@ def collect_dataclass_fields(
     Returns:
         The dataclass fields.
     """
+    import dataclasses
     from ..fields import FieldInfo
 
     fields: dict[str, FieldInfo] = {}

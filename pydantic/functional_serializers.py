@@ -1,7 +1,6 @@
 """This module contains related classes and functions for serialization."""
 from __future__ import annotations
 
-import dataclasses
 from functools import partialmethod
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
 
@@ -13,7 +12,7 @@ from . import PydanticUndefinedAnnotation
 from ._internal import _annotated_handlers, _decorators, _internal_dataclass
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_internal_dataclass.deferred_dataclass(frozen=True)
 class PlainSerializer:
     """Plain serializers use a function to modify the output of serialization.
 
@@ -57,7 +56,7 @@ class PlainSerializer:
         return schema
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+@_internal_dataclass.deferred_dataclass(frozen=True)
 class WrapSerializer:
     """Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization
     logic, and can modify the resulting value before returning it as the final output of serialization.
@@ -258,7 +257,7 @@ if TYPE_CHECKING:
     """
 else:
 
-    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    @_internal_dataclass.deferred_dataclass
     class SerializeAsAny:  # noqa: D101
         def __class_getitem__(cls, item: Any) -> Any:
             return Annotated[item, SerializeAsAny()]

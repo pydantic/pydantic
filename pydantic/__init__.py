@@ -19,10 +19,10 @@ from ._internal._annotated_handlers import (
 )
 from ._internal._generate_schema import GenerateSchema as GenerateSchema
 from ._migration import getattr_migration
-from .config import ConfigDict, Extra
-from .deprecated.class_validators import root_validator, validator
-from .deprecated.config import BaseConfig
-from .deprecated.tools import *
+from .config import ConfigDict
+# from .deprecated.class_validators import root_validator, validator
+# from .deprecated.config import BaseConfig
+# from .deprecated.tools import *
 from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .functional_serializers import PlainSerializer, SerializeAsAny, WrapSerializer, field_serializer, model_serializer
@@ -40,7 +40,7 @@ from .json_schema import WithJsonSchema
 from .main import *
 from .networks import *
 from .type_adapter import TypeAdapter
-from .types import *
+# from .types import *
 from .validate_call import validate_call
 from .version import VERSION
 from .warnings import *
@@ -66,8 +66,8 @@ __all__ = [
     'PlainValidator',
     'WrapValidator',
     # deprecated V1 functional validators
-    'root_validator',
-    'validator',
+    # 'root_validator',
+    # 'validator',
     # functional serializers
     'field_serializer',
     'model_serializer',
@@ -78,9 +78,8 @@ __all__ = [
     'SerializationInfo',
     'SerializerFunctionWrapHandler',
     # config
-    'BaseConfig',
+    # 'BaseConfig',
     'ConfigDict',
-    'Extra',
     # validate_call
     'validate_call',
     # pydantic_core errors
@@ -123,9 +122,9 @@ __all__ = [
     # root_model
     'RootModel',
     # tools
-    'parse_obj_as',
-    'schema_of',
-    'schema_json_of',
+    # 'parse_obj_as',
+    # 'schema_of',
+    # 'schema_json_of',
     # types
     'Strict',
     'StrictStr',

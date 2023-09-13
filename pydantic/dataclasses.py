@@ -1,7 +1,7 @@
 """Provide an enhanced dataclass that performs validation."""
 from __future__ import annotations as _annotations
 
-import dataclasses
+# import dataclasses
 import sys
 import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
@@ -23,7 +23,7 @@ _T = TypeVar('_T')
 
 if sys.version_info >= (3, 10):
 
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    # @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         *,
@@ -40,7 +40,7 @@ if sys.version_info >= (3, 10):
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
         ...
 
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    # @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         _cls: type[_T],  # type: ignore
@@ -60,7 +60,7 @@ if sys.version_info >= (3, 10):
 
 else:
 
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    # @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         *,
@@ -75,7 +75,7 @@ else:
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
         ...
 
-    @dataclass_transform(field_specifiers=(dataclasses.field, Field))
+    # @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
         _cls: type[_T],  # type: ignore
@@ -92,7 +92,7 @@ else:
         ...
 
 
-@dataclass_transform(field_specifiers=(dataclasses.field, Field))
+# @dataclass_transform(field_specifiers=(dataclasses.field, Field))
 def dataclass(
     _cls: type[_T] | None = None,
     *,
@@ -155,6 +155,8 @@ def dataclass(
         Returns:
             A Pydantic dataclass.
         """
+        import dataclasses
+
         original_cls = cls
 
         config_dict = config
@@ -215,18 +217,18 @@ def dataclass(
 
 __getattr__ = getattr_migration(__name__)
 
-if (3, 8) <= sys.version_info < (3, 11):
-    # Monkeypatch dataclasses.InitVar so that typing doesn't error if it occurs as a type when evaluating type hints
-    # Starting in 3.11, typing.get_type_hints will not raise an error if the retrieved type hints are not callable.
-
-    def _call_initvar(*args: Any, **kwargs: Any) -> NoReturn:
-        """This function does nothing but raise an error that is as similar as possible to what you'd get
-        if you were to try calling `InitVar[int]()` without this monkeypatch. The whole purpose is just
-        to ensure typing._type_check does not error if the type hint evaluates to `InitVar[<parameter>]`.
-        """
-        raise TypeError("'InitVar' object is not callable")
-
-    dataclasses.InitVar.__call__ = _call_initvar
+# if (3, 8) <= sys.version_info < (3, 11):
+#     # Monkeypatch dataclasses.InitVar so that typing doesn't error if it occurs as a type when evaluating type hints
+#     # Starting in 3.11, typing.get_type_hints will not raise an error if the retrieved type hints are not callable.
+#
+#     def _call_initvar(*args: Any, **kwargs: Any) -> NoReturn:
+#         """This function does nothing but raise an error that is as similar as possible to what you'd get
+#         if you were to try calling `InitVar[int]()` without this monkeypatch. The whole purpose is just
+#         to ensure typing._type_check does not error if the type hint evaluates to `InitVar[<parameter>]`.
+#         """
+#         raise TypeError("'InitVar' object is not callable")
+#
+#     dataclasses.InitVar.__call__ = _call_initvar
 
 
 def rebuild_dataclass(
@@ -287,4 +289,6 @@ def is_pydantic_dataclass(__cls: type[Any]) -> TypeGuard[type[PydanticDataclass]
     Returns:
         `True` if the class is a pydantic dataclass, `False` otherwise.
     """
+    import dataclasses
+
     return dataclasses.is_dataclass(__cls) and '__pydantic_validator__' in __cls.__dict__

@@ -2,7 +2,6 @@
 
 from __future__ import annotations as _annotations
 
-import dataclasses
 import sys
 from functools import partialmethod
 from types import FunctionType
@@ -30,7 +29,7 @@ else:
 _inspect_validator = _decorators.inspect_validator
 
 
-@dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass(frozen=True)
 class AfterValidator:
     '''Usage docs: https://docs.pydantic.dev/2.2/usage/validators/#annotated-validators
 
@@ -85,7 +84,7 @@ class AfterValidator:
             return core_schema.no_info_after_validator_function(self.func, schema=schema)  # type: ignore
 
 
-@dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass(frozen=True)
 class BeforeValidator:
     """Usage docs: https://docs.pydantic.dev/2.3/usage/validators/#annotated-validators
 
@@ -127,7 +126,7 @@ class BeforeValidator:
             return core_schema.no_info_before_validator_function(self.func, schema=schema)  # type: ignore
 
 
-@dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass(frozen=True)
 class PlainValidator:
     """Usage docs: https://docs.pydantic.dev/2.3/usage/validators/#annotated-validators
 
@@ -162,7 +161,7 @@ class PlainValidator:
             return core_schema.no_info_plain_validator_function(self.func)  # type: ignore
 
 
-@dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass(frozen=True)
 class WrapValidator:
     """Usage docs: https://docs.pydantic.dev/2.3/usage/validators/#annotated-validators
 
@@ -486,7 +485,7 @@ if TYPE_CHECKING:
 
 else:
 
-    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    @_internal_dataclass.deferred_dataclass
     class InstanceOf:
         '''Generic type for annotating a type that is an instance of a given class.
 
@@ -553,7 +552,7 @@ if TYPE_CHECKING:
     SkipValidation = Annotated[AnyType, ...]  # SkipValidation[list[str]] will be treated by type checkers as list[str]
 else:
 
-    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    @_internal_dataclass.deferred_dataclass
     class SkipValidation:
         """If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be
             skipped. You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.

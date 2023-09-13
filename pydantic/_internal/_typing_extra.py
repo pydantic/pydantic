@@ -1,7 +1,6 @@
 """Logic for interacting with type annotations, mostly extensions, shims and hacks to wrap python's typing module."""
 from __future__ import annotations as _annotations
 
-import dataclasses
 import sys
 import types
 import typing
@@ -428,6 +427,8 @@ else:
 def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     # The dataclasses.is_dataclass function doesn't seem to provide TypeGuard functionality,
     # so I created this convenience function
+    import dataclasses
+
     return dataclasses.is_dataclass(_cls)
 
 

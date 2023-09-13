@@ -2,10 +2,8 @@
 from __future__ import annotations as _annotations
 
 import base64
-import dataclasses as _dataclasses
 import re
 from datetime import date, datetime
-from decimal import Decimal
 from enum import Enum
 from pathlib import Path
 from types import ModuleType
@@ -41,6 +39,9 @@ from ._migration import getattr_migration
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
+
+if TYPE_CHECKING:
+    from decimal import Decimal
 
 __all__ = (
     'Strict',
@@ -100,7 +101,6 @@ __all__ = (
 )
 
 
-@_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
     """A field metadata class to indicate that a field should be validated in strict mode.
 
@@ -116,8 +116,11 @@ class Strict(_fields.PydanticMetadata, BaseMetadata):
         StrictBool = Annotated[bool, Strict()]
         ```
     """
+    __slots__ = ('strict',)
+    strict: bool
 
-    strict: bool = True
+    def __init__(self, strict: bool = True) -> None:
+        self.strict = strict
 
     def __hash__(self) -> int:
         return hash(self.strict)
@@ -175,11 +178,13 @@ StrictInt = Annotated[int, Strict()]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FLOAT TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_dataclasses.dataclass
 class AllowInfNan(_fields.PydanticMetadata):
     """A field metadata class to indicate that a field should allow ``-inf``, ``inf``, and ``nan``."""
+    __slots__ = ('allow_inf_nan',)
+    allow_inf_nan: bool
 
-    allow_inf_nan: bool = True
+    def __init__(self, allow_inf_nan: bool = True) -> None:
+        self.allow_inf_nan = allow_inf_nan
 
     def __hash__(self) -> int:
         return hash(self.allow_inf_nan)
@@ -265,7 +270,7 @@ StrictBytes = Annotated[bytes, Strict()]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STRING TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_dataclasses.dataclass(frozen=True)
+@_internal_dataclass.deferred_dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
     """Apply constraints to `str` types.
 
@@ -594,6 +599,7 @@ def condecimal(
         decimal_places: The number of decimal places. Defaults to `None`.
         allow_inf_nan: Whether to allow infinity and NaN. Defaults to `None`.
     """
+    from decimal import Decimal
     return Annotated[
         Decimal,
         Strict(strict) if strict is not None else None,
@@ -607,9 +613,13 @@ def condecimal(
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class UuidVersion:
+    __slots__ = ('uuid_version',)
+
     uuid_version: Literal[1, 3, 4, 5]
+
+    def __init__(self, uuid_version: Literal[1, 3, 4, 5]) -> None:
+        self.uuid_version = uuid_version
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
@@ -641,9 +651,12 @@ UUID5 = Annotated[UUID, UuidVersion(5)]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_dataclasses.dataclass
 class PathType:
+    __slots__ = ('path_type',)
     path_type: Literal['file', 'dir', 'new']
+
+    def __init__(self, path_type: Literal['file', 'dir', 'new']) -> None:
+        self.path_type = path_type
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
@@ -1501,7 +1514,6 @@ class Base64UrlEncoder(EncoderProtocol):
         return 'base64url'
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class EncodedBytes:
     """A bytes type that is encoded and decoded using the specified encoder.
 
@@ -1557,6 +1569,9 @@ class EncodedBytes:
     """
 
     encoder: type[EncoderProtocol]
+
+    def __init__(self, encoder: type[EncoderProtocol]) -> None:
+        self.encoder = encoder
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
@@ -1810,7 +1825,7 @@ print(m)
 __getattr__ = getattr_migration(__name__)
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass
 class GetPydanticSchema:
     """A convenience class for creating an annotation that provides pydantic custom type hooks.
 

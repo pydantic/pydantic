@@ -1,7 +1,6 @@
 """The networks module contains types for common network-related fields."""
 from __future__ import annotations as _annotations
 
-import dataclasses as _dataclasses
 import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import TYPE_CHECKING, Any
@@ -9,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated, TypeAlias
 
-from ._internal import _annotated_handlers, _fields, _repr, _schema_generation_shared
+from ._internal import _annotated_handlers, _fields, _repr, _schema_generation_shared, _internal_dataclass
 from ._migration import getattr_migration
 from .json_schema import JsonSchemaValue
 
@@ -45,7 +44,6 @@ __all__ = [
 ]
 
 
-@_dataclasses.dataclass
 class UrlConstraints(_fields.PydanticMetadata):
     """Url constraints.
 
@@ -57,13 +55,31 @@ class UrlConstraints(_fields.PydanticMetadata):
         default_port: The default port. Defaults to `None`.
         default_path: The default path. Defaults to `None`.
     """
+    __slots__ = 'max_length', 'allowed_schemes', 'host_required', 'default_host', 'default_port', 'default_path'
 
-    max_length: int | None = None
-    allowed_schemes: list[str] | None = None
-    host_required: bool | None = None
-    default_host: str | None = None
-    default_port: int | None = None
-    default_path: str | None = None
+    max_length: int | None
+    allowed_schemes: list[str] | None
+    host_required: bool | None
+    default_host: str | None
+    default_port: int | None
+    default_path: str | None
+
+    def __init__(
+        self,
+        max_length: int | None = None,
+        allowed_schemes: list[str] | None = None,
+        host_required: bool | None = None,
+        default_host: str | None = None,
+        default_port: int | None = None,
+        default_path: str | None = None,
+    ):
+        self.max_length = max_length
+        self.allowed_schemes = allowed_schemes
+        self.host_required = host_required
+        self.default_host = default_host
+        self.default_port = default_port
+        self.default_path = default_path
+
 
     def __hash__(self) -> int:
         return hash(

@@ -2,7 +2,6 @@
 from __future__ import annotations as _annotations
 
 import collections.abc
-import dataclasses
 import inspect
 import re
 import sys
@@ -86,19 +85,19 @@ if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
     from ._schema_generation_shared import GetJsonSchemaFunction
 
+    FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
+    FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
+    AnyFieldDecorator = Union[
+        Decorator[ValidatorDecoratorInfo],
+        Decorator[FieldValidatorDecoratorInfo],
+        Decorator[FieldSerializerDecoratorInfo],
+    ]
+
+    ModifyCoreSchemaWrapHandler = GetCoreSchemaHandler
+    GetCoreSchemaFunction = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
+
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
 _AnnotatedType = type(Annotated[int, 123])
-
-FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
-FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
-AnyFieldDecorator = Union[
-    Decorator[ValidatorDecoratorInfo],
-    Decorator[FieldValidatorDecoratorInfo],
-    Decorator[FieldSerializerDecoratorInfo],
-]
-
-ModifyCoreSchemaWrapHandler = GetCoreSchemaHandler
-GetCoreSchemaFunction = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
 
 
 TUPLE_TYPES: list[type] = [tuple, typing.Tuple]
@@ -1258,6 +1257,8 @@ class GenerateSchema:
         self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
     ) -> core_schema.CoreSchema:
         """Generate schema for a dataclass."""
+        import dataclasses
+
         with self.defs.get_schema_or_ref(dataclass) as (dataclass_ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema

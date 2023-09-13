@@ -1,7 +1,6 @@
 """Private logic for creating pydantic dataclasses."""
 from __future__ import annotations as _annotations
 
-import dataclasses
 import inspect
 import typing
 import warnings
@@ -190,6 +189,8 @@ def generate_dataclass_signature(cls: type[StandardDataclass]) -> Signature:
     Returns:
         The signature.
     """
+    import dataclasses
+
     sig = signature(cls)
     final_params: dict[str, Parameter] = {}
 

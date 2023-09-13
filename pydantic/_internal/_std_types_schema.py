@@ -6,7 +6,6 @@ from __future__ import annotations as _annotations
 
 import collections
 import collections.abc
-import dataclasses
 import decimal
 import inspect
 import os
@@ -35,7 +34,7 @@ from ..config import ConfigDict
 from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _known_annotated_metadata, _typing_extra, _validators
 from ._core_utils import get_type_ref
-from ._internal_dataclass import slots_true
+from ._internal_dataclass import deferred_dataclass
 from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
 
 if typing.TYPE_CHECKING:
@@ -44,7 +43,7 @@ if typing.TYPE_CHECKING:
     StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
 
 
-@dataclasses.dataclass(**slots_true)
+@deferred_dataclass
 class SchemaTransformer:
     get_core_schema: Callable[[Any, GetCoreSchemaHandler], CoreSchema]
     get_json_schema: Callable[[CoreSchema, GetJsonSchemaHandler], JsonSchemaValue]
@@ -136,7 +135,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
     )
 
 
-@dataclasses.dataclass(**slots_true)
+@deferred_dataclass
 class InnerSchemaValidator:
     """Use a fixed CoreSchema, avoiding interference from outward annotations."""
 
@@ -283,7 +282,7 @@ def dequeue_validator(
         return collections.deque(handler(input_value), maxlen=maxlen)
 
 
-@dataclasses.dataclass(**slots_true)
+@deferred_dataclass
 class SequenceValidator:
     mapped_origin: type[Any]
     item_source_type: type[Any]
@@ -409,7 +408,7 @@ def sequence_like_prepare_pydantic_annotations(
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
     _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.SEQUENCE_CONSTRAINTS, source_type)
 
-    return (source_type, [SequenceValidator(mapped_origin, item_source_type, **metadata), *remaining_annotations])
+    return source_type, [SequenceValidator(mapped_origin, item_source_type, **metadata), *remaining_annotations]
 
 
 MAPPING_ORIGIN_MAP: dict[Any, Any] = {
@@ -497,7 +496,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
     return default_default_factory
 
 
-@dataclasses.dataclass(**slots_true)
+@deferred_dataclass
 class MappingValidator:
     mapped_origin: type[Any]
     keys_source_type: type[Any]

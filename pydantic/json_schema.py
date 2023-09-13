@@ -8,14 +8,12 @@ In general you shouldn't need to use this module directly; instead, you can
 """
 from __future__ import annotations as _annotations
 
-import dataclasses
 import inspect
 import math
 import re
 import warnings
 from collections import defaultdict
 from copy import deepcopy
-from dataclasses import is_dataclass
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -139,7 +137,7 @@ CoreModeRef = Tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass
 class _DefinitionsRemapping:
     defs_remapping: dict[DefsRef, DefsRef]
     json_remapping: dict[JsonRef, JsonRef]
@@ -1479,6 +1477,8 @@ class GenerateJsonSchema:
         Returns:
             The generated JSON schema.
         """
+        import dataclasses
+
         cls = schema['cls']
         config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
         title = config.get('title') or cls.__name__
@@ -1490,7 +1490,7 @@ class GenerateJsonSchema:
         json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
 
         # Dataclass-specific handling of description
-        if is_dataclass(cls) and not hasattr(cls, '__pydantic_validator__'):
+        if dataclasses.is_dataclass(cls) and not hasattr(cls, '__pydantic_validator__'):
             # vanilla dataclass; don't use cls.__doc__ as it will contain the class signature by default
             description = None
         else:
@@ -2229,7 +2229,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
         return value
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass
 class WithJsonSchema:
     """Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
@@ -2261,7 +2261,7 @@ class WithJsonSchema:
         return hash(type(self.mode))
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass
 class Examples:
     """Add examples to a JSON schema.
 
@@ -2316,7 +2316,7 @@ if TYPE_CHECKING:
     SkipJsonSchema = Annotated[AnyType, ...]
 else:
 
-    @dataclasses.dataclass(**_internal_dataclass.slots_true)
+    @_internal_dataclass.deferred_dataclass
     class SkipJsonSchema:
         """Add this as an annotation on a field to skip generating a JSON schema for that field.
 

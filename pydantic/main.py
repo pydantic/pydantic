@@ -26,8 +26,8 @@ from ._internal import (
 )
 from ._migration import getattr_migration
 from .config import ConfigDict
-from .deprecated import copy_internals as _deprecated_copy_internals
-from .deprecated import parse as _deprecated_parse
+# from .deprecated import copy_internals as _deprecated_copy_internals
+# from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema

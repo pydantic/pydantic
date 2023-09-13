@@ -2,7 +2,6 @@
 from __future__ import annotations as _annotations
 
 from collections import deque
-from dataclasses import dataclass, field
 from functools import partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
 from itertools import islice
@@ -14,7 +13,7 @@ from typing_extensions import Literal, TypeAlias, is_typeddict
 from ..errors import PydanticUserError
 from ..fields import ComputedFieldInfo
 from ._core_utils import get_type_ref
-from ._internal_dataclass import slots_true
+from ._internal_dataclass import deferred_dataclass
 from ._typing_extra import get_function_type_hints
 
 if TYPE_CHECKING:
@@ -27,7 +26,7 @@ except ImportError:
     cached_property = None
 
 
-@dataclass(**slots_true)
+@deferred_dataclass
 class ValidatorDecoratorInfo:
     """A container for data from `@validator` so that we can access it
     while building the pydantic-core schema.
@@ -51,7 +50,7 @@ class ValidatorDecoratorInfo:
     check_fields: bool | None
 
 
-@dataclass(**slots_true)
+@deferred_dataclass
 class FieldValidatorDecoratorInfo:
     """A container for data from `@field_validator` so that we can access it
     while building the pydantic-core schema.
@@ -70,7 +69,7 @@ class FieldValidatorDecoratorInfo:
     check_fields: bool | None
 
 
-@dataclass(**slots_true)
+@deferred_dataclass
 class RootValidatorDecoratorInfo:
     """A container for data from `@root_validator` so that we can access it
     while building the pydantic-core schema.
@@ -84,7 +83,7 @@ class RootValidatorDecoratorInfo:
     mode: Literal['before', 'after']
 
 
-@dataclass(**slots_true)
+@deferred_dataclass
 class FieldSerializerDecoratorInfo:
     """A container for data from `@field_serializer` so that we can access it
     while building the pydantic-core schema.
@@ -107,7 +106,7 @@ class FieldSerializerDecoratorInfo:
     check_fields: bool | None
 
 
-@dataclass(**slots_true)
+@deferred_dataclass
 class ModelSerializerDecoratorInfo:
     """A container for data from `@model_serializer` so that we can access it
     while building the pydantic-core schema.
@@ -126,7 +125,7 @@ class ModelSerializerDecoratorInfo:
     when_used: core_schema.WhenUsed
 
 
-@dataclass(**slots_true)
+@deferred_dataclass
 class ModelValidatorDecoratorInfo:
     """A container for data from `@model_validator` so that we can access it
     while building the pydantic-core schema.
@@ -156,7 +155,7 @@ DecoratedType: TypeAlias = (
 )
 
 
-@dataclass  # can't use slots here since we set attributes on `__post_init__`
+@deferred_dataclass(slots=False)  # can't use slots here since we set attributes on `__post_init__`
 class PydanticDescriptorProxy(Generic[ReturnType]):
     """Wrap a classmethod, staticmethod, property or unbound function
     and act as a descriptor that allows us to detect decorated items
@@ -204,7 +203,7 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
 
 
-@dataclass(**slots_true)
+@deferred_dataclass
 class Decorator(Generic[DecoratorInfoType]):
     """A generic container class to join together the decorator metadata
     (metadata from decorator itself, which we have when the
@@ -400,21 +399,46 @@ def get_attribute_from_base_dicts(tp: type[Any], name: str) -> Any:
     return tp.__dict__[name]  # raise the error
 
 
-@dataclass(**slots_true)
 class DecoratorInfos:
     """Mapping of name in the class namespace to decorator info.
 
     note that the name in the class namespace is the function or attribute name
     not the field name!
     """
+    __slots__ = (
+        'validators',
+        'field_validators',
+        'root_validators',
+        'field_serializers',
+        'model_serializers',
+        'model_validators',
+        'computed_fields',
+    )
 
-    validators: dict[str, Decorator[ValidatorDecoratorInfo]] = field(default_factory=dict)
-    field_validators: dict[str, Decorator[FieldValidatorDecoratorInfo]] = field(default_factory=dict)
-    root_validators: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
-    field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
-    model_serializers: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
-    model_validators: dict[str, Decorator[ModelValidatorDecoratorInfo]] = field(default_factory=dict)
-    computed_fields: dict[str, Decorator[ComputedFieldInfo]] = field(default_factory=dict)
+    validators: dict[str, Decorator[ValidatorDecoratorInfo]]
+    field_validators: dict[str, Decorator[FieldValidatorDecoratorInfo]]
+    root_validators: dict[str, Decorator[RootValidatorDecoratorInfo]]
+    field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]]
+    model_serializers: dict[str, Decorator[ModelSerializerDecoratorInfo]]
+    model_validators: dict[str, Decorator[ModelValidatorDecoratorInfo]]
+    computed_fields: dict[str, Decorator[ComputedFieldInfo]]
+
+    def __init__(self,
+        validators: dict[str, Decorator[ValidatorDecoratorInfo]] | None = None,
+        field_validators: dict[str, Decorator[FieldValidatorDecoratorInfo]] | None = None,
+        root_validators: dict[str, Decorator[RootValidatorDecoratorInfo]] | None = None,
+        field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]] | None = None,
+        model_serializers: dict[str, Decorator[ModelSerializerDecoratorInfo]] | None = None,
+        model_validators: dict[str, Decorator[ModelValidatorDecoratorInfo]] | None = None,
+        computed_fields: dict[str, Decorator[ComputedFieldInfo]] | None = None,
+    ):
+        self.validators = validators or {}
+        self.field_validators = field_validators or {}
+        self.root_validators = root_validators or {}
+        self.field_serializers = field_serializers or {}
+        self.model_serializers = model_serializers or {}
+        self.model_validators = model_validators or {}
+        self.computed_fields = computed_fields or {}
 
     @staticmethod
     def build(model_dc: type[Any]) -> DecoratorInfos:  # noqa: C901 (ignore complexity)

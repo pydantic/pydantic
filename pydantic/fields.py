@@ -1,12 +1,10 @@
 """Defining fields on models."""
 from __future__ import annotations as _annotations
 
-import dataclasses
 import inspect
 import sys
 import typing
 from copy import copy
-from dataclasses import Field as DataclassField
 from typing import Any, ClassVar
 from warnings import warn
 
@@ -15,13 +13,14 @@ import typing_extensions
 from pydantic_core import PydanticUndefined
 from typing_extensions import Literal, Unpack
 
-from . import types
+# from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
 from .errors import PydanticUserError
 from .warnings import PydanticDeprecatedSince20
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
+    from dataclasses import Field as DataclassField
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
@@ -150,7 +149,7 @@ class FieldInfo(_repr.Representation):
     # used to convert kwargs to metadata/constraints,
     # None has a special meaning - these items are collected into a `PydanticGeneralMetadata`
     metadata_lookup: ClassVar[dict[str, typing.Callable[[Any], Any] | None]] = {
-        'strict': types.Strict,
+        # 'strict': types.Strict,
         'gt': annotated_types.Gt,
         'ge': annotated_types.Ge,
         'lt': annotated_types.Lt,
@@ -322,6 +321,8 @@ class FieldInfo(_repr.Representation):
                 spam: Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
             ```
         """
+        import dataclasses
+
         final = False
         if _typing_extra.is_finalvar(annotation):
             final = True
@@ -422,6 +423,8 @@ class FieldInfo(_repr.Representation):
         Raises:
             TypeError: If any of the `FieldInfo` kwargs does not match the `dataclass.Field` kwargs.
         """
+        import dataclasses
+
         default = dc_field.default
         if default is dataclasses.MISSING:
             default = PydanticUndefined
@@ -572,7 +575,7 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass
 class AliasPath:
     """Usage docs: https://docs.pydantic.dev/2.3/usage/fields#aliaspath-and-aliaschoices
 
@@ -596,7 +599,7 @@ class AliasPath:
         return self.path
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass
 class AliasChoices:
     """Usage docs: https://docs.pydantic.dev/2.3/usage/fields#aliaspath-and-aliaschoices
 
@@ -943,7 +946,7 @@ def PrivateAttr(
     )
 
 
-@dataclasses.dataclass(**_internal_dataclass.slots_true)
+@_internal_dataclass.deferred_dataclass
 class ComputedFieldInfo:
     """A container for data from `@computed_field` so that we can access it while building the pydantic-core schema.
 
