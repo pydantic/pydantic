@@ -47,30 +47,20 @@ class PluggableSchemaValidator:
     ) -> None:
         self._schema_validator = SchemaValidator(schema, config)
 
-        plugin_factory = _PluginFactory(schema, config, plugins, plugin_settings)
+        def plugin_api_builder(event: _Event) -> _PluginAPI:
+            return _PluginAPI(
+                event=event, schema=schema, config=config, plugins=plugins, plugin_settings=plugin_settings
+            )
 
-        self.validate_json = plugin_factory(self._schema_validator.validate_json)
-        self.validate_python = plugin_factory(self._schema_validator.validate_python)
+        self.validate_json = self._build_wrapper(self._schema_validator.validate_json, plugin_api_builder)
+        self.validate_python = self._build_wrapper(self._schema_validator.validate_python, plugin_api_builder)
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._schema_validator, name)
 
-
-class _PluginFactory:
-    def __init__(
-        self,
-        schema: CoreSchema,
-        config: CoreConfig | None,
-        plugins: set[Plugin],
-        plugin_settings: dict[str, Any],
-    ) -> None:
-        self.schema = schema
-        self.config = config
-        self.plugins = plugins
-        self.plugin_settings = plugin_settings
-
-    def __call__(self, func: Callable[P, R]) -> Callable[P, R]:
-        """Call plugins for pydantic"""
+    def _build_wrapper(
+        self, func: Callable[P, R], plugin_api_builder: Callable[[_Event], _PluginAPI]
+    ) -> Callable[P, R]:
         try:
             event = _Event[func.__name__]
         except KeyError as exc:
@@ -78,7 +68,7 @@ class _PluginFactory:
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            plugin_api = self.plugin_api(event=event)
+            plugin_api = plugin_api_builder(event)
 
             plugin_api.on_enter(*args, **kwargs)
             try:
@@ -92,17 +82,13 @@ class _PluginFactory:
 
         return wrapper
 
-    def plugin_api(self, event: _Event) -> _PluginAPI:
-        return _PluginAPI(
-            event=event,
-            schema=self.schema,
-            config=self.config,
-            plugins=self.plugins,
-            plugin_settings=self.plugin_settings,
-        )
-
 
 class _PluginAPI:
+    """Creates Event Handlers instances for each validation call.
+
+    Provides a single accumulated callback for each validation hook.
+    """
+
     _in_call: ClassVar[set[str]] = set()
 
     def __init__(

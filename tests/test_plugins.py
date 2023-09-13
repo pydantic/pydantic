@@ -269,13 +269,9 @@ def test_fresh_import_using_example_plugin(monkeypatch: pytest.MonkeyPatch, unim
     else:
         monkeypatch.setattr('importlib_metadata.distributions', fake_distributions)
 
+    assert [name for name in sys.modules if name == 'pydantic' or name.startswith('pydantic.')] == []
+
     with pytest.warns(UserWarning, match='ImportError while running a Pydantic plugin'):
-        from .example_plugin import example_func
+        from . import example_plugin
 
-    from pydantic.plugin._loader import get_plugins
-
-    assert len(get_plugins()) == 1
-
-    from .example_plugin import example_func
-
-    assert example_func().model_dump() == {}
+    assert example_plugin.m.model_dump() == {'value': 'abc'}

@@ -1,3 +1,8 @@
-from .example import example_func
+from pydantic_core import PydanticUndefined
 
-__all__ = ('example_func',)
+from pydantic import create_model
+
+Model = create_model('Model', value=(str, PydanticUndefined))
+
+
+m = Model(value='abc')
