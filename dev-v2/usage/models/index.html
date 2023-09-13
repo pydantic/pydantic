@@ -4070,8 +4070,7 @@ Models possess the following methods and attributes:</p>
 <li><code>model_post_init()</code>: perform additional initialization after the model is initialized.</li>
 <li><code>model_rebuild()</code>: rebuild the model schema, which also supports building recursive generic models.
     See <a href="#rebuild-model-schema">Rebuild model schema</a>.</li>
-<li><code>model_validate()</code>: a utility for loading any object into a model with error handling if the object is not a
-    dictionary. See <a href="#helper-functions">Helper functions</a>.</li>
+<li><code>model_validate()</code>: a utility for loading any object into a model. See <a href="#helper-functions">Helper functions</a>.</li>
 <li><code>model_validate_json()</code>: a utility for validating the given JSON data against the Pydantic model. See
     <a href="#helper-functions">Helper functions</a>.</li>
 </ul>
@@ -4332,7 +4331,7 @@ and that <code>ValidationError</code> will contain information about all of the 
 <h2 id="helper-functions">Helper functions<a class="headerlink" href="#helper-functions" title="Permanent link">&para;</a></h2>
 <p><em>Pydantic</em> provides two <code>classmethod</code> helper functions on models for parsing data:</p>
 <ul>
-<li><strong><code>model_validate</code></strong>: this is very similar to the <code>__init__</code> method of the model, except it takes a dict
+<li><strong><code>model_validate</code></strong>: this is very similar to the <code>__init__</code> method of the model, except it takes a dict or an object
   rather than keyword arguments. If the object passed is not a dict a <code>ValidationError</code> will be raised.</li>
 <li><strong><code>model_validate_json</code></strong>: this takes a <em>str</em> or <em>bytes</em> and parses it as <em>json</em>, then passes the result to <code>model_validate</code>.</li>
 </ul>

@@ -3894,11 +3894,11 @@ If you have multiple variables with the same structure they will be merged.</p>
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
 
-<span class="k">class</span> <span class="nc">DeepSubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">DeepSubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>  <span class="c1"># (1)!</span>
     <span class="n">v4</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>  <span class="c1"># (2)!</span>
     <span class="n">v1</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">v2</span><span class="p">:</span> <span class="nb">bytes</span>
     <span class="n">v3</span><span class="p">:</span> <span class="nb">int</span>
@@ -3920,6 +3920,16 @@ If you have multiple variables with the same structure they will be merged.</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+<ol>
+<li>
+<p>Sub model has to inherit from <code>pydantic.BaseModel</code>, Otherwise <code>pydantic-settings</code> will initialize sub model,
+   collects values for sub model fields separately, and you may get unexpected results.</p>
+</li>
+<li>
+<p>Sub model has to inherit from <code>pydantic.BaseModel</code>, Otherwise <code>pydantic-settings</code> will initialize sub model,
+   collects values for sub model fields separately, and you may get unexpected results.</p>
+</li>
+</ol>
 <p><code>env_nested_delimiter</code> can be configured via the <code>model_config</code> as shown above, or via the
 <code>_env_nested_delimiter</code> keyword argument on instantiation.</p>
 <p>JSON is only parsed in top-level fields, if you need to parse JSON in sub-models, you will need to implement
