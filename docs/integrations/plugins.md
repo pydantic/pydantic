@@ -1,6 +1,6 @@
 !!! warning "Experimental feature"
-    Plugins support is experimental and is subject to change.
-    The Plugins API should not be considered stable!
+    Plugins support is experimental and is subject to change in minor releases.
+    Developing plugins is not recommended until the feature becomes stable.
 
 Pydantic allows users to create plugins that can be used to extend the functionality of the library.
 
@@ -8,19 +8,19 @@ Plugins are installed via Python entry points. You can read more about entry poi
 [Entry points specification](https://packaging.python.org/specifications/entry-points/) from the
 Python Packaging Authority.
 
-In case you have a project called `pydantic-plugin`, you can create a plugin by adding the following
+In case you have a project called `my-pydantic-plugin`, you can create a plugin by adding the following
 to your `pyproject.toml`:
 
 ```toml
 [project.entry-points.pydantic]
-pydantic_plugin = "pydantic_plugin:plugin"
+my_plugin = "my_pydantic_plugin:plugin"
 ```
 
-The entry point group is `pydantic`, and the name of the entry point is the name of the plugin.
+The entry point group is `pydantic`, `my_plugin` is the name of the plugin, `my_pydantic_plugin` is the module to load plugin object from, and `plugin` is the object name to load.
 
 Plugins are loaded in the order they are found, and the order they are found is not guaranteed.
 
-As a user, you can modify the behavior of the plugin in a `BaseModel` using the `plugin_settings`
+As a user, you can modify the behavior of the plugin in a `BaseModel` using the `plugin_settings` [Model Config](../usage/model_config.md) argument or
 class keyword argument. This argument takes a dictionary of settings that will be passed to all plugins as is.
 The plugin can then use these settings to modify its behavior. It is recommended for plugins to separate their settings
 into their own dedicates keys in a plugin specific key in the `plugin_settings` dictionary.
@@ -59,11 +59,10 @@ from typing import Any, Dict, Optional
 
 from pydantic_core import ValidationError
 
-from pydantic.plugin import OnValidatePython as _OnValidatePython
-from pydantic.plugin import Plugin
+from pydantic.plugin import OnValidatePythonProtocol, Plugin
 
 
-class OnValidatePython(_OnValidatePython):
+class OnValidatePython(OnValidatePythonProtocol):
     def on_enter(
         self,
         input: Any,

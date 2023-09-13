@@ -5,12 +5,12 @@ import contextlib
 import functools
 import warnings
 from enum import Enum
-from typing import Any, Callable, Iterator, TypeVar
+from typing import Any, Callable, ClassVar, Iterator, TypeVar
 
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Literal, ParamSpec
 
-from .plugin import EventHandler, Plugin
+from .plugin import Plugin, _EventHandlerProtocol
 
 P = ParamSpec('P')
 R = TypeVar('R')
@@ -19,20 +19,24 @@ R = TypeVar('R')
 def create_schema_validator(
     schema: CoreSchema, config: CoreConfig | None = None, plugin_settings: dict[str, Any] | None = None
 ) -> SchemaValidator:
-    """Get the schema validator class.
+    """Create a `SchemaValidator` or `PluggableSchemaValidator` if plugins are installed.
 
     Returns:
         If plugins are installed then return `PluggableSchemaValidator`, otherwise return `SchemaValidator`.
     """
-    from ._loader import plugins
+    from ._loader import get_plugins
 
+    plugins = get_plugins()
     if plugins:
         return PluggableSchemaValidator(schema, config, plugins, plugin_settings or {})  # type: ignore
-    return SchemaValidator(schema, config)
+    else:
+        return SchemaValidator(schema, config)
 
 
 class PluggableSchemaValidator:
     """Pluggable schema validator."""
+
+    __slots__ = '_schema_validator', 'validate_json', 'validate_python'
 
     def __init__(
         self,
@@ -41,15 +45,15 @@ class PluggableSchemaValidator:
         plugins: set[Plugin],
         plugin_settings: dict[str, Any],
     ) -> None:
-        self.schema_validator = SchemaValidator(schema, config)
+        self._schema_validator = SchemaValidator(schema, config)
 
-        self.plugin_factory = _PluginFactory(schema, config, plugins, plugin_settings)
+        plugin_factory = _PluginFactory(schema, config, plugins, plugin_settings)
 
-        self.validate_json = self.plugin_factory(self.schema_validator.validate_json)
-        self.validate_python = self.plugin_factory(self.schema_validator.validate_python)
+        self.validate_json = plugin_factory(self._schema_validator.validate_json)
+        self.validate_python = plugin_factory(self._schema_validator.validate_python)
 
     def __getattr__(self, name: str) -> Any:
-        return getattr(self.schema_validator, name)
+        return getattr(self._schema_validator, name)
 
 
 class _PluginFactory:
@@ -99,6 +103,8 @@ class _PluginFactory:
 
 
 class _PluginAPI:
+    _in_call: ClassVar[set[str]] = set()
+
     def __init__(
         self,
         event: _Event,
@@ -119,15 +125,13 @@ class _PluginAPI:
         self.on_success = self.prepare_on_success()
         self.on_error = self.prepare_on_error()
 
-        self._in_call: set[str] = set()
-
-    def prepare_event_handlers(self, plugins: set[Plugin]) -> list[EventHandler]:
-        handlers: list[EventHandler] = []
+    def prepare_event_handlers(self, plugins: set[Plugin]) -> list[_EventHandlerProtocol]:
+        handlers: list[_EventHandlerProtocol] = []
 
         for plugin in plugins:
             if not hasattr(plugin, self.event.value):
                 continue
-            handler_type: type[EventHandler] = getattr(plugin, self.event.value)
+            handler_type: type[_EventHandlerProtocol] = getattr(plugin, self.event.value)
             handlers.append(handler_type(self.schema, self.config, self.plugin_settings))
 
         return handlers
@@ -162,10 +166,11 @@ class _PluginAPI:
     def gather_calls(self, callback_type: Literal['on_enter', 'on_success', 'on_error']) -> list[Callable[..., None]]:
         calls: list[Callable[..., None]] = []
 
-        for handler in self.event_handlers:
-            if not hasattr(handler, callback_type):
+        for handler_name in self.event_handlers:
+            handler = getattr(handler_name, callback_type, None)
+            if handler is None:
                 continue
-            calls.append(getattr(handler, callback_type))
+            calls.append(handler)
 
         return calls
 

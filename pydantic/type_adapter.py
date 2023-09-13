@@ -20,7 +20,7 @@ from .json_schema import (
     JsonSchemaMode,
     JsonSchemaValue,
 )
-from .plugin.schema_validator import create_schema_validator
+from .plugin._schema_validator import create_schema_validator
 
 T = TypeVar('T')
 

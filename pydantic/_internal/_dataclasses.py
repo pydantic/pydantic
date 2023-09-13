@@ -14,7 +14,7 @@ from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
-from ..plugin.schema_validator import create_schema_validator
+from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _discriminated_union, _typing_extra
 from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs

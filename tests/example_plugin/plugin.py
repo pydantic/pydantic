@@ -6,7 +6,7 @@ import pydantic.plugin
 from pydantic import ValidationError
 
 
-class OnValidatePython(pydantic.plugin.OnValidatePython):
+class OnValidatePython(pydantic.plugin.OnValidatePythonProtocol):
     def on_enter(
         self,
         input: Any,

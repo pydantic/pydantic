@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import sys
 import warnings
+from typing import Iterable
 
 from typing_extensions import Final
 
@@ -39,14 +40,12 @@ else:
     import importlib_metadata
 
 
-GROUP: Final[str] = 'pydantic'
-
-plugins: set[Plugin]
+ENTRY_POINT_GROUP: Final[str] = 'pydantic'
 
 _plugins: dict[str, Plugin] = {}
 
 
-def load_plugins():
+def get_plugins() -> Iterable[Plugin]:
     """Load plugins for pydantic.
 
     Inspired by:
@@ -56,26 +55,16 @@ def load_plugins():
 
     for dist in importlib_metadata.distributions():
         for entry_point in dist.entry_points:
-            if entry_point.group != GROUP:
+            if entry_point.group != ENTRY_POINT_GROUP:
                 continue
             if entry_point.value in _plugins:
                 continue
-            _plugins[entry_point.value] = entry_point.load()
+            try:
+                _plugins[entry_point.value] = entry_point.load()
+            except ImportError as e:
+                warnings.warn(
+                    f'Import error while loading "{entry_point.name}" Pydantic plugin could be caused by a circular'
+                    f' import, Pydantic will attempt importing this plugin again after other imports are finished. {e}'
+                )
 
-
-def __getattr__(attr_name: str) -> object:
-    global _plugins
-
-    if attr_name != 'plugins':
-        raise AttributeError(f'module {__name__!r} has no attribute {attr_name!r}')
-
-    try:
-        load_plugins()
-    except ImportError:
-        warnings.warn(
-            'Import error while loading a Pydantic plugin could be caused by a circular import,'
-            ' avoid module level imports from the same package in your plugin'
-        )
-        raise
-
-    return set(_plugins.values())
+    return _plugins.values()

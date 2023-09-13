@@ -8,7 +8,7 @@ from typing import Any, Awaitable, Callable
 import pydantic_core
 
 from ..config import ConfigDict
-from ..plugin.schema_validator import create_schema_validator
+from ..plugin._schema_validator import create_schema_validator
 from . import _discriminated_union, _generate_schema, _typing_extra
 from ._config import ConfigWrapper
 from ._core_utils import flatten_schema_defs, inline_schema_defs

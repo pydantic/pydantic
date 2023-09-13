@@ -8,8 +8,8 @@ import pytest
 from pydantic_core import ValidationError
 
 from pydantic import BaseModel
-from pydantic.plugin import OnValidateJson, OnValidatePython, Plugin
-from pydantic.plugin._loader import plugins
+from pydantic.plugin import OnValidateJsonProtocol, OnValidatePythonProtocol, Plugin
+from pydantic.plugin._loader import _plugins
 
 
 @pytest.fixture
@@ -33,14 +33,14 @@ def unimport_pydantic():
 
 @contextlib.contextmanager
 def install_plugin(plugin: Plugin) -> Generator[None, None, None]:
-    plugins.add(plugin)
+    _plugins[plugin.__class__.__qualname__] = plugin
     yield
-    plugins.clear()
+    _plugins.clear()
 
 
 def test_on_validate_json_on_success() -> None:
-    class CustomOnValidateJson(OnValidateJson):
-        def enter(
+    class CustomOnValidateJson(OnValidateJsonProtocol):
+        def on_enter(
             self,
             input: str | bytes | bytearray,
             *,
@@ -68,7 +68,7 @@ def test_on_validate_json_on_success() -> None:
 
 
 def test_on_validate_json_on_error() -> None:
-    class CustomOnValidateJson(OnValidateJson):
+    class CustomOnValidateJson(OnValidateJsonProtocol):
         def enter(
             self,
             input: str | bytes | bytearray,
@@ -92,7 +92,7 @@ def test_on_validate_json_on_error() -> None:
                     'loc': ('a',),
                     'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
                     'type': 'int_parsing',
-                    'url': 'https://errors.pydantic.dev/2.2/v/int_parsing',
+                    'url': 'https://errors.pydantic.dev/2.3/v/int_parsing',
                 },
             ]
 
@@ -107,7 +107,7 @@ def test_on_validate_json_on_error() -> None:
 
 
 def test_on_validate_python_on_success() -> None:
-    class CustomOnValidatePython(OnValidatePython):
+    class CustomOnValidatePython(OnValidatePythonProtocol):
         def enter(
             self,
             input: Any,
@@ -137,7 +137,7 @@ def test_on_validate_python_on_success() -> None:
 
 
 def test_on_validate_python_on_error() -> None:
-    class CustomOnValidatePython(OnValidatePython):
+    class CustomOnValidatePython(OnValidatePythonProtocol):
         def enter(
             self,
             input: Any,
@@ -162,7 +162,7 @@ def test_on_validate_python_on_error() -> None:
                     'loc': ('a',),
                     'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
                     'type': 'int_parsing',
-                    'url': 'https://errors.pydantic.dev/2.2/v/int_parsing',
+                    'url': 'https://errors.pydantic.dev/2.3/v/int_parsing',
                 },
             ]
 
@@ -177,8 +177,8 @@ def test_on_validate_python_on_error() -> None:
 
 
 def test_using_pydantic_inside_plugin():
-    class TestPlugin(OnValidatePython):
-        def enter(
+    class TestPlugin(OnValidatePythonProtocol):
+        def on_enter(
             self,
             input: Any,
             *,
@@ -202,7 +202,7 @@ def test_using_pydantic_inside_plugin():
 
 def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPatch, unimport_pydantic):
     def fake_distributions():
-        class FakeOnValidatePython(OnValidatePython):
+        class FakeOnValidatePython(OnValidatePythonProtocol):
             def on_enter(
                 self,
                 input: Any,
@@ -272,9 +272,9 @@ def test_fresh_import_using_example_plugin(monkeypatch: pytest.MonkeyPatch, unim
     with pytest.warns(UserWarning, match='ImportError while running a Pydantic plugin'):
         from .example_plugin import example_func
 
-    from pydantic.plugin._loader import plugins
+    from pydantic.plugin._loader import get_plugins
 
-    assert len(plugins) == 1
+    assert len(get_plugins()) == 1
 
     from .example_plugin import example_func
 

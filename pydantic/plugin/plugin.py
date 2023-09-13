@@ -4,7 +4,6 @@ Plugin interface for Pydantic plugins, and related types.
 """
 from __future__ import annotations
 
-from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,7 +11,7 @@ from pydantic_core import CoreConfig, CoreSchema, ValidationError
 from typing_extensions import Protocol
 
 
-class EventHandler(Protocol):
+class _EventHandlerProtocol(Protocol):
     """Event handler Protocol and base class for plugin callbacks."""
 
     schema: CoreSchema
@@ -29,21 +28,18 @@ class EventHandler(Protocol):
         self.config = config
         self.plugin_settings = plugin_settings
 
-    @abstractmethod
     def on_success(self, result: Any) -> None:
         """Call `on_success` callback."""
-        ...
+        pass
 
-    @abstractmethod
     def on_error(self, error: ValidationError) -> None:
         """Call `on_error` callback."""
-        ...
+        pass
 
 
-class OnValidatePython(EventHandler, Protocol):
+class OnValidatePythonProtocol(_EventHandlerProtocol, Protocol):
     """`on_validate_python` event handler Protocol."""
 
-    @abstractmethod
     def on_enter(
         self,
         input: Any,
@@ -54,13 +50,12 @@ class OnValidatePython(EventHandler, Protocol):
         self_instance: Any | None = None,
     ) -> None:
         """Call `enter` callback."""
-        ...
+        pass
 
 
-class OnValidateJson(EventHandler, Protocol):
+class OnValidateJsonProtocol(_EventHandlerProtocol, Protocol):
     """`on_validate_json` event handler Protocol."""
 
-    @abstractmethod
     def on_enter(
         self,
         input: str | bytes | bytearray,
@@ -70,12 +65,12 @@ class OnValidateJson(EventHandler, Protocol):
         self_instance: Any | None = None,
     ) -> None:
         """Call `enter` callback."""
-        ...
+        pass
 
 
 @dataclass(frozen=True)
 class Plugin:
     """Plugin interface for Pydantic plugins"""
 
-    on_validate_python: type[OnValidatePython] | None = None
-    on_validate_json: type[OnValidateJson] | None = None
+    on_validate_python: type[OnValidatePythonProtocol] | None = None
+    on_validate_json: type[OnValidateJsonProtocol] | None = None
