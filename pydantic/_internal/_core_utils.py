@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable, Hashable, Iterable, TypeVar, Union, _GenericAlias, cast  # type: ignore
+from typing import (
+    Any,
+    Callable,
+    Hashable,
+    Iterable,
+    TypeVar,
+    Union,
+    _GenericAlias,  # type: ignore
+    cast,
+)
 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypeAliasType, TypeGuard, get_args
