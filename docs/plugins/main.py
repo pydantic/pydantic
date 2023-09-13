@@ -16,7 +16,7 @@ from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
 from .conversion_table import conversion_table
-from .exclude_priority_table import exclude_overrides_table, exclude_variants_table
+from .exclude_priority_table import exclude_variations_code_examples
 from .utils import generate_table_heading, generate_table_row
 
 logger = logging.getLogger('mkdocs.plugin')
@@ -283,8 +283,9 @@ def build_exclude_priority_table(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'usage/serialization.md':
         return None
 
-    markdown = re.sub(r'{{ *exclude_overrides_table *}}', exclude_overrides_table, markdown)
-    markdown = re.sub(r'{{ *exclude_variants_table *}}', exclude_variants_table, markdown)
+    for example_name, md_example in exclude_variations_code_examples.items():
+        md_example = textwrap.indent(md_example, '    ')
+        markdown = re.sub(rf'{{{{ *{example_name}_example *}}}}', md_example, markdown)
 
     return markdown
 

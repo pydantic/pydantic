@@ -634,39 +634,24 @@ The same holds for the `model_dump_json` method.
 ### Model- and field-level include and exclude
 
 In addition to the explicit arguments `exclude` and `include` passed to `model_dump` and `model_dump_json` methods,
-we can also pass the `exclude: bool` arguments directly to the `Field` constructor.
+we can also pass the `exclude: bool` argument directly to the `Field` constructor.
+The tabs below show the expected behavior when using combinations of `exclude` at the `Field` constructor level
+and `exclude`, `include`, `exclude_none`, `exclude_defaults`, and `exclude_unset` for the `model_dump` and `model_dump_json` methods.
 
-The table below shows the expected behavior when using combinations of `exclude` at the `Field` constructor level
-and `exclude` and `include` for the `model_dump` and `model_dump_json` methods.
+=== "exclude"
+{{ exclude_example }}
 
-Imagine a case where we have the following class definition + instance creation:
+=== "include"
+{{ include_example }}
 
-```py
-from typing import Optional
+=== "exclude_none"
+{{ exclude_none_example }}
 
-from pydantic import BaseModel, Field
+=== "exclude_defaults"
+{{ exclude_defaults_example }}
 
-# differs by table row / col
-init_kws = {}
-field_kws = {}
-model_dump_kws = {}
-
-
-class Dog(BaseModel):
-    name: Optional[str] = Field(default='Unspecified', **field_kws)
-
-
-my_dog = Dog(**init_kws)
-my_dog.model_dump(**model_dump_kws)
-```
-
-{{ exclude_overrides_table }}
-
-Using the same case with the `Dog` class defined above, this table shows the expected behavior when using combinations
-of `exclude` at the `Field` constructor level and `exclude_none`, `exclude_defaults`, and `exclude_unset` for the
-`model_dump` and `model_dump_json` methods.
-
-{{ exclude_variants_table }}
+=== "exclude_unset"
+{{ exclude_unset_example }}
 
 
 ## `model_copy(...)`
