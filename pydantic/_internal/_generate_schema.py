@@ -9,7 +9,7 @@ import sys
 import typing
 import warnings
 from contextlib import contextmanager
-from copy import copy
+from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
@@ -1275,7 +1275,7 @@ class GenerateSchema:
                 from ..dataclasses import is_pydantic_dataclass
 
                 if is_pydantic_dataclass(dataclass):
-                    fields = dataclass.__pydantic_fields__
+                    fields = deepcopy(dataclass.__pydantic_fields__)
                     if typevars_map:
                         for field in fields.values():
                             field.apply_typevars_map(typevars_map, self._types_namespace)
