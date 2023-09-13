@@ -2,13 +2,9 @@
 description: Support for common types from the Python standard library.
 ---
 
-Pydantic supports many common types from the Python standard library. If you need stricter processing see
-[Strict types](#strict-types), including if you need to constrain the values allowed (e.g. to require a positive `int`).
-
 | Type | Description |
 | ---- | ----------- |
 | `None`, `type(None)`, or `Literal[None]` | Equivalent according to [PEP 484](https://www.python.org/dev/peps/pep-0484/#using-none). Allows only `None` value. |
-| `bool` | See [Booleans](../../api/standard_library_types.md#bool) for details on how bools are validated and what values are permitted. |
 | `int` | Pydantic uses `int(v)` to coerce types to an `int`. See [Number Types](number_types.md) for more details. See the [Data Conversion](../models.md#data-conversion) warning on loss of information during data conversion. |
 | `float` | `float(v)` is used to coerce values to floats. See [Number Types](number_types.md) for more details. |
 | `str` | Strings are accepted as-is. `bytes` and `bytearray` are converted using `v.decode()`. `Enum`s inheriting from `str` are converted using `v.value`. All other types cause an error. |
@@ -19,10 +15,6 @@ Pydantic supports many common types from the Python standard library. If you nee
 | `set` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a set. See [`typing.Set`](set_types.md) for sub-type constraints. |
 | `frozenset` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a frozen set. See [`typing.FrozenSet`](set_types.md) for sub-type constraints. |
 | `deque` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a deque. See [`typing.Deque`](list_types.md) for sub-type constraints. |
-| `datetime.date` | See [Datetime Types](datetime.md) for more detail on parsing and validation. |
-| `datetime.time` | See [Datetime Types](datetime.md) for more detail on parsing and validation. |
-| `datetime.datetime` | See [Datetime Types](datetime.md) for more detail on parsing and validation. |
-| `datetime.timedelta` | See [Datetime Types](datetime.md) for more detail on parsing and validation. |
 | `typing.Any` | Allows any value including `None`, thus an `Any` field is optional. |
 | `typing.Annotated` | Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../json_schema.md#typingannotated-fields), but otherwise the additional metadata is ignored and the root type is used. |
 | `typing.TypeVar` | Constrains the values allowed based on `constraints` or `bound`, see [TypeVar](typevars.md). |
