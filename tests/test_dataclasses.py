@@ -2058,6 +2058,24 @@ def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_v
         assert exc_info.value.errors(include_url=False) == output_value
 
 
+def test_multiple_parametrized_generic_dataclasses():
+    T = TypeVar('T')
+
+    @pydantic.dataclasses.dataclass
+    class GenericDataclass(Generic[T]):
+        x: T
+
+    validator1 = pydantic.TypeAdapter(GenericDataclass[int])
+    validator2 = pydantic.TypeAdapter(GenericDataclass[str])
+
+    # verify that generic parameters are showing up in the type ref for generic dataclasses
+    assert '[int:' in validator1.core_schema['schema']['schema_ref']
+    assert '[str:' in validator2.core_schema['schema']['schema_ref']
+
+    assert validator1.validate_python({'x': 1}).x == 1
+    assert validator2.validate_python({'x': 'hello world'}).x == 'hello world'
+
+
 @pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(include_identity=True))
 def test_pydantic_dataclass_preserves_metadata(dataclass_decorator: Callable[[Any], Any]) -> None:
     @dataclass_decorator

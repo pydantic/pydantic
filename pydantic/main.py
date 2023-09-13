@@ -871,7 +871,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             yield from extra.items()
 
     def __repr__(self) -> str:
-        print(list(self.__repr_args__()))
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 
     def __repr_args__(self) -> _repr.ReprArgs:
