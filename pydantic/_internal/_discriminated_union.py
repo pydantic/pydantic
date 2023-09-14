@@ -19,9 +19,14 @@ def set_discriminator(schema: CoreSchema, discriminator: Any) -> None:
 
 
 def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    if schema.get('metadata', {}).get('needs_apply_discriminators', False):
+        return schema
+
     definitions = collect_definitions(schema)
 
     def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
+        if s.get('metadata', {}).get('needs_apply_discriminators', False):
+            return s
         s = recurse(s, inner)
         if s['type'] == 'tagged-union':
             return s
@@ -32,7 +37,9 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
             s = apply_discriminator(s, discriminator, definitions)
         return s
 
-    return _core_utils.walk_core_schema(schema, inner)
+    s = _core_utils.walk_core_schema(schema, inner)
+    s.setdefault('metadata', {})['needs_apply_discriminators'] = False
+    return s
 
 
 def apply_discriminator(

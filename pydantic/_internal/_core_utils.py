@@ -115,6 +115,14 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
     defs: dict[str, CoreSchema] = {}
 
     def _record_valid_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
+        if s['type'] == 'definitions' and 'metadata' in s and s['metadata'].get('definitions_complete', False):
+            # assume they are complete
+            for definition in s['definitions']:
+                ref = get_ref(definition)
+                assert ref is not None
+                defs[ref] = definition
+            return s
+
         ref = get_ref(s)
         if ref:
             defs[ref] = s
@@ -422,7 +430,8 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
     def make_result(schema: core_schema.CoreSchema, defs: Iterable[core_schema.CoreSchema]) -> core_schema.CoreSchema:
         definitions = list(defs)
         if definitions:
-            return core_schema.definitions_schema(schema=schema, definitions=definitions)
+            schema = core_schema.definitions_schema(schema=schema, definitions=definitions)
+        schema.setdefault('metadata', {})['definitions_complete'] = True
         return schema
 
     def collect_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
@@ -431,6 +440,8 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
                 ref = get_ref(definition)
                 assert ref is not None
                 all_defs[ref] = recurse(definition, collect_refs)
+            if 'metadata' in s and s['metadata'].get('definitions_complete', True):
+                return s['schema']
             return recurse(s['schema'], collect_refs)
         else:
             ref = get_ref(s)

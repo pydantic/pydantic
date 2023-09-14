@@ -32,6 +32,7 @@ from typing import (
     overload,
 )
 from warnings import warn
+from weakref import WeakKeyDictionary
 
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
@@ -106,6 +107,9 @@ LIST_TYPES: list[type] = [list, typing.List, collections.abc.MutableSequence]
 SET_TYPES: list[type] = [set, typing.Set, collections.abc.MutableSet]
 FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set]
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
+
+
+_SCHEMA_CACHE: WeakKeyDictionary[Any, core_schema.CoreSchema] = WeakKeyDictionary()
 
 
 def check_validator_fields_against_field_name(
@@ -1463,7 +1467,7 @@ class GenerateSchema:
 
         # This check for hashability is only necessary for python 3.7
         try:
-            hash(obj)
+            hash((obj, annotations))
         except TypeError:
             # obj is definitely not a known type if this fails
             return None
@@ -1474,6 +1478,23 @@ class GenerateSchema:
                 return res
 
         return None
+
+    def _apply_annotations_inner_handler(
+        self,
+        obj: Any,
+        transform_inner_schema: Callable[[CoreSchema], CoreSchema] | None = None,
+    ) -> CoreSchema:
+        from_property = self._generate_schema_from_property(obj, obj)
+        if from_property is None:
+            schema = self._generate_schema(obj)
+        else:
+            schema = from_property
+        metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+        if metadata_js_function is not None:
+            metadata_schema = resolve_original_schema(schema, self.defs.definitions)
+            if metadata_schema is not None:
+                self._add_js_function(metadata_schema, metadata_js_function)
+        return transform_inner_schema(schema) if transform_inner_schema else schema
 
     def _apply_annotations(
         self,
@@ -1487,6 +1508,9 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
+        if not annotations:
+            return self._apply_annotations_inner_handler(source_type, transform_inner_schema)
+
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
         res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
         if res is not None:
@@ -1494,20 +1518,9 @@ class GenerateSchema:
 
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
-        def inner_handler(obj: Any) -> CoreSchema:
-            from_property = self._generate_schema_from_property(obj, obj)
-            if from_property is None:
-                schema = self._generate_schema(obj)
-            else:
-                schema = from_property
-            metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
-            if metadata_js_function is not None:
-                metadata_schema = resolve_original_schema(schema, self.defs.definitions)
-                if metadata_schema is not None:
-                    self._add_js_function(metadata_schema, metadata_js_function)
-            return transform_inner_schema(schema)
-
-        get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
+        get_inner_schema = CallbackGetCoreSchemaHandler(
+            partial(self._apply_annotations_inner_handler, transform_inner_schema=transform_inner_schema), self
+        )
 
         for annotation in annotations:
             if annotation is None:

@@ -4,11 +4,20 @@ Tests for internal things that are complex enough to warrant their own unit test
 from dataclasses import dataclass
 
 import pytest
-from pydantic_core import SchemaValidator
+from pydantic_core import CoreSchema, SchemaValidator
 from pydantic_core import core_schema as cs
 
-from pydantic._internal._core_utils import flatten_schema_defs, inline_schema_defs
+from pydantic._internal._core_utils import Walk, flatten_schema_defs, inline_schema_defs, walk_core_schema
 from pydantic._internal._repr import Representation
+
+
+def remove_metadata(schema: CoreSchema) -> CoreSchema:
+    def inner(s: CoreSchema, recurse: Walk) -> CoreSchema:
+        s = s.copy()
+        s.pop('metadata', None)
+        return recurse(s, inner)
+
+    return walk_core_schema(schema, inner)
 
 
 @pytest.mark.parametrize(
@@ -231,11 +240,11 @@ from pydantic._internal._repr import Representation
     ],
 )
 def test_build_schema_defs(input_schema: cs.CoreSchema, flattened: cs.CoreSchema, inlined: cs.CoreSchema):
-    actual_flattened = flatten_schema_defs(input_schema)
+    actual_flattened = remove_metadata(flatten_schema_defs(input_schema))
     assert actual_flattened == flattened
     SchemaValidator(actual_flattened)  # check for validity
 
-    actual_inlined = inline_schema_defs(input_schema)
+    actual_inlined = remove_metadata(inline_schema_defs(input_schema))
     assert actual_inlined == inlined
     SchemaValidator(actual_inlined)  # check for validity
 
