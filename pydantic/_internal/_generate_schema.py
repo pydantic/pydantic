@@ -109,9 +109,6 @@ FROZEN_SET_TYPES: list[type] = [frozenset, typing.FrozenSet, collections.abc.Set
 DICT_TYPES: list[type] = [dict, typing.Dict, collections.abc.MutableMapping, collections.abc.Mapping]
 
 
-_SCHEMA_CACHE: WeakKeyDictionary[Any, core_schema.CoreSchema] = WeakKeyDictionary()
-
-
 def check_validator_fields_against_field_name(
     info: FieldDecoratorInfo,
     field: str,
@@ -1467,7 +1464,7 @@ class GenerateSchema:
 
         # This check for hashability is only necessary for python 3.7
         try:
-            hash((obj, annotations))
+            hash(obj)
         except TypeError:
             # obj is definitely not a known type if this fails
             return None
