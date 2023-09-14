@@ -32,7 +32,6 @@ from typing import (
     overload,
 )
 from warnings import warn
-from weakref import WeakKeyDictionary
 
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
