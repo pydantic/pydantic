@@ -18,7 +18,6 @@ from typing import (
     Generic,
     Hashable,
     Iterator,
-    List,
     Set,
     TypeVar,
     cast,
@@ -453,7 +452,7 @@ def conlist(
             ),
             code='removed-kwargs',
         )
-    return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]
+    return Annotated[list[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
