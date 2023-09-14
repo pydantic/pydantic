@@ -127,8 +127,8 @@ if __name__ == '__main__':
     import sys
     import time
 
-    INNER_DATA_MODEL_COUNT = 50
-    OUTER_DATA_MODEL_COUNT = 50
+    INNER_DATA_MODEL_COUNT = 25
+    OUTER_DATA_MODEL_COUNT = 25
     print(f'Python version: {sys.version}')
     if sys.argv[-1] == 'cProfile':
         cProfile.run('test_fastapi_startup_perf(lambda f: f())', sort='tottime')
