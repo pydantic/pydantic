@@ -39,7 +39,7 @@ import dirty_equals
 import pytest
 from dirty_equals import HasRepr, IsOneOf, IsStr
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
-from typing_extensions import Annotated, Literal, TypedDict, get_args
+from typing_extensions import Annotated, Literal, NotRequired, Required, TypedDict, get_args
 
 from pydantic import (
     UUID1,
@@ -5847,3 +5847,10 @@ def test_decimal_float_precision() -> None:
     assert ta.validate_python('1.1') == Decimal('1.1')
     assert ta.validate_json('1') == Decimal('1')
     assert ta.validate_python(1) == Decimal('1')
+
+
+def test_typeddict_required() -> None:
+    # Required and NotRequired are just ignored; handling them like this makes it safe to pass a
+    # field annotation of a TypedDict directly into a TypeAdapter.
+    assert TypeAdapter(Required[int]).core_schema == TypeAdapter(int).core_schema
+    assert TypeAdapter(NotRequired[int]).core_schema == TypeAdapter(int).core_schema

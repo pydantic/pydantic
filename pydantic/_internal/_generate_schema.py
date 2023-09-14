@@ -33,6 +33,7 @@ from typing import (
 )
 from warnings import warn
 
+import typing_extensions
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
@@ -773,6 +774,8 @@ class GenerateSchema:
             return self._iterable_schema(obj)
         elif origin in (re.Pattern, typing.Pattern):
             return self._pattern_schema(obj)
+        elif origin in (typing_extensions.Required, typing_extensions.NotRequired):
+            return self.generate_schema(get_args(obj)[0])
 
         if self._arbitrary_types:
             return self._arbitrary_type_schema(origin)
