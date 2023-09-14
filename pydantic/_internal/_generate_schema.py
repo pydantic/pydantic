@@ -1509,30 +1509,32 @@ class GenerateSchema:
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
         if not annotations:
-            return self._apply_annotations_inner_handler(source_type, transform_inner_schema)
+            schema = self._apply_annotations_inner_handler(source_type, transform_inner_schema)
+        else:
+            annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
+            res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
+            if res is not None:
+                source_type, annotations = res
 
-        annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
-        res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
-        if res is not None:
-            source_type, annotations = res
+            pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
-        pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
-
-        get_inner_schema = CallbackGetCoreSchemaHandler(
-            partial(self._apply_annotations_inner_handler, transform_inner_schema=transform_inner_schema), self
-        )
-
-        for annotation in annotations:
-            if annotation is None:
-                continue
-            get_inner_schema = self._get_wrapped_inner_schema(
-                get_inner_schema, annotation, pydantic_js_annotation_functions
+            get_inner_schema = CallbackGetCoreSchemaHandler(
+                partial(self._apply_annotations_inner_handler, transform_inner_schema=transform_inner_schema), self
             )
 
-        schema = get_inner_schema(source_type)
-        if pydantic_js_annotation_functions:
-            metadata = CoreMetadataHandler(schema).metadata
-            metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
+            for annotation in annotations:
+                if annotation is None:
+                    continue
+                get_inner_schema = self._get_wrapped_inner_schema(
+                    get_inner_schema, annotation, pydantic_js_annotation_functions
+                )
+
+            schema = get_inner_schema(source_type)
+
+            if pydantic_js_annotation_functions:
+                metadata = CoreMetadataHandler(schema).metadata
+                metadata.setdefault('pydantic_js_annotation_functions', []).extend(pydantic_js_annotation_functions)
+
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
