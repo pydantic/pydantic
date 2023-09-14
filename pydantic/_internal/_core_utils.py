@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable, Hashable, Iterable, TypeVar, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Hashable,
+    Iterable,
+    TypeVar,
+    Union,
+    _GenericAlias,  # type: ignore
+    cast,
+)
 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypeAliasType, TypeGuard, get_args
@@ -65,7 +74,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     when creating generic models without needing to create a concrete class.
     """
     origin = type_
-    args = args_override or ()
+    args = get_args(type_) if isinstance(type_, _GenericAlias) else (args_override or ())
     generic_metadata = getattr(type_, '__pydantic_generic_metadata__', None)
     if generic_metadata:
         origin = generic_metadata['origin'] or origin
