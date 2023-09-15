@@ -25,8 +25,46 @@ subclass of `enum.IntEnum`
 : checks that the value is a valid member of the integer enum;
   see [Enums and Choices](enums.md) for more details.
 
+
+## Serialization notes
+
 `decimal.Decimal`
-: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`.
+Pydantic serializes `Decimal` types as strings.
+You can use a custom serializer to override this behavior if desired. For example:
+
+```py
+from decimal import Decimal
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, PlainSerializer
+
+
+class Model(BaseModel):
+    x: Decimal
+    y: Annotated[
+        Decimal,
+        PlainSerializer(
+            lambda x: float(x), return_type=float, when_used='json'
+        ),
+    ]
+
+
+my_model = Model(x=Decimal('1.1'), y=Decimal('2.1'))
+
+print(my_model.model_dump())  # (1)!
+#> {'x': Decimal('1.1'), 'y': Decimal('2.1')}
+print(my_model.model_dump(mode='json'))  # (2)!
+#> {'x': '1.1', 'y': 2.1}
+print(my_model.model_dump_json())  # (3)!
+#> {"x":"1.1","y":2.1}
+```
+
+1. Using `model_dump`, both `x` and `y` remain instances of the `Decimal` type
+2. Using `model_dump` with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
+3. Using `model_dump_json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
+
+
 
 ## Constrained types
 
