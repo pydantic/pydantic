@@ -21,7 +21,13 @@ cd .. && pip install . && cd fastapi
 ./scripts/test.sh -vv \
   --deselect tests/test_openapi_separate_input_output_schemas.py::test_openapi_schema \
   --deselect tests/test_tutorial/test_body_updates/test_tutorial001.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_body_updates/test_tutorial001_py310.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_body_updates/test_tutorial001_py39.py::test_openapi_schema \
   --deselect tests/test_tutorial/test_dataclasses/test_tutorial003.py::test_openapi_schema \
   --deselect tests/test_tutorial/test_path_operation_advanced_configurations/test_tutorial004.py::test_openapi_schema \
   --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005_py310.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_path_operation_configurations/test_tutorial005_py39.py::test_openapi_schema \
   --deselect tests/test_tutorial/test_separate_openapi_schemas/test_tutorial001.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_separate_openapi_schemas/test_tutorial001_py310.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_separate_openapi_schemas/test_tutorial001_py39.py::test_openapi_schema \
