@@ -32,7 +32,7 @@ from typing import Iterable
 
 from typing_extensions import Final
 
-from .plugin import Plugin
+from .plugin import PydanticPlugin
 
 if sys.version_info >= (3, 8):
     import importlib.metadata as importlib_metadata
@@ -42,10 +42,10 @@ else:
 
 ENTRY_POINT_GROUP: Final[str] = 'pydantic'
 
-_plugins: dict[str, Plugin] = {}
+_plugins: dict[str, PydanticPlugin] = {}
 
 
-def get_plugins() -> Iterable[Plugin]:
+def get_plugins() -> Iterable[PydanticPlugin]:
     """Load plugins for pydantic.
 
     Inspired by:

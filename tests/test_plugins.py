@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import contextlib
 import sys
+from dataclasses import dataclass
 from typing import Any, Generator
 
 import pytest
 from pydantic_core import ValidationError
 
 from pydantic import BaseModel
-from pydantic.plugin import OnValidateJsonProtocol, OnValidatePythonProtocol, Plugin
+from pydantic.plugin import OnValidateJsonProtocol, OnValidatePythonProtocol, PydanticPlugin
 from pydantic.plugin._loader import _plugins
 
 
@@ -32,7 +33,7 @@ def unimport_pydantic():
 
 
 @contextlib.contextmanager
-def install_plugin(plugin: Plugin) -> Generator[None, None, None]:
+def install_plugin(plugin: PydanticPlugin) -> Generator[None, None, None]:
     _plugins[plugin.__class__.__qualname__] = plugin
     yield
     _plugins.clear()
@@ -57,6 +58,11 @@ def test_on_validate_json_on_success() -> None:
 
         def on_success(self, result: Any) -> None:
             assert isinstance(result, Model)
+
+    @dataclass
+    class Plugin:
+        on_validate_json: OnValidateJsonProtocol | None = None
+        on_validate_python: OnValidatePythonProtocol | None = None
 
     plugin = Plugin(on_validate_json=CustomOnValidateJson)
     with install_plugin(plugin):
@@ -97,6 +103,11 @@ def test_on_validate_json_on_error() -> None:
                 },
             ]
 
+    @dataclass
+    class Plugin:
+        on_validate_json: OnValidateJsonProtocol | None = None
+        on_validate_python: OnValidatePythonProtocol | None = None
+
     plugin = Plugin(on_validate_json=CustomOnValidateJson)
     with install_plugin(plugin):
 
@@ -128,6 +139,11 @@ def test_on_validate_python_on_success() -> None:
 
         def on_success(self, result: Any) -> None:
             assert isinstance(result, Model)
+
+    @dataclass
+    class Plugin:
+        on_validate_json: OnValidateJsonProtocol | None = None
+        on_validate_python: OnValidatePythonProtocol | None = None
 
     plugin = Plugin(on_validate_python=CustomOnValidatePython)
     with install_plugin(plugin):
@@ -169,6 +185,11 @@ def test_on_validate_python_on_error() -> None:
                 },
             ]
 
+    @dataclass
+    class Plugin:
+        on_validate_json: OnValidateJsonProtocol | None = None
+        on_validate_python: OnValidatePythonProtocol | None = None
+
     plugin = Plugin(on_validate_python=CustomOnValidatePython)
     with install_plugin(plugin):
 
@@ -194,6 +215,11 @@ def test_using_pydantic_inside_plugin():
             from pydantic import TypeAdapter
 
             assert TypeAdapter(int).validate_python(42)
+
+    @dataclass
+    class Plugin:
+        on_validate_json: OnValidateJsonProtocol | None = None
+        on_validate_python: OnValidatePythonProtocol | None = None
 
     plugin = Plugin(on_validate_python=TestPlugin)
     with install_plugin(plugin):
@@ -232,6 +258,11 @@ def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPat
                 # Emulate performing the same import that caused loading plugin while importing a plugin module
                 from pydantic import BaseModel  # noqa: F401
 
+                @dataclass
+                class Plugin:
+                    on_validate_json: OnValidateJsonProtocol | None = None
+                    on_validate_python: OnValidatePythonProtocol | None = None
+
                 return Plugin(on_validate_python=FakeOnValidatePython)
 
         class FakeDistribution:
@@ -256,10 +287,10 @@ def test_fresh_import_using_example_plugin(monkeypatch: pytest.MonkeyPatch, unim
     def fake_distributions():
         class ExampleEntryPoint:
             group = 'pydantic'
-            value = 'pydantic.tests.example_plugin.plugin:plugin'
+            value = 'pydantic.tests.example_plugin.plugin'
 
             def load(self):
-                from .example_plugin.plugin import plugin
+                from .example_plugin import plugin
 
                 return plugin
 

@@ -4,7 +4,6 @@ Plugin interface for Pydantic plugins, and related types.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
 from pydantic_core import CoreConfig, CoreSchema, ValidationError
@@ -68,8 +67,7 @@ class OnValidateJsonProtocol(_EventHandlerProtocol, Protocol):
         pass
 
 
-@dataclass(frozen=True)
-class Plugin:
+class PydanticPlugin(Protocol):
     """Plugin interface for Pydantic plugins"""
 
     on_validate_python: type[OnValidatePythonProtocol] | None = None

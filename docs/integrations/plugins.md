@@ -54,12 +54,17 @@ For each method, you can implement the following callbacks:
 Let's see an example of a plugin that _wraps_ the `validate_python` method of the [`SchemaValidator`][pydantic_core.SchemaValidator].
 
 ```py
+from dataclasses import dataclass
 from pprint import pprint
 from typing import Any, Dict, Optional
 
 from pydantic_core import ValidationError
 
-from pydantic.plugin import OnValidatePythonProtocol, Plugin
+from pydantic.plugin import (
+    OnValidateJsonProtocol,
+    OnValidatePythonProtocol,
+    PydanticPlugin,
+)
 
 
 class OnValidatePython(OnValidatePythonProtocol):
@@ -79,6 +84,12 @@ class OnValidatePython(OnValidatePythonProtocol):
 
     def on_error(self, error: ValidationError) -> None:
         pprint(error.json())
+
+
+@dataclass
+class Plugin(PydanticPlugin):
+    on_validate_python: type[OnValidatePythonProtocol] | None = None
+    on_validate_json: type[OnValidateJsonProtocol] | None = None
 
 
 plugin = Plugin(on_validate_python=OnValidatePython)

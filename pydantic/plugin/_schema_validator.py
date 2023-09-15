@@ -10,7 +10,7 @@ from typing import Any, Callable, ClassVar, Iterator, TypeVar
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Literal, ParamSpec
 
-from .plugin import Plugin, _EventHandlerProtocol
+from .plugin import PydanticPlugin, _EventHandlerProtocol
 
 P = ParamSpec('P')
 R = TypeVar('R')
@@ -42,7 +42,7 @@ class PluggableSchemaValidator:
         self,
         schema: CoreSchema,
         config: CoreConfig | None,
-        plugins: set[Plugin],
+        plugins: set[PydanticPlugin],
         plugin_settings: dict[str, Any],
     ) -> None:
         self._schema_validator = SchemaValidator(schema, config)
@@ -96,7 +96,7 @@ class _PluginAPI:
         event: _Event,
         schema: CoreSchema,
         config: CoreConfig | None,
-        plugins: set[Plugin],
+        plugins: set[PydanticPlugin],
         plugin_settings: dict[str, Any],
     ) -> None:
         self.event = event
@@ -111,7 +111,7 @@ class _PluginAPI:
         self.on_success = self.prepare_on_success()
         self.on_error = self.prepare_on_error()
 
-    def prepare_event_handlers(self, plugins: set[Plugin]) -> list[_EventHandlerProtocol]:
+    def prepare_event_handlers(self, plugins: set[PydanticPlugin]) -> list[_EventHandlerProtocol]:
         handlers: list[_EventHandlerProtocol] = []
 
         for plugin in plugins:

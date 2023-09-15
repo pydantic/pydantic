@@ -31,4 +31,5 @@ class OnValidatePython(pydantic.plugin.OnValidatePythonProtocol):
         example_func()
 
 
-plugin = pydantic.plugin.Plugin(on_validate_python=OnValidatePython)
+on_validate_json = None
+on_validate_python = OnValidatePython
