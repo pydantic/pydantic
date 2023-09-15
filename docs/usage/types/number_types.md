@@ -34,7 +34,8 @@ You can use a custom serializer to override this behavior if desired. For exampl
 
 ```py
 from decimal import Decimal
-from typing import Annotated
+
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, PlainSerializer
 
@@ -60,10 +61,8 @@ print(my_model.model_dump_json())  # (3)!
 ```
 
 1. Using `model_dump`, both `x` and `y` remain instances of the `Decimal` type
-2. Using `model_dump` with `mode='json'`, `x` is serialized as a `string`, 
-and `y` is serialized as a `float` because of the custom serializer applied.
-3. Using `model_dump_json'`, `x` is serialized as a `string`, 
-and `y` is serialized as a `float` because of the custom serializer applied.
+2. Using `model_dump` with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
+3. Using `model_dump_json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
 
 
 
