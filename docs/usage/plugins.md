@@ -56,7 +56,7 @@ Let's see an example of a plugin that _wraps_ the `validate_python` method of th
 ```py
 from dataclasses import dataclass
 from pprint import pprint
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from pydantic_core import ValidationError
 
@@ -88,9 +88,23 @@ class OnValidatePython(OnValidatePythonProtocol):
 
 @dataclass
 class Plugin(PydanticPlugin):
-    on_validate_python: type[OnValidatePythonProtocol] | None = None
-    on_validate_json: type[OnValidateJsonProtocol] | None = None
+    on_validate_python: Optional[Type[OnValidatePythonProtocol]] = None
+    on_validate_json: Optional[Type[OnValidateJsonProtocol]] = None
 
 
 plugin = Plugin(on_validate_python=OnValidatePython)
 ```
+
+## Using Plugin Settings
+
+Consider that you have a plugin called setting called "observer", then you can use it like this:
+
+```py
+from pydantic import BaseModel
+
+
+class Foo(BaseModel, plugin_settings={'observer': 'all'}):
+    ...
+```
+
+On each validation call, the `plugin_settings` will be passed to a callable registered for the events.

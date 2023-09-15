@@ -198,7 +198,7 @@ class ConfigDict(TypedDict, total=False):
     plugin_settings: dict[str, object] | None
     """A `dict` of settings for plugins. Defaults to `None`.
 
-    See [Pydantic Plugins](../integrations/plugins.md) for details.
+    See [Pydantic Plugins](../usage/plugins.md) for details.
     """
 
     schema_generator: type[_GenerateSchema] | None
