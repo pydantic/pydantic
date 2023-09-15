@@ -271,7 +271,7 @@ def test_fresh_import_using_example_plugin(monkeypatch: pytest.MonkeyPatch, unim
 
     assert [name for name in sys.modules if name == 'pydantic' or name.startswith('pydantic.')] == []
 
-    with pytest.warns(UserWarning, match='ImportError while running a Pydantic plugin'):
+    with pytest.warns(UserWarning, match='Error while running a Pydantic plugin'):
         from . import example_plugin
 
     assert example_plugin.m.model_dump() == {'value': 'abc'}

@@ -142,10 +142,8 @@ class _PluginAPI:
                         continue
                     try:
                         callback_once(*args, **kwargs)
-                    except ImportError as e:
-                        warnings.warn(
-                            f'ImportError while running a Pydantic plugin {callback.__code__.co_filename!r}: {e}'
-                        )
+                    except Exception as e:  # It could be an ImportError or an AttributeError
+                        warnings.warn(f'Error while running a Pydantic plugin {callback.__code__.co_filename!r}: {e}')
 
         return wrapper
 
