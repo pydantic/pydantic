@@ -5594,10 +5594,10 @@ def test_json_schema_mode_override():
         a: Json[int]  # requires a string to validate, but will dump an int
 
     class ValidationModel(Model):
-        model_config = ConfigDict(json_schema_mode_override='validation')
+        model_config = ConfigDict(json_schema_mode_override='validation', title='Model')
 
     class SerializationModel(Model):
-        model_config = ConfigDict(json_schema_mode_override='serialization')
+        model_config = ConfigDict(json_schema_mode_override='serialization', title='Model')
 
     # Ensure the ValidationModel and SerializationModel schemas do not depend on the value of the mode
     assert ValidationModel.model_json_schema(mode='validation') == ValidationModel.model_json_schema(
