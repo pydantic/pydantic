@@ -83,6 +83,8 @@ validating. This flag provides a way to indicate whether you want the JSON schem
 for validation inputs, or that will be matched by serialization outputs.
 """
 
+_MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serialization': 'Output'}
+
 
 def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
     """Update a JSON schema by providing a dictionary of updates.
@@ -1848,19 +1850,15 @@ class GenerateJsonSchema:
         components = [re.sub(r'(?:[^.[\]]+\.)+((?:[^.[\]]+))', r'\1', x) for x in components]
         short_ref = ''.join(components)
 
-        mode_suffix = (
-            self._config.json_schema_serialization_suffix
-            if mode == 'serialization'
-            else self._config.json_schema_validation_suffix
-        )
+        mode_title = _MODE_TITLE_MAPPING[mode]
 
         # It is important that the generated defs_ref values be such that at least one choice will not
         # be generated for any other core_ref. Currently, this should be the case because we include
         # the id of the source type in the core_ref
         name = DefsRef(self.normalize_name(short_ref))
-        name_mode = DefsRef(self.normalize_name(short_ref) + f'{mode_suffix}')
+        name_mode = DefsRef(self.normalize_name(short_ref) + f'-{mode_title}')
         module_qualname = DefsRef(self.normalize_name(core_ref_no_id))
-        module_qualname_mode = DefsRef(f'{module_qualname}{mode_suffix}')
+        module_qualname_mode = DefsRef(f'{module_qualname}-{mode_title}')
         module_qualname_id = DefsRef(self.normalize_name(core_ref))
         occurrence_index = self._collision_index.get(module_qualname_id)
         if occurrence_index is None:

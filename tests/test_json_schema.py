@@ -5573,3 +5573,43 @@ def test_enum_complex_value() -> None:
 
     # insert_assert(ta.json_schema())
     assert ta.json_schema() == {'enum': [[1, 2], [2, 3]], 'title': 'MyEnum', 'type': 'array'}
+
+
+def test_json_schema_serialization_defaults_required():
+    class Model(BaseModel):
+        a: str = 'a'
+
+    class SerializationDefaultsRequiredModel(Model):
+        model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
+    model_schema = Model.model_json_schema(mode='serialization')
+    sdr_model_schema = SerializationDefaultsRequiredModel.model_json_schema(mode='serialization')
+
+    assert 'required' not in model_schema
+    assert sdr_model_schema['required'] == ['a']
+
+
+def test_json_schema_mode_override():
+    class Model(BaseModel):
+        a: Json[int]  # requires a string to validate, but will dump an int
+
+    class ValidationModel(Model):
+        model_config = ConfigDict(json_schema_mode_override='validation')
+
+    class SerializationModel(Model):
+        model_config = ConfigDict(json_schema_mode_override='serialization')
+
+    # Ensure the ValidationModel and SerializationModel schemas do not depend on the value of the mode
+    assert ValidationModel.model_json_schema(mode='validation') == ValidationModel.model_json_schema(
+        mode='serialization'
+    )
+    assert SerializationModel.model_json_schema(mode='validation') == SerializationModel.model_json_schema(
+        mode='serialization'
+    )
+
+    # Ensure the two submodels models have different JSON schemas
+    assert ValidationModel.model_json_schema() != SerializationModel.model_json_schema()
+
+    # Ensure the submodels' JSON schemas match the expected mode even when the opposite value is specified:
+    assert ValidationModel.model_json_schema(mode='serialization') == Model.model_json_schema(mode='validation')
+    assert SerializationModel.model_json_schema(mode='validation') == Model.model_json_schema(mode='serialization')

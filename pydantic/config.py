@@ -233,21 +233,5 @@ class ConfigDict(TypedDict, total=False):
     Defaults to `None`.
     """
 
-    json_schema_validation_suffix: str
-    """
-    When the validation and serialization schemas for a single model are different, and both schemas must be referenced
-    in a single generated JSON schema, this suffix will be added to the schema for `mode='validation'`.
-
-    Defaults to `'-Input'`.
-    """
-
-    json_schema_serialization_suffix: str
-    """
-    When the validation and serialization schemas for a single model are different, and both schemas must be referenced
-    in a single generated JSON schema, this suffix will be added to the schema for `mode='serialization'`.
-
-    Defaults to `'-Output'`.
-    """
-
 
 __getattr__ = getattr_migration(__name__)
