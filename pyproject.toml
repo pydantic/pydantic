@@ -85,7 +85,8 @@ docs = [
     "black>=23.3.0",
     "pytest-examples>=0.0.10",
     "pydantic-settings>=2.0b1",
-    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
+    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main",
+    "gitpython",
 ]
 linting = [
     "black",

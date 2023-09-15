@@ -1,109 +1,80 @@
-from __future__ import annotations as _annotations
+from __future__ import annotations
 
+import datetime
 import re
-import subprocess
 import sys
-from dataclasses import dataclass
-from datetime import date
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import requests
+from git.repo import Repo
+
+if TYPE_CHECKING:
+    from git.objects.commit import Commit
+    from git.refs.tag import TagReference
 
 
-def main():
+REPO_URL = 'https://github.com/pydantic/pydantic'
+
+
+def get_latest_tag(repo: Repo) -> TagReference:
+    tags = repo.tags
+    if len(tags) == 0:
+        sys.exit('no tags found')
+
+    return tags[-1]
+
+
+def get_new_commits(repo: Repo) -> list[Commit]:
+    latest_tag = get_latest_tag(repo)
+
+    new_commits = []
+    commits = repo.iter_commits()
+    for commit in commits:
+        if commit == latest_tag.commit:
+            break
+
+        new_commits.append(commit)
+
+    if len(new_commits) == 0:
+        sys.exit('no new commits found')
+
+    return new_commits
+
+
+def get_latest_package_version(root_dir: Path) -> str:
+    version_file = root_dir.joinpath('pydantic', 'version.py')
+    latest_version = re.search(r"VERSION = '(.*)'", version_file.read_text())
+    if latest_version is None:
+        sys.exit('no version found')
+
+    return latest_version.group(1)
+
+
+def main() -> None:
     root_dir = Path(__file__).parent.parent
-    version_file = root_dir / 'pydantic' / 'version.py'
+    repo = Repo(root_dir)
 
-    new_version = re.search(r"VERSION = '(.*)'", version_file.read_text()).group(1)
-
-    history_path = root_dir / 'HISTORY.md'
+    filename = 'HISTORY.md'
+    history_path = root_dir.joinpath(filename)
     history_content = history_path.read_text()
 
+    new_version = get_latest_package_version(root_dir)
     if f'## v{new_version}' in history_content:
-        print(f'WARNING: v{new_version} already in history, stopping')
-        sys.exit(1)
+        sys.exit('version already exists')
 
-    commits = get_commits()
-    commits_bullets = '\n'.join(f'* {c}' for c in commits)
+    bullets = ''
 
-    title = f'v{new_version} ({date.today():%Y-%m-%d})'
-    new_chunk = (
-        f'## {title}\n\n'
-        f'[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v{new_version})\n\n'
-        f'{commits_bullets}\n\n'
-    )
-    history = new_chunk + history_content
+    commits = get_new_commits(repo)
+    for commit in commits:
+        short_message = str(commit.message).split('\n')[0]
+        bullets += f'* {short_message} by @{commit.author.name}\n'
 
-    history_path.write_text(history)
-    print(f'\nSUCCESS: added "{title}" section to {history_path.relative_to(root_dir)}')
+    title = f'{new_version} ({datetime.datetime.now(tz=datetime.timezone.utc).date()})'
+    release_url = f'[GitHub Release]({REPO_URL}/releases/tag/v{new_version})'
 
-
-def get_commits() -> list[Commit]:
-    last_tag = get_last_tag()
-    raw_commits = run('git', 'log', f'{last_tag}..main', '--oneline')
-    commits = [Commit.from_line(line) for line in raw_commits.splitlines()]
-    commits = [c for c in commits if c]
-    print(f'found {len(commits)} commits since {last_tag}')
-    add_author(commits)
-    return commits
-
-
-@dataclass
-class Commit:
-    short_sha: str
-    message: str
-    pr: int
-    author: str | None = None
-
-    @classmethod
-    def from_line(cls, line: str) -> Commit | None:
-        short_sha, message = line.split(' ', 1)
-        message, last_word = message.rsplit(' ', 1)
-        m = re.fullmatch(r'\(#(\d+)\)', last_word)
-        if m:
-            pr = int(m.group(1))
-            return cls(short_sha, message, pr)
-
-    def __str__(self):
-        return f'{self.message} by @{self.author} in [#{self.pr}](https://github.com/pydantic/pydantic/pull/{self.pr})'
-
-
-def add_author(commits: list[Commit]) -> None:
-    print('Getting PR authors from GitHub...')
-    session = requests.Session()
-    headers = {
-        'Accept': 'application/vnd.github+json',
-        'x-github-api-version': '2022-11-28',
-    }
-    missing = {c.pr for c in commits}
-    for page in range(1, 10):
-        print(f'getting GH pulls page {page}, looking for {len(missing)} missing authors...')
-        params = {'per_page': 100, 'page': page, 'direction': 'desc', 'sort': 'updated', 'state': 'closed'}
-        r = session.get('https://api.github.com/repos/pydantic/pydantic/pulls', headers=headers, params=params)
-        r.raise_for_status()
-        for pr in r.json():
-            pr_number = pr['number']
-            # debug(pr_number, missing, pr_number in missing)
-            if pr_number in missing:
-                for c in commits:
-                    if c.pr == pr_number:
-                        missing.remove(pr_number)
-                        c.author = pr['user']['login']
-                        break
-        if not missing:
-            print(f'all authors found after page {page}')
-            return
-        else:
-            print(f'{len(missing)} authors still missing after page {page}')
-
-
-def get_last_tag():
-    return run('git', 'describe', '--tags', '--abbrev=0')
-
-
-def run(*args: str) -> str:
-    p = subprocess.run(args, stdout=subprocess.PIPE, check=True, encoding='utf-8')
-    return p.stdout.strip()
+    new_chunk = f"""## {title}\n\n{release_url}\n\n{bullets}\n"""
+    new_history = new_chunk + history_content
+    history_path.write_text(new_history)
 
 
 if __name__ == '__main__':
