@@ -1107,6 +1107,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#serialization-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serialization notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#constrained-types" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3386,6 +3397,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#serialization-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Serialization notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#constrained-types" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3465,9 +3487,81 @@
 <dt>subclass of <code>enum.IntEnum</code></dt>
 <dd>checks that the value is a valid member of the integer enum;
   see <a href="../enums/">Enums and Choices</a> for more details.</dd>
-<dt><code>decimal.Decimal</code></dt>
-<dd>Pydantic attempts to convert the value to a string, then passes the string to <code>Decimal(v)</code>.</dd>
 </dl>
+<h2 id="serialization-notes">Serialization notes<a class="headerlink" href="#serialization-notes" title="Permanent link">&para;</a></h2>
+<p><code>decimal.Decimal</code>
+Pydantic serializes <code>Decimal</code> types as strings.
+You can use a custom serializer to override this behavior if desired. For example:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PlainSerializer</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Decimal</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">Decimal</span><span class="p">,</span>
+        <span class="n">PlainSerializer</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">return_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json&#39;</span>
+        <span class="p">),</span>
+    <span class="p">]</span>
+
+
+<span class="n">my_model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;1.1&#39;</span><span class="p">),</span> <span class="n">y</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;2.1&#39;</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">my_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&#39;x&#39;: Decimal(&#39;1.1&#39;), &#39;y&#39;: Decimal(&#39;2.1&#39;)}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">my_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">))</span>  <span class="c1"># (2)!</span>
+<span class="c1">#&gt; {&#39;x&#39;: &#39;1.1&#39;, &#39;y&#39;: 2.1}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">my_model</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>  <span class="c1"># (3)!</span>
+<span class="c1">#&gt; {&quot;x&quot;:&quot;1.1&quot;,&quot;y&quot;:2.1}</span>
+</code></pre></div>
+<ol>
+<li>Using <code>model_dump</code>, both <code>x</code> and <code>y</code> remain instances of the <code>Decimal</code> type</li>
+<li>Using <code>model_dump</code> with <code>mode='json'</code>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
+<li>Using <code>model_dump_json'</code>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
+</ol>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PlainSerializer</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">Decimal</span>
+    <span class="n">y</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">Decimal</span><span class="p">,</span>
+        <span class="n">PlainSerializer</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">return_type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json&#39;</span>
+        <span class="p">),</span>
+    <span class="p">]</span>
+
+
+<span class="n">my_model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;1.1&#39;</span><span class="p">),</span> <span class="n">y</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;2.1&#39;</span><span class="p">))</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">my_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&#39;x&#39;: Decimal(&#39;1.1&#39;), &#39;y&#39;: Decimal(&#39;2.1&#39;)}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">my_model</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">))</span>  <span class="c1"># (2)!</span>
+<span class="c1">#&gt; {&#39;x&#39;: &#39;1.1&#39;, &#39;y&#39;: 2.1}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">my_model</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>  <span class="c1"># (3)!</span>
+<span class="c1">#&gt; {&quot;x&quot;:&quot;1.1&quot;,&quot;y&quot;:2.1}</span>
+</code></pre></div>
+<ol>
+<li>Using <code>model_dump</code>, both <code>x</code> and <code>y</code> remain instances of the <code>Decimal</code> type</li>
+<li>Using <code>model_dump</code> with <code>mode='json'</code>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
+<li>Using <code>model_dump_json'</code>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
+</ol>
+</div>
+</div>
+</div>
 <h2 id="constrained-types">Constrained types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
 <p>Pydantic provides functions that can be used to constrain numbers:</p>
 <ul>
