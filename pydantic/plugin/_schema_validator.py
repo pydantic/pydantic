@@ -115,9 +115,9 @@ class _PluginAPI:
         handlers: list[_EventHandlerProtocol] = []
 
         for plugin in plugins:
-            if not hasattr(plugin, self.event.value):
+            handler_type: type[_EventHandlerProtocol] | None = getattr(plugin, self.event.value)
+            if handler_type is None:
                 continue
-            handler_type: type[_EventHandlerProtocol] = getattr(plugin, self.event.value)
             handlers.append(handler_type(self.schema, self.config, self.plugin_settings))
 
         return handlers
