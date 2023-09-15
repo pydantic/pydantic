@@ -575,6 +575,11 @@ else:
         ) -> core_schema.CoreSchema:
             original_schema = handler(source)
             metadata = _core_metadata.build_metadata_dict(js_annotation_functions=[lambda _c, h: h(original_schema)])
-            return core_schema.any_schema(metadata=metadata, serialization=original_schema)
+            return core_schema.any_schema(
+                metadata=metadata,
+                serialization=core_schema.wrap_serializer_function_ser_schema(
+                    function=lambda v, h: h(v), schema=original_schema
+                ),
+            )
 
         __hash__ = object.__hash__

@@ -9,7 +9,7 @@ import sys
 import typing
 import warnings
 from contextlib import contextmanager
-from copy import copy
+from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
@@ -380,7 +380,6 @@ class GenerateSchema:
         self,
         obj: Any,
         from_dunder_get_core_schema: bool = True,
-        from_prepare_args: bool = True,
     ) -> core_schema.CoreSchema:
         """Generate core schema.
 
@@ -388,8 +387,6 @@ class GenerateSchema:
             obj: The object to generate core schema for.
             from_dunder_get_core_schema: Whether to generate schema from either the
                 `__get_pydantic_core_schema__` function or `__pydantic_core_schema__` property.
-            from_prepare_args: Whether to generate schema from either the
-                `__prepare_pydantic_annotations__` function or `__prepare_pydantic_annotations__` property.
 
         Returns:
             The generated core schema.
@@ -407,9 +404,6 @@ class GenerateSchema:
                 - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
         """
         schema: CoreSchema | None = None
-
-        if from_prepare_args:
-            schema = self._generate_schema_from_prepare_annotations(obj)
 
         if from_dunder_get_core_schema:
             from_property = self._generate_schema_from_property(obj, obj)
@@ -515,18 +509,6 @@ class GenerateSchema:
                 schema = apply_model_validators(schema, model_validators, 'outer')
                 self.defs.definitions[model_ref] = schema
                 return core_schema.definition_reference_schema(model_ref)
-
-    def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
-        """Try to generate schema from either the `__prepare_pydantic_annotations__` function or
-        `__prepare_pydantic_annotations__` property.
-        """
-        new_obj, new_annotations = self._prepare_annotations(obj, [])
-        if new_obj is not obj or new_annotations:
-            return self._apply_annotations(
-                new_obj,
-                new_annotations,
-            )
-        return None
 
     def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
         """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
@@ -1293,7 +1275,7 @@ class GenerateSchema:
                 from ..dataclasses import is_pydantic_dataclass
 
                 if is_pydantic_dataclass(dataclass):
-                    fields = dataclass.__pydantic_fields__
+                    fields = deepcopy(dataclass.__pydantic_fields__)
                     if typevars_map:
                         for field in fields.values():
                             field.apply_typevars_map(typevars_map, self._types_namespace)
@@ -1493,27 +1475,6 @@ class GenerateSchema:
 
         return None
 
-    def _prepare_annotations(self, source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]]:
-        """Call `__prepare_pydantic_annotations__` if it exists and return a tuple of
-            (new_source_type, new_annotations).
-
-        This should be treated conceptually similar to the transformation
-        `Annotated[source_type, *annotations]` -> `Annotated[new_source_type, *new_annotations]`
-        """
-        prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
-
-        annotations = tuple(annotations)  # make them immutable to avoid confusion over mutating them
-
-        if prepare is not None:
-            source_type, annotations = prepare(source_type, tuple(annotations), self._config_wrapper.config_dict)
-            annotations = list(annotations)
-        else:
-            res = self._get_prepare_pydantic_annotations_for_known_type(source_type, annotations)
-            if res is not None:
-                source_type, annotations = res
-
-        return source_type, list(annotations)
-
     def _apply_annotations(
         self,
         source_type: Any,
@@ -1526,18 +1487,10 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
-        # expand annotations before we start processing them so that `__prepare_pydantic_annotations` can consume
-        # individual items from GroupedMetadata
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
-        idx = -1
-        prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
-        if prepare:
-            source_type, annotations = prepare(source_type, tuple(annotations), self._config_wrapper.config_dict)
-            annotations = list(annotations)
-        else:
-            res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
-            if res is not None:
-                source_type, annotations = res
+        res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
+        if res is not None:
+            source_type, annotations = res
 
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
@@ -1556,26 +1509,9 @@ class GenerateSchema:
 
         get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
 
-        while True:
-            idx += 1
-            if idx == len(annotations):
-                break
-            annotation = annotations[idx]
+        for annotation in annotations:
             if annotation is None:
                 continue
-            prepare = getattr(annotation, '__prepare_pydantic_annotations__', None)
-            if prepare is not None:
-                previous = annotations[:idx]
-                remaining = annotations[idx + 1 :]
-                new_source_type, remaining = prepare(source_type, tuple(remaining), self._config_wrapper.config_dict)
-                annotations = previous + list(remaining)
-                if new_source_type is not source_type:
-                    return self._apply_annotations(
-                        new_source_type,
-                        annotations,
-                        transform_inner_schema=transform_inner_schema,
-                    )
-            annotation = annotations[idx]
             get_inner_schema = self._get_wrapped_inner_schema(
                 get_inner_schema, annotation, pydantic_js_annotation_functions
             )

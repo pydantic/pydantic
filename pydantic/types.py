@@ -17,7 +17,6 @@ from typing import (
     FrozenSet,
     Generic,
     Hashable,
-    Iterable,
     Iterator,
     List,
     Set,
@@ -28,19 +27,17 @@ from uuid import UUID
 
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
-from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, deprecated
 
 from ._internal import (
     _annotated_handlers,
     _fields,
     _internal_dataclass,
-    _known_annotated_metadata,
     _utils,
     _validators,
 )
 from ._migration import getattr_migration
-from .config import ConfigDict
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
@@ -321,20 +318,58 @@ def constr(
     max_length: int | None = None,
     pattern: str | None = None,
 ) -> type[str]:
-    """A wrapper around `str` that allows for additional constraints.
+    """
+    !!! warning "Discouraged"
+        This function is **discouraged** in favor of using
+        [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
+        [`StringConstraints`][pydantic.types.StringConstraints] instead.
+
+        This function will be **deprecated** in Pydantic 3.0.
+
+        The reason is that `constr` returns a type, which doesn't play well with static analysis tools.
+
+        === ":x: Don't do this"
+            ```py
+            from pydantic import BaseModel, constr
+
+            class Foo(BaseModel):
+                bar: constr(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')
+            ```
+
+        === ":white_check_mark: Do this"
+            ```py
+            from pydantic import BaseModel, Annotated, StringConstraints
+
+            class Foo(BaseModel):
+                bar: Annotated[str, StringConstraints(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')]
+            ```
+
+    A wrapper around `str` that allows for additional constraints.
+
+    ```py
+    from pydantic import BaseModel, constr
+
+    class Foo(BaseModel):
+        bar: constr(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')
+
+
+    foo = Foo(bar='  hello  ')
+    print(foo)
+    #> bar='HELLO'
+    ```
 
     Args:
-        strip_whitespace: Whether to strip whitespace from the string.
-        to_upper: Whether to convert the string to uppercase.
-        to_lower: Whether to convert the string to lowercase.
+        strip_whitespace: Whether to remove leading and trailing whitespace.
+        to_upper: Whether to turn all characters to uppercase.
+        to_lower: Whether to turn all characters to lowercase.
         strict: Whether to validate the string in strict mode.
         min_length: The minimum length of the string.
         max_length: The maximum length of the string.
-        pattern: A regex pattern that the string must match.
+        pattern: A regex pattern to validate the string against.
 
     Returns:
         The wrapped string type.
-    """
+    """  # noqa: D212
     return Annotated[
         str,
         StringConstraints(
@@ -431,21 +466,72 @@ else:
     class ImportString:
         """A type that can be used to import a type from a string.
 
-        Example:
-            ```py
-            from datetime import date
-            from typing import Type
+        `ImportString` expects a string and loads the Python object importable at that dotted path.
+        Attributes of modules may be separated from the module by `:` or `.`, e.g. if `'math:cos'` was provided,
+        the resulting field value would be the function`cos`. If a `.` is used and both an attribute and submodule
+        are present at the same path, the module will be preferred.
 
-            from pydantic import BaseModel, ImportString
+        On model instantiation, pointers will be evaluated and imported. There is
+        some nuance to this behavior, demonstrated in the examples below.
+
+        > A known limitation: setting a default value to a string
+        > won't result in validation (thus evaluation). This is actively
+        > being worked on.
+
+        **Good behavior:**
+        ```py
+        from math import cos
+
+        from pydantic import BaseModel, ImportString, ValidationError
 
 
-            class Foo(BaseModel):
-                call_date: ImportString[Type[date]]
+        class ImportThings(BaseModel):
+            obj: ImportString
 
 
-            foo = Foo(call_date="datetime.date")
-            assert foo.call_date(2021, 1, 1) == date(2021, 1, 1)
-            ```
+        # A string value will cause an automatic import
+        my_cos = ImportThings(obj='math.cos')
+
+        # You can use the imported function as you would expect
+        cos_of_0 = my_cos.obj(0)
+        assert cos_of_0 == 1
+
+
+        # A string whose value cannot be imported will raise an error
+        try:
+            ImportThings(obj='foo.bar')
+        except ValidationError as e:
+            print(e)
+            '''
+            1 validation error for ImportThings
+            obj
+            Invalid python path: No module named 'foo.bar' [type=import_error, input_value='foo.bar', input_type=str]
+            '''
+
+
+        # Actual python objects can be assigned as well
+        my_cos = ImportThings(obj=cos)
+        my_cos_2 = ImportThings(obj='math.cos')
+        assert my_cos == my_cos_2
+        ```
+
+        Serializing an `ImportString` type to json is also possible.
+
+        ```py
+        from pydantic import BaseModel, ImportString
+
+
+        class ImportThings(BaseModel):
+            obj: ImportString
+
+
+        # Create an instance
+        m = ImportThings(obj='math:cos')
+        print(m)
+        #> obj=<built-in function cos>
+        print(m.model_dump_json())
+        #> {"obj":"math.cos"}
+        ```
         """
 
         @classmethod
@@ -609,9 +695,89 @@ class PathType:
 
 
 FilePath = Annotated[Path, PathType('file')]
-"""A path that must point to a file."""
+"""A path that must point to a file.
+
+```py
+from pathlib import Path
+
+from pydantic import BaseModel, FilePath, ValidationError
+
+class Model(BaseModel):
+    f: FilePath
+
+path = Path('text.txt')
+path.touch()
+m = Model(f='text.txt')
+print(m.model_dump())
+#> {'f': PosixPath('text.txt')}
+path.unlink()
+
+path = Path('directory')
+path.mkdir()
+try:
+    Model(f='directory')  # directory
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for Model
+    f
+      Path does not point to a file [type=path_not_file, input_value='directory', input_type=str]
+    '''
+path.rmdir()
+
+try:
+    Model(f='not-exists-file')
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for Model
+    f
+      Path does not point to a file [type=path_not_file, input_value='not-exists-file', input_type=str]
+    '''
+```
+"""
 DirectoryPath = Annotated[Path, PathType('dir')]
-"""A path that must point to a directory."""
+"""A path that must point to a directory.
+
+```py
+from pathlib import Path
+
+from pydantic import BaseModel, DirectoryPath, ValidationError
+
+class Model(BaseModel):
+    f: DirectoryPath
+
+path = Path('directory/')
+path.mkdir()
+m = Model(f='directory/')
+print(m.model_dump())
+#> {'f': PosixPath('directory')}
+path.rmdir()
+
+path = Path('file.txt')
+path.touch()
+try:
+    Model(f='file.txt')  # file
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for Model
+    f
+      Path does not point to a directory [type=path_not_directory, input_value='file.txt', input_type=str]
+    '''
+path.unlink()
+
+try:
+    Model(f='not-exists-directory')
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for Model
+    f
+      Path does not point to a directory [type=path_not_directory, input_value='not-exists-directory', input_type=str]
+    '''
+```
+"""
 NewPath = Annotated[Path, PathType('new')]
 """A path for a new file or directory that must not already exist."""
 
@@ -666,20 +832,6 @@ class _SecretField(Generic[SecretType]):
         """
         return self._secret_value
 
-    @classmethod
-    def __prepare_pydantic_annotations__(
-        cls, source: type[Any], annotations: tuple[Any, ...], _config: ConfigDict
-    ) -> tuple[Any, Iterable[Any]]:
-        metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-        _known_annotated_metadata.check_metadata(metadata, {'min_length', 'max_length'}, cls)
-        return (
-            source,
-            (
-                _SecretFieldValidator(source, **metadata),
-                *remaining_annotations,
-            ),
-        )
-
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
 
@@ -698,6 +850,61 @@ class _SecretField(Generic[SecretType]):
     def _display(self) -> SecretType:
         raise NotImplementedError
 
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        if issubclass(source, SecretStr):
+            field_type = str
+            inner_schema = core_schema.str_schema()
+        else:
+            assert issubclass(source, SecretBytes)
+            field_type = bytes
+            inner_schema = core_schema.bytes_schema()
+        error_kind = 'string_type' if field_type is str else 'bytes_type'
+
+        def serialize(
+            value: _SecretField[SecretType], info: core_schema.SerializationInfo
+        ) -> str | _SecretField[SecretType]:
+            if info.mode == 'json':
+                # we want the output to always be string without the `b'` prefix for bytes,
+                # hence we just use `secret_display`
+                return _secret_display(value.get_secret_value())
+            else:
+                return value
+
+        def get_json_schema(
+            _core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            json_schema = handler(inner_schema)
+            _utils.update_not_none(
+                json_schema,
+                type='string',
+                writeOnly=True,
+                format='password',
+            )
+            return json_schema
+
+        s = core_schema.union_schema(
+            [
+                core_schema.is_instance_schema(source),
+                core_schema.no_info_after_validator_function(
+                    source,  # construct the type
+                    inner_schema,
+                ),
+            ],
+            strict=True,
+            custom_error_type=error_kind,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                serialize,
+                info_arg=True,
+                return_schema=core_schema.str_schema(),
+                when_used='json',
+            ),
+        )
+        s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(get_json_schema)
+        return s
+
 
 def _secret_display(value: str | bytes) -> str:
     if isinstance(value, bytes):
@@ -705,93 +912,25 @@ def _secret_display(value: str | bytes) -> str:
     return '**********' if value else ''
 
 
-@_dataclasses.dataclass(**_internal_dataclass.slots_true)
-class _SecretFieldValidator:
-    field_type: type[_SecretField[Any]]
-    min_length: int | None = None
-    max_length: int | None = None
-    inner_schema: CoreSchema = _dataclasses.field(init=False)
-
-    def validate(self, value: _SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
-        error_prefix: Literal['string', 'bytes'] = 'string' if issubclass(self.field_type, SecretStr) else 'bytes'
-        if self.min_length is not None and len(value) < self.min_length:
-            short_kind: core_schema.ErrorType = f'{error_prefix}_too_short'  # type: ignore[assignment]
-            raise PydanticKnownError(short_kind, {'min_length': self.min_length})
-        if self.max_length is not None and len(value) > self.max_length:
-            long_kind: core_schema.ErrorType = f'{error_prefix}_too_long'  # type: ignore[assignment]
-            raise PydanticKnownError(long_kind, {'max_length': self.max_length})
-
-        if isinstance(value, self.field_type):
-            return value
-        else:
-            return self.field_type(value)  # type: ignore[arg-type]
-
-    def serialize(
-        self, value: _SecretField[SecretType], info: core_schema.SerializationInfo
-    ) -> str | _SecretField[SecretType]:
-        if info.mode == 'json':
-            # we want the output to always be string without the `b'` prefix for bytes,
-            # hence we just use `secret_display`
-            return _secret_display(value.get_secret_value())
-        else:
-            return value
-
-    def __get_pydantic_json_schema__(
-        self, _core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        schema = self.inner_schema.copy()
-        if self.min_length is not None:
-            schema['min_length'] = self.min_length  # type: ignore
-        if self.max_length is not None:
-            schema['max_length'] = self.max_length  # type: ignore
-        json_schema = handler(schema)
-        _utils.update_not_none(
-            json_schema,
-            type='string',
-            writeOnly=True,
-            format='password',
-        )
-        return json_schema
-
-    def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        self.inner_schema = handler(str if issubclass(self.field_type, SecretStr) else bytes)
-        error_kind = 'string_type' if issubclass(self.field_type, SecretStr) else 'bytes_type'
-        return core_schema.general_after_validator_function(
-            self.validate,
-            core_schema.union_schema(
-                [core_schema.is_instance_schema(self.field_type), self.inner_schema],
-                strict=True,
-                custom_error_type=error_kind,
-            ),
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                self.serialize,
-                info_arg=True,
-                return_schema=core_schema.str_schema(),
-                when_used='json',
-            ),
-        )
-
-
 class SecretStr(_SecretField[str]):
-    """A string that is displayed as `**********` in reprs and can be used for passwords.
+    """A string used for storing sensitive information that you do not want to be visible in logging or tracebacks.
 
-    Example:
-        ```py
-        from pydantic import BaseModel, SecretStr
+    It displays `'**********'` instead of the string value on `repr()` and `str()` calls.
 
-        class User(BaseModel):
-            username: str
-            password: SecretStr
+    ```py
+    from pydantic import BaseModel, SecretStr
 
-        user = User(username='scolvin', password='password1')
+    class User(BaseModel):
+        username: str
+        password: SecretStr
 
-        print(user)
-        #> username='scolvin' password=SecretStr('**********')
-        print(user.password.get_secret_value())
-        #> password1
-        ```
+    user = User(username='scolvin', password='password1')
+
+    print(user)
+    #> username='scolvin' password=SecretStr('**********')
+    print(user.password.get_secret_value())
+    #> password1
+    ```
     """
 
     def _display(self) -> str:
@@ -799,7 +938,23 @@ class SecretStr(_SecretField[str]):
 
 
 class SecretBytes(_SecretField[bytes]):
-    """A bytes that is displayed as `**********` in reprs and can be used for passwords."""
+    """A bytes used for storing sensitive information that you do not want to be visible in logging or tracebacks.
+
+    It displays `b'**********'` instead of the string value on `repr()` and `str()` calls.
+
+    ```py
+    from pydantic import BaseModel, SecretBytes
+
+    class User(BaseModel):
+        username: str
+        password: SecretBytes
+
+    user = User(username='scolvin', password=b'password1')
+    #> username='scolvin' password=SecretBytes(b'**********')
+    print(user.password.get_secret_value())
+    #> b'password1'
+    ```
+    """
 
     def _display(self) -> bytes:
         return _secret_display(self.get_secret_value()).encode()
@@ -950,7 +1105,39 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 
 class ByteSize(int):
-    """Converts a bytes string with units to the number of bytes."""
+    """Converts a string representing a number of bytes with units (such as `'1KB'` or `'11.5MiB'`) into an integer.
+
+    You can use the `ByteSize` data type to (case-insensitively) convert a string representation of a number of bytes into
+    an integer, and also to print out human-readable strings representing a number of bytes.
+
+    In conformance with [IEC 80000-13 Standard](https://en.wikipedia.org/wiki/ISO/IEC_80000) we interpret `'1KB'` to mean 1000 bytes,
+    and `'1KiB'` to mean 1024 bytes. In general, including a middle `'i'` will cause the unit to be interpreted as a power of 2,
+    rather than a power of 10 (so, for example, `'1 MB'` is treated as `1_000_000` bytes, whereas `'1 MiB'` is treated as `1_048_576` bytes).
+
+    !!! info
+        Note that `1b` will be parsed as "1 byte" and not "1 bit".
+
+    ```py
+    from pydantic import BaseModel, ByteSize
+
+    class MyModel(BaseModel):
+        size: ByteSize
+
+    print(MyModel(size=52000).size)
+    #> 52000
+    print(MyModel(size='3000 KiB').size)
+    #> 3072000
+
+    m = MyModel(size='50 PB')
+    print(m.size.human_readable())
+    #> 44.4PiB
+    print(m.size.human_readable(decimal=True))
+    #> 50.0PB
+
+    print(m.size.to('TiB'))
+    #> 45474.73508864641
+    ```
+    """
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -1316,7 +1503,58 @@ class Base64UrlEncoder(EncoderProtocol):
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class EncodedBytes:
-    """A bytes type that is encoded and decoded using the specified encoder."""
+    """A bytes type that is encoded and decoded using the specified encoder.
+
+    `EncodedBytes` needs an encoder that implements `EncoderProtocol` to operate.
+
+    ```py
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, EncodedBytes, EncoderProtocol, ValidationError
+
+    class MyEncoder(EncoderProtocol):
+        @classmethod
+        def decode(cls, data: bytes) -> bytes:
+            if data == b'**undecodable**':
+                raise ValueError('Cannot decode data')
+            return data[13:]
+
+        @classmethod
+        def encode(cls, value: bytes) -> bytes:
+            return b'**encoded**: ' + value
+
+        @classmethod
+        def get_json_format(cls) -> str:
+            return 'my-encoder'
+
+    MyEncodedBytes = Annotated[bytes, EncodedBytes(encoder=MyEncoder)]
+
+    class Model(BaseModel):
+        my_encoded_bytes: MyEncodedBytes
+
+    # Initialize the model with encoded data
+    m = Model(my_encoded_bytes=b'**encoded**: some bytes')
+
+    # Access decoded value
+    print(m.my_encoded_bytes)
+    #> b'some bytes'
+
+    # Serialize into the encoded form
+    print(m.model_dump())
+    #> {'my_encoded_bytes': b'**encoded**: some bytes'}
+
+    # Validate encoded data
+    try:
+        Model(my_encoded_bytes=b'**undecodable**')
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        my_encoded_bytes
+          Value error, Cannot decode data [type=value_error, input_value=b'**undecodable**', input_type=bytes]
+        '''
+    ```
+    """
 
     encoder: type[EncoderProtocol]
 
@@ -1328,7 +1566,7 @@ class EncodedBytes:
         return field_schema
 
     def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             function=self.decode,
@@ -1363,10 +1601,61 @@ class EncodedBytes:
 
 
 class EncodedStr(EncodedBytes):
-    """A str type that is encoded and decoded using the specified encoder."""
+    """A str type that is encoded and decoded using the specified encoder.
+
+    `EncodedStr` needs an encoder that implements `EncoderProtocol` to operate.
+
+    ```py
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, EncodedStr, EncoderProtocol, ValidationError
+
+    class MyEncoder(EncoderProtocol):
+        @classmethod
+        def decode(cls, data: bytes) -> bytes:
+            if data == b'**undecodable**':
+                raise ValueError('Cannot decode data')
+            return data[13:]
+
+        @classmethod
+        def encode(cls, value: bytes) -> bytes:
+            return b'**encoded**: ' + value
+
+        @classmethod
+        def get_json_format(cls) -> str:
+            return 'my-encoder'
+
+    MyEncodedStr = Annotated[str, EncodedStr(encoder=MyEncoder)]
+
+    class Model(BaseModel):
+        my_encoded_str: MyEncodedStr
+
+    # Initialize the model with encoded data
+    m = Model(my_encoded_str='**encoded**: some str')
+
+    # Access decoded value
+    print(m.my_encoded_str)
+    #> some str
+
+    # Serialize into the encoded form
+    print(m.model_dump())
+    #> {'my_encoded_str': '**encoded**: some str'}
+
+    # Validate encoded data
+    try:
+        Model(my_encoded_str='**undecodable**')
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        my_encoded_str
+          Value error, Cannot decode data [type=value_error, input_value='**undecodable**', input_type=str]
+        '''
+    ```
+    """
 
     def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             function=self.decode_str,
@@ -1398,13 +1687,124 @@ class EncodedStr(EncodedBytes):
 
 
 Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
-"""A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder."""
+"""A bytes type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
+
+Note:
+    Under the hood, `Base64Bytes` use standard library `base64.encodebytes` and `base64.decodebytes` functions.
+
+    As a result, attempting to decode url-safe base64 data using the `Base64Bytes` type may fail or produce an incorrect
+    decoding.
+
+```py
+from pydantic import Base64Bytes, BaseModel, ValidationError
+
+class Model(BaseModel):
+    base64_bytes: Base64Bytes
+
+# Initialize the model with base64 data
+m = Model(base64_bytes=b'VGhpcyBpcyB0aGUgd2F5')
+
+# Access decoded value
+print(m.base64_bytes)
+#> b'This is the way'
+
+# Serialize into the base64 form
+print(m.model_dump())
+#> {'base64_bytes': b'VGhpcyBpcyB0aGUgd2F5\n'}
+
+# Validate base64 data
+try:
+    print(Model(base64_bytes=b'undecodable').base64_bytes)
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for Model
+    base64_bytes
+      Base64 decoding error: 'Incorrect padding' [type=base64_decode, input_value=b'undecodable', input_type=bytes]
+    '''
+```
+"""
 Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
-"""A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder."""
+"""A str type that is encoded and decoded using the standard (non-URL-safe) base64 encoder.
+
+Note:
+    Under the hood, `Base64Bytes` use standard library `base64.encodebytes` and `base64.decodebytes` functions.
+
+    As a result, attempting to decode url-safe base64 data using the `Base64Str` type may fail or produce an incorrect
+    decoding.
+
+```py
+from pydantic import Base64Str, BaseModel, ValidationError
+
+class Model(BaseModel):
+    base64_str: Base64Str
+
+# Initialize the model with base64 data
+m = Model(base64_str='VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y')
+
+# Access decoded value
+print(m.base64_str)
+#> These aren't the droids you're looking for
+
+# Serialize into the base64 form
+print(m.model_dump())
+#> {'base64_str': 'VGhlc2UgYXJlbid0IHRoZSBkcm9pZHMgeW91J3JlIGxvb2tpbmcgZm9y\n'}
+
+# Validate base64 data
+try:
+    print(Model(base64_str='undecodable').base64_str)
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for Model
+    base64_str
+      Base64 decoding error: 'Incorrect padding' [type=base64_decode, input_value='undecodable', input_type=str]
+    '''
+```
+"""
 Base64UrlBytes = Annotated[bytes, EncodedBytes(encoder=Base64UrlEncoder)]
-"""A bytes type that is encoded and decoded using the URL-safe base64 encoder."""
+"""A bytes type that is encoded and decoded using the URL-safe base64 encoder.
+
+Note:
+    Under the hood, `Base64UrlBytes` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
+    functions.
+
+    As a result, the `Base64UrlBytes` type can be used to faithfully decode "vanilla" base64 data
+    (using `'+'` and `'/'`).
+
+```py
+from pydantic import Base64UrlBytes, BaseModel
+
+class Model(BaseModel):
+    base64url_bytes: Base64UrlBytes
+
+# Initialize the model with base64 data
+m = Model(base64url_bytes=b'SHc_dHc-TXc==')
+print(m)
+#> base64url_bytes=b'Hw?tw>Mw'
+```
+"""
 Base64UrlStr = Annotated[str, EncodedStr(encoder=Base64UrlEncoder)]
-"""A str type that is encoded and decoded using the URL-safe base64 encoder."""
+"""A str type that is encoded and decoded using the URL-safe base64 encoder.
+
+Note:
+    Under the hood, `Base64UrlStr` use standard library `base64.urlsafe_b64encode` and `base64.urlsafe_b64decode`
+    functions.
+
+    As a result, the `Base64UrlStr` type can be used to faithfully decode "vanilla" base64 data (using `'+'` and `'/'`).
+
+```py
+from pydantic import Base64UrlStr, BaseModel
+
+class Model(BaseModel):
+    base64url_str: Base64UrlStr
+
+# Initialize the model with base64 data
+m = Model(base64url_str='SHc_dHc-TXc==')
+print(m)
+#> base64url_str='Hw?tw>Mw'
+```
+"""
 
 
 __getattr__ = getattr_migration(__name__)
@@ -1437,10 +1837,6 @@ class GetPydanticSchema:
 
     get_pydantic_core_schema: Callable[[Any, _annotated_handlers.GetCoreSchemaHandler], CoreSchema] | None = None
     get_pydantic_json_schema: Callable[[Any, _annotated_handlers.GetJsonSchemaHandler], JsonSchemaValue] | None = None
-    # Note: if we find a use, we could uncomment the following as a way to specify `__prepare_pydantic_annotations__`:
-    # prepare_pydantic_annotations: Callable[
-    #   [Any, tuple[Any, ...], ConfigDict], tuple[Any, Iterable[Any]]
-    # ] | None = None
 
     # Note: we may want to consider adding a convenience staticmethod `def for_type(type_: Any) -> GetPydanticSchema:`
     #   which returns `GetPydanticSchema(lambda _s, h: h(type_))`

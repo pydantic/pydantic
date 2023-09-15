@@ -408,16 +408,14 @@ Notice that type checkers will not complain about assigning `'abc'` to `Username
 Another use case for the pattern in the previous section is to handle third party types.
 
 ```py
-from typing import (
-    Any,
-    Callable,
-)
+from typing import Any
 
 from pydantic_core import core_schema
 from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,
+    GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     ValidationError,
 )
@@ -441,7 +439,7 @@ class _ThirdPartyTypePydanticAnnotation:
     def __get_pydantic_core_schema__(
         cls,
         _source_type: Any,
-        _handler: Callable[[Any], core_schema.CoreSchema],
+        _handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         """
         We return a pydantic_core.CoreSchema that behaves in the following ways:
@@ -743,12 +741,12 @@ except ValidationError as e:
 The same idea can be applied to create generic container types, like a custom `Sequence` type:
 
 ```python
-from typing import Any, Callable, Sequence, TypeVar
+from typing import Any, Sequence, TypeVar
 
 from pydantic_core import ValidationError, core_schema
 from typing_extensions import get_args
 
-from pydantic import BaseModel
+from pydantic import BaseModel, GetCoreSchemaHandler
 
 T = TypeVar('T')
 
@@ -765,7 +763,7 @@ class MySequence(Sequence[T]):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
+        cls, source: Any, handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         instance_schema = core_schema.is_instance_schema(cls)
 

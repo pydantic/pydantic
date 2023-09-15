@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated, TypeAlias
 
-from ._internal import _fields, _repr, _schema_generation_shared
+from ._internal import _annotated_handlers, _fields, _repr, _schema_generation_shared
 from ._migration import getattr_migration
 from .json_schema import JsonSchemaValue
 
@@ -168,24 +168,33 @@ if TYPE_CHECKING:
 else:
 
     class EmailStr:
-        """Validate email addresses.
-
-        Example:
-            ```py
-            from pydantic import BaseModel, EmailStr
-
-            class Model(BaseModel):
-                email: EmailStr
-
-            print(Model(email='contact@mail.com'))
-            #> email='contact@mail.com'
-            ```
         """
+        Info:
+            To use this type, you need to install the optional
+            [`email-validator`](https://github.com/JoshData/python-email-validator) package:
+
+            ```bash
+            pip install email-validator
+            ```
+
+        Validate email addresses.
+
+        ```py
+        from pydantic import BaseModel, EmailStr
+
+        class Model(BaseModel):
+            email: EmailStr
+
+        print(Model(email='contact@mail.com'))
+        #> email='contact@mail.com'
+        ```
+        """  # noqa: D212
 
         @classmethod
         def __get_pydantic_core_schema__(
             cls,
             source: type[Any],
+            handler: _annotated_handlers.GetCoreSchemaHandler,
         ) -> core_schema.CoreSchema:
             import_email_validator()
             return core_schema.general_after_validator_function(cls._validate, core_schema.str_schema())
@@ -204,23 +213,40 @@ else:
 
 
 class NameEmail(_repr.Representation):
-    """Validate a name and email address combination.
+    """
+    Info:
+        To use this type, you need to install the optional
+        [`email-validator`](https://github.com/JoshData/python-email-validator) package:
 
-    Example:
-        ```py
-        from pydantic import BaseModel, NameEmail
-
-        class User(BaseModel):
-            email: NameEmail
-
-        print(User(email='John Doe <john.doe@mail.com>'))
-        #> email=NameEmail(name='John Doe', email='john.doe@mail.com')
+        ```bash
+        pip install email-validator
         ```
 
-    Attributes:
-        name: The name.
-        email: The email address.
-    """
+    Validate a name and email address combination, as specified by
+    [RFC 5322](https://datatracker.ietf.org/doc/html/rfc5322#section-3.4).
+
+    The `NameEmail` has two properties: `name` and `email`.
+    In case the `name` is not provided, it's inferred from the email address.
+
+    ```py
+    from pydantic import BaseModel, NameEmail
+
+    class User(BaseModel):
+        email: NameEmail
+
+    user = User(email='Fred Bloggs <fred.bloggs@example.com>')
+    print(user.email)
+    #> Fred Bloggs <fred.bloggs@example.com>
+    print(user.email.name)
+    #> Fred Bloggs
+
+    user = User(email='fred.bloggs@example.com')
+    print(user.email)
+    #> fred.bloggs <fred.bloggs@example.com>
+    print(user.email.name)
+    #> fred.bloggs
+    ```
+    """  # noqa: D212
 
     __slots__ = 'name', 'email'
 
@@ -243,6 +269,7 @@ class NameEmail(_repr.Representation):
     def __get_pydantic_core_schema__(
         cls,
         source: type[Any],
+        handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         import_email_validator()
         return core_schema.general_after_validator_function(
@@ -296,6 +323,7 @@ class IPvAnyAddress:
     def __get_pydantic_core_schema__(
         cls,
         source: type[Any],
+        handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         return core_schema.general_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
@@ -335,6 +363,7 @@ class IPvAnyInterface:
     def __get_pydantic_core_schema__(
         cls,
         source: type[Any],
+        handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         return core_schema.general_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
@@ -376,6 +405,7 @@ class IPvAnyNetwork:
     def __get_pydantic_core_schema__(
         cls,
         source: type[Any],
+        handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         return core_schema.general_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
@@ -398,13 +428,13 @@ pretty_email_regex = _build_pretty_email_regex()
 
 
 def validate_email(value: str) -> tuple[str, str]:
-    """Email address validation using https://pypi.org/project/email-validator/.
+    """Email address validation using [email-validator](https://pypi.org/project/email-validator/).
 
     Note:
         Note that:
 
         * Raw IP address (literal) domain parts are not allowed.
-        * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed.
+        * `"John Doe <local_part@domain.com>"` style "pretty" email addresses are processed.
         * Spaces are striped from the beginning and end of addresses, but no error is raised.
     """
     if email_validator is None:

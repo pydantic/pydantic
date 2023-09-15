@@ -795,15 +795,15 @@ For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringCons
 
 | Pydantic V1 | Pydantic V2 |
 | --- | --- |
-| `pydantic.BaseSettings` | [`pydantic-settings.BaseSettings`](#basesettings-has-moved-to-pydantic-settings) |
-| `pydantic.color` | `pydantic_extra_types.color` |
+| `pydantic.BaseSettings` | [`pydantic_settings.BaseSettings`](#basesettings-has-moved-to-pydantic-settings) |
+| `pydantic.color` | [`pydantic_extra_types.color`][pydantic_extra_types.color] |
 | `pydantic.types.PaymentCardBrand` | [`pydantic_extra_types.PaymentCardBrand`](#color-and-payment-card-numbers-moved-to-pydantic-extra-types) |
 | `pydantic.types.PaymentCardNumber` | [`pydantic_extra_types.PaymentCardNumber`](#color-and-payment-card-numbers-moved-to-pydantic-extra-types) |
-| `pydantic.utils.version_info` | `pydantic.version.version_info` |
-| `pydantic.error_wrappers.ValidationError` | `pydantic.ValidationError` |
-| `pydantic.utils.to_camel` | `pydantic.alias_generators.to_pascal` |
-| `pydantic.utils.to_lower_camel` | `pydantic.alias_generators.to_camel` |
-| `pydantic.PyObject` | [`pydantic.ImportString`](usage/types/string_types.md#importstring) |
+| `pydantic.utils.version_info` | [`pydantic.version.version_info`][pydantic.version.version_info] |
+| `pydantic.error_wrappers.ValidationError` | [`pydantic.ValidationError`][pydantic_core.ValidationError] |
+| `pydantic.utils.to_camel` | [`pydantic.alias_generators.to_pascal`][pydantic.alias_generators.to_pascal] |
+| `pydantic.utils.to_lower_camel` | [`pydantic.alias_generators.to_camel`][pydantic.alias_generators.to_camel] |
+| `pydantic.PyObject` | [`pydantic.ImportString`][pydantic.types.ImportString] |
 
 ## Deprecated and moved in Pydantic V2
 

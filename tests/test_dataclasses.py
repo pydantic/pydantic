@@ -2058,6 +2058,41 @@ def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_v
         assert exc_info.value.errors(include_url=False) == output_value
 
 
+def test_multiple_parametrized_generic_dataclasses():
+    T = TypeVar('T')
+
+    @pydantic.dataclasses.dataclass
+    class GenericDataclass(Generic[T]):
+        x: T
+
+    validator1 = pydantic.TypeAdapter(GenericDataclass[int])
+    validator2 = pydantic.TypeAdapter(GenericDataclass[str])
+
+    # verify that generic parameters are showing up in the type ref for generic dataclasses
+    # this can probably be removed if the schema changes in some way that makes this part of the test fail
+    assert '[int:' in validator1.core_schema['schema']['schema_ref']
+    assert '[str:' in validator2.core_schema['schema']['schema_ref']
+
+    assert validator1.validate_python({'x': 1}).x == 1
+    assert validator2.validate_python({'x': 'hello world'}).x == 'hello world'
+
+    with pytest.raises(ValidationError) as exc_info:
+        validator2.validate_python({'x': 1})
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': 1, 'loc': ('x',), 'msg': 'Input should be a valid string', 'type': 'string_type'}
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        validator1.validate_python({'x': 'hello world'})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'hello world',
+            'loc': ('x',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
 @pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(include_identity=True))
 def test_pydantic_dataclass_preserves_metadata(dataclass_decorator: Callable[[Any], Any]) -> None:
     @dataclass_decorator
@@ -2547,3 +2582,14 @@ def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
         pass
 
     assert Model().a == 5
+
+
+def test_alias_with_dashes():
+    """Test for fix issue #7226."""
+
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        some_var: str = Field(alias='some-var')
+
+    obj = Foo(**{'some-var': 'some_value'})
+    assert obj.some_var == 'some_value'

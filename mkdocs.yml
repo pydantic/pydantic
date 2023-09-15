@@ -42,6 +42,7 @@ extra_css:
   - 'extra/tweaks.css'
 extra_javascript:
   - 'extra/fluff.js'
+  - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
 
 nav:
 - Get Started:
@@ -59,27 +60,21 @@ nav:
     - Types Overview: usage/types/types.md
     - Standard Library Types: usage/types/standard_types.md
     - Booleans: usage/types/booleans.md
-    - ByteSize: usage/types/bytesize.md
     - Callables: usage/types/callables.md
     - Datetimes: usage/types/datetime.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
-    - Encoded Types: usage/types/encoded.md
     - Enums and Choices: usage/types/enums.md
-    - File Types: usage/types/file_types.md
     - JSON: usage/types/json.md
     - Lists and Tuples: usage/types/list_types.md
     - Number Types: usage/types/number_types.md
-    - Secret Types: usage/types/secrets.md
     - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
     - Strict Types: usage/types/strict_types.md
-    - String Types: usage/types/string_types.md
     - Type and TypeVar: usage/types/typevars.md
     - Types with Fields: usage/types/types_fields.md
     - Unions: usage/types/unions.md
     - URLs: usage/types/urls.md
     - UUIDs: usage/types/uuids.md
-    - Encoded: usage/types/encoded.md
     - Custom Data Types: usage/types/custom.md
     - Extra Types:
       - Extra Types Overview: usage/types/extra_types/extra_types.md
@@ -94,7 +89,6 @@ nav:
   - 'Fields': usage/fields.md
   - 'JSON Schema': usage/json_schema.md
   - 'Serialization': usage/serialization.md
-  - 'Computed Fields': usage/computed_fields.md
   - 'Dataclasses': usage/dataclasses.md
   - 'TypeAdapter': usage/type_adapter.md
   - 'Validation Decorator': usage/validation_decorator.md
@@ -102,6 +96,8 @@ nav:
   - 'Strict Mode': usage/strict_mode.md
   - 'Conversion Table': usage/conversion_table.md
   - 'Settings Management': usage/pydantic_settings.md
+- Examples:
+  - Secrets: examples/secrets.md
 - Error Messages:
   - Error Handling: errors/errors.md
   - Validation Errors: errors/validation_errors.md
@@ -154,7 +150,8 @@ markdown_extensions:
 - admonition
 - pymdownx.details
 - pymdownx.superfences
-- pymdownx.highlight
+- pymdownx.highlight:
+    pygments_lang_class: true
 - pymdownx.extra
 - pymdownx.emoji:
     emoji_index: !!python/name:materialx.emoji.twemoji
@@ -204,6 +201,9 @@ plugins:
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
       'usage/types.md': 'usage/types/types.md'
+      'usage/types/secrets.md': 'examples/secrets.md'
+      'usage/types/string_types.md': 'api/types.md'
+      'usage/types/file_types.md': 'api/types.md'
       'api/main.md': 'api/base_model.md'
       'api/color.md': 'api/pydantic_extra_types_color.md'
       'api/alias_generators.md': 'api/config.md'

@@ -11,8 +11,8 @@ Pydantic supports many common types from the Python standard library. If you nee
 | `bool` | See [Booleans](booleans.md) for details on how bools are validated and what values are permitted. |
 | `int` | Pydantic uses `int(v)` to coerce types to an `int`. See [Number Types](number_types.md) for more details. See the [Data Conversion](../models.md#data-conversion) warning on loss of information during data conversion. |
 | `float` | `float(v)` is used to coerce values to floats. See [Number Types](number_types.md) for more details. |
-| `str` | Strings are accepted as-is. `bytes` and `bytearray` are converted using `v.decode()`. `Enum`s inheriting from `str` are converted using `v.value`. All other types cause an error. See [String Types](string_types.md) for more details. |
-| `bytes` | `bytes` are accepted as-is. `bytearray` is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](bytesize.md) for more details. |
+| `str` | Strings are accepted as-is. `bytes` and `bytearray` are converted using `v.decode()`. `Enum`s inheriting from `str` are converted using `v.value`. All other types cause an error. |
+| `bytes` | `bytes` are accepted as-is. `bytearray` is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](../../api/types.md#pydantic.types.ByteSize) for more details. |
 | `list` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a list. See [`typing.List`](list_types.md) for sub-type constraints. |
 | `tuple` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a tuple. See [`typing.Tuple`](list_types.md) for sub-type constraints. |
 | `dict`| `dict(v)` is used to attempt to convert a dictionary. See [`typing.Dict`](dicts_mapping.md) for sub-type constraints. |
@@ -53,9 +53,9 @@ Pydantic supports many common types from the Python standard library. If you nee
 | `enum.IntEnum` | Checks that the value is a valid `IntEnum` instance. See [Enums and Choices](enums.md) for more details. |
 | Subclass of `enum.IntEnum` | Checks that the value is a valid member of the integer `enum`. See [Enums and Choices](enums.md) for more details. |
 | `decimal.Decimal` | Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`. See [Number Types](number_types.md) for more details. |
-| `pathlib.Path` | Simply uses the type itself for validation by passing the value to `Path(v)`. See [File Types](file_types.md) for other, more strict path types. |
+| `pathlib.Path` | Simply uses the type itself for validation by passing the value to `Path(v)`. |
 | `uuid.UUID` | Strings and bytes (converted to strings) are passed to `UUID(v)`, with a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`. See [UUIDs](uuids.md) for other, more strict UUID types. |
-| `ByteSize` | Converts a bytes string with units to bytes. See [ByteSize](bytesize.md) for more details. |
+| `ByteSize` | Converts a bytes string with units to bytes. See [ByteSize](../../api/types.md#pydantic.types.ByteSize) for more details. |
 
 ## Type conversion
 

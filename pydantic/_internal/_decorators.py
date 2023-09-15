@@ -341,6 +341,9 @@ def mro_for_bases(bases: tuple[type[Any], ...]) -> tuple[type[Any], ...]:
     return tuple(merge_seqs(seqs))
 
 
+_sentinel = object()
+
+
 def get_attribute_from_bases(tp: type[Any] | tuple[type[Any], ...], name: str) -> Any:
     """Get the attribute from the next class in the MRO that has it,
     aiming to simulate calling the method on the actual class.
@@ -362,17 +365,18 @@ def get_attribute_from_bases(tp: type[Any] | tuple[type[Any], ...], name: str) -
     """
     if isinstance(tp, tuple):
         for base in mro_for_bases(tp):
-            if hasattr(base, name):
-                return getattr(base, name)
+            attribute = base.__dict__.get(name, _sentinel)
+            if attribute is not _sentinel:
+                attribute_get = getattr(attribute, '__get__', None)
+                if attribute_get is not None:
+                    return attribute_get(None, tp)
+                return attribute
         raise AttributeError(f'{name} not found in {tp}')
     else:
         try:
             return getattr(tp, name)
-        except AttributeError as e:
-            for base in mro(tp):
-                if hasattr(base, name):
-                    return getattr(base, name)
-            raise e
+        except AttributeError:
+            return get_attribute_from_bases(mro(tp), name)
 
 
 def get_attribute_from_base_dicts(tp: type[Any], name: str) -> Any:

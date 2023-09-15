@@ -95,7 +95,7 @@ def run_example(example: CodeExample, eval_example: EvalExample, mocker: Any) ->
 
     group_name = prefix_settings.get('group')
 
-    eval_example.set_config(ruff_ignore=['D', 'T', 'E721'], line_length=LINE_LENGTH)
+    eval_example.set_config(ruff_ignore=['D', 'T', 'E721', 'Q001'], line_length=LINE_LENGTH)
     if '# ignore-above' in example.source:
         eval_example.set_config(ruff_ignore=eval_example.config.ruff_ignore + ['E402'], line_length=LINE_LENGTH)
     if group_name:

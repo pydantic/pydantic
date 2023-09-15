@@ -328,7 +328,7 @@ def test_merge_field_infos_ordering() -> None:
         Model(x=2)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'less_than', 'loc': ('x',), 'msg': 'Input should be less than 4', 'input': 2, 'ctx': {'lt': '4'}}
+        {'type': 'less_than', 'loc': ('x',), 'msg': 'Input should be less than 4', 'input': 2, 'ctx': {'lt': 4}}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -340,7 +340,7 @@ def test_merge_field_infos_ordering() -> None:
             'loc': ('x',),
             'msg': 'Input should be less than or equal to 2',
             'input': 3,
-            'ctx': {'le': '2'},
+            'ctx': {'le': 2},
         }
     ]
 

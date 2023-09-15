@@ -49,11 +49,13 @@ jobs:
       with:
         # cloudflare pages build containers run 3.8, hence using it here
         python-version: '3.8'
-        cache: true
 
     - name: install dependencies
+      # Unlike the docs build, we don't use mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
+      # Because the secret for accessing the library is not accessible from forks, but we still want to run
+      # this job on public CI runs.
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip $PYTHON
         pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
