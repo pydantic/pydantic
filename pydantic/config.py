@@ -1,7 +1,7 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 
@@ -22,7 +22,7 @@ JsonSchemaExtraCallable: TypeAlias = Union[
 ]
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
-JsonType = dict[str, Union[str, int, float, bool, None, list[Any], dict[str, Any]]]
+JsonType = Dict[str, Union[str, int, float, bool, None, List[Any], Dict[str, Any]]]
 
 
 class ConfigDict(TypedDict, total=False):
