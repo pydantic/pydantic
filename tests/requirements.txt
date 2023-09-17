@@ -3,7 +3,7 @@ dirty-equals==0.6.0
 hypothesis==6.79.4
 # pandas doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
 pandas==2.0.3; python_version >= "3.9" and python_version < "3.12" and implementation_name == "cpython" and platform_machine == 'x86_64'
-pytest==7.4.1
+pytest==7.4.2
 # we run codspeed benchmarks on x86_64 CPython (i.e. native github actions architecture)
 pytest-codspeed~=2.1.0; implementation_name == "cpython" and platform_machine == 'x86_64'
 pytest-examples==0.0.10
