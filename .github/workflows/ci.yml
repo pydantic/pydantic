@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: install rust nightly
         uses: dtolnay/rust-toolchain@nightly
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -116,7 +116,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -156,7 +156,7 @@ jobs:
           - 'pypy3.10'
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: set up python
         uses: actions/setup-python@v4
         with:
@@ -181,12 +181,12 @@ jobs:
     continue-on-error: true
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: pydantic/pydantic
           path: pydantic
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: pydantic-core
 
@@ -221,7 +221,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: install rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -269,7 +269,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: install rust nightly
         uses: dtolnay/rust-toolchain@nightly
@@ -288,7 +288,7 @@ jobs:
   build-wasm-emscripten:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
         id: setup-python
@@ -351,7 +351,7 @@ jobs:
     name: build sdist
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: PyO3/maturin-action@v1
         with:
           command: sdist
@@ -432,7 +432,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
         uses: actions/setup-python@v4
@@ -485,7 +485,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
         uses: actions/setup-python@v4
@@ -559,7 +559,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: get dist artifacts
         uses: actions/download-artifact@v3
@@ -599,7 +599,7 @@ jobs:
             distro: alpine_latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: get dist artifacts
         uses: actions/download-artifact@v3
@@ -646,7 +646,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
         uses: actions/setup-python@v4
@@ -670,7 +670,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
         uses: actions/setup-python@v4
