@@ -7,8 +7,6 @@ Pydantic supports many common types from the Python standard library. If you nee
 
 ## Booleans
 
-### `bool`
-
 A standard `bool` field will raise a `ValidationError` if the value is not one of the following:
 
 * A valid boolean (i.e. `True` or `False`),
