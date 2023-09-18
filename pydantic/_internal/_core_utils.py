@@ -532,3 +532,31 @@ def inline_schema_defs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema
     2. Removing any unused `ref` references from schemas.
     """
     return _simplify_schema_references(schema, inline=True)
+
+
+def pretty_print_core_schema(
+    schema: CoreSchema,
+    include_metadata: bool = False,
+) -> None:
+    """Pretty print a CoreSchema using rich.
+    This is intended for debugging purposes.
+
+    Args:
+        schema (CoreSchema): The CoreSchema to print.
+        include_metadata (bool, optional): Whether to include metadata in the output. Defaults to False.
+
+    Returns:
+        None
+    """
+    from rich import print
+
+    if not include_metadata:
+
+        def strip_metadata(s: CoreSchema, recurse: Recurse) -> CoreSchema:
+            if 'metadata' in s:
+                del s['metadata']
+            return recurse(s, strip_metadata)
+
+        schema = walk_core_schema(schema, strip_metadata)
+
+    return print(schema)
