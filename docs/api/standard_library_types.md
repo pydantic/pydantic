@@ -116,20 +116,3 @@ print(m.model_dump())
 """
 ```
 
-## Lists and Tuples
-
-## Dicts and Mappings
-
-## Sets and Frozenset
-
-## Sequence, Iterable & Iterator
-
-## Type and Typevars
-
-## Callables
-
-## URLS
-
-# Enums and Choices
-
-# Bytesize
