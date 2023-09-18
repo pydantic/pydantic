@@ -705,7 +705,8 @@ except ValidationError as e:
 ## JSON schema customization
 
 #### `json_schema_serialization_defaults_required`
-By default, the JSON schema generated for serialization will mark fields as not-required, even if they
+
+By default, the JSON schema generated for serialization will mark fields as **not-required**, even if they
 have a default value that would always be included during serialization. This has the benefit that most
 typical types will have the same JSON schema for both validation and serialization, but has the downside
 that you can often guarantee that fields will be present when dumping a model even if they don't need to
