@@ -1,21 +1,24 @@
 import pytest
 
-from pydantic_core import SchemaSerializer
+from pydantic_core import SchemaSerializer, core_schema
 
 
 def test_branch_nullable():
     s = SchemaSerializer(
-        {
-            'type': 'typed-dict',
-            'ref': 'Branch',
-            'fields': {
-                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                'sub_branch': {
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}},
-                },
-            },
-        }
+        core_schema.definitions_schema(
+            core_schema.definition_reference_schema('Branch'),
+            [
+                core_schema.typed_dict_schema(
+                    {
+                        'name': core_schema.typed_dict_field(core_schema.str_schema()),
+                        'sub_branch': core_schema.typed_dict_field(
+                            core_schema.nullable_schema(core_schema.definition_reference_schema('Branch'))
+                        ),
+                    },
+                    ref='Branch',
+                )
+            ],
+        )
     )
     assert s.to_python({'name': 'root', 'sub_branch': {'name': 'branch', 'sub_branch': None}}) == {
         'name': 'root',
@@ -29,17 +32,20 @@ def test_branch_nullable():
 
 def test_cyclic_recursion():
     s = SchemaSerializer(
-        {
-            'type': 'typed-dict',
-            'ref': 'Branch',
-            'fields': {
-                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                'sub_branch': {
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}},
-                },
-            },
-        }
+        core_schema.definitions_schema(
+            core_schema.definition_reference_schema('Branch'),
+            [
+                core_schema.typed_dict_schema(
+                    {
+                        'name': core_schema.typed_dict_field(core_schema.str_schema()),
+                        'sub_branch': core_schema.typed_dict_field(
+                            core_schema.nullable_schema(core_schema.definition_reference_schema('Branch'))
+                        ),
+                    },
+                    ref='Branch',
+                )
+            ],
+        )
     )
     v = {'name': 'root'}
     v['sub_branch'] = v
@@ -53,24 +59,24 @@ def test_cyclic_recursion():
 
 def test_custom_ser():
     s = SchemaSerializer(
-        {
-            'type': 'typed-dict',
-            'ref': 'Branch',
-            'fields': {
-                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                'sub_branch': {
-                    'type': 'typed-dict-field',
-                    'schema': {
-                        'type': 'nullable',
-                        'schema': {
-                            'type': 'definition-ref',
-                            'schema_ref': 'Branch',
-                            'serialization': {'type': 'to-string', 'when_used': 'always'},
-                        },
+        core_schema.definitions_schema(
+            core_schema.definition_reference_schema('Branch'),
+            [
+                core_schema.typed_dict_schema(
+                    {
+                        'name': core_schema.typed_dict_field(core_schema.str_schema()),
+                        'sub_branch': core_schema.typed_dict_field(
+                            core_schema.nullable_schema(
+                                core_schema.definition_reference_schema(
+                                    'Branch', serialization=core_schema.to_string_ser_schema(when_used='always')
+                                )
+                            )
+                        ),
                     },
-                },
-            },
-        }
+                    ref='Branch',
+                )
+            ],
+        )
     )
     assert s.to_python({'name': 'root', 'sub_branch': {'name': 'branch', 'sub_branch': None}}) == {
         'name': 'root',
@@ -80,43 +86,39 @@ def test_custom_ser():
 
 def test_recursive_function():
     s = SchemaSerializer(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'root': {'type': 'typed-dict-field', 'schema': {'type': 'definition-ref', 'schema_ref': 'my_ref'}}
-            },
-            'ref': 'my_ref',
-            'serialization': {'type': 'function-wrap', 'info_arg': True, 'function': lambda x, _1, _2: x},
-        }
+        core_schema.definitions_schema(
+            core_schema.definition_reference_schema('my_ref'),
+            [
+                core_schema.typed_dict_schema(
+                    {'root': core_schema.typed_dict_field(core_schema.definition_reference_schema('my_ref'))},
+                    ref='my_ref',
+                    serialization=core_schema.wrap_serializer_function_ser_schema(function=lambda x, _handler: x),
+                )
+            ],
+        )
     )
     assert s.to_python({'root': {'root': {}}}) == {'root': {'root': {}}}
 
 
 def test_recursive_function_deeper_ref():
     s = SchemaSerializer(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'a': {
-                    'type': 'typed-dict-field',
-                    'schema': {
-                        'type': 'typed-dict',
-                        'ref': 'my_ref',
-                        'fields': {
-                            'b': {
-                                'type': 'typed-dict-field',
-                                'schema': {'type': 'definition-ref', 'schema_ref': 'my_ref'},
-                            }
-                        },
-                    },
-                }
+        core_schema.typed_dict_schema(
+            {
+                'a': core_schema.typed_dict_field(
+                    core_schema.definitions_schema(
+                        core_schema.definition_reference_schema('my_ref'),
+                        [
+                            core_schema.typed_dict_schema(
+                                {'b': core_schema.typed_dict_field(core_schema.definition_reference_schema('my_ref'))},
+                                ref='my_ref',
+                            )
+                        ],
+                    )
+                )
             },
-            'serialization': {
-                'type': 'function-wrap',
-                'is_field_serializer': False,
-                'info_arg': True,
-                'function': lambda x, _1, _2: x,
-            },
-        }
+            serialization=core_schema.wrap_serializer_function_ser_schema(
+                function=lambda x, _handler: x, is_field_serializer=False
+            ),
+        )
     )
     assert s.to_python({'a': {'b': {'b': {}}}}) == {'a': {'b': {'b': {}}}}

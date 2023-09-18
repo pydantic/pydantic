@@ -7,6 +7,16 @@ import pytest
 
 from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
+GC_TEST_SCHEMA_INNER = core_schema.definitions_schema(
+    core_schema.definition_reference_schema(schema_ref='model'),
+    [
+        core_schema.typed_dict_schema(
+            {'x': core_schema.typed_dict_field(core_schema.definition_reference_schema(schema_ref='model'))},
+            ref='model',
+        )
+    ],
+)
+
 
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
@@ -17,15 +27,7 @@ def test_gc_schema_serializer() -> None:
         __schema__: SchemaSerializer
 
         def __init_subclass__(cls) -> None:
-            cls.__schema__ = SchemaSerializer(
-                core_schema.model_schema(
-                    cls,
-                    core_schema.typed_dict_schema(
-                        {'x': core_schema.typed_dict_field(core_schema.definition_reference_schema('model'))}
-                    ),
-                    ref='model',
-                )
-            )
+            cls.__schema__ = SchemaSerializer(core_schema.model_schema(cls, GC_TEST_SCHEMA_INNER))
 
     cache: 'WeakValueDictionary[int, Any]' = WeakValueDictionary()
 
@@ -54,15 +56,7 @@ def test_gc_schema_validator() -> None:
         __validator__: SchemaValidator
 
         def __init_subclass__(cls) -> None:
-            cls.__validator__ = SchemaValidator(
-                core_schema.model_schema(
-                    cls,
-                    core_schema.typed_dict_schema(
-                        {'x': core_schema.typed_dict_field(core_schema.definition_reference_schema('model'))}
-                    ),
-                    ref='model',
-                )
-            )
+            cls.__validator__ = SchemaValidator(core_schema.model_schema(cls, GC_TEST_SCHEMA_INNER))
 
     cache: 'WeakValueDictionary[int, Any]' = WeakValueDictionary()
 

@@ -10,6 +10,7 @@ from hypothesis import given, strategies
 from typing_extensions import TypedDict
 
 from pydantic_core import SchemaSerializer, SchemaValidator, ValidationError
+from pydantic_core import core_schema as cs
 
 
 @pytest.fixture(scope='module')
@@ -58,21 +59,22 @@ def test_datetime_binary(datetime_schema, data):
 @pytest.fixture(scope='module')
 def definition_schema():
     return SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'ref': 'Branch',
-            'fields': {
-                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                'sub_branch': {
-                    'type': 'typed-dict-field',
-                    'schema': {
-                        'type': 'default',
-                        'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}},
-                        'default': None,
+        cs.definitions_schema(
+            cs.definition_reference_schema('Branch'),
+            [
+                cs.typed_dict_schema(
+                    {
+                        'name': cs.typed_dict_field(cs.str_schema()),
+                        'sub_branch': cs.typed_dict_field(
+                            cs.with_default_schema(
+                                cs.nullable_schema(cs.definition_reference_schema('Branch')), default=None
+                            )
+                        ),
                     },
-                },
-            },
-        }
+                    ref='Branch',
+                )
+            ],
+        )
     )
 
 

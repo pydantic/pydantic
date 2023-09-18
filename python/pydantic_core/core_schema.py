@@ -3772,9 +3772,14 @@ def definition_reference_schema(
     from pydantic_core import SchemaValidator, core_schema
 
     schema_definition = core_schema.definition_reference_schema('list-schema')
-    schema = core_schema.list_schema(items_schema=schema_definition, ref='list-schema')
+    schema = core_schema.definitions_schema(
+        schema=schema_definition,
+        definitions=[
+            core_schema.list_schema(items_schema=schema_definition, ref='list-schema'),
+        ],
+    )
     v = SchemaValidator(schema)
-    assert v.validate_python([[]]) == [[]]
+    assert v.validate_python([()]) == [[]]
     ```
 
     Args:

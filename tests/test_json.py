@@ -254,18 +254,23 @@ def test_to_jsonable_python_schema_serializer():
 
     # force a recursive model to ensure we exercise the transfer of definitions from the loaded
     # serializer
-    c = core_schema.model_schema(
-        Foobar,
-        core_schema.typed_dict_schema(
-            {
-                'my_foo': core_schema.typed_dict_field(core_schema.int_schema(), serialization_alias='myFoo'),
-                'my_inners': core_schema.typed_dict_field(
-                    core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
-                    serialization_alias='myInners',
+    c = core_schema.definitions_schema(
+        core_schema.definition_reference_schema(schema_ref='foobar'),
+        [
+            core_schema.model_schema(
+                Foobar,
+                core_schema.typed_dict_schema(
+                    {
+                        'my_foo': core_schema.typed_dict_field(core_schema.int_schema(), serialization_alias='myFoo'),
+                        'my_inners': core_schema.typed_dict_field(
+                            core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
+                            serialization_alias='myInners',
+                        ),
+                    }
                 ),
-            }
-        ),
-        ref='foobar',
+                ref='foobar',
+            )
+        ],
     )
     v = SchemaValidator(c)
     s = SchemaSerializer(c)

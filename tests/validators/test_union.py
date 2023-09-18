@@ -396,14 +396,19 @@ def test_no_strict_check():
 
 def test_strict_reference():
     v = SchemaValidator(
-        core_schema.tuple_positional_schema(
+        core_schema.definitions_schema(
+            core_schema.definition_reference_schema(schema_ref='tuple-ref'),
             [
-                core_schema.float_schema(),
-                core_schema.union_schema(
-                    [core_schema.int_schema(), core_schema.definition_reference_schema('tuple-ref')]
-                ),
+                core_schema.tuple_positional_schema(
+                    [
+                        core_schema.float_schema(),
+                        core_schema.union_schema(
+                            [core_schema.int_schema(), core_schema.definition_reference_schema('tuple-ref')]
+                        ),
+                    ],
+                    ref='tuple-ref',
+                )
             ],
-            ref='tuple-ref',
         )
     )
     assert 'strict_required:true' in plain_repr(v)

@@ -78,10 +78,12 @@ def test_repeated_ref():
         SchemaValidator(
             core_schema.tuple_positional_schema(
                 [
-                    core_schema.int_schema(ref='foobar'),
-                    # the definition has to be used for it to go into slots/reusable and therefore trigger the error
-                    core_schema.definition_reference_schema('foobar'),
-                    core_schema.int_schema(ref='foobar'),
+                    core_schema.definitions_schema(
+                        core_schema.definition_reference_schema('foobar'), [core_schema.int_schema(ref='foobar')]
+                    ),
+                    core_schema.definitions_schema(
+                        core_schema.definition_reference_schema('foobar'), [core_schema.int_schema(ref='foobar')]
+                    ),
                 ]
             )
         )
@@ -90,14 +92,16 @@ def test_repeated_ref():
 def test_repeat_after():
     with pytest.raises(SchemaError, match='SchemaError: Duplicate ref: `foobar`'):
         SchemaValidator(
-            core_schema.tuple_positional_schema(
-                [
-                    core_schema.definitions_schema(
-                        core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
-                        [core_schema.int_schema(ref='foobar')],
-                    ),
-                    core_schema.int_schema(ref='foobar'),
-                ]
+            core_schema.definitions_schema(
+                core_schema.tuple_positional_schema(
+                    [
+                        core_schema.definitions_schema(
+                            core_schema.definition_reference_schema('foobar'), [core_schema.int_schema(ref='foobar')]
+                        ),
+                        core_schema.definition_reference_schema('foobar'),
+                    ]
+                ),
+                [core_schema.int_schema(ref='foobar')],
             )
         )
 
