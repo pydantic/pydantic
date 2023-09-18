@@ -131,7 +131,9 @@ if __name__ == '__main__':
     OUTER_DATA_MODEL_COUNT = 50
     print(f'Python version: {sys.version}')
     if sys.argv[-1] == 'cProfile':
-        cProfile.run('test_fastapi_startup_perf(lambda f: f())', sort='tottime')
+        cProfile.run(
+            'test_fastapi_startup_perf(lambda f: f())', sort='tottime', filename=__file__.strip('.py') + '.cprof'
+        )
     else:
         start = time.perf_counter()
         test_fastapi_startup_perf(lambda f: f())

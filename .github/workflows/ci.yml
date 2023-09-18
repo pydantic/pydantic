@@ -127,7 +127,7 @@ jobs:
     - name: install deps
       run: |
         pdm use -f $PYTHON
-        pdm install -G testing
+        pdm install -G testing -G email
 
     - run: pdm info && pdm list
 
