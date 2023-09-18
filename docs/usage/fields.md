@@ -191,7 +191,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        name: str = Field(..., alias='username')
+        name: str = Field(..., alias=str('username'))
     ```
 
      This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
