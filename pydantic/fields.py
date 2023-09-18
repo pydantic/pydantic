@@ -1068,6 +1068,30 @@ def computed_field(
     #> {"width":2.0,"area":4.0,"the magic number":3}
     ```
 
+    !!! warning "Overriding with `computed_field`"
+        You can't override a field from a parent class with a `computed_field` in the child class.
+        `mypy` complains about this behavior if allowed, and `dataclasses` doesn't allow this pattern either.
+        See the example below:
+
+    ```py
+    from pydantic import BaseModel, computed_field
+
+    class Parent(BaseModel):
+        a: str
+
+    try:
+
+        class Child(Parent):
+            @computed_field
+            @property
+            def a(self) -> str:
+                return 'new a'
+
+    except ValueError as e:
+        print(repr(e))
+        #> ValueError("you can't override a field with a computed field")
+    ```
+
     Args:
         __f: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
