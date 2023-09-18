@@ -14,7 +14,7 @@ from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, ForwardRef, List, Set, Type, Union
 
-from typing_extensions import get_args, get_origin, is_typeddict
+from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
 TypingUnionType = Type[Union[str, int]]
 
@@ -45,13 +45,13 @@ else:
 schema_ref_validator = {'type': 'definition-ref', 'schema_ref': 'root-schema'}
 
 
-def get_schema(obj) -> core_schema.CoreSchema:
+def get_schema(obj: Any, definitions: dict[str, core_schema.CoreSchema]) -> core_schema.CoreSchema:
     if isinstance(obj, str):
         return {'type': obj}
     elif obj in (datetime, timedelta, date, time, bool, int, float, str, decimal.Decimal):
         return {'type': obj.__name__.lower()}
     elif is_typeddict(obj):
-        return type_dict_schema(obj)
+        return type_dict_schema(obj, definitions)
     elif obj == Any or obj == type:
         return {'type': 'any'}
     if isinstance(obj, type) and issubclass(obj, core_schema.Protocol):
@@ -60,7 +60,7 @@ def get_schema(obj) -> core_schema.CoreSchema:
     origin = get_origin(obj)
     assert origin is not None, f'origin cannot be None, obj={obj}, you probably need to fix generate_self_schema.py'
     if origin is Union or origin is TypesUnionType:
-        return union_schema(obj)
+        return union_schema(obj, definitions)
     elif obj is Callable or origin is Callable:
         return {'type': 'callable'}
     elif origin is core_schema.Literal:
@@ -68,14 +68,14 @@ def get_schema(obj) -> core_schema.CoreSchema:
         assert expected, f'literal "expected" cannot be empty, obj={obj}'
         return {'type': 'literal', 'expected': expected}
     elif issubclass(origin, List):
-        return {'type': 'list', 'items_schema': get_schema(obj.__args__[0])}
+        return {'type': 'list', 'items_schema': get_schema(obj.__args__[0], definitions)}
     elif issubclass(origin, Set):
-        return {'type': 'set', 'items_schema': get_schema(obj.__args__[0])}
+        return {'type': 'set', 'items_schema': get_schema(obj.__args__[0], definitions)}
     elif issubclass(origin, Dict):
         return {
             'type': 'dict',
-            'keys_schema': get_schema(obj.__args__[0]),
-            'values_schema': get_schema(obj.__args__[1]),
+            'keys_schema': get_schema(obj.__args__[0], definitions),
+            'values_schema': get_schema(obj.__args__[1], definitions),
         }
     elif issubclass(origin, Type):
         # can't really use 'is-instance' since this is used for the class_ parameter of 'is-instance' validators
@@ -107,7 +107,9 @@ def tagged_union(std_union_schema: Dict[str, Any], discriminator_key: str, ref: 
 defined_ser_schema = False
 
 
-def type_dict_schema(typed_dict) -> dict[str, Any]:  # noqa: C901
+def type_dict_schema(  # noqa: C901
+    typed_dict: type[TypedDict], definitions: dict[str, core_schema.CoreSchema]
+) -> dict[str, Any]:
     global defined_ser_schema
 
     required_keys = getattr(typed_dict, '__required_keys__', set())
@@ -154,13 +156,14 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:  # noqa: C901
                 required = True
                 field_type = field_type.__args__[0]
 
-            schema = get_schema(field_type)
+            schema = get_schema(field_type, definitions)
             if fr_arg == 'SerSchema':
                 if defined_ser_schema:
                     schema = {'type': 'definition-ref', 'schema_ref': 'ser-schema'}
                 else:
                     defined_ser_schema = True
-                    schema = tagged_union(schema, 'type', 'ser-schema')
+                    definitions['ser-schema'] = tagged_union(schema, 'type', 'ser-schema')
+                    schema = {'type': 'definition-ref', 'schema_ref': 'ser-schema'}
             elif fr_arg.endswith('SerSchema'):
                 schema = tagged_union(schema, 'type')
 
@@ -172,8 +175,8 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:  # noqa: C901
     return {'type': 'typed-dict', 'fields': fields, 'extra_behavior': 'forbid'}
 
 
-def union_schema(union_type: UnionType) -> core_schema.UnionSchema | core_schema.DefinitionReferenceSchema:
-    return {'type': 'union', 'choices': [get_schema(arg) for arg in union_type.__args__]}
+def union_schema(union_type: UnionType, definitions) -> core_schema.UnionSchema | core_schema.DefinitionReferenceSchema:
+    return {'type': 'union', 'choices': [get_schema(arg, definitions) for arg in union_type.__args__]}
 
 
 def all_literal_values(type_: type[core_schema.Literal]) -> list[any]:
@@ -196,16 +199,24 @@ def main() -> None:
     schema_union = core_schema.CoreSchema
     assert get_origin(schema_union) is Union, 'expected core_schema.CoreSchema to be a Union'
 
+    definitions: dict[str, core_schema.CoreSchema] = {}
+
     choices = {}
     for s in schema_union.__args__:
         type_ = s.__annotations__['type']
         m = re.search(r"Literal\['(.+?)']", type_.__forward_arg__)
         assert m, f'Unknown schema type: {type_}'
         key = m.group(1)
-        value = get_schema(s)
+        value = get_schema(s, definitions)
         choices[key] = value
 
-    schema = {'type': 'tagged-union', 'ref': 'root-schema', 'discriminator': 'type', 'choices': choices}
+    schema = core_schema.definitions_schema(
+        schema=core_schema.definition_reference_schema(schema_ref='root-schema'),
+        definitions=[
+            core_schema.tagged_union_schema(choices, discriminator='type', ref='root-schema'),
+            *definitions.values(),
+        ],
+    )
     python_code = (
         f'# this file is auto-generated by generate_self_schema.py, DO NOT edit manually\nself_schema = {schema}\n'
     )

@@ -3,7 +3,7 @@ from enum import Enum
 import pytest
 from dirty_equals import IsAnyStr
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import CoreConfig, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 from .test_typed_dict import Cls
@@ -495,23 +495,20 @@ def test_from_attributes():
 
 def test_use_ref():
     v = SchemaValidator(
-        {
-            'type': 'tagged-union',
-            'discriminator': 'foobar',
-            'choices': {
-                'apple': {
-                    'type': 'typed-dict',
-                    'ref': 'apple',
-                    'fields': {'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+        core_schema.definitions_schema(
+            core_schema.tagged_union_schema(
+                discriminator='foobar',
+                choices={
+                    'apple': core_schema.definition_reference_schema('apple'),
+                    'apple2': core_schema.definition_reference_schema('apple'),
+                    'banana': core_schema.typed_dict_schema(
+                        {'b': core_schema.typed_dict_field(core_schema.str_schema())}
+                    ),
                 },
-                'apple2': {'type': 'definition-ref', 'schema_ref': 'apple'},
-                'banana': {
-                    'type': 'typed-dict',
-                    'fields': {'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-                },
-            },
-        },
-        {'from_attributes': True},
+            ),
+            [core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(core_schema.str_schema())}, ref='apple')],
+        ),
+        config=CoreConfig(from_attributes=True),
     )
     assert v.validate_python({'foobar': 'apple', 'a': 'apple'}) == {'a': 'apple'}
     assert v.validate_python({'foobar': 'apple2', 'a': 'apple'}) == {'a': 'apple'}

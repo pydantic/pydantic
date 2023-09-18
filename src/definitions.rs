@@ -82,7 +82,8 @@ impl<T: Clone + std::fmt::Debug> DefinitionsBuilder<T> {
     }
 
     /// Retrieve an item definition using a ReferenceId
-    /// Will raise an error if the definition for that reference does not yet exist
+    /// If the definition doesn't yet exist (as happens in recursive types) then we create it
+    /// At the end (in finish()) we check that there are no undefined definitions
     pub fn get_definition(&self, reference_id: ReferenceId) -> PyResult<&T> {
         let (reference, def) = match self.definitions.iter().find(|(_, def)| def.id == reference_id) {
             Some(v) => v,

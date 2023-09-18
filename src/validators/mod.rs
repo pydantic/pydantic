@@ -60,7 +60,6 @@ mod with_default;
 
 pub use with_default::DefaultType;
 
-use self::definitions::DefinitionRefValidator;
 pub use self::validation_state::ValidationState;
 
 #[pyclass(module = "pydantic_core._pydantic_core", name = "Some")]
@@ -413,13 +412,6 @@ fn build_specific_validator<'a, T: BuildValidator>(
     config: Option<&'a PyDict>,
     definitions: &mut DefinitionsBuilder<CombinedValidator>,
 ) -> PyResult<CombinedValidator> {
-    let py = schema_dict.py();
-    if let Some(schema_ref) = schema_dict.get_as::<String>(intern!(py, "ref"))? {
-        let inner_val = T::build(schema_dict, config, definitions)?;
-        let validator_id = definitions.add_definition(schema_ref, inner_val)?;
-        return Ok(DefinitionRefValidator::new(validator_id).into());
-    }
-
     T::build(schema_dict, config, definitions)
         .map_err(|err| py_schema_error_type!("Error building \"{}\" validator:\n  {}", val_type, err))
 }
