@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Any, Callable
+from typing import Any, Callable
 from uuid import UUID
 
 from annotated_types import Gt
+from typing_extensions import Annotated
 
 from pydantic import AnyUrl, BaseModel, EmailStr, TypeAdapter
 from pydantic.functional_validators import AfterValidator
