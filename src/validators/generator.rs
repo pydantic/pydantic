@@ -19,6 +19,7 @@ pub struct GeneratorValidator {
     max_length: Option<usize>,
     name: String,
     hide_input_in_errors: bool,
+    validation_error_cause: bool,
 }
 
 impl BuildValidator for GeneratorValidator {
@@ -37,12 +38,16 @@ impl BuildValidator for GeneratorValidator {
         let hide_input_in_errors: bool = config
             .get_as(pyo3::intern!(schema.py(), "hide_input_in_errors"))?
             .unwrap_or(false);
+        let validation_error_cause: bool = config
+            .get_as(pyo3::intern!(schema.py(), "validation_error_cause"))?
+            .unwrap_or(false);
         Ok(Self {
             item_validator,
             name,
             min_length: schema.get_as(pyo3::intern!(schema.py(), "min_length"))?,
             max_length: schema.get_as(pyo3::intern!(schema.py(), "max_length"))?,
             hide_input_in_errors,
+            validation_error_cause,
         }
         .into())
     }
@@ -58,10 +63,16 @@ impl Validator for GeneratorValidator {
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let iterator = input.validate_iter()?;
-        let validator = self
-            .item_validator
-            .as_ref()
-            .map(|v| InternalValidator::new(py, "ValidatorIterator", v, state, self.hide_input_in_errors));
+        let validator = self.item_validator.as_ref().map(|v| {
+            InternalValidator::new(
+                py,
+                "ValidatorIterator",
+                v,
+                state,
+                self.hide_input_in_errors,
+                self.validation_error_cause,
+            )
+        });
 
         let v_iterator = ValidatorIterator {
             iterator,
@@ -69,6 +80,7 @@ impl Validator for GeneratorValidator {
             min_length: self.min_length,
             max_length: self.max_length,
             hide_input_in_errors: self.hide_input_in_errors,
+            validation_error_cause: self.validation_error_cause,
         };
         Ok(v_iterator.into_py(py))
     }
@@ -105,6 +117,7 @@ struct ValidatorIterator {
     min_length: Option<usize>,
     max_length: Option<usize>,
     hide_input_in_errors: bool,
+    validation_error_cause: bool,
 }
 
 #[pymethods]
@@ -117,6 +130,7 @@ impl ValidatorIterator {
         let min_length = slf.min_length;
         let max_length = slf.max_length;
         let hide_input_in_errors = slf.hide_input_in_errors;
+        let validation_error_cause = slf.validation_error_cause;
         let Self {
             validator, iterator, ..
         } = &mut *slf;
@@ -143,6 +157,7 @@ impl ValidatorIterator {
                                         val_error,
                                         None,
                                         hide_input_in_errors,
+                                        validation_error_cause,
                                     ));
                                 }
                             }
@@ -169,6 +184,7 @@ impl ValidatorIterator {
                                     val_error,
                                     None,
                                     hide_input_in_errors,
+                                    validation_error_cause,
                                 ));
                             }
                         }
@@ -217,6 +233,7 @@ pub struct InternalValidator {
     recursion_guard: RecursionGuard,
     validation_mode: InputType,
     hide_input_in_errors: bool,
+    validation_error_cause: bool,
 }
 
 impl fmt::Debug for InternalValidator {
@@ -232,6 +249,7 @@ impl InternalValidator {
         validator: &CombinedValidator,
         state: &ValidationState,
         hide_input_in_errors: bool,
+        validation_error_cause: bool,
     ) -> Self {
         let extra = state.extra();
         Self {
@@ -246,6 +264,7 @@ impl InternalValidator {
             recursion_guard: state.recursion_guard.clone(),
             validation_mode: extra.mode,
             hide_input_in_errors,
+            validation_error_cause,
         }
     }
 
@@ -277,6 +296,7 @@ impl InternalValidator {
                     e,
                     outer_location,
                     self.hide_input_in_errors,
+                    self.validation_error_cause,
                 )
             })
     }
@@ -305,6 +325,7 @@ impl InternalValidator {
                 e,
                 outer_location,
                 self.hide_input_in_errors,
+                self.validation_error_cause,
             )
         })
     }
