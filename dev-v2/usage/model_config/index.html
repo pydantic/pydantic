@@ -1776,6 +1776,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#json-schema-customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON schema customization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="JSON schema customization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mark-fields-with-default-values-as-required-in-the-serialization-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mark fields with default values as required in the serialization schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#override-mode-on-json-schema-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Override mode on JSON schema generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -3632,6 +3671,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#json-schema-customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON schema customization
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="JSON schema customization">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mark-fields-with-default-values-as-required-in-the-serialization-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mark fields with default values as required in the serialization schema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#override-mode-on-json-schema-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Override mode on JSON schema generation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -4242,7 +4320,7 @@ an error <em>is</em> raised if there is an actual collision with an existing att
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="hide-input-in-errors">Hide Input in Errors<a class="headerlink" href="#hide-input-in-errors" title="Permanent link">&para;</a></h2>
-<p><em>Pydantic</em> shows the input value and type when it raises <code>ValidationError</code> during the validation.</p>
+<p>Pydantic shows the input value and type when it raises <code>ValidationError</code> during the validation.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4280,6 +4358,93 @@ an error <em>is</em> raised if there is an actual collision with an existing att
 <span class="sd">      Input should be a valid string [type=string_type]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<h2 id="json-schema-customization">JSON schema customization<a class="headerlink" href="#json-schema-customization" title="Permanent link">&para;</a></h2>
+<h4 id="mark-fields-with-default-values-as-required-in-the-serialization-schema">Mark fields with default values as required in the serialization schema<a class="headerlink" href="#mark-fields-with-default-values-as-required-in-the-serialization-schema" title="Permanent link">&para;</a></h4>
+<p>By default, the JSON schema generated for serialization will mark fields as <strong>not-required</strong>, even if they
+have a default value that would always be included during serialization. This has the benefit that most
+typical types will have the same JSON schema for both validation and serialization, but has the downside
+that you can often guarantee that fields will be present when dumping a model even if they don't need to
+be included when initializing, and the JSON schema doesn't reflect that.</p>
+<p>If you want to opt into having the serialization schema mark fields as required even if they have a default value,
+you can set the config setting to <code>json_schema_serialization_defaults_required=True</code>:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;a&#39;</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">json_schema_serialization_defaults_required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;validation&#39;</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {&#39;a&#39;: {&#39;default&#39;: &#39;a&#39;, &#39;title&#39;: &#39;A&#39;, &#39;type&#39;: &#39;string&#39;}},</span>
+<span class="sd">    &#39;title&#39;: &#39;Model&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {&#39;a&#39;: {&#39;default&#39;: &#39;a&#39;, &#39;title&#39;: &#39;A&#39;, &#39;type&#39;: &#39;string&#39;}},</span>
+<span class="sd">    &#39;required&#39;: [&#39;a&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;Model&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<h4 id="override-mode-on-json-schema-generation">Override <code>mode</code> on JSON schema generation<a class="headerlink" href="#override-mode-on-json-schema-generation" title="Permanent link">&para;</a></h4>
+<p>If you want to be able to force a model to always use a specific mode when generating a JSON schema (even if the
+mode is explicitly specified as a different value in the JSON schema generation calls), this can be done by setting
+the config setting <code>json_schema_mode_override='serialization'</code> or <code>json_schema_mode_override='validation'</code>:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Json</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">Json</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>  <span class="c1"># requires a string to validate, but will dump an int</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {&#39;a&#39;: {&#39;title&#39;: &#39;A&#39;, &#39;type&#39;: &#39;integer&#39;}},</span>
+<span class="sd">    &#39;required&#39;: [&#39;a&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;Model&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">ForceInputModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="c1"># the following ensures that even with mode=&#39;serialization&#39;, we</span>
+    <span class="c1"># will get the schema that would be generated for validation.</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">json_schema_mode_override</span><span class="o">=</span><span class="s1">&#39;validation&#39;</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ForceInputModel</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;serialization&#39;</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;a&#39;: {</span>
+<span class="sd">            &#39;contentMediaType&#39;: &#39;application/json&#39;,</span>
+<span class="sd">            &#39;contentSchema&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;title&#39;: &#39;A&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;string&#39;,</span>
+<span class="sd">        }</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;a&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;ForceInputModel&#39;,</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+<p>This can be useful when using frameworks (such as FastAPI) that may generate different schemas for validation
+and serialization that must both be referenced from the same schema; when this happens, we automatically append
+<code>-Input</code> to the definition reference for the validation schema and <code>-Output</code> to the definition reference for the
+serialization schema. By specifying a <code>json_schema_mode_override</code> though, this prevents the conflict between
+the validation and serialization schemas (since both will use the specified schema), and so prevents the suffixes
+from being added to the definition references.</p>
 
 
 

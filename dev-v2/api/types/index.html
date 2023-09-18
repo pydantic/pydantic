@@ -5570,7 +5570,7 @@
 <span class="n">path</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
 
 <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;directory&#39;</span><span class="p">)</span>
-<span class="n">path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">()</span>
+<span class="n">path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="n">Model</span><span class="p">(</span><span class="n">f</span><span class="o">=</span><span class="s1">&#39;directory&#39;</span><span class="p">)</span>  <span class="c1"># directory</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>

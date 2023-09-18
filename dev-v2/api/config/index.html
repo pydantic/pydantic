@@ -3050,6 +3050,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.json_schema_serialization_defaults_required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        json_schema_serialization_defaults_required
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.json_schema_mode_override" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        json_schema_mode_override
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4043,6 +4065,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.json_schema_serialization_defaults_required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        json_schema_serialization_defaults_required
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.json_schema_mode_override" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        json_schema_mode_override
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4998,6 +5042,75 @@ used nested within other models, or when you want to manually define type namesp
 Useful if you want to change the way types are validated across an entire model/schema.</p>
 <p>The <code>GenerateSchema</code> interface is subject to change, currently only the <code>string_schema</code> method is public.</p>
 <p>See <a href="https://github.com/pydantic/pydantic/pull/6737">#6737</a> for details.</p>
+<p>Defaults to <code>None</code>.</p>
+  </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.json_schema_serialization_defaults_required" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">json_schema_serialization_defaults_required</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.json_schema_serialization_defaults_required" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">json_schema_serialization_defaults_required</span><span class="p">:</span> <span class="nb">bool</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Whether fields with default values should be marked as required in the serialization schema.</p>
+<p>This ensures that the serialization schema will reflect the fact a field with a default will always be present
+when serializing the model, even though it is not required for validation.</p>
+<p>However, there are scenarios where this may be undesirable — in particular, if you want to share the schema
+between validation and serialization, and don't mind fields with defaults being marked as not required during
+serialization. See <a href="https://github.com/pydantic/pydantic/issues/7209">#7209</a> for more details.</p>
+<p>Defaults to <code>False</code>.</p>
+  </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.json_schema_mode_override" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">json_schema_mode_override</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.json_schema_mode_override" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">json_schema_mode_override</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+    <span class="s2">&quot;validation&quot;</span><span class="p">,</span> <span class="s2">&quot;serialization&quot;</span><span class="p">,</span> <span class="kc">None</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>If not <code>None</code>, the specified mode will be used to generate the JSON schema regardless of what <code>mode</code> was passed to
+the function call.</p>
+<p>This provides a way to force the JSON schema generation to reflect a specific mode, e.g., to always use the
+validation schema, even if a framework (like FastAPI) might be indicating to use the serialization schema in some
+places.</p>
 <p>Defaults to <code>None</code>.</p>
   </div>
 
