@@ -93,7 +93,7 @@ class ConfigDict(TypedDict, total=False):
     """
 
     loc_by_alias: bool
-    """Whether to use the alias for error `loc`s rather than the field's name. Defaults to `True`."""
+    """Whether to use the actual key provided in the data(e.g. alias) for error `loc`s rather than the field's name. Defaults to `True`."""
 
     alias_generator: Callable[[str], str] | None
     """
