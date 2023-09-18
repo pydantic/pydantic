@@ -48,8 +48,6 @@ except ValidationError as e:
     """
 ```
 
-## Number Types
-
 ## Datetime Types
 
 Pydantic supports the following [datetime](https://docs.python.org/library/datetime.html#available-types)
