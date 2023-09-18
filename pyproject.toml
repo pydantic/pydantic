@@ -180,7 +180,8 @@ extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
 [tool.ruff.extend-per-file-ignores]
 "docs/**/*.py" = ['T']
 "tests/**/*.py" = ['T', 'E721', 'F811']
-"tests/benchmarks/test_fastapi_startup.py" = ['UP006']
+"tests/benchmarks/test_fastapi_startup_generics.py" = ['UP006', 'UP007']
+"tests/benchmarks/test_fastapi_startup_simple.py" = ['UP006', 'UP007']
 
 [tool.ruff.pydocstyle]
 convention = "google"

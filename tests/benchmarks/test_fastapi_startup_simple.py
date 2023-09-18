@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from uuid import UUID
 
 from annotated_types import Gt
@@ -19,7 +19,7 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
             id: int
             username: str
             email: EmailStr
-            full_name: str | None = None
+            full_name: Optional[str] = None
 
         class Address(BaseModel):
             street: str
@@ -31,7 +31,7 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
             id: int
             name: str
             price: Annotated[float, Gt(0)]
-            description: str | None = None
+            description: Optional[str] = None
 
         class BlogPost(BaseModel):
             title: Annotated[str, StringConstraints(pattern=r'[A-Za-z0-9]+')]
@@ -42,13 +42,13 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
         class Website(BaseModel):
             name: str
             url: AnyUrl
-            description: str | None = None
+            description: Optional[str] = None
 
         class Order(BaseModel):
             order_id: str
             customer: User
             shipping_address: Address
-            products: list[Product]
+            products: List[Product]
 
         class Comment(BaseModel):
             text: str
@@ -64,9 +64,9 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
 
         class Category(BaseModel):
             name: str
-            description: str | None = None
+            description: Optional[str] = None
 
-        ReviewGroup = list[dict[tuple[User, Product], Comment]]
+        ReviewGroup = List[Dict[Tuple[User, Product], Comment]]
 
         data_models = [
             User,

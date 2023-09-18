@@ -1,7 +1,7 @@
 """https://github.com/pydantic/pydantic/issues/6768"""
 from __future__ import annotations
 
-from typing import Any, Generic, List, TypeVar
+from typing import Any, Dict, Generic, List, TypeVar
 
 from typing_extensions import Annotated
 
@@ -58,17 +58,17 @@ def test_fastapi_startup_perf(benchmark: Any):
         bar: str
 
     class GetManyModel(BaseModel, Generic[T]):
-        res: list[T]
+        res: List[T]
 
     class GetManyModel2(GetManyModel[T], Generic[T]):
         foo: str
         bar: str
 
     class GetManyModel3(BaseModel, Generic[T]):
-        res: dict[str, T]
+        res: Dict[str, T]
 
     class GetManyModel4(BaseModel, Generic[T]):
-        res: dict[str, list[T]]
+        res: Dict[str, List[T]]
 
     class PutModel(BaseModel, Generic[T]):
         data: T
@@ -78,13 +78,13 @@ def test_fastapi_startup_perf(benchmark: Any):
         bar: str
 
     class PutManyModel(BaseModel, Generic[T]):
-        data: list[T]
+        data: List[T]
 
     class PutManyModel2(PutManyModel[T], Generic[T]):
         foo: str
         bar: str
 
-    api_models: list[Any] = [
+    api_models: List[Any] = [
         GetModel,
         GetModel2,
         GetManyModel,
