@@ -57,7 +57,7 @@ impl<'de> Deserialize<'de> for JsonInput {
         impl<'de> Visitor<'de> for JsonVisitor {
             type Value = JsonInput;
 
-            #[cfg_attr(has_no_coverage, no_coverage)]
+            #[cfg_attr(has_coverage_attribute, coverage(off))]
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("any valid JSON value")
             }
@@ -92,12 +92,12 @@ impl<'de> Deserialize<'de> for JsonInput {
                 Ok(JsonInput::String(value))
             }
 
-            #[cfg_attr(has_no_coverage, no_coverage)]
+            #[cfg_attr(has_coverage_attribute, coverage(off))]
             fn visit_none<E>(self) -> Result<JsonInput, E> {
                 unreachable!()
             }
 
-            #[cfg_attr(has_no_coverage, no_coverage)]
+            #[cfg_attr(has_coverage_attribute, coverage(off))]
             fn visit_some<D>(self, _: D) -> Result<JsonInput, D::Error>
             where
                 D: serde::Deserializer<'de>,
@@ -200,7 +200,7 @@ impl<'de> DeserializeSeed<'de> for KeyDeserializer {
 impl<'de> Visitor<'de> for KeyDeserializer {
     type Value = String;
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a string key")
     }
@@ -212,7 +212,7 @@ impl<'de> Visitor<'de> for KeyDeserializer {
         Ok(s.to_string())
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn visit_string<E>(self, _: String) -> Result<Self::Value, E>
     where
         E: serde::de::Error,

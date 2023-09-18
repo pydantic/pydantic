@@ -21,7 +21,7 @@ use super::{
 
 impl<'a> Input<'a> for JsonInput {
     /// This is required by since JSON object keys are always strings, I don't think it can be called
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn as_loc_item(&self) -> LocItem {
         match self {
             JsonInput::Int(i) => (*i).into(),
@@ -102,7 +102,7 @@ impl<'a> Input<'a> for JsonInput {
             _ => Err(ValError::new(ErrorTypeDefaults::BytesType, self)),
         }
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         self.validate_bytes(false)
     }
@@ -196,7 +196,7 @@ impl<'a> Input<'a> for JsonInput {
             _ => Err(ValError::new(ErrorTypeDefaults::DictType, self)),
         }
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         self.validate_dict(false)
     }
@@ -207,7 +207,7 @@ impl<'a> Input<'a> for JsonInput {
             _ => Err(ValError::new(ErrorTypeDefaults::ListType, self)),
         }
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_list(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_list(false)
     }
@@ -219,7 +219,7 @@ impl<'a> Input<'a> for JsonInput {
             _ => Err(ValError::new(ErrorTypeDefaults::TupleType, self)),
         }
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_tuple(false)
     }
@@ -231,7 +231,7 @@ impl<'a> Input<'a> for JsonInput {
             _ => Err(ValError::new(ErrorTypeDefaults::SetType, self)),
         }
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_set(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_set(false)
     }
@@ -243,7 +243,7 @@ impl<'a> Input<'a> for JsonInput {
             _ => Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self)),
         }
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_frozenset(false)
     }
@@ -278,7 +278,7 @@ impl<'a> Input<'a> for JsonInput {
     }
     // NO custom `lax_date` implementation, if strict_date fails, the validator will fallback to lax_datetime
     // then check there's no remainder
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_date(&self) -> ValResult<EitherDate> {
         self.validate_date(false)
     }
@@ -365,7 +365,7 @@ impl<'a> Input<'a> for String {
         InputValue::String(self)
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn is_none(&self) -> bool {
         false
     }
@@ -374,12 +374,12 @@ impl<'a> Input<'a> for String {
         None
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<'a, GenericArguments<'a>> {
         let class_name = class_name.to_string();
         Err(ValError::new(
@@ -405,7 +405,7 @@ impl<'a> Input<'a> for String {
     fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
         Ok(self.as_bytes().into())
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         self.validate_bytes(false)
     }
@@ -427,11 +427,11 @@ impl<'a> Input<'a> for String {
         }
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
         self.strict_float()
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
         Err(ValError::new(ErrorTypeDefaults::FloatType, self))
     }
@@ -443,47 +443,47 @@ impl<'a> Input<'a> for String {
         create_decimal(self.to_object(py).into_ref(py), self, py)
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn validate_dict(&'a self, _strict: bool) -> ValResult<GenericMapping<'a>> {
         Err(ValError::new(ErrorTypeDefaults::DictType, self))
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         self.validate_dict(false)
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn validate_list(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_list(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_list(false)
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         Err(ValError::new(ErrorTypeDefaults::TupleType, self))
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_tuple(false)
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn validate_set(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         Err(ValError::new(ErrorTypeDefaults::SetType, self))
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_set(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_set(false)
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_frozenset(false)
     }
@@ -499,7 +499,7 @@ impl<'a> Input<'a> for String {
     fn validate_date(&self, _strict: bool) -> ValResult<EitherDate> {
         bytes_as_date(self, self.as_bytes())
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_date(&self) -> ValResult<EitherDate> {
         self.validate_date(false)
     }
@@ -511,7 +511,7 @@ impl<'a> Input<'a> for String {
     ) -> ValResult<EitherTime> {
         bytes_as_time(self, self.as_bytes(), microseconds_overflow_behavior)
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_time(
         &self,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
@@ -526,7 +526,7 @@ impl<'a> Input<'a> for String {
     ) -> ValResult<EitherDateTime> {
         bytes_as_datetime(self, self.as_bytes(), microseconds_overflow_behavior)
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_datetime(
         &self,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
@@ -541,7 +541,7 @@ impl<'a> Input<'a> for String {
     ) -> ValResult<EitherTimedelta> {
         bytes_as_timedelta(self, self.as_bytes(), microseconds_overflow_behavior)
     }
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_timedelta(
         &self,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
