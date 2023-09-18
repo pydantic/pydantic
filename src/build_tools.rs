@@ -67,7 +67,7 @@ impl fmt::Display for SchemaError {
 }
 
 impl Error for SchemaError {
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         None
     }

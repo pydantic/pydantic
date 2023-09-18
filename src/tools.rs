@@ -48,7 +48,7 @@ impl<'py> SchemaDict<'py> for Option<&PyDict> {
         }
     }
 
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
     where
         T: FromPyObject<'py>,

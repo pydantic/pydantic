@@ -1,4 +1,4 @@
-#![cfg_attr(has_no_coverage, feature(no_coverage))]
+#![cfg_attr(has_coverage_attribute, feature(coverage_attribute))]
 
 extern crate core;
 
