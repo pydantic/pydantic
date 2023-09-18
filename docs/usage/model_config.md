@@ -704,7 +704,7 @@ except ValidationError as e:
 
 ## JSON schema customization
 
-#### `json_schema_serialization_defaults_required`
+#### Mark fields with default values as required in the serialization schema
 
 By default, the JSON schema generated for serialization will mark fields as **not-required**, even if they
 have a default value that would always be included during serialization. This has the benefit that most
@@ -744,7 +744,7 @@ print(Model.model_json_schema(mode='serialization'))
 """
 ```
 
-#### `json_schema_mode_override`
+#### Override `mode` on JSON schema generation
 
 If you want to be able to force a model to always use a specific mode when generating a JSON schema (even if the
 mode is explicitly specified as a different value in the JSON schema generation calls), this can be done by setting
