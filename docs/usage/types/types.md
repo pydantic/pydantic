@@ -11,7 +11,6 @@ The following sections describe the types supported by Pydantic.
 
 * [Standard Library Types](standard_types.md) &mdash; types from the Python standard library.
 * [Callables](callables.md) &mdash; `Callable` types.
-* [Datetimes](datetime.md) &mdash; `datetime`, `date`, `time`, and `timedelta` types.
 * [Dicts and Mapping Types](dicts_mapping.md) &mdash; `dict` types and mapping types.
 * [Enums and Choices](enums.md) &mdash; uses Python's standard `enum` classes to define choices.
 * [JSON](json.md) &mdash; a type that allows you to store JSON data in your model.
