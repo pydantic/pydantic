@@ -548,7 +548,7 @@ def pretty_print_core_schema(
     Returns:
         None
     """
-    from rich import print
+    from rich import print  # type: ignore  # install it manually in your dev env
 
     if not include_metadata:
 
