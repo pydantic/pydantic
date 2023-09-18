@@ -713,7 +713,7 @@ print(m.model_dump())
 path.unlink()
 
 path = Path('directory')
-path.mkdir()
+path.mkdir(exist_ok=True)
 try:
     Model(f='directory')  # directory
 except ValidationError as e:

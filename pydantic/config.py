@@ -207,5 +207,31 @@ class ConfigDict(TypedDict, total=False):
     Defaults to `None`.
     """
 
+    json_schema_serialization_defaults_required: bool
+    """
+    Whether fields with default values should be marked as required in the serialization schema.
+
+    This ensures that the serialization schema will reflect the fact a field with a default will always be present
+    when serializing the model, even though it is not required for validation.
+
+    However, there are scenarios where this may be undesirable — in particular, if you want to share the schema
+    between validation and serialization, and don't mind fields with defaults being marked as not required during
+    serialization. See [#7209](https://github.com/pydantic/pydantic/issues/7209) for more details.
+
+    Defaults to `False`.
+    """
+
+    json_schema_mode_override: Literal['validation', 'serialization', None]
+    """
+    If not `None`, the specified mode will be used to generate the JSON schema regardless of what `mode` was passed to
+    the function call.
+
+    This provides a way to force the JSON schema generation to reflect a specific mode, e.g., to always use the
+    validation schema, even if a framework (like FastAPI) might be indicating to use the serialization schema in some
+    places.
+
+    Defaults to `None`.
+    """
+
 
 __getattr__ = getattr_migration(__name__)

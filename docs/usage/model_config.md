@@ -658,7 +658,7 @@ except NameError as e:
 
 ## Hide Input in Errors
 
-_Pydantic_ shows the input value and type when it raises `ValidationError` during the validation.
+Pydantic shows the input value and type when it raises `ValidationError` during the validation.
 
 ```py
 from pydantic import BaseModel, ValidationError
@@ -701,3 +701,101 @@ except ValidationError as e:
       Input should be a valid string [type=string_type]
     """
 ```
+
+## JSON schema customization
+
+#### Mark fields with default values as required in the serialization schema
+
+By default, the JSON schema generated for serialization will mark fields as **not-required**, even if they
+have a default value that would always be included during serialization. This has the benefit that most
+typical types will have the same JSON schema for both validation and serialization, but has the downside
+that you can often guarantee that fields will be present when dumping a model even if they don't need to
+be included when initializing, and the JSON schema doesn't reflect that.
+
+If you want to opt into having the serialization schema mark fields as required even if they have a default value,
+you can set the config setting to `json_schema_serialization_defaults_required=True`:
+
+```py
+from pydantic import BaseModel, ConfigDict
+
+
+class Model(BaseModel):
+    a: str = 'a'
+
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
+
+print(Model.model_json_schema(mode='validation'))
+"""
+{
+    'properties': {'a': {'default': 'a', 'title': 'A', 'type': 'string'}},
+    'title': 'Model',
+    'type': 'object',
+}
+"""
+print(Model.model_json_schema(mode='serialization'))
+"""
+{
+    'properties': {'a': {'default': 'a', 'title': 'A', 'type': 'string'}},
+    'required': ['a'],
+    'title': 'Model',
+    'type': 'object',
+}
+"""
+```
+
+#### Override `mode` on JSON schema generation
+
+If you want to be able to force a model to always use a specific mode when generating a JSON schema (even if the
+mode is explicitly specified as a different value in the JSON schema generation calls), this can be done by setting
+the config setting `json_schema_mode_override='serialization'` or `json_schema_mode_override='validation'`:
+
+```py
+from pydantic import BaseModel, ConfigDict, Json
+
+
+class Model(BaseModel):
+    a: Json[int]  # requires a string to validate, but will dump an int
+
+
+print(Model.model_json_schema(mode='serialization'))
+"""
+{
+    'properties': {'a': {'title': 'A', 'type': 'integer'}},
+    'required': ['a'],
+    'title': 'Model',
+    'type': 'object',
+}
+"""
+
+
+class ForceInputModel(Model):
+    # the following ensures that even with mode='serialization', we
+    # will get the schema that would be generated for validation.
+    model_config = ConfigDict(json_schema_mode_override='validation')
+
+
+print(ForceInputModel.model_json_schema(mode='serialization'))
+"""
+{
+    'properties': {
+        'a': {
+            'contentMediaType': 'application/json',
+            'contentSchema': {'type': 'integer'},
+            'title': 'A',
+            'type': 'string',
+        }
+    },
+    'required': ['a'],
+    'title': 'ForceInputModel',
+    'type': 'object',
+}
+"""
+```
+
+This can be useful when using frameworks (such as FastAPI) that may generate different schemas for validation
+and serialization that must both be referenced from the same schema; when this happens, we automatically append
+`-Input` to the definition reference for the validation schema and `-Output` to the definition reference for the
+serialization schema. By specifying a `json_schema_mode_override` though, this prevents the conflict between
+the validation and serialization schemas (since both will use the specified schema), and so prevents the suffixes
+from being added to the definition references.
