@@ -80,7 +80,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_str(&'a self) -> ValResult<EitherString<'a>>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
         self.strict_str()
     }
@@ -93,7 +93,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         self.strict_bytes()
     }
@@ -106,7 +106,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_bool(&self) -> ValResult<bool>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_bool(&self) -> ValResult<bool> {
         self.strict_bool()
     }
@@ -119,7 +119,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_int(&'a self) -> ValResult<EitherInt<'a>>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_int(&'a self) -> ValResult<EitherInt<'a>> {
         self.strict_int()
     }
@@ -147,7 +147,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
     }
     fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>>;
     fn strict_float(&'a self) -> ValResult<EitherFloat<'a>>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
         self.strict_float()
     }
@@ -160,7 +160,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
         self.strict_decimal(py)
     }
@@ -173,7 +173,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         self.strict_dict()
     }
@@ -190,7 +190,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_list(&'a self) -> ValResult<GenericIterable<'a>>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_list(&'a self) -> ValResult<GenericIterable<'a>> {
         self.strict_list()
     }
@@ -203,7 +203,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
         self.strict_tuple()
     }
@@ -216,7 +216,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_set(&'a self) -> ValResult<GenericIterable<'a>>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_set(&'a self) -> ValResult<GenericIterable<'a>> {
         self.strict_set()
     }
@@ -229,7 +229,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
         self.strict_frozenset()
     }
@@ -246,7 +246,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         }
     }
     fn strict_date(&self) -> ValResult<EitherDate>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_date(&self) -> ValResult<EitherDate> {
         self.strict_date()
     }
@@ -266,7 +266,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         &self,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<EitherTime>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_time(
         &self,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
@@ -289,7 +289,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         &self,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<EitherDateTime>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_datetime(
         &self,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
@@ -312,7 +312,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         &self,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<EitherTimedelta>;
-    #[cfg_attr(has_no_coverage, no_coverage)]
+    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn lax_timedelta(
         &self,
         microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,

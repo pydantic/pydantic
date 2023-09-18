@@ -32,8 +32,8 @@ fn generate_self_schema() {
 
 fn main() {
     pyo3_build_config::use_pyo3_cfgs();
-    if let Some(true) = version_check::supports_feature("no_coverage") {
-        println!("cargo:rustc-cfg=has_no_coverage");
+    if let Some(true) = version_check::supports_feature("coverage_attribute") {
+        println!("cargo:rustc-cfg=has_coverage_attribute");
     }
     generate_self_schema();
     println!("cargo:rustc-env=PROFILE={}", std::env::var("PROFILE").unwrap());
