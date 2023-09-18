@@ -1908,6 +1908,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#validation-of-default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation of default values
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#environment-variable-names" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3512,6 +3523,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#validation-of-default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation of default values
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#environment-variable-names" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3773,6 +3795,35 @@ will still be used if the matching environment variable is not set.)</p>
 <p>Check the <a href="#environment-variable-names">Environment variable names documentation</a> for more information.</p>
 </li>
 </ol>
+<h2 id="validation-of-default-values">Validation of default values<a class="headerlink" href="#validation-of-default-values" title="Permanent link">&para;</a></h2>
+<p>Unlike pydantic <code>BaseModel</code>, default values of <code>BaseSettings</code> fields are validated by default.
+You can disable this behaviour by setting <code>validate_default=False</code> either in <code>model_config</code>
+or on field level by <code>Field(validate_default=False)</code>:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">validate_default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># default won&#39;t be validated</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s1">&#39;test&#39;</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">())</span>
+<span class="c1">#&gt; foo=&#39;test&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">Settings1</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="c1"># default won&#39;t be validated</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="s1">&#39;test&#39;</span><span class="p">,</span> <span class="n">validate_default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings1</span><span class="p">())</span>
+<span class="c1">#&gt; foo=&#39;test&#39;</span>
+</code></pre></div>
+<p>Check the <a href="../validators/#validation-of-default-values">Validation of default values</a> for more information.</p>
 <h2 id="environment-variable-names">Environment variable names<a class="headerlink" href="#environment-variable-names" title="Permanent link">&para;</a></h2>
 <p>By default, the environment variable name is the same as the field name.</p>
 <p>You can change the prefix for all environment variables by setting the <code>env_prefix</code> config setting,
