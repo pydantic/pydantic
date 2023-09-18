@@ -298,28 +298,28 @@ def test_definition_model_core(definition_model_data, benchmark):
         __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     v = SchemaValidator(
-        {
-            'ref': 'Branch',
-            'type': 'model',
-            'cls': CoreBranch,
-            'schema': {
-                'type': 'model-fields',
-                'fields': {
-                    'width': {'type': 'model-field', 'schema': {'type': 'int'}},
-                    'branch': {
-                        'type': 'model-field',
-                        'schema': {
-                            'type': 'default',
-                            'schema': {
-                                'type': 'nullable',
-                                'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
-                            },
-                            'default': None,
-                        },
-                    },
-                },
-            },
-        }
+        core_schema.definitions_schema(
+            core_schema.definition_reference_schema(schema_ref='Branch'),
+            [
+                core_schema.model_schema(
+                    CoreBranch,
+                    core_schema.model_fields_schema(
+                        {
+                            'width': core_schema.model_field(core_schema.int_schema()),
+                            'branch': core_schema.model_field(
+                                core_schema.with_default_schema(
+                                    core_schema.nullable_schema(
+                                        core_schema.definition_reference_schema(schema_ref='Branch')
+                                    ),
+                                    default=None,
+                                )
+                            ),
+                        }
+                    ),
+                    ref='Branch',
+                )
+            ],
+        )
     )
     benchmark(v.validate_python, definition_model_data)
 

@@ -21,7 +21,6 @@ use super::errors::se_err_py_err;
 use super::extra::Extra;
 use super::infer::infer_json_key;
 use super::ob_type::{IsType, ObType};
-use super::type_serializers::definitions::DefinitionRefSerializer;
 
 pub(crate) trait BuildSerializer: Sized {
     const EXPECTED_TYPE: &'static str;
@@ -207,13 +206,6 @@ impl BuildSerializer for CombinedSerializer {
         config: Option<&PyDict>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        let py: Python = schema.py();
-        if let Some(schema_ref) = schema.get_as::<String>(intern!(py, "ref"))? {
-            let inner_ser = Self::_build(schema, config, definitions)?;
-            let ser_id = definitions.add_definition(schema_ref, inner_ser)?;
-            return Ok(DefinitionRefSerializer::from_id(ser_id));
-        }
-
         Self::_build(schema, config, definitions)
     }
 }

@@ -207,7 +207,7 @@ jobs:
         run: |
           pip install pdm maturin
           pdm venv create --with-pip
-          pdm install -G testing
+          pdm install -G testing -G email
           pdm run pip install maturin
           pdm run bash -c 'cd ../pydantic-core && make build-dev'
         working-directory: pydantic

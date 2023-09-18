@@ -255,8 +255,12 @@ all_schema_functions = [
     (core_schema.is_subclass_schema, args(MyModel), {'type': 'is-subclass', 'cls': MyModel}),
     (
         core_schema.definitions_schema,
-        args({'type': 'int'}, [{'type': 'int'}]),
-        {'type': 'definitions', 'schema': {'type': 'int'}, 'definitions': [{'type': 'int'}]},
+        args({'type': 'definition-ref', 'schema_ref': 'an-int'}, [{'type': 'int', 'ref': 'an-int'}]),
+        {
+            'type': 'definitions',
+            'schema': {'type': 'definition-ref', 'schema_ref': 'an-int'},
+            'definitions': [{'type': 'int', 'ref': 'an-int'}],
+        },
     ),
     (core_schema.definition_reference_schema, args('foo'), {'type': 'definition-ref', 'schema_ref': 'foo'}),
     (

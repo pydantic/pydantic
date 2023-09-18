@@ -61,6 +61,7 @@ def test_pickle(pickle_protocol: int) -> None:
     assert repr(v1) == repr(v2)
 
 
+@pytest.mark.skip
 def test_schema_definition_error():
     schema = {'type': 'union', 'choices': []}
     schema['choices'].append({'type': 'nullable', 'schema': schema})

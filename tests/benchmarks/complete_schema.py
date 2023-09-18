@@ -191,22 +191,28 @@ def schema(*, strict: bool = False) -> dict:
                 'field_recursive': {
                     'type': 'model-field',
                     'schema': {
-                        'ref': 'Branch',
-                        'type': 'typed-dict',
-                        'fields': {
-                            'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                            'sub_branch': {
-                                'type': 'typed-dict-field',
-                                'schema': {
-                                    'type': 'default',
-                                    'schema': {
-                                        'type': 'nullable',
-                                        'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
+                        'type': 'definitions',
+                        'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
+                        'definitions': [
+                            {
+                                'type': 'typed-dict',
+                                'fields': {
+                                    'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                                    'sub_branch': {
+                                        'type': 'typed-dict-field',
+                                        'schema': {
+                                            'type': 'default',
+                                            'schema': {
+                                                'type': 'nullable',
+                                                'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
+                                            },
+                                            'default': None,
+                                        },
                                     },
-                                    'default': None,
                                 },
-                            },
-                        },
+                                'ref': 'Branch',
+                            }
+                        ],
                     },
                 },
             },

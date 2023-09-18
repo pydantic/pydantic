@@ -25,8 +25,11 @@ impl BuildValidator for DefinitionsValidatorBuilder {
         let schema_definitions: &PyList = schema.get_as_req(intern!(py, "definitions"))?;
 
         for schema_definition in schema_definitions {
-            build_validator(schema_definition, config, definitions)?;
-            // no need to store the validator here, it has already been stored in definitions if necessary
+            let reference = schema_definition
+                .extract::<&PyDict>()?
+                .get_as_req::<String>(intern!(py, "ref"))?;
+            let validator = build_validator(schema_definition, config, definitions)?;
+            definitions.add_definition(reference, validator)?;
         }
 
         let inner_schema: &PyAny = schema.get_as_req(intern!(py, "schema"))?;
