@@ -288,6 +288,7 @@ pub struct FunctionWrapValidator {
     field_name: Option<Py<PyString>>,
     info_arg: bool,
     hide_input_in_errors: bool,
+    validation_error_cause: bool,
 }
 
 impl BuildValidator for FunctionWrapValidator {
@@ -302,6 +303,7 @@ impl BuildValidator for FunctionWrapValidator {
         let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
         let function_info = destructure_function_schema(schema)?;
         let hide_input_in_errors: bool = config.get_as(intern!(py, "hide_input_in_errors"))?.unwrap_or(false);
+        let validation_error_cause: bool = config.get_as(intern!(py, "validation_error_cause"))?.unwrap_or(false);
         Ok(Self {
             validator: Box::new(validator),
             func: function_info.function.clone(),
@@ -313,6 +315,7 @@ impl BuildValidator for FunctionWrapValidator {
             field_name: function_info.field_name.clone(),
             info_arg: function_info.info_arg,
             hide_input_in_errors,
+            validation_error_cause,
         }
         .into())
     }
@@ -356,6 +359,7 @@ impl Validator for FunctionWrapValidator {
                 &self.validator,
                 state,
                 self.hide_input_in_errors,
+                self.validation_error_cause,
             ),
         };
         self._validate(
@@ -381,6 +385,7 @@ impl Validator for FunctionWrapValidator {
                 &self.validator,
                 state,
                 self.hide_input_in_errors,
+                self.validation_error_cause,
             ),
             updated_field_name: field_name.to_string(),
             updated_field_value: field_value.to_object(py),
@@ -478,12 +483,12 @@ impl AssignmentValidatorCallable {
 }
 
 macro_rules! py_err_string {
-    ($error_value:expr, $type_member:ident, $input:ident) => {
+    ($py:expr, $py_err:expr, $error_value:expr, $type_member:ident, $input:ident) => {
         match $error_value.str() {
             Ok(py_string) => match py_string.to_str() {
                 Ok(_) => ValError::new(
                     ErrorType::$type_member {
-                        error: Some($error_value.into()),
+                        error: Some($py_err.into_py($py)),
                         context: None,
                     },
                     $input,
@@ -499,17 +504,18 @@ macro_rules! py_err_string {
 /// as validation errors, `TypeError` is now considered as a runtime error to catch errors in function signatures
 pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> ValError<'a> {
     if err.is_instance_of::<PyValueError>(py) {
-        if let Ok(pydantic_value_error) = err.value(py).extract::<PydanticCustomError>() {
+        let error_value = err.value(py);
+        if let Ok(pydantic_value_error) = error_value.extract::<PydanticCustomError>() {
             pydantic_value_error.into_val_error(input)
-        } else if let Ok(pydantic_error_type) = err.value(py).extract::<PydanticKnownError>() {
+        } else if let Ok(pydantic_error_type) = error_value.extract::<PydanticKnownError>() {
             pydantic_error_type.into_val_error(input)
         } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
             validation_error.into_val_error(py)
         } else {
-            py_err_string!(err.value(py), ValueError, input)
+            py_err_string!(py, err, error_value, ValueError, input)
         }
     } else if err.is_instance_of::<PyAssertionError>(py) {
-        py_err_string!(err.value(py), AssertionError, input)
+        py_err_string!(py, err, err.value(py), AssertionError, input)
     } else if err.is_instance_of::<PydanticOmit>(py) {
         ValError::Omit
     } else if err.is_instance_of::<PydanticUseDefault>(py) {
