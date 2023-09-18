@@ -61,6 +61,22 @@ types:
         * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
         * `int` or `float` as a string (assumed as Unix time)
 
+```py
+from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class Event(BaseModel):
+    dt: datetime = None
+
+
+event = Event(dt='2032-04-23T10:20:30.400+02:30')
+
+print(event.model_dump())
+#> {'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(+02:30))}
+```
+
 ### `datetime.date`
 * `date` fields will accept values of type:
 
@@ -70,12 +86,44 @@ types:
         * `YYYY-MM-DD`
         * `int` or `float` as a string (assumed as Unix time)
 
+```py
+from datetime import date
+
+from pydantic import BaseModel
+
+
+class Birthday(BaseModel):
+    d: date = None
+
+
+my_birthday = Birthday(d=1679616000.0)
+
+print(my_birthday.model_dump())
+#> {'d': datetime.date(2023, 3, 24)}
+```
+
 ### `datetime.time`
 * `time` fields will accept values of type:
 
     * `time`; an existing `time` object
     * `str`; the following formats are accepted:
         * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+
+```py
+from datetime import time
+
+from pydantic import BaseModel
+
+
+class Meeting(BaseModel):
+    t: time = None
+
+
+m = Meeting(t=time(4, 8, 16))
+
+print(m.model_dump())
+#> {'t': datetime.time(4, 8, 16)}
+```
 
 ### `datetime.timdelta`
 * `timedelta` fields will accept values of type:
@@ -87,28 +135,17 @@ types:
         * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
 ```py
-from datetime import date, datetime, time, timedelta
+from datetime import timedelta
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    d: date = None
-    dt: datetime = None
-    t: time = None
     td: timedelta = None
 
 
-m = Model(
-    d=1679616000.0,
-    dt='2032-04-23T10:20:30.400+02:30',
-    t=time(4, 8, 16),
-    td='P3DT12H30M5S',
-)
+m = Model(td='P3DT12H30M5S')
 
 print(m.model_dump())
-"""
-{'d': datetime.date(2023, 3, 24), 'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(+02:30)), 't': datetime.time(4, 8, 16), 'td': datetime.timedelta(days=3, seconds=45005)}
-"""
+#> {'td': datetime.timedelta(days=3, seconds=45005)}
 ```
-
