@@ -61,6 +61,8 @@ class CoreConfig(TypedDict, total=False):
         ser_json_timedelta: The serialization option for `timedelta` values. Default is 'iso8601'.
         ser_json_bytes: The serialization option for `bytes` values. Default is 'utf8'.
         hide_input_in_errors: Whether to hide input data from `ValidationError` representation.
+        validation_error_cause: Whether to add user-python excs to the __cause__ of a ValidationError.
+            Requires exceptiongroup backport pre Python 3.11.
     """
 
     title: str
@@ -92,6 +94,7 @@ class CoreConfig(TypedDict, total=False):
     ser_json_bytes: Literal['utf8', 'base64']  # default: 'utf8'
     # used to hide input data from ValidationError repr
     hide_input_in_errors: bool
+    validation_error_cause: bool  # default: False
 
 
 IncExCall: TypeAlias = 'set[int | str] | dict[int | str, IncExCall] | None'
