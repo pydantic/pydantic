@@ -98,6 +98,7 @@ testing-extra = [
     "devtools",
     # used in docs tests
     "sqlalchemy>=2.0,<3.0",
+    "greenlet>=3.0.0rc3",
 ]
 testing = [
     "coverage[toml]",
