@@ -1522,6 +1522,29 @@ def test_enum_fails(cooking_model):
     ]
 
 
+def test_enum_fails_error_msg():
+    class Number(IntEnum):
+        one = 1
+        two = 2
+        three = 3
+
+    class Model(BaseModel):
+        num: Number
+
+    with pytest.raises(ValueError) as exc_info:
+        Model(num=4)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'enum',
+            'loc': ('num',),
+            'msg': 'Input should be 1, 2 or 3',
+            'input': 4,
+            'ctx': {'expected': '1, 2 or 3'},
+        }
+    ]
+
+
 def test_int_enum_successful_for_str_int(cooking_model):
     FruitEnum, ToolEnum, CookingModel = cooking_model
     m = CookingModel(tool='2')
