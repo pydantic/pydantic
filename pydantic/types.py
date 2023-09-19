@@ -140,7 +140,32 @@ def conint(
     le: int | None = None,
     multiple_of: int | None = None,
 ) -> type[int]:
-    """A wrapper around `int` that allows for additional constraints.
+    """!!! warning "Discouraged"
+        This function is **discouraged** in favor of using
+        [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
+        [`Field`][pydantic.fields.Field] instead.
+
+        This function will be **deprecated** in Pydantic 3.0.
+
+        The reason is that `conint` returns a type, which doesn't play well with static analysis tools.
+
+        === ":x: Don't do this"
+            ```py
+            from pydantic import BaseModel, conint
+
+            class Foo(BaseModel):
+                bar: conint(strict=True, gt=0)
+            ```
+
+        === ":white_check_mark: Do this"
+            ```py
+            from pydantic import Annotated, BaseModel, Field
+
+            class Foo(BaseModel):
+                bar: Annotated[int, Field(strict=True, gt=0)]
+            ```
+
+    A wrapper around `int` that allows for additional constraints.
 
     Args:
         strict: Whether to validate the integer in strict mode. Defaults to `None`.
@@ -358,7 +383,32 @@ def confloat(
     multiple_of: float | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[float]:
-    """A wrapper around `float` that allows for additional constraints.
+    """!!! warning "Discouraged"
+        This function is **discouraged** in favor of using
+        [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
+        [`Field`][pydantic.fields.Field] instead.
+
+        This function will be **deprecated** in Pydantic 3.0.
+
+        The reason is that `confloat` returns a type, which doesn't play well with static analysis tools.
+
+        === ":x: Don't do this"
+            ```py
+            from pydantic import BaseModel, confloat
+
+            class Foo(BaseModel):
+                bar: confloat(strict=True, gt=0)
+            ```
+
+        === ":white_check_mark: Do this"
+            ```py
+            from pydantic import Annotated, BaseModel, Field
+
+            class Foo(BaseModel):
+                bar: Annotated[float, Field(strict=True, gt=0)]
+            ```
+
+    A wrapper around `float` that allows for additional constraints.
 
     Args:
         strict: Whether to validate the float in strict mode.
@@ -918,7 +968,34 @@ def condecimal(
     decimal_places: int | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[Decimal]:
-    """A wrapper around Decimal that adds validation.
+    """!!! warning "Discouraged"
+        This function is **discouraged** in favor of using
+        [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
+        [`Field`][pydantic.fields.Field] instead.
+
+        This function will be **deprecated** in Pydantic 3.0.
+
+        The reason is that `condecimal` returns a type, which doesn't play well with static analysis tools.
+
+        === ":x: Don't do this"
+            ```py
+            from pydantic import BaseModel, condecimal
+
+            class Foo(BaseModel):
+                bar: condecimal(strict=True, allow_inf_nan=True)
+            ```
+
+        === ":white_check_mark: Do this"
+            ```py
+            from decimal import Decimal
+
+            from pydantic import Annotated, BaseModel, Field
+
+            class Foo(BaseModel):
+                bar: Annotated[Decimal, Field(strict=True, allow_inf_nan=True)]
+            ```
+
+    A wrapper around Decimal that adds validation.
 
     Args:
         strict: Whether to validate the value in strict mode. Defaults to `None`.
