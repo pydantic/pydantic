@@ -542,11 +542,8 @@ def pretty_print_core_schema(
     This is intended for debugging purposes.
 
     Args:
-        schema (CoreSchema): The CoreSchema to print.
-        include_metadata (bool, optional): Whether to include metadata in the output. Defaults to False.
-
-    Returns:
-        None
+        schema: The CoreSchema to print.
+        include_metadata: Whether to include metadata in the output. Defaults to `False`.
     """
     from rich import print  # type: ignore  # install it manually in your dev env
 
