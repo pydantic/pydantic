@@ -22,6 +22,10 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
     definitions = collect_definitions(schema)
 
     def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
+        if 'metadata' in s:
+            if s['metadata'].get('pydantic.needs_discriminator', False):
+                return s
+
         s = recurse(s, inner)
         if s['type'] == 'tagged-union':
             return s

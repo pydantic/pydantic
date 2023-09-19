@@ -38,7 +38,11 @@ def test_generic_model_signature():
     class Model(BaseModel, Generic[T]):
         a: T
 
-    sig = signature(Model[int])
+    IntModel = Model[int]
+
+    assert IntModel.model_validate({'a': '1'}).a == 1
+
+    sig = signature(IntModel)
     assert sig != signature(BaseModel)
     assert _equals(map(str, sig.parameters.values()), ('a: int',))
     assert _equals(str(sig), '(*, a: int) -> None')

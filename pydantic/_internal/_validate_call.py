@@ -10,7 +10,7 @@ import pydantic_core
 from ..config import ConfigDict
 from . import _discriminated_union, _generate_schema, _typing_extra
 from ._config import ConfigWrapper
-from ._core_utils import flatten_schema_defs, inline_schema_defs
+from ._core_utils import simplify_schema_references
 
 
 @dataclass
@@ -61,11 +61,12 @@ class ValidateCallWrapper:
         namespace = _typing_extra.add_module_globals(function, None)
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
-        self.__pydantic_core_schema__ = schema = gen_schema.collect_definitions(gen_schema.generate_schema(function))
+        schema = gen_schema.collect_definitions(gen_schema.generate_schema(function))
+        schema = simplify_schema_references(schema)
+        self.__pydantic_core_schema__ = schema = schema
         core_config = config_wrapper.core_config(self)
-        schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
-        simplified_schema = inline_schema_defs(schema)
-        self.__pydantic_validator__ = pydantic_core.SchemaValidator(simplified_schema, core_config)
+        schema = _discriminated_union.apply_discriminators(schema)
+        self.__pydantic_validator__ = pydantic_core.SchemaValidator(schema, core_config)
 
         if self._validate_return:
             return_type = (
@@ -74,13 +75,11 @@ class ValidateCallWrapper:
                 else Any
             )
             gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
-            self.__return_pydantic_core_schema__ = schema = gen_schema.collect_definitions(
-                gen_schema.generate_schema(return_type)
-            )
+            schema = gen_schema.collect_definitions(gen_schema.generate_schema(return_type))
+            schema = _discriminated_union.apply_discriminators(simplify_schema_references(schema))
+            self.__return_pydantic_core_schema__ = schema
             core_config = config_wrapper.core_config(self)
-            schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
-            simplified_schema = inline_schema_defs(schema)
-            validator = pydantic_core.SchemaValidator(simplified_schema, core_config)
+            validator = pydantic_core.SchemaValidator(schema, core_config)
             if inspect.iscoroutinefunction(self.raw_function):
 
                 async def return_val_wrapper(aw: Awaitable[Any]) -> None:

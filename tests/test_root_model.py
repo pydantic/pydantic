@@ -47,11 +47,6 @@ def check_schema(schema: CoreSchema) -> None:
     # we assume the shape of the core schema here, which is not a guarantee
     # pydantic makes to its users but is useful to check here to make sure
     # we are doing the right thing internally
-    assert schema['type'] == 'definitions'
-    inner = schema['schema']
-    assert inner['type'] == 'definition-ref'
-    ref = inner['schema_ref']  # type: ignore
-    schema = next(s for s in schema['definitions'] if s['ref'] == ref)  # type: ignore
     assert schema['type'] == 'model'
     assert schema['root_model'] is True
     assert schema['custom_init'] is False

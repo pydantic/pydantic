@@ -16,7 +16,7 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
+from ._core_utils import collect_invalid_schemas, simplify_schema_references
 from ._decorators import (
     ComputedFieldInfo,
     DecoratorInfos,
@@ -487,16 +487,16 @@ def complete_model_class(
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
-    schema = apply_discriminators(flatten_schema_defs(schema))
     if collect_invalid_schemas(schema):
         set_model_mocks(cls, cls_name)
         return False
 
+    schema = apply_discriminators(simplify_schema_references(schema))
+
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-    simplified_core_schema = inline_schema_defs(schema)
-    cls.__pydantic_validator__ = SchemaValidator(simplified_core_schema, core_config)
-    cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
+    cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
