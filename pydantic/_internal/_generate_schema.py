@@ -50,6 +50,7 @@ from ._core_metadata import (
     build_metadata_dict,
 )
 from ._core_utils import (
+    NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
     define_expected_missing_refs,
     get_type_ref,
@@ -357,6 +358,22 @@ class GenerateSchema:
             ' `__get_pydantic_core_schema__` on `<some type>` otherwise to avoid infinite recursion.'
         )
 
+    def _apply_discriminator_to_union(self, schema: CoreSchema, discriminator: Any) -> CoreSchema:
+        try:
+            return _discriminated_union.apply_discriminator(
+                schema,
+                discriminator,
+            )
+        except _discriminated_union.MissingDefinitionForUnionRef:
+            # defer until defs are resolved
+            _discriminated_union.set_discriminator(
+                schema,
+                discriminator,
+            )
+            schema.setdefault('metadata', {})[NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = True
+            self._needs_apply_discriminated_union = True
+            return schema
+
     def collect_definitions(self, schema: CoreSchema) -> CoreSchema:
         ref = cast('str | None', schema.get('ref', None))
         if ref:
@@ -510,7 +527,7 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[model_ref] = schema
+                self.defs.definitions[model_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(model_ref)
 
     def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
@@ -566,7 +583,7 @@ class GenerateSchema:
 
         ref: str | None = schema.get('ref', None)
         if ref:
-            self.defs.definitions[ref] = schema
+            self.defs.definitions[ref] = self._post_process_generated_schema(schema)
             return core_schema.definition_reference_schema(ref)
 
         schema = self._post_process_generated_schema(schema)
@@ -628,7 +645,7 @@ class GenerateSchema:
 
     def _post_process_generated_schema(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         schema.setdefault('metadata', {})[
-            'pydantic.needs_apply_discriminated_union'
+            NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY
         ] = self._needs_apply_discriminated_union
         return schema
 
@@ -863,8 +880,7 @@ class GenerateSchema:
         source_type, annotations = field_info.annotation, field_info.metadata
 
         def set_discriminator(schema: CoreSchema) -> CoreSchema:
-            _discriminated_union.set_discriminator(schema, field_info.discriminator)
-            self._needs_apply_discriminated_union = True
+            schema = self._apply_discriminator_to_union(schema, field_info.discriminator)
             return schema
 
         if field_info.discriminator is not None:
@@ -1082,7 +1098,7 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
-                self.defs.definitions[typed_dict_ref] = schema
+                self.defs.definitions[typed_dict_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(typed_dict_ref)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
@@ -1335,7 +1351,7 @@ class GenerateSchema:
                 )
                 schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[dataclass_ref] = schema
+                self.defs.definitions[dataclass_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(dataclass_ref)
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
@@ -1542,11 +1558,7 @@ class GenerateSchema:
                 schema = self._apply_single_annotation(schema, field_metadata)
 
             if metadata.discriminator is not None:
-                _discriminated_union.set_discriminator(
-                    schema,
-                    metadata.discriminator,
-                )
-                self._needs_apply_discriminated_union = True
+                schema = self._apply_discriminator_to_union(schema, metadata.discriminator)
             return schema
 
         if schema['type'] == 'nullable':

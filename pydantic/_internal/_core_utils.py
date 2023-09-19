@@ -39,6 +39,10 @@ _CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field'
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
 _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozenset'}
 
+_DEFINITIONS_CACHE_METADATA_KEY = 'pydantic.definitions_cache'
+
+NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY = 'pydantic.needs_apply_discriminated_union'
+
 
 def is_core_schema(
     schema: CoreSchemaOrField,
@@ -115,7 +119,7 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
 
     def _record_valid_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if 'metadata' in s:
-            definitions_cache: _DefinitionsState | None = s['metadata'].get('pydantic.definitions_cache', None)
+            definitions_cache: _DefinitionsState | None = s['metadata'].get(_DEFINITIONS_CACHE_METADATA_KEY, None)
             if definitions_cache is not None:
                 defs.update(definitions_cache['definitions'])
                 return s
@@ -446,7 +450,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 
     def collect_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if 'metadata' in s:
-            definitions_cache: _DefinitionsState | None = s['metadata'].get('pydantic.definitions_cache', None)
+            definitions_cache: _DefinitionsState | None = s['metadata'].get(_DEFINITIONS_CACHE_METADATA_KEY, None)
             if definitions_cache is not None:
                 state['definitions'].update(definitions_cache['definitions'])
                 return s
@@ -471,7 +475,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 
     def count_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if 'metadata' in s:
-            definitions_cache: _DefinitionsState | None = s['metadata'].get('pydantic.definitions_cache', None)
+            definitions_cache: _DefinitionsState | None = s['metadata'].get(_DEFINITIONS_CACHE_METADATA_KEY, None)
             if definitions_cache is not None:
                 for ref in definitions_cache['ref_counts']:
                     state['ref_counts'][ref] += definitions_cache['ref_counts'][ref]
@@ -543,7 +547,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 
     if definitions:
         schema = core_schema.definitions_schema(schema=schema, definitions=definitions)
-    schema.setdefault('metadata', {})['pydantic.definitions_cache'] = definitions_cache  # type: ignore
+    schema.setdefault('metadata', {})[_DEFINITIONS_CACHE_METADATA_KEY] = definitions_cache  # type: ignore
     return schema
 
 
@@ -563,6 +567,7 @@ def pretty_print_core_schema(
     if not include_metadata:
 
         def strip_metadata(s: CoreSchema, recurse: Recurse) -> CoreSchema:
+            s = s.copy()
             s.pop('metadata', None)
             if s['type'] == 'model-fields':
                 s = s.copy()
@@ -584,7 +589,7 @@ def pretty_print_core_schema(
                 if s.get('root_model', True) is False:
                     s.pop('root_model')
                 if {'title'}.issuperset(s.get('config', {}).keys()):
-                    s.pop('config')
+                    s.pop('config', None)
 
             return recurse(s, strip_metadata)
 
