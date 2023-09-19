@@ -851,6 +851,15 @@ else:
         not the original JSON string. However, you can use the argument `round_trip=True` to get the original JSON string back:
 
         ```py
+        from typing import List
+
+        from pydantic import BaseModel, Json
+
+
+        class ConstrainedJsonModel(BaseModel):
+            json_obj: Json[List[int]]
+
+
         print(ConstrainedJsonModel(json_obj='[1, 2, 3]').model_dump_json())
         #> {"json_obj":[1,2,3]}
         print(
