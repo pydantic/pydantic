@@ -8,7 +8,7 @@ use ahash::AHashSet;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::{GenericArguments, Input};
+use crate::input::{BorrowInput, GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
@@ -188,15 +188,21 @@ impl Validator for DataclassArgsValidator {
                                     kw_value = Some((lookup_path, value));
                                 }
                             }
+                            let kw_value = kw_value
+                                .as_ref()
+                                .map(|(path, value)| (path, value.borrow_input()));
 
                             match (pos_value, kw_value) {
                                 // found both positional and keyword arguments, error
                                 (Some(_), Some((_, kw_value))) => {
-                                    errors.push(ValLineError::new_with_loc(
-                                        ErrorTypeDefaults::MultipleArgumentValues,
-                                        kw_value,
-                                        field.name.clone(),
-                                    ));
+                                    errors.push(
+                                        ValLineError::new_with_loc(
+                                            ErrorTypeDefaults::MultipleArgumentValues,
+                                            kw_value,
+                                            field.name.clone(),
+                                        )
+                                        .into_owned(py),
+                                    );
                                 }
                                 // found a positional argument, validate it
                                 (Some(pos_value), None) => match field.validator.validate(py, pos_value, state) {
@@ -216,10 +222,12 @@ impl Validator for DataclassArgsValidator {
                                         Ok(value) => set_item!(field, value),
                                         Err(ValError::LineErrors(line_errors)) => {
                                             errors.extend(line_errors.into_iter().map(|err| {
-                                                lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name)
+                                                lookup_path
+                                                    .apply_error_loc(err, self.loc_by_alias, &field.name)
+                                                    .into_owned(py)
                                             }));
                                         }
-                                        Err(err) => return Err(err),
+                                        Err(err) => return Err(err.into_owned(py)),
                                     }
                                 }
                                 // found neither, check if there is a default value, otherwise error
@@ -267,11 +275,14 @@ impl Validator for DataclassArgsValidator {
                                                 // Unknown / extra field
                                                 match self.extra_behavior {
                                                     ExtraBehavior::Forbid => {
-                                                        errors.push(ValLineError::new_with_loc(
-                                                            ErrorTypeDefaults::UnexpectedKeywordArgument,
-                                                            value,
-                                                            raw_key.as_loc_item(),
-                                                        ));
+                                                        errors.push(
+                                                            ValLineError::new_with_loc(
+                                                                ErrorTypeDefaults::UnexpectedKeywordArgument,
+                                                                value,
+                                                                raw_key.as_loc_item(),
+                                                            )
+                                                            .into_owned(py),
+                                                        );
                                                     }
                                                     ExtraBehavior::Ignore => {}
                                                     ExtraBehavior::Allow => {
@@ -310,9 +321,24 @@ impl Validator for DataclassArgsValidator {
                         }
                     }};
                 }
+
                 match args {
                     GenericArguments::Py(a) => process!(a, py_get_dict_item, py_get, py_slice),
                     GenericArguments::Json(a) => process!(a, json_get, json_get, json_slice),
+                    GenericArguments::StringMapping(a) => {
+                        // StringMapping cannot pass positional args, so wrap the PyDict
+                        // in a type with guaranteed empty args array for sake of the process
+                        // macro
+                        struct StringMappingArgs<'a> {
+                            args: Option<&'a PyTuple>,
+                            kwargs: Option<&'a PyDict>,
+                        }
+                        let a = StringMappingArgs {
+                            args: None,
+                            kwargs: Some(a),
+                        };
+                        process!(a, py_get_string_mapping_item, py_get, py_slice);
+                    }
                 }
                 Ok(())
             },

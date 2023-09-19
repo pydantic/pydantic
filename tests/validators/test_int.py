@@ -402,7 +402,8 @@ def test_int_key(py_and_json: PyAndJson):
     v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'1': 1, '2': 2}) == {1: 1, 2: 2}
     with pytest.raises(ValidationError, match='Input should be a valid integer'):
-        v.validate_test({'1': 1, '2': 2}, strict=True)
+        v.validate_python({'1': 1, '2': 2}, strict=True)
+    assert v.validate_json('{"1": 1, "2": 2}', strict=True) == {1: 1, 2: 2}
 
 
 def test_string_as_int_with_underscores() -> None:

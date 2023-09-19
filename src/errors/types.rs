@@ -2,37 +2,20 @@ use std::any::type_name;
 use std::borrow::Cow;
 use std::fmt;
 
-use ahash::AHashMap;
-use num_bigint::BigInt;
-use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyKeyError, PyTypeError};
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::input::Int;
-use crate::tools::{extract_i64, py_err, py_error_type};
+use ahash::AHashMap;
+use num_bigint::BigInt;
 use strum::{Display, EnumMessage, IntoEnumIterator};
 use strum_macros::EnumIter;
 
+use crate::input::{InputType, Int};
+use crate::tools::{extract_i64, py_err, py_error_type};
+
 use super::PydanticCustomError;
-
-#[derive(Clone, Debug)]
-pub enum ErrorMode {
-    Python,
-    Json,
-}
-
-impl TryFrom<&str> for ErrorMode {
-    type Error = PyErr;
-
-    fn try_from(error_mode: &str) -> PyResult<Self> {
-        match error_mode {
-            "python" => Ok(Self::Python),
-            "json" => Ok(Self::Json),
-            s => py_err!(PyValueError; "Invalid error mode: {}", s),
-        }
-    }
-}
 
 #[pyfunction]
 pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
@@ -45,12 +28,12 @@ pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
             d.set_item("message_template_python", message_template_python)?;
             d.set_item(
                 "example_message_python",
-                error_type.render_message(py, &ErrorMode::Python)?,
+                error_type.render_message(py, InputType::Python)?,
             )?;
             let message_template_json = error_type.message_template_json();
             if message_template_python != message_template_json {
                 d.set_item("message_template_json", message_template_json)?;
-                d.set_item("example_message_json", error_type.render_message(py, &ErrorMode::Json)?)?;
+                d.set_item("example_message_json", error_type.render_message(py, InputType::Json)?)?;
             }
             d.set_item("example_context", error_type.py_dict(py)?)?;
             errors.push(d);
@@ -623,10 +606,10 @@ impl ErrorType {
         }
     }
 
-    pub fn render_message(&self, py: Python, error_mode: &ErrorMode) -> PyResult<String> {
-        let tmpl = match error_mode {
-            ErrorMode::Python => self.message_template_python(),
-            ErrorMode::Json => self.message_template_json(),
+    pub fn render_message(&self, py: Python, input_type: InputType) -> PyResult<String> {
+        let tmpl = match input_type {
+            InputType::Python => self.message_template_python(),
+            _ => self.message_template_json(),
         };
         match self {
             Self::NoSuchAttribute { attribute, .. } => render!(tmpl, attribute),

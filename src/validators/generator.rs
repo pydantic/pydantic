@@ -3,7 +3,7 @@ use std::fmt;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::errors::{ErrorMode, ErrorType, LocItem, ValError, ValResult};
+use crate::errors::{ErrorType, LocItem, ValError, ValResult};
 use crate::input::{GenericIterator, Input};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
@@ -153,7 +153,7 @@ impl ValidatorIterator {
                                     return Err(ValidationError::from_val_error(
                                         py,
                                         "ValidatorIterator".to_object(py),
-                                        ErrorMode::Python,
+                                        InputType::Python,
                                         val_error,
                                         None,
                                         hide_input_in_errors,
@@ -180,7 +180,7 @@ impl ValidatorIterator {
                                 return Err(ValidationError::from_val_error(
                                     py,
                                     "ValidatorIterator".to_object(py),
-                                    ErrorMode::Python,
+                                    InputType::Python,
                                     val_error,
                                     None,
                                     hide_input_in_errors,
@@ -262,7 +262,7 @@ impl InternalValidator {
             context: extra.context.map(|d| d.into_py(py)),
             self_instance: extra.self_instance.map(|d| d.into_py(py)),
             recursion_guard: state.recursion_guard.clone(),
-            validation_mode: extra.mode,
+            validation_mode: extra.input_type,
             hide_input_in_errors,
             validation_error_cause,
         }
@@ -277,7 +277,7 @@ impl InternalValidator {
         outer_location: Option<LocItem>,
     ) -> PyResult<PyObject> {
         let extra = Extra {
-            mode: self.validation_mode,
+            input_type: self.validation_mode,
             data: self.data.as_ref().map(|data| data.as_ref(py)),
             strict: self.strict,
             ultra_strict: false,
@@ -292,7 +292,7 @@ impl InternalValidator {
                 ValidationError::from_val_error(
                     py,
                     self.name.to_object(py),
-                    ErrorMode::Python,
+                    InputType::Python,
                     e,
                     outer_location,
                     self.hide_input_in_errors,
@@ -308,7 +308,7 @@ impl InternalValidator {
         outer_location: Option<LocItem>,
     ) -> PyResult<PyObject> {
         let extra = Extra {
-            mode: self.validation_mode,
+            input_type: self.validation_mode,
             data: self.data.as_ref().map(|data| data.as_ref(py)),
             strict: self.strict,
             ultra_strict: false,
@@ -321,7 +321,7 @@ impl InternalValidator {
             ValidationError::from_val_error(
                 py,
                 self.name.to_object(py),
-                ErrorMode::Python,
+                InputType::Python,
                 e,
                 outer_location,
                 self.hide_input_in_errors,

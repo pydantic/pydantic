@@ -2,9 +2,9 @@ use num_bigint::BigInt;
 use pyo3::{intern, PyAny, Python};
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
-use crate::input::EitherInt;
 
-use super::{EitherFloat, Input};
+use super::parse_json::{JsonArray, JsonInput};
+use super::{EitherFloat, EitherInt, Input};
 
 pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: serde_json::Error) -> ValError<'a> {
     ValError::new(
@@ -149,4 +149,8 @@ pub fn decimal_as_int<'a>(py: Python, input: &'a impl Input<'a>, decimal: &'a Py
         return Err(ValError::new(ErrorTypeDefaults::IntFromFloat, input));
     }
     Ok(EitherInt::Py(numerator))
+}
+
+pub fn string_to_vec(s: &str) -> JsonArray {
+    JsonArray::new(s.chars().map(|c| JsonInput::String(c.to_string())).collect())
 }

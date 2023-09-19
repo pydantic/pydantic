@@ -455,8 +455,9 @@ impl Validator for TaggedUnionValidator {
                 let dict = input.validate_model_fields(self.strict, from_attributes)?;
                 let tag = match dict {
                     GenericMapping::PyDict(dict) => find_validator!(py_get_dict_item, dict),
-                    GenericMapping::PyGetAttr(obj, kwargs) => find_validator!(py_get_attr, obj, kwargs),
                     GenericMapping::PyMapping(mapping) => find_validator!(py_get_mapping_item, mapping),
+                    GenericMapping::StringMapping(d) => find_validator!(py_get_dict_item, d),
+                    GenericMapping::PyGetAttr(obj, kwargs) => find_validator!(py_get_attr, obj, kwargs),
                     GenericMapping::JsonObject(mapping) => find_validator!(json_get, mapping),
                 }?;
                 self.find_call_validator(py, tag, input, state)

@@ -544,7 +544,7 @@ impl ValidationInfo {
             context: extra.context.map(Into::into),
             field_name,
             data: extra.data.map(Into::into),
-            mode: extra.mode,
+            mode: extra.input_type,
         }
     }
 }

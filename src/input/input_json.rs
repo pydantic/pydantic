@@ -12,11 +12,10 @@ use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
-use super::parse_json::JsonArray;
-use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int};
+use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int, string_to_vec};
 use super::{
-    EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
-    GenericIterator, GenericMapping, Input, JsonArgs, JsonInput,
+    BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
+    GenericIterator, GenericMapping, Input, JsonArgs, JsonArray, JsonInput,
 };
 
 impl<'a> Input<'a> for JsonInput {
@@ -355,6 +354,15 @@ impl<'a> Input<'a> for JsonInput {
     }
 }
 
+impl BorrowInput for &'_ JsonInput {
+    type Input<'a> = JsonInput where Self: 'a;
+    fn borrow_input(&self) -> &Self::Input<'_> {
+        self
+    }
+}
+
+/// TODO: it would be good to get JsonInput and StringMapping string variants to go through this
+/// implementation
 /// Required for Dict keys so the string can behave like an Input
 impl<'a> Input<'a> for String {
     fn as_loc_item(&self) -> LocItem {
@@ -363,11 +371,6 @@ impl<'a> Input<'a> for String {
 
     fn as_error_value(&'a self) -> InputValue<'a> {
         InputValue::String(self)
-    }
-
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn is_none(&self) -> bool {
-        false
     }
 
     fn as_kwargs(&'a self, _py: Python<'a>) -> Option<&'a PyDict> {
@@ -395,47 +398,29 @@ impl<'a> Input<'a> for String {
         serde_json::from_str(self.as_str()).map_err(|e| map_json_err(self, e))
     }
 
-    fn validate_str(&'a self, _strict: bool) -> ValResult<EitherString<'a>> {
+    fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
         Ok(self.as_str().into())
     }
-    fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
-        self.validate_str(false)
-    }
 
-    fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
-        Ok(self.as_bytes().into())
-    }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
-        self.validate_bytes(false)
+        Ok(self.as_bytes().into())
     }
 
     fn strict_bool(&self) -> ValResult<bool> {
-        Err(ValError::new(ErrorTypeDefaults::BoolType, self))
-    }
-    fn lax_bool(&self) -> ValResult<bool> {
         str_as_bool(self, self)
     }
 
     fn strict_int(&'a self) -> ValResult<EitherInt<'a>> {
-        Err(ValError::new(ErrorTypeDefaults::IntType, self))
-    }
-    fn lax_int(&'a self) -> ValResult<EitherInt<'a>> {
         match self.parse() {
             Ok(i) => Ok(EitherInt::I64(i)),
             Err(_) => Err(ValError::new(ErrorTypeDefaults::IntParsing, self)),
         }
     }
 
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
         self.strict_float()
     }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        Err(ValError::new(ErrorTypeDefaults::FloatType, self))
-    }
-    fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
         str_as_float(self, self)
     }
 
@@ -444,48 +429,28 @@ impl<'a> Input<'a> for String {
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_dict(&'a self, _strict: bool) -> ValResult<GenericMapping<'a>> {
+    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
         Err(ValError::new(ErrorTypeDefaults::DictType, self))
     }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_dict(&'a self) -> ValResult<GenericMapping<'a>> {
-        self.validate_dict(false)
-    }
 
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
-        Err(ValError::new(ErrorTypeDefaults::ListType, self))
-    }
     #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_list(&'a self) -> ValResult<GenericIterable<'a>> {
-        self.validate_list(false)
+        Err(ValError::new(ErrorTypeDefaults::ListType, self))
     }
 
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
-        Err(ValError::new(ErrorTypeDefaults::TupleType, self))
-    }
     #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
-        self.validate_tuple(false)
+        Err(ValError::new(ErrorTypeDefaults::TupleType, self))
     }
 
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
-        Err(ValError::new(ErrorTypeDefaults::SetType, self))
-    }
     #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_set(&'a self) -> ValResult<GenericIterable<'a>> {
-        self.validate_set(false)
+        Err(ValError::new(ErrorTypeDefaults::SetType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
-        Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
-    }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
     fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
-        self.validate_frozenset(false)
+        Err(ValError::new(ErrorTypeDefaults::FrozenSetType, self))
     }
 
     fn extract_generic_iterable(&'a self) -> ValResult<GenericIterable<'a>> {
@@ -496,60 +461,42 @@ impl<'a> Input<'a> for String {
         Ok(string_to_vec(self).into())
     }
 
-    fn validate_date(&self, _strict: bool) -> ValResult<EitherDate> {
+    fn strict_date(&self) -> ValResult<EitherDate> {
         bytes_as_date(self, self.as_bytes())
     }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_date(&self) -> ValResult<EitherDate> {
-        self.validate_date(false)
-    }
 
-    fn validate_time(
+    fn strict_time(
         &self,
-        _strict: bool,
-        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<EitherTime> {
         bytes_as_time(self, self.as_bytes(), microseconds_overflow_behavior)
     }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_time(
-        &self,
-        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTime> {
-        self.validate_time(false, microseconds_overflow_behavior)
-    }
 
-    fn validate_datetime(
+    fn strict_datetime(
         &self,
-        _strict: bool,
-        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<EitherDateTime> {
         bytes_as_datetime(self, self.as_bytes(), microseconds_overflow_behavior)
     }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_datetime(
-        &self,
-        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherDateTime> {
-        self.validate_datetime(false, microseconds_overflow_behavior)
-    }
 
-    fn validate_timedelta(
+    fn strict_timedelta(
         &self,
-        _strict: bool,
-        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
     ) -> ValResult<EitherTimedelta> {
         bytes_as_timedelta(self, self.as_bytes(), microseconds_overflow_behavior)
     }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_timedelta(
-        &self,
-        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTimedelta> {
-        self.validate_timedelta(false, microseconds_overflow_behavior)
+}
+
+impl BorrowInput for &'_ String {
+    type Input<'a> = String where Self: 'a;
+    fn borrow_input(&self) -> &Self::Input<'_> {
+        self
     }
 }
 
-fn string_to_vec(s: &str) -> JsonArray {
-    JsonArray::new(s.chars().map(|c| JsonInput::String(c.to_string())).collect())
+impl BorrowInput for String {
+    type Input<'a> = String where Self: 'a;
+    fn borrow_input(&self) -> &Self::Input<'_> {
+        self
+    }
 }

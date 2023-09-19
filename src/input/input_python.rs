@@ -23,7 +23,7 @@ use super::datetime::{
 };
 use super::shared::{decimal_as_int, float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int};
 use super::{
-    py_string_str, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments,
+    py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments,
     GenericIterable, GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
 };
 
@@ -184,7 +184,7 @@ impl<'a> Input<'a> for PyAny {
         if let Ok(py_bytes) = self.downcast::<PyBytes>() {
             serde_json::from_slice(py_bytes.as_bytes()).map_err(|e| map_json_err(self, e))
         } else if let Ok(py_str) = self.downcast::<PyString>() {
-            let str = py_str.to_str()?;
+            let str = py_string_str(py_str)?;
             serde_json::from_str(str).map_err(|e| map_json_err(self, e))
         } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
             // Safety: from_slice does not run arbitrary Python code and the GIL is held so the
@@ -196,7 +196,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
-        if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
+        if let Ok(py_str) = PyString::try_from_exact(self) {
             Ok(py_str.into())
         } else if let Ok(py_str) = self.downcast::<PyString>() {
             // force to a rust string to make sure behavior is consistent whether or not we go via a
@@ -208,7 +208,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
-        if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
+        if let Ok(py_str) = PyString::try_from_exact(self) {
             Ok(EitherString::Py(py_str))
         } else {
             Err(ValError::new(ErrorTypeDefaults::IntType, self))
@@ -707,6 +707,13 @@ impl<'a> Input<'a> for PyAny {
         } else {
             Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self))
         }
+    }
+}
+
+impl BorrowInput for &'_ PyAny {
+    type Input<'a> = PyAny where Self: 'a;
+    fn borrow_input(&self) -> &Self::Input<'_> {
+        self
     }
 }
 

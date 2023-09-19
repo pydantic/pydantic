@@ -25,6 +25,7 @@ use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, InputValue, Val
 use crate::tools::py_err;
 use crate::validators::{CombinedValidator, ValidationState, Validator};
 
+use super::input_string::StringMapping;
 use super::parse_json::{JsonArray, JsonInput, JsonObject};
 use super::{py_error_on_minusone, Input};
 
@@ -429,6 +430,7 @@ impl<'a> GenericIterable<'a> {
 pub enum GenericMapping<'a> {
     PyDict(&'a PyDict),
     PyMapping(&'a PyMapping),
+    StringMapping(&'a PyDict),
     PyGetAttr(&'a PyAny, Option<&'a PyDict>),
     JsonObject(&'a JsonObject),
 }
@@ -503,6 +505,38 @@ impl<'py> Iterator for MappingGenericIterator<'py> {
             }),
             Err(e) => Err(mapping_err(e, self.iter.py(), self.input)),
         })
+    }
+}
+
+pub struct StringMappingGenericIterator<'py> {
+    dict_iter: PyDictIterator<'py>,
+}
+
+impl<'py> StringMappingGenericIterator<'py> {
+    pub fn new(dict: &'py PyDict) -> ValResult<'py, Self> {
+        Ok(Self { dict_iter: dict.iter() })
+    }
+}
+
+impl<'py> Iterator for StringMappingGenericIterator<'py> {
+    // key (the first member of the tuple could be a simple String)
+    type Item = ValResult<'py, (StringMapping<'py>, StringMapping<'py>)>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.dict_iter.next() {
+            Some((py_key, py_value)) => {
+                let key = match StringMapping::new_key(py_key) {
+                    Ok(key) => key,
+                    Err(e) => return Some(Err(e)),
+                };
+                let value = match StringMapping::new_value(py_value) {
+                    Ok(value) => value,
+                    Err(e) => return Some(Err(e)),
+                };
+                Some(Ok((key, value)))
+            }
+            None => None,
+        }
     }
 }
 
@@ -691,6 +725,7 @@ impl<'a> JsonArgs<'a> {
 pub enum GenericArguments<'a> {
     Py(PyArgs<'a>),
     Json(JsonArgs<'a>),
+    StringMapping(&'a PyDict),
 }
 
 impl<'a> From<PyArgs<'a>> for GenericArguments<'a> {

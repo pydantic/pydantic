@@ -16,12 +16,13 @@ use serde_json::ser::PrettyFormatter;
 use crate::build_tools::py_schema_error_type;
 use crate::errors::LocItem;
 use crate::get_pydantic_version;
+use crate::input::InputType;
 use crate::serializers::{SerMode, SerializationState};
 use crate::tools::{safe_repr, SchemaDict};
 
 use super::line_error::ValLineError;
 use super::location::Location;
-use super::types::{ErrorMode, ErrorType};
+use super::types::ErrorType;
 use super::value_exception::PydanticCustomError;
 use super::{InputValue, ValError};
 
@@ -31,16 +32,16 @@ use super::{InputValue, ValError};
 pub struct ValidationError {
     line_errors: Vec<PyLineError>,
     title: PyObject,
-    error_mode: ErrorMode,
+    input_type: InputType,
     hide_input: bool,
 }
 
 impl ValidationError {
-    pub fn new(line_errors: Vec<PyLineError>, title: PyObject, error_mode: ErrorMode, hide_input: bool) -> Self {
+    pub fn new(line_errors: Vec<PyLineError>, title: PyObject, input_type: InputType, hide_input: bool) -> Self {
         Self {
             line_errors,
             title,
-            error_mode,
+            input_type,
             hide_input,
         }
     }
@@ -48,7 +49,7 @@ impl ValidationError {
     pub fn from_val_error(
         py: Python,
         title: PyObject,
-        error_mode: ErrorMode,
+        input_type: InputType,
         error: ValError,
         outer_location: Option<LocItem>,
         hide_input: bool,
@@ -63,9 +64,7 @@ impl ValidationError {
                         .collect(),
                     None => raw_errors.into_iter().map(|e| e.into_py(py)).collect(),
                 };
-
-                let validation_error = Self::new(line_errors, title, error_mode, hide_input);
-
+                let validation_error = Self::new(line_errors, title, input_type, hide_input);
                 match Py::new(py, validation_error) {
                     Ok(err) => {
                         if validation_error_cause {
@@ -87,7 +86,7 @@ impl ValidationError {
 
     pub fn display(&self, py: Python, prefix_override: Option<&'static str>, hide_input: bool) -> String {
         let url_prefix = get_url_prefix(py, include_url_env(py));
-        let line_errors = pretty_py_line_errors(py, &self.error_mode, self.line_errors.iter(), url_prefix, hide_input);
+        let line_errors = pretty_py_line_errors(py, self.input_type, self.line_errors.iter(), url_prefix, hide_input);
         if let Some(prefix) = prefix_override {
             format!("{prefix}\n{line_errors}")
         } else {
@@ -238,12 +237,12 @@ impl ValidationError {
 #[pymethods]
 impl ValidationError {
     #[staticmethod]
-    #[pyo3(signature = (title, line_errors, error_mode="python", hide_input=false))]
+    #[pyo3(signature = (title, line_errors, input_type="python", hide_input=false))]
     fn from_exception_data(
         py: Python,
         title: PyObject,
         line_errors: &PyList,
-        error_mode: &str,
+        input_type: &str,
         hide_input: bool,
     ) -> PyResult<Py<Self>> {
         Py::new(
@@ -251,7 +250,7 @@ impl ValidationError {
             Self {
                 line_errors: line_errors.iter().map(PyLineError::try_from).collect::<PyResult<_>>()?,
                 title,
-                error_mode: ErrorMode::try_from(error_mode)?,
+                input_type: InputType::try_from(input_type)?,
                 hide_input,
             },
         )
@@ -279,7 +278,7 @@ impl ValidationError {
                 if iteration_error.is_some() {
                     return py.None();
                 }
-                e.as_dict(py, url_prefix, include_context, &self.error_mode)
+                e.as_dict(py, url_prefix, include_context, self.input_type)
                     .unwrap_or_else(|err| {
                         iteration_error = Some(err);
                         py.None()
@@ -309,7 +308,7 @@ impl ValidationError {
             url_prefix: get_url_prefix(py, include_url),
             include_context,
             extra: &extra,
-            error_mode: &self.error_mode,
+            input_type: &self.input_type,
         };
 
         let writer: Vec<u8> = Vec::with_capacity(self.line_errors.len() * 200);
@@ -387,13 +386,13 @@ macro_rules! truncate_input_value {
 
 pub fn pretty_py_line_errors<'a>(
     py: Python,
-    error_mode: &ErrorMode,
+    input_type: InputType,
     line_errors_iter: impl Iterator<Item = &'a PyLineError>,
     url_prefix: Option<&str>,
     hide_input: bool,
 ) -> String {
     line_errors_iter
-        .map(|i| i.pretty(py, error_mode, url_prefix, hide_input))
+        .map(|i| i.pretty(py, input_type, url_prefix, hide_input))
         .collect::<Result<Vec<_>, _>>()
         .unwrap_or_else(|err| vec![format!("[error formatting line errors: {err}]")])
         .join("\n")
@@ -477,12 +476,12 @@ impl PyLineError {
         py: Python,
         url_prefix: Option<&str>,
         include_context: bool,
-        error_mode: &ErrorMode,
+        input_type: InputType,
     ) -> PyResult<PyObject> {
         let dict = PyDict::new(py);
         dict.set_item("type", self.error_type.type_string())?;
         dict.set_item("loc", self.location.to_object(py))?;
-        dict.set_item("msg", self.error_type.render_message(py, error_mode)?)?;
+        dict.set_item("msg", self.error_type.render_message(py, input_type)?)?;
         dict.set_item("input", &self.input_value)?;
         if include_context {
             if let Some(context) = self.error_type.py_dict(py)? {
@@ -505,14 +504,14 @@ impl PyLineError {
     fn pretty(
         &self,
         py: Python,
-        error_mode: &ErrorMode,
+        input_type: InputType,
         url_prefix: Option<&str>,
         hide_input: bool,
     ) -> Result<String, fmt::Error> {
         let mut output = String::with_capacity(200);
         write!(output, "{}", self.location)?;
 
-        let message = match self.error_type.render_message(py, error_mode) {
+        let message = match self.error_type.render_message(py, input_type) {
             Ok(message) => message,
             Err(err) => format!("(error rendering message: {err})"),
         };
@@ -565,7 +564,7 @@ struct ValidationErrorSerializer<'py> {
     url_prefix: Option<&'py str>,
     include_context: bool,
     extra: &'py crate::serializers::Extra<'py>,
-    error_mode: &'py ErrorMode,
+    input_type: &'py InputType,
 }
 
 impl<'py> Serialize for ValidationErrorSerializer<'py> {
@@ -581,7 +580,7 @@ impl<'py> Serialize for ValidationErrorSerializer<'py> {
                 url_prefix: self.url_prefix,
                 include_context: self.include_context,
                 extra: self.extra,
-                error_mode: self.error_mode,
+                input_type: self.input_type,
             };
             seq.serialize_element(&line_s)?;
         }
@@ -595,7 +594,7 @@ struct PyLineErrorSerializer<'py> {
     url_prefix: Option<&'py str>,
     include_context: bool,
     extra: &'py crate::serializers::Extra<'py>,
-    error_mode: &'py ErrorMode,
+    input_type: &'py InputType,
 }
 
 impl<'py> Serialize for PyLineErrorSerializer<'py> {
@@ -620,7 +619,7 @@ impl<'py> Serialize for PyLineErrorSerializer<'py> {
         let msg = self
             .line_error
             .error_type
-            .render_message(py, self.error_mode)
+            .render_message(py, *self.input_type)
             .map_err(py_err_json::<S>)?;
         map.serialize_entry("msg", &msg)?;
 
