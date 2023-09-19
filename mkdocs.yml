@@ -60,7 +60,6 @@ nav:
     - Types Overview: usage/types/types.md
     - Standard Library Types: usage/types/standard_types.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
-    - Lists and Tuples: usage/types/list_types.md
     - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
     - Strict Types: usage/types/strict_types.md
