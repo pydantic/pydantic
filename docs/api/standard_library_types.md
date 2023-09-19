@@ -151,3 +151,14 @@ m = Model(td='P3DT12H30M5S')
 print(m.model_dump())
 #> {'td': datetime.timedelta(days=3, seconds=45005)}
 ```
+
+## IP Address Types
+
+* `ipaddress.IPv4Address`: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+* `ipaddress.IPv4Interface`: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+* `ipaddress.IPv4Network`: Uses the type itself for validation by passing the value to `IPv4Network(v)`.
+* `ipaddress.IPv6Address`: Uses the type itself for validation by passing the value to `IPv6Address(v)`.
+* `ipaddress.IPv6Interface`: Uses the type itself for validation by passing the value to `IPv6Interface(v)`.
+* `ipaddress.IPv6Network`: Uses the type itself for validation by passing the value to `IPv6Network(v)`.
+
+See [Network Types](../api/networks.md) for other custom IP address types.
