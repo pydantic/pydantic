@@ -1162,7 +1162,7 @@ To do this, you may want to use a `default_factory`.
 Here is an example:
 
 ```py
-from datetime import datetime
+from datetime import datetime, UTC
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -1170,9 +1170,7 @@ from pydantic import BaseModel, Field
 
 class Model(BaseModel):
     uid: UUID = Field(default_factory=uuid4)
-    updated: datetime = Field(
-        default_factory=lambda: datetime.now(datetime.UTC)
-    )
+    updated: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 m1 = Model()
