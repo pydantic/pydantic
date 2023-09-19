@@ -1,4 +1,5 @@
 import datetime
+import sys
 from typing import Dict, List, Tuple, TypeVar, Union
 
 import pytest
@@ -133,6 +134,7 @@ def test_recursive_type_alias() -> None:
     }
 
 
+@pytest.mark.xfail(sys.version_info >= (3, 12), reason="TypeAliasType doesn't have __qualname__ yet")
 def test_type_alias_annotated() -> None:
     t = TypeAdapter(ShortMyList[int])
 
@@ -153,6 +155,7 @@ def test_type_alias_annotated() -> None:
     assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'maxItems': 1}
 
 
+@pytest.mark.xfail(sys.version_info >= (3, 12), reason="TypeAliasType doesn't have __qualname__ yet")
 def test_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
     t = TypeAdapter(Tuple[ShortMyList[int], ShortMyList[int]])
@@ -230,6 +233,7 @@ def test_recursive_generic_type_alias() -> None:
     }
 
 
+@pytest.mark.xfail(sys.version_info >= (3, 12), reason="TypeAliasType doesn't have __qualname__ yet")
 def test_recursive_generic_type_alias_annotated() -> None:
     t = TypeAdapter(ShortRecursiveGenericAlias[int])
 
@@ -261,6 +265,7 @@ def test_recursive_generic_type_alias_annotated() -> None:
     }
 
 
+@pytest.mark.xfail(sys.version_info >= (3, 12), reason="TypeAliasType doesn't have __qualname__ yet")
 def test_recursive_generic_type_alias_annotated_defs() -> None:
     # force use of refs by referencing the schema in multiple places
     t = TypeAdapter(Tuple[ShortRecursiveGenericAlias[int], ShortRecursiveGenericAlias[int]])
