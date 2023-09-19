@@ -4,7 +4,11 @@ use pyo3::types::PyDict;
 
 use crate::build_tools::is_strict;
 use crate::errors::{ValError, ValLineError, ValResult};
-use crate::input::{DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator, MappingGenericIterator};
+use crate::input::BorrowInput;
+use crate::input::{
+    DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator, MappingGenericIterator,
+    StringMappingGenericIterator,
+};
 
 use crate::tools::SchemaDict;
 
@@ -78,6 +82,9 @@ impl Validator for DictValidator {
             GenericMapping::PyMapping(mapping) => {
                 self.validate_generic_mapping(py, input, MappingGenericIterator::new(mapping)?, state)
             }
+            GenericMapping::StringMapping(dict) => {
+                self.validate_generic_mapping(py, input, StringMappingGenericIterator::new(dict)?, state)
+            }
             GenericMapping::PyGetAttr(_, _) => unreachable!(),
             GenericMapping::JsonObject(json_object) => {
                 self.validate_generic_mapping(py, input, JsonObjectGenericIterator::new(json_object)?, state)
@@ -113,9 +120,7 @@ impl DictValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        mapping_iter: impl Iterator<
-            Item = ValResult<'data, (&'data (impl Input<'data> + 'data), &'data (impl Input<'data> + 'data))>,
-        >,
+        mapping_iter: impl Iterator<Item = ValResult<'data, (impl BorrowInput + 'data, impl BorrowInput + 'data)>>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let output = PyDict::new(py);
@@ -125,6 +130,8 @@ impl DictValidator {
         let value_validator = self.value_validator.as_ref();
         for item_result in mapping_iter {
             let (key, value) = item_result?;
+            let key = key.borrow_input();
+            let value = value.borrow_input();
             let output_key = match key_validator.validate(py, key, state) {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
@@ -132,24 +139,25 @@ impl DictValidator {
                         // these are added in reverse order so [key] is shunted along by the second call
                         errors.push(
                             err.with_outer_location("[key]".into())
-                                .with_outer_location(key.as_loc_item()),
+                                .with_outer_location(key.as_loc_item())
+                                .into_owned(py),
                         );
                     }
                     None
                 }
                 Err(ValError::Omit) => continue,
-                Err(err) => return Err(err),
+                Err(err) => return Err(err.into_owned(py)),
             };
             let output_value = match value_validator.validate(py, value, state) {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
                     for err in line_errors {
-                        errors.push(err.with_outer_location(key.as_loc_item()));
+                        errors.push(err.with_outer_location(key.as_loc_item()).into_owned(py));
                     }
                     None
                 }
                 Err(ValError::Omit) => continue,
-                Err(err) => return Err(err),
+                Err(err) => return Err(err.into_owned(py)),
             };
             if let (Some(key), Some(value)) = (output_key, output_value) {
                 output.set_item(key, value)?;

@@ -50,26 +50,33 @@ def test_any(py_and_json: PyAndJson, input_value, expected):
     [
         ('{"a": 1}', {'a': 1}),
         (b'{"a": 1}', {'a': 1}),
+        (
+            '🐈 Hello \ud800World',
+            Err(
+                'Input should be a valid string, unable to parse raw data as a unicode string '
+                "[type=string_unicode, input_value='🐈 Hello \\ud800World', input_type=str]"
+            ),
+        ),
         (bytearray(b'{"a": 1}'), {'a': 1}),
         (
             'xx',
             Err(
                 'Invalid JSON: expected value at line 1 column 1 '
-                "[type=json_invalid, input_value='xx', input_type=str"
+                "[type=json_invalid, input_value='xx', input_type=str]"
             ),
         ),
         (
             b'xx',
             Err(
                 'Invalid JSON: expected value at line 1 column 1 '
-                "[type=json_invalid, input_value=b'xx', input_type=bytes"
+                "[type=json_invalid, input_value=b'xx', input_type=bytes]"
             ),
         ),
         (
             bytearray(b'xx'),
             Err(
                 'Invalid JSON: expected value at line 1 column 1 '
-                "[type=json_invalid, input_value=bytearray(b'xx'), input_type=bytearray"
+                "[type=json_invalid, input_value=bytearray(b'xx'), input_type=bytearray]"
             ),
         ),
     ],

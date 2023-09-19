@@ -1,9 +1,8 @@
-use crate::errors::ErrorMode;
 use pyo3::exceptions::{PyException, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
-use crate::input::Input;
+use crate::input::{Input, InputType};
 use crate::tools::extract_i64;
 
 use super::{ErrorType, ValError};
@@ -164,7 +163,7 @@ impl PydanticKnownError {
     }
 
     pub fn message(&self, py: Python) -> PyResult<String> {
-        self.error_type.render_message(py, &ErrorMode::Python)
+        self.error_type.render_message(py, InputType::Python)
     }
 
     fn __str__(&self, py: Python) -> PyResult<String> {

@@ -88,7 +88,8 @@ def test_bool_key(py_and_json: PyAndJson):
     assert v.validate_test({'true': 1, 'off': 2}) == {True: 1, False: 2}
     assert v.validate_test({'true': 1, 'off': 2}, strict=False) == {True: 1, False: 2}
     with pytest.raises(ValidationError, match='Input should be a valid boolean'):
-        v.validate_test({'true': 1, 'off': 2}, strict=True)
+        v.validate_python({'true': 1, 'off': 2}, strict=True)
+    assert v.validate_json('{"true": 1, "off": 2}', strict=True) == {True: 1, False: 2}
 
 
 def test_validate_assignment_not_supported() -> None:
