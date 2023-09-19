@@ -29,9 +29,10 @@ def set_discriminator(schema: CoreSchema, discriminator: Any) -> None:
 
 
 def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    definitions = collect_definitions(schema)
+    definitions: dict[str, CoreSchema] | None = None
 
     def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
+        nonlocal definitions
         if 'metadata' in s:
             if s['metadata'].get(NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY, True) is False:
                 return s
@@ -43,6 +44,8 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
         metadata = s.get('metadata', {})
         discriminator = metadata.get(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
         if discriminator is not None:
+            if definitions is None:
+                definitions = collect_definitions(schema)
             s = apply_discriminator(s, discriminator, definitions)
         return s
 
