@@ -1162,7 +1162,7 @@ To do this, you may want to use a `default_factory`.
 Here is an example:
 
 ```py
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
