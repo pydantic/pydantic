@@ -140,7 +140,8 @@ def conint(
     le: int | None = None,
     multiple_of: int | None = None,
 ) -> type[int]:
-    """!!! warning "Discouraged"
+    """
+    !!! warning "Discouraged"
         This function is **discouraged** in favor of using
         [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
         [`Field`][pydantic.fields.Field] instead.
@@ -208,7 +209,7 @@ def conint(
         '''
     ```
 
-    """
+    """  # noqa: D212
     return Annotated[
         int,
         Strict(strict) if strict is not None else None,
@@ -385,7 +386,8 @@ def confloat(
     multiple_of: float | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[float]:
-    """!!! warning "Discouraged"
+    """
+    !!! warning "Discouraged"
         This function is **discouraged** in favor of using
         [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
         [`Field`][pydantic.fields.Field] instead.
@@ -452,7 +454,7 @@ def confloat(
         ]
         '''
     ```
-    """
+    """  # noqa: D212
     return Annotated[
         float,
         Strict(strict) if strict is not None else None,
@@ -971,7 +973,8 @@ def condecimal(
     decimal_places: int | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[Decimal]:
-    """!!! warning "Discouraged"
+    """
+    !!! warning "Discouraged"
         This function is **discouraged** in favor of using
         [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
         [`Field`][pydantic.fields.Field] instead.
@@ -1041,7 +1044,7 @@ def condecimal(
         ]
         '''
     ```
-    """
+    """  # noqa: D212
     return Annotated[
         Decimal,
         Strict(strict) if strict is not None else None,
