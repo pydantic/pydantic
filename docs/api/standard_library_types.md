@@ -209,6 +209,6 @@ print(my_model.model_dump_json())  # (3)!
 #> {"x":"1.1","y":2.1}
 ```
 
-1. Using `model_dump`, both `x` and `y` remain instances of the `Decimal` type
-2. Using `model_dump` with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
-3. Using `model_dump_json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
+1. Using [`model_dump`][pydantic.main.model_dump], both `x` and `y` remain instances of the `Decimal` type
+2. Using [`model_dump`][pydantic.main.model_dump] with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
+3. Using [`model_dump_json`][pydantic.main.model_dump_json], `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
