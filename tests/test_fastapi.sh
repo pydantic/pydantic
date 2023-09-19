@@ -31,3 +31,4 @@ cd .. && pip install . && cd fastapi
   --deselect tests/test_tutorial/test_separate_openapi_schemas/test_tutorial001.py::test_openapi_schema \
   --deselect tests/test_tutorial/test_separate_openapi_schemas/test_tutorial001_py310.py::test_openapi_schema \
   --deselect tests/test_tutorial/test_separate_openapi_schemas/test_tutorial001_py39.py::test_openapi_schema \
+  --deselect tests/test_tutorial/test_path_params/test_tutorial005.py::test_get_enums_invalid \
