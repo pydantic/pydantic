@@ -432,7 +432,9 @@ _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValid
 def model_validator(
     *,
     mode: Literal['wrap'],
-) -> Callable[[_AnyModelWrapValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
+) -> Callable[
+    [_AnyModelWrapValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+]:
     ...
 
 
