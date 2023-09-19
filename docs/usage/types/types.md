@@ -13,7 +13,6 @@ The following sections describe the types supported by Pydantic.
 * [Callables](callables.md) &mdash; `Callable` types.
 * [Dicts and Mapping Types](dicts_mapping.md) &mdash; `dict` types and mapping types.
 * [Enums and Choices](enums.md) &mdash; uses Python's standard `enum` classes to define choices.
-* [JSON](json.md) &mdash; a type that allows you to store JSON data in your model.
 * [Lists and Tuples](list_types.md) &mdash; `list` and `tuple` types.
 * [Number Types](number_types.md) &mdash; `int`, `float`, `Decimal`, and other number types.
 * [Sequence, Iterable, & Iterator](sequence_iterable.md) &mdash; iterable types including `Sequence`, `Iterable`, and `Iterator`.
