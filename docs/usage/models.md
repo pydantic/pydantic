@@ -222,7 +222,7 @@ from typing import List
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 from pydantic import BaseModel, ConfigDict, constr
 
@@ -271,7 +271,7 @@ convenient:
 import typing
 
 import sqlalchemy as sa
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -738,7 +738,7 @@ Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can lat
     `TypeVar` needs to be wrapped inside [`SerializeAsAny`](serialization.md#serializing-with-duck-typing)
     for Pydantic to serialize `ChildModel` as `ChildModel`.
 
-```py
+```py requires="3.12"
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ValidationError
@@ -764,7 +764,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    2 validation errors for Model[int, ~IntT]
+    2 validation errors for Model[int, TypeVar]
     a
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
     b
@@ -1170,7 +1170,9 @@ from pydantic import BaseModel, Field
 
 class Model(BaseModel):
     uid: UUID = Field(default_factory=uuid4)
-    updated: datetime = Field(default_factory=datetime.utcnow)
+    updated: datetime = Field(
+        default_factory=lambda: datetime.now(datetime.UTC)
+    )
 
 
 m1 = Model()
