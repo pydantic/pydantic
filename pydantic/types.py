@@ -159,7 +159,9 @@ def conint(
 
         === ":white_check_mark: Do this"
             ```py
-            from pydantic import Annotated, BaseModel, Field
+            from typing_extensions import Annotated
+
+            from pydantic import BaseModel, Field
 
             class Foo(BaseModel):
                 bar: Annotated[int, Field(strict=True, gt=0)]
@@ -402,7 +404,8 @@ def confloat(
 
         === ":white_check_mark: Do this"
             ```py
-            from pydantic import Annotated, BaseModel, Field
+            from typing_extensions import Annotated
+            from pydantic import BaseModel, Field
 
             class Foo(BaseModel):
                 bar: Annotated[float, Field(strict=True, gt=0)]
@@ -988,8 +991,9 @@ def condecimal(
         === ":white_check_mark: Do this"
             ```py
             from decimal import Decimal
+            from typing_extensions import Annotated
 
-            from pydantic import Annotated, BaseModel, Field
+            from pydantic import BaseModel, Field
 
             class Foo(BaseModel):
                 bar: Annotated[Decimal, Field(strict=True, allow_inf_nan=True)]
