@@ -100,7 +100,7 @@ macro_rules! impl_validator {
                 state: &mut ValidationState<'_>,
             ) -> ValResult<'data, PyObject> {
                 let validate = |v, s: &mut ValidationState<'_>| self.validator.validate(py, v, s);
-                self._validate(validate, py, input.to_object(py).into_ref(py), state)
+                self._validate(validate, py, input, state)
             }
             fn validate_assignment<'data>(
                 &self,
@@ -158,7 +158,7 @@ impl FunctionBeforeValidator {
         &'s self,
         call: impl FnOnce(&'data PyAny, &mut ValidationState<'_>) -> ValResult<'data, PyObject>,
         py: Python<'data>,
-        input: &'data PyAny,
+        input: &'data impl Input<'data>,
         state: &'s mut ValidationState<'_>,
     ) -> ValResult<'data, PyObject> {
         let r = if self.info_arg {
@@ -187,11 +187,11 @@ pub struct FunctionAfterValidator {
 impl_build!(FunctionAfterValidator, "function-after");
 
 impl FunctionAfterValidator {
-    fn _validate<'s, 'data>(
+    fn _validate<'s, 'data, I: Input<'data>>(
         &'s self,
-        call: impl FnOnce(&'data PyAny, &mut ValidationState<'_>) -> ValResult<'data, PyObject>,
+        call: impl FnOnce(&'data I, &mut ValidationState<'_>) -> ValResult<'data, PyObject>,
         py: Python<'data>,
-        input: &'data PyAny,
+        input: &'data I,
         state: &mut ValidationState<'_>,
     ) -> ValResult<'data, PyObject> {
         let v = call(input, state)?;
@@ -326,7 +326,7 @@ impl FunctionWrapValidator {
         &'s self,
         handler: &'s PyAny,
         py: Python<'data>,
-        input: &'data PyAny,
+        input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let r = if self.info_arg {
