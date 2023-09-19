@@ -212,3 +212,14 @@ print(my_model.model_dump_json())  # (3)!
 1. Using [`model_dump`][pydantic.main.BaseModel.model_dump], both `x` and `y` remain instances of the `Decimal` type
 2. Using [`model_dump`][pydantic.main.BaseModel.model_dump] with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
 3. Using [`model_dump_json`][pydantic.main.BaseModel.model_dump_json], `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
+
+## IP Address Types
+
+* `ipaddress.IPv4Address`: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+* `ipaddress.IPv4Interface`: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+* `ipaddress.IPv4Network`: Uses the type itself for validation by passing the value to `IPv4Network(v)`.
+* `ipaddress.IPv6Address`: Uses the type itself for validation by passing the value to `IPv6Address(v)`.
+* `ipaddress.IPv6Interface`: Uses the type itself for validation by passing the value to `IPv6Interface(v)`.
+* `ipaddress.IPv6Network`: Uses the type itself for validation by passing the value to `IPv6Network(v)`.
+
+See [Network Types](../api/networks.md) for other custom IP address types.

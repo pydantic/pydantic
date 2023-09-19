@@ -32,12 +32,6 @@ description: Support for common types from the Python standard library.
 | `typing.Type` | See [Type and Typevars](typevars.md) for more detail on parsing and validation. |
 | `typing.Callable` | See [Callables](callables.md) for more detail on parsing and validation. |
 | `typing.Pattern` | Will cause the input value to be passed to `re.compile(v)` to create a regular expression pattern. |
-| `ipaddress.IPv4Address` | Simply uses the type itself for validation by passing the value to `IPv4Address(v)`. See [URLs](urls.md) for other custom IP address types. |
-| <nobr>`ipaddress.IPv4Interface`</nobr> | Simply uses the type itself for validation by passing the value to `IPv4Address(v)`. See [URLs](urls.md) for other custom IP address types. |
-| `ipaddress.IPv4Network` | Simply uses the type itself for validation by passing the value to `IPv4Network(v)`. See [URLs](urls.md) for other custom IP address types. |
-| `ipaddress.IPv6Address` | Simply uses the type itself for validation by passing the value to `IPv6Address(v)`. See [URLs](urls.md) for other custom IP address types. |
-| `ipaddress.IPv6Interface` | Simply uses the type itself for validation by passing the value to `IPv6Interface(v)`. See [URLs](urls.md) for other custom IP address types. |
-| `ipaddress.IPv6Network` | Simply uses the type itself for validation by passing the value to `IPv6Network(v)`. See [URLs](urls.md) for other custom IP address types. |
 | `enum.Enum` | Checks that the value is a valid `Enum` instance. See [Enums and Choices](enums.md) for more details. |
 | Subclass of `enum.Enum` | Checks that the value is a valid member of the `enum`. See [Enums and Choices](enums.md) for more details. |
 | `enum.IntEnum` | Checks that the value is a valid `IntEnum` instance. See [Enums and Choices](enums.md) for more details. |

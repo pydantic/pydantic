@@ -62,7 +62,6 @@ nav:
     - Callables: usage/types/callables.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
     - Enums and Choices: usage/types/enums.md
-    - JSON: usage/types/json.md
     - Lists and Tuples: usage/types/list_types.md
     - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
@@ -70,7 +69,6 @@ nav:
     - Type and TypeVar: usage/types/typevars.md
     - Types with Fields: usage/types/types_fields.md
     - Unions: usage/types/unions.md
-    - URLs: usage/types/urls.md
     - UUIDs: usage/types/uuids.md
     - Custom Data Types: usage/types/custom.md
     - Extra Types:

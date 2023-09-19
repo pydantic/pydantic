@@ -13,7 +13,6 @@ The following sections describe the types supported by Pydantic.
 * [Callables](callables.md) &mdash; `Callable` types.
 * [Dicts and Mapping Types](dicts_mapping.md) &mdash; `dict` types and mapping types.
 * [Enums and Choices](enums.md) &mdash; uses Python's standard `enum` classes to define choices.
-* [JSON](json.md) &mdash; a type that allows you to store JSON data in your model.
 * [Lists and Tuples](list_types.md) &mdash; `list` and `tuple` types.
 * [Sequence, Iterable, & Iterator](sequence_iterable.md) &mdash; iterable types including `Sequence`, `Iterable`, and `Iterator`.
 * [Sets and frozenset](set_types.md) &mdash; `set` and `frozenset` types.
@@ -21,7 +20,6 @@ The following sections describe the types supported by Pydantic.
 * [Type and TypeVar](typevars.md) &mdash; `Type` and `TypeVar` types.
 * [Types with Fields](types_fields.md) &mdash; types that allow you to define fields.
 * [Unions](unions.md) &mdash; allows a model attribute to accept different types.
-* [URLs](urls.md) &mdash; URI/URL validation types.
 * [UUIDs](uuids.md) &mdash; types that allow you to store UUIDs in your model.
 * [Custom Data Types](custom.md) &mdash; create your own custom data types.
 * [Field Type Conversions](../conversion_table.md) &mdash; strict and lax conversion between different field types.
