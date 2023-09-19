@@ -221,7 +221,7 @@ class _WalkCoreSchema:
 
     def _handle_ser_schemas(self, ser_schema: core_schema.SerSchema, f: Walk) -> core_schema.SerSchema:
         schema: core_schema.CoreSchema | None = ser_schema.get('schema', None)
-        ser_schema = ser_schema.copy()
+        ser_schema = ser_schema
         new_ser_schema: dict[str, Any] = {}
         if schema is not None:
             new_ser_schema['schema'] = self.walk(schema, f)  # type: ignore
@@ -247,7 +247,7 @@ class _WalkCoreSchema:
             # This means we'd be returning a "trivial" definitions schema that just wrapped the inner schema
             return new_inner_schema
 
-        new_schema = schema.copy()
+        new_schema = schema
         new_schema['schema'] = new_inner_schema
         new_schema['definitions'] = new_definitions
         return new_schema
@@ -348,13 +348,13 @@ class _WalkCoreSchema:
         replaced_fields: dict[str, core_schema.ModelField] = {}
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
-            replaced_field = computed_field.copy()
+            replaced_field = computed_field
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
             schema['computed_fields'] = replaced_computed_fields
         for k, v in schema['fields'].items():
-            replaced_field = v.copy()
+            replaced_field = v
             replaced_field['schema'] = self.walk(v['schema'], f)
             replaced_fields[k] = replaced_field
         schema['fields'] = replaced_fields
@@ -366,14 +366,14 @@ class _WalkCoreSchema:
             schema['extras_schema'] = self.walk(extras_schema, f)
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
-            replaced_field = computed_field.copy()
+            replaced_field = computed_field
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
             schema['computed_fields'] = replaced_computed_fields
         replaced_fields: dict[str, core_schema.TypedDictField] = {}
         for k, v in schema['fields'].items():
-            replaced_field = v.copy()
+            replaced_field = v
             replaced_field['schema'] = self.walk(v['schema'], f)
             replaced_fields[k] = replaced_field
         schema['fields'] = replaced_fields
@@ -383,13 +383,13 @@ class _WalkCoreSchema:
         replaced_fields: list[core_schema.DataclassField] = []
         replaced_computed_fields: list[core_schema.ComputedField] = []
         for computed_field in schema.get('computed_fields', ()):
-            replaced_field = computed_field.copy()
+            replaced_field = computed_field
             replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
             replaced_computed_fields.append(replaced_field)
         if replaced_computed_fields:
             schema['computed_fields'] = replaced_computed_fields
         for field in schema['fields']:
-            replaced_field = field.copy()
+            replaced_field = field
             replaced_field['schema'] = self.walk(field['schema'], f)
             replaced_fields.append(replaced_field)
         schema['fields'] = replaced_fields
@@ -398,7 +398,7 @@ class _WalkCoreSchema:
     def handle_arguments_schema(self, schema: core_schema.ArgumentsSchema, f: Walk) -> core_schema.CoreSchema:
         replaced_arguments_schema: list[core_schema.ArgumentsParameter] = []
         for param in schema['arguments_schema']:
-            replaced_param = param.copy()
+            replaced_param = param
             replaced_param['schema'] = self.walk(param['schema'], f)
             replaced_arguments_schema.append(replaced_param)
         schema['arguments_schema'] = replaced_arguments_schema
@@ -517,9 +517,9 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
     assert all(c == 0 for c in state['current_recursion_ref_count'].values()), 'this is a bug! please report it'
 
     definitions_cache = _DefinitionsState(
-        definitions=state['definitions'].copy(),
+        definitions=state['definitions'],
         ref_counts=dict(state['ref_counts']),
-        involved_in_recursion=state['involved_in_recursion'].copy(),
+        involved_in_recursion=state['involved_in_recursion'],
         current_recursion_ref_count=dict(state['current_recursion_ref_count']),
     )
 
@@ -531,8 +531,15 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         if 'serialization' in s:
             return False
         if 'metadata' in s:
-            if {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY}.difference(s['metadata'].keys()):
-                return False
+            metadata = s['metadata']
+            for k in (
+                'pydantic_js_functions',
+                'pydantic_js_annotation_functions',
+                'pydantic.internal.union_discriminator',
+            ):
+                if k in metadata:
+                    # we need to keep this as a ref
+                    return False
         return True
 
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
@@ -581,17 +588,17 @@ def pretty_print_core_schema(
     if not include_metadata:
 
         def strip_metadata(s: CoreSchema, recurse: Recurse) -> CoreSchema:
-            s = s.copy()
+            s = s
             s.pop('metadata', None)
             if s['type'] == 'model-fields':
-                s = s.copy()
-                s['fields'] = {k: v.copy() for k, v in s['fields'].items()}
+                s = s
+                s['fields'] = {k: v for k, v in s['fields'].items()}
                 for field_name, field_schema in s['fields'].items():
                     field_schema.pop('metadata', None)
                     s['fields'][field_name] = field_schema
                 computed_fields = s.get('computed_fields', None)
                 if computed_fields:
-                    s['computed_fields'] = [cf.copy() for cf in computed_fields]
+                    s['computed_fields'] = [cf for cf in computed_fields]
                     for cf in computed_fields:
                         cf.pop('metadata', None)
                 else:
