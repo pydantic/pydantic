@@ -114,7 +114,6 @@ jobs:
             python-version: 'pypy3.10'
 
     env:
-      PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
       DEPS: yes
 
@@ -126,6 +125,7 @@ jobs:
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
+        cache: true
         allow-python-prereleases: true
 
     - name: install deps
