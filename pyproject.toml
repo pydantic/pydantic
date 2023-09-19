@@ -153,6 +153,8 @@ filterwarnings = [
     'ignore:path is deprecated.*:DeprecationWarning:',
     # Work around https://github.com/pytest-dev/pytest/issues/10977 for Python 3.12
     'ignore:(ast\.Str|ast\.NameConstant|ast\.Num|Attribute s) is deprecated and will be removed.*:DeprecationWarning:',
+    # pytest-examples needs to remove `co_lnotab` in favor of `co_lines`.
+    'ignore:co_lnotab is deprecated, use co_lines instead.:DeprecationWarning:',
 ]
 addopts = [
     '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
