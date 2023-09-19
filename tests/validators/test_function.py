@@ -1,3 +1,4 @@
+import datetime
 import platform
 import re
 from copy import deepcopy
@@ -971,3 +972,21 @@ def test_reprs() -> None:
         'ValidationInfo(config=None, context=None)',
         "FieldValidationInfo(config=None, context=None, field_name='x')",
     ]
+
+
+def test_function_after_doesnt_change_mode() -> None:
+    # https://github.com/pydantic/pydantic/issues/7468 - function-after was
+    # incorrectly forcing Python validation mode
+
+    def identity(v):
+        return v
+
+    schema = core_schema.no_info_after_validator_function(identity, core_schema.date_schema(strict=True))
+    v = SchemaValidator(schema)
+
+    # this input should be valid JSON input, but isn't valid Python input, so
+    # the following tests will pass if the after_validator is not
+    # forcing the mode to Python
+    assert v.validate_json(b'"2000-01-01"') == datetime.date(2000, 1, 1)
+    with pytest.raises(ValidationError):
+        v.validate_python(b'"2000-01-01"')
