@@ -79,13 +79,110 @@ class UrlConstraints(_fields.PydanticMetadata):
 
 
 AnyUrl = Url
-"""Base type for all URLs."""
+"""Base type for all URLs.
+
+* Any scheme allowed
+* Top-level domain (TLD) not required
+* Host required
+
+Assuming an input URL of `http://samuel:pass@example.com:8000/the/path/?query=here#fragment=is;this=bit`,
+the types export the following properties:
+
+- `scheme`: the URL scheme (`http`), always set.
+- `host`: the URL host (`example.com`), always set.
+- `username`: optional username if included (`samuel`).
+- `password`: optional password if included (`pass`).
+- `port`: optional port (`8000`).
+- `path`: optional path (`/the/path/`).
+- `query`: optional URL query (for example, `GET` arguments or "search string", such as `query=here`).
+- `fragment`: optional fragment (`fragment=is;this=bit`).
+"""
 AnyHttpUrl = Annotated[Url, UrlConstraints(allowed_schemes=['http', 'https'])]
-"""A type that will accept any http or https URL."""
+"""A type that will accept any http or https URL.
+
+* TLD not required
+* Host required
+"""
 HttpUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'])]
-"""A type that will accept any http or https URL with a max length of 2083 characters."""
+"""A type that will accept any http or https URL.
+
+* TLD required
+* Host required
+* Max length 2083
+
+```py
+from pydantic import BaseModel, HttpUrl, ValidationError
+
+class MyModel(BaseModel):
+    url: HttpUrl
+
+m = MyModel(url='http://www.example.com')
+print(m.url)
+#> http://www.example.com/
+
+try:
+    MyModel(url='ftp://invalid.url')
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for MyModel
+    url
+      URL scheme should be 'http' or 'https' [type=url_scheme, input_value='ftp://invalid.url', input_type=str]
+    '''
+
+try:
+    MyModel(url='not a url')
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for MyModel
+    url
+      Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='not a url', input_type=str]
+    '''
+```
+
+"International domains" (e.g. a URL where the host or TLD includes non-ascii characters) will be encoded via
+[punycode](https://en.wikipedia.org/wiki/Punycode) (see
+[this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
+
+```py
+from pydantic import BaseModel, HttpUrl
+
+class MyModel(BaseModel):
+    url: HttpUrl
+
+m1 = MyModel(url='http://puny£code.com')
+print(m1.url)
+#> http://xn--punycode-eja.com/
+m2 = MyModel(url='https://www.аррӏе.com/')
+print(m2.url)
+#> https://www.xn--80ak6aa92e.com/
+m3 = MyModel(url='https://www.example.珠宝/')
+print(m3.url)
+#> https://www.example.xn--pbt977c/
+```
+
+
+!!! warning "Underscores in Hostnames"
+    In Pydantic, underscores are allowed in all parts of a domain except the TLD.
+    Technically this might be wrong - in theory the hostname cannot have underscores, but subdomains can.
+
+    To explain this; consider the following two cases:
+
+    - `exam_ple.co.uk`: the hostname is `exam_ple`, which should not be allowed since it contains an underscore.
+    - `foo_bar.example.com` the hostname is `example`, which should be allowed since the underscore is in the subdomain.
+
+    Without having an exhaustive list of TLDs, it would be impossible to differentiate between these two. Therefore
+    underscores are allowed, but you can always do further validation in a validator if desired.
+
+    Also, Chrome, Firefox, and Safari all currently accept `http://exam_ple.com` as a URL, so we're in good
+    (or at least big) company.
+"""
 FileUrl = Annotated[Url, UrlConstraints(allowed_schemes=['file'])]
-"""A type that will accept any file URL."""
+"""A type that will accept any file URL.
+
+* Host not required
+"""
 PostgresDsn = Annotated[
     MultiHostUrl,
     UrlConstraints(
@@ -103,7 +200,64 @@ PostgresDsn = Annotated[
         ],
     ),
 ]
-"""A type that will accept any Postgres DSN."""
+"""A type that will accept any Postgres DSN.
+
+* User info required
+* TLD not required
+* Host required
+* Supports multiple hosts
+
+If further validation is required, these properties can be used by validators to enforce specific behaviour:
+
+```py
+from pydantic import (
+    BaseModel,
+    HttpUrl,
+    PostgresDsn,
+    ValidationError,
+    field_validator,
+)
+
+class MyModel(BaseModel):
+    url: HttpUrl
+
+m = MyModel(url='http://www.example.com')
+
+# the repr() method for a url will display all properties of the url
+print(repr(m.url))
+#> Url('http://www.example.com/')
+print(m.url.scheme)
+#> http
+print(m.url.host)
+#> www.example.com
+print(m.url.port)
+#> 80
+
+class MyDatabaseModel(BaseModel):
+    db: PostgresDsn
+
+    @field_validator('db')
+    def check_db_name(cls, v):
+        assert v.path and len(v.path) > 1, 'database must be provided'
+        return v
+
+m = MyDatabaseModel(db='postgres://user:pass@localhost:5432/foobar')
+print(m.db)
+#> postgres://user:pass@localhost:5432/foobar
+
+try:
+    MyDatabaseModel(db='postgres://user:pass@localhost:5432')
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for MyDatabaseModel
+    db
+      Assertion failed, database must be provided
+    assert (None)
+     +  where None = MultiHostUrl('postgres://user:pass@localhost:5432').path [type=assertion_error, input_value='postgres://user:pass@localhost:5432', input_type=str]
+    '''
+```
+"""
 
 CockroachDsn = Annotated[
     Url,
@@ -116,18 +270,44 @@ CockroachDsn = Annotated[
         ],
     ),
 ]
-"""A type that will accept any Cockroach DSN."""
+"""A type that will accept any Cockroach DSN.
+
+* User info required
+* TLD not required
+* Host required
+"""
 AmqpDsn = Annotated[Url, UrlConstraints(allowed_schemes=['amqp', 'amqps'])]
-"""A type that will accept any AMQP DSN."""
+"""A type that will accept any AMQP DSN.
+
+* User info required
+* TLD not required
+* Host required
+"""
 RedisDsn = Annotated[
     Url,
     UrlConstraints(allowed_schemes=['redis', 'rediss'], default_host='localhost', default_port=6379, default_path='/0'),
 ]
-"""A type that will accept any Redis DSN."""
+"""A type that will accept any Redis DSN.
+
+* User info required
+* TLD not required
+* Host required (e.g., `rediss://:pass@localhost`)
+"""
 MongoDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)]
-"""A type that will accept any MongoDB DSN."""
+"""A type that will accept any MongoDB DSN.
+
+* User info not required
+* Database name not required
+* Port not required
+* User info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`).
+"""
 KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)]
-"""A type that will accept any Kafka DSN."""
+"""A type that will accept any Kafka DSN.
+
+* User info required
+* TLD not required
+* Host required
+"""
 MySQLDsn = Annotated[
     Url,
     UrlConstraints(
@@ -144,7 +324,12 @@ MySQLDsn = Annotated[
         default_port=3306,
     ),
 ]
-"""A type that will accept any MySQL DSN."""
+"""A type that will accept any MySQL DSN.
+
+* User info required
+* TLD not required
+* Host required
+"""
 MariaDBDsn = Annotated[
     Url,
     UrlConstraints(
@@ -152,7 +337,12 @@ MariaDBDsn = Annotated[
         default_port=3306,
     ),
 ]
-"""A type that will accept any MariaDB DSN."""
+"""A type that will accept any MariaDB DSN.
+
+* User info required
+* TLD not required
+* Host required
+"""
 
 
 def import_email_validator() -> None:
@@ -293,7 +483,34 @@ class NameEmail(_repr.Representation):
 
 
 class IPvAnyAddress:
-    """Validate an IPv4 or IPv6 address."""
+    """Validate an IPv4 or IPv6 address.
+
+    ```py
+    from pydantic import BaseModel
+    from pydantic.networks import IPvAnyAddress
+
+    class IpModel(BaseModel):
+        ip: IPvAnyAddress
+
+    print(IpModel(ip='127.0.0.1'))
+    #> ip=IPv4Address('127.0.0.1')
+
+    try:
+        IpModel(ip='http://www.example.com')
+    except ValueError as e:
+        print(e.errors())
+        '''
+        [
+            {
+                'type': 'ip_any_address',
+                'loc': ('ip',),
+                'msg': 'value is not a valid IPv4 or IPv6 address',
+                'input': 'http://www.example.com',
+            }
+        ]
+        '''
+    ```
+    """
 
     __slots__ = ()
 
