@@ -553,8 +553,29 @@ def pretty_print_core_schema(
     if not include_metadata:
 
         def strip_metadata(s: CoreSchema, recurse: Recurse) -> CoreSchema:
-            if 'metadata' in s:
-                del s['metadata']
+            s.pop('metadata', None)
+            if s['type'] == 'model-fields':
+                s = s.copy()
+                s['fields'] = {k: v.copy() for k, v in s['fields'].items()}
+                for field_name, field_schema in s['fields'].items():
+                    field_schema.pop('metadata', None)
+                    s['fields'][field_name] = field_schema
+                computed_fields = s.get('computed_fields', None)
+                if computed_fields:
+                    s['computed_fields'] = [cf.copy() for cf in computed_fields]
+                    for cf in computed_fields:
+                        cf.pop('metadata', None)
+                else:
+                    s.pop('computed_fields', None)
+            elif s['type'] == 'model':
+                # remove some defaults
+                if s.get('custom_init', True) is False:
+                    s.pop('custom_init')
+                if s.get('root_model', True) is False:
+                    s.pop('root_model')
+                if {'title'}.issuperset(s.get('config', {}).keys()):
+                    s.pop('config')
+
             return recurse(s, strip_metadata)
 
         schema = walk_core_schema(schema, strip_metadata)
