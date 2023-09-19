@@ -1168,9 +1168,13 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 
+def datetime_now() -> datetime:
+    return datetime.now(UTC)
+
+
 class Model(BaseModel):
     uid: UUID = Field(default_factory=uuid4)
-    updated: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated: datetime = Field(default_factory=datetime_now)
 
 
 m1 = Model()
