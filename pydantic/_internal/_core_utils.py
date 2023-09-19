@@ -532,3 +532,49 @@ def inline_schema_defs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema
     2. Removing any unused `ref` references from schemas.
     """
     return _simplify_schema_references(schema, inline=True)
+
+
+def pretty_print_core_schema(
+    schema: CoreSchema,
+    include_metadata: bool = False,
+) -> None:
+    """Pretty print a CoreSchema using rich.
+    This is intended for debugging purposes.
+
+    Args:
+        schema: The CoreSchema to print.
+        include_metadata: Whether to include metadata in the output. Defaults to `False`.
+    """
+    from rich import print  # type: ignore  # install it manually in your dev env
+
+    if not include_metadata:
+
+        def strip_metadata(s: CoreSchema, recurse: Recurse) -> CoreSchema:
+            s.pop('metadata', None)
+            if s['type'] == 'model-fields':
+                s = s.copy()
+                s['fields'] = {k: v.copy() for k, v in s['fields'].items()}
+                for field_name, field_schema in s['fields'].items():
+                    field_schema.pop('metadata', None)
+                    s['fields'][field_name] = field_schema
+                computed_fields = s.get('computed_fields', None)
+                if computed_fields:
+                    s['computed_fields'] = [cf.copy() for cf in computed_fields]
+                    for cf in computed_fields:
+                        cf.pop('metadata', None)
+                else:
+                    s.pop('computed_fields', None)
+            elif s['type'] == 'model':
+                # remove some defaults
+                if s.get('custom_init', True) is False:
+                    s.pop('custom_init')
+                if s.get('root_model', True) is False:
+                    s.pop('root_model')
+                if {'title'}.issuperset(s.get('config', {}).keys()):
+                    s.pop('config')
+
+            return recurse(s, strip_metadata)
+
+        schema = walk_core_schema(schema, strip_metadata)
+
+    return print(schema)
