@@ -50,7 +50,7 @@ from ._internal import (
     _schema_generation_shared,
     _typing_extra,
 )
-from .config import JsonSchemaExtraCallable
+from .config import JsonSchemaExtraCallable, JsonType
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
@@ -1338,7 +1338,7 @@ class GenerateJsonSchema:
         title: str | None,
         extra: Literal['allow', 'ignore', 'forbid'] | None,
         cls: type[Any],
-        json_schema_extra: dict[str, Any] | JsonSchemaExtraCallable | None,
+        json_schema_extra: JsonType | JsonSchemaExtraCallable | None,
     ) -> JsonSchemaValue:
         if '$ref' in json_schema:
             schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref'])) or json_schema

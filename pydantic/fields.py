@@ -17,6 +17,7 @@ from typing_extensions import Literal, Unpack
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from .config import JsonType
 from .errors import PydanticUserError
 from .warnings import PydanticDeprecatedSince20
 
@@ -58,7 +59,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     decimal_places: int | None
     union_mode: Literal['smart', 'left_to_right'] | None
     discriminator: str | None
-    json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None
+    json_schema_extra: JsonType | typing.Callable[[dict[str, Any]], None] | None
     frozen: bool | None
     validate_default: bool | None
     repr: bool
@@ -116,7 +117,7 @@ class FieldInfo(_repr.Representation):
     examples: list[Any] | None
     exclude: bool | None
     discriminator: str | None
-    json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None
+    json_schema_extra: JsonType | typing.Callable[[dict[str, Any]], None] | None
     frozen: bool | None
     validate_default: bool | None
     repr: bool
@@ -676,7 +677,7 @@ def Field(  # noqa: C901
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     discriminator: str | None = _Unset,
-    json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None = _Unset,
+    json_schema_extra: JsonType | typing.Callable[[dict[str, Any]], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
     repr: bool = _Unset,

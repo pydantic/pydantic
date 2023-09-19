@@ -22,7 +22,7 @@ JsonSchemaExtraCallable: TypeAlias = Union[
 ]
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
-JsonType = Dict[str, Union[str, int, float, bool, None, List[Any], Dict[str, Any]]]
+JsonType = Dict[str, Union[int, float, None, 'JsonType', List['JsonType']]]
 
 
 class ConfigDict(TypedDict, total=False):
