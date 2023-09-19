@@ -517,16 +517,24 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
         current_recursion_ref_count=dict(state['current_recursion_ref_count']),
     )
 
+    def can_be_inlined(s: core_schema.DefinitionReferenceSchema, ref: str) -> bool:
+        if state['ref_counts'][ref] > 1:
+            return False
+        if state['involved_in_recursion'].get(ref, False):
+            return False
+        if 'serialization' in s:
+            return False
+        if 'metadata' in s:
+            if {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY}.difference(s['metadata'].keys()):
+                return False
+        return True
+
     def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if s['type'] == 'definition-ref':
             ref = s['schema_ref']
             # Check if the reference is only used once, not involved in recursion and does not have
             # any extra keys (like 'serialization')
-            if (
-                state['ref_counts'][ref] <= 1
-                and not state['involved_in_recursion'].get(ref, False)
-                and {'type', 'schema_ref'}.issuperset(s.keys())
-            ):
+            if can_be_inlined(s, ref):
                 # Inline the reference by replacing the reference with the actual schema
                 new = state['definitions'].pop(ref)
                 state['ref_counts'][ref] -= 1  # because we just replaced it!
