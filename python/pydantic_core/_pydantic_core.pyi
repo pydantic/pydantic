@@ -52,6 +52,8 @@ _recursion_limit: int
 
 _T = TypeVar('_T', default=Any, covariant=True)
 
+_StringInput: TypeAlias = 'dict[str, _StringInput]'
+
 @final
 class Some(Generic[_T]):
     """
@@ -163,6 +165,29 @@ class SchemaValidator:
             context: The context to use for validation, this is passed to functional validators as
                 [`info.context`][pydantic_core.core_schema.ValidationInfo.context].
             self_instance: An instance of a model set attributes on from validation.
+
+        Raises:
+            ValidationError: If validation fails or if the JSON data is invalid.
+            Exception: Other error types maybe raised if internal errors occur.
+
+        Returns:
+            The validated Python object.
+        """
+    def validate_strings(
+        self, input: _StringInput, *, strict: bool | None = None, context: 'dict[str, Any] | None' = None
+    ) -> Any:
+        """
+        Validate a string against the schema and return the validated Python object.
+
+        This is similar to `validate_json` but applies to scenarios where the input will be a string but not
+        JSON data, e.g. URL fragments, query parameters, etc.
+
+        Arguments:
+            input: The input as a string, or bytes/bytearray if `strict=False`.
+            strict: Whether to validate the object in strict mode.
+                If `None`, the value of [`CoreConfig.strict`][pydantic_core.core_schema.CoreConfig] is used.
+            context: The context to use for validation, this is passed to functional validators as
+                [`info.context`][pydantic_core.core_schema.ValidationInfo.context].
 
         Raises:
             ValidationError: If validation fails or if the JSON data is invalid.
@@ -680,7 +705,7 @@ class ValidationError(ValueError):
     def from_exception_data(
         title: str,
         line_errors: list[InitErrorDetails],
-        error_mode: Literal['python', 'json'] = 'python',
+        input_type: Literal['python', 'json'] = 'python',
         hide_input: bool = False,
     ) -> ValidationError:
         """
@@ -693,7 +718,7 @@ class ValidationError(ValueError):
             title: The title of the error, as used in the heading of `str(validation_error)`
             line_errors: A list of [`InitErrorDetails`][pydantic_core.InitErrorDetails] which contain information
                 about errors that occurred during validation.
-            error_mode: Whether the error is for a Python object or JSON.
+            input_type: Whether the error is for a Python object or JSON.
             hide_input: Whether to hide the input value in the error message.
         """
     @property

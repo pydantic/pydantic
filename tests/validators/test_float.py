@@ -215,7 +215,8 @@ def test_float_key(py_and_json: PyAndJson):
     assert v.validate_test({'1': 1, '2': 2}) == {1: 1, 2: 2}
     assert v.validate_test({'1.5': 1, '2.4': 2}) == {1.5: 1, 2.4: 2}
     with pytest.raises(ValidationError, match='Input should be a valid number'):
-        v.validate_test({'1.5': 1, '2.5': 2}, strict=True)
+        v.validate_python({'1.5': 1, '2.5': 2}, strict=True)
+    assert v.validate_json('{"1.5": 1, "2.5": 2}', strict=True) == {1.5: 1, 2.5: 2}
 
 
 @pytest.mark.parametrize(

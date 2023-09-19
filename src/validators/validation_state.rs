@@ -44,6 +44,7 @@ impl<'a> ValidationState<'a> {
         &'state mut self,
         f: impl FnOnce(&mut Extra<'a>),
     ) -> ValidationStateWithReboundExtra<'state, 'a> {
+        #[allow(clippy::unnecessary_struct_initialization)]
         let old_extra = Extra { ..self.extra };
         f(&mut self.extra);
         ValidationStateWithReboundExtra { state: self, old_extra }

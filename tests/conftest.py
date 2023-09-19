@@ -59,6 +59,9 @@ class PyAndJsonValidator:
     def validate_python(self, py_input, strict: bool | None = None, context: Any = None):
         return self.validator.validate_python(py_input, strict=strict, context=context)
 
+    def validate_json(self, json_str: str, strict: bool | None = None, context: Any = None):
+        return self.validator.validate_json(json_str, strict=strict, context=context)
+
     def validate_test(self, py_input, strict: bool | None = None, context: Any = None):
         if self.validator_type == 'json':
             return self.validator.validate_json(

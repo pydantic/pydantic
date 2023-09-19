@@ -6,8 +6,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
 
 use crate::build_tools::py_schema_err;
-use crate::errors::{ErrorType, ValLineError};
-use crate::input::{Input, JsonInput, JsonObject};
+use crate::errors::{py_err_string, ErrorType, ValError, ValLineError, ValResult};
+use crate::input::{Input, JsonInput, JsonObject, StringMapping};
 use crate::tools::{extract_i64, py_err};
 
 /// Used for getting items from python dicts, python objects, or JSON objects, in different ways
@@ -109,7 +109,7 @@ impl LookupKey {
     pub fn py_get_dict_item<'data, 's>(
         &'s self,
         dict: &'data PyDict,
-    ) -> PyResult<Option<(&'s LookupPath, &'data PyAny)>> {
+    ) -> ValResult<'data, Option<(&'s LookupPath, &'data PyAny)>> {
         match self {
             Self::Simple { py_key, path, .. } => match dict.get_item(py_key) {
                 Some(value) => Ok(Some((path, value))),
@@ -143,10 +143,22 @@ impl LookupKey {
         }
     }
 
+    pub fn py_get_string_mapping_item<'data, 's>(
+        &'s self,
+        dict: &'data PyDict,
+    ) -> ValResult<'data, Option<(&'s LookupPath, StringMapping<'data>)>> {
+        if let Some((path, py_any)) = self.py_get_dict_item(dict)? {
+            let value = StringMapping::new_value(py_any)?;
+            Ok(Some((path, value)))
+        } else {
+            Ok(None)
+        }
+    }
+
     pub fn py_get_mapping_item<'data, 's>(
         &'s self,
         dict: &'data PyMapping,
-    ) -> PyResult<Option<(&'s LookupPath, &'data PyAny)>> {
+    ) -> ValResult<'data, Option<(&'s LookupPath, &'data PyAny)>> {
         match self {
             Self::Simple { py_key, path, .. } => match dict.get_item(py_key) {
                 Ok(value) => Ok(Some((path, value))),
@@ -181,6 +193,23 @@ impl LookupKey {
     }
 
     pub fn py_get_attr<'data, 's>(
+        &'s self,
+        obj: &'data PyAny,
+        kwargs: Option<&'data PyDict>,
+    ) -> ValResult<'data, Option<(&'s LookupPath, &'data PyAny)>> {
+        match self._py_get_attr(obj, kwargs) {
+            Ok(v) => Ok(v),
+            Err(err) => {
+                let error = py_err_string(obj.py(), err);
+                Err(ValError::new(
+                    ErrorType::GetAttributeError { error, context: None },
+                    obj,
+                ))
+            }
+        }
+    }
+
+    pub fn _py_get_attr<'data, 's>(
         &'s self,
         obj: &'data PyAny,
         kwargs: Option<&'data PyDict>,
@@ -235,7 +264,7 @@ impl LookupKey {
     pub fn json_get<'data, 's>(
         &'s self,
         dict: &'data JsonObject,
-    ) -> PyResult<Option<(&'s LookupPath, &'data JsonInput)>> {
+    ) -> ValResult<'data, Option<(&'s LookupPath, &'data JsonInput)>> {
         match self {
             Self::Simple { key, path, .. } => match dict.get(key) {
                 Some(value) => Ok(Some((path, value))),

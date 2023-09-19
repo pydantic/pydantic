@@ -57,9 +57,9 @@ impl Validator for JsonOrPython {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        match state.extra().mode {
+        match state.extra().input_type {
             InputType::Python => self.python.validate(py, input, state),
-            InputType::Json => self.json.validate(py, input, state),
+            _ => self.json.validate(py, input, state),
         }
     }
 

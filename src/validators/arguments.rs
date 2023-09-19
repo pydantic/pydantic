@@ -323,6 +323,7 @@ impl Validator for ArgumentsValidator {
         match args {
             GenericArguments::Py(a) => process!(a, py_get_dict_item, py_get, py_slice),
             GenericArguments::Json(a) => process!(a, json_get, json_get, json_slice),
+            GenericArguments::StringMapping(_) => unimplemented!(),
         }
         if !errors.is_empty() {
             Err(ValError::LineErrors(errors))
