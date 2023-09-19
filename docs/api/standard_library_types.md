@@ -163,7 +163,7 @@ Pydantic supports the following numeric types from the Python standard library:
 
 ### `float`
 
-* Pydantic uses `float(v)` is used to coerce values to floats.
+* Pydantic uses `float(v)` to coerce values to floats.
 
 ### `enum.IntEnum`
 
