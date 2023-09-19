@@ -176,6 +176,7 @@ Pydantic supports the following numeric types from the Python standard library:
 
 
 ### `decimal.Decimal`
+
 * Validation: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`.
 * Serialization: Pydantic serializes `Decimal` types as strings.
 You can use a custom serializer to override this behavior if desired. For example:
