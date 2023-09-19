@@ -1180,7 +1180,6 @@ class Model(BaseModel):
 m1 = Model()
 m2 = Model()
 assert m1.uid != m2.uid
-assert m1.updated != m2.updated
 ```
 
 You can find more information in the documentation of the [`Field` function](fields.md).
