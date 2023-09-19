@@ -154,11 +154,11 @@ print(m.model_dump())
 
 ## IP Address Types
 
-* `ipaddress.IPv4Address`: Simply uses the type itself for validation by passing the value to `IPv4Address(v)`.
-* `ipaddress.IPv4Interface`: Simply uses the type itself for validation by passing the value to `IPv4Address(v)`.
-* `ipaddress.IPv4Network`: Simply uses the type itself for validation by passing the value to `IPv4Network(v)`.
-* `ipaddress.IPv6Address`: Simply uses the type itself for validation by passing the value to `IPv6Address(v)`.
-* `ipaddress.IPv6Interface`: Simply uses the type itself for validation by passing the value to `IPv6Interface(v)`.
-* `ipaddress.IPv6Network`: Simply uses the type itself for validation by passing the value to `IPv6Network(v)`.
+* `ipaddress.IPv4Address`: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+* `ipaddress.IPv4Interface`: Uses the type itself for validation by passing the value to `IPv4Address(v)`.
+* `ipaddress.IPv4Network`: Uses the type itself for validation by passing the value to `IPv4Network(v)`.
+* `ipaddress.IPv6Address`: Uses the type itself for validation by passing the value to `IPv6Address(v)`.
+* `ipaddress.IPv6Interface`: Uses the type itself for validation by passing the value to `IPv6Interface(v)`.
+* `ipaddress.IPv6Network`: Uses the type itself for validation by passing the value to `IPv6Network(v)`.
 
 See [Network Types](../api/networks.md) for other custom IP address types.
