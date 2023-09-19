@@ -167,9 +167,15 @@ def collect_invalid_schemas(schema: core_schema.CoreSchema) -> list[core_schema.
     invalid_schemas: list[core_schema.CoreSchema] = []
 
     def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if s.get('metadata', {}).get('invalid'):
+        metadata = s.setdefault('metadata', {})
+        invalid = metadata.get('invalid', None)
+        if invalid is True:
             invalid_schemas.append(s)
-        return recurse(s, _is_schema_valid)
+        elif invalid is False:
+            return s
+        s = recurse(s, _is_schema_valid)
+        metadata['invalid'] = False
+        return s
 
     walk_core_schema(schema, _is_schema_valid)
     return invalid_schemas
