@@ -1161,15 +1161,15 @@ To do this, you may want to use a `default_factory`.
 
 Here is an example:
 
-```py requires="3.12"
-from datetime import UTC, datetime
+```py
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 
 def datetime_now() -> datetime:
-    return datetime.now(UTC)
+    return datetime.now(timezone.utc)
 
 
 class Model(BaseModel):
