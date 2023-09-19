@@ -2296,6 +2296,7 @@ def test_parent_field_with_default():
     assert c.c == 3
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='error message different on older versions')
 @pytest.mark.parametrize(
     'bases',
     [
@@ -2358,14 +2359,14 @@ def test_abstractmethod_missing_for_all_decorators(bases):
     with pytest.raises(
         TypeError,
         match=(
-            "Can't instantiate abstract class Square with abstract methods"
-            " my_computed_field,"
-            " my_field_validator,"
-            " my_model_serializer,"
-            " my_model_validator,"
-            " my_root_validator,"
-            " my_serializer,"
-            " my_validator"
+            "Can't instantiate abstract class Square without an implementation for abstract methods"
+            " 'my_computed_field',"
+            " 'my_field_validator',"
+            " 'my_model_serializer',"
+            " 'my_model_validator',"
+            " 'my_root_validator',"
+            " 'my_serializer',"
+            " 'my_validator'"
         ),
     ):
         Square(side=1.0)
