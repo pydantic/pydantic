@@ -52,7 +52,6 @@ from ._core_metadata import (
 from ._core_utils import (
     CoreSchemaOrField,
     define_expected_missing_refs,
-    flatten_schema_defs,
     get_type_ref,
     is_list_like_schema_with_items_schema,
 )
@@ -517,8 +516,6 @@ class GenerateSchema:
 
         def get_ref(s: CoreSchema) -> str:
             return s['ref']  # type: ignore
-
-        schema = flatten_schema_defs(schema)
 
         if schema['type'] == 'definitions':
             self.defs.definitions.update({get_ref(s): s for s in schema['definitions']})

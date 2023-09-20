@@ -2440,8 +2440,12 @@ def test_model_get_core_schema() -> None:
     class Model(BaseModel):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            assert handler(int) == {'type': 'int'}
-            assert handler.generate_schema(int) == {'type': 'int'}
+            schema = handler(int)
+            schema.pop('metadata', None)  # we don't care about this in tests
+            assert schema == {'type': 'int'}
+            schema = handler.generate_schema(int)
+            schema.pop('metadata', None)  # we don't care about this in tests
+            assert schema == {'type': 'int'}
             return handler(source_type)
 
     Model()

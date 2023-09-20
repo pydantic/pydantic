@@ -2070,8 +2070,8 @@ def test_multiple_parametrized_generic_dataclasses():
 
     # verify that generic parameters are showing up in the type ref for generic dataclasses
     # this can probably be removed if the schema changes in some way that makes this part of the test fail
-    assert '[int:' in validator1.core_schema['schema']['schema_ref']
-    assert '[str:' in validator2.core_schema['schema']['schema_ref']
+    assert '[int:' in validator1.core_schema['ref']
+    assert '[str:' in validator2.core_schema['ref']
 
     assert validator1.validate_python({'x': 1}).x == 1
     assert validator2.validate_python({'x': 'hello world'}).x == 'hello world'
