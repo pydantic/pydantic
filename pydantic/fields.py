@@ -741,7 +741,7 @@ def Field(  # noqa: C901
         max_digits: Maximum number of allow digits for strings.
         decimal_places: Maximum number of decimal places allowed for numbers.
         union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
-            See [Union Mode](../usage/types/unions.md#union-mode) for details.
+            See [Union Mode](standard_library_types.md#union-mode) for details.
         extra: Include extra fields used by the JSON schema.
 
             !!! warning Deprecated

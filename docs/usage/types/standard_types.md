@@ -10,8 +10,6 @@ description: Support for common types from the Python standard library.
 | `typing.Any` | Allows any value including `None`, thus an `Any` field is optional. |
 | `typing.Annotated` | Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../json_schema.md#typingannotated-fields), but otherwise the additional metadata is ignored and the root type is used. |
 | `typing.TypeVar` | Constrains the values allowed based on `constraints` or `bound`, see [TypeVar](typevars.md). |
-| `typing.Union` | See [Unions](unions.md) for more detail on parsing and validation. |
-| `typing.Optional` | `Optional[x]` is simply short hand for `Union[x, None]`. See [Unions](unions.md) for more detail on parsing and validation and [Required Fields](../models.md#required-fields) for details about required fields that can receive `None` as a value. |
 | Subclass of `typing.TypedDict` | Same as `dict`, but Pydantic will validate the dictionary since keys are annotated. |
 | `typing.Type` | See [Type and Typevars](typevars.md) for more detail on parsing and validation. |
 | `typing.Pattern` | Will cause the input value to be passed to `re.compile(v)` to create a regular expression pattern. |
