@@ -174,7 +174,6 @@ Pydantic supports the following numeric types from the Python standard library:
 * Validation: checks that the value is a valid member of the integer enum;
   see [Enums and Choices](#enum) for more details.
 
-
 ### `decimal.Decimal`
 
 * Validation: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`.

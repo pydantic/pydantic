@@ -31,6 +31,13 @@ description: Support for common types from the Python standard library.
 | `typing.Iterable` | This is reserved for iterables that shouldn't be consumed. See [Sequence, Iterable & Iterator](sequence_iterable.md) for more detail on parsing and validation. |
 | `typing.Type` | See [Type and Typevars](typevars.md) for more detail on parsing and validation. |
 | `typing.Pattern` | Will cause the input value to be passed to `re.compile(v)` to create a regular expression pattern. |
+<<<<<<< HEAD
+=======
+| `enum.Enum` | Checks that the value is a valid `Enum` instance. See [Enums and Choices](enums.md) for more details. |
+| Subclass of `enum.Enum` | Checks that the value is a valid member of the `enum`. See [Enums and Choices](enums.md) for more details. |
+| `enum.IntEnum` | Checks that the value is a valid `IntEnum` instance. See [Enums and Choices](enums.md) for more details. |
+| Subclass of `enum.IntEnum` | Checks that the value is a valid member of the integer `enum`. See [Enums and Choices](enums.md) for more details. |
+>>>>>>> 0ddead6c (Removing `number_types.md` (#7488))
 | `pathlib.Path` | Simply uses the type itself for validation by passing the value to `Path(v)`. |
 | `uuid.UUID` | Strings and bytes (converted to strings) are passed to `UUID(v)`, with a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`. See [UUIDs](uuids.md) for other, more strict UUID types. |
 | `ByteSize` | Converts a bytes string with units to bytes. See [ByteSize](../../api/types.md#pydantic.types.ByteSize) for more details. |
