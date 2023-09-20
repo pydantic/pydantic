@@ -256,7 +256,10 @@ def test_empty_choices():
 
 def test_one_choice():
     v = SchemaValidator({'type': 'union', 'choices': [{'type': 'str'}]})
-    assert plain_repr(v) == 'SchemaValidator(title="str",validator=Str(StrValidator{strict:false}),definitions=[])'
+    assert (
+        plain_repr(v)
+        == 'SchemaValidator(title="str",validator=Str(StrValidator{strict:false,coerce_numbers_to_str:false}),definitions=[])'
+    )
     assert v.validate_python('hello') == 'hello'
 
 

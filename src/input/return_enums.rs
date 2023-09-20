@@ -768,6 +768,12 @@ impl<'a> From<&'a str> for EitherString<'a> {
     }
 }
 
+impl<'a> From<String> for EitherString<'a> {
+    fn from(data: String) -> Self {
+        Self::Cow(Cow::Owned(data))
+    }
+}
+
 impl<'a> From<&'a PyString> for EitherString<'a> {
     fn from(date: &'a PyString) -> Self {
         Self::Py(date)
