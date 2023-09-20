@@ -7,21 +7,14 @@ description: Support for common types from the Python standard library.
 | `None`, `type(None)`, or `Literal[None]` | Equivalent according to [PEP 484](https://www.python.org/dev/peps/pep-0484/#using-none). Allows only `None` value. |
 | `str` | Strings are accepted as-is. `bytes` and `bytearray` are converted using `v.decode()`. `Enum`s inheriting from `str` are converted using `v.value`. All other types cause an error. |
 | `bytes` | `bytes` are accepted as-is. `bytearray` is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](../../api/types.md#pydantic.types.ByteSize) for more details. |
-| `list` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a list. See [`typing.List`](list_types.md) for sub-type constraints. |
-| `tuple` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a tuple. See [`typing.Tuple`](list_types.md) for sub-type constraints. |
 | `dict`| `dict(v)` is used to attempt to convert a dictionary. See [`typing.Dict`](dicts_mapping.md) for sub-type constraints. |
 | `set` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a set. See [`typing.Set`](set_types.md) for sub-type constraints. |
 | `frozenset` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a frozen set. See [`typing.FrozenSet`](set_types.md) for sub-type constraints. |
-| `deque` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a deque. See [`typing.Deque`](list_types.md) for sub-type constraints. |
 | `typing.Any` | Allows any value including `None`, thus an `Any` field is optional. |
 | `typing.Annotated` | Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../json_schema.md#typingannotated-fields), but otherwise the additional metadata is ignored and the root type is used. |
 | `typing.TypeVar` | Constrains the values allowed based on `constraints` or `bound`, see [TypeVar](typevars.md). |
 | `typing.Union` | See [Unions](unions.md) for more detail on parsing and validation. |
 | `typing.Optional` | `Optional[x]` is simply short hand for `Union[x, None]`. See [Unions](unions.md) for more detail on parsing and validation and [Required Fields](../models.md#required-fields) for details about required fields that can receive `None` as a value. |
-| `typing.List` | See [Lists and Tuples](list_types.md) for more detail on parsing and validation. |
-| `typing.Tuple` | See [Lists and Tuples](list_types.md) for more detail on parsing and validation. |
-| Subclass of `typing.NamedTuple` | Same as `tuple`, but instantiates with the given `namedtuple` and validates fields since they are annotated. See [Lists and Tuples](list_types.md) for more detail. |
-| Subclass of `collections.namedtuple` | Same as subclass of `typing.NamedTuple`, but all fields will have type `Any` since they are not annotated. See [Lists and Tuples](list_types.md) for more detail. |
 | `typing.Dict` | See [Dicts and mapping](dicts_mapping.md) for more detail on parsing and validation. |
 | Subclass of `typing.TypedDict` | Same as `dict`, but Pydantic will validate the dictionary since keys are annotated. |
 | `typing.Set` | See [Sets and frozenset](set_types.md) for more detail on parsing and validation. |
