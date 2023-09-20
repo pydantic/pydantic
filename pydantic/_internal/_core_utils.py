@@ -190,13 +190,13 @@ class _WalkCoreSchema:
         return mapping
 
     def walk(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
-        return f(schema.copy(), self._walk)
+        return f(schema, self._walk)
 
     def _walk(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
         schema = self._schema_type_to_method[schema['type']](schema, f)
         ser_schema: core_schema.SerSchema | None = schema.get('serialization')  # type: ignore
         if ser_schema:
-            schema['serialization'] = self._handle_ser_schemas(ser_schema.copy(), f)
+            schema['serialization'] = self._handle_ser_schemas(ser_schema, f)
         return schema
 
     def _handle_other_schemas(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
