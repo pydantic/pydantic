@@ -333,7 +333,7 @@ This applies to all validation decorators.
 
 Pydantic V2 includes some changes to type coercion. For example:
 
-* int, float, and decimal values are no longer coerced to strings.
+* coercing `int`, `float`, and `Decimal` values to strings is now optional and disabled by default, see [Coerce Numbers to Strings](./usage/model_config.md#coerce-numbers-to-strings).
 * iterable of pairs is no longer coerced to a dict.
 
 See the [Conversion table](usage/conversion_table.md) for details on Pydantic V2 type coercion defaults.
