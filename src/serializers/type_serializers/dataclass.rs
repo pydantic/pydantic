@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use ahash::AHashMap;
 
 use crate::build_tools::{py_schema_error_type, ExtraBehavior};
-use crate::definitions::DefinitionsBuilder;
+use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::tools::SchemaDict;
 
 use super::{
@@ -179,7 +179,7 @@ impl TypeSerializer for DataclassSerializer {
         &self.name
     }
 
-    fn retry_with_lax_check(&self) -> bool {
+    fn retry_with_lax_check(&self, _definitions: &Definitions<CombinedSerializer>) -> bool {
         true
     }
 }

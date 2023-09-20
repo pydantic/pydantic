@@ -4,7 +4,7 @@ use pyo3::types::{PyDict, PyList, PyTuple};
 use std::borrow::Cow;
 
 use crate::build_tools::py_schema_err;
-use crate::definitions::DefinitionsBuilder;
+use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::tools::SchemaDict;
 use crate::PydanticSerializationUnexpectedValue;
 
@@ -87,7 +87,7 @@ impl TypeSerializer for UnionSerializer {
                 },
             }
         }
-        if self.retry_with_lax_check() {
+        if self.retry_with_lax_check(extra.definitions) {
             new_extra.check = SerCheck::Lax;
             for comb_serializer in &self.choices {
                 match comb_serializer.to_python(value, include, exclude, &new_extra) {
@@ -116,7 +116,7 @@ impl TypeSerializer for UnionSerializer {
                 },
             }
         }
-        if self.retry_with_lax_check() {
+        if self.retry_with_lax_check(extra.definitions) {
             new_extra.check = SerCheck::Lax;
             for comb_serializer in &self.choices {
                 match comb_serializer.json_key(key, &new_extra) {
@@ -153,7 +153,7 @@ impl TypeSerializer for UnionSerializer {
                 },
             }
         }
-        if self.retry_with_lax_check() {
+        if self.retry_with_lax_check(extra.definitions) {
             new_extra.check = SerCheck::Lax;
             for comb_serializer in &self.choices {
                 match comb_serializer.to_python(value, include, exclude, &new_extra) {
@@ -174,8 +174,10 @@ impl TypeSerializer for UnionSerializer {
         &self.name
     }
 
-    fn retry_with_lax_check(&self) -> bool {
-        self.choices.iter().any(TypeSerializer::retry_with_lax_check)
+    fn retry_with_lax_check(&self, definitions: &Definitions<CombinedSerializer>) -> bool {
+        self.choices
+            .iter()
+            .any(|choice| choice.retry_with_lax_check(definitions))
     }
 }
 

@@ -1,7 +1,7 @@
 import dataclasses
 import json
 import re
-from typing import Union
+from typing import Any, ClassVar, Union
 
 import pytest
 from typing_extensions import Literal
@@ -401,3 +401,56 @@ def test_union_literal_with_other_type(data, json_value):
 
     assert s.to_python(m) == {'value': data, 'value_types_reversed': data}
     assert s.to_json(m) == f'{{"value":{json_value},"value_types_reversed":{json_value}}}'.encode()
+
+
+def test_union_serializes_model_subclass_from_definition() -> None:
+    class BaseModel:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+
+        def __init__(self, **kwargs: Any):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+    class User(BaseModel):
+        name: str
+
+    class DBUser(User):
+        password: str
+        __pydantic_serializer__: ClassVar[SchemaSerializer]
+
+    DBUser.__pydantic_serializer__ = SchemaSerializer(
+        core_schema.model_schema(
+            DBUser,
+            core_schema.model_fields_schema(
+                {
+                    'name': core_schema.model_field(core_schema.str_schema()),
+                    'password': core_schema.model_field(core_schema.str_schema()),
+                }
+            ),
+        )
+    )
+
+    class Item(BaseModel):
+        price: float
+
+    s = SchemaSerializer(
+        core_schema.definitions_schema(
+            core_schema.union_schema(
+                [core_schema.definition_reference_schema('User'), core_schema.definition_reference_schema('Item')]
+            ),
+            [
+                core_schema.model_schema(
+                    User,
+                    core_schema.model_fields_schema({'name': core_schema.model_field(core_schema.str_schema())}),
+                    ref='User',
+                ),
+                core_schema.model_schema(
+                    Item,
+                    core_schema.model_fields_schema({'price': core_schema.model_field(core_schema.float_schema())}),
+                    ref='Item',
+                ),
+            ],
+        )
+    )
+
+    assert s.to_python(DBUser(name='John', password='secret')) == {'name': 'John'}
