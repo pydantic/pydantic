@@ -2559,3 +2559,38 @@ def test_type_union():
     m = Model(a=bytes, b=int)
     assert m.model_dump() == {'a': bytes, 'b': int}
     assert m.a == bytes
+
+
+def test_custom_exception_handler():
+    from traceback import TracebackException
+
+    from pydantic import BaseModel
+
+    traceback_exceptions = []
+
+    class MyModel(BaseModel):
+        name: str
+
+    class CustomErrorCatcher:
+        def __enter__(self):
+            return None
+
+        def __exit__(self, _exception_type, exception, exception_traceback):
+            if exception is not None:
+                traceback_exceptions.append(
+                    TracebackException(
+                        exc_type=type(exception),
+                        exc_value=exception,
+                        exc_traceback=exception_traceback,
+                        capture_locals=True,
+                    )
+                )
+
+                return True
+            return False
+
+    with CustomErrorCatcher():
+        data = {'age': 'John Doe'}
+        MyModel(**data)
+
+    assert len(traceback_exceptions) == 1
