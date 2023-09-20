@@ -213,18 +213,23 @@ print(my_model.model_dump_json())  # (3)!
 3. Using [`model_dump_json`][pydantic.main.BaseModel.model_dump_json], `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
 
 ## Enum
+
 Pydantic uses Python's standard `enum` classes to define choices.
 
 ### `enum.Enum`
+
 Checks that the value is a valid `Enum` instance.
 
 ### Subclass of `enum.Enum`
+
 Checks that the value is a valid member of the enum.
 
 ### `enum.IntEnum`
+
 Checks that the value is a valid `IntEnum` instance.
 
 ### Subclass of `enum.IntEnum`
+
 Checks that the value is a valid member of the integer enum.
 
 ```py
@@ -267,11 +272,12 @@ except ValidationError as e:
 
 ### `list`
 
-Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a list.
-when a generic parameter is provided, the appropriate validation is applied to all items of the list.
+Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `list`.
+When a generic parameter is provided, the appropriate validation is applied to all items of the list.
 
 ### `typing.List`
-Handled the same as `list` above
+
+Handled the same as `list` above.
 
 ```py
 from typing import List, Optional
@@ -293,11 +299,13 @@ print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
 ## Tuple
 
 ### `tuple`
-Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a tuple.
-when generic parameters are provided, the appropriate validation is applied to the respective items of the tuple
+
+Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `tuple`.
+When generic parameters are provided, the appropriate validation is applied to the respective items of the tuple
 
 ### `typing.Tuple`
-Handled the same as `tuple` above
+
+Handled the same as `tuple` above.
 
 ```py
 from typing import Optional, Tuple
@@ -319,11 +327,13 @@ print(Model(tuple_of_different_types=[3, 2, 1]).tuple_of_different_types)
 ## Deque
 
 ### `deque`
+
 Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `deque`.
-when generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`
+When generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`
 
 ### `typing.Deque`
-Handled the same as `deque` above
+
+Handled the same as `deque` above.
 
 ```py
 from typing import Deque, Optional
@@ -341,10 +351,12 @@ print(Model(deque=[1, 2, 3]).deque)
 
 ## NamedTuple
 
-### `subclasses of typing.NamedTuple`
+### Subclasses of `typing.NamedTuple`
+
 Similar to `tuple`, but creates instances of the given `namedtuple` class.
 
-### `types returned from collections.namedtuple`
+### Types returned from `collections.namedtuple`
+
 Similar to `subclass of typing.NamedTuple`, but since field types are not specified,
 all fields are treated as having type `Any`.
 
@@ -352,6 +364,7 @@ all fields are treated as having type `Any`.
 from typing import NamedTuple
 
 from pydantic import BaseModel, ValidationError
+
 
 class Point(NamedTuple):
     x: int
@@ -373,7 +386,6 @@ except ValidationError as e:
     """
 ```
 
-<<<<<<< HEAD
 ## Callable
 
 See below for more detail on parsing and validation
@@ -399,7 +411,6 @@ print(m)
     Callable fields only perform a simple check that the argument is
     callable; no validation of arguments, their types, or the return
     type is performed.
-=======
 
 ## IP Address Types
 
