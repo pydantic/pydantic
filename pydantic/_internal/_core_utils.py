@@ -41,6 +41,8 @@ _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozense
 
 _DEFINITIONS_CACHE_METADATA_KEY = 'pydantic.definitions_cache'
 
+NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY = 'pydantic.internal.needs_apply_discriminated_union'
+
 
 def is_core_schema(
     schema: CoreSchemaOrField,

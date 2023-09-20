@@ -6,9 +6,19 @@ from pydantic_core import CoreSchema, core_schema
 
 from ..errors import PydanticUserError
 from . import _core_utils
-from ._core_utils import CoreSchemaField, collect_definitions
+from ._core_utils import NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY, CoreSchemaField, collect_definitions
 
 CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic.internal.union_discriminator'
+
+
+class MissingDefinitionForUnionRef(Exception):
+    """Raised when applying a discriminated union discriminator to a schema
+    requires a definition that is not yet defined
+    """
+
+    def __init__(self, ref: str) -> None:
+        self.ref = ref
+        super().__init__(f'Missing definition for ref {self.ref!r}')
 
 
 def set_discriminator(schema: CoreSchema, discriminator: Any) -> None:
@@ -19,9 +29,14 @@ def set_discriminator(schema: CoreSchema, discriminator: Any) -> None:
 
 
 def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    definitions = collect_definitions(schema)
+    definitions: dict[str, CoreSchema] | None = None
 
     def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
+        nonlocal definitions
+        if 'metadata' in s:
+            if s['metadata'].get(NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY, True) is False:
+                return s
+
         s = recurse(s, inner)
         if s['type'] == 'tagged-union':
             return s
@@ -29,6 +44,8 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
         metadata = s.get('metadata', {})
         discriminator = metadata.get(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
         if discriminator is not None:
+            if definitions is None:
+                definitions = collect_definitions(schema)
             s = apply_discriminator(s, discriminator, definitions)
         return s
 
@@ -53,7 +70,7 @@ def apply_discriminator(
             - If `discriminator` is used with invalid union variant.
             - If `discriminator` is used with `Union` type with one variant.
             - If `discriminator` value mapped to multiple choices.
-        ValueError:
+        MissingDefinitionForUnionRef:
             If the definition for ref is missing.
         PydanticUserError:
             - If a model in union doesn't have a discriminator field.
@@ -242,7 +259,7 @@ class _ApplyInferredDiscriminator:
             self._choices_to_handle.extend(choices_schemas)
         elif choice['type'] == 'definition-ref':
             if choice['schema_ref'] not in self.definitions:
-                raise ValueError(f"Missing definition for ref {choice['schema_ref']!r}")
+                raise MissingDefinitionForUnionRef(choice['schema_ref'])
             self._handle_choice(self.definitions[choice['schema_ref']])
         elif choice['type'] not in {
             'model',
@@ -344,9 +361,8 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'definition-ref':
             schema_ref = choice['schema_ref']
             if schema_ref not in self.definitions:
-                raise ValueError(f'Missing definition for inner ref {schema_ref!r}')
+                raise MissingDefinitionForUnionRef(schema_ref)
             return self._infer_discriminator_values_for_choice(self.definitions[schema_ref], source_name=source_name)
-
         else:
             raise TypeError(
                 f'{choice["type"]!r} is not a valid discriminated union variant;'

@@ -50,6 +50,7 @@ from ._core_metadata import (
     build_metadata_dict,
 )
 from ._core_utils import (
+    NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
     define_expected_missing_refs,
     get_type_ref,
@@ -354,6 +355,22 @@ class GenerateSchema:
             ' `handler.generate_schema(<some type>)` since we do not call'
             ' `__get_pydantic_core_schema__` on `<some type>` otherwise to avoid infinite recursion.'
         )
+
+    def _apply_discriminator_to_union(self, schema: CoreSchema, discriminator: Any) -> CoreSchema:
+        try:
+            return _discriminated_union.apply_discriminator(
+                schema,
+                discriminator,
+            )
+        except _discriminated_union.MissingDefinitionForUnionRef:
+            # defer until defs are resolved
+            _discriminated_union.set_discriminator(
+                schema,
+                discriminator,
+            )
+            schema.setdefault('metadata', {})[NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = True
+            self._needs_apply_discriminated_union = True
+            return schema
 
     def collect_definitions(self, schema: CoreSchema) -> CoreSchema:
         ref = cast('str | None', schema.get('ref', None))
@@ -847,7 +864,7 @@ class GenerateSchema:
         source_type, annotations = field_info.annotation, field_info.metadata
 
         def set_discriminator(schema: CoreSchema) -> CoreSchema:
-            _discriminated_union.set_discriminator(schema, field_info.discriminator)
+            schema = self._apply_discriminator_to_union(schema, field_info.discriminator)
             return schema
 
         if field_info.discriminator is not None:
@@ -1525,7 +1542,7 @@ class GenerateSchema:
                 schema = self._apply_single_annotation(schema, field_metadata)
 
             if metadata.discriminator is not None:
-                _discriminated_union.set_discriminator(
+                schema = self._apply_discriminator_to_union(
                     schema,
                     metadata.discriminator,
                 )
