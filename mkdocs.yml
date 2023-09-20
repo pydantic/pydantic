@@ -64,14 +64,6 @@ nav:
     - Types with Fields: usage/types/types_fields.md
     - Unions: usage/types/unions.md
     - Custom Data Types: usage/types/custom.md
-    - Extra Types:
-      - Extra Types Overview: usage/types/extra_types/extra_types.md
-      - Color Types: usage/types/extra_types/color_types.md
-      - Payment Card Numbers: usage/types/extra_types/payment_cards.md
-      - Phone Numbers: usage/types/extra_types/phone_numbers.md
-      - Routing Numbers: usage/types/extra_types/routing_numbers.md
-      - MAC Address: usage/types/extra_types/mac_address.md
-      - Coordinate: usage/types/extra_types/coordinate.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
   - 'Fields': usage/fields.md
@@ -108,10 +100,10 @@ nav:
     - RootModel: api/root_model.md
     - 'Pydantic Dataclasses': api/dataclasses.md
     - TypeAdapter: api/type_adapter.md
-    - validate_call: api/validate_call.md
+    - Validation Decorator: api/validate_call.md
     - Fields: api/fields.md
-    - Config: api/config.md
-    - json_schema: api/json_schema.md
+    - Configuration: api/config.md
+    - JSON Schema: api/json_schema.md
     - Errors: api/errors.md
     - 'Functional Validators': api/functional_validators.md
     - 'Functional Serializers': api/functional_serializers.md
@@ -122,14 +114,13 @@ nav:
   - Pydantic Core:
     - 'pydantic_core': api/pydantic_core.md
     - 'pydantic_core.core_schema': api/pydantic_core_schema.md
-  - Pydantic Settings:
-    - 'pydantic_settings': api/pydantic_settings.md
+  - Pydantic Settings: api/pydantic_settings.md
   - Pydantic Extra Types:
-    - 'pydantic_extra_types.color': api/pydantic_extra_types_color.md
-    - 'pydantic_extra_types.country': api/pydantic_extra_types_country.md
-    - 'pydantic_extra_types.payment': api/pydantic_extra_types_payment.md
-    - 'pydantic_extra_types.phone_numbers': api/pydantic_extra_types_phone_numbers.md
-    - 'pydantic_extra_types.routing_number': api/pydantic_extra_types_routing_number.md
+    - Color: api/pydantic_extra_types_color.md
+    - Country: api/pydantic_extra_types_country.md
+    - Payment: api/pydantic_extra_types_payment.md
+    - Phone Numbers: api/pydantic_extra_types_phone_numbers.md
+    - Routing Numbers: api/pydantic_extra_types_routing_numbers.md
 
 markdown_extensions:
 - tables
@@ -194,9 +185,22 @@ plugins:
       'usage/types/string_types.md': 'api/types.md'
       'usage/types/file_types.md': 'api/types.md'
       'api/main.md': 'api/base_model.md'
-      'api/color.md': 'api/pydantic_extra_types_color.md'
       'api/alias_generators.md': 'api/config.md'
       'api/pydantic_core_init.md': 'api/pydantic_core.md'
+      'usage/types/booleans.md': 'api/standard_library_types.md'
+      'usage/types/callables.md': 'api/standard_library_types.md'
+      'usage/types/datetime.md': 'api/standard_library_types.md'
+      'usage/types/enum.md': 'api/standard_library_types.md'
+      'usage/types/json.md': 'api/standard_library_types.md'
+      'usage/types/list_types.md': 'api/standard_library_types.md'
+      'usage/types/urls.md': 'api/standard_library_types.md'
       'usage/validation_errors.md': 'errors/validation_errors.md'
       'usage/errors.md': 'errors/usage_errors.md'
+      'usage/types/extra_types/color_types.md': 'api/pydantic_extra_types_color.md'
+      'usage/types/extra_types/extra_types.md': 'api/pydantic_extra_types_color.md'
+      'usage/types/extra_types/coordinate.md': 'api/pydantic_extra_types_coordinate.md'
+      'usage/types/extra_types/mac_address.md': 'api/pydantic_extra_types_mac_address.md'
+      'usage/types/extra_types/payment_cards.md': 'api/pydantic_extra_types_payment.md'
+      'usage/types/extra_types/phone_numbers.md': 'api/pydantic_extra_types_phone_numbers.md'
+      'usage/types/extra_types/routing_numbers.md': 'api/pydantic_extra_types_routing_numbers.md'
 - external-markdown:

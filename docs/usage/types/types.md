@@ -2,7 +2,8 @@ Where possible Pydantic uses [standard library types](standard_types.md) to defi
 the learning curve. For many useful applications, however, no standard library type exists,
 so Pydantic implements many commonly used types.
 
-There are also more complex types that can be found in the [Pydantic Extra Types](extra_types/extra_types.md).
+There are also more complex types that can be found in the
+[Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) package.
 
 If no existing type suits your purpose you can also implement your [own Pydantic-compatible types](custom.md#custom-data-types) with custom properties and validation.
 
@@ -16,8 +17,3 @@ The following sections describe the types supported by Pydantic.
 * [Unions](unions.md) &mdash; allows a model attribute to accept different types.
 * [Custom Data Types](custom.md) &mdash; create your own custom data types.
 * [Field Type Conversions](../conversion_table.md) &mdash; strict and lax conversion between different field types.
-* [Extra Types](extra_types/extra_types.md): Types that can be found in the optional [Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) package. These include:
-    * [Color Types](extra_types/color_types.md) &mdash; types that enable you to store RGB color values in your model.
-    * [Payment Card Numbers](extra_types/payment_cards.md) &mdash; types that enable you to store payment cards such as debit or credit cards.
-    * [Phone Numbers](extra_types/phone_numbers.md) &mdash; types that enable you to store phone numbers in your model.
-    * [Routing Numbers](extra_types/color_types.md) &mdash; types that enable you to store ABA routing transit numbers in your model.
