@@ -1550,7 +1550,7 @@ class EncodedStr(EncodedBytes):
         Returns:
             The encoded data.
         """
-        return super().encode(value=value.encode()).decode()
+        return super(EncodedStr, self).encode(value=value.encode()).decode()  # noqa: UP008
 
     def __hash__(self) -> int:
         return hash(self.encoder)
