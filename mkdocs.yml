@@ -67,7 +67,6 @@ nav:
     - Type and TypeVar: usage/types/typevars.md
     - Types with Fields: usage/types/types_fields.md
     - Unions: usage/types/unions.md
-    - UUIDs: usage/types/uuids.md
     - Custom Data Types: usage/types/custom.md
     - Extra Types:
       - Extra Types Overview: usage/types/extra_types/extra_types.md
