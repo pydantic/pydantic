@@ -59,9 +59,6 @@ nav:
   - Field Types:
     - Types Overview: usage/types/types.md
     - Standard Library Types: usage/types/standard_types.md
-    - Dicts and Mapping: usage/types/dicts_mapping.md
-    - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
-    - Sets and frozenset: usage/types/set_types.md
     - Strict Types: usage/types/strict_types.md
     - Type and TypeVar: usage/types/typevars.md
     - Types with Fields: usage/types/types_fields.md
