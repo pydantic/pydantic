@@ -7,21 +7,12 @@ description: Support for common types from the Python standard library.
 | `None`, `type(None)`, or `Literal[None]` | Equivalent according to [PEP 484](https://www.python.org/dev/peps/pep-0484/#using-none). Allows only `None` value. |
 | `str` | Strings are accepted as-is. `bytes` and `bytearray` are converted using `v.decode()`. `Enum`s inheriting from `str` are converted using `v.value`. All other types cause an error. |
 | `bytes` | `bytes` are accepted as-is. `bytearray` is converted using `bytes(v)`. `str` are converted using `v.encode()`. `int`, `float`, and `Decimal` are coerced using `str(v).encode()`. See [ByteSize](../../api/types.md#pydantic.types.ByteSize) for more details. |
-| `dict`| `dict(v)` is used to attempt to convert a dictionary. See [`typing.Dict`](dicts_mapping.md) for sub-type constraints. |
-| `set` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a set. See [`typing.Set`](set_types.md) for sub-type constraints. |
-| `frozenset` | Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a frozen set. See [`typing.FrozenSet`](set_types.md) for sub-type constraints. |
 | `typing.Any` | Allows any value including `None`, thus an `Any` field is optional. |
 | `typing.Annotated` | Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../json_schema.md#typingannotated-fields), but otherwise the additional metadata is ignored and the root type is used. |
 | `typing.TypeVar` | Constrains the values allowed based on `constraints` or `bound`, see [TypeVar](typevars.md). |
 | `typing.Union` | See [Unions](unions.md) for more detail on parsing and validation. |
 | `typing.Optional` | `Optional[x]` is simply short hand for `Union[x, None]`. See [Unions](unions.md) for more detail on parsing and validation and [Required Fields](../models.md#required-fields) for details about required fields that can receive `None` as a value. |
-| `typing.Dict` | See [Dicts and mapping](dicts_mapping.md) for more detail on parsing and validation. |
 | Subclass of `typing.TypedDict` | Same as `dict`, but Pydantic will validate the dictionary since keys are annotated. |
-| `typing.Set` | See [Sets and frozenset](set_types.md) for more detail on parsing and validation. |
-| `typing.FrozenSet` | See [Sets and frozenset](set_types.md) for more detail on parsing and validation. |
-| `typing.Deque` | See [Sequence, Iterable & Iterator](sequence_iterable.md) for more detail on parsing and validation. |
-| `typing.Sequence` | See [Sequence, Iterable & Iterator](sequence_iterable.md) for more detail on parsing and validation. |
-| `typing.Iterable` | This is reserved for iterables that shouldn't be consumed. See [Sequence, Iterable & Iterator](sequence_iterable.md) for more detail on parsing and validation. |
 | `typing.Type` | See [Type and Typevars](typevars.md) for more detail on parsing and validation. |
 | `typing.Pattern` | Will cause the input value to be passed to `re.compile(v)` to create a regular expression pattern. |
 | `pathlib.Path` | Simply uses the type itself for validation by passing the value to `Path(v)`. |
