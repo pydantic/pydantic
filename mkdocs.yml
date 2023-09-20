@@ -185,6 +185,7 @@ plugins:
       'usage/types/string_types.md': 'api/types.md'
       'usage/types/file_types.md': 'api/types.md'
       'api/main.md': 'api/base_model.md'
+      'api/color.md': 'api/pydantic_extra_types_color.md'
       'api/alias_generators.md': 'api/config.md'
       'api/pydantic_core_init.md': 'api/pydantic_core.md'
       'usage/types/booleans.md': 'api/standard_library_types.md'
