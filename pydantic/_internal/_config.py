@@ -54,7 +54,7 @@ class ConfigWrapper:
     validate_assignment: bool
     arbitrary_types_allowed: bool
     from_attributes: bool
-    # whether to use the actual key provided in the data(e.g. alias or first alias for "field required" errors) instead of field_names
+    # whether to use the actual key provided in the data (e.g. alias or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default `True`
     loc_by_alias: bool
     alias_generator: Callable[[str], str] | None
