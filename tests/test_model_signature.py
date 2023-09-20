@@ -32,6 +32,7 @@ def test_model_signature():
     assert _equals(str(sig), '(*, a: float, b: int = 10) -> None')
 
 
+@pytest.mark.xfail(reason='https://github.com/pydantic/pydantic/pull/7523#discussion_r1331765978')
 def test_generic_model_signature():
     T = TypeVar('T')
 

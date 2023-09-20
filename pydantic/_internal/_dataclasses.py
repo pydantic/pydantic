@@ -16,7 +16,7 @@ from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _discriminated_union, _typing_extra
-from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
+from ._core_utils import collect_invalid_schemas, simplify_schema_references
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
@@ -152,19 +152,19 @@ def complete_dataclass(
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
-    schema = flatten_schema_defs(schema)
     if collect_invalid_schemas(schema):
         set_dataclass_mock_validator(cls, cls.__name__, 'all referenced types')
         return False
+
+    schema = _discriminated_union.apply_discriminators(simplify_schema_references(schema))
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
-    cls.__pydantic_core_schema__ = schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
-    simplified_core_schema = inline_schema_defs(schema)
-    cls.__pydantic_validator__ = validator = SchemaValidator(simplified_core_schema, core_config)
-    cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
+    cls.__pydantic_core_schema__ = schema
+    cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
 
     if config_wrapper.validate_assignment:
 

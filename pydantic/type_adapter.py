@@ -166,21 +166,20 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
 
-        core_schema = _discriminated_union.apply_discriminators(_core_utils.flatten_schema_defs(core_schema))
-        simplified_core_schema = _core_utils.inline_schema_defs(core_schema)
+        core_schema = _discriminated_union.apply_discriminators(_core_utils.simplify_schema_references(core_schema))
 
         core_config = config_wrapper.core_config(None)
         validator: SchemaValidator
         try:
             validator = _getattr_no_parents(type, '__pydantic_validator__')
         except AttributeError:
-            validator = SchemaValidator(simplified_core_schema, core_config)
+            validator = SchemaValidator(core_schema, core_config)
 
         serializer: SchemaSerializer
         try:
             serializer = _getattr_no_parents(type, '__pydantic_serializer__')
         except AttributeError:
-            serializer = SchemaSerializer(simplified_core_schema, core_config)
+            serializer = SchemaSerializer(core_schema, core_config)
 
         self.core_schema = core_schema
         self.validator = validator
