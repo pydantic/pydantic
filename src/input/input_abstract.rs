@@ -91,16 +91,16 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
 
     fn parse_json(&'a self) -> ValResult<'a, JsonInput>;
 
-    fn validate_str(&'a self, strict: bool) -> ValResult<EitherString<'a>> {
+    fn validate_str(&'a self, strict: bool, coerce_numbers_to_str: bool) -> ValResult<EitherString<'a>> {
         if strict {
             self.strict_str()
         } else {
-            self.lax_str()
+            self.lax_str(coerce_numbers_to_str)
         }
     }
     fn strict_str(&'a self) -> ValResult<EitherString<'a>>;
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
+    fn lax_str(&'a self, _coerce_numbers_to_str: bool) -> ValResult<EitherString<'a>> {
         self.strict_str()
     }
 

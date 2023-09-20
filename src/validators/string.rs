@@ -13,6 +13,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationSta
 #[derive(Debug, Clone)]
 pub struct StrValidator {
     strict: bool,
+    coerce_numbers_to_str: bool,
 }
 
 impl BuildValidator for StrValidator {
@@ -30,6 +31,7 @@ impl BuildValidator for StrValidator {
         } else {
             Ok(Self {
                 strict: con_str_validator.strict,
+                coerce_numbers_to_str: con_str_validator.coerce_numbers_to_str,
             }
             .into())
         }
@@ -45,7 +47,7 @@ impl Validator for StrValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let either_str = input.validate_str(state.strict_or(self.strict))?;
+        let either_str = input.validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)?;
         Ok(either_str.into_py(py))
     }
 
@@ -76,6 +78,7 @@ pub struct StrConstrainedValidator {
     strip_whitespace: bool,
     to_lower: bool,
     to_upper: bool,
+    coerce_numbers_to_str: bool,
 }
 
 impl_py_gc_traverse!(StrConstrainedValidator {});
@@ -87,7 +90,7 @@ impl Validator for StrConstrainedValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let either_str = input.validate_str(state.strict_or(self.strict))?;
+        let either_str = input.validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)?;
         let cow = either_str.as_cow()?;
         let mut str = cow.as_ref();
         if self.strip_whitespace {
@@ -188,6 +191,11 @@ impl StrConstrainedValidator {
         let to_upper: bool =
             schema_or_config(schema, config, intern!(py, "to_upper"), intern!(py, "str_to_upper"))?.unwrap_or(false);
 
+        let coerce_numbers_to_str = config
+            .and_then(|c| c.get_item("coerce_numbers_to_str"))
+            .and_then(|v| v.is_true().ok())
+            .unwrap_or(false);
+
         Ok(Self {
             strict: is_strict(schema, config)?,
             pattern,
@@ -196,6 +204,7 @@ impl StrConstrainedValidator {
             strip_whitespace,
             to_lower,
             to_upper,
+            coerce_numbers_to_str,
         })
     }
 

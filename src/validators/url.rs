@@ -111,7 +111,7 @@ impl Validator for UrlValidator {
 
 impl UrlValidator {
     fn get_url<'s, 'data>(&'s self, input: &'data impl Input<'data>, strict: bool) -> ValResult<'data, Url> {
-        match input.validate_str(strict) {
+        match input.validate_str(strict, false) {
             Ok(either_str) => {
                 let cow = either_str.as_cow()?;
                 let url_str = cow.as_ref();
@@ -251,7 +251,7 @@ impl Validator for MultiHostUrlValidator {
 
 impl MultiHostUrlValidator {
     fn get_url<'s, 'data>(&'s self, input: &'data impl Input<'data>, strict: bool) -> ValResult<'data, PyMultiHostUrl> {
-        match input.validate_str(strict) {
+        match input.validate_str(strict, false) {
             Ok(either_str) => {
                 let cow = either_str.as_cow()?;
                 let url_str = cow.as_ref();
