@@ -155,6 +155,8 @@ filterwarnings = [
     'ignore:(ast\.Str|ast\.NameConstant|ast\.Num|Attribute s) is deprecated and will be removed.*:DeprecationWarning:',
     # pytest-examples needs to remove `co_lnotab` in favor of `co_lines`.
     'ignore:co_lnotab is deprecated, use co_lines instead.:DeprecationWarning:',
+    # Once we drop Python 3.8, we can bump mypy, and we can remove the following.
+    'ignore:ast.Ellipsis is deprecated and will be removed in Python 3.14.*:DeprecationWarning:',
 ]
 addopts = [
     '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
