@@ -70,7 +70,7 @@ def test_dataclass_no_docs_extraction():
 
 
 def test_dataclass_docs_extraction():
-    @pydantic_dataclass(config=ConfigDict(use_attributes_docstring=True), kw_only=True)
+    @pydantic_dataclass(config=ConfigDict(use_attributes_docstring=True))
     class ModelDCDocs:
         a: int
         """A docs"""
@@ -80,7 +80,7 @@ def test_dataclass_docs_extraction():
         c: int = 1
         # This isn't used as a description.
 
-        d: int
+        d: int = 1
 
         def dummy_method(self) -> None:
             """Docs for dummy_method that won't be used for d"""
@@ -88,18 +88,18 @@ def test_dataclass_docs_extraction():
         e: int = Field(1, description='Real description')
         """Won't be used"""
 
-        f: int
+        f: int = 1
         """F docs"""
 
         """Useless docs"""
 
-        g: int
+        g: int = 1
         """G docs"""
 
         h = 1
         """H docs"""
 
-        i: Annotated[int, Field(description='Real description')]
+        i: Annotated[int, Field(description='Real description')] = 1
         """Won't be used"""
 
     assert ModelDCDocs.__pydantic_fields__['a'].description == 'A docs'
@@ -108,32 +108,47 @@ def test_dataclass_docs_extraction():
     assert ModelDCDocs.__pydantic_fields__['d'].description is None
     assert ModelDCDocs.__pydantic_fields__['e'].description == 'Real description'
     assert ModelDCDocs.__pydantic_fields__['g'].description == 'G docs'
-    assert ModelDCDocs.__pydantic_fields__['i'].description == 'Real description'  # TODO What is happening here?
-    # Annotated[..., Field(...)] doesn't seem to work for dataclasses
+    assert ModelDCDocs.__pydantic_fields__['i'].description == 'Real description'
 
 
 def test_typeddict():
-    class ModelTD(TypedDict):
+    class ModelTDNoDocs(TypedDict):
         a: int
         """A docs"""
 
-    ta = TypeAdapter(ModelTD)
+    ta = TypeAdapter(ModelTDNoDocs)
     assert ta.json_schema() == {
         'properties': {'a': {'title': 'A', 'type': 'integer'}},
         'required': ['a'],
-        'title': 'Model',
+        'title': 'ModelTDNoDocs',
         'type': 'object',
     }
 
-    class Model(TypedDict):
+    class ModelTDDocs(TypedDict):
         a: int
         """A docs"""
 
         __pydantic_config__ = ConfigDict(use_attributes_docstring=True)
 
+    ta = TypeAdapter(ModelTDDocs)
+
     assert ta.json_schema() == {
         'properties': {'a': {'title': 'A', 'type': 'integer', 'description': 'A docs'}},
         'required': ['a'],
-        'title': 'Model',
+        'title': 'ModelTDDocs',
         'type': 'object',
     }
+
+
+def test_typeddict_as_field():
+    class ModelTDAsField(TypedDict):
+        a: int
+        """A docs"""
+
+        __pydantic_config__ = ConfigDict(use_attributes_docstring=True)
+
+    class ModelWithTDField(BaseModel):
+        td: ModelTDAsField
+
+    a_property = ModelWithTDField.model_json_schema()['$defs']['ModelTDAsField']['properties']['a']
+    assert a_property['description'] == 'A docs'
