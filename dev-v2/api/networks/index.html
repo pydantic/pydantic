@@ -3030,6 +3030,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.networks.MAX_EMAIL_LENGTH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAX_EMAIL_LENGTH
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.networks.UrlConstraints" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3690,6 +3701,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.networks.MAX_EMAIL_LENGTH" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MAX_EMAIL_LENGTH
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.networks.UrlConstraints" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4165,6 +4187,30 @@
 
 </div>
 
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pydantic.networks.MAX_EMAIL_LENGTH" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">MAX_EMAIL_LENGTH</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.networks.MAX_EMAIL_LENGTH" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">MAX_EMAIL_LENGTH</span> <span class="o">=</span> <span class="mi">2048</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Maximum length for an email.
+A somewhat arbitrary but very generous number compared to what is allowed by most implementations.</p>
+  </div>
+
+</div>
+
 
 <div class="doc doc-object doc-class">
 
@@ -4561,12 +4607,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 </details>
       <details class="quote">
         <summary>Source code in <code>pydantic/networks.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">430</span>
-<span class="normal">431</span>
-<span class="normal">432</span>
-<span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">435</span>
 <span class="normal">436</span>
 <span class="normal">437</span>
 <span class="normal">438</span>
@@ -4592,7 +4633,19 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 <span class="normal">458</span>
 <span class="normal">459</span>
 <span class="normal">460</span>
-<span class="normal">461</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Email address validation using [email-validator](https://pypi.org/project/email-validator/).</span>
 
 <span class="sd">    Note:</span>
@@ -4604,6 +4657,13 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">email_validator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">import_email_validator</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MAX_EMAIL_LENGTH</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
+            <span class="s1">&#39;value_error&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;value is not a valid email address: </span><span class="si">{reason}</span><span class="s1">&#39;</span><span class="p">,</span>
+            <span class="p">{</span><span class="s1">&#39;reason&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;Length must not exceed </span><span class="si">{</span><span class="n">MAX_EMAIL_LENGTH</span><span class="si">}</span><span class="s1"> characters&#39;</span><span class="p">},</span>
+        <span class="p">)</span>
 
     <span class="n">m</span> <span class="o">=</span> <span class="n">pretty_email_regex</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
