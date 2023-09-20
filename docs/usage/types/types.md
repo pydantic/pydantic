@@ -17,7 +17,6 @@ The following sections describe the types supported by Pydantic.
 * [Type and TypeVar](typevars.md) &mdash; `Type` and `TypeVar` types.
 * [Types with Fields](types_fields.md) &mdash; types that allow you to define fields.
 * [Unions](unions.md) &mdash; allows a model attribute to accept different types.
-* [UUIDs](uuids.md) &mdash; types that allow you to store UUIDs in your model.
 * [Custom Data Types](custom.md) &mdash; create your own custom data types.
 * [Field Type Conversions](../conversion_table.md) &mdash; strict and lax conversion between different field types.
 * [Extra Types](extra_types/extra_types.md): Types that can be found in the optional [Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) package. These include:
