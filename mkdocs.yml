@@ -61,7 +61,6 @@ nav:
     - Standard Library Types: usage/types/standard_types.md
     - Callables: usage/types/callables.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
-    - Enums and Choices: usage/types/enums.md
     - Lists and Tuples: usage/types/list_types.md
     - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
