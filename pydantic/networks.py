@@ -416,15 +416,20 @@ class IPvAnyNetwork:
         return cls(__input_value)  # type: ignore[return-value]
 
 
-def _build_pretty_email_regex() -> re.Pattern:
+def _build_pretty_email_regex() -> re.Pattern[str]:
     name_chars = r'[\w!#$%&\'*+\-/=?^_`{|}~]'
     unquoted_name_group = fr'((?:{name_chars}+\s+)*{name_chars}+)'
     quoted_name_group = r'"((?:[^"]|\")+)"'
-    email_group = r'<\s*(.+)\s*>'
+    email_group = r'<\s*(.{0,254})\s*>'
     return re.compile(rf'\s*(?:{unquoted_name_group}|{quoted_name_group})?\s*{email_group}\s*')
 
 
 pretty_email_regex = _build_pretty_email_regex()
+
+MAX_EMAIL_LENGTH = 2048
+"""Maximum length for an email.
+A somewhat arbitrary but very generous number compared to what is allowed by most implementations.
+"""
 
 
 def validate_email(value: str) -> tuple[str, str]:
@@ -439,6 +444,13 @@ def validate_email(value: str) -> tuple[str, str]:
     """
     if email_validator is None:
         import_email_validator()
+
+    if len(value) > MAX_EMAIL_LENGTH:
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': f'Length must not exceed {MAX_EMAIL_LENGTH} characters'},
+        )
 
     m = pretty_email_regex.fullmatch(value)
     name: str | None = None
