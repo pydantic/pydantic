@@ -593,6 +593,8 @@ Pydantic no longer allows number types (`int`, `float`, `Decimal`) to be coerced
 Set [`coerce_numbers_to_str=True`](../api/config.md#pydantic.config.ConfigDict.coerce_numbers_to_str) to enable coercing of numbers to strings.
 
 ```py
+from decimal import Decimal
+
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 
@@ -620,6 +622,8 @@ class Model(BaseModel):
 repr(Model(value=42).value)
 #> "42"
 repr(Model(value=42.13).value)
+#> "42.13"
+repr(Model(value=Decimal('42.13')).value)
 #> "42.13"
 ```
 
