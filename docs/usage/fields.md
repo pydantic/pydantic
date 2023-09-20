@@ -767,7 +767,7 @@ print(User.model_json_schema())
 
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
-[Discriminated Unions]: types/unions.md#discriminated-unions-aka-tagged-unions
+[Discriminated Unions]: ../api/standard_library_types.md#discriminated-unions-aka-tagged-unions
 [Helper Functions]: models.md#helper-functions
 [Models]: models.md
 [init-only field]: https://docs.python.org/3/library/dataclasses.html#init-only-variables

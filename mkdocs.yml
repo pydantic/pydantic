@@ -62,7 +62,6 @@ nav:
     - Strict Types: usage/types/strict_types.md
     - Type and TypeVar: usage/types/typevars.md
     - Types with Fields: usage/types/types_fields.md
-    - Unions: usage/types/unions.md
     - Custom Data Types: usage/types/custom.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
@@ -195,6 +194,7 @@ plugins:
       'usage/types/json.md': 'api/standard_library_types.md'
       'usage/types/list_types.md': 'api/standard_library_types.md'
       'usage/types/urls.md': 'api/standard_library_types.md'
+      'usage/types/unions.md': 'api/standard_library_types.md'
       'usage/validation_errors.md': 'errors/validation_errors.md'
       'usage/errors.md': 'errors/usage_errors.md'
       'usage/types/extra_types/color_types.md': 'api/pydantic_extra_types_color.md'
