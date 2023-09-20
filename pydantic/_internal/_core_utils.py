@@ -116,6 +116,12 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
     defs: dict[str, CoreSchema] = {}
 
     def _record_valid_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
+        if 'metadata' in s:
+            definitions_cache: _DefinitionsState | None = s['metadata'].get(_DEFINITIONS_CACHE_METADATA_KEY, None)
+            if definitions_cache is not None:
+                defs.update(definitions_cache['definitions'])
+                return s
+
         ref = get_ref(s)
         if ref:
             defs[ref] = s
@@ -157,11 +163,21 @@ def define_expected_missing_refs(
 
 def collect_invalid_schemas(schema: core_schema.CoreSchema) -> list[core_schema.CoreSchema]:
     invalid_schemas: list[core_schema.CoreSchema] = []
+    child_invalid = False  # track recursion
 
     def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if s.get('metadata', {}).get('invalid'):
+        nonlocal child_invalid
+        metadata = s.setdefault('metadata', {})
+        invalid = metadata.get('invalid', None)
+        if invalid is True:
             invalid_schemas.append(s)
-        return recurse(s, _is_schema_valid)
+        elif invalid is False:
+            return s
+        s = recurse(s, _is_schema_valid)
+        if invalid is True:
+            child_invalid = True
+        metadata['invalid'] = child_invalid
+        return s
 
     walk_core_schema(schema, _is_schema_valid)
     return invalid_schemas
