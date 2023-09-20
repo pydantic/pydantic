@@ -30,10 +30,10 @@ def test_model_docs_extraction():
         d: int
 
         def dummy_method(self) -> None:
-            """Docs for dummy that wont be used for d"""
+            """Docs for dummy that won't be used for d"""
 
         e: Annotated[int, Field(description='Real description')]
-        """Wont be used"""
+        """Won't be used"""
 
         f: int
         """F docs"""
@@ -70,7 +70,7 @@ def test_dataclass_no_docs_extraction():
 
 
 def test_dataclass_docs_extraction():
-    @pydantic_dataclass(config=ConfigDict(use_attributes_docstring=True))
+    @pydantic_dataclass(config=ConfigDict(use_attributes_docstring=True), kw_only=True)
     class ModelDCDocs:
         a: int
         """A docs"""
@@ -83,10 +83,10 @@ def test_dataclass_docs_extraction():
         d: int
 
         def dummy_method(self) -> None:
-            """Docs for dummy that wont be used for d"""
+            """Docs for dummy_method that won't be used for d"""
 
         e: int = Field(1, description='Real description')
-        """Wont be used"""
+        """Won't be used"""
 
         f: int
         """F docs"""
@@ -100,7 +100,7 @@ def test_dataclass_docs_extraction():
         """H docs"""
 
         i: Annotated[int, Field(description='Real description')]
-        """Wont be used"""
+        """Won't be used"""
 
     assert ModelDCDocs.__pydantic_fields__['a'].description == 'A docs'
     assert ModelDCDocs.__pydantic_fields__['b'].description == 'B docs'
