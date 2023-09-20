@@ -10,7 +10,6 @@ The following sections describe the types supported by Pydantic.
 
 
 * [Standard Library Types](standard_types.md) &mdash; types from the Python standard library.
-* [Callables](callables.md) &mdash; `Callable` types.
 * [Dicts and Mapping Types](dicts_mapping.md) &mdash; `dict` types and mapping types.
 * [Lists and Tuples](list_types.md) &mdash; `list` and `tuple` types.
 * [Sequence, Iterable, & Iterator](sequence_iterable.md) &mdash; iterable types including `Sequence`, `Iterable`, and `Iterator`.
