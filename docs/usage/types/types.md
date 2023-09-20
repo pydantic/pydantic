@@ -12,6 +12,5 @@ The following sections describe the types supported by Pydantic.
 
 * [Standard Library Types](standard_types.md) &mdash; types from the Python standard library.
 * [Strict Types](strict_types.md) &mdash; types that enable you to prevent coercion from compatible types.
-* [Types with Fields](types_fields.md) &mdash; types that allow you to define fields.
 * [Custom Data Types](custom.md) &mdash; create your own custom data types.
 * [Field Type Conversions](../conversion_table.md) &mdash; strict and lax conversion between different field types.
