@@ -4,6 +4,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
+use crate::definitions::Definitions;
 use crate::definitions::DefinitionsBuilder;
 
 use crate::tools::SchemaDict;
@@ -95,5 +96,10 @@ impl TypeSerializer for DefinitionRefSerializer {
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
+    }
+
+    fn retry_with_lax_check(&self, definitions: &Definitions<CombinedSerializer>) -> bool {
+        let comb_serializer = definitions.get(self.serializer_id).unwrap();
+        comb_serializer.retry_with_lax_check(definitions)
     }
 }
