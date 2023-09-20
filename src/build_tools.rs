@@ -125,7 +125,7 @@ impl SchemaError {
     fn errors(&self, py: Python) -> PyResult<Py<PyList>> {
         match &self.0 {
             SchemaErrorEnum::Message(_) => Ok(PyList::empty(py).into_py(py)),
-            SchemaErrorEnum::ValidationError(error) => error.errors(py, false, false),
+            SchemaErrorEnum::ValidationError(error) => error.errors(py, false, false, true),
         }
     }
 
