@@ -1070,3 +1070,21 @@ def test_loc_with_dots(pydantic_version):
         "[type=int_parsing, input_value='x', input_type=str]\n"
         f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing'
     )
+
+
+def test_hide_input_in_error() -> None:
+    s = SchemaValidator({'type': 'int'})
+    with pytest.raises(ValidationError) as exc_info:
+        s.validate_python('definitely not an int')
+
+    for error in exc_info.value.errors(include_input=False):
+        assert 'input' not in error
+
+
+def test_hide_input_in_json() -> None:
+    s = SchemaValidator({'type': 'int'})
+    with pytest.raises(ValidationError) as exc_info:
+        s.validate_python('definitely not an int')
+
+    for error in exc_info.value.errors(include_input=False):
+        assert 'input' not in error
