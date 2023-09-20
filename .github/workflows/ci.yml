@@ -197,7 +197,8 @@ jobs:
             python-version: '3.9'
           - mypy-version: 'lockfile'
             python-version: '3.11'
-          - mypy-version: 'lockfile'
+          # TODO: Once Python 3.7 is removed, and mypy is bumped on the lockfile, we can add 'lockfile' again.
+          - mypy-version: '1.5.1'
             python-version: '3.12'
 
     steps:
