@@ -221,7 +221,6 @@ class _WalkCoreSchema:
 
     def _handle_ser_schemas(self, ser_schema: core_schema.SerSchema, f: Walk) -> core_schema.SerSchema:
         schema: core_schema.CoreSchema | None = ser_schema.get('schema', None)
-        ser_schema = ser_schema
         new_ser_schema: dict[str, Any] = {}
         if schema is not None:
             new_ser_schema['schema'] = self.walk(schema, f)  # type: ignore
