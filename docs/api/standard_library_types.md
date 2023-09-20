@@ -424,6 +424,7 @@ Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to 
 When a generic parameter is provided, the appropriate validation is applied to all items of the frozen set.
 
 ### `typing.FrozenSet`
+
 Handled the same as `frozenset` above.
 
 ```py
@@ -454,6 +455,7 @@ print(sorted(m2.frozenset_of_ints))
 ## Support for iterable types
 
 ### `typing.Sequence`
+
 This is intended for use when the provided value should meet the requirements of the `Sequence` protocol, and it is
 desirable to do eager validation of the values in the container. Note that when validation must be performed on the
 values of the container, the type of the container may not be preserved since validation may end up replacing values.
@@ -461,6 +463,7 @@ We guarantee that the validated value will be a valid `typing.Sequence`, but it 
 provided (generally, it will become a `list`).
 
 ### `typing.Iterable`
+
 This is intended for use when the provided value may be an iterable that shouldn't be consumed.
 See [Infinite Generators](#infinite-generators) below for more detail on parsing and validation.
 Similar to `typing.Sequence`, we guarantee that the validated result will be a valid `typing.Iterable`,
@@ -623,7 +626,7 @@ except ValidationError as e:
     """
 ```
 
-## Dicts and Mapping Types
+## Mapping Types
 
 ### `dict`
 
