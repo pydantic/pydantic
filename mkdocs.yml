@@ -63,7 +63,6 @@ nav:
     - Dicts and Mapping: usage/types/dicts_mapping.md
     - Enums and Choices: usage/types/enums.md
     - Lists and Tuples: usage/types/list_types.md
-    - Number Types: usage/types/number_types.md
     - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
     - Strict Types: usage/types/strict_types.md
