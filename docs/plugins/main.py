@@ -6,7 +6,7 @@ import os
 import re
 import textwrap
 from pathlib import Path
-from textwrap import dedent, indent
+from textwrap import indent
 
 import autoflake  # type: ignore
 import pyupgrade._main as pyupgrade_main  # type: ignore
@@ -53,8 +53,6 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     elif md := build_conversion_table(markdown, page):
         return md
     elif md := devtools_example(markdown, page):
-        return md
-    elif md := install_pydantic_extra_types(markdown, page):
         return md
     else:
         return markdown
@@ -290,22 +288,3 @@ def devtools_example(markdown: str, page: Page) -> str | None:
     html = (THIS_DIR / 'devtools_output.html').read_text().strip('\n')
     full_html = f'<div class="highlight">\n<pre><code>{html}</code></pre>\n</div>'
     return re.sub(r'{{ *devtools_example *}}', full_html, markdown)
-
-
-def install_pydantic_extra_types(markdown: str, page: Page) -> str | None:
-    if not page.file.src_uri.startswith('usage/types/extra_types'):
-        return None
-
-    recommendation_text = dedent(
-        """
-    !!! warning
-        To use this type, you need to install the optional
-        [pydantic-extra-types](https://pypi.org/project/pydantic-extra-types/) package:
-
-        ```bash
-        pip install pydantic-extra-types
-        ```
-    """
-    )
-
-    return re.sub(r'{{ *install_pydantic_extra_types *}}', recommendation_text, markdown)
