@@ -1070,10 +1070,14 @@ except ValidationError as e:
 
 ## Support for `Type[T]` and `TypeVar``
 
+### `type`
+
+Pydantic supports the use of `type[T]` to specify that a field may only accept classes (not instances)
+that are subclasses of `T`.
+
 ### `typing.Type`
 
-Pydantic supports the use of `Type[T]` to specify that a field may only accept classes (not instances)
-that are subclasses of `T`.
+Handled the same as `type` above.
 
 ```py
 from typing import Type
