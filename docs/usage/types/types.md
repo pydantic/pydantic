@@ -11,7 +11,6 @@ The following sections describe the types supported by Pydantic.
 
 * [Standard Library Types](standard_types.md) &mdash; types from the Python standard library.
 * [Dicts and Mapping Types](dicts_mapping.md) &mdash; `dict` types and mapping types.
-* [Lists and Tuples](list_types.md) &mdash; `list` and `tuple` types.
 * [Sequence, Iterable, & Iterator](sequence_iterable.md) &mdash; iterable types including `Sequence`, `Iterable`, and `Iterator`.
 * [Sets and frozenset](set_types.md) &mdash; `set` and `frozenset` types.
 * [Strict Types](strict_types.md) &mdash; types that enable you to prevent coercion from compatible types.
