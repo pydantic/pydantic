@@ -11,15 +11,20 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Callable, Dict, Hashable, List, Set, Tuple, Type, Union
 
+if sys.version_info < (3, 12):
+    from typing_extensions import TypedDict
+else:
+    from typing import TypedDict
+
 if sys.version_info < (3, 11):
     from typing_extensions import Protocol, Required, TypeAlias
 else:
     from typing import Protocol, Required, TypeAlias
 
 if sys.version_info < (3, 9):
-    from typing_extensions import Literal, TypedDict
+    from typing_extensions import Literal
 else:
-    from typing import Literal, TypedDict
+    from typing import Literal
 
 if TYPE_CHECKING:
     from pydantic_core import PydanticUndefined
