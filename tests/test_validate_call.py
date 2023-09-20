@@ -725,3 +725,19 @@ def test_async_func() -> None:
             'input': 'x',
         }
     ]
+
+
+def test_with_slots() -> None:
+    class ClassWithSlots:
+        __slots__ = {'counter'}
+
+        def __init__(self) -> None:
+            self.counter = 0
+
+        @validate_call
+        def some_instance_method(self, increment: int) -> None:
+            self.counter += increment
+
+    c = ClassWithSlots()
+    c.some_instance_method(increment=5)
+    assert c.counter == 5

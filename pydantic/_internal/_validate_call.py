@@ -101,27 +101,35 @@ class ValidateCallWrapper:
             return self.__return_pydantic_validator__(res)
         return res
 
-    def __get__(self, obj: Any, objtype: type[Any] | None = None) -> ValidateCallWrapper:
+    def __get__(self, obj: Any, objtype: type[Any] | None = None) -> BoundValidateCallWrapper:
         """Bind the raw function and return another ValidateCallWrapper wrapping that."""
         if obj is None:
-            try:
-                # Handle the case where a method is accessed as a class attribute
-                return objtype.__getattribute__(objtype, self._name)  # type: ignore
-            except AttributeError:
-                # This will happen the first time the attribute is accessed
-                pass
+            return BoundValidateCallWrapper(self, objtype)
 
-        bound_function = self.raw_function.__get__(obj, objtype)
-        result = self.__class__(bound_function, self._config, self._validate_return)
-        if self._name is not None:
-            if obj is not None:
-                object.__setattr__(obj, self._name, result)
-            else:
-                object.__setattr__(objtype, self._name, result)
-        return result
+        return BoundValidateCallWrapper(self, obj)
 
     def __set_name__(self, owner: Any, name: str) -> None:
         self._name = name
 
     def __repr__(self) -> str:
         return f'ValidateCallWrapper({self.raw_function})'
+
+
+class BoundValidateCallWrapper:
+    """This class controls the binding logic for a validate call wrapper.
+
+    Allows us to avoid using __setattr__ and mutating the obj.
+    """
+
+    def __init__(self, unbound: ValidateCallWrapper, obj: Any) -> None:
+        self.unbound = unbound
+        self.obj = obj
+
+    def __call__(self, *args, **kwargs) -> Any:
+        return self.unbound(self.obj, *args, *kwargs)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, BoundValidateCallWrapper):
+            return (self.unbound == other.unbound) and (self.obj == other.obj)
+        else:
+            return False
