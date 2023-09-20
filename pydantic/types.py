@@ -1517,7 +1517,7 @@ class EncodedBytes:
         return hash(self.encoder)
 
 
-@_dataclasses.dataclass()
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class EncodedStr(EncodedBytes):
     """A str type that is encoded and decoded using the specified encoder."""
 
