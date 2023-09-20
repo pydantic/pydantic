@@ -1526,7 +1526,7 @@ class EncodedStr(EncodedBytes):
     ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             function=self.decode_str,
-            schema=super().__get_pydantic_core_schema__(source=source, handler=handler),
+            schema=super(EncodedStr, self).__get_pydantic_core_schema__(source=source, handler=handler),  # noqa: UP008
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
         )
 
