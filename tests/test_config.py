@@ -7,7 +7,7 @@ from inspect import signature
 from typing import Any, ContextManager, Iterable, NamedTuple, Optional, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr, IsPartialDict
-from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
+from pydantic_core import SchemaSerializer, SchemaValidator
 
 from pydantic import (
     BaseConfig,
@@ -470,15 +470,15 @@ def test_invalid_extra():
     )
     config_dict = {'extra': 'invalid-value'}
 
-    with pytest.raises(SchemaError, match=extra_error):
+    with pytest.raises(ValidationError, match=extra_error):
 
         class MyModel(BaseModel):
             model_config = config_dict
 
-    with pytest.raises(SchemaError, match=extra_error):
+    with pytest.raises(ValidationError, match=extra_error):
         create_model('MyCreatedModel', __config__=config_dict)
 
-    with pytest.raises(SchemaError, match=extra_error):
+    with pytest.raises(ValidationError, match=extra_error):
 
         @pydantic_dataclass(config=config_dict)
         class MyDataclass:

@@ -16,7 +16,7 @@ from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _discriminated_union, _typing_extra
-from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
+from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs, validate_core_schema
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
@@ -163,6 +163,7 @@ def complete_dataclass(
     # debug(schema)
     cls.__pydantic_core_schema__ = schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
     simplified_core_schema = inline_schema_defs(schema)
+    simplified_core_schema = validate_core_schema(simplified_core_schema)
     cls.__pydantic_validator__ = validator = SchemaValidator(simplified_core_schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
 
