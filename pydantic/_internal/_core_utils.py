@@ -133,10 +133,10 @@ def define_expected_missing_refs(
         # in this case, there are no missing refs to potentially substitute, so there's no need to walk the schema
         # this is a common case (will be hit for all non-generic models), so it's worth optimizing for
         return schema
-    refs = set()
+    refs: set[str] = set()
 
     def _record_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        ref: str | None = s.get('ref')
+        ref = get_ref(s)
         if ref:
             refs.add(ref)
         return recurse(s, _record_refs)
