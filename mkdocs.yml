@@ -59,7 +59,6 @@ nav:
   - Field Types:
     - Types Overview: usage/types/types.md
     - Standard Library Types: usage/types/standard_types.md
-    - Callables: usage/types/callables.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
     - Lists and Tuples: usage/types/list_types.md
     - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
