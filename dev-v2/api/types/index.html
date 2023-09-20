@@ -8450,6 +8450,10 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 <h2 id="pydantic.types.EncodedStr" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">EncodedStr</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
 
 <a href="#pydantic.types.EncodedStr" class="headerlink" title="Permanent link">&para;</a></h2>
 
@@ -8590,8 +8594,7 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1666</span>
-<span class="normal">1667</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1667</span>
 <span class="normal">1668</span>
 <span class="normal">1669</span>
 <span class="normal">1670</span>
@@ -8599,7 +8602,8 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 <span class="normal">1672</span>
 <span class="normal">1673</span>
 <span class="normal">1674</span>
-<span class="normal">1675</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">1675</span>
+<span class="normal">1676</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -8683,8 +8687,7 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1677</span>
-<span class="normal">1678</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1678</span>
 <span class="normal">1679</span>
 <span class="normal">1680</span>
 <span class="normal">1681</span>
@@ -8692,7 +8695,8 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 <span class="normal">1683</span>
 <span class="normal">1684</span>
 <span class="normal">1685</span>
-<span class="normal">1686</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">1686</span>
+<span class="normal">1687</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">encode_str</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Encode the data using the specified encoder.</span>
 
 <span class="sd">    Args:</span>
@@ -8701,7 +8705,7 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        The encoded data.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+    <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">EncodedStr</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>  <span class="c1"># noqa: UP008</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
