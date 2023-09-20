@@ -223,7 +223,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
+    fn lax_str(&'a self, coerce_numbers_to_str: bool) -> ValResult<EitherString<'a>> {
         if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
             Ok(py_str.into())
         } else if let Ok(py_str) = self.downcast::<PyString>() {
@@ -246,6 +246,15 @@ impl<'a> Input<'a> for PyAny {
                 Err(_) => return Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
             };
             Ok(s.into())
+        } else if coerce_numbers_to_str && {
+            let py = self.py();
+            let decimal_type: Py<PyType> = get_decimal_type(py);
+
+            self.is_instance_of::<PyInt>()
+                || self.is_instance_of::<PyFloat>()
+                || self.is_instance(decimal_type.as_ref(py)).unwrap_or_default()
+        } {
+            Ok(self.str()?.into())
         } else {
             Err(ValError::new(ErrorTypeDefaults::StringType, self))
         }

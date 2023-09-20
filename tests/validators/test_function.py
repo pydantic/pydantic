@@ -201,7 +201,10 @@ def test_function_wrap_repr():
         {'type': 'function-wrap', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}
     )
 
-    assert v.validate_python('input value') == 'ValidatorCallable(Str(StrValidator{strict:false}))'
+    assert (
+        v.validate_python('input value')
+        == 'ValidatorCallable(Str(StrValidator{strict:false,coerce_numbers_to_str:false}))'
+    )
 
 
 def test_function_wrap_str():
@@ -212,7 +215,10 @@ def test_function_wrap_str():
         {'type': 'function-wrap', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}
     )
 
-    assert v.validate_python('input value') == 'ValidatorCallable(Str(StrValidator{strict:false}))'
+    assert (
+        v.validate_python('input value')
+        == 'ValidatorCallable(Str(StrValidator{strict:false,coerce_numbers_to_str:false}))'
+    )
 
 
 def test_function_wrap_not_callable():

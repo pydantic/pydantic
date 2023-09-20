@@ -63,6 +63,7 @@ class CoreConfig(TypedDict, total=False):
         hide_input_in_errors: Whether to hide input data from `ValidationError` representation.
         validation_error_cause: Whether to add user-python excs to the __cause__ of a ValidationError.
             Requires exceptiongroup backport pre Python 3.11.
+        coerce_numbers_to_str: Whether to enable coercion of any `Number` type to `str` (not applicable in `strict` mode).
     """
 
     title: str
@@ -95,6 +96,7 @@ class CoreConfig(TypedDict, total=False):
     # used to hide input data from ValidationError repr
     hide_input_in_errors: bool
     validation_error_cause: bool  # default: False
+    coerce_numbers_to_str: bool  # default: False
 
 
 IncExCall: TypeAlias = 'set[int | str] | dict[int | str, IncExCall] | None'
