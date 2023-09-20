@@ -1600,6 +1600,7 @@ class EncodedBytes:
         return hash(self.encoder)
 
 
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class EncodedStr(EncodedBytes):
     """A str type that is encoded and decoded using the specified encoder.
 
@@ -1659,7 +1660,7 @@ class EncodedStr(EncodedBytes):
     ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             function=self.decode_str,
-            schema=super().__get_pydantic_core_schema__(source=source, handler=handler),
+            schema=super(EncodedStr, self).__get_pydantic_core_schema__(source=source, handler=handler),  # noqa: UP008
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
         )
 
@@ -1683,7 +1684,10 @@ class EncodedStr(EncodedBytes):
         Returns:
             The encoded data.
         """
-        return super().encode(value=value.encode()).decode()
+        return super(EncodedStr, self).encode(value=value.encode()).decode()  # noqa: UP008
+
+    def __hash__(self) -> int:
+        return hash(self.encoder)
 
 
 Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
