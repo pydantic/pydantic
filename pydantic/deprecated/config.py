@@ -50,15 +50,22 @@ class BaseConfig(metaclass=_ConfigMetaclass):
         return super().__init_subclass__(**kwargs)
 
 
-class Extra:
+class _ExtraMeta(type):
+    def __getattribute__(self, __name: str) -> Any:
+        # The @deprecated decorator accesses other attributes, so we only emit a warning for the expected ones
+        if __name in {'allow', 'ignore', 'forbid'}:
+            warnings.warn(
+                "`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return super().__getattribute__(__name)
+
+
+@deprecated(
+    "Extra is deprecated. Use literal values instead (e.g. `extra='allow'`)", category=PydanticDeprecatedSince20
+)
+class Extra(metaclass=_ExtraMeta):
     allow: Literal['allow'] = 'allow'
     ignore: Literal['ignore'] = 'ignore'
     forbid: Literal['forbid'] = 'forbid'
-
-    def __getattribute__(self, __name: str) -> Any:
-        warnings.warn(
-            "`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return super().__getattribute__(__name)

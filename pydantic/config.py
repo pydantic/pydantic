@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Type, Union
 from typing_extensions import Literal, TypeAlias, TypedDict
 
 from ._migration import getattr_migration
-from .deprecated.config import BaseConfig
-from .deprecated.config import Extra as _Extra
+from .deprecated.config import BaseConfig, Extra
 
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
@@ -21,8 +20,6 @@ JsonSchemaExtraCallable: TypeAlias = Union[
     Callable[[Dict[str, Any]], None],
     Callable[[Dict[str, Any], Type[Any]], None],
 ]
-
-Extra = _Extra()
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
 
