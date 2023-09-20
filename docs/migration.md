@@ -745,7 +745,7 @@ The following special-use types have been moved to the
 which may be installed separately if needed.
 
 * [Color Types](api/pydantic_extra_types_color.md)
-* [Payment Card Numbers](api/pydantic_extra_types_payment_card.md)
+* [Payment Card Numbers](api/pydantic_extra_types_payment.md)
 
 ### Url and Dsn types in `pydantic.networks` no longer inherit from `str`
 
