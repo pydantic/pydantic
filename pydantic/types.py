@@ -1060,6 +1060,8 @@ def condecimal(
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class UuidVersion:
+    """A field metadata class to indicate a [UUID](https://docs.python.org/3/library/uuid.html) version."""
+
     uuid_version: Literal[1, 3, 4, 5]
 
     def __get_pydantic_json_schema__(
@@ -1080,13 +1082,61 @@ class UuidVersion:
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
-"""A UUID1 annotated type."""
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 1.
+
+```py
+import uuid
+
+from pydantic import BaseModel, UUID1
+
+class Model(BaseModel):
+    uuid1: UUID1
+
+Model(uuid1=uuid.uuid1())
+```
+"""
 UUID3 = Annotated[UUID, UuidVersion(3)]
-"""A UUID3 annotated type."""
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 3.
+
+```py
+import uuid
+
+from pydantic import BaseModel, UUID3
+
+class Model(BaseModel):
+    uuid3: UUID3
+
+Model(uuid3=uuid.uuid3(uuid.NAMESPACE_DNS, 'pydantic.org'))
+```
+"""
 UUID4 = Annotated[UUID, UuidVersion(4)]
-"""A UUID4 annotated type."""
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 4.
+
+```py
+import uuid
+
+from pydantic import BaseModel, UUID4
+
+class Model(BaseModel):
+    uuid4: UUID4
+
+Model(uuid4=uuid.uuid4())
+```
+"""
 UUID5 = Annotated[UUID, UuidVersion(5)]
-"""A UUID5 annotated type."""
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 5.
+
+```py
+import uuid
+
+from pydantic import BaseModel, UUID5
+
+class Model(BaseModel):
+    uuid5: UUID5
+
+Model(uuid5=uuid.uuid5(uuid.NAMESPACE_DNS, 'pydantic.org'))
+```
+"""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

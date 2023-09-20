@@ -127,7 +127,7 @@ print(m.model_dump())
 #> {'t': datetime.time(4, 8, 16)}
 ```
 
-### `datetime.timdelta`
+### `datetime.timedelta`
 * `timedelta` fields will accept values of type:
 
     * `timedelta`; an existing `timedelta` object
@@ -422,3 +422,15 @@ print(m)
 * `ipaddress.IPv6Network`: Uses the type itself for validation by passing the value to `IPv6Network(v)`.
 
 See [Network Types](../api/networks.md) for other custom IP address types.
+
+## UUID
+
+For UUID, Pydantic tries to use the type itself for validation by passing the value to `UUID(v)`.
+There's a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`.
+
+In case you want to constrained the UUID version, you can check the following types:
+
+* [`UUID1`][pydantic.types.UUID1]: requires UUID version 1.
+* [`UUID3`][pydantic.types.UUID3]: requires UUID version 3.
+* [`UUID4`][pydantic.types.UUID4]: requires UUID version 4.
+* [`UUID5`][pydantic.types.UUID5]: requires UUID version 5.
