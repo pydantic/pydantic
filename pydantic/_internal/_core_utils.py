@@ -116,6 +116,12 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
     defs: dict[str, CoreSchema] = {}
 
     def _record_valid_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
+        if 'metadata' in s:
+            definitions_cache: _DefinitionsState | None = s['metadata'].get(_DEFINITIONS_CACHE_METADATA_KEY, None)
+            if definitions_cache is not None:
+                defs.update(definitions_cache['definitions'])
+                return s
+
         ref = get_ref(s)
         if ref:
             defs[ref] = s
