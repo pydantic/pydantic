@@ -12,8 +12,8 @@ from typing import (
     cast,
 )
 
-from pydantic_core import CoreSchema, core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args
+from pydantic_core import CoreSchema, SchemaValidator, core_schema
+from typing_extensions import Annotated, TypeAliasType, TypeGuard, get_args
 
 from . import _repr
 
@@ -578,3 +578,31 @@ def pretty_print_core_schema(
         schema = walk_core_schema(schema, strip_metadata)
 
     return print(schema)
+
+
+_CORE_SCHEMA_VALIDATOR: SchemaValidator | None = None
+
+
+def validate_core_schema(schema: CoreSchema) -> CoreSchema:
+    """Validate a CoreSchema.
+
+    Args:
+        schema: The CoreSchema to validate.
+
+    Raises:
+        pydantic.errors.SchemaError: If the CoreSchema is invalid.
+    """
+    global _CORE_SCHEMA_VALIDATOR
+    if _CORE_SCHEMA_VALIDATOR is None:
+        # local imports in here to avoid circular imports
+        from pydantic.fields import Field
+
+        from . import _config, _discriminated_union, _generate_schema
+
+        gen = _generate_schema.GenerateSchema(_config.ConfigWrapper(None), types_namespace={}, typevars_map={})
+        meta_schema = gen.generate_schema(Annotated[CoreSchema, Field(discriminator='type')])
+        meta_schema = gen.collect_definitions(meta_schema)
+        meta_schema = _discriminated_union.apply_discriminators(flatten_schema_defs(meta_schema))
+        meta_schema = inline_schema_defs(meta_schema)
+        _CORE_SCHEMA_VALIDATOR = SchemaValidator(meta_schema)
+    return _CORE_SCHEMA_VALIDATOR.validate_python(schema)

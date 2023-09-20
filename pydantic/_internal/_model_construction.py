@@ -16,7 +16,7 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
+from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs, validate_core_schema
 from ._decorators import (
     ComputedFieldInfo,
     DecoratorInfos,
@@ -491,6 +491,8 @@ def complete_model_class(
     if collect_invalid_schemas(schema):
         set_model_mocks(cls, cls_name)
         return False
+
+    schema = validate_core_schema(schema)
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
