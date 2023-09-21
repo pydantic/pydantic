@@ -96,14 +96,14 @@ def make_generic_v1_field_validator(validator: V1Validator) -> core_schema.Field
         # (v, **kwargs), (v, values, **kwargs), (v, *, values, **kwargs) or (v, *, values)
         val1 = cast(V1ValidatorWithValues, validator)
 
-        def wrapper1(value: Any, info: core_schema.FieldValidationInfo) -> Any:
+        def wrapper1(value: Any, info: core_schema.ValidationInfo) -> Any:
             return val1(value, values=info.data)
 
         return wrapper1
     else:
         val2 = cast(V1OnlyValueValidator, validator)
 
-        def wrapper2(value: Any, _: core_schema.FieldValidationInfo) -> Any:
+        def wrapper2(value: Any, _: core_schema.ValidationInfo) -> Any:
             return val2(value)
 
         return wrapper2

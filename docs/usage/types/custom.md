@@ -775,7 +775,7 @@ class MySequence(Sequence[T]):
         else:
             sequence_t_schema = handler.generate_schema(Sequence)
 
-        non_instance_schema = core_schema.general_after_validator_function(
+        non_instance_schema = core_schema.with_info_after_validator_function(
             lambda v, i: MySequence(v), sequence_t_schema
         )
         return core_schema.union_schema([instance_schema, non_instance_schema])

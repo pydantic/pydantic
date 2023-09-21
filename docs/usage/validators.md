@@ -305,8 +305,8 @@ If you want to attach a validator to a specific field of a model you can use the
 ```py
 from pydantic import (
     BaseModel,
-    FieldValidationInfo,
     ValidationError,
+    ValidationInfo,
     field_validator,
 )
 
@@ -325,7 +325,7 @@ class UserModel(BaseModel):
     # you can select multiple fields, or use '*' to select all fields
     @field_validator('id', 'name')
     @classmethod
-    def check_alphanumeric(cls, v: str, info: FieldValidationInfo) -> str:
+    def check_alphanumeric(cls, v: str, info: ValidationInfo) -> str:
         if isinstance(v, str):
             # info.field_name is the name of the field being validated
             is_alphanumeric = v.replace(' ', '').isalnum()
@@ -372,7 +372,7 @@ A few things to note on validators:
 
 * `@field_validator`s are "class methods", so the first argument value they receive is the `UserModel` class, not an instance of `UserModel`. We recommend you use the `@classmethod` decorator on them below the `@field_validator` decorator to get proper type checking.
 * the second argument is the field value to validate; it can be named as you please
-* the third argument, if present, is an instance of `pydantic.FieldValidationInfo`
+* the third argument, if present, is an instance of `pydantic.ValidationInfo`
 * validators should either return the parsed value or raise a `ValueError` or `AssertionError` (``assert`` statements may be used).
 * A single validator can be applied to multiple fields by passing it multiple field names.
 * A single validator can also be called on *all* fields by passing the special value `'*'`.
@@ -382,8 +382,8 @@ A few things to note on validators:
     Python with the [`-O` optimization flag](https://docs.python.org/3/using/cmdline.html#cmdoption-o)
     disables `assert` statements, and **validators will stop working**.
 
-If you want to access values from another field inside a `@field_validator`, this may be possible using `FieldValidationInfo.data`, which is a dict of field name to field value.
-Validation is done in the order fields are defined, so you have to be careful when using `FieldValidationInfo.data` to not access a field that has not yet been validated/populated — in the code above, for example, you would not be able to access `info.data['id']` from within `name_must_contain_space`.
+If you want to access values from another field inside a `@field_validator`, this may be possible using `ValidationInfo.data`, which is a dict of field name to field value.
+Validation is done in the order fields are defined, so you have to be careful when using `ValidationInfo.data` to not access a field that has not yet been validated/populated — in the code above, for example, you would not be able to access `info.data['id']` from within `name_must_contain_space`.
 However, in most cases where you want to perform validation using multiple field values, it is better to use `@model_validator` which is discussed in the section below.
 
 ## Model validators
@@ -604,7 +604,7 @@ You can pass a context object to the validation methods which can be accessed fr
 argument to decorated validator functions:
 
 ```python
-from pydantic import BaseModel, FieldValidationInfo, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 
 class Model(BaseModel):
@@ -612,7 +612,7 @@ class Model(BaseModel):
 
     @field_validator('text')
     @classmethod
-    def remove_stopwords(cls, v: str, info: FieldValidationInfo):
+    def remove_stopwords(cls, v: str, info: ValidationInfo):
         context = info.context
         if context:
             stopwords = context.get('stopwords', set())
@@ -638,8 +638,8 @@ from typing import Any, Dict, List
 
 from pydantic import (
     BaseModel,
-    FieldValidationInfo,
     ValidationError,
+    ValidationInfo,
     field_validator,
 )
 
@@ -660,7 +660,7 @@ class Model(BaseModel):
 
     @field_validator('choice')
     @classmethod
-    def validate_choice(cls, v: str, info: FieldValidationInfo):
+    def validate_choice(cls, v: str, info: ValidationInfo):
         allowed_choices = info.context.get('allowed_choices')
         if allowed_choices and v not in allowed_choices:
             raise ValueError(f'choice must be one of {allowed_choices}')
@@ -702,7 +702,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any, Dict, Iterator
 
-from pydantic import BaseModel, FieldValidationInfo, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 _init_context_var = ContextVar('_init_context_var', default=None)
 
@@ -728,9 +728,7 @@ class Model(BaseModel):
 
     @field_validator('my_number')
     @classmethod
-    def multiply_with_context(
-        cls, value: int, info: FieldValidationInfo
-    ) -> int:
+    def multiply_with_context(cls, value: int, info: ValidationInfo) -> int:
         if info.context:
             multiplier = info.context.get('multiplier', 1)
             value = value * multiplier

@@ -20,13 +20,13 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
-    FieldValidationInfo,
     GenerateSchema,
     PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     TypeAdapter,
     ValidationError,
+    ValidationInfo,
     computed_field,
     field_serializer,
     field_validator,
@@ -1859,7 +1859,7 @@ def test_validator_info_field_name_data_before():
 
         @field_validator('b', mode='before')
         @classmethod
-        def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def check_a(cls, v: Any, info: ValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
             assert info.data == {'a': 'your foobar is good'}

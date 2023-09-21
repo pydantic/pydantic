@@ -197,7 +197,7 @@ else:
             handler: _annotated_handlers.GetCoreSchemaHandler,
         ) -> core_schema.CoreSchema:
             import_email_validator()
-            return core_schema.general_after_validator_function(cls._validate, core_schema.str_schema())
+            return core_schema.with_info_after_validator_function(cls._validate, core_schema.str_schema())
 
         @classmethod
         def __get_pydantic_json_schema__(
@@ -272,7 +272,7 @@ class NameEmail(_repr.Representation):
         handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         import_email_validator()
-        return core_schema.general_after_validator_function(
+        return core_schema.with_info_after_validator_function(
             cls._validate,
             core_schema.union_schema(
                 [core_schema.is_instance_schema(cls), core_schema.str_schema()],
@@ -325,7 +325,7 @@ class IPvAnyAddress:
         source: type[Any],
         handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(
+        return core_schema.with_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
         )
 
@@ -365,7 +365,7 @@ class IPvAnyInterface:
         source: type[Any],
         handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(
+        return core_schema.with_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
         )
 
@@ -407,7 +407,7 @@ class IPvAnyNetwork:
         source: type[Any],
         handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(
+        return core_schema.with_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
         )
 
