@@ -33,7 +33,11 @@ def test_init_export():
 @pytest.mark.parametrize(('attr_name', 'value'), list(pydantic._dynamic_imports.items()))
 def test_public_api_dynamic_imports(attr_name, value):
     package, module_name, deprecation_message = value
-    imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
+    if deprecation_message:
+        with pytest.warns(DeprecationWarning, match=deprecation_message):
+            imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
+    else:
+        imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
     assert isinstance(imported_object, object)
 
 
