@@ -1783,7 +1783,7 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
     M1 = module.M1
 
     # assert M1.__pydantic_core_schema__ == {}
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) == []
+    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
 
 
 def test_generic_recursive_models_complicated(create_module):
@@ -1843,7 +1843,7 @@ def test_generic_recursive_models_complicated(create_module):
 
     M1 = module.M1
 
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) == []
+    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
 
 
 def test_generic_recursive_models_in_container(create_module):
@@ -1862,11 +1862,6 @@ def test_generic_recursive_models_in_container(create_module):
     MyGenericModel = module.MyGenericModel
     instance = MyGenericModel[int](foobar=[{'foobar': [], 'spam': 1}], spam=1)
     assert type(instance.foobar[0]) == MyGenericModel[int]
-
-
-def test_schema_is_valid():
-    assert not collect_invalid_schemas(core_schema.none_schema())
-    assert collect_invalid_schemas(core_schema.nullable_schema(core_schema.int_schema(metadata={'invalid': True})))
 
 
 def test_generic_enum():

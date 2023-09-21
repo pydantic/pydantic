@@ -50,6 +50,7 @@ from ._core_metadata import (
     build_metadata_dict,
 )
 from ._core_utils import (
+    HAS_INVALID_SCHEMAS_METADATA_KEY,
     NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
     define_expected_missing_refs,
@@ -274,6 +275,7 @@ class GenerateSchema:
         self._types_namespace = types_namespace
         self._typevars_map = typevars_map
         self._needs_apply_discriminated_union = False
+        self._has_invalid_schema = False
         self.defs = _Definitions()
 
     @classmethod
@@ -289,6 +291,7 @@ class GenerateSchema:
         obj._types_namespace = types_namespace
         obj._typevars_map = typevars_map
         obj._needs_apply_discriminated_union = False
+        obj._has_invalid_schema = False
         obj.defs = defs
         return obj
 
@@ -514,7 +517,13 @@ class GenerateSchema:
                         model_name=cls.__name__,
                     )
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values(), None)
-                    inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
+                    new_inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
+                    if new_inner_schema is not None:
+                        inner_schema = new_inner_schema
+                        self._has_invalid_schema = True
+                        metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = True
+                    else:
+                        metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = False
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
                     model_schema = core_schema.model_schema(
@@ -648,14 +657,26 @@ class GenerateSchema:
 
     def _post_process_generated_schema(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         if 'metadata' in schema:
-            schema['metadata'][NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = self._needs_apply_discriminated_union
+            metadata = schema['metadata']
+            metadata[NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = self._needs_apply_discriminated_union
+            metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = self._has_invalid_schema
         else:
-            schema['metadata'] = {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: self._needs_apply_discriminated_union}
+            schema['metadata'] = {
+                NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: self._needs_apply_discriminated_union,
+                HAS_INVALID_SCHEMAS_METADATA_KEY: self._has_invalid_schema,
+            }
         return schema
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         """Recursively generate a pydantic-core schema for any supported python type."""
-        return self._post_process_generated_schema(self._generate_schema_inner(obj))
+        has_invalid_schema = self._has_invalid_schema
+        self._has_invalid_schema = False
+        needs_apply_discriminated_union = self._needs_apply_discriminated_union
+        self._needs_apply_discriminated_union = False
+        schema = self._post_process_generated_schema(self._generate_schema_inner(obj))
+        self._has_invalid_schema = self._has_invalid_schema or has_invalid_schema
+        self._needs_apply_discriminated_union = self._needs_apply_discriminated_union or needs_apply_discriminated_union
+        return schema
 
     def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
         if isinstance(obj, _AnnotatedType):
