@@ -79,6 +79,7 @@ class ValidateCallWrapper:
             schema = _discriminated_union.apply_discriminators(simplify_schema_references(schema))
             self.__return_pydantic_core_schema__ = schema
             core_config = config_wrapper.core_config(self)
+            schema = pydantic_core.validate_core_schema(schema)
             validator = pydantic_core.SchemaValidator(schema, core_config)
             if inspect.iscoroutinefunction(self.raw_function):
 
