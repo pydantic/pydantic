@@ -2,23 +2,23 @@ import pickle
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator
+from pydantic_core import SchemaError, SchemaValidator, validate_core_schema
 from pydantic_core import core_schema as cs
 
 
 def test_build_error_type():
     with pytest.raises(SchemaError, match="Input tag 'foobar' found using 'type' does not match any of the"):
-        SchemaValidator({'type': 'foobar', 'title': 'TestModel'})
+        validate_core_schema({'type': 'foobar', 'title': 'TestModel'})
 
 
 def test_build_error_internal():
     with pytest.raises(SchemaError, match='Input should be a valid integer, unable to parse string as an integer'):
-        SchemaValidator({'type': 'str', 'min_length': 'xxx', 'title': 'TestModel'})
+        validate_core_schema({'type': 'str', 'min_length': 'xxx', 'title': 'TestModel'})
 
 
 def test_build_error_deep():
     with pytest.raises(SchemaError, match='Input should be a valid integer, unable to parse string as an integer'):
-        SchemaValidator(
+        validate_core_schema(
             {
                 'title': 'MyTestModel',
                 'type': 'typed-dict',
@@ -34,7 +34,7 @@ def test_schema_as_string():
 
 def test_schema_wrong_type(pydantic_version):
     with pytest.raises(SchemaError) as exc_info:
-        SchemaValidator(1)
+        validate_core_schema(1)
     assert str(exc_info.value) == (
         'Invalid Schema:\n  Input should be a valid dictionary or object to'
         ' extract fields from [type=model_attributes_type, input_value=1, input_type=int]\n'
@@ -66,7 +66,7 @@ def test_schema_definition_error():
     schema = {'type': 'union', 'choices': []}
     schema['choices'].append({'type': 'nullable', 'schema': schema})
     with pytest.raises(SchemaError, match='Recursion error - cyclic reference detected'):
-        SchemaValidator(schema)
+        validate_core_schema(schema)
 
 
 def test_not_schema_definition_error():
@@ -83,17 +83,17 @@ def test_not_schema_definition_error():
 
 def test_no_type():
     with pytest.raises(SchemaError, match="Unable to extract tag using discriminator 'type'"):
-        SchemaValidator({})
+        validate_core_schema({})
 
 
 def test_wrong_type():
     with pytest.raises(SchemaError, match="Input tag 'unknown' found using 'type' does not match any of the"):
-        SchemaValidator({'type': 'unknown'})
+        validate_core_schema({'type': 'unknown'})
 
 
 def test_function_no_mode():
     with pytest.raises(SchemaError, match="Input tag 'function' found using 'type' does not match any of the"):
-        SchemaValidator({'type': 'function'})
+        validate_core_schema({'type': 'function'})
 
 
 def test_try_self_schema_discriminator():

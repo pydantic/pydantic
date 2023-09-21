@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaError, SchemaSerializer, core_schema
+from pydantic_core import SchemaError, SchemaSerializer, core_schema, validate_core_schema
 
 
 def test_custom_ser():
@@ -25,7 +25,7 @@ def test_ignored_def():
 
 def test_def_error():
     with pytest.raises(SchemaError) as exc_info:
-        SchemaSerializer(
+        validate_core_schema(
             core_schema.definitions_schema(
                 core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
                 [core_schema.int_schema(ref='foobar'), {'type': 'wrong'}],

@@ -7,7 +7,6 @@ use pyo3::{PyTraverseError, PyVisit};
 
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
-use crate::validators::SelfValidator;
 
 use config::SerializationConfig;
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
@@ -73,9 +72,7 @@ impl SchemaSerializer {
 #[pymethods]
 impl SchemaSerializer {
     #[new]
-    pub fn py_new(py: Python, schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
-        let self_validator = SelfValidator::new(py)?;
-        let schema = self_validator.validate_schema(py, schema)?;
+    pub fn py_new(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         let mut definitions_builder = DefinitionsBuilder::new();
 
         let serializer = CombinedSerializer::build(schema.downcast()?, config, &mut definitions_builder)?;

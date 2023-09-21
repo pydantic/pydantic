@@ -24,6 +24,7 @@ from ._pydantic_core import (
     __version__,
     to_json,
     to_jsonable_python,
+    validate_core_schema,
 )
 from .core_schema import CoreConfig, CoreSchema, CoreSchemaType, ErrorType
 
@@ -63,6 +64,7 @@ __all__ = [
     'TzInfo',
     'to_json',
     'to_jsonable_python',
+    'validate_core_schema',
 ]
 
 

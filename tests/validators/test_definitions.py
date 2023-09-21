@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, core_schema
+from pydantic_core import SchemaError, SchemaValidator, core_schema, validate_core_schema
 
 from ..conftest import plain_repr
 
@@ -47,7 +47,7 @@ def test_check_ref_used_ignores_metadata():
 
 def test_def_error():
     with pytest.raises(SchemaError) as exc_info:
-        SchemaValidator(
+        validate_core_schema(
             core_schema.definitions_schema(
                 core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
                 [core_schema.int_schema(ref='foobar'), {'type': 'wrong'}],

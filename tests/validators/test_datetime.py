@@ -10,7 +10,7 @@ from typing import Dict
 import pytest
 import pytz
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -284,7 +284,7 @@ def test_union():
 
 def test_invalid_constraint():
     with pytest.raises(SchemaError, match=r'datetime\.gt\n  Input should be a valid datetime'):
-        SchemaValidator({'type': 'datetime', 'gt': 'foobar'})
+        validate_core_schema({'type': 'datetime', 'gt': 'foobar'})
 
 
 @pytest.mark.parametrize(
@@ -387,7 +387,7 @@ def test_mock_utc_offset_8_hours(mocker):
 
 def test_offset_too_large():
     with pytest.raises(SchemaError, match=r'Input should be greater than -86400 \[type=greater_than,'):
-        SchemaValidator(core_schema.datetime_schema(now_op='past', now_utc_offset=-24 * 3600))
+        validate_core_schema(core_schema.datetime_schema(now_op='past', now_utc_offset=-24 * 3600))
 
 
 def test_raises_schema_error_for_unknown_constraint_kind():
@@ -395,7 +395,7 @@ def test_raises_schema_error_for_unknown_constraint_kind():
         SchemaError,
         match=(r'Input should be \'aware\' or \'naive\' \[type=literal_error, input_value=\'foo\', input_type=str\]'),
     ):
-        SchemaValidator({'type': 'datetime', 'tz_constraint': 'foo'})
+        validate_core_schema({'type': 'datetime', 'tz_constraint': 'foo'})
 
 
 def test_aware():
@@ -477,7 +477,7 @@ def test_tz_constraint_too_high():
 
 def test_tz_constraint_wrong():
     with pytest.raises(SchemaError, match="Input should be 'aware' or 'naive"):
-        SchemaValidator(core_schema.datetime_schema(tz_constraint='wrong'))
+        validate_core_schema(core_schema.datetime_schema(tz_constraint='wrong'))
 
 
 def test_tz_pickle() -> None:

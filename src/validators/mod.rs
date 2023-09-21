@@ -113,9 +113,6 @@ pub struct SchemaValidator {
 impl SchemaValidator {
     #[new]
     pub fn py_new(py: Python, schema: &PyAny, config: Option<&PyDict>) -> PyResult<Self> {
-        let self_validator = SelfValidator::new(py)?;
-        let schema = self_validator.validate_schema(py, schema)?;
-
         let mut definitions_builder = DefinitionsBuilder::new();
 
         let mut validator = build_validator(schema, config, &mut definitions_builder)?;
@@ -409,6 +406,12 @@ impl<'py> SelfValidator<'py> {
             validation_error_cause: false,
         })
     }
+}
+
+#[pyfunction]
+pub fn validate_core_schema<'a>(py: Python<'a>, schema: &'a PyAny) -> PyResult<&'a PyAny> {
+    let self_validator = SelfValidator::new(py)?;
+    self_validator.validate_schema(py, schema)
 }
 
 pub trait BuildValidator: Sized {
