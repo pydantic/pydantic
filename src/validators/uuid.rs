@@ -59,7 +59,7 @@ impl From<u8> for Version {
 #[derive(Debug, Clone)]
 pub struct UuidValidator {
     strict: bool,
-    version: Option<Version>,
+    version: Option<usize>,
 }
 
 impl BuildValidator for UuidValidator {
@@ -71,10 +71,11 @@ impl BuildValidator for UuidValidator {
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
+        // Note(lig): let's keep this conversion through the Version enum just for the sake of validation
         let version = schema.get_as::<u8>(intern!(py, "version"))?.map(Version::from);
         Ok(Self {
             strict: is_strict(schema, config)?,
-            version,
+            version: version.map(usize::from),
         }
         .into())
     }
@@ -92,9 +93,11 @@ impl Validator for UuidValidator {
         let class = get_uuid_type(py)?;
         if let Some(py_input) = input.input_is_instance(class) {
             if let Some(expected_version) = self.version {
-                let py_input_version: usize = py_input.getattr(intern!(py, "version"))?.extract()?;
-                let expected_version = usize::from(expected_version);
-                if expected_version != py_input_version {
+                let py_input_version: Option<usize> = py_input.getattr(intern!(py, "version"))?.extract()?;
+                if !match py_input_version {
+                    Some(py_input_version) => py_input_version == expected_version,
+                    None => false,
+                } {
                     return Err(ValError::new(
                         ErrorType::UuidVersion {
                             expected_version,
@@ -179,7 +182,6 @@ impl UuidValidator {
 
         if let Some(expected_version) = self.version {
             let v1 = uuid.get_version_num();
-            let expected_version = usize::from(expected_version);
             if v1 != expected_version {
                 return Err(ValError::new(
                     ErrorType::UuidVersion {
