@@ -3,7 +3,7 @@ import json
 import pytest
 from dirty_equals import IsStrictDict
 
-from pydantic_core import SchemaError, SchemaSerializer, core_schema
+from pydantic_core import SchemaError, SchemaSerializer, core_schema, validate_core_schema
 
 
 def test_dict_str_int():
@@ -155,4 +155,6 @@ def test_filter_runtime_int():
 )
 def test_include_error(include_value, error_msg):
     with pytest.raises(SchemaError, match=error_msg):
-        SchemaSerializer(core_schema.dict_schema(serialization=core_schema.filter_dict_schema(include=include_value)))
+        validate_core_schema(
+            core_schema.dict_schema(serialization=core_schema.filter_dict_schema(include=include_value))
+        )

@@ -7,10 +7,11 @@ use test::{black_box, Bencher};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
-use _pydantic_core::SchemaValidator;
+use _pydantic_core::{validate_core_schema, SchemaValidator};
 
 fn build_schema_validator_with_globals(py: Python, code: &str, globals: Option<&PyDict>) -> SchemaValidator {
-    let schema: &PyDict = py.eval(code, globals, None).unwrap().extract().unwrap();
+    let mut schema: &PyDict = py.eval(code, globals, None).unwrap().extract().unwrap();
+    schema = validate_core_schema(py, schema).unwrap().extract().unwrap();
     SchemaValidator::py_new(py, schema, None).unwrap()
 }
 
@@ -444,7 +445,8 @@ fn complete_model(bench: &mut Bencher) {
         sys_path.call_method1("append", ("./tests/benchmarks/",)).unwrap();
 
         let complete_schema = py.import("complete_schema").unwrap();
-        let schema = complete_schema.call_method0("schema").unwrap();
+        let mut schema = complete_schema.call_method0("schema").unwrap();
+        schema = validate_core_schema(py, schema).unwrap().extract().unwrap();
         let validator = SchemaValidator::py_new(py, schema, None).unwrap();
 
         let input = complete_schema.call_method0("input_data_lax").unwrap();

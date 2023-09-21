@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -156,7 +156,6 @@ def test_time_strict_json(input_value, expected):
         ({'ge': time(1)}, '00:59', Err('Input should be greater than or equal to 01:00:00')),
         ({'gt': time(12, 13, 14, 123_456)}, '12:13:14.123457', time(12, 13, 14, 123_457)),
         ({'gt': time(12, 13, 14, 123_456)}, '12:13:14.123456', Err('Input should be greater than 12:13:14.123456')),
-        ({'gt': '12:13:14.123456'}, '12:13:14.123456', Err('Input should be greater than 12:13:14.123456')),
     ],
 )
 def test_time_kwargs(kwargs: Dict[str, Any], input_value, expected):
@@ -192,7 +191,7 @@ def test_time_bound_ctx():
 
 def test_invalid_constraint():
     with pytest.raises(SchemaError, match='Input should be in a valid time format'):
-        SchemaValidator({'type': 'time', 'gt': 'foobar'})
+        validate_core_schema({'type': 'time', 'gt': 'foobar'})
 
 
 def test_dict_py():
@@ -294,4 +293,4 @@ def test_tz_constraint_too_high():
 
 def test_tz_constraint_wrong():
     with pytest.raises(SchemaError, match="Input should be 'aware' or 'naive"):
-        SchemaValidator(core_schema.time_schema(tz_constraint='wrong'))
+        validate_core_schema(core_schema.time_schema(tz_constraint='wrong'))

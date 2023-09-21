@@ -8,7 +8,7 @@ from typing import Any, Dict, Mapping, Union
 import pytest
 from dirty_equals import FunctionCheck
 
-from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -194,7 +194,7 @@ def test_allow_extra_invalid():
 
 def test_allow_extra_wrong():
     with pytest.raises(SchemaError, match="Input should be 'allow', 'forbid' or 'ignore'"):
-        SchemaValidator({'type': 'typed-dict', 'fields': {}, 'config': {'extra_fields_behavior': 'wrong'}})
+        validate_core_schema({'type': 'typed-dict', 'fields': {}, 'config': {'extra_fields_behavior': 'wrong'}})
 
 
 def test_str_config():
@@ -235,7 +235,7 @@ def test_json_error():
 
 def test_missing_schema_key():
     with pytest.raises(SchemaError, match='typed-dict.fields.x.schema\n  Field required'):
-        SchemaValidator({'type': 'typed-dict', 'fields': {'x': {'type': 'str'}}})
+        validate_core_schema({'type': 'typed-dict', 'fields': {'x': {'type': 'str'}}})
 
 
 def test_fields_required_by_default():
@@ -629,10 +629,12 @@ def test_paths_allow_by_name(py_and_json: PyAndJson, input_value):
 def test_alias_build_error(alias_schema, error):
     with pytest.raises(SchemaError, match=error):
         SchemaValidator(
-            {
-                'type': 'typed-dict',
-                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}, **alias_schema}},
-            }
+            validate_core_schema(
+                {
+                    'type': 'typed-dict',
+                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}, **alias_schema}},
+                }
+            )
         )
 
 
@@ -899,7 +901,7 @@ def test_bad_default_factory(default_factory, error_message):
 class TestOnError:
     def test_on_error_bad_name(self):
         with pytest.raises(SchemaError, match="Input should be 'raise', 'omit' or 'default'"):
-            SchemaValidator(
+            validate_core_schema(
                 {
                     'type': 'typed-dict',
                     'fields': {
