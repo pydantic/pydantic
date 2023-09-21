@@ -621,7 +621,7 @@ def test_internal_error(py_and_json: PyAndJson):
                 {
                     'name': 'b',
                     'mode': 'positional_only',
-                    'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': double_or_bust}},
+                    'schema': core_schema.with_info_plain_validator_function(double_or_bust),
                 },
             ],
         }

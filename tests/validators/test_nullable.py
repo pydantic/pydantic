@@ -47,7 +47,7 @@ def test_leak_nullable():
         def validate(v, info):
             return v
 
-        schema = core_schema.general_plain_validator_function(validate)
+        schema = core_schema.with_info_plain_validator_function(validate)
         schema = core_schema.nullable_schema(schema)
 
         # If any of the Rust validators don't implement traversal properly,

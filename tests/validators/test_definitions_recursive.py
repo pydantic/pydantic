@@ -519,7 +519,7 @@ def test_definition_wrap():
         core_schema.definitions_schema(
             core_schema.definition_reference_schema('wrapper'),
             [
-                core_schema.general_wrap_validator_function(
+                core_schema.with_info_wrap_validator_function(
                     wrap_func,
                     core_schema.tuple_positional_schema(
                         [
@@ -653,7 +653,7 @@ def test_function_name():
             [
                 core_schema.union_schema(
                     [
-                        core_schema.general_after_validator_function(
+                        core_schema.with_info_after_validator_function(
                             f, core_schema.definition_reference_schema('root-schema')
                         ),
                         core_schema.int_schema(),
@@ -701,7 +701,7 @@ def test_function_change_id(strict: bool):
             [
                 core_schema.union_schema(
                     [
-                        core_schema.general_before_validator_function(
+                        core_schema.with_info_before_validator_function(
                             f, core_schema.definition_reference_schema('root-schema')
                         )
                     ],

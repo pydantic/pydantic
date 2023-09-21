@@ -493,7 +493,7 @@ def test_dataclass_field_after_validator():
         b: str
 
         @classmethod
-        def validate_b(cls, v: str, info: core_schema.FieldValidationInfo) -> str:
+        def validate_b(cls, v: str, info: core_schema.ValidationInfo) -> str:
             assert v == 'hello'
             assert info.field_name == 'b'
             assert info.data == {'a': 1}
@@ -507,7 +507,9 @@ def test_dataclass_field_after_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.field_after_validator_function(Foo.validate_b, 'b', core_schema.str_schema()),
+                    schema=core_schema.with_info_after_validator_function(
+                        Foo.validate_b, core_schema.str_schema(), field_name='b'
+                    ),
                 ),
             ],
         ),
@@ -526,7 +528,7 @@ def test_dataclass_field_plain_validator():
         b: str
 
         @classmethod
-        def validate_b(cls, v: bytes, info: core_schema.FieldValidationInfo) -> str:
+        def validate_b(cls, v: bytes, info: core_schema.ValidationInfo) -> str:
             assert v == b'hello'
             assert info.field_name == 'b'
             assert info.data == {'a': 1}
@@ -539,7 +541,7 @@ def test_dataclass_field_plain_validator():
             [
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
-                    name='b', schema=core_schema.field_plain_validator_function(Foo.validate_b, 'b')
+                    name='b', schema=core_schema.with_info_plain_validator_function(Foo.validate_b, field_name='b')
                 ),
             ],
         ),
@@ -558,7 +560,7 @@ def test_dataclass_field_before_validator():
         b: str
 
         @classmethod
-        def validate_b(cls, v: bytes, info: core_schema.FieldValidationInfo) -> bytes:
+        def validate_b(cls, v: bytes, info: core_schema.ValidationInfo) -> bytes:
             assert v == b'hello'
             assert info.field_name == 'b'
             assert info.data == {'a': 1}
@@ -572,7 +574,9 @@ def test_dataclass_field_before_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.field_before_validator_function(Foo.validate_b, 'b', core_schema.str_schema()),
+                    schema=core_schema.with_info_before_validator_function(
+                        Foo.validate_b, core_schema.str_schema(), field_name='b'
+                    ),
                 ),
             ],
         ),
@@ -592,7 +596,7 @@ def test_dataclass_field_wrap_validator1():
 
         @classmethod
         def validate_b(
-            cls, v: bytes, nxt: core_schema.ValidatorFunctionWrapHandler, info: core_schema.FieldValidationInfo
+            cls, v: bytes, nxt: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo
         ) -> str:
             assert v == b'hello'
             v = nxt(v)
@@ -609,7 +613,9 @@ def test_dataclass_field_wrap_validator1():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.field_wrap_validator_function(Foo.validate_b, 'b', core_schema.str_schema()),
+                    schema=core_schema.with_info_wrap_validator_function(
+                        Foo.validate_b, core_schema.str_schema(), field_name='b'
+                    ),
                 ),
             ],
         ),
@@ -629,7 +635,7 @@ def test_dataclass_field_wrap_validator2():
 
         @classmethod
         def validate_b(
-            cls, v: bytes, nxt: core_schema.ValidatorFunctionWrapHandler, info: core_schema.FieldValidationInfo
+            cls, v: bytes, nxt: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo
         ) -> bytes:
             assert v == b'hello'
             assert info.field_name == 'b'
@@ -644,7 +650,9 @@ def test_dataclass_field_wrap_validator2():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.field_wrap_validator_function(Foo.validate_b, 'b', core_schema.str_schema()),
+                    schema=core_schema.with_info_wrap_validator_function(
+                        Foo.validate_b, core_schema.str_schema(), field_name='b'
+                    ),
                 ),
             ],
         ),
@@ -870,7 +878,10 @@ def test_validate_assignment_function():
                 [
                     core_schema.dataclass_field('field_a', core_schema.str_schema()),
                     core_schema.dataclass_field(
-                        'field_b', core_schema.field_after_validator_function(func, 'field_b', core_schema.int_schema())
+                        'field_b',
+                        core_schema.with_info_after_validator_function(
+                            func, core_schema.int_schema(), field_name='field_b'
+                        ),
                     ),
                     core_schema.dataclass_field('field_c', core_schema.int_schema()),
                 ],
@@ -883,14 +894,14 @@ def test_validate_assignment_function():
     assert m.field_a == 'x'
     assert m.field_b == 246
     assert m.field_c == 456
-    assert calls == ["FieldValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')"]
+    assert calls == ["ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')"]
 
     v.validate_assignment(m, 'field_b', '111')
 
     assert m.field_b == 222
     assert calls == [
-        "FieldValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')",
-        "FieldValidationInfo(config=None, context=None, data={'field_a': 'x', 'field_c': 456}, field_name='field_b')",
+        "ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')",
+        "ValidationInfo(config=None, context=None, data={'field_a': 'x', 'field_c': 456}, field_name='field_b')",
     ]
 
 
@@ -1271,7 +1282,7 @@ def test_dataclass_slots_field_before_validator():
         b: str
 
         @classmethod
-        def validate_b(cls, v: bytes, info: core_schema.FieldValidationInfo) -> bytes:
+        def validate_b(cls, v: bytes, info: core_schema.ValidationInfo) -> bytes:
             assert v == b'hello'
             assert info.field_name == 'b'
             assert info.data == {'a': 1}
@@ -1285,7 +1296,9 @@ def test_dataclass_slots_field_before_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.field_before_validator_function(Foo.validate_b, 'b', core_schema.str_schema()),
+                    schema=core_schema.with_info_before_validator_function(
+                        Foo.validate_b, core_schema.str_schema(), field_name='b'
+                    ),
                 ),
             ],
         ),
@@ -1306,7 +1319,7 @@ def test_dataclass_slots_field_after_validator():
         b: str
 
         @classmethod
-        def validate_b(cls, v: str, info: core_schema.FieldValidationInfo) -> str:
+        def validate_b(cls, v: str, info: core_schema.ValidationInfo) -> str:
             assert v == 'hello'
             assert info.field_name == 'b'
             assert info.data == {'a': 1}
@@ -1320,7 +1333,9 @@ def test_dataclass_slots_field_after_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.field_after_validator_function(Foo.validate_b, 'b', core_schema.str_schema()),
+                    schema=core_schema.with_info_after_validator_function(
+                        Foo.validate_b, core_schema.str_schema(), field_name='b'
+                    ),
                 ),
             ],
         ),
@@ -1515,9 +1530,15 @@ def test_leak_dataclass(validator):
 
         field_schema = core_schema.int_schema()
         if validator == 'field':
-            field_schema = core_schema.field_before_validator_function(Dataclass._validator, 'a', field_schema)
-            field_schema = core_schema.field_wrap_validator_function(Dataclass._wrap_validator, 'a', field_schema)
-            field_schema = core_schema.field_after_validator_function(Dataclass._validator, 'a', field_schema)
+            field_schema = core_schema.with_info_before_validator_function(
+                Dataclass._validator, field_schema, field_name='a'
+            )
+            field_schema = core_schema.with_info_wrap_validator_function(
+                Dataclass._wrap_validator, field_schema, field_name='a'
+            )
+            field_schema = core_schema.with_info_after_validator_function(
+                Dataclass._validator, field_schema, field_name='a'
+            )
 
         dataclass_schema = core_schema.dataclass_schema(
             Dataclass,
@@ -1526,9 +1547,11 @@ def test_leak_dataclass(validator):
         )
 
         if validator == 'dataclass':
-            dataclass_schema = core_schema.general_before_validator_function(Dataclass._validator, dataclass_schema)
-            dataclass_schema = core_schema.general_wrap_validator_function(Dataclass._wrap_validator, dataclass_schema)
-            dataclass_schema = core_schema.general_after_validator_function(Dataclass._validator, dataclass_schema)
+            dataclass_schema = core_schema.with_info_before_validator_function(Dataclass._validator, dataclass_schema)
+            dataclass_schema = core_schema.with_info_wrap_validator_function(
+                Dataclass._wrap_validator, dataclass_schema
+            )
+            dataclass_schema = core_schema.with_info_after_validator_function(Dataclass._validator, dataclass_schema)
 
         # If any of the Rust validators don't implement traversal properly,
         # there will be an undetectable cycle created by this assignment
