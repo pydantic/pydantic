@@ -861,7 +861,7 @@ print(m.my_field)
 You can also access `field_name` from the markers used with `Annotated`, like [`AfterValidator`][pydantic.functional_validators.AfterValidator].
 
 ```python
-from typing import Annotated
+from typing_extensions import Annotated
 
 from pydantic import AfterValidator, BaseModel, ValidationInfo
 
