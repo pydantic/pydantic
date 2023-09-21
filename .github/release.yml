@@ -1,7 +1,8 @@
 changelog:
   exclude:
     labels:
-      - ignore-for-release
+      - relnotes-ignore
+      - documentation
   categories:
     - title: Packaging
       labels:

@@ -12,15 +12,22 @@ if __name__ == '__main__':
     with open(event_path) as event_file:
         event = json.load(event_file)
 
-    labels = [label['name'] for label in event['pull_request']['labels'] if label['name'].startswith('relnotes-')]
+    labels = [
+        label['name']
+        for label in event['pull_request']['labels']
+        if label['name'].startswith('relnotes-') or label['name'] == 'documentation'
+    ]
 
     if not labels:
-        print('No relnotes label found', file=sys.stderr)
+        print(
+            'No suitable label found, please add either one of the `relnotes-` or `documentation` labels.',
+            file=sys.stderr,
+        )
         exit(1)
 
     if len(labels) > 1:
         print(f'Multiple relnotes labels found: `{"`, `".join(labels)}`', file=sys.stderr)
         exit(1)
 
-    print('Found relnotes label:', labels[0])
+    print('Found suitable label:', labels[0])
     exit(0)

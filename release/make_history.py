@@ -54,7 +54,6 @@ def get_notes(new_version: str) -> str:
 
     body = response.json()['body']
     body = body.removeprefix('<!-- Release notes generated using configuration in .github/release.yml at main -->\n\n')
-    body = body.removeprefix("## What's Changed\n")
 
     body = re.sub(
         pattern='https://github.com/pydantic/pydantic/pull/(\\d+)',
