@@ -838,7 +838,7 @@ class TzInfo(datetime.tzinfo):
     def fromutc(self, dt: datetime.datetime) -> datetime.datetime: ...
     def __deepcopy__(self, _memo: dict[Any, Any]) -> 'TzInfo': ...
 
-def validate_core_schema(schema: CoreSchema) -> CoreSchema:
+def validate_core_schema(schema: CoreSchema, *, strict: bool | None = None) -> CoreSchema:
     """Validate a CoreSchema
     This currently uses lax mode for validation (i.e. will coerce strings to dates and such)
     but may use strict mode in the future.
