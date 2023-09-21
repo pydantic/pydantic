@@ -2,23 +2,27 @@ import contextlib
 import re
 import sys
 from collections import deque
+from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
 from functools import partial, partialmethod
 from itertools import product
-from typing import Any, Callable, Deque, Dict, FrozenSet, List, Optional, Tuple, Union
+from typing import Any, Callable, Deque, Dict, FrozenSet, List, NamedTuple, Optional, Tuple, Union
 from unittest.mock import MagicMock
 
 import pytest
 from dirty_equals import HasRepr
-from typing_extensions import Annotated, Literal
+from pydantic_core import core_schema
+from typing_extensions import Annotated, Literal, TypedDict
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    GetCoreSchemaHandler,
     PydanticDeprecatedSince20,
     PydanticUserError,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     ValidatorFunctionWrapHandler,
@@ -26,6 +30,7 @@ from pydantic import (
     field_validator,
     model_validator,
     root_validator,
+    validate_call,
     validator,
 )
 from pydantic.functional_validators import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
@@ -2609,3 +2614,78 @@ def test_validator_function_error_hide_input(mode, config, input_str):
 
     with pytest.raises(ValidationError, match=re.escape(f'Value error, foo [{input_str}]')):
         Model(x='123')
+
+
+def foobar_validate(value: Any, info: core_schema.ValidationInfo):
+    data = info.data
+    if isinstance(data, dict):
+        data = data.copy()
+    return {'value': value, 'field_name': info.field_name, 'data': data}
+
+
+class Foobar:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        return core_schema.with_info_plain_validator_function(foobar_validate, field_name=handler.field_name)
+
+
+def test_custom_type_field_name_model():
+    class MyModel(BaseModel):
+        foobar: Foobar
+
+    m = MyModel(foobar=1, tuple_nesting=(1, 2))
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {}}
+
+
+def test_custom_type_field_name_model_nested():
+    class MyModel(BaseModel):
+        x: int
+        tuple_nested: Tuple[int, Foobar]
+
+    m = MyModel(x='123', tuple_nested=(1, 2))
+    # insert_assert(m.tuple_nested[1])
+    assert m.tuple_nested[1] == {'value': 2, 'field_name': 'tuple_nested', 'data': {'x': 123}}
+
+
+def test_custom_type_field_name_typed_dict():
+    class MyDict(TypedDict):
+        x: int
+        foobar: Foobar
+
+    ta = TypeAdapter(MyDict)
+    m = ta.validate_python({'x': '123', 'foobar': 1})
+    # insert_assert(m['foobar'])
+    assert m['foobar'] == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_custom_type_field_name_dataclass():
+    @dataclass
+    class MyDc:
+        x: int
+        foobar: Foobar
+
+    ta = TypeAdapter(MyDc)
+    m = ta.validate_python({'x': '123', 'foobar': 1})
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_custom_type_field_name_named_tuple():
+    class MyNamedTuple(NamedTuple):
+        x: int
+        foobar: Foobar
+
+    ta = TypeAdapter(MyNamedTuple)
+    m = ta.validate_python({'x': '123', 'foobar': 1})
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': None}
+
+
+def test_custom_type_field_name_validate_call():
+    @validate_call
+    def foobar(x: int, y: Foobar):
+        return x, y
+
+    # insert_assert(foobar(1, 2))
+    assert foobar(1, 2) == (1, {'value': 2, 'field_name': 'y', 'data': None})
