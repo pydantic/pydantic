@@ -365,7 +365,7 @@ class DayThisYear(date):
     def __get_pydantic_core_schema__(
         cls, source: Type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.general_after_validator_function(
+        return core_schema.with_info_after_validator_function(
             cls.validate,
             core_schema.int_schema(),
             serialization=core_schema.format_ser_schema('%Y-%m-%d'),

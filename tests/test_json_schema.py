@@ -3074,7 +3074,7 @@ def test_schema_for_generic_field():
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
             metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler.generate_schema(param))])
-            return core_schema.general_plain_validator_function(
+            return core_schema.with_info_plain_validator_function(
                 GenModel,
                 metadata=metadata,
             )
@@ -3205,7 +3205,7 @@ def test_advanced_generic_schema():  # noqa: C901
                     s = handler.generate_schema(Optional[arg])
                     return h(s)
 
-                return core_schema.general_plain_validator_function(
+                return core_schema.with_info_plain_validator_function(
                     Gen,
                     metadata={'pydantic_js_annotation_functions': [js_func]},
                 )
@@ -3244,7 +3244,7 @@ def test_advanced_generic_schema():  # noqa: C901
             if hasattr(source, '__args__'):
                 # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
                 metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))])
-                return core_schema.general_plain_validator_function(
+                return core_schema.with_info_plain_validator_function(
                     GenTwoParams,
                     metadata=metadata,
                 )

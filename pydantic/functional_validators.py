@@ -74,13 +74,13 @@ class AfterValidator:
         ```
     '''
 
-    func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
+    func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'after')
         if info_arg:
-            return core_schema.general_after_validator_function(self.func, schema=schema)  # type: ignore
+            return core_schema.with_info_after_validator_function(self.func, schema=schema)  # type: ignore
         else:
             return core_schema.no_info_after_validator_function(self.func, schema=schema)  # type: ignore
 
@@ -116,13 +116,13 @@ class BeforeValidator:
         ```
     """
 
-    func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
+    func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
-            return core_schema.general_before_validator_function(self.func, schema=schema)  # type: ignore
+            return core_schema.with_info_before_validator_function(self.func, schema=schema)  # type: ignore
         else:
             return core_schema.no_info_before_validator_function(self.func, schema=schema)  # type: ignore
 
@@ -152,12 +152,12 @@ class PlainValidator:
         ```
     """
 
-    func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
+    func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
-            return core_schema.general_plain_validator_function(self.func)  # type: ignore
+            return core_schema.with_info_plain_validator_function(self.func)  # type: ignore
         else:
             return core_schema.no_info_plain_validator_function(self.func)  # type: ignore
 
@@ -200,17 +200,13 @@ class WrapValidator:
     ```
     """
 
-    func: (
-        core_schema.NoInfoWrapValidatorFunction
-        | core_schema.GeneralWrapValidatorFunction
-        | core_schema.FieldWrapValidatorFunction
-    )
+    func: (core_schema.NoInfoWrapValidatorFunction | core_schema.WithInfoValidatorFunction)
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
-            return core_schema.general_wrap_validator_function(self.func, schema=schema)  # type: ignore
+            return core_schema.with_info_wrap_validator_function(self.func, schema=schema)  # type: ignore
         else:
             return core_schema.no_info_wrap_validator_function(self.func, schema=schema)  # type: ignore
 
@@ -222,7 +218,7 @@ if TYPE_CHECKING:
             ...
 
     class _V2ValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.FieldValidationInfo) -> Any:
+        def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:
             ...
 
     class _V2WrapValidatorClsMethod(Protocol):
@@ -237,15 +233,14 @@ if TYPE_CHECKING:
 
     _V2Validator = Union[
         _V2ValidatorClsMethod,
-        _core_schema.FieldValidatorFunction,
+        _core_schema.WithInfoValidatorFunction,
         _OnlyValueValidatorClsMethod,
         _core_schema.NoInfoValidatorFunction,
     ]
 
     _V2WrapValidator = Union[
         _V2WrapValidatorClsMethod,
-        _core_schema.GeneralWrapValidatorFunction,
-        _core_schema.FieldWrapValidatorFunction,
+        _core_schema.WithInfoValidatorFunction,
     ]
 
     _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]

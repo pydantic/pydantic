@@ -17,7 +17,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    FieldValidationInfo,
     PydanticDeprecatedSince20,
     PydanticUserError,
     ValidationError,
@@ -455,7 +454,7 @@ def test_validating_assignment_values_dict():
 
         @field_validator('b')
         @classmethod
-        def validate_b(cls, b, info: FieldValidationInfo):
+        def validate_b(cls, b, info: ValidationInfo):
             if 'm' in info.data:
                 return b + info.data['m'].a  # this fails if info.data['m'] is a dict
             else:
@@ -476,7 +475,7 @@ def test_validate_multiple():
 
         @field_validator('a', 'b')
         @classmethod
-        def check_a_and_b(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def check_a_and_b(cls, v: Any, info: ValidationInfo) -> Any:
             if len(v) < 4:
                 field = cls.model_fields[info.field_name]
                 raise AssertionError(f'{field.alias or info.field_name} is too short')
@@ -1687,13 +1686,13 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values():
 
         @field_validator('foo')
         @classmethod
-        def validate_foo(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def validate_foo(cls, v: Any, info: ValidationInfo) -> Any:
             check_values({**info.data})
             return v
 
         @field_validator('bar')
         @classmethod
-        def validate_bar(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def validate_bar(cls, v: Any, info: ValidationInfo) -> Any:
             check_values({**info.data})
             return v
 
@@ -1932,7 +1931,7 @@ def test_info_field_name_data_before():
 
         @field_validator('b', mode='before')
         @classmethod
-        def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def check_a(cls, v: Any, info: ValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
             assert info.data == {'a': 'your foobar is good'}
@@ -2177,7 +2176,7 @@ def partial_values_val_func2(
 
 def partial_info_val_func(
     value: int,
-    info: FieldValidationInfo,
+    info: ValidationInfo,
     *,
     allowed: int,
 ) -> int:
@@ -2240,7 +2239,7 @@ def partial_cls_values_val_func2(
 def partial_cls_info_val_func(
     cls: Any,
     value: int,
-    info: FieldValidationInfo,
+    info: ValidationInfo,
     *,
     allowed: int,
     expected_cls: Any,

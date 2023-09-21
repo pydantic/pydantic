@@ -3,7 +3,6 @@ import typing
 import pydantic_core
 from pydantic_core.core_schema import (
     FieldSerializationInfo,
-    FieldValidationInfo,
     SerializationInfo,
     SerializerFunctionWrapHandler,
     ValidationInfo,
@@ -57,7 +56,6 @@ __all__ = [
     'dataclasses',
     # functional validators
     'ValidationInfo',
-    'FieldValidationInfo',
     'ValidatorFunctionWrapHandler',
     'field_validator',
     'model_validator',
@@ -198,8 +196,15 @@ __all__ = [
     'GenerateSchema',
 ]
 
-# A mapping of {<member name>: <module name>} defining dynamic imports
-_dynamic_imports = {'RootModel': '.root_model'}
+# A mapping of {<member name>: (package, <module name>, deprecation_message)} defining dynamic imports
+_dynamic_imports: 'dict[str, tuple[str, str, str | None]]' = {
+    'RootModel': (__package__, '.root_model', None),
+    'FieldValidationInfo': (
+        'pydantic_core',
+        '.core_schema',
+        '`FieldValidationInfo` is deprecated, use `ValidationInfo` instead',
+    ),
+}
 if typing.TYPE_CHECKING:
     from .root_model import RootModel
 
@@ -211,7 +216,13 @@ def __getattr__(attr_name: str) -> object:
     if dynamic_attr is None:
         return _getattr_migration(attr_name)
 
+    package, module_name, deprecation_message = dynamic_attr
+    if deprecation_message is not None:
+        import warnings
+
+        warnings.warn(deprecation_message, DeprecationWarning, stacklevel=1)
+
     from importlib import import_module
 
-    module = import_module(_dynamic_imports[attr_name], package=__package__)
+    module = import_module(module_name, package=package)
     return getattr(module, attr_name)
