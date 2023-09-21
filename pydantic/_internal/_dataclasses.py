@@ -9,6 +9,7 @@ from functools import partial, wraps
 from inspect import Parameter, Signature, signature
 from typing import Any, Callable, ClassVar
 
+import pydantic_core
 from pydantic_core import ArgsKwargs, PydanticUndefined, SchemaSerializer, SchemaValidator, core_schema
 from typing_extensions import TypeGuard
 
@@ -163,8 +164,11 @@ def complete_dataclass(
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-    cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
-    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+
+    validator, serializer = pydantic_core._build_validator_and_serializer(schema, core_config)
+
+    cls.__pydantic_validator__ = validator
+    cls.__pydantic_serializer__ = serializer
 
     if config_wrapper.validate_assignment:
 

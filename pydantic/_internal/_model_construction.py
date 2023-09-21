@@ -9,7 +9,8 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
+import pydantic_core
+from pydantic_core import PydanticUndefined
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -495,8 +496,9 @@ def complete_model_class(
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-    cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
-    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+    cls.__pydantic_validator__, cls.__pydantic_serializer__ = pydantic_core._build_validator_and_serializer(
+        schema, core_config
+    )
     cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances

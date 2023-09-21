@@ -5,6 +5,7 @@ import sys
 from dataclasses import is_dataclass
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, overload
 
+import pydantic_core
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Literal, is_typeddict
 
@@ -169,16 +170,25 @@ class TypeAdapter(Generic[T]):
         core_schema = _discriminated_union.apply_discriminators(_core_utils.simplify_schema_references(core_schema))
 
         core_config = config_wrapper.core_config(None)
-        validator: SchemaValidator
+        validator: SchemaValidator | None = None
+        serializer: SchemaSerializer | None = None
         try:
             validator = _getattr_no_parents(type, '__pydantic_validator__')
         except AttributeError:
-            validator = SchemaValidator(core_schema, core_config)
+            pass
 
-        serializer: SchemaSerializer
         try:
             serializer = _getattr_no_parents(type, '__pydantic_serializer__')
         except AttributeError:
+            pass
+
+        if validator is None:
+            if serializer is None:
+                (validator, serializer) = pydantic_core._build_validator_and_serializer(core_schema, core_config)
+            else:
+                validator = SchemaValidator(core_schema, core_config)
+
+        if serializer is None:
             serializer = SchemaSerializer(core_schema, core_config)
 
         self.core_schema = core_schema
