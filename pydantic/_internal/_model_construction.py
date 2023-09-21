@@ -9,7 +9,7 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
+from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator, validate_core_schema
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -494,7 +494,7 @@ def complete_model_class(
     schema = apply_discriminators(simplify_schema_references(schema))
 
     # debug(schema)
-    cls.__pydantic_core_schema__ = schema
+    cls.__pydantic_core_schema__ = schema = validate_core_schema(schema)
     cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True
