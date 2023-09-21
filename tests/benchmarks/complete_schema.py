@@ -158,7 +158,7 @@ def schema(*, strict: bool = False) -> dict:
                                 'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'function-before',
-                                    'function': {'type': 'general', 'function': append_func},
+                                    'function': {'type': 'with-info', 'function': append_func},
                                     'schema': {'type': 'str'},
                                 },
                             },
@@ -166,7 +166,7 @@ def schema(*, strict: bool = False) -> dict:
                                 'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'function-after',
-                                    'function': {'type': 'general', 'function': append_func},
+                                    'function': {'type': 'with-info', 'function': append_func},
                                     'schema': {'type': 'str'},
                                 },
                             },
@@ -174,7 +174,7 @@ def schema(*, strict: bool = False) -> dict:
                                 'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'function-wrap',
-                                    'function': {'type': 'general', 'function': wrap_function},
+                                    'function': {'type': 'with-info', 'function': wrap_function},
                                     'schema': {'type': 'str'},
                                 },
                             },
@@ -182,7 +182,7 @@ def schema(*, strict: bool = False) -> dict:
                                 'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'function-plain',
-                                    'function': {'type': 'general', 'function': append_func},
+                                    'function': {'type': 'with-info', 'function': append_func},
                                 },
                             },
                         },

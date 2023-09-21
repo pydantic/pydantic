@@ -121,7 +121,7 @@ def test_model_class_root_validator_wrap():
 
     schema = core_schema.model_schema(
         MyModel,
-        core_schema.general_wrap_validator_function(
+        core_schema.with_info_wrap_validator_function(
             f, core_schema.model_fields_schema({'field_a': core_schema.model_field(core_schema.int_schema())})
         ),
     )
@@ -155,7 +155,7 @@ def test_model_class_root_validator_before():
 
     schema = core_schema.model_schema(
         MyModel,
-        core_schema.general_before_validator_function(
+        core_schema.with_info_before_validator_function(
             f, core_schema.model_fields_schema({'field_a': core_schema.model_field(core_schema.int_schema())})
         ),
     )
@@ -227,7 +227,7 @@ def test_function_ask(mode):
             'cls': MyModel,
             'schema': {
                 'type': f'function-{mode}',
-                'function': {'type': 'general', 'function': f},
+                'function': {'type': 'with-info', 'function': f},
                 'schema': {
                     'type': 'model-fields',
                     'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
@@ -244,13 +244,7 @@ def test_function_plain_ask():
     def f(input_value):
         return input_value, {1: 2}, {'field_a'}
 
-    v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {'type': 'function-plain', 'function': {'type': 'no-info', 'function': f}},
-        }
-    )
+    v = SchemaValidator({'type': 'model', 'cls': MyModel, 'schema': core_schema.no_info_plain_validator_function(f)})
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test'}
@@ -363,7 +357,7 @@ def test_model_class_function_after():
             'cls': MyModel,
             'schema': {
                 'type': 'function-after',
-                'function': {'type': 'general', 'function': f},
+                'function': {'type': 'with-info', 'function': f},
                 'schema': {
                     'type': 'model-fields',
                     'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
@@ -996,7 +990,9 @@ def test_validate_assignment_function():
                 {
                     'field_a': core_schema.model_field(core_schema.str_schema()),
                     'field_b': core_schema.model_field(
-                        core_schema.field_after_validator_function(func, 'field_b', core_schema.int_schema())
+                        core_schema.with_info_after_validator_function(
+                            func, core_schema.int_schema(), field_name='field_b'
+                        )
                     ),
                     'field_c': core_schema.model_field(core_schema.int_schema()),
                 }
@@ -1009,14 +1005,14 @@ def test_validate_assignment_function():
     assert m.field_b == 246
     assert m.field_c == 456
     assert m.__pydantic_fields_set__ == {'field_a', 'field_b', 'field_c'}
-    assert calls == ["FieldValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')"]
+    assert calls == ["ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')"]
 
     v.validate_assignment(m, 'field_b', '111')
 
     assert m.field_b == 222
     assert calls == [
-        "FieldValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')",
-        "FieldValidationInfo(config=None, context=None, data={'field_a': 'x', 'field_c': 456}, field_name='field_b')",
+        "ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')",
+        "ValidationInfo(config=None, context=None, data={'field_a': 'x', 'field_c': 456}, field_name='field_b')",
     ]
 
 
@@ -1085,19 +1081,19 @@ def test_frozen():
     'function_schema,call1, call2',
     [
         (
-            core_schema.general_after_validator_function,
-            (({'a': 1, 'b': 2}, None, {'b'}), 'ValidationInfo(config=None, context=None)'),
-            (({'a': 10, 'b': 2}, None, {'a'}), 'ValidationInfo(config=None, context=None)'),
+            core_schema.with_info_after_validator_function,
+            (({'a': 1, 'b': 2}, None, {'b'}), 'ValidationInfo(config=None, context=None, data=None, field_name=None)'),
+            (({'a': 10, 'b': 2}, None, {'a'}), 'ValidationInfo(config=None, context=None, data=None, field_name=None)'),
         ),
         (
-            core_schema.general_before_validator_function,
-            ({'b': 2}, 'ValidationInfo(config=None, context=None)'),
-            ({'a': 10, 'b': 2}, 'ValidationInfo(config=None, context=None)'),
+            core_schema.with_info_before_validator_function,
+            ({'b': 2}, 'ValidationInfo(config=None, context=None, data=None, field_name=None)'),
+            ({'a': 10, 'b': 2}, 'ValidationInfo(config=None, context=None, data=None, field_name=None)'),
         ),
         (
-            core_schema.general_wrap_validator_function,
-            ({'b': 2}, 'ValidationInfo(config=None, context=None)'),
-            ({'a': 10, 'b': 2}, 'ValidationInfo(config=None, context=None)'),
+            core_schema.with_info_wrap_validator_function,
+            ({'b': 2}, 'ValidationInfo(config=None, context=None, data=None, field_name=None)'),
+            ({'a': 10, 'b': 2}, 'ValidationInfo(config=None, context=None, data=None, field_name=None)'),
         ),
     ],
 )

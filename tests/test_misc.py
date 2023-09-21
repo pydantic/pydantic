@@ -204,3 +204,13 @@ def test_unicode_error_input_repr() -> None:
     actual = repr(exc_info.value).split('For further information visit ')[0].strip()
 
     assert expected == actual
+
+
+def test_core_schema_import_field_validation_info():
+    with pytest.warns(DeprecationWarning, match='`FieldValidationInfo` is deprecated, use `ValidationInfo` instead.'):
+        core_schema.FieldValidationInfo
+
+
+def test_core_schema_import_missing():
+    with pytest.raises(AttributeError, match="module 'pydantic_core' has no attribute 'foobar'"):
+        core_schema.foobar

@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError, core_schema
 
 from .conftest import PyAndJson
 
@@ -9,9 +9,7 @@ def test_after(py_and_json: PyAndJson):
     def f(input_value, info):
         return input_value + f'| context: {info.context}'
 
-    v = py_and_json(
-        {'type': 'function-after', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}
-    )
+    v = py_and_json(core_schema.with_info_after_validator_function(f, core_schema.str_schema()))
 
     assert v.validate_test('foobar') == 'foobar| context: None'
     assert v.validate_test('foobar', None, {1: 10}) == 'foobar| context: {1: 10}'
@@ -23,9 +21,7 @@ def test_mutable_context(py_and_json: PyAndJson):
         info.context['foo'] = input_value
         return input_value
 
-    v = py_and_json(
-        {'type': 'function-before', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}
-    )
+    v = py_and_json(core_schema.with_info_before_validator_function(f, core_schema.str_schema()))
     mutable_context = {}
     assert v.validate_test('foobar', None, mutable_context) == 'foobar'
     assert mutable_context == {'foo': 'foobar'}
@@ -41,19 +37,12 @@ def test_typed_dict(py_and_json: PyAndJson):
         return input_value + f'| context: {info.context}'
 
     v = py_and_json(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'f1': {
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f1}},
-                },
-                'f2': {
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f2}},
-                },
-            },
-        }
+        core_schema.typed_dict_schema(
+            {
+                'f1': core_schema.typed_dict_field(core_schema.with_info_plain_validator_function(f1)),
+                'f2': core_schema.typed_dict_field(core_schema.with_info_plain_validator_function(f2)),
+            }
+        )
     )
 
     assert v.validate_test({'f1': '1', 'f2': '2'}, None, {'x': 'y'}) == {
@@ -66,9 +55,7 @@ def test_wrap(py_and_json: PyAndJson):
     def f(input_value, validator, info):
         return validator(input_value) + f'| context: {info.context}'
 
-    v = py_and_json(
-        {'type': 'function-wrap', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}
-    )
+    v = py_and_json(core_schema.with_info_wrap_validator_function(f, core_schema.str_schema()))
 
     assert v.validate_test('foobar') == 'foobar| context: None'
     assert v.validate_test('foobar', None, {1: 10}) == 'foobar| context: {1: 10}'
@@ -81,9 +68,7 @@ def test_isinstance(py_and_json: PyAndJson):
             raise ValueError('wrong')
         return validator(input_value)
 
-    v = py_and_json(
-        {'type': 'function-wrap', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}
-    )
+    v = py_and_json(core_schema.with_info_wrap_validator_function(f, core_schema.str_schema()))
 
     assert v.validate_python('foobar', None, {}) == 'foobar'
 
@@ -115,19 +100,12 @@ def test_validate_assignment_with_context():
         return input_value + f'| context: {info.context}'
 
     v = SchemaValidator(
-        {
-            'type': 'model-fields',
-            'fields': {
-                'f1': {
-                    'type': 'model-field',
-                    'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f1}},
-                },
-                'f2': {
-                    'type': 'model-field',
-                    'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f2}},
-                },
-            },
-        }
+        core_schema.model_fields_schema(
+            {
+                'f1': core_schema.model_field(core_schema.with_info_plain_validator_function(f1)),
+                'f2': core_schema.model_field(core_schema.with_info_plain_validator_function(f2)),
+            }
+        )
     )
 
     m1, model_extra, fields_set = v.validate_python({'f1': '1', 'f2': '2'}, strict=None, context={'x': 'y'})

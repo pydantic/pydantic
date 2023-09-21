@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import PyAndJson
 
@@ -11,10 +11,7 @@ def test_chain():
     validator = SchemaValidator(
         {
             'type': 'chain',
-            'steps': [
-                {'type': 'str'},
-                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: Decimal(v)}},
-            ],
+            'steps': [{'type': 'str'}, core_schema.with_info_plain_validator_function(lambda v, info: Decimal(v))],
         }
     )
 
@@ -27,10 +24,10 @@ def test_chain_many():
         {
             'type': 'chain',
             'steps': [
-                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-1'}},
-                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-2'}},
-                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-3'}},
-                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-4'}},
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1'),
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-2'),
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-3'),
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-4'),
             ],
         }
     )
@@ -66,7 +63,7 @@ def test_json(py_and_json: PyAndJson, input_value, expected):
             'type': 'chain',
             'steps': [
                 {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'float'}]},
-                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: Decimal(v)}},
+                core_schema.with_info_plain_validator_function(lambda v, info: Decimal(v)),
             ],
         }
     )
@@ -80,17 +77,17 @@ def test_flatten():
         {
             'type': 'chain',
             'steps': [
-                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-1'}},
+                core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1'),
                 {
                     'type': 'chain',
                     'steps': [
                         {
                             'type': 'function-plain',
-                            'function': {'type': 'general', 'function': lambda v, info: f'{v}-2'},
+                            'function': {'type': 'with-info', 'function': lambda v, info: f'{v}-2'},
                         },
                         {
                             'type': 'function-plain',
-                            'function': {'type': 'general', 'function': lambda v, info: f'{v}-3'},
+                            'function': {'type': 'with-info', 'function': lambda v, info: f'{v}-3'},
                         },
                     ],
                 },
@@ -109,12 +106,7 @@ def test_chain_empty():
 
 def test_chain_one():
     validator = SchemaValidator(
-        {
-            'type': 'chain',
-            'steps': [
-                {'type': 'function-plain', 'function': {'type': 'general', 'function': lambda v, info: f'{v}-1'}}
-            ],
-        }
+        {'type': 'chain', 'steps': [core_schema.with_info_plain_validator_function(lambda v, info: f'{v}-1')]}
     )
     assert validator.validate_python('input') == 'input-1'
     assert validator.title == 'function-plain[<lambda>()]'

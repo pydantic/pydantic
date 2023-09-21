@@ -1066,7 +1066,7 @@ class TestOnError:
                             'on_error': 'raise',
                             'schema': {
                                 'type': 'function-wrap',
-                                'function': {'type': 'general', 'function': wrap_function},
+                                'function': {'type': 'with-info', 'function': wrap_function},
                                 'schema': {'type': 'str'},
                             },
                         },
@@ -1173,7 +1173,7 @@ def test_leak_typed_dict():
         def validate(v, info):
             return v
 
-        schema = core_schema.general_plain_validator_function(validate)
+        schema = core_schema.with_info_plain_validator_function(validate)
         schema = core_schema.typed_dict_schema(
             {'f': core_schema.typed_dict_field(schema)}, extra_behavior='allow', extras_schema=schema
         )

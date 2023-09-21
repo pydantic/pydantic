@@ -111,11 +111,11 @@ def test_schema_typing() -> None:
     SchemaValidator(schema)
     schema: CoreSchema = {
         'type': 'function-wrap',
-        'function': {'type': 'general', 'function': wrap_validator},
+        'function': {'type': 'with-info', 'function': wrap_validator, 'field_name': 'foobar'},
         'schema': {'type': 'str'},
     }
     SchemaValidator(schema)
-    schema: CoreSchema = {'type': 'function-plain', 'function': {'type': 'general', 'function': validator}}
+    schema: CoreSchema = core_schema.with_info_plain_validator_function(validator)
     SchemaValidator(schema)
     schema: CoreSchema = {
         'type': 'definitions',
@@ -189,7 +189,7 @@ def test_correct_function_signature() -> None:
     def my_validator(value: Any, info: Any) -> str:
         return str(value)
 
-    v = SchemaValidator(core_schema.general_plain_validator_function(my_validator))
+    v = SchemaValidator(core_schema.with_info_plain_validator_function(my_validator))
     assert v.validate_python(1) == '1'
 
 
@@ -197,7 +197,7 @@ def test_wrong_function_signature() -> None:
     def wrong_validator(value: Any) -> Any:
         return value
 
-    v = SchemaValidator(core_schema.general_plain_validator_function(wrong_validator))  # type: ignore
+    v = SchemaValidator(core_schema.with_info_plain_validator_function(wrong_validator))  # type: ignore
 
     # use this instead of pytest.raises since pyright complains about input when pytest isn't installed
     try:
