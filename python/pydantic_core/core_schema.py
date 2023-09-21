@@ -69,6 +69,7 @@ class CoreConfig(TypedDict, total=False):
         validation_error_cause: Whether to add user-python excs to the __cause__ of a ValidationError.
             Requires exceptiongroup backport pre Python 3.11.
         coerce_numbers_to_str: Whether to enable coercion of any `Number` type to `str` (not applicable in `strict` mode).
+        regex_engine: The regex engine to use for regex pattern validation. Default is 'rust-regex'. See `StringSchema`.
     """
 
     title: str
@@ -752,6 +753,7 @@ class StringSchema(TypedDict, total=False):
     strip_whitespace: bool
     to_lower: bool
     to_upper: bool
+    regex_engine: Literal['rust-regex', 'python-re']  # default: 'rust-regex'
     strict: bool
     ref: str
     metadata: Any
@@ -766,6 +768,7 @@ def str_schema(
     strip_whitespace: bool | None = None,
     to_lower: bool | None = None,
     to_upper: bool | None = None,
+    regex_engine: Literal['rust-regex', 'python-re'] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: Any = None,
@@ -789,6 +792,12 @@ def str_schema(
         strip_whitespace: Whether to strip whitespace from the value
         to_lower: Whether to convert the value to lowercase
         to_upper: Whether to convert the value to uppercase
+        regex_engine: The regex engine to use for pattern validation. Default is 'rust-regex'.
+            - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust
+              crate, which is non-backtracking and therefore more DDoS
+              resistant, but does not support all regex features.
+            - `python-re` use the [`re`](https://docs.python.org/3/library/re.html) module,
+              which supports all regex features, but may be slower.
         strict: Whether the value should be a string or a value that can be converted to a string
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -802,6 +811,7 @@ def str_schema(
         strip_whitespace=strip_whitespace,
         to_lower=to_lower,
         to_upper=to_upper,
+        regex_engine=regex_engine,
         strict=strict,
         ref=ref,
         metadata=metadata,

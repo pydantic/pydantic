@@ -167,7 +167,8 @@ def test_str_constrained_config():
         v.validate_python('test long')
 
 
-def test_invalid_regex():
+@pytest.mark.parametrize('engine', [None, 'rust-regex', 'python-re'])
+def test_invalid_regex(engine):
     # TODO uncomment and fix once #150 is done
     # with pytest.raises(SchemaError) as exc_info:
     #     SchemaValidator({'type': 'str', 'pattern': 123})
@@ -175,18 +176,25 @@ def test_invalid_regex():
     #     'Error building "str" validator:\n  TypeError: \'int\' object cannot be converted to \'PyString\''
     # )
     with pytest.raises(SchemaError) as exc_info:
-        SchemaValidator({'type': 'str', 'pattern': '(abc'})
-    assert exc_info.value.args[0] == (
-        'Error building "str" validator:\n'
-        '  SchemaError: regex parse error:\n'
-        '    (abc\n'
-        '    ^\n'
-        'error: unclosed group'
-    )
+        SchemaValidator(core_schema.str_schema(pattern='(abc', regex_engine=engine))
+
+    if engine is None or engine == 'rust-regex':
+        assert exc_info.value.args[0] == (
+            'Error building "str" validator:\n'
+            '  SchemaError: regex parse error:\n'
+            '    (abc\n'
+            '    ^\n'
+            'error: unclosed group'
+        )
+    elif engine == 'python-re':
+        assert exc_info.value.args[0] == (
+            'Error building "str" validator:\n  error: missing ), unterminated subpattern at position 0'
+        )
 
 
-def test_regex_error():
-    v = SchemaValidator({'type': 'str', 'pattern': '11'})
+@pytest.mark.parametrize('engine', [None, 'rust-regex', 'python-re'])
+def test_regex_error(engine):
+    v = SchemaValidator(core_schema.str_schema(pattern='11', regex_engine=engine))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('12')
     assert exc_info.value.errors(include_url=False) == [
@@ -297,3 +305,40 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
 
     v = SchemaValidator(core_schema.str_schema(), config)
     assert v.validate_json(number) == expected_str
+
+
+@pytest.mark.parametrize('mode', (None, 'schema', 'config'))
+def test_backtracking_regex_rust_unsupported(mode) -> None:
+    pattern = r'r(#*)".*?"\1'
+
+    with pytest.raises(SchemaError) as exc_info:
+        if mode is None:
+            # rust-regex is the default
+            SchemaValidator(core_schema.str_schema(pattern=pattern))
+        elif mode == 'schema':
+            SchemaValidator(core_schema.str_schema(pattern=pattern, regex_engine='rust-regex'))
+        elif mode == 'config':
+            SchemaValidator(core_schema.str_schema(pattern=pattern), core_schema.CoreConfig(regex_engine='rust-regex'))
+
+    assert exc_info.value.args[0] == (
+        'Error building \"str\" validator:\n'
+        '  SchemaError: regex parse error:\n'
+        '    r(#*)\".*?\"\\1\n'
+        '              ^^\n'
+        'error: backreferences are not supported'
+    )
+
+
+@pytest.mark.parametrize('mode', ('schema', 'config'))
+def test_backtracking_regex_python(mode) -> None:
+    pattern = r'r(#*)".*?"\1'
+
+    if mode == 'schema':
+        v = SchemaValidator(core_schema.str_schema(pattern=pattern, regex_engine='python-re'))
+    elif mode == 'config':
+        v = SchemaValidator(core_schema.str_schema(pattern=pattern), core_schema.CoreConfig(regex_engine='python-re'))
+    assert v.validate_python('r""') == 'r""'
+    assert v.validate_python('r#""#') == 'r#""#'
+    with pytest.raises(ValidationError):
+        # not a valid match for the pattern
+        v.validate_python('r#"#')
