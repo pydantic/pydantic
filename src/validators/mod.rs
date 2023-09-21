@@ -367,10 +367,10 @@ impl<'py> SelfValidator<'py> {
         Ok(Self { validator })
     }
 
-    pub fn validate_schema(&self, py: Python<'py>, schema: &'py PyAny) -> PyResult<&'py PyAny> {
+    pub fn validate_schema(&self, py: Python<'py>, schema: &'py PyAny, strict: Option<bool>) -> PyResult<&'py PyAny> {
         let mut recursion_guard = RecursionGuard::default();
         let mut state = ValidationState::new(
-            Extra::new(None, None, None, None, InputType::Python),
+            Extra::new(strict, None, None, None, InputType::Python),
             &self.validator.definitions,
             &mut recursion_guard,
         );
@@ -408,10 +408,10 @@ impl<'py> SelfValidator<'py> {
     }
 }
 
-#[pyfunction]
-pub fn validate_core_schema<'a>(py: Python<'a>, schema: &'a PyAny) -> PyResult<&'a PyAny> {
+#[pyfunction(signature = (schema, *, strict = None))]
+pub fn validate_core_schema<'a>(py: Python<'a>, schema: &'a PyAny, strict: Option<bool>) -> PyResult<&'a PyAny> {
     let self_validator = SelfValidator::new(py)?;
-    self_validator.validate_schema(py, schema)
+    self_validator.validate_schema(py, schema, strict)
 }
 
 pub trait BuildValidator: Sized {
