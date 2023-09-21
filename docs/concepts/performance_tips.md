@@ -133,8 +133,12 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
 
 
     ta = TypeAdapter(TypedModel)
-    result1 = timeit(lambda: ta.validate_python({"a": {"a": "a", "b": 2}}), number=10000)
-    result2 = timeit(lambda: Model.model_validate({"b": {"a": "a", "b": 2}}), number=10000)
+    result1 = timeit(
+        lambda: ta.validate_python({"a": {"a": "a", "b": 2}}), number=10000
+    )
+    result2 = timeit(
+        lambda: Model.model_validate({"b": {"a": "a", "b": 2}}), number=10000
+    )
     print(result2 / result1)
     ```
 
