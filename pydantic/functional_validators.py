@@ -6,7 +6,7 @@ import dataclasses
 import sys
 from functools import partialmethod
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast, overload
 
 from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
@@ -80,9 +80,11 @@ class AfterValidator:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'after')
         if info_arg:
-            return core_schema.with_info_after_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.WithInfoValidatorFunction, self.func)
+            return core_schema.with_info_after_validator_function(func, schema=schema, field_name=handler.field_name)
         else:
-            return core_schema.no_info_after_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.NoInfoValidatorFunction, self.func)
+            return core_schema.no_info_after_validator_function(func, schema=schema)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -122,9 +124,11 @@ class BeforeValidator:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
-            return core_schema.with_info_before_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.WithInfoValidatorFunction, self.func)
+            return core_schema.with_info_before_validator_function(func, schema=schema, field_name=handler.field_name)
         else:
-            return core_schema.no_info_before_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.NoInfoValidatorFunction, self.func)
+            return core_schema.no_info_before_validator_function(func, schema=schema)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -157,9 +161,11 @@ class PlainValidator:
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
-            return core_schema.with_info_plain_validator_function(self.func)  # type: ignore
+            func = cast(core_schema.WithInfoValidatorFunction, self.func)
+            return core_schema.with_info_plain_validator_function(func, field_name=handler.field_name)
         else:
-            return core_schema.no_info_plain_validator_function(self.func)  # type: ignore
+            func = cast(core_schema.NoInfoValidatorFunction, self.func)
+            return core_schema.no_info_plain_validator_function(func)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
@@ -206,9 +212,11 @@ class WrapValidator:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
-            return core_schema.with_info_wrap_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.WithInfoWrapValidatorFunction, self.func)
+            return core_schema.with_info_wrap_validator_function(func, schema=schema, field_name=handler.field_name)
         else:
-            return core_schema.no_info_wrap_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.NoInfoWrapValidatorFunction, self.func)
+            return core_schema.no_info_wrap_validator_function(func, schema=schema)
 
 
 if TYPE_CHECKING:

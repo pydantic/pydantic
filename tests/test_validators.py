@@ -2689,3 +2689,50 @@ def test_custom_type_field_name_validate_call():
 
     # insert_assert(foobar(1, 2))
     assert foobar(1, 2) == (1, {'value': 2, 'field_name': 'y', 'data': None})
+
+
+def test_after_validator_field_name():
+    class MyModel(BaseModel):
+        x: int
+        foobar: Annotated[int, AfterValidator(foobar_validate)]
+
+    m = MyModel(x='123', foobar='1')
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_before_validator_field_name():
+    class MyModel(BaseModel):
+        x: int
+        foobar: Annotated[Dict[Any, Any], BeforeValidator(foobar_validate)]
+
+    m = MyModel(x='123', foobar='1')
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': '1', 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_plain_validator_field_name():
+    class MyModel(BaseModel):
+        x: int
+        foobar: Annotated[int, PlainValidator(foobar_validate)]
+
+    m = MyModel(x='123', foobar='1')
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': '1', 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def validate_wrap(value: Any, handler: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo):
+    data = info.data
+    if isinstance(data, dict):
+        data = data.copy()
+    return {'value': handler(value), 'field_name': info.field_name, 'data': data}
+
+
+def test_wrap_validator_field_name():
+    class MyModel(BaseModel):
+        x: int
+        foobar: Annotated[int, WrapValidator(validate_wrap)]
+
+    m = MyModel(x='123', foobar='1')
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
