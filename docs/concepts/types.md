@@ -1,6 +1,72 @@
+Where possible Pydantic uses [standard library types](../api/standard_library_types.md) to define fields, thus smoothing
+the learning curve. For many useful applications, however, no standard library type exists,
+so Pydantic implements many commonly used types.
+
+There are also more complex types that can be found in the
+[Pydantic Extra Types](https://github.com/pydantic/pydantic-extra-types) package.
+
+If no existing type suits your purpose you can also implement your [own Pydantic-compatible types](#custom-types) with custom properties and validation.
+
+The following sections describe the types supported by Pydantic.
+
+
+* [Standard Library Types](../api/standard_library_types.md) &mdash; types from the Python standard library.
+* [Strict Types](#strict-types) &mdash; types that enable you to prevent coercion from compatible types.
+* [Custom Data Types](#custom-types) &mdash; create your own custom data types.
+* [Field Type Conversions](../usage/conversion_table.md) &mdash; strict and lax conversion between different field types.
+
+
+## Type conversion
+
+During validation, Pydantic can coerce data into expected types.
+
+There are two modes of coercion: strict and lax. See [Conversion Table](../usage/conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
+
+See [Strict mode](../usage/strict_mode.md) and [Strict Types](#strict-types) for details on enabling strict coercion.
+
+
+## Strict Types
+
+Pydantic provides the following strict types:
+
+- [`StrictBool`][pydantic.types.StrictBool]
+- [`StrictBytes`][pydantic.types.StrictBytes]
+- [`StrictFloat`][pydantic.types.StrictFloat]
+- [`StrictInt`][pydantic.types.StrictInt]
+- [`StrictStr`][pydantic.types.StrictStr]
+
+These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
+
+### Constrained types
+
+This behavior is also exposed via the `strict` field of the constrained types and can be combined with a multitude of complex validation rules. See the individual type signatures for supported arguments.
+
+- [`conbytes()`][pydantic.types.conbytes]
+- [`condate()`][pydantic.types.condate]
+- [`condecimal()`][pydantic.types.condecimal]
+- [`confloat()`][pydantic.types.confloat]
+- [`confrozenset()`][pydantic.types.confrozenset]
+- [`conint()`][pydantic.types.conint]
+- [`conlist()`][pydantic.types.conlist]
+- [`conset()`][pydantic.types.conset]
+- [`constr()`][pydantic.types.constr]
+
+The following caveats apply:
+
+- `StrictBytes` (and the `strict` option of `conbytes()`) will accept both `bytes`,
+   and `bytearray` types.
+- `StrictInt` (and the `strict` option of `conint()`) will not accept `bool` types,
+    even though `bool` is a subclass of `int` in Python. Other subclasses will work.
+- `StrictFloat` (and the `strict` option of `confloat()`) will not accept `int`.
+
+Besides the above, you can also have a [`FiniteFloat`][pydantic.types.FiniteFloat] type that will only accept finite values (i.e. not `inf`, `-inf` or `nan`).
+
+
+## Custom Types
+
 You can also define your own custom data types. There are several ways to achieve it.
 
-## Composing types via `Annotated`
+### Composing types via `Annotated`
 
 [PEP 593] introduced `Annotated` as a way to attach runtime metadata to types without changing how type checkers interpret them.
 Pydantic takes advantage of this to allow you to create types that are identical to the original type as far as type checkers are concerned, but add validation, serialize differently, etc.
@@ -56,7 +122,7 @@ except ValidationError as exc:
     """
 ```
 
-### Adding validation and serialization
+#### Adding validation and serialization
 
 You can add or override validation, serialization, and JSON schemas to an arbitrary type using the markers that
 Pydantic exports:
@@ -92,7 +158,7 @@ assert ta.json_schema(mode='validation') == {'type': 'number'}
 assert ta.json_schema(mode='serialization') == {'type': 'string'}
 ```
 
-### Generics
+#### Generics
 
 You can use type variables within `Annotated` to make re-usable modifications to types:
 
@@ -147,7 +213,7 @@ except ValidationError as exc:
     """
 ```
 
-## Named type aliases
+### Named type aliases
 
 The above examples make use of implicit type aliases.
 This means that they will not be able to have a `title` in JSON schemas and their schema will be copied between fields.
@@ -255,7 +321,7 @@ except ValidationError as exc:
     """
 ```
 
-### Named recursive types
+#### Named recursive types
 
 You can also use `TypeAliasType` to create recursive types:
 
@@ -313,7 +379,7 @@ except ValidationError as exc:
     """
 ```
 
-## Customizing validation with `__get_pydantic_core_schema__`
+### Customizing validation with `__get_pydantic_core_schema__`
 
 To do more extensive customization of how Pydantic handles custom classes, and in particular when you have access to the
 class or can subclass it, you can implement a special `__get_pydantic_core_schema__` to tell Pydantic how to generate the
@@ -332,7 +398,7 @@ The simplest no-op implementation calls the handler with the type you are given,
 also choose to modify the type before calling the handler, modify the core schema returned by the handler, or not call the
 handler at all.
 
-### As a method on a custom type
+#### As a method on a custom type
 
 The following is an example of a type that uses `__get_pydantic_core_schema__` to customize how it gets validated.
 This is equivalent to implementing `__get_validators__` in Pydantic V1.
@@ -359,9 +425,9 @@ assert isinstance(res, Username)
 assert res == 'abc'
 ```
 
-See [JSON Schema](../json_schema.md) for more details on how to customize JSON schemas for custom types.
+See [JSON Schema](../usage/json_schema.md) for more details on how to customize JSON schemas for custom types.
 
-### As an annotation
+#### As an annotation
 
 Often you'll want to parametrize your custom type by more than just generic type parameters (which you can do via the type system and will be discussed later). Or you may not actually care (or want to) make an instance of your subclass; you actually want the original type, just with some extra validation done.
 
@@ -401,7 +467,7 @@ assert Model(name='ABC').name == 'abc'
 
 Notice that type checkers will not complain about assigning `'abc'` to `Username` like they did in the previous example because they do not consider `Username` to be a distinct type from `str`.
 
-### Handling third-party types
+#### Handling third-party types
 
 Another use case for the pattern in the previous section is to handle third party types.
 
@@ -536,7 +602,7 @@ assert Model.model_json_schema() == {
 
 You can use this approach to e.g. define behavior for Pandas or Numpy types.
 
-### Using `GetPydanticSchema` to reduce boilerplate
+#### Using `GetPydanticSchema` to reduce boilerplate
 
 You may notice that the above examples where we create a marker class require a good amount of boilerplate.
 For many simple cases you can greatly minimize this by using `pydantic.GetPydanticSchema`:
@@ -562,7 +628,7 @@ class Model(BaseModel):
 assert Model(y='ab').y == 'abab'
 ```
 
-### Summary
+#### Summary
 
 Let's recap:
 
@@ -570,7 +636,7 @@ Let's recap:
 2. Under the hood these use `pydantic-core` to customize validation, and you can hook into that directly using `GetPydanticSchema` or a marker class with `__get_pydantic_core_schema__`.
 3. If you really want a custom type you can implement `__get_pydantic_core_schema__` on the type itself.
 
-## Handling custom generic classes
+### Handling custom generic classes
 
 !!! warning
     This is an advanced technique that you might not need in the beginning. In most of
@@ -583,7 +649,7 @@ with `__get_pydantic_core_schema__`.
 
 If the Generic class that you are using as a sub-type has a classmethod
 `__get_pydantic_core_schema__`, you don't need to use
-[`arbitrary_types_allowed`](../model_config.md#arbitrary-types-allowed) for it to work.
+[`arbitrary_types_allowed`](../usage/model_config.md#arbitrary-types-allowed) for it to work.
 
 Because the `source_type` parameter is not the same as the `cls` parameter, you can use `typing.get_args` (or `typing_extensions.get_args`) to extract the generic parameters.
 Then you can use the `handler` to generate a schema for them by calling `handler.generate_schema`.
@@ -734,7 +800,7 @@ except ValidationError as e:
     """
 ```
 
-### Generic containers
+#### Generic containers
 
 The same idea can be applied to create generic container types, like a custom `Sequence` type:
 

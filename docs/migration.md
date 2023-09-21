@@ -684,7 +684,7 @@ We have also introduced ways to use `typing.Annotated` to add custom validation 
 The main changes are:
 
 * `__get_validators__` should be replaced with `__get_pydantic_core_schema__`.
-  See [Custom Data Types](usage/types/custom.md#classes-with-getpydanticcoreschema) for more information.
+  See [Custom Data Types](concepts/types.md#customizing-validation-with-getpydanticcoreschema) for more information.
 * `__modify_schema__` becomes `__get_pydantic_json_schema__`.
   See [JSON Schema Customization](usage/json_schema.md#schema-customization) for more information.
 
@@ -693,7 +693,7 @@ Additionally, you can use `typing.Annotated` to modify or provide the `__get_pyd
 This provides a powerful and flexible mechanism for integrating third-party types with Pydantic, and in some cases
 may help you remove hacks from Pydantic V1 introduced to work around the limitations for custom types.
 
-See [Custom Data Types](usage/types/custom.md) for more information.
+See [Custom Data Types](concepts/types.md#custom-types) for more information.
 
 ### Changes to JSON schema generation
 
@@ -786,7 +786,7 @@ class Model(BaseModel):
     x: MyInt
 ```
 
-Read more about it in the [Composing types via `Annotated`](./usage/types/custom.md#composing-types-via-annotated)
+Read more about it in the [Composing types via `Annotated`](concepts/types.md#composing-types-via-annotated)
 docs.
 
 For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.

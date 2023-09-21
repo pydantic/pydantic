@@ -42,8 +42,8 @@ except ValidationError as exc:
 ## Argument types
 
 Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
-as `Any`. All types listed in [types](types/types.md) can be validated, including Pydantic models and
-[custom types](types/types.md#custom-data-types).
+as `Any`. All types listed in [types](../concepts/types.md) can be validated, including Pydantic models and
+[custom types](../concepts/types.md#custom-types).
 As with the rest of Pydantic, types can be coerced by the decorator before they're passed to the actual function:
 
 ```py test="no-print-intercept"
