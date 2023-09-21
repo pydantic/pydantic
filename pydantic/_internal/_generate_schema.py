@@ -370,7 +370,10 @@ class GenerateSchema:
                 schema,
                 discriminator,
             )
-            schema.setdefault('metadata', {})[NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = True
+            if 'metadata' in schema:
+                schema['metadata'][NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = True
+            else:
+                schema['metadata'] = {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: True}
             self._needs_apply_discriminated_union = True
             return schema
 
@@ -644,9 +647,10 @@ class GenerateSchema:
         return args[0], args[1]
 
     def _post_process_generated_schema(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        schema.setdefault('metadata', {})[
-            NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY
-        ] = self._needs_apply_discriminated_union
+        if 'metadata' in schema:
+            schema['metadata'][NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = self._needs_apply_discriminated_union
+        else:
+            schema['metadata'] = {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: self._needs_apply_discriminated_union}
         return schema
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:
