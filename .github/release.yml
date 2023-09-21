@@ -2,3 +2,19 @@ changelog:
   exclude:
     labels:
       - ignore-for-release
+  categories:
+    - title: Packaging
+      labels:
+        - relnotes-packaging
+    - title: Added
+      labels:
+        - relnotes-added
+    - title: Changed
+      labels:
+        - relnotes-changed
+    - title: Removed
+      labels:
+        - relnotes-removed
+    - title: Fixed
+      labels:
+        - relnotes-fixed
