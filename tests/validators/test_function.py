@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Type, Union
 import pytest
 from dirty_equals import HasRepr
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema, validate_core_schema
 
 from ..conftest import plain_repr
 
@@ -223,12 +223,12 @@ def test_function_wrap_str():
 
 def test_function_wrap_not_callable():
     with pytest.raises(SchemaError, match='function-wrap.function.typed-dict.function\n  Input should be callable'):
-        SchemaValidator(
+        validate_core_schema(
             {'type': 'function-wrap', 'function': {'type': 'general', 'function': []}, 'schema': {'type': 'str'}}
         )
 
     with pytest.raises(SchemaError, match='function-wrap.function\n  Field required'):
-        SchemaValidator({'type': 'function-wrap', 'schema': {'type': 'str'}})
+        validate_core_schema({'type': 'function-wrap', 'schema': {'type': 'str'}})
 
 
 def test_wrap_error():
@@ -450,7 +450,7 @@ def test_function_plain_no_info():
 
 def test_plain_with_schema():
     with pytest.raises(SchemaError, match='function-plain.schema\n  Extra inputs are not permitted'):
-        SchemaValidator(
+        validate_core_schema(
             {
                 'type': 'function-plain',
                 'function': {'type': 'general', 'function': lambda x: x},

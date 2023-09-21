@@ -1,6 +1,6 @@
 import pytest
 
-from pydantic_core import SchemaError, SchemaSerializer, core_schema
+from pydantic_core import SchemaError, core_schema, validate_core_schema
 
 
 @pytest.mark.parametrize(
@@ -12,4 +12,4 @@ from pydantic_core import SchemaError, SchemaSerializer, core_schema
 )
 def test_invalid_ser_schema(ser_schema, msg):
     with pytest.raises(SchemaError, match=msg):
-        SchemaSerializer(core_schema.any_schema(serialization=ser_schema))
+        validate_core_schema(core_schema.any_schema(serialization=ser_schema))

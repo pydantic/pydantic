@@ -4,7 +4,7 @@ from functools import partial
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaSerializer, core_schema
+from pydantic_core import SchemaError, SchemaSerializer, core_schema, validate_core_schema
 
 
 def test_list_any():
@@ -144,8 +144,10 @@ def test_exclude(schema_func, seq_f):
 @pytest.mark.parametrize('include,exclude', [({1, 3, 5}, {5, 6}), ([1, 3, 5], [5, 6])])
 def test_filter(include, exclude):
     v = SchemaSerializer(
-        core_schema.list_schema(
-            core_schema.any_schema(), serialization=core_schema.filter_seq_schema(include=include, exclude=exclude)
+        validate_core_schema(
+            core_schema.list_schema(
+                core_schema.any_schema(), serialization=core_schema.filter_seq_schema(include=include, exclude=exclude)
+            )
         )
     )
     assert v.to_python([0, 1, 2, 3, 4, 5, 6, 7]) == [1, 3]
@@ -186,7 +188,7 @@ class RemovedContains(ImplicitContains):
 @pytest.mark.parametrize('schema_func', [core_schema.list_schema, core_schema.tuple_variable_schema])
 def test_include_error(schema_func, include_value, error_msg):
     with pytest.raises(SchemaError, match=error_msg):
-        SchemaSerializer(
+        validate_core_schema(
             schema_func(core_schema.any_schema(), serialization=core_schema.filter_seq_schema(include=include_value))
         )
 

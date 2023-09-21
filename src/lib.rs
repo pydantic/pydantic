@@ -34,7 +34,7 @@ pub use errors::{
 pub use serializers::{
     to_json, to_jsonable_python, PydanticSerializationError, PydanticSerializationUnexpectedValue, SchemaSerializer,
 };
-pub use validators::{PySome, SchemaValidator};
+pub use validators::{validate_core_schema, PySome, SchemaValidator};
 
 pub fn get_pydantic_core_version() -> &'static str {
     static PYDANTIC_CORE_VERSION: OnceLock<String> = OnceLock::new();
@@ -97,5 +97,6 @@ fn _pydantic_core(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(to_json, m)?)?;
     m.add_function(wrap_pyfunction!(to_jsonable_python, m)?)?;
     m.add_function(wrap_pyfunction!(list_all_errors, m)?)?;
+    m.add_function(wrap_pyfunction!(validate_core_schema, m)?)?;
     Ok(())
 }

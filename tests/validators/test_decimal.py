@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import math
 import re
@@ -184,8 +186,8 @@ def test_decimal_kwargs(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_va
     ],
     ids=repr,
 )
-def test_decimal_multiple_of(py_and_json: PyAndJson, multiple_of, input_value, error):
-    v = py_and_json({'type': 'decimal', 'multiple_of': multiple_of})
+def test_decimal_multiple_of(py_and_json: PyAndJson, multiple_of: float, input_value: float, error: Err | None):
+    v = py_and_json({'type': 'decimal', 'multiple_of': Decimal(str(multiple_of))})
     if error:
         with pytest.raises(ValidationError, match=re.escape(error.message)):
             v.validate_test(input_value)

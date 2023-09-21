@@ -239,8 +239,8 @@ enum RegexEngine {
 }
 
 impl RegexEngine {
-    const RUST_REGEX: &str = "rust-regex";
-    const PYTHON_RE: &str = "python-re";
+    const RUST_REGEX: &'static str = "rust-regex";
+    const PYTHON_RE: &'static str = "python-re";
 }
 
 impl Pattern {

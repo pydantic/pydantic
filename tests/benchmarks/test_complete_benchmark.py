@@ -8,7 +8,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError, validate_core_schema
 
 from .complete_schema import input_data_lax, input_data_strict, input_data_wrong, schema
 
@@ -16,7 +16,7 @@ from .complete_schema import input_data_lax, input_data_strict, input_data_wrong
 def test_complete_valid():
     lax_schema = schema()
     cls = lax_schema['cls']
-    lax_validator = SchemaValidator(lax_schema)
+    lax_validator = SchemaValidator(validate_core_schema(lax_schema))
     output = lax_validator.validate_python(input_data_lax())
     assert isinstance(output, cls)
     assert len(output.__pydantic_fields_set__) == 41
@@ -73,14 +73,14 @@ def test_complete_valid():
         },
     }
 
-    strict_validator = SchemaValidator(schema(strict=True))
+    strict_validator = SchemaValidator(validate_core_schema(schema(strict=True)))
     output2 = strict_validator.validate_python(input_data_strict())
     assert output_dict == output2.__dict__
 
 
 def test_complete_invalid():
     lax_schema = schema()
-    lax_validator = SchemaValidator(lax_schema)
+    lax_validator = SchemaValidator(validate_core_schema(lax_schema))
     with pytest.raises(ValidationError) as exc_info:
         lax_validator.validate_python(input_data_wrong())
     assert len(exc_info.value.errors(include_url=False)) == 739
@@ -88,19 +88,19 @@ def test_complete_invalid():
 
 @pytest.mark.benchmark(group='complete')
 def test_complete_core_lax(benchmark):
-    v = SchemaValidator(schema())
+    v = SchemaValidator(validate_core_schema(schema()))
     benchmark(v.validate_python, input_data_lax())
 
 
 @pytest.mark.benchmark(group='complete')
 def test_complete_core_strict(benchmark):
-    v = SchemaValidator(schema(strict=True))
+    v = SchemaValidator(validate_core_schema(schema(strict=True)))
     benchmark(v.validate_python, input_data_strict())
 
 
 @pytest.mark.benchmark(group='complete-wrong')
 def test_complete_core_error(benchmark):
-    v = SchemaValidator(schema())
+    v = SchemaValidator(validate_core_schema(schema()))
     data = input_data_wrong()
 
     @benchmark
@@ -115,7 +115,7 @@ def test_complete_core_error(benchmark):
 
 @pytest.mark.benchmark(group='complete-wrong')
 def test_complete_core_isinstance(benchmark):
-    v = SchemaValidator(schema())
+    v = SchemaValidator(validate_core_schema(schema()))
     data = input_data_wrong()
     assert v.isinstance_python(data) is False
 
@@ -135,7 +135,7 @@ def default_json_encoder(obj):
 
 @pytest.mark.benchmark(group='complete-json')
 def test_complete_core_json(benchmark):
-    v = SchemaValidator(schema())
+    v = SchemaValidator(validate_core_schema(schema()))
     json_data = json.dumps(input_data_lax(), default=default_json_encoder)
     benchmark(v.validate_json, json_data)
 
@@ -143,4 +143,4 @@ def test_complete_core_json(benchmark):
 @pytest.mark.benchmark(group='build')
 def test_build_schema(benchmark):
     lax_schema = schema()
-    benchmark(SchemaValidator, lax_schema)
+    benchmark(lambda s: SchemaValidator(validate_core_schema(s)), lax_schema)

@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, validate_core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -143,7 +143,6 @@ def test_timedelta_strict_json(input_value, expected):
         ({'ge': timedelta(days=3)}, 'P3D', timedelta(days=3)),
         ({'ge': timedelta(days=3)}, 'P2DT1H', Err('Input should be greater than or equal to 3 days')),
         ({'gt': timedelta(days=3)}, 'P3DT1H', timedelta(days=3, hours=1)),
-        ({'gt': 'P3D'}, 'P2DT1H', Err('Input should be greater than 3 days')),
         ({'le': timedelta(seconds=-86400.123)}, '-PT86400.123S', timedelta(seconds=-86400.123)),
         ({'le': timedelta(seconds=-86400.123)}, '-PT86400.124S', timedelta(seconds=-86400.124)),
         (
@@ -197,10 +196,10 @@ def test_timedelta_kwargs_strict():
 
 def test_invalid_constraint():
     with pytest.raises(SchemaError, match='timedelta.gt\n  Input should be a valid timedelta, invalid digit in'):
-        SchemaValidator({'type': 'timedelta', 'gt': 'foobar'})
+        validate_core_schema({'type': 'timedelta', 'gt': 'foobar'})
 
     with pytest.raises(SchemaError, match='timedelta.le\n  Input should be a valid timedelta, invalid digit in'):
-        SchemaValidator({'type': 'timedelta', 'le': 'foobar'})
+        validate_core_schema({'type': 'timedelta', 'le': 'foobar'})
 
 
 def test_dict_py():
