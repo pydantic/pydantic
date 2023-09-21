@@ -506,6 +506,7 @@ def test_abstractmethod():
     assert m.model_dump() == {'side': 4.0, 'area': 5.0}
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='error message is different on older versions')
 @pytest.mark.parametrize(
     'bases',
     [
@@ -527,7 +528,9 @@ def test_abstractmethod_missing(bases: Tuple[Any, ...]):
     class Square(AbstractSquare):
         pass
 
-    with pytest.raises(TypeError, match="Can't instantiate abstract class Square with abstract methods? area"):
+    with pytest.raises(
+        TypeError, match="Can't instantiate abstract class Square without an implementation for abstract method 'area'"
+    ):
         Square(side=4.0)
 
 

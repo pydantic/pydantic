@@ -170,7 +170,7 @@ def test_optional_field():
     )
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='repr different on older versions')
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='repr different on older versions')
 def test_annotated_field():
     from annotated_types import Gt
 
@@ -178,7 +178,7 @@ def test_annotated_field():
         foo: Annotated[int, Gt(1)] = 1
 
     sig = signature(Model)
-    assert str(sig) == '(*, foo: typing.Annotated[int, Gt(gt=1)] = 1) -> None'
+    assert str(sig) == '(*, foo: Annotated[int, Gt(gt=1)] = 1) -> None'
     # check that the `Annotated` we created is a valid `Annotated`
     assert is_annotated(sig.parameters['foo'].annotation)
 

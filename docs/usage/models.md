@@ -222,7 +222,7 @@ from typing import List
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 from pydantic import BaseModel, ConfigDict, constr
 
@@ -271,7 +271,7 @@ convenient:
 import typing
 
 import sqlalchemy as sa
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -738,7 +738,7 @@ Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can lat
     `TypeVar` needs to be wrapped inside [`SerializeAsAny`](serialization.md#serializing-with-duck-typing)
     for Pydantic to serialize `ChildModel` as `ChildModel`.
 
-```py
+```py requires="3.12"
 from typing import Generic, TypeVar
 
 from pydantic import BaseModel, ValidationError
@@ -764,7 +764,7 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    2 validation errors for Model[int, ~IntT]
+    2 validation errors for Model[int, TypeVar]
     a
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
     b
@@ -1162,21 +1162,24 @@ To do this, you may want to use a `default_factory`.
 Here is an example:
 
 ```py
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 
+def datetime_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class Model(BaseModel):
     uid: UUID = Field(default_factory=uuid4)
-    updated: datetime = Field(default_factory=datetime.utcnow)
+    updated: datetime = Field(default_factory=datetime_now)
 
 
 m1 = Model()
 m2 = Model()
 assert m1.uid != m2.uid
-assert m1.updated != m2.updated
 ```
 
 You can find more information in the documentation of the [`Field` function](fields.md).
