@@ -47,7 +47,7 @@ Using type hints also means that Pydantic integrates well with static typing too
     4. I'm not claiming "bazam" is really an attribute of fruit, but rather to show that arbitrarily complex types can easily be validated.
 
 !!! tip "Learn more"
-    See the [documentation on supported types](usage/types/types.md).
+    See the [documentation on supported types](concepts/types.md).
 
 ## Performance
 
@@ -272,7 +272,7 @@ Pydantic provides four ways to create schemas and perform validation and seriali
 
 1. [`BaseModel`](usage/models.md) &mdash; Pydantic's own super class with many common utilities available via instance methods.
 2. [`pydantic.dataclasses.dataclass`](usage/dataclasses.md) &mdash; a wrapper around standard dataclasses which performs validation when a dataclass is initialized.
-3. [`TypeAdapter`](usage/type_adapter.md) &mdash; a general way to adapt any type for validation and serialization. This allows types like [`TypedDict`](api/standard_library_types.md#typeddict) and [`NampedTuple`](api/standard_library_types.md#namedtuple) to be validated as well as simple scalar values like `int` or `timedelta` &mdash; [all types](usage/types/types.md) supported can be used with `TypeAdapter`.
+3. [`TypeAdapter`](usage/type_adapter.md) &mdash; a general way to adapt any type for validation and serialization. This allows types like [`TypedDict`](api/standard_library_types.md#typeddict) and [`NampedTuple`](api/standard_library_types.md#namedtuple) to be validated as well as simple scalar values like `int` or `timedelta` &mdash; [all types](concepts/types.md) supported can be used with `TypeAdapter`.
 4. [`validate_call`](usage/validation_decorator.md) &mdash; a decorator to perform validation when calling a function.
 
 ??? example "Example - schema based on TypedDict"
@@ -352,7 +352,7 @@ Functional validators and serializers, as well as a powerful protocol for custom
     ```
 
 !!! tip "Learn more"
-    See the documentation on [validators](usage/validators.md), [custom serializers](usage/serialization.md#custom-serializers), and [custom types](usage/types/custom.md).
+    See the documentation on [validators](usage/validators.md), [custom serializers](usage/serialization.md#custom-serializers), and [custom types](concepts/types.md#custom-types).
 
 ## Ecosystem
 

@@ -56,11 +56,6 @@ nav:
   - changelog.md
 - Usage:
   - usage/models.md
-  - Field Types:
-    - Types Overview: usage/types/types.md
-    - Standard Library Types: usage/types/standard_types.md
-    - Strict Types: usage/types/strict_types.md
-    - Custom Data Types: usage/types/custom.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
   - 'Fields': usage/fields.md
@@ -73,6 +68,8 @@ nav:
   - 'Strict Mode': usage/strict_mode.md
   - 'Conversion Table': usage/conversion_table.md
   - 'Settings Management': usage/pydantic_settings.md
+- Concepts:
+  - 'Types': concepts/types.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
@@ -177,23 +174,27 @@ plugins:
       'pycharm_plugin.md': 'integrations/pycharm.md'
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
-      'usage/types.md': 'usage/types/types.md'
+      'usage/types.md': 'concepts/types.md'
       'usage/types/secrets.md': 'examples/secrets.md'
-      'usage/types/string_types.md': 'api/types.md'
-      'usage/types/file_types.md': 'api/types.md'
+      'usage/types/string_types.md': 'api/types.md#pydantic.types.StringConstraints'
+      'usage/types/file_types.md': 'api/types.md#pydantic.types.FilePath'
       'api/main.md': 'api/base_model.md'
       'api/color.md': 'api/pydantic_extra_types_color.md'
-      'api/alias_generators.md': 'api/config.md'
+      'api/alias_generators.md': 'api/config.md#pydantic.config.ConfigDict.alias_generator'
       'api/pydantic_core_init.md': 'api/pydantic_core.md'
-      'usage/types/booleans.md': 'api/standard_library_types.md'
-      'usage/types/callables.md': 'api/standard_library_types.md'
-      'usage/types/datetime.md': 'api/standard_library_types.md'
-      'usage/types/enum.md': 'api/standard_library_types.md'
-      'usage/types/json.md': 'api/standard_library_types.md'
-      'usage/types/list_types.md': 'api/standard_library_types.md'
-      'usage/types/urls.md': 'api/standard_library_types.md'
-      'usage/types/unions.md': 'api/standard_library_types.md'
-      'usage/types/typevars.md': 'api/standard_library_types.md'
+      'usage/types/booleans.md': 'api/standard_library_types.md#booleans'
+      'usage/types/callables.md': 'api/standard_library_types.md#callable'
+      'usage/types/custom.md': 'concepts/types.md#custom-types'
+      'usage/types/datetime.md': 'api/standard_library_types.md#datetime-types'
+      'usage/types/enum.md': 'api/standard_library_types.md#enum'
+      'usage/types/json.md': 'api/types.md#pydantic.types.Json'
+      'usage/types/list_types.md': 'api/standard_library_types.md#list'
+      'usage/types/standard_types.md': 'api/standard_library_types.md'
+      'usage/types/strict_types.md': 'concepts/types.md#strict-types'
+      'usage/types/types.md': 'concepts/types.md'
+      'usage/types/urls.md': 'api/networks.md'
+      'usage/types/unions.md': 'api/standard_library_types.md#union'
+      'usage/types/typevars.md': 'api/standard_library_types.md#type-and-typevar'
       'usage/types/types_fields.md': 'api/standard_library_types.md'
       'usage/validation_errors.md': 'errors/validation_errors.md'
       'usage/errors.md': 'errors/usage_errors.md'
