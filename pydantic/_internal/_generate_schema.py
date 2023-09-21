@@ -263,6 +263,15 @@ def _add_custom_serialization_from_json_encoders(
 
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
+    __slots__ = (
+        '_config_wrapper_stack',
+        '_types_namespace',
+        '_typevars_map',
+        '_needs_apply_discriminated_union',
+        '_has_invalid_schema',
+        'field_name_stack',
+        'defs',
+    )
 
     def __init__(
         self,
@@ -276,6 +285,7 @@ class GenerateSchema:
         self._typevars_map = typevars_map
         self._needs_apply_discriminated_union = False
         self._has_invalid_schema = False
+        self.field_name_stack = _FieldNameStack()
         self.defs = _Definitions()
 
     @classmethod
@@ -292,6 +302,7 @@ class GenerateSchema:
         obj._typevars_map = typevars_map
         obj._needs_apply_discriminated_union = False
         obj._has_invalid_schema = False
+        obj.field_name_stack = _FieldNameStack()
         obj.defs = defs
         return obj
 
@@ -908,13 +919,14 @@ class GenerateSchema:
             schema = self._apply_discriminator_to_union(schema, field_info.discriminator)
             return schema
 
-        if field_info.discriminator is not None:
-            schema = self._apply_annotations(source_type, annotations, transform_inner_schema=set_discriminator)
-        else:
-            schema = self._apply_annotations(
-                source_type,
-                annotations,
-            )
+        with self.field_name_stack.push(name):
+            if field_info.discriminator is not None:
+                schema = self._apply_annotations(source_type, annotations, transform_inner_schema=set_discriminator)
+            else:
+                schema = self._apply_annotations(
+                    source_type,
+                    annotations,
+                )
 
         # This V1 compatibility shim should eventually be removed
         # push down any `each_item=True` validators
@@ -1173,7 +1185,8 @@ class GenerateSchema:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         source_type, annotations = field.annotation, field.metadata
-        schema = self._apply_annotations(source_type, annotations)
+        with self.field_name_stack.push(name):
+            schema = self._apply_annotations(source_type, annotations)
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -2005,3 +2018,22 @@ def resolve_original_schema(schema: CoreSchema, definitions: dict[str, CoreSchem
         return schema['schema']
     else:
         return schema
+
+
+class _FieldNameStack:
+    __slots__ = ('_stack',)
+
+    def __init__(self) -> None:
+        self._stack: list[str] = []
+
+    @contextmanager
+    def push(self, field_name: str) -> Iterator[None]:
+        self._stack.append(field_name)
+        yield
+        self._stack.pop()
+
+    def get(self) -> str | None:
+        if self._stack:
+            return self._stack[-1]
+        else:
+            return None
