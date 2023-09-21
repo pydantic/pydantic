@@ -42,6 +42,14 @@ _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozense
 _DEFINITIONS_CACHE_METADATA_KEY = 'pydantic.definitions_cache'
 
 NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY = 'pydantic.internal.needs_apply_discriminated_union'
+"""Used to mark a schema that has a discriminated union that needs to be checked for validity at the end of
+schema building because one of it's members refers to a definition that was not yet defined when the union
+was first encountered.
+"""
+HAS_INVALID_SCHEMAS_METADATA_KEY = 'pydantic.internal.invalid'
+"""Used to mark a schema that is invalid because it refers to a definition that was not yet defined when the
+schema was first encountered.
+"""
 
 
 def is_core_schema(
@@ -136,43 +144,47 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
 
 def define_expected_missing_refs(
     schema: core_schema.CoreSchema, allowed_missing_refs: set[str]
-) -> core_schema.CoreSchema:
+) -> core_schema.CoreSchema | None:
     if not allowed_missing_refs:
         # in this case, there are no missing refs to potentially substitute, so there's no need to walk the schema
         # this is a common case (will be hit for all non-generic models), so it's worth optimizing for
-        return schema
-    refs: set[str] = set()
+        return None
 
-    def _record_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        ref = get_ref(s)
-        if ref:
-            refs.add(ref)
-        return recurse(s, _record_refs)
-
-    walk_core_schema(schema, _record_refs)
+    refs = collect_definitions(schema).keys()
 
     expected_missing_refs = allowed_missing_refs.difference(refs)
     if expected_missing_refs:
         definitions: list[core_schema.CoreSchema] = [
             # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
             #   Issue: https://github.com/pydantic/pydantic-core/issues/619
-            core_schema.none_schema(ref=ref, metadata={'pydantic_debug_missing_ref': True, 'invalid': True})
+            core_schema.none_schema(ref=ref, metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})
             for ref in expected_missing_refs
         ]
         return core_schema.definitions_schema(schema, definitions)
-    return schema
+    return None
 
 
-def collect_invalid_schemas(schema: core_schema.CoreSchema) -> list[core_schema.CoreSchema]:
-    invalid_schemas: list[core_schema.CoreSchema] = []
+def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
+    invalid = False
 
     def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if s.get('metadata', {}).get('invalid'):
-            invalid_schemas.append(s)
+        nonlocal invalid
+        if 'metadata' in s:
+            metadata = s['metadata']
+            if HAS_INVALID_SCHEMAS_METADATA_KEY in metadata:
+                invalid = metadata[HAS_INVALID_SCHEMAS_METADATA_KEY]
+                if invalid is True:
+                    invalid = True
+                return s
         return recurse(s, _is_schema_valid)
 
     walk_core_schema(schema, _is_schema_valid)
-    return invalid_schemas
+    if 'metadata' in schema:
+        metadata = schema['metadata']
+        metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = invalid
+    else:
+        schema['metadata'] = {HAS_INVALID_SCHEMAS_METADATA_KEY: invalid}
+    return invalid
 
 
 T = TypeVar('T')
