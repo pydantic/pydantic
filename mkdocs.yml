@@ -57,19 +57,19 @@ nav:
 - Usage:
   - usage/models.md
   - usage/validators.md
-  - 'Model Config': usage/model_config.md
-  - 'Fields': usage/fields.md
-  - 'JSON Schema': usage/json_schema.md
-  - 'Serialization': usage/serialization.md
-  - 'Dataclasses': usage/dataclasses.md
-  - 'TypeAdapter': usage/type_adapter.md
-  - 'Validation Decorator': usage/validation_decorator.md
-  - 'Postponed Annotations': usage/postponed_annotations.md
-  - 'Strict Mode': usage/strict_mode.md
-  - 'Conversion Table': usage/conversion_table.md
-  - 'Settings Management': usage/pydantic_settings.md
+  - Model Config: usage/model_config.md
+  - Fields: usage/fields.md
+  - JSON Schema: usage/json_schema.md
+  - Serialization: usage/serialization.md
+  - Dataclasses: usage/dataclasses.md
+  - TypeAdapter: usage/type_adapter.md
+  - Validation Decorator: usage/validation_decorator.md
+  - Postponed Annotations: usage/postponed_annotations.md
+  - Strict Mode: usage/strict_mode.md
+  - Conversion Table: usage/conversion_table.md
+  - Settings Management: usage/pydantic_settings.md
 - Concepts:
-  - 'Types': concepts/types.md
+  - Types: concepts/types.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
