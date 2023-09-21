@@ -41,12 +41,13 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
         if s['type'] == 'tagged-union':
             return s
 
-        metadata = s.get('metadata', {})
-        discriminator = metadata.get(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
-        if discriminator is not None:
-            if definitions is None:
-                definitions = collect_definitions(schema)
-            s = apply_discriminator(s, discriminator, definitions)
+        metadata = s.get('metadata', None)
+        if metadata is not None:
+            discriminator = metadata.get(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
+            if discriminator is not None:
+                if definitions is None:
+                    definitions = collect_definitions(schema)
+                s = apply_discriminator(s, discriminator, definitions)
         return s
 
     return _core_utils.walk_core_schema(schema, inner)

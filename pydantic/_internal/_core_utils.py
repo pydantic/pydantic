@@ -558,7 +558,10 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 
     if definitions:
         schema = core_schema.definitions_schema(schema=schema, definitions=definitions)
-    schema.setdefault('metadata', {})[_DEFINITIONS_CACHE_METADATA_KEY] = definitions_cache  # type: ignore
+    if 'metadata' in schema:
+        schema['metadata'][_DEFINITIONS_CACHE_METADATA_KEY] = definitions_cache
+    else:
+        schema['metadata'] = {_DEFINITIONS_CACHE_METADATA_KEY: definitions_cache}
     return schema
 
 
