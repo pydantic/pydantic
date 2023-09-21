@@ -528,7 +528,8 @@ See [Strict Mode](strict_mode.md) for more details.
 See the [Conversion Table](conversion_table.md) for more details on how Pydantic converts data in both strict and lax
 modes.
 
-### Arbitrary Types Allowed
+
+## Arbitrary Types Allowed
 
 You can allow arbitrary types using the `arbitrary_types_allowed` setting in the model's config:
 
@@ -583,6 +584,49 @@ print(model2.pet.name)
 print(type(model2.pet))
 #> <class '__main__.Pet'>
 ```
+
+
+## Coerce Numbers to Strings
+
+Pydantic no longer allows number types (`int`, `float`, `Decimal`) to be coerced as type `str` by default.
+
+Set [`coerce_numbers_to_str=True`](../api/config.md#pydantic.config.ConfigDict.coerce_numbers_to_str) to enable coercing of numbers to strings.
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+class Model(BaseModel):
+    value: str
+
+
+try:
+    print(Model(value=42))
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    value
+      Input should be a valid string [type=string_type, input_value=42, input_type=int]
+    """
+
+
+class Model(BaseModel):
+    model_config = ConfigDict(coerce_numbers_to_str=True)
+
+    value: str
+
+
+repr(Model(value=42).value)
+#> "42"
+repr(Model(value=42.13).value)
+#> "42.13"
+repr(Model(value=Decimal('42.13')).value)
+#> "42.13"
+```
+
 
 ## Protected Namespaces
 

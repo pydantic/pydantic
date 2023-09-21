@@ -230,5 +230,12 @@ class ConfigDict(TypedDict, total=False):
     Defaults to `None`.
     """
 
+    coerce_numbers_to_str: bool
+    """
+    If `True`, enables automatic coercion of any `Number` type to `str` in "lax" (non-strict) mode.
+
+    Defaults to `False`.
+    """
+
 
 __getattr__ = getattr_migration(__name__)

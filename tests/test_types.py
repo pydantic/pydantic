@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
+from numbers import Number
 from pathlib import Path
 from typing import (
     Any,
@@ -5870,3 +5871,46 @@ def test_decimal_float_precision() -> None:
     assert ta.validate_python('1.1') == Decimal('1.1')
     assert ta.validate_json('1') == Decimal('1')
     assert ta.validate_python(1) == Decimal('1')
+
+
+def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(strict=True, coerce_numbers_to_str=True)
+        value: str
+
+    with pytest.raises(ValidationError, match='value'):
+        Model.model_validate({'value': 42})
+    with pytest.raises(ValidationError, match='value'):
+        Model.model_validate_json('{"value": 42}')
+
+
+@pytest.mark.parametrize(
+    ('number', 'expected_str'),
+    [
+        pytest.param(42, '42', id='42'),
+        pytest.param(42.0, '42.0', id='42.0'),
+        pytest.param(Decimal('42.0'), '42.0', id="Decimal('42.0')"),
+    ],
+)
+def test_coerce_numbers_to_str(number: Number, expected_str: str) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=True)
+        value: str
+
+    assert Model.model_validate({'value': number}).model_dump() == {'value': expected_str}
+
+
+@pytest.mark.parametrize(
+    ('number', 'expected_str'),
+    [
+        pytest.param('42', '42', id='42'),
+        pytest.param('42.0', '42', id='42.0'),
+        pytest.param('42.13', '42.13', id='42.13'),
+    ],
+)
+def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=True)
+        value: str
+
+    assert Model.model_validate_json(f'{{"value": {number}}}').model_dump() == {'value': expected_str}
