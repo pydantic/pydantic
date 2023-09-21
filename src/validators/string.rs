@@ -72,7 +72,7 @@ impl Validator for StrValidator {
 #[derive(Debug, Clone, Default)]
 pub struct StrConstrainedValidator {
     strict: bool,
-    pattern: Option<Regex>,
+    pattern: Option<Pattern>,
     max_length: Option<usize>,
     min_length: Option<usize>,
     strip_whitespace: bool,
@@ -126,10 +126,10 @@ impl Validator for StrConstrainedValidator {
         }
 
         if let Some(pattern) = &self.pattern {
-            if !pattern.is_match(str) {
+            if !pattern.is_match(py, str)? {
                 return Err(ValError::new(
                     ErrorType::StringPatternMismatch {
-                        pattern: pattern.to_string(),
+                        pattern: pattern.pattern.clone(),
                         context: None,
                     },
                     input,
@@ -170,10 +170,16 @@ impl Validator for StrConstrainedValidator {
 impl StrConstrainedValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         let py = schema.py();
-        let pattern = match schema.get_as(intern!(py, "pattern"))? {
-            Some(s) => Some(Regex::new(s).map_err(|e| py_schema_error_type!("{}", e))?),
-            None => None,
-        };
+
+        let pattern = schema
+            .get_as(intern!(py, "pattern"))?
+            .map(|s| {
+                let regex_engine =
+                    schema_or_config(schema, config, intern!(py, "regex_engine"), intern!(py, "regex_engine"))?
+                        .unwrap_or(RegexEngine::RUST_REGEX);
+                Pattern::compile(py, s, regex_engine)
+            })
+            .transpose()?;
         let min_length: Option<usize> =
             schema_or_config(schema, config, intern!(py, "min_length"), intern!(py, "str_min_length"))?;
         let max_length: Option<usize> =
@@ -217,5 +223,47 @@ impl StrConstrainedValidator {
             || self.strip_whitespace
             || self.to_lower
             || self.to_upper
+    }
+}
+
+#[derive(Debug, Clone)]
+struct Pattern {
+    pattern: String,
+    engine: RegexEngine,
+}
+
+#[derive(Debug, Clone)]
+enum RegexEngine {
+    RustRegex(Regex),
+    PythonRe(PyObject),
+}
+
+impl RegexEngine {
+    const RUST_REGEX: &str = "rust-regex";
+    const PYTHON_RE: &str = "python-re";
+}
+
+impl Pattern {
+    fn compile(py: Python<'_>, pattern: String, engine: &str) -> PyResult<Self> {
+        let engine = match engine {
+            RegexEngine::RUST_REGEX => {
+                RegexEngine::RustRegex(Regex::new(&pattern).map_err(|e| py_schema_error_type!("{}", e))?)
+            }
+            RegexEngine::PYTHON_RE => {
+                let re_compile = py.import(intern!(py, "re"))?.getattr(intern!(py, "compile"))?;
+                RegexEngine::PythonRe(re_compile.call1((&pattern,))?.into())
+            }
+            _ => return Err(py_schema_error_type!("Invalid regex engine: {}", engine)),
+        };
+        Ok(Self { pattern, engine })
+    }
+
+    fn is_match(&self, py: Python<'_>, target: &str) -> PyResult<bool> {
+        match &self.engine {
+            RegexEngine::RustRegex(regex) => Ok(regex.is_match(target)),
+            RegexEngine::PythonRe(py_regex) => {
+                Ok(!py_regex.call_method1(py, intern!(py, "match"), (target,))?.is_none(py))
+            }
+        }
     }
 }
