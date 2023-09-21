@@ -51,7 +51,7 @@ nav:
   - Help with Pydantic: help_with_pydantic.md
   - Installation: install.md
   - Migration Guide: migration.md
-  - Version Compatibility: version-compatibility.md
+  - Version Policy: version-policy.md
   - Contributing: contributing.md
   - changelog.md
 - Usage:
