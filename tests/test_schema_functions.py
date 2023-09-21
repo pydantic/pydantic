@@ -108,32 +108,36 @@ all_schema_functions = [
         {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
     ),
     (
-        core_schema.general_before_validator_function,
+        core_schema.with_info_before_validator_function,
         args(val_function, {'type': 'int'}),
         {
             'type': 'function-before',
-            'function': {'type': 'general', 'function': val_function},
+            'function': {'type': 'with-info', 'function': val_function},
             'schema': {'type': 'int'},
         },
     ),
     (
-        core_schema.general_after_validator_function,
+        core_schema.with_info_after_validator_function,
         args(val_function, {'type': 'int'}),
         {
             'type': 'function-after',
-            'function': {'type': 'general', 'function': val_function},
+            'function': {'type': 'with-info', 'function': val_function},
             'schema': {'type': 'int'},
         },
     ),
     (
-        core_schema.general_wrap_validator_function,
+        core_schema.with_info_wrap_validator_function,
         args(val_function, {'type': 'int'}),
-        {'type': 'function-wrap', 'function': {'type': 'general', 'function': val_function}, 'schema': {'type': 'int'}},
+        {
+            'type': 'function-wrap',
+            'function': {'type': 'with-info', 'function': val_function},
+            'schema': {'type': 'int'},
+        },
     ),
     (
-        core_schema.general_plain_validator_function,
+        core_schema.with_info_plain_validator_function,
         args(val_function),
-        {'type': 'function-plain', 'function': {'type': 'general', 'function': val_function}},
+        core_schema.with_info_plain_validator_function(val_function),
     ),
     (
         core_schema.with_default_schema,

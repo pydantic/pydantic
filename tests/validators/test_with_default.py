@@ -633,7 +633,7 @@ def test_leak_with_default():
             def _validator(cls, v, info):
                 return Defaulted(v)
 
-        schema = core_schema.general_plain_validator_function(Defaulted._validator)
+        schema = core_schema.with_info_plain_validator_function(Defaulted._validator)
         schema = core_schema.with_default_schema(schema, default=Defaulted(0))
 
         # If any of the Rust validators don't implement traversal properly,

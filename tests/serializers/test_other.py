@@ -16,20 +16,24 @@ def test_chain():
 
 
 def test_function_plain():
-    s = SchemaSerializer(core_schema.general_plain_validator_function(lambda v, info: v + 1))
+    s = SchemaSerializer(core_schema.with_info_plain_validator_function(lambda v, info: v + 1))
     # can't infer the type from plain function validators
     # insert_assert(plain_repr(s))
     assert plain_repr(s) == 'SchemaSerializer(serializer=Any(AnySerializer),definitions=[])'
 
 
 def test_function_before():
-    s = SchemaSerializer(core_schema.general_before_validator_function(lambda v, info: v + 1, core_schema.int_schema()))
+    s = SchemaSerializer(
+        core_schema.with_info_before_validator_function(lambda v, info: v + 1, core_schema.int_schema())
+    )
     # insert_assert(plain_repr(s))
     assert plain_repr(s) == 'SchemaSerializer(serializer=Int(IntSerializer),definitions=[])'
 
 
 def test_function_after():
-    s = SchemaSerializer(core_schema.general_after_validator_function(lambda v, info: v + 1, core_schema.int_schema()))
+    s = SchemaSerializer(
+        core_schema.with_info_after_validator_function(lambda v, info: v + 1, core_schema.int_schema())
+    )
     # insert_assert(plain_repr(s))
     assert plain_repr(s) == 'SchemaSerializer(serializer=Int(IntSerializer),definitions=[])'
 

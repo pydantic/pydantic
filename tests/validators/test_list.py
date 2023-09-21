@@ -236,9 +236,7 @@ def test_list_function():
     def f(input_value, info):
         return input_value * 2
 
-    v = SchemaValidator(
-        {'type': 'list', 'items_schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f}}}
-    )
+    v = SchemaValidator({'type': 'list', 'items_schema': core_schema.with_info_plain_validator_function(f)})
 
     assert v.validate_python([1, 2, 3]) == [2, 4, 6]
 
@@ -247,9 +245,7 @@ def test_list_function_val_error():
     def f(input_value, info):
         raise ValueError(f'error {input_value}')
 
-    v = SchemaValidator(
-        {'type': 'list', 'items_schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f}}}
-    )
+    v = SchemaValidator({'type': 'list', 'items_schema': core_schema.with_info_plain_validator_function(f)})
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1, 2])
@@ -275,9 +271,7 @@ def test_list_function_internal_error():
     def f(input_value, info):
         raise RuntimeError(f'error {input_value}')
 
-    v = SchemaValidator(
-        {'type': 'list', 'items_schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f}}}
-    )
+    v = SchemaValidator({'type': 'list', 'items_schema': core_schema.with_info_plain_validator_function(f)})
 
     with pytest.raises(RuntimeError, match='^error 1$') as exc_info:
         v.validate_python([1, 2])

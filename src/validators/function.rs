@@ -1,4 +1,4 @@
-use pyo3::exceptions::{PyAssertionError, PyAttributeError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyAssertionError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
@@ -8,7 +8,7 @@ use crate::errors::{
 };
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
-use crate::tools::{function_name, py_err, SchemaDict};
+use crate::tools::{function_name, py_err, safe_repr, SchemaDict};
 use crate::PydanticUseDefault;
 
 use super::generator::InternalValidator;
@@ -28,20 +28,14 @@ fn destructure_function_schema(schema: &PyDict) -> PyResult<FunctionInfo> {
     let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
     let function: &PyAny = func_dict.get_as_req(intern!(schema.py(), "function"))?;
     let func_type: &str = func_dict.get_as_req(intern!(schema.py(), "type"))?;
-    let (is_field_validator, info_arg) = match func_type {
-        "field" => (true, true),
-        "general" => (false, true),
-        "no-info" => (false, false),
+    let info_arg = match func_type {
+        "with-info" => true,
+        "no-info" => false,
         _ => unreachable!(),
     };
-    let field_name: Option<Py<PyString>> = match is_field_validator {
-        true => Some(
-            func_dict
-                .get_as_req::<&PyString>(intern!(schema.py(), "field_name"))?
-                .into(),
-        ),
-        false => None,
-    };
+    let field_name = func_dict
+        .get_as::<&PyString>(intern!(schema.py(), "field_name"))?
+        .map(Into::into);
     Ok(FunctionInfo {
         function: function.into(),
         field_name,
@@ -525,15 +519,12 @@ pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) ->
     }
 }
 
-#[pyclass(module = "pydantic_core._pydantic_core")]
+#[pyclass(module = "pydantic_core._pydantic_core", get_all)]
 pub struct ValidationInfo {
-    #[pyo3(get)]
     config: PyObject,
-    #[pyo3(get)]
     context: Option<PyObject>,
     data: Option<Py<PyDict>>,
     field_name: Option<Py<PyString>>,
-    #[pyo3(get)]
     mode: InputType,
 }
 
@@ -551,40 +542,22 @@ impl ValidationInfo {
 
 #[pymethods]
 impl ValidationInfo {
-    #[getter]
-    fn get_data(&self, py: Python) -> PyResult<Py<PyDict>> {
-        match (&self.data, &self.field_name) {
-            (Some(data), Some(_)) => Ok(data.clone_ref(py)),
-            _ => Err(PyAttributeError::new_err("No attribute named 'data'")),
-        }
-    }
-
-    #[getter]
-    fn get_field_name(&self) -> PyResult<Py<PyString>> {
-        match self.field_name {
-            Some(ref field_name) => Ok(field_name.clone()),
-            None => Err(PyAttributeError::new_err("No attribute named 'field_name'")),
-        }
-    }
-
     fn __repr__(&self, py: Python) -> PyResult<String> {
         let context = match self.context {
-            Some(ref context) => context.as_ref(py).repr()?.extract()?,
-            None => "None",
+            Some(ref context) => safe_repr(context.as_ref(py)),
+            None => "None".into(),
         };
         let config = self.config.as_ref(py).repr()?;
-        let mut s = if self.field_name.is_some() {
-            format!("FieldValidationInfo(config={config}, context={context}")
-        } else {
-            format!("ValidationInfo(config={config}, context={context}")
+        let data = match self.data {
+            Some(ref data) => safe_repr(data.as_ref(py)),
+            None => "None".into(),
         };
-        if let Ok(data) = self.get_data(py) {
-            s += &format!(", data={}", data.as_ref(py).repr()?);
-        }
-        if let Ok(field_name) = self.get_field_name() {
-            s += &format!(", field_name='{field_name}'");
-        }
-        s += ")";
-        Ok(s)
+        let field_name = match self.field_name {
+            Some(ref field_name) => safe_repr(field_name.as_ref(py)),
+            None => "None".into(),
+        };
+        Ok(format!(
+            "ValidationInfo(config={config}, context={context}, data={data}, field_name={field_name})"
+        ))
     }
 }
