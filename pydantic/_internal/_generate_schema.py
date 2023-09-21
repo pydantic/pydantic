@@ -569,7 +569,7 @@ class GenerateSchema:
                 '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
                 PydanticDeprecatedSince20,
             )
-            schema = core_schema.chain_schema([core_schema.general_plain_validator_function(v) for v in validators()])
+            schema = core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
         else:
             if len(inspect.signature(get_schema).parameters) == 1:
                 # (source) -> CoreSchema
@@ -1744,28 +1744,25 @@ class GenerateSchema:
 
 
 _VALIDATOR_F_MATCH: Mapping[
-    tuple[FieldValidatorModes, Literal['no-info', 'general', 'field']],
-    Callable[[Callable[..., Any], None, core_schema.CoreSchema], core_schema.CoreSchema],
+    tuple[FieldValidatorModes, Literal['no-info', 'with-info']],
+    Callable[[Callable[..., Any], core_schema.CoreSchema, str | None], core_schema.CoreSchema],
 ] = {
-    ('before', 'no-info'): lambda f, _, schema: core_schema.no_info_before_validator_function(f, schema),
-    ('after', 'no-info'): lambda f, _, schema: core_schema.no_info_after_validator_function(f, schema),
+    ('before', 'no-info'): lambda f, schema, _: core_schema.no_info_before_validator_function(f, schema),
+    ('after', 'no-info'): lambda f, schema, _: core_schema.no_info_after_validator_function(f, schema),
     ('plain', 'no-info'): lambda f, _1, _2: core_schema.no_info_plain_validator_function(f),
-    ('wrap', 'no-info'): lambda f, _, schema: core_schema.no_info_wrap_validator_function(f, schema),
-    ('before', 'general'): lambda f, _, schema: core_schema.general_before_validator_function(f, schema),
-    ('after', 'general'): lambda f, _, schema: core_schema.general_after_validator_function(f, schema),
-    ('plain', 'general'): lambda f, _1, _2: core_schema.general_plain_validator_function(f),
-    ('wrap', 'general'): lambda f, _, schema: core_schema.general_wrap_validator_function(f, schema),
-}
-
-
-_FIELD_VALIDATOR_F_MATCH: Mapping[
-    tuple[FieldValidatorModes, Literal['no-info', 'general', 'field']],
-    Callable[[Callable[..., Any], str, core_schema.CoreSchema], core_schema.CoreSchema],
-] = {
-    ('before', 'field'): core_schema.field_before_validator_function,
-    ('after', 'field'): core_schema.field_after_validator_function,
-    ('plain', 'field'): lambda f, field_name, _: core_schema.field_plain_validator_function(f, field_name),
-    ('wrap', 'field'): core_schema.field_wrap_validator_function,
+    ('wrap', 'no-info'): lambda f, schema, _: core_schema.no_info_wrap_validator_function(f, schema),
+    ('before', 'with-info'): lambda f, schema, field_name: core_schema.with_info_before_validator_function(
+        f, schema, field_name=field_name
+    ),
+    ('after', 'with-info'): lambda f, schema, field_name: core_schema.with_info_after_validator_function(
+        f, schema, field_name=field_name
+    ),
+    ('plain', 'with-info'): lambda f, _, field_name: core_schema.with_info_plain_validator_function(
+        f, field_name=field_name
+    ),
+    ('wrap', 'with-info'): lambda f, schema, field_name: core_schema.with_info_wrap_validator_function(
+        f, schema, field_name=field_name
+    ),
 }
 
 
@@ -1788,18 +1785,9 @@ def apply_validators(
     """
     for validator in validators:
         info_arg = inspect_validator(validator.func, validator.info.mode)
-        if not info_arg:
-            val_type: Literal['no-info', 'general', 'field'] = 'no-info'
-        elif isinstance(validator.info, (FieldValidatorDecoratorInfo, ValidatorDecoratorInfo)):
-            assert field_name is not None, 'field validators must be used within a model field'
-            val_type = 'field'
-        else:
-            val_type = 'general'
+        val_type = 'with-info' if info_arg else 'no-info'
 
-        if field_name is None or val_type != 'field':
-            schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, None, schema)
-        else:
-            schema = _FIELD_VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, field_name, schema)
+        schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, schema, field_name)
     return schema
 
 
@@ -1847,18 +1835,18 @@ def apply_model_validators(
         info_arg = inspect_validator(validator.func, validator.info.mode)
         if validator.info.mode == 'wrap':
             if info_arg:
-                schema = core_schema.general_wrap_validator_function(function=validator.func, schema=schema)
+                schema = core_schema.with_info_wrap_validator_function(function=validator.func, schema=schema)
             else:
                 schema = core_schema.no_info_wrap_validator_function(function=validator.func, schema=schema)
         elif validator.info.mode == 'before':
             if info_arg:
-                schema = core_schema.general_before_validator_function(function=validator.func, schema=schema)
+                schema = core_schema.with_info_before_validator_function(function=validator.func, schema=schema)
             else:
                 schema = core_schema.no_info_before_validator_function(function=validator.func, schema=schema)
         else:
             assert validator.info.mode == 'after'
             if info_arg:
-                schema = core_schema.general_after_validator_function(function=validator.func, schema=schema)
+                schema = core_schema.with_info_after_validator_function(function=validator.func, schema=schema)
             else:
                 schema = core_schema.no_info_after_validator_function(function=validator.func, schema=schema)
     if ref:
