@@ -6,18 +6,15 @@ changelog:
     - title: Packaging
       labels:
         - relnotes-packaging
-    - title: Added
+    - title: New Features
       labels:
-        - relnotes-added
+        - relnotes-feature
+    - title: Changes
+      labels:
+        - relnotes-change
     - title: Performance
       labels:
         - relnotes-performance
-    - title: Changed
+    - title: Fixes
       labels:
-        - relnotes-changed
-    - title: Removed
-      labels:
-        - relnotes-removed
-    - title: Fixed
-      labels:
-        - relnotes-fixed
+        - relnotes-fix
