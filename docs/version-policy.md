@@ -3,11 +3,11 @@ We're sorry about this pain :pray:, it was an unfortunate but necessary step to 
 
 **There will not be another breaking change of this magnitude!**
 
-## Pydantic V1 Support
+## Pydantic V1
 
-Active development of V1 has already stopped, however critical bug fixes and security vulnerabilities will be fixed in V1 for **one year** after the release of V2.
+Active development of V1 has already stopped, however critical bug fixes and security vulnerabilities will be fixed in V1 for **one year** after the release of V2 (June 30, 2024).
 
-## Pydantic V2 Changes
+## Pydantic V2
 
 We will not intentionally make breaking changes in minor releases of V2.
 
@@ -28,3 +28,10 @@ In all cases we will aim to minimize churn and do so only when justified by the 
 ## Pydantic V3 and beyond
 
 We expect to make new major releases roughly once a year going forward, although as mentioned above, any associated breaking changes should be trivial to fix compared to the V1-to-V2 transition.
+
+## Support for Python versions
+
+Pydantic will drop support for a Python version when the following conditions are met:
+
+* The Python version has reached [EOL](https://devguide.python.org/versions/).
+* <5% of downloads of the most recent minor release need to be using that version.
