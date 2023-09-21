@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.8+insiders-4.40.4">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.2.8+insiders-4.40.4">
     
     
       
@@ -3069,6 +3069,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.SchemaValidator.validate_strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_strings()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic_core._pydantic_core.SchemaValidator.validate_assignment" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4311,6 +4322,17 @@
     <span class="md-ellipsis">
       
         validate_json()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.SchemaValidator.validate_strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_strings()
       
     </span>
   </a>
@@ -5642,6 +5664,140 @@ If <code>None</code>, the value of <a class="autorefs autorefs-internal" href=".
 
 
 
+<h3 id="pydantic_core._pydantic_core.SchemaValidator.validate_strings" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">validate_strings</span>
+
+
+<a href="#pydantic_core._pydantic_core.SchemaValidator.validate_strings" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">validate_strings</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Validate a string against the schema and return the validated Python object.</p>
+<p>This is similar to <code>validate_json</code> but applies to scenarios where the input will be a string but not
+JSON data, e.g. URL fragments, query parameters, etc.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>input</code></td>
+          <td>
+                <code><span title="pydantic_core._pydantic_core._StringInput">_StringInput</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The input as a string, or bytes/bytearray if <code>strict=False</code>.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>strict</code></td>
+          <td>
+                <code>bool | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether to validate the object in strict mode.
+If <code>None</code>, the value of <a class="autorefs autorefs-internal" href="../pydantic_core_schema/#pydantic_core.core_schema.CoreConfig"><code>CoreConfig.strict</code></a> is used.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>context</code></td>
+          <td>
+                <code>&#39;dict[str, Any] | None&#39;</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The context to use for validation, this is passed to functional validators as
+<a class="autorefs autorefs-internal" href="../pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo.context"><code>info.context</code></a>.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Raises:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="pydantic_core._pydantic_core.ValidationError" href="#pydantic_core.ValidationError">ValidationError</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If validation fails or if the JSON data is invalid.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+                <code>Exception</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Other error types maybe raised if internal errors occur.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="typing.Any">Any</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The validated Python object.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
 <h3 id="pydantic_core._pydantic_core.SchemaValidator.validate_assignment" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">validate_assignment</span>
 
@@ -6553,7 +6709,7 @@ which detail why validation failed.</p>
 <div class="highlight"><pre><span></span><code><span class="n">from_exception_data</span><span class="p">(</span>
     <span class="n">title</span><span class="p">,</span>
     <span class="n">line_errors</span><span class="p">,</span>
-    <span class="n">error_mode</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+    <span class="n">input_type</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
     <span class="n">hide_input</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -6605,7 +6761,7 @@ about errors that occurred during validation.</p>
           </td>
         </tr>
         <tr>
-          <td><code>error_mode</code></td>
+          <td><code>input_type</code></td>
           <td>
                 <code><span title="typing.Literal">Literal</span>[&#39;python&#39;, &#39;json&#39;]</code>
           </td>
@@ -6689,7 +6845,12 @@ about errors that occurred during validation.</p>
 
 
 <a href="#pydantic_core._pydantic_core.ValidationError.errors" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">errors</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">include_url</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">include_context</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">errors</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">include_url</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">include_context</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">include_input</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -6735,6 +6896,20 @@ about errors that occurred during validation.</p>
                 <code>True</code>
           </td>
         </tr>
+        <tr>
+          <td><code>include_input</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether to include the input value of each error.</p>
+            </div>
+          </td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
     </tbody>
   </table>
 
@@ -6774,7 +6949,11 @@ about errors that occurred during validation.</p>
 
 <a href="#pydantic_core._pydantic_core.ValidationError.json" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">json</span><span class="p">(</span>
-    <span class="o">*</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_url</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">include_context</span><span class="o">=</span><span class="kc">True</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">include_url</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">include_context</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">include_input</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -6829,6 +7008,20 @@ about errors that occurred during validation.</p>
           <td>
             <div class="doc-md-description">
               <p>Whether to include the context of each error.</p>
+            </div>
+          </td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>include_input</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether to include the input value of each error.</p>
             </div>
           </td>
           <td>

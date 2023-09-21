@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.8+insiders-4.40.4">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.2.8+insiders-4.40.4">
     
     
       
@@ -1735,10 +1735,9 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Strict Mode">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#arbitrary-types-allowed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1748,9 +1747,15 @@
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#coerce-numbers-to-strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coerce Numbers to Strings
+      
+    </span>
+  </a>
   
 </li>
       
@@ -3630,10 +3635,9 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Strict Mode">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
+</li>
+      
+        <li class="md-nav__item">
   <a href="#arbitrary-types-allowed" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3643,9 +3647,15 @@
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#coerce-numbers-to-strings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coerce Numbers to Strings
+      
+    </span>
+  </a>
   
 </li>
       
@@ -4205,7 +4215,7 @@ does not match the field's type annotation.</p>
 <p>See <a href="../strict_mode/">Strict Mode</a> for more details.</p>
 <p>See the <a href="../conversion_table/">Conversion Table</a> for more details on how Pydantic converts data in both strict and lax
 modes.</p>
-<h3 id="arbitrary-types-allowed">Arbitrary Types Allowed<a class="headerlink" href="#arbitrary-types-allowed" title="Permanent link">&para;</a></h3>
+<h2 id="arbitrary-types-allowed">Arbitrary Types Allowed<a class="headerlink" href="#arbitrary-types-allowed" title="Permanent link">&para;</a></h2>
 <p>You can allow arbitrary types using the <code>arbitrary_types_allowed</code> setting in the model's config:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
@@ -4256,6 +4266,42 @@ modes.</p>
 <span class="c1">#&gt; 42</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="p">))</span>
 <span class="c1">#&gt; &lt;class &#39;__main__.Pet&#39;&gt;</span>
+</code></pre></div>
+<h2 id="coerce-numbers-to-strings">Coerce Numbers to Strings<a class="headerlink" href="#coerce-numbers-to-strings" title="Permanent link">&para;</a></h2>
+<p>Pydantic no longer allows number types (<code>int</code>, <code>float</code>, <code>Decimal</code>) to be coerced as type <code>str</code> by default.</p>
+<p>Set <a href="../../api/config/#pydantic.config.ConfigDict.coerce_numbers_to_str"><code>coerce_numbers_to_str=True</code></a> to enable coercing of numbers to strings.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">42</span><span class="p">))</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    value</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value=42, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">coerce_numbers_to_str</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="c1">#&gt; &quot;42&quot;</span>
+<span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mf">42.13</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="c1">#&gt; &quot;42.13&quot;</span>
+<span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;42.13&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="c1">#&gt; &quot;42.13&quot;</span>
 </code></pre></div>
 <h2 id="protected-namespaces">Protected Namespaces<a class="headerlink" href="#protected-namespaces" title="Permanent link">&para;</a></h2>
 <p>Pydantic prevents collisions between model attributes and <code>BaseModel</code>'s own methods by

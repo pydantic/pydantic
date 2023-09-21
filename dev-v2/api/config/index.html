@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../favicon.png">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.8+insiders-4.40.4">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.2.8+insiders-4.40.4">
     
     
       
@@ -3072,6 +3072,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.coerce_numbers_to_str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        coerce_numbers_to_str
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4081,6 +4092,17 @@
     <span class="md-ellipsis">
       
         json_schema_mode_override
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.coerce_numbers_to_str" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        coerce_numbers_to_str
       
     </span>
   </a>
@@ -5112,6 +5134,35 @@ the function call.</p>
 validation schema, even if a framework (like FastAPI) might be indicating to use the serialization schema in some
 places.</p>
 <p>Defaults to <code>None</code>.</p>
+  </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.coerce_numbers_to_str" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">coerce_numbers_to_str</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.coerce_numbers_to_str" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">coerce_numbers_to_str</span><span class="p">:</span> <span class="nb">bool</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>If <code>True</code>, enables automatic coercion of any <code>Number</code> type to <code>str</code> in "lax" (non-strict) mode.</p>
+<p>Defaults to <code>False</code>.</p>
   </div>
 
 </div>

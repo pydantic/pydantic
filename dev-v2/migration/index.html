@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../favicon.png">
-      <meta name="generator" content="mkdocs-1.5.2, mkdocs-material-9.2.8+insiders-4.40.4">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.2.8+insiders-4.40.4">
     
     
       
@@ -4424,7 +4424,7 @@ undesirable behavior &mdash; for example, calling a function with the wrong sign
 <h4 id="validator-behavior-changes">Validator behavior changes<a class="headerlink" href="#validator-behavior-changes" title="Permanent link">&para;</a></h4>
 <p>Pydantic V2 includes some changes to type coercion. For example:</p>
 <ul>
-<li>int, float, and decimal values are no longer coerced to strings.</li>
+<li>coercing <code>int</code>, <code>float</code>, and <code>Decimal</code> values to strings is now optional and disabled by default, see <a href="../usage/model_config/#coerce-numbers-to-strings">Coerce Numbers to Strings</a>.</li>
 <li>iterable of pairs is no longer coerced to a dict.</li>
 </ul>
 <p>See the <a href="../usage/conversion_table/">Conversion table</a> for details on Pydantic V2 type coercion defaults.</p>
