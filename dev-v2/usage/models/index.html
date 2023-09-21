@@ -4169,7 +4169,7 @@ to the model field names. One common application of this functionality is integr
 
 <span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">Column</span><span class="p">,</span> <span class="n">Integer</span><span class="p">,</span> <span class="n">String</span>
 <span class="kn">from</span> <span class="nn">sqlalchemy.dialects.postgresql</span> <span class="kn">import</span> <span class="n">ARRAY</span>
-<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">declarative_base</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">constr</span>
 
@@ -4214,7 +4214,7 @@ convenient:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">typing</span>
 
 <span class="kn">import</span> <span class="nn">sqlalchemy</span> <span class="k">as</span> <span class="nn">sa</span>
-<span class="kn">from</span> <span class="nn">sqlalchemy.ext.declarative</span> <span class="kn">import</span> <span class="n">declarative_base</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy.orm</span> <span class="kn">import</span> <span class="n">declarative_base</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
@@ -4669,7 +4669,7 @@ for Pydantic to serialize <code>ChildModel</code> as <code>ChildModel</code>.</p
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    2 validation errors for Model[int, ~IntT]</span>
+<span class="sd">    2 validation errors for Model[int, TypeVar]</span>
 <span class="sd">    a</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;a&#39;, input_type=str]</span>
 <span class="sd">    b</span>
@@ -5016,21 +5016,24 @@ value when creating each instance of the model:</p>
 <p>When declaring a field with a default value, you may want it to be dynamic (i.e. different for each model).
 To do this, you may want to use a <code>default_factory</code>.</p>
 <p>Here is an example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span><span class="p">,</span> <span class="n">uuid4</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 
 
+<span class="k">def</span> <span class="nf">datetime_now</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+
+
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">uid</span><span class="p">:</span> <span class="n">UUID</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">uuid4</span><span class="p">)</span>
-    <span class="n">updated</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcnow</span><span class="p">)</span>
+    <span class="n">updated</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">datetime_now</span><span class="p">)</span>
 
 
 <span class="n">m1</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
 <span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
 <span class="k">assert</span> <span class="n">m1</span><span class="o">.</span><span class="n">uid</span> <span class="o">!=</span> <span class="n">m2</span><span class="o">.</span><span class="n">uid</span>
-<span class="k">assert</span> <span class="n">m1</span><span class="o">.</span><span class="n">updated</span> <span class="o">!=</span> <span class="n">m2</span><span class="o">.</span><span class="n">updated</span>
 </code></pre></div>
 <p>You can find more information in the documentation of the <a href="../fields/"><code>Field</code> function</a>.</p>
 <h2 id="automatically-excluded-attributes">Automatically excluded attributes<a class="headerlink" href="#automatically-excluded-attributes" title="Permanent link">&para;</a></h2>
