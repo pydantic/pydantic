@@ -263,6 +263,7 @@ def _add_custom_serialization_from_json_encoders(
 
 class GenerateSchema:
     """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
+
     __slots__ = (
         '_config_wrapper_stack',
         '_types_namespace',

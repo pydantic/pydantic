@@ -55,7 +55,7 @@ def can_be_keyword(param: Parameter) -> bool:
     return param.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
 
 
-def make_generic_v1_field_validator(validator: V1Validator) -> core_schema.FieldValidatorFunction:
+def make_generic_v1_field_validator(validator: V1Validator) -> core_schema.WithInfoValidatorFunction:
     """Wrap a V1 style field validator for V2 compatibility.
 
     Args:

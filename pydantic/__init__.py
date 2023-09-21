@@ -196,14 +196,10 @@ __all__ = [
     'GenerateSchema',
 ]
 
-# A mapping of {<member name>: (package, <module name>, deprecation_message)} defining dynamic imports
-_dynamic_imports: 'dict[str, tuple[str, str, str | None]]' = {
-    'RootModel': (__package__, '.root_model', None),
-    'FieldValidationInfo': (
-        'pydantic_core',
-        '.core_schema',
-        '`FieldValidationInfo` is deprecated, use `ValidationInfo` instead',
-    ),
+# A mapping of {<member name>: (package, <module name>)} defining dynamic imports
+_dynamic_imports: 'dict[str, tuple[str, str]]' = {
+    'RootModel': (__package__, '.root_model'),
+    'FieldValidationInfo': ('pydantic_core', '.core_schema'),
 }
 if typing.TYPE_CHECKING:
     from .root_model import RootModel
@@ -216,11 +212,7 @@ def __getattr__(attr_name: str) -> object:
     if dynamic_attr is None:
         return _getattr_migration(attr_name)
 
-    package, module_name, deprecation_message = dynamic_attr
-    if deprecation_message is not None:
-        import warnings
-
-        warnings.warn(deprecation_message, DeprecationWarning, stacklevel=1)
+    package, module_name = dynamic_attr
 
     from importlib import import_module
 

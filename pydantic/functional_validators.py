@@ -200,11 +200,7 @@ class WrapValidator:
     ```
     """
 
-    func: (
-        core_schema.NoInfoWrapValidatorFunction
-        | core_schema.GeneralWrapValidatorFunction
-        | core_schema.FieldWrapValidatorFunction
-    )
+    func: core_schema.NoInfoWrapValidatorFunction | core_schema.WithInfoWrapValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
@@ -237,15 +233,14 @@ if TYPE_CHECKING:
 
     _V2Validator = Union[
         _V2ValidatorClsMethod,
-        _core_schema.FieldValidatorFunction,
+        _core_schema.WithInfoValidatorFunction,
         _OnlyValueValidatorClsMethod,
         _core_schema.NoInfoValidatorFunction,
     ]
 
     _V2WrapValidator = Union[
         _V2WrapValidatorClsMethod,
-        _core_schema.GeneralWrapValidatorFunction,
-        _core_schema.FieldWrapValidatorFunction,
+        _core_schema.WithInfoWrapValidatorFunction,
     ]
 
     _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
