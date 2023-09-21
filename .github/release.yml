@@ -9,6 +9,9 @@ changelog:
     - title: Added
       labels:
         - relnotes-added
+    - title: Performance
+      labels:
+        - relnotes-performance
     - title: Changed
       labels:
         - relnotes-changed
