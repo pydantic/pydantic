@@ -129,6 +129,7 @@ nav:
     - 'Functional Serializers': api/functional_serializers.md
     - 'Pydantic Types': api/types.md
     - 'Network Types': api/networks.md
+    - 'Annotated Handlers': api/annotated_handlers.md
     - 'Version Information': api/version.md
   - Pydantic Core:
     - 'pydantic_core': api/pydantic_core.md

@@ -30,14 +30,9 @@ from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, deprecated
 
-from ._internal import (
-    _annotated_handlers,
-    _fields,
-    _internal_dataclass,
-    _utils,
-    _validators,
-)
+from ._internal import _fields, _internal_dataclass, _utils, _validators
 from ._migration import getattr_migration
+from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
@@ -540,7 +535,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             serializer = core_schema.plain_serializer_function_ser_schema(cls._serialize, when_used='json')
             if cls is source:
@@ -612,16 +607,14 @@ class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
     def __get_pydantic_json_schema__(
-        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         field_schema.pop('anyOf', None)  # remove the bytes/str union
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.uuid_schema(version=self.uuid_version)
 
     def __hash__(self) -> int:
@@ -646,16 +639,14 @@ class PathType:
     path_type: Literal['file', 'dir', 'new']
 
     def __get_pydantic_json_schema__(
-        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         format_conversion = {'file': 'file-path', 'dir': 'directory-path'}
         field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         function_lookup = {
             'file': cast(core_schema.WithInfoValidatorFunction, self.validate_file),
             'dir': cast(core_schema.WithInfoValidatorFunction, self.validate_directory),
@@ -797,9 +788,7 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             if cls is source:
                 return core_schema.json_schema(None)
             else:
@@ -851,9 +840,7 @@ class _SecretField(Generic[SecretType]):
         raise NotImplementedError
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(source, SecretStr):
             field_type = str
             inner_schema = core_schema.str_schema()
@@ -873,9 +860,7 @@ class _SecretField(Generic[SecretType]):
             else:
                 return value
 
-        def get_json_schema(
-            _core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
+        def get_json_schema(_core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(inner_schema)
             _utils.update_not_none(
                 json_schema,
@@ -998,9 +983,7 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.with_info_after_validator_function(
             cls.validate,
             core_schema.str_schema(
@@ -1140,9 +1123,7 @@ class ByteSize(int):
     """
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.with_info_plain_validator_function(cls._validate)
 
     @classmethod
@@ -1233,7 +1214,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1252,7 +1233,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1309,7 +1290,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1328,7 +1309,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1347,7 +1328,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1366,7 +1347,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1559,15 +1540,13 @@ class EncodedBytes:
     encoder: type[EncoderProtocol]
 
     def __get_pydantic_json_schema__(
-        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         field_schema.update(type='string', format=self.encoder.get_json_format())
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.with_info_after_validator_function(
             function=self.decode,
             schema=core_schema.bytes_schema(),
@@ -1655,9 +1634,7 @@ class EncodedStr(EncodedBytes):
     ```
     """
 
-    def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.with_info_after_validator_function(
             function=self.decode_str,
             schema=super(EncodedStr, self).__get_pydantic_core_schema__(source=source, handler=handler),  # noqa: UP008
@@ -1839,8 +1816,8 @@ class GetPydanticSchema:
     ```
     """
 
-    get_pydantic_core_schema: Callable[[Any, _annotated_handlers.GetCoreSchemaHandler], CoreSchema] | None = None
-    get_pydantic_json_schema: Callable[[Any, _annotated_handlers.GetJsonSchemaHandler], JsonSchemaValue] | None = None
+    get_pydantic_core_schema: Callable[[Any, GetCoreSchemaHandler], CoreSchema] | None = None
+    get_pydantic_json_schema: Callable[[Any, GetJsonSchemaHandler], JsonSchemaValue] | None = None
 
     # Note: we may want to consider adding a convenience staticmethod `def for_type(type_: Any) -> GetPydanticSchema:`
     #   which returns `GetPydanticSchema(lambda _s, h: h(type_))`
