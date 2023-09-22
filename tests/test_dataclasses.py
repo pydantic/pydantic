@@ -6,7 +6,7 @@ import sys
 import traceback
 from collections.abc import Hashable
 from dataclasses import InitVar
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
 
@@ -2593,3 +2593,14 @@ def test_alias_with_dashes():
 
     obj = Foo(**{'some-var': 'some_value'})
     assert obj.some_var == 'some_value'
+
+
+def test_validate_strings():
+    @pydantic.dataclasses.dataclass
+    class Nested:
+        d: date
+
+    class Model(BaseModel):
+        n: Nested
+
+    assert Model.model_validate_strings({'n': {'d': '2017-01-01'}}).n.d == date(2017, 1, 1)

@@ -531,6 +531,28 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return cls.__pydantic_validator__.validate_json(json_data, strict=strict, context=context)
 
     @classmethod
+    def model_validate_strings(
+        cls: type[Model],
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> Model:
+        """Validate the given object contains string data against the Pydantic model.
+
+        Args:
+            obj: The object contains string data to validate.
+            strict: Whether to enforce types strictly.
+            context: Extra variables to pass to the validator.
+
+        Returns:
+            The validated Pydantic model.
+        """
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        __tracebackhide__ = True
+        return cls.__pydantic_validator__.validate_strings(obj, strict=strict, context=context)
+
+    @classmethod
     def __get_pydantic_core_schema__(
         cls, __source: type[BaseModel], __handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> CoreSchema:

@@ -223,6 +223,19 @@ class TypeAdapter(Generic[T]):
         """
         return self.validator.validate_json(__data, strict=strict, context=context)
 
+    def validate_strings(self, __obj: Any, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
+        """Validate object contains string data against the model.
+
+        Args:
+            __obj: The object contains string data to validate.
+            strict: Whether to strictly check types.
+            context: Additional context to use during validation.
+
+        Returns:
+            The validated object.
+        """
+        return self.validator.validate_strings(__obj, strict=strict, context=context)
+
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
         """Get the default value for the wrapped type.
 
