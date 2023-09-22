@@ -112,6 +112,7 @@ __all__ = [
     'KafkaDsn',
     'MySQLDsn',
     'MariaDBDsn',
+    'SQLiteDsn',
     'validate_email',
     # root_model
     'RootModel',

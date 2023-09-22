@@ -18,6 +18,7 @@ from pydantic import (
     NameEmail,
     PostgresDsn,
     RedisDsn,
+    SQLiteDsn,
     Strict,
     UrlConstraints,
     ValidationError,
@@ -415,6 +416,15 @@ def test_mariadb_dsns(dsn):
         a: MariaDBDsn
 
     assert str(Model(a=dsn).a) == dsn
+
+
+def test_sqlite_dsns() -> None:
+    class Model(BaseModel):
+        a: SQLiteDsn
+
+    example_db_path: str = 'tests/mocks/test_db.db'
+
+    assert str(Model(a=example_db_path).a) == example_db_path
 
 
 @pytest.mark.parametrize(

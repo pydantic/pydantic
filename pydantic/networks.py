@@ -13,6 +13,7 @@ from ._internal import _fields, _repr, _schema_generation_shared
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler
 from .json_schema import JsonSchemaValue
+from .types import FilePath, StringConstraints
 
 if TYPE_CHECKING:
     import email_validator
@@ -43,6 +44,7 @@ __all__ = [
     'validate_email',
     'MySQLDsn',
     'MariaDBDsn',
+    'SQLiteDsn',
 ]
 
 
@@ -154,6 +156,10 @@ MariaDBDsn = Annotated[
     ),
 ]
 """A type that will accept any MariaDB DSN."""
+SQLiteDsn = Annotated[
+    FilePath,
+    StringConstraints(pattern=r'.*\.db'),
+]
 
 
 def import_email_validator() -> None:
