@@ -15,23 +15,28 @@ the function is called. Instead, instantiate it once, and reuse it.
 
 === ":x: Bad"
 
-    ```py
+    ```py lint="skip"
+    from typing import List
+
     from pydantic import TypeAdapter
 
 
     def my_func():
-        adapter = TypeAdapter(int, str)
+        adapter = TypeAdapter(List[int])
         # do something with adapter
     ```
 
 === ":white_check_mark: Good"
 
-    ```py
+    ```py lint="skip"
+    from typing import List
+
     from pydantic import TypeAdapter
 
-    adapter = TypeAdapter(int, str)
+    adapter = TypeAdapter(List[int])
 
     def my_func():
+        ...
         # do something with adapter
     ```
 
@@ -82,10 +87,11 @@ Instead of using `Enum`, use `Literal` to define the structure of the data.
 ??? info "Performance comparison"
     With a simple benchmark, `Literal` is about ~3x faster than `Enum`:
 
-    ```py
+    ```py test="skip"
     import enum
     from timeit import timeit
-    from typing import Literal
+
+    from typing_extensions import Literal
 
     from pydantic import TypeAdapter
 
@@ -93,7 +99,7 @@ Instead of using `Enum`, use `Literal` to define the structure of the data.
     result1 = timeit(lambda: ta.validate_python('a'), number=10000)
 
 
-    class AB(enum.Enum, str):
+    class AB(str, enum.Enum):
         a = 'a'
         b = 'b'
 
@@ -110,8 +116,9 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
 ??? info "Performance comparison"
     With a simple benchmark, `TypedDict` is about ~2.5x faster than nested models:
 
-    ```py
+    ```py test="skip"
     from timeit import timeit
+
     from typing_extensions import TypedDict
 
     from pydantic import BaseModel, TypeAdapter
