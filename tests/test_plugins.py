@@ -9,7 +9,7 @@ import pytest
 from pydantic_core import ValidationError
 
 from pydantic import BaseModel
-from pydantic.plugin import OnValidateJsonProtocol, OnValidatePythonProtocol, PydanticPlugin
+from pydantic.plugin import PydanticPlugin, ValidateJsonHandlerProtocol, ValidatePythonHandlerProtocol
 from pydantic.plugin._loader import _plugins
 
 
@@ -40,7 +40,7 @@ def install_plugin(plugin: PydanticPlugin) -> Generator[None, None, None]:
 
 
 def test_on_validate_json_on_success() -> None:
-    class CustomOnValidateJson(OnValidateJsonProtocol):
+    class CustomOnValidateJson(ValidateJsonHandlerProtocol):
         def on_enter(
             self,
             input: str | bytes | bytearray,
@@ -61,8 +61,8 @@ def test_on_validate_json_on_success() -> None:
 
     @dataclass
     class Plugin:
-        on_validate_json: OnValidateJsonProtocol | None = None
-        on_validate_python: OnValidatePythonProtocol | None = None
+        on_validate_json: ValidateJsonHandlerProtocol | None = None
+        on_validate_python: ValidatePythonHandlerProtocol | None = None
 
     plugin = Plugin(on_validate_json=CustomOnValidateJson)
     with install_plugin(plugin):
@@ -75,7 +75,7 @@ def test_on_validate_json_on_success() -> None:
 
 
 def test_on_validate_json_on_error() -> None:
-    class CustomOnValidateJson(OnValidateJsonProtocol):
+    class CustomOnValidateJson(ValidateJsonHandlerProtocol):
         def enter(
             self,
             input: str | bytes | bytearray,
@@ -105,8 +105,8 @@ def test_on_validate_json_on_error() -> None:
 
     @dataclass
     class Plugin:
-        on_validate_json: OnValidateJsonProtocol | None = None
-        on_validate_python: OnValidatePythonProtocol | None = None
+        on_validate_json: ValidateJsonHandlerProtocol | None = None
+        on_validate_python: ValidatePythonHandlerProtocol | None = None
 
     plugin = Plugin(on_validate_json=CustomOnValidateJson)
     with install_plugin(plugin):
@@ -120,7 +120,7 @@ def test_on_validate_json_on_error() -> None:
 
 
 def test_on_validate_python_on_success() -> None:
-    class CustomOnValidatePython(OnValidatePythonProtocol):
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
         def enter(
             self,
             input: Any,
@@ -142,8 +142,8 @@ def test_on_validate_python_on_success() -> None:
 
     @dataclass
     class Plugin:
-        on_validate_json: OnValidateJsonProtocol | None = None
-        on_validate_python: OnValidatePythonProtocol | None = None
+        on_validate_json: ValidateJsonHandlerProtocol | None = None
+        on_validate_python: ValidatePythonHandlerProtocol | None = None
 
     plugin = Plugin(on_validate_python=CustomOnValidatePython)
     with install_plugin(plugin):
@@ -156,7 +156,7 @@ def test_on_validate_python_on_success() -> None:
 
 
 def test_on_validate_python_on_error() -> None:
-    class CustomOnValidatePython(OnValidatePythonProtocol):
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
         def enter(
             self,
             input: Any,
@@ -187,8 +187,8 @@ def test_on_validate_python_on_error() -> None:
 
     @dataclass
     class Plugin:
-        on_validate_json: OnValidateJsonProtocol | None = None
-        on_validate_python: OnValidatePythonProtocol | None = None
+        on_validate_json: ValidateJsonHandlerProtocol | None = None
+        on_validate_python: ValidatePythonHandlerProtocol | None = None
 
     plugin = Plugin(on_validate_python=CustomOnValidatePython)
     with install_plugin(plugin):
@@ -202,7 +202,7 @@ def test_on_validate_python_on_error() -> None:
 
 
 def test_using_pydantic_inside_plugin():
-    class TestPlugin(OnValidatePythonProtocol):
+    class TestPlugin(ValidatePythonHandlerProtocol):
         def on_enter(
             self,
             input: Any,
@@ -218,8 +218,8 @@ def test_using_pydantic_inside_plugin():
 
     @dataclass
     class Plugin:
-        on_validate_json: OnValidateJsonProtocol | None = None
-        on_validate_python: OnValidatePythonProtocol | None = None
+        on_validate_json: ValidateJsonHandlerProtocol | None = None
+        on_validate_python: ValidatePythonHandlerProtocol | None = None
 
     plugin = Plugin(on_validate_python=TestPlugin)
     with install_plugin(plugin):
@@ -232,7 +232,7 @@ def test_using_pydantic_inside_plugin():
 
 def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPatch, unimport_pydantic):
     def fake_distributions():
-        class FakeOnValidatePython(OnValidatePythonProtocol):
+        class FakeOnValidatePython(ValidatePythonHandlerProtocol):
             def on_enter(
                 self,
                 input: Any,
@@ -260,8 +260,8 @@ def test_fresh_import_using_pydantic_inside_plugin(monkeypatch: pytest.MonkeyPat
 
                 @dataclass
                 class Plugin:
-                    on_validate_json: OnValidateJsonProtocol | None = None
-                    on_validate_python: OnValidatePythonProtocol | None = None
+                    on_validate_json: ValidateJsonHandlerProtocol | None = None
+                    on_validate_python: ValidatePythonHandlerProtocol | None = None
 
                 return Plugin(on_validate_python=FakeOnValidatePython)
 

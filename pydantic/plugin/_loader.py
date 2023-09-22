@@ -2,11 +2,9 @@ from __future__ import annotations
 
 import sys
 import warnings
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 from typing_extensions import Final
-
-from ._types import PydanticPlugin
 
 if sys.version_info >= (3, 8):
     import importlib.metadata as importlib_metadata
@@ -14,12 +12,16 @@ else:
     import importlib_metadata
 
 
+if TYPE_CHECKING:
+    from . import PydanticPluginProtocol
+
+
 PYDANTIC_ENTRY_POINT_GROUP: Final[str] = 'pydantic'
 
-_plugins: dict[str, PydanticPlugin] = {}
+_plugins: dict[str, PydanticPluginProtocol] = {}
 
 
-def get_plugins() -> Iterable[PydanticPlugin]:
+def get_plugins() -> Iterable[PydanticPluginProtocol]:
     """Load plugins for Pydantic.
 
     Inspired by: https://github.com/pytest-dev/pluggy/blob/1.3.0/src/pluggy/_manager.py#L376-L402

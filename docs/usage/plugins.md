@@ -61,13 +61,13 @@ from typing import Any, Dict, Optional, Type
 from pydantic_core import ValidationError
 
 from pydantic.plugin import (
-    OnValidateJsonProtocol,
-    OnValidatePythonProtocol,
+    ValidateJsonHandlerProtocol,
+    ValidatePythonHandlerProtocol,
     PydanticPlugin,
 )
 
 
-class OnValidatePython(OnValidatePythonProtocol):
+class OnValidatePython(ValidatePythonHandlerProtocol):
     def on_enter(
         self,
         input: Any,
@@ -88,8 +88,8 @@ class OnValidatePython(OnValidatePythonProtocol):
 
 @dataclass
 class Plugin(PydanticPlugin):
-    on_validate_python: Optional[Type[OnValidatePythonProtocol]] = None
-    on_validate_json: Optional[Type[OnValidateJsonProtocol]] = None
+    on_validate_python: Optional[Type[ValidatePythonHandlerProtocol]] = None
+    on_validate_json: Optional[Type[ValidateJsonHandlerProtocol]] = None
 
 
 plugin = Plugin(on_validate_python=OnValidatePython)
