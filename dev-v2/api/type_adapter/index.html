@@ -3743,7 +3743,7 @@ for types that do not have such methods (such as dataclasses, primitive types, a
 
     <span class="n">core_schema</span> <span class="o">=</span> <span class="n">_discriminated_union</span><span class="o">.</span><span class="n">apply_discriminators</span><span class="p">(</span><span class="n">_core_utils</span><span class="o">.</span><span class="n">simplify_schema_references</span><span class="p">(</span><span class="n">core_schema</span><span class="p">))</span>
 
-    <span class="n">core_schema</span> <span class="o">=</span> <span class="n">validate_core_schema</span><span class="p">(</span><span class="n">core_schema</span><span class="p">)</span>
+    <span class="n">core_schema</span> <span class="o">=</span> <span class="n">_core_utils</span><span class="o">.</span><span class="n">validate_core_schema</span><span class="p">(</span><span class="n">core_schema</span><span class="p">)</span>
 
     <span class="n">core_config</span> <span class="o">=</span> <span class="n">config_wrapper</span><span class="o">.</span><span class="n">core_config</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
     <span class="n">validator</span><span class="p">:</span> <span class="n">SchemaValidator</span>
