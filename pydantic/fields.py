@@ -7,6 +7,12 @@ import sys
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
+
+try:
+    from functools import cached_property  # type: ignore
+except ImportError:
+    # python 3.7
+    cached_property = None
 from typing import Any, ClassVar
 from warnings import warn
 
@@ -991,6 +997,18 @@ def computed_field(__func: PropertyT) -> PropertyT:
     ...
 
 
+def _wrapped_property_is_private(property_: cached_property | property) -> bool:  # type: ignore
+    """Returns true if provided property is private, False otherwise."""
+    wrapped_name: str = ''
+
+    if isinstance(property_, property):
+        wrapped_name = getattr(property_.fget, '__name__', '')
+    elif isinstance(property_, cached_property):  # type: ignore
+        wrapped_name = getattr(property_.func, '__name__', '')  # type: ignore
+
+    return wrapped_name.startswith('_') and not wrapped_name.startswith('__')
+
+
 def computed_field(
     __f: PropertyT | None = None,
     *,
@@ -998,7 +1016,7 @@ def computed_field(
     alias_priority: int | None = None,
     title: str | None = None,
     description: str | None = None,
-    repr: bool = True,
+    repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
     """Decorator to include `property` and `cached_property` when serializing models or dataclasses.
@@ -1092,6 +1110,31 @@ def computed_field(
         #> ValueError("you can't override a field with a computed field")
     ```
 
+    Private properties decorated with `@computed_field` have `repr=False` by default.
+
+    ```py
+    from functools import cached_property
+
+    from pydantic import BaseModel, computed_field
+
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @cached_property
+        def _private_cached_property(self) -> int:
+            return -self.foo
+
+        @computed_field
+        @property
+        def _private_property(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    print(repr(m))
+    #> M(foo=1)
+    ```
+
     Args:
         __f: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
@@ -1099,7 +1142,8 @@ def computed_field(
         title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697
         description: Description to used when including this computed field in JSON Schema, defaults to the functions
             docstring, currently unused waiting for #4697
-        repr: whether to include this computed field in model repr
+        repr: whether to include this computed field in model repr.
+            Default is `False` for private properties and `True` for public properties.
         return_type: optional return for serialization logic to expect when serializing to JSON, if included
             this must be correct, otherwise a `TypeError` is raised.
             If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
@@ -1118,7 +1162,13 @@ def computed_field(
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
         alias_priority = (alias_priority or 2) if alias is not None else None
-        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, repr)
+
+        if repr is None:
+            repr_: bool = False if _wrapped_property_is_private(property_=f) else True
+        else:
+            repr_ = repr
+
+        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, repr_)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:

@@ -891,7 +891,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     def __iter__(self) -> TupleGenerator:
         """So `dict(model)` works."""
-        yield from self.__dict__.items()
+        yield from [(k, v) for (k, v) in self.__dict__.items() if not k.startswith('_')]
         extra = self.__pydantic_extra__
         if extra:
             yield from extra.items()
