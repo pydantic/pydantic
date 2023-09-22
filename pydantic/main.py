@@ -740,7 +740,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 except KeyError as exc:
                     raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
             else:
-                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+                # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+                # See `BaseModel.__repr_args__` for more details
+                try:
+                    pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+                except AttributeError:
+                    pydantic_extra = None
+
                 if pydantic_extra is not None:
                     try:
                         return pydantic_extra[item]
@@ -898,11 +904,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             field = self.model_fields.get(k)
             if field and field.repr:
                 yield k, v
+
         # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
         # This can happen if a `ValidationError` is raised during initialization and the instance's
         # repr is generated as part of the exception handling. Therefore, we use `getattr` here
         # with a fallback, even though the type hints indicate the attribute will always be present.
-        pydantic_extra = getattr(self, '__pydantic_extra__', None)
+        try:
+            pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+        except AttributeError:
+            pydantic_extra = None
+
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)

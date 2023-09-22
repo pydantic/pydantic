@@ -75,6 +75,7 @@ class ConfigWrapper:
     protected_namespaces: tuple[str, ...]
     hide_input_in_errors: bool
     defer_build: bool
+    plugin_settings: dict[str, object] | None
     schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
     json_schema_mode_override: Literal['validation', 'serialization', None]
@@ -242,6 +243,7 @@ config_defaults = ConfigDict(
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
+    plugin_settings=None,
     schema_generator=None,
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,

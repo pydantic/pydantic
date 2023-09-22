@@ -9,11 +9,12 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
+from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
+from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._core_utils import collect_invalid_schemas, simplify_schema_references, validate_core_schema
@@ -495,7 +496,7 @@ def complete_model_class(
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema = validate_core_schema(schema)
-    cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
+    cls.__pydantic_validator__ = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True
 

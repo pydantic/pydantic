@@ -96,6 +96,7 @@ nav:
   - 'Strict Mode': usage/strict_mode.md
   - 'Conversion Table': usage/conversion_table.md
   - 'Settings Management': usage/pydantic_settings.md
+  - 'Pydantic Plugins': usage/plugins.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
@@ -131,6 +132,7 @@ nav:
     - 'Network Types': api/networks.md
     - 'Annotated Handlers': api/annotated_handlers.md
     - 'Version Information': api/version.md
+    - 'Pydantic Plugins': api/plugin.md
   - Pydantic Core:
     - 'pydantic_core': api/pydantic_core.md
     - 'pydantic_core.core_schema': api/pydantic_core_schema.md

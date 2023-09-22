@@ -192,6 +192,12 @@ class ConfigDict(TypedDict, total=False):
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
     """
 
+    plugin_settings: dict[str, object] | None
+    """A `dict` of settings for plugins. Defaults to `None`.
+
+    See [Pydantic Plugins](../usage/plugins.md) for details.
+    """
+
     schema_generator: type[_GenerateSchema] | None
     """
     A custom core schema generator class to use when generating JSON schemas.
