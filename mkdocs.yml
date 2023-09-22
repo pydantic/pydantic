@@ -69,6 +69,7 @@ nav:
   - Validation Decorator: concepts/validation_decorator.md
   - Conversion Table: concepts/conversion_table.md
   - Settings Management: concepts/pydantic_settings.md
+  - Performance: concepts/performance.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
