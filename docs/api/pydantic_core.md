@@ -3,9 +3,6 @@
         allow_inspection: false
         show_source: false
         members:
-        - SchemaValidator
-        - SchemaValidator.validate_python
-        - SchemaValidator.validate_json
         - SchemaSerializer
         - ValidationError
         - ErrorDetails
@@ -35,3 +32,4 @@
         members:
         - validate_python
         - validate_json
+        - validate_strings

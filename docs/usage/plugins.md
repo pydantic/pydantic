@@ -44,6 +44,7 @@ On your plugin you can _wrap_ the following methods:
 
 * [`validate_python`][pydantic_core.SchemaValidator.validate_python]: Used to validate the data from a Python object.
 * [`validate_json`][pydantic_core.SchemaValidator.validate_json]: Used to validate the data from a JSON string.
+* [`validate_strings`][pydantic_core.SchemaValidator.validate_strings]: Used to validate the data from strings.
 
 For each method, you can implement the following callbacks:
 
@@ -54,16 +55,14 @@ For each method, you can implement the following callbacks:
 Let's see an example of a plugin that _wraps_ the `validate_python` method of the [`SchemaValidator`][pydantic_core.SchemaValidator].
 
 ```py
-from dataclasses import dataclass
-from pprint import pprint
-from typing import Any, Dict, Optional, Type
+from typing import Any, Dict, Optional
 
-from pydantic_core import ValidationError
+from pydantic_core import CoreConfig, CoreSchema, ValidationError
 
 from pydantic.plugin import (
-    ValidateJsonHandlerProtocol,
+    NewSchemaReturns,
+    PydanticPluginProtocol,
     ValidatePythonHandlerProtocol,
-    PydanticPlugin,
 )
 
 
@@ -77,22 +76,26 @@ class OnValidatePython(ValidatePythonHandlerProtocol):
         context: Optional[Dict[str, Any]] = None,
         self_instance: Optional[Any] = None,
     ) -> None:
-        pprint(input)
+        print(input)
 
     def on_success(self, result: Any) -> None:
-        pprint(result)
+        print(result)
 
     def on_error(self, error: ValidationError) -> None:
-        pprint(error.json())
+        print(error.json())
 
 
-@dataclass
-class Plugin(PydanticPlugin):
-    on_validate_python: Optional[Type[ValidatePythonHandlerProtocol]] = None
-    on_validate_json: Optional[Type[ValidateJsonHandlerProtocol]] = None
+class Plugin(PydanticPluginProtocol):
+    def new_schema_validator(
+        self,
+        schema: CoreSchema,
+        config: CoreConfig | None,
+        plugin_settings: dict[str, object],
+    ) -> NewSchemaReturns:
+        return OnValidatePython(), None, None
 
 
-plugin = Plugin(on_validate_python=OnValidatePython)
+plugin = Plugin()
 ```
 
 ## Using Plugin Settings
