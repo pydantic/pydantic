@@ -6109,7 +6109,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TupleGenerator</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;So `dict(model)` works.&quot;&quot;&quot;</span>
-        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">yield from</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)]</span>
         <span class="n">extra</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_extra__</span>
         <span class="k">if</span> <span class="n">extra</span><span class="p">:</span>
             <span class="k">yield from</span> <span class="n">extra</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
