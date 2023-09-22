@@ -213,7 +213,7 @@ print(my_model.model_dump_json())  # (3)!
 
 Pydantic uses Python's standard `enum` classes to define choices.
 
-`enum.Enum` Checks that the value is a valid `Enum` instance.
+`enum.Enum` checks that the value is a valid `Enum` instance.
 Subclass of `enum.Enum` checks that the value is a valid member of the enum.
 
 ```py
