@@ -414,7 +414,7 @@ def test_private_properties_not_included_in_iter_property() -> None:
         foo: int
 
         @computed_field
-        @functools.cached_property
+        @property
         def _foo(self) -> int:
             return -self.foo
 
