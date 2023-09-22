@@ -4,6 +4,7 @@ from __future__ import annotations as _annotations
 import dataclasses as _dataclasses
 import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
@@ -12,8 +13,9 @@ from typing_extensions import Annotated, TypeAlias
 from ._internal import _fields, _repr, _schema_generation_shared
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler
+from .functional_validators import AfterValidator
 from .json_schema import JsonSchemaValue
-from .types import FilePath, StringConstraints
+from .types import FilePath
 
 if TYPE_CHECKING:
     import email_validator
@@ -156,10 +158,14 @@ MariaDBDsn = Annotated[
     ),
 ]
 """A type that will accept any MariaDB DSN."""
-SQLiteDsn = Annotated[
-    FilePath,
-    StringConstraints(pattern=r'.*\.db'),
-]
+
+
+def _sqlite_dsn_regex_validator(path: Path) -> str:
+    assert re.match(pattern=r'.*\.db', string=str(path)), 'SQLiteDsn file name must end in `.db`'
+    return str(path)
+
+
+SQLiteDsn = Annotated[FilePath, AfterValidator(_sqlite_dsn_regex_validator)]
 
 
 def import_email_validator() -> None:

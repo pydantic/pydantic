@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Union
 
 import pytest
@@ -418,13 +419,23 @@ def test_mariadb_dsns(dsn):
     assert str(Model(a=dsn).a) == dsn
 
 
-def test_sqlite_dsns() -> None:
+def test_sqlite_dsn() -> None:
     class Model(BaseModel):
         a: SQLiteDsn
 
-    example_db_path: str = 'tests/mocks/test_db.db'
+    example_db_path: Path = Path('tests/mocks/test_db.db')
+    assert Model(a=example_db_path).a == str(example_db_path)
 
-    assert str(Model(a=example_db_path).a) == example_db_path
+
+def test_sqlite_dsn_raises() -> None:
+    class Model(BaseModel):
+        a: SQLiteDsn
+
+    with pytest.raises(ValidationError, match='type=path_not_file'):
+        Model(a=Path('tests/mocks/does_not_exist.db'))
+
+    with pytest.raises(ValidationError, match='SQLiteDsn file name must end in `.db`'):
+        Model(a='tests/mocks/test_not_db')
 
 
 @pytest.mark.parametrize(
