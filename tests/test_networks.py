@@ -812,9 +812,10 @@ def test_address_valid(value, name, email):
         ('foobar <<foobar<@example.com>', None),
         ('foobar <>', None),
         ('first.last <first.last@example.com>', None),
+        pytest.param('foobar <' + 'a' * 4096 + '@example.com>', 'Length must not exceed 2048 characters', id='long'),
     ],
 )
-def test_address_invalid(value, reason):
+def test_address_invalid(value: str, reason: Union[str, None]):
     with pytest.raises(PydanticCustomError, match=f'value is not a valid email address: {reason or ""}'):
         validate_email(value)
 

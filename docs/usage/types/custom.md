@@ -1,5 +1,3 @@
-
-
 You can also define your own custom data types. There are several ways to achieve it.
 
 ## Composing types via `Annotated`
@@ -775,8 +773,8 @@ class MySequence(Sequence[T]):
         else:
             sequence_t_schema = handler.generate_schema(Sequence)
 
-        non_instance_schema = core_schema.general_after_validator_function(
-            lambda v, i: MySequence(v), sequence_t_schema
+        non_instance_schema = core_schema.no_info_after_validator_function(
+            MySequence, sequence_t_schema
         )
         return core_schema.union_schema([instance_schema, non_instance_schema])
 
@@ -807,9 +805,78 @@ except ValidationError as exc:
     2 validation errors for M
     s1.is-instance[MySequence]
       Input should be an instance of MySequence [type=is_instance_of, input_value=['a'], input_type=list]
-    s1.function-after[<lambda>(), json-or-python[json=list[int],python=chain[is-instance[Sequence],function-wrap[sequence_validator()]]]].0
+    s1.function-after[MySequence(), json-or-python[json=list[int],python=chain[is-instance[Sequence],function-wrap[sequence_validator()]]]].0
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
     """
+```
+
+### Access to field name
+
+!!!note
+    This was not possible with Pydantic V2 to V2.3, it was [re-added](https://github.com/pydantic/pydantic/pull/7542) in Pydantic V2.4.
+
+As of Pydantic V2.4, you can access the field name via the `handler.field_name` within `__get_pydantic_core_schema__`
+and thereby set the field name which will be available from `info.field_name`.
+
+```python
+from typing import Any
+
+from pydantic_core import core_schema
+
+from pydantic import BaseModel, GetCoreSchemaHandler, ValidationInfo
+
+
+class CustomType:
+    """Custom type that stores the field it was used in."""
+
+    def __init__(self, value: int, field_name: str):
+        self.value = value
+        self.field_name = field_name
+
+    def __repr__(self):
+        return f'CustomType<{self.value} {self.field_name!r}>'
+
+    @classmethod
+    def validate(cls, value: int, info: ValidationInfo):
+        return cls(value, info.field_name)
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        return core_schema.with_info_after_validator_function(
+            cls.validate, handler(int), field_name=handler.field_name
+        )
+
+
+class MyModel(BaseModel):
+    my_field: CustomType
+
+
+m = MyModel(my_field=1)
+print(m.my_field)
+#> CustomType<1 'my_field'>
+```
+
+You can also access `field_name` from the markers used with `Annotated`, like [`AfterValidator`][pydantic.functional_validators.AfterValidator].
+
+```python
+from typing_extensions import Annotated
+
+from pydantic import AfterValidator, BaseModel, ValidationInfo
+
+
+def my_validators(value: int, info: ValidationInfo):
+    return f'<{value} {info.field_name!r}>'
+
+
+class MyModel(BaseModel):
+    my_field: Annotated[int, AfterValidator(my_validators)]
+
+
+m = MyModel(my_field=1)
+print(m.my_field)
+#> <1 'my_field'>
 ```
 
 [PEP 593]: https://peps.python.org/pep-0593/

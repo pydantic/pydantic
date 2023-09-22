@@ -6,7 +6,7 @@ import sys
 import traceback
 from collections.abc import Hashable
 from dataclasses import InitVar
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
 
@@ -20,13 +20,13 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
-    FieldValidationInfo,
     GenerateSchema,
     PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
     TypeAdapter,
     ValidationError,
+    ValidationInfo,
     computed_field,
     field_serializer,
     field_validator,
@@ -1859,7 +1859,7 @@ def test_validator_info_field_name_data_before():
 
         @field_validator('b', mode='before')
         @classmethod
-        def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def check_a(cls, v: Any, info: ValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
             assert info.data == {'a': 'your foobar is good'}
@@ -2070,8 +2070,8 @@ def test_multiple_parametrized_generic_dataclasses():
 
     # verify that generic parameters are showing up in the type ref for generic dataclasses
     # this can probably be removed if the schema changes in some way that makes this part of the test fail
-    assert '[int:' in validator1.core_schema['schema']['schema_ref']
-    assert '[str:' in validator2.core_schema['schema']['schema_ref']
+    assert '[int:' in validator1.core_schema['ref']
+    assert '[str:' in validator2.core_schema['ref']
 
     assert validator1.validate_python({'x': 1}).x == 1
     assert validator2.validate_python({'x': 'hello world'}).x == 'hello world'
@@ -2593,3 +2593,14 @@ def test_alias_with_dashes():
 
     obj = Foo(**{'some-var': 'some_value'})
     assert obj.some_var == 'some_value'
+
+
+def test_validate_strings():
+    @pydantic.dataclasses.dataclass
+    class Nested:
+        d: date
+
+    class Model(BaseModel):
+        n: Nested
+
+    assert Model.model_validate_strings({'n': {'d': '2017-01-01'}}).n.d == date(2017, 1, 1)

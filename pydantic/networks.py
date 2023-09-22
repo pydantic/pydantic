@@ -193,11 +193,11 @@ else:
         @classmethod
         def __get_pydantic_core_schema__(
             cls,
-            source: type[Any],
-            handler: _annotated_handlers.GetCoreSchemaHandler,
+            _source: type[Any],
+            _handler: _annotated_handlers.GetCoreSchemaHandler,
         ) -> core_schema.CoreSchema:
             import_email_validator()
-            return core_schema.general_after_validator_function(cls._validate, core_schema.str_schema())
+            return core_schema.no_info_after_validator_function(cls._validate, core_schema.str_schema())
 
         @classmethod
         def __get_pydantic_json_schema__(
@@ -208,7 +208,7 @@ else:
             return field_schema
 
         @classmethod
-        def _validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> str:
+        def _validate(cls, __input_value: str) -> str:
             return validate_email(__input_value)[1]
 
 
@@ -268,11 +268,11 @@ class NameEmail(_repr.Representation):
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
-        source: type[Any],
-        handler: _annotated_handlers.GetCoreSchemaHandler,
+        _source: type[Any],
+        _handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         import_email_validator()
-        return core_schema.general_after_validator_function(
+        return core_schema.no_info_after_validator_function(
             cls._validate,
             core_schema.union_schema(
                 [core_schema.is_instance_schema(cls), core_schema.str_schema()],
@@ -283,7 +283,7 @@ class NameEmail(_repr.Representation):
         )
 
     @classmethod
-    def _validate(cls, __input_value: NameEmail | str, _: core_schema.ValidationInfo) -> NameEmail:
+    def _validate(cls, __input_value: NameEmail | str) -> NameEmail:
         if isinstance(__input_value, cls):
             return __input_value
         else:
@@ -322,15 +322,15 @@ class IPvAnyAddress:
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
-        source: type[Any],
-        handler: _annotated_handlers.GetCoreSchemaHandler,
+        _source: type[Any],
+        _handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(
+        return core_schema.no_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
         )
 
     @classmethod
-    def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> IPv4Address | IPv6Address:
+    def _validate(cls, __input_value: Any) -> IPv4Address | IPv6Address:
         return cls(__input_value)  # type: ignore[return-value]
 
 
@@ -362,15 +362,15 @@ class IPvAnyInterface:
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
-        source: type[Any],
-        handler: _annotated_handlers.GetCoreSchemaHandler,
+        _source: type[Any],
+        _handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(
+        return core_schema.no_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
         )
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Interface | IPv6Interface:
+    def _validate(cls, __input_value: NetworkType) -> IPv4Interface | IPv6Interface:
         return cls(__input_value)  # type: ignore[return-value]
 
 
@@ -404,27 +404,32 @@ class IPvAnyNetwork:
     @classmethod
     def __get_pydantic_core_schema__(
         cls,
-        source: type[Any],
-        handler: _annotated_handlers.GetCoreSchemaHandler,
+        _source: type[Any],
+        _handler: _annotated_handlers.GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(
+        return core_schema.no_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
         )
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Network | IPv6Network:
+    def _validate(cls, __input_value: NetworkType) -> IPv4Network | IPv6Network:
         return cls(__input_value)  # type: ignore[return-value]
 
 
-def _build_pretty_email_regex() -> re.Pattern:
+def _build_pretty_email_regex() -> re.Pattern[str]:
     name_chars = r'[\w!#$%&\'*+\-/=?^_`{|}~]'
     unquoted_name_group = fr'((?:{name_chars}+\s+)*{name_chars}+)'
     quoted_name_group = r'"((?:[^"]|\")+)"'
-    email_group = r'<\s*(.+)\s*>'
+    email_group = r'<\s*(.{0,254})\s*>'
     return re.compile(rf'\s*(?:{unquoted_name_group}|{quoted_name_group})?\s*{email_group}\s*')
 
 
 pretty_email_regex = _build_pretty_email_regex()
+
+MAX_EMAIL_LENGTH = 2048
+"""Maximum length for an email.
+A somewhat arbitrary but very generous number compared to what is allowed by most implementations.
+"""
 
 
 def validate_email(value: str) -> tuple[str, str]:
@@ -439,6 +444,13 @@ def validate_email(value: str) -> tuple[str, str]:
     """
     if email_validator is None:
         import_email_validator()
+
+    if len(value) > MAX_EMAIL_LENGTH:
+        raise PydanticCustomError(
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': f'Length must not exceed {MAX_EMAIL_LENGTH} characters'},
+        )
 
     m = pretty_email_regex.fullmatch(value)
     name: str | None = None

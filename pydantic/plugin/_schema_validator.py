@@ -37,7 +37,7 @@ def create_schema_validator(
 class PluggableSchemaValidator:
     """Pluggable schema validator."""
 
-    __slots__ = '_schema_validator', 'validate_json', 'validate_python'
+    __slots__ = '_schema_validator', 'validate_json', 'validate_python', 'validate_strings'
 
     def __init__(
         self,

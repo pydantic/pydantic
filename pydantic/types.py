@@ -657,12 +657,12 @@ class PathType:
         self, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         function_lookup = {
-            'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
-            'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
-            'new': cast(core_schema.GeneralValidatorFunction, self.validate_new),
+            'file': cast(core_schema.WithInfoValidatorFunction, self.validate_file),
+            'dir': cast(core_schema.WithInfoValidatorFunction, self.validate_directory),
+            'new': cast(core_schema.WithInfoValidatorFunction, self.validate_new),
         }
 
-        return core_schema.general_after_validator_function(
+        return core_schema.with_info_after_validator_function(
             function_lookup[self.path_type],
             handler(source),
         )
@@ -713,7 +713,7 @@ print(m.model_dump())
 path.unlink()
 
 path = Path('directory')
-path.mkdir()
+path.mkdir(exist_ok=True)
 try:
     Model(f='directory')  # directory
 except ValidationError as e:
@@ -1001,7 +1001,7 @@ class PaymentCardNumber(str):
     def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.general_after_validator_function(
+        return core_schema.with_info_after_validator_function(
             cls.validate,
             core_schema.str_schema(
                 min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
@@ -1143,7 +1143,7 @@ class ByteSize(int):
     def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(cls._validate)
+        return core_schema.with_info_plain_validator_function(cls._validate)
 
     @classmethod
     def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
@@ -1568,7 +1568,7 @@ class EncodedBytes:
     def __get_pydantic_core_schema__(
         self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.general_after_validator_function(
+        return core_schema.with_info_after_validator_function(
             function=self.decode,
             schema=core_schema.bytes_schema(),
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode),
@@ -1600,6 +1600,7 @@ class EncodedBytes:
         return hash(self.encoder)
 
 
+@_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class EncodedStr(EncodedBytes):
     """A str type that is encoded and decoded using the specified encoder.
 
@@ -1657,9 +1658,9 @@ class EncodedStr(EncodedBytes):
     def __get_pydantic_core_schema__(
         self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.general_after_validator_function(
+        return core_schema.with_info_after_validator_function(
             function=self.decode_str,
-            schema=super().__get_pydantic_core_schema__(source=source, handler=handler),
+            schema=super(EncodedStr, self).__get_pydantic_core_schema__(source=source, handler=handler),  # noqa: UP008
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
         )
 
@@ -1683,7 +1684,10 @@ class EncodedStr(EncodedBytes):
         Returns:
             The encoded data.
         """
-        return super().encode(value=value.encode()).decode()
+        return super(EncodedStr, self).encode(value=value.encode()).decode()  # noqa: UP008
+
+    def __hash__(self) -> int:
+        return hash(self.encoder)
 
 
 Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]

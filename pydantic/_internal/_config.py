@@ -77,6 +77,9 @@ class ConfigWrapper:
     defer_build: bool
     plugin_settings: dict[str, object] | None
     schema_generator: type[GenerateSchema] | None
+    json_schema_serialization_defaults_required: bool
+    json_schema_mode_override: Literal['validation', 'serialization', None]
+    coerce_numbers_to_str: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -172,6 +175,7 @@ class ConfigWrapper:
                 str_max_length=self.config_dict.get('str_max_length'),
                 str_min_length=self.config_dict.get('str_min_length'),
                 hide_input_in_errors=self.config_dict.get('hide_input_in_errors'),
+                coerce_numbers_to_str=self.config_dict.get('coerce_numbers_to_str'),
             )
         )
         return core_config
@@ -241,6 +245,9 @@ config_defaults = ConfigDict(
     defer_build=False,
     plugin_settings=None,
     schema_generator=None,
+    json_schema_serialization_defaults_required=False,
+    json_schema_mode_override=None,
+    coerce_numbers_to_str=False,
 )
 
 

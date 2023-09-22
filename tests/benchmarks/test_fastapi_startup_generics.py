@@ -1,6 +1,7 @@
 """https://github.com/pydantic/pydantic/issues/6768"""
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Dict, Generic, List, TypeVar
 
 from typing_extensions import Annotated
@@ -131,7 +132,11 @@ if __name__ == '__main__':
     OUTER_DATA_MODEL_COUNT = 50
     print(f'Python version: {sys.version}')
     if sys.argv[-1] == 'cProfile':
-        cProfile.run('test_fastapi_startup_perf(lambda f: f())', sort='tottime')
+        cProfile.run(
+            'test_fastapi_startup_perf(lambda f: f())',
+            sort='tottime',
+            filename=Path(__file__).name.strip('.py') + '.cprof',
+        )
     else:
         start = time.perf_counter()
         test_fastapi_startup_perf(lambda f: f())

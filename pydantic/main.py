@@ -531,6 +531,28 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return cls.__pydantic_validator__.validate_json(json_data, strict=strict, context=context)
 
     @classmethod
+    def model_validate_strings(
+        cls: type[Model],
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> Model:
+        """Validate the given object contains string data against the Pydantic model.
+
+        Args:
+            obj: The object contains string data to validate.
+            strict: Whether to enforce types strictly.
+            context: Extra variables to pass to the validator.
+
+        Returns:
+            The validated Pydantic model.
+        """
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        __tracebackhide__ = True
+        return cls.__pydantic_validator__.validate_strings(obj, strict=strict, context=context)
+
+    @classmethod
     def __get_pydantic_core_schema__(
         cls, __source: type[BaseModel], __handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> CoreSchema:
@@ -883,6 +905,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if field and field.repr:
                 yield k, v
 
+        # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+        # This can happen if a `ValidationError` is raised during initialization and the instance's
+        # repr is generated as part of the exception handling. Therefore, we use `getattr` here
+        # with a fallback, even though the type hints indicate the attribute will always be present.
         try:
             pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
         except AttributeError:

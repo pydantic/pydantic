@@ -276,7 +276,7 @@ class GenerateJsonSchema:
         self.definitions: dict[DefsRef, JsonSchemaValue] = {}
         self._config_wrapper_stack = _config.ConfigWrapperStack(_config.ConfigWrapper({}))
 
-        self.mode: JsonSchemaMode = 'validation'
+        self._mode: JsonSchemaMode = 'validation'
 
         # The following includes a mapping of a fully-unique defs ref choice to a list of preferred
         # alternatives, which are generally simpler, such as only including the class name.
@@ -303,6 +303,13 @@ class GenerateJsonSchema:
     @property
     def _config(self) -> _config.ConfigWrapper:
         return self._config_wrapper_stack.tail
+
+    @property
+    def mode(self) -> JsonSchemaMode:
+        if self._config.json_schema_mode_override is not None:
+            return self._config.json_schema_mode_override
+        else:
+            return self._mode
 
     def build_schema_type_to_method(
         self,
@@ -363,14 +370,14 @@ class GenerateJsonSchema:
             )
 
         for key, mode, schema in inputs:
-            self.mode = mode
+            self._mode = mode
             self.generate_inner(schema)
 
         definitions_remapping = self._build_definitions_remapping()
 
         json_schemas_map: dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef] = {}
         for key, mode, schema in inputs:
-            self.mode = mode
+            self._mode = mode
             json_schema = self.generate_inner(schema)
             json_schemas_map[(key, mode)] = definitions_remapping.remap_json_schema(json_schema)
 
@@ -392,7 +399,7 @@ class GenerateJsonSchema:
         Raises:
             PydanticUserError: If the JSON schema generator has already been used to generate a JSON schema.
         """
-        self.mode = mode
+        self._mode = mode
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
@@ -1442,15 +1449,13 @@ class GenerateJsonSchema:
         Returns:
             `True` if the field should be marked as required in the generated JSON schema, `False` otherwise.
         """
-        if self.mode == 'serialization':
+        if self.mode == 'serialization' and self._config.json_schema_serialization_defaults_required:
             return not field.get('serialization_exclude')
-        elif self.mode == 'validation':
+        else:
             if field['type'] == 'typed-dict-field':
                 return field.get('required', total)
             else:
                 return field['schema']['type'] != 'default'
-        else:
-            assert_never(self.mode)
 
     def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
         """Generates a JSON schema that matches a schema that defines a dataclass's constructor arguments.

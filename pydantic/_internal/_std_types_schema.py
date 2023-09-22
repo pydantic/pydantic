@@ -72,7 +72,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
     if len(cases) == 1:
         expected = repr(cases[0].value)
     else:
-        expected = ','.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
+        expected = ', '.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
 
     def to_enum(__input_value: Any) -> Enum:
         try:

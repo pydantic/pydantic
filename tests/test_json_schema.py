@@ -521,7 +521,6 @@ def test_decimal_json_schema():
             'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
             'b': {'default': '12.34', 'title': 'B', 'type': 'string'},
         },
-        'required': ['a', 'b'],
         'title': 'Model',
         'type': 'object',
     }
@@ -1695,7 +1694,6 @@ def test_model_default_timedelta(ser_json_timedelta: Literal['float', 'iso8601']
     # insert_assert(Model.model_json_schema(mode='serialization'))
     assert Model.model_json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['duration'],
         'title': 'Model',
         'type': 'object',
     }
@@ -1717,7 +1715,6 @@ def test_model_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], properti
     # insert_assert(Model.model_json_schema(mode='serialization'))
     assert Model.model_json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['data'],
         'title': 'Model',
         'type': 'object',
     }
@@ -1740,7 +1737,6 @@ def test_dataclass_default_timedelta(
     # insert_assert(TypeAdapter(Dataclass).json_schema(mode='serialization'))
     assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['duration'],
         'title': 'Dataclass',
         'type': 'object',
     }
@@ -1761,7 +1757,6 @@ def test_dataclass_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     # insert_assert(TypeAdapter(Dataclass).json_schema(mode='serialization'))
     assert TypeAdapter(Dataclass).json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['data'],
         'title': 'Dataclass',
         'type': 'object',
     }
@@ -1785,7 +1780,6 @@ def test_typeddict_default_timedelta(
     # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
     assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['duration'],
         'title': 'MyTypedDict',
         'type': 'object',
     }
@@ -1807,7 +1801,6 @@ def test_typeddict_default_bytes(ser_json_bytes: Literal['base64', 'utf8'], prop
     # insert_assert(TypeAdapter(MyTypedDict).json_schema(mode='serialization'))
     assert TypeAdapter(MyTypedDict).json_schema(mode='serialization') == {
         'properties': properties,
-        'required': ['data'],
         'title': 'MyTypedDict',
         'type': 'object',
     }
@@ -1928,7 +1921,6 @@ def test_constraints_schema_serialization(kwargs, type_, expected_extra):
         'title': 'Foo',
         'type': 'object',
         'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
-        'required': ['a'],
     }
 
     expected_schema['properties']['a'].update(expected_extra)
@@ -3082,7 +3074,7 @@ def test_schema_for_generic_field():
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
             metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler.generate_schema(param))])
-            return core_schema.general_plain_validator_function(
+            return core_schema.with_info_plain_validator_function(
                 GenModel,
                 metadata=metadata,
             )
@@ -3213,7 +3205,7 @@ def test_advanced_generic_schema():  # noqa: C901
                     s = handler.generate_schema(Optional[arg])
                     return h(s)
 
-                return core_schema.general_plain_validator_function(
+                return core_schema.with_info_plain_validator_function(
                     Gen,
                     metadata={'pydantic_js_annotation_functions': [js_func]},
                 )
@@ -3252,7 +3244,7 @@ def test_advanced_generic_schema():  # noqa: C901
             if hasattr(source, '__args__'):
                 # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
                 metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))])
-                return core_schema.general_plain_validator_function(
+                return core_schema.with_info_plain_validator_function(
                     GenTwoParams,
                     metadata=metadata,
                 )
@@ -4755,7 +4747,7 @@ def test_serialization_schema_with_exclude():
     }
     assert Model.model_json_schema(mode='serialization', schema_generator=MyGenerateJsonSchema) == {
         'properties': {'x': {'title': 'X', 'type': 'integer'}, 'y': {'title': 'Y', 'type': 'integer'}},
-        'required': ['x'],
+        'required': ['x', 'y'],
         'title': 'Model',
         'type': 'object',
     }
@@ -5581,3 +5573,43 @@ def test_enum_complex_value() -> None:
 
     # insert_assert(ta.json_schema())
     assert ta.json_schema() == {'enum': [[1, 2], [2, 3]], 'title': 'MyEnum', 'type': 'array'}
+
+
+def test_json_schema_serialization_defaults_required():
+    class Model(BaseModel):
+        a: str = 'a'
+
+    class SerializationDefaultsRequiredModel(Model):
+        model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+
+    model_schema = Model.model_json_schema(mode='serialization')
+    sdr_model_schema = SerializationDefaultsRequiredModel.model_json_schema(mode='serialization')
+
+    assert 'required' not in model_schema
+    assert sdr_model_schema['required'] == ['a']
+
+
+def test_json_schema_mode_override():
+    class Model(BaseModel):
+        a: Json[int]  # requires a string to validate, but will dump an int
+
+    class ValidationModel(Model):
+        model_config = ConfigDict(json_schema_mode_override='validation', title='Model')
+
+    class SerializationModel(Model):
+        model_config = ConfigDict(json_schema_mode_override='serialization', title='Model')
+
+    # Ensure the ValidationModel and SerializationModel schemas do not depend on the value of the mode
+    assert ValidationModel.model_json_schema(mode='validation') == ValidationModel.model_json_schema(
+        mode='serialization'
+    )
+    assert SerializationModel.model_json_schema(mode='validation') == SerializationModel.model_json_schema(
+        mode='serialization'
+    )
+
+    # Ensure the two submodels models have different JSON schemas
+    assert ValidationModel.model_json_schema() != SerializationModel.model_json_schema()
+
+    # Ensure the submodels' JSON schemas match the expected mode even when the opposite value is specified:
+    assert ValidationModel.model_json_schema(mode='serialization') == Model.model_json_schema(mode='validation')
+    assert SerializationModel.model_json_schema(mode='validation') == Model.model_json_schema(mode='serialization')

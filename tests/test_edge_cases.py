@@ -1924,7 +1924,7 @@ def test_custom_generic_validators():
                     ) from exc
                 return v
 
-            return core_schema.general_after_validator_function(validate, schema)
+            return core_schema.with_info_after_validator_function(validate, schema)
 
     class Model(BaseModel):
         a: str
@@ -2296,6 +2296,7 @@ def test_parent_field_with_default():
     assert c.c == 3
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='error message different on older versions')
 @pytest.mark.parametrize(
     'bases',
     [
@@ -2358,14 +2359,14 @@ def test_abstractmethod_missing_for_all_decorators(bases):
     with pytest.raises(
         TypeError,
         match=(
-            "Can't instantiate abstract class Square with abstract methods"
-            " my_computed_field,"
-            " my_field_validator,"
-            " my_model_serializer,"
-            " my_model_validator,"
-            " my_root_validator,"
-            " my_serializer,"
-            " my_validator"
+            "Can't instantiate abstract class Square without an implementation for abstract methods"
+            " 'my_computed_field',"
+            " 'my_field_validator',"
+            " 'my_model_serializer',"
+            " 'my_model_validator',"
+            " 'my_root_validator',"
+            " 'my_serializer',"
+            " 'my_validator'"
         ),
     ):
         Square(side=1.0)
@@ -2576,3 +2577,38 @@ def test_model_repr_before_validation():
     assert m.x == 10
     # insert_assert(log)
     assert log == ['before=MyModel()', 'after=MyModel(x=10)']
+
+
+def test_custom_exception_handler():
+    from traceback import TracebackException
+
+    from pydantic import BaseModel
+
+    traceback_exceptions = []
+
+    class MyModel(BaseModel):
+        name: str
+
+    class CustomErrorCatcher:
+        def __enter__(self):
+            return None
+
+        def __exit__(self, _exception_type, exception, exception_traceback):
+            if exception is not None:
+                traceback_exceptions.append(
+                    TracebackException(
+                        exc_type=type(exception),
+                        exc_value=exception,
+                        exc_traceback=exception_traceback,
+                        capture_locals=True,
+                    )
+                )
+
+                return True
+            return False
+
+    with CustomErrorCatcher():
+        data = {'age': 'John Doe'}
+        MyModel(**data)
+
+    assert len(traceback_exceptions) == 1

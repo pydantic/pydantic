@@ -637,8 +637,8 @@ def test_handle_typed_dict_schema(params, expected_extra_schema):
 
 
 def test_handle_function_schema():
-    schema = core_schema.field_before_validator_function(
-        function=lambda v, _info: v, field_name='field_name', schema=core_schema.float_schema()
+    schema = core_schema.with_info_before_validator_function(
+        lambda v, _info: v, core_schema.float_schema(), field_name='field_name'
     )
 
     def walk(s, recurse):

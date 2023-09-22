@@ -9,7 +9,14 @@ from functools import partial, wraps
 from inspect import Parameter, Signature, signature
 from typing import Any, Callable, ClassVar
 
-from pydantic_core import ArgsKwargs, PydanticUndefined, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import (
+    ArgsKwargs,
+    PydanticUndefined,
+    SchemaSerializer,
+    SchemaValidator,
+    core_schema,
+    validate_core_schema,
+)
 from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
@@ -17,7 +24,7 @@ from ..fields import FieldInfo
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _discriminated_union, _typing_extra
-from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
+from ._core_utils import collect_invalid_schemas, simplify_schema_references
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
@@ -153,21 +160,22 @@ def complete_dataclass(
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
-    schema = flatten_schema_defs(schema)
     if collect_invalid_schemas(schema):
         set_dataclass_mock_validator(cls, cls.__name__, 'all referenced types')
         return False
+
+    schema = _discriminated_union.apply_discriminators(simplify_schema_references(schema))
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
-    cls.__pydantic_core_schema__ = schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
-    simplified_core_schema = inline_schema_defs(schema)
+
+    cls.__pydantic_core_schema__ = schema = validate_core_schema(schema)
     cls.__pydantic_validator__ = validator = create_schema_validator(
-        simplified_core_schema, core_config, config_wrapper.plugin_settings
+        schema, core_config, config_wrapper.plugin_settings
     )
-    cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
 
     if config_wrapper.validate_assignment:
 

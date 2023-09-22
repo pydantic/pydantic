@@ -9,7 +9,7 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import PydanticUndefined, SchemaSerializer
+from pydantic_core import PydanticUndefined, SchemaSerializer, validate_core_schema
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -17,7 +17,7 @@ from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
+from ._core_utils import collect_invalid_schemas, simplify_schema_references
 from ._decorators import (
     ComputedFieldInfo,
     DecoratorInfos,
@@ -488,18 +488,16 @@ def complete_model_class(
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
-    schema = apply_discriminators(flatten_schema_defs(schema))
     if collect_invalid_schemas(schema):
         set_model_mocks(cls, cls_name)
         return False
 
+    schema = apply_discriminators(simplify_schema_references(schema))
+
     # debug(schema)
-    cls.__pydantic_core_schema__ = schema
-    simplified_core_schema = inline_schema_defs(schema)
-    cls.__pydantic_validator__ = create_schema_validator(
-        simplified_core_schema, core_config, config_wrapper.plugin_settings
-    )
-    cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
+    cls.__pydantic_core_schema__ = schema = validate_core_schema(schema)
+    cls.__pydantic_validator__ = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
