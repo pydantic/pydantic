@@ -83,9 +83,10 @@ Instead of using `Enum`, use `Literal` to define the structure of the data.
     With a simple benchmark, `Literal` is about ~3x faster than `Enum`:
 
     ```py
-    from typing import Literal
-    from timeit import timeit
     import enum
+    from timeit import timeit
+    from typing import Literal
+
     from pydantic import TypeAdapter
 
     ta = TypeAdapter(Literal['a', 'b'])
@@ -110,10 +111,10 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
     With a simple benchmark, `TypedDict` is about ~2.5x faster than nested models:
 
     ```py
-    from typing_extensions import TypedDict
     from timeit import timeit
-    from pydantic import TypeAdapter
-    from pydantic import BaseModel
+    from typing_extensions import TypedDict
+
+    from pydantic import BaseModel, TypeAdapter
 
 
     class A(TypedDict):
