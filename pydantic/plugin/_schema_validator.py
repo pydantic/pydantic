@@ -8,7 +8,7 @@ from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationErr
 from typing_extensions import Literal, ParamSpec
 
 if TYPE_CHECKING:
-    from . import PydanticPluginProtocol, _BaseValidateHandlerProtocol
+    from . import BaseValidateHandlerProtocol, PydanticPluginProtocol
 
 
 P = ParamSpec('P')
@@ -48,9 +48,9 @@ class PluggableSchemaValidator:
     ) -> None:
         self._schema_validator = SchemaValidator(schema, config)
 
-        python_event_handlers: list[_BaseValidateHandlerProtocol] = []
-        json_event_handlers: list[_BaseValidateHandlerProtocol] = []
-        strings_event_handlers: list[_BaseValidateHandlerProtocol] = []
+        python_event_handlers: list[BaseValidateHandlerProtocol] = []
+        json_event_handlers: list[BaseValidateHandlerProtocol] = []
+        strings_event_handlers: list[BaseValidateHandlerProtocol] = []
         for plugin in plugins:
             p, j, s = plugin.new_schema_validator(schema, config, plugin_settings)
             if p is not None:
@@ -68,7 +68,7 @@ class PluggableSchemaValidator:
         return getattr(self._schema_validator, name)
 
 
-def build_wrapper(func: Callable[P, R], event_handlers: list[_BaseValidateHandlerProtocol]) -> Callable[P, R]:
+def build_wrapper(func: Callable[P, R], event_handlers: list[BaseValidateHandlerProtocol]) -> Callable[P, R]:
     if not event_handlers:
         return func
     else:
@@ -95,7 +95,7 @@ def build_wrapper(func: Callable[P, R], event_handlers: list[_BaseValidateHandle
         return wrapper
 
 
-def filter_handlers(handler_cls: _BaseValidateHandlerProtocol, method_name: str) -> bool:
+def filter_handlers(handler_cls: BaseValidateHandlerProtocol, method_name: str) -> bool:
     """Filter out handler methods which are not implemented by the plugin directly - e.g. are missing
     or are inherited from the protocol.
     """

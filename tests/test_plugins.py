@@ -6,7 +6,12 @@ from typing import Any, Generator
 from pydantic_core import ValidationError
 
 from pydantic import BaseModel
-from pydantic.plugin import PydanticPluginProtocol, ValidateJsonHandlerProtocol, ValidatePythonHandlerProtocol
+from pydantic.plugin import (
+    PydanticPluginProtocol,
+    ValidateJsonHandlerProtocol,
+    ValidatePythonHandlerProtocol,
+    ValidateStringsHandlerProtocol,
+)
 from pydantic.plugin._loader import _plugins
 
 
@@ -175,3 +180,65 @@ def test_on_validate_python_on_error() -> None:
         with contextlib.suppress(ValidationError):
             Model.model_validate({'a': 'potato'})
         Model.model_validate_json('{"a": 1}') == {'a': 1}
+
+
+def test_all_handlers():
+    log = []
+
+    class Python(ValidatePythonHandlerProtocol):
+        def on_enter(self, input, **kwargs) -> None:
+            log.append(f'python enter input={input} kwargs={kwargs}')
+
+        def on_success(self, result: Any) -> None:
+            log.append(f'python success result={result}')
+
+        def on_error(self, error: ValidationError) -> None:
+            log.append(f'python error error={error}')
+
+    class Json(ValidateJsonHandlerProtocol):
+        def on_enter(self, input, **kwargs) -> None:
+            log.append(f'json enter input={input} kwargs={kwargs}')
+
+        def on_success(self, result: Any) -> None:
+            log.append(f'json success result={result}')
+
+        def on_error(self, error: ValidationError) -> None:
+            log.append(f'json error error={error}')
+
+    class Strings(ValidateStringsHandlerProtocol):
+        def on_enter(self, input, **kwargs) -> None:
+            log.append(f'strings enter input={input} kwargs={kwargs}')
+
+        def on_success(self, result: Any) -> None:
+            log.append(f'strings success result={result}')
+
+        def on_error(self, error: ValidationError) -> None:
+            log.append(f'strings error error={error}')
+
+    class Plugin(PydanticPluginProtocol):
+        def new_schema_validator(self, schema, config, plugin_settings):
+            return Python(), Json(), Strings()
+
+    plugin = Plugin()
+    with install_plugin(plugin):
+
+        class Model(BaseModel):
+            a: int
+
+        assert Model(a=1).model_dump() == {'a': 1}
+        # insert_assert(log)
+        assert log == ["python enter input={'a': 1} kwargs={'self_instance': Model()}", 'python success result=a=1']
+        log.clear()
+        assert Model.model_validate_json('{"a": 2}', context={'c': 2}).model_dump() == {'a': 2}
+        # insert_assert(log)
+        assert log == [
+            'json enter input={"a": 2} kwargs={\'strict\': None, \'context\': {\'c\': 2}}',
+            'json success result=a=2',
+        ]
+        log.clear()
+        assert Model.model_validate_strings({'a': '3'}, strict=True, context={'c': 3}).model_dump() == {'a': 3}
+        # insert_assert(log)
+        assert log == [
+            "strings enter input={'a': '3'} kwargs={'strict': True, 'context': {'c': 3}}",
+            'strings success result=a=3',
+        ]

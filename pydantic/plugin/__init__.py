@@ -11,6 +11,7 @@ from typing_extensions import Protocol, TypeAlias
 
 __all__ = (
     'PydanticPluginProtocol',
+    'BaseValidateHandlerProtocol',
     'ValidatePythonHandlerProtocol',
     'ValidateJsonHandlerProtocol',
     'ValidateStringsHandlerProtocol',
@@ -28,7 +29,9 @@ class PydanticPluginProtocol(Protocol):
         schema: CoreSchema,
         config: CoreConfig | None,
         plugin_settings: dict[str, object],
-    ) -> NewSchemaReturns:
+    ) -> tuple[
+        ValidatePythonHandlerProtocol | None, ValidateJsonHandlerProtocol | None, ValidateStringsHandlerProtocol | None
+    ]:
         """This method is called for each plugin every time a new [`SchemaValidator`][pydantic_core.SchemaValidator]
         is created.
 
@@ -42,16 +45,20 @@ class PydanticPluginProtocol(Protocol):
 
         Returns:
             A tuple of optional event handlers for each of the three validation methods -
-            `validate_python`, `validate_json`, `validate_strings`.
+                `validate_python`, `validate_json`, `validate_strings`.
         """
         raise NotImplementedError('Pydantic plugins should implement `new_schema_validator`.')
 
 
-class _BaseValidateHandlerProtocol(Protocol):
-    """Base class for plugin callbacks protocols."""
+class BaseValidateHandlerProtocol(Protocol):
+    """Base class for plugin callbacks protocols.
 
-    # on_enter is changed to be more specific on all subclasses
+    You shouldn't implement this protocol directly, instead use one of the subclasses with adds the correctly
+    typed `on_error` method.
+    """
+
     on_enter: Callable[..., None]
+    """`on_enter` is changed to be more specific on all subclasses"""
 
     def on_success(self, result: Any) -> None:
         """Callback to be notified of successful validation.
@@ -70,7 +77,7 @@ class _BaseValidateHandlerProtocol(Protocol):
         return
 
 
-class ValidatePythonHandlerProtocol(_BaseValidateHandlerProtocol, Protocol):
+class ValidatePythonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
     """Event handler for `SchemaValidator.validate_python`."""
 
     def on_enter(
@@ -95,7 +102,7 @@ class ValidatePythonHandlerProtocol(_BaseValidateHandlerProtocol, Protocol):
         pass
 
 
-class ValidateJsonHandlerProtocol(_BaseValidateHandlerProtocol, Protocol):
+class ValidateJsonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
     """Event handler for `SchemaValidator.validate_json`."""
 
     def on_enter(
@@ -121,7 +128,7 @@ class ValidateJsonHandlerProtocol(_BaseValidateHandlerProtocol, Protocol):
 StringInput: TypeAlias = 'dict[str, StringInput]'
 
 
-class ValidateStringsHandlerProtocol(_BaseValidateHandlerProtocol, Protocol):
+class ValidateStringsHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
     """Event handler for `SchemaValidator.validate_strings`."""
 
     def on_enter(

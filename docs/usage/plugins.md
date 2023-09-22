@@ -36,7 +36,7 @@ class Foo(BaseModel, plugin_settings={'my-plugin': {'observe': 'all'}}):
 ## Build a plugin
 
 ??? api "API Documentation"
-    [`pydantic.plugin.plugin`][pydantic.plugin.plugin]<br>
+    [`pydantic.plugin`][pydantic.plugin]<br>
 
 Pydantic has an API for creating plugins. The API is exposed via the `pydantic.plugin` module.
 
@@ -90,7 +90,7 @@ class Plugin(PydanticPluginProtocol):
         self,
         schema: CoreSchema,
         config: Union[CoreConfig, None],
-        plugin_settings: dict[str, object],
+        plugin_settings: Dict[str, object],
     ) -> NewSchemaReturns:
         return OnValidatePython(), None, None
 
