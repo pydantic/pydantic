@@ -20,7 +20,7 @@ The entry point group is `pydantic`, `my_plugin` is the name of the plugin, `my_
 
 Plugins are loaded in the order they are found, and the order they are found is not guaranteed.
 
-As a user, you can modify the behavior of the plugin in a `BaseModel` using the `plugin_settings` [Model Config](../usage/model_config.md) argument or
+As a user, you can modify the behavior of the plugin in a `BaseModel` using the `plugin_settings` [Model Config](config.md) argument or
 class keyword argument. This argument takes a dictionary of settings that will be passed to all plugins as is.
 The plugin can then use these settings to modify its behavior. It is recommended for plugins to separate their settings
 into their own dedicates keys in a plugin specific key in the `plugin_settings` dictionary.

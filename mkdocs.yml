@@ -78,7 +78,7 @@ nav:
   - Validation Errors: errors/validation_errors.md
   - Usage Errors: errors/usage_errors.md
 - Integrations:
-  - Mypy: integrations/mypy.md
+  - Mypy: integrations/mypy.md/.
   - PyCharm: integrations/pycharm.md
   - Hypothesis: integrations/hypothesis.md
   - Visual Studio Code: integrations/visual_studio_code.md
@@ -107,6 +107,7 @@ nav:
     - Network Types: api/networks.md
     - Version Information: api/version.md
     - Pydantic Plugins: api/plugin.md
+    - Annotated Handlers: api/annotated_handlers.md
   - Pydantic Core:
     - pydantic_core: api/pydantic_core.md
     - pydantic_core.core_schema: api/pydantic_core_schema.md
@@ -117,6 +118,8 @@ nav:
     - Payment: api/pydantic_extra_types_payment.md
     - Phone Numbers: api/pydantic_extra_types_phone_numbers.md
     - Routing Numbers: api/pydantic_extra_types_routing_numbers.md
+    - Coordinate: api/pydantic_extra_types_coordinate.md
+    - Mac Address: api/pydantic_extra_types_mac_address.md
 
 markdown_extensions:
 - tables
