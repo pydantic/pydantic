@@ -746,9 +746,40 @@ class ConfigDict(TypedDict, total=False):
 
     coerce_numbers_to_str: bool
     """
-    If `True`, enables automatic coercion of any `Number` type to `str` in "lax" (non-strict) mode.
+    If `True`, enables automatic coercion of any `Number` type to `str` in "lax" (non-strict) mode. Defaults to `False`.
 
-    Defaults to `False`.
+    Pydantic doesn't allow number types (`int`, `float`, `Decimal`) to be coerced as type `str` by default.
+
+    ```py
+    from decimal import Decimal
+
+    from pydantic import BaseModel, ConfigDict, ValidationError
+
+    class Model(BaseModel):
+        value: str
+
+    try:
+        print(Model(value=42))
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        value
+        Input should be a valid string [type=string_type, input_value=42, input_type=int]
+        '''
+
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=True)
+
+        value: str
+
+    repr(Model(value=42).value)
+    #> "42"
+    repr(Model(value=42.13).value)
+    #> "42.13"
+    repr(Model(value=Decimal('42.13')).value)
+    #> "42.13"
+    ```
     """
 
 
