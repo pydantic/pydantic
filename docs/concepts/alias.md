@@ -1,3 +1,12 @@
+An alias is an alternative name for a field, used when serializing and deserializing data.
+
+You can specify an alias in the following ways:
+
+* `alias` on the [`Field`][pydantic.fields.Field]
+* `validation_alias` on the [`Field`][pydantic.fields.Field]
+* `serialization_alias` on the [`Field`][pydantic.fields.Field]
+* `alias_generator` on the [`Config`][pydantic.config.ConfigDict.alias_generator]
+
 ## Alias Precedence
 
 If you specify an `alias` on the [`Field`][pydantic.fields.Field], it will take precedence over the generated alias by default:

@@ -173,6 +173,7 @@ plugins:
       'visual_studio_code.md': 'integrations/visual_studio_code.md'
       'hypothesis_plugin.md': 'integrations/hypothesis.md'
       'pycharm_plugin.md': 'integrations/pycharm.md'
+      'usage/model_config.md': 'api/config.md'
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
       'usage/types.md': 'concepts/types.md'
