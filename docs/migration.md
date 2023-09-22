@@ -182,7 +182,7 @@ dataclasses without having to subclass `BaseModel`. Pydantic V2 introduces the f
     to perform validation or provide other functionality.
     * To perform validation, generate a JSON schema, or make use of
         any other functionality that may have required `__pydantic_model__` in V1, you should now wrap the dataclass
-        with a [`TypeAdapter`](usage/type_adapter.md) ([discussed more below](#introduction-of-typeadapter)) and
+        with a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] ([discussed more below](#introduction-of-typeadapter)) and
         make use of its methods.
 * In Pydantic V1, if you used a vanilla (i.e., non-Pydantic) dataclass as a field, the config of the parent type would
     be used as though it was the config for the dataclass itself as well. In Pydantic V2, this is no longer the case.
@@ -643,7 +643,7 @@ Pydantic V1 had weak support for validating or serializing non-`BaseModel` types
 To work with them, you had to either create a "root" model or use the utility functions in `pydantic.tools`
 (namely, `parse_obj_as` and `schema_of`).
 
-In Pydantic V2 this is _a lot_ easier: the [`TypeAdapter`](usage/type_adapter.md) class lets you create an object
+In Pydantic V2 this is _a lot_ easier: the [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] class lets you create an object
 with methods for validating, serializing, and producing JSON schemas for arbitrary types.
 This serves as a complete replacement for `parse_obj_as` and `schema_of` (which are now deprecated),
 and also covers some of the use cases of "root" models. ([`RootModel`](usage/models.md#rootmodel-and-custom-root-types),
