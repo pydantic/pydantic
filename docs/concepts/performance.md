@@ -68,17 +68,69 @@ model = Model(a=1)
 
 ## Avoid extra information via subclasses of primitives
 
-<!-- Lose information, Mongo int example look for it...
-https://github.com/mongodb/mongo-python-driver/blob/9b6f2e18cfcdf56ad2afc988246060c4d20e11b8/bson/int64.py#L21
--->
+=== "Don't do this"
 
-<!-- TODO: I also need help here. -->
+    ```py
+    class CompletedStr(str):
+        def __init__(self, s: str):
+            self.s = s
+            self.done = False
+    ```
+
+=== "Do this"
+
+    ```py
+    from pydantic import BaseModel
+
+
+    class CompletedModel(BaseModel):
+        s: str
+        done: bool = False
+    ```
+
+===
 
 ## Use tagged union, not union
 
 Tagged union (or discriminated union) is a union with a field that indicates which type it is.
 
-<!-- TODO: I need a good example here. My tests didn't show much difference. -->
+```py test="skip"
+from typing import Any
+
+from typing_extensions import Literal
+
+from pydantic import BaseModel, Field
+
+
+class DivModel(BaseModel):
+    el_type: Literal['div'] = 'div'
+    class_name: str | None = None
+    children: list[Any] | None = None
+
+
+class SpanModel(BaseModel):
+    el_type: Literal['span'] = 'span'
+    class_name: str | None = None
+    contents: str | None = None
+
+
+class ButtonModel(BaseModel):
+    el_type: Literal['button'] = 'button'
+    class_name: str | None = None
+    contents: str | None = None
+
+
+class InputModel(BaseModel):
+    el_type: Literal['input'] = 'input'
+    class_name: str | None = None
+    value: str | None = None
+
+
+class Html(BaseModel):
+    contents: DivModel | SpanModel | ButtonModel | InputModel = Field(
+        discriminator='el_type'
+    )
+```
 
 ## Use `Literal` not `Enum`
 
