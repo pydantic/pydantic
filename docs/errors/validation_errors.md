@@ -653,7 +653,7 @@ except ValidationError as exc:
     #> 'extra_forbidden'
 ```
 
-You can read more about the `extra` configuration in the [Extra Attributes](../usage/model_config.md#extra-attributes) section.
+You can read more about the `extra` configuration in the [Extra Attributes][pydantic.config.ConfigDict.extra] section.
 
 ## `finite_number`
 

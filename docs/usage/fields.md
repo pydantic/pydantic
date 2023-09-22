@@ -142,8 +142,8 @@ print(user.model_dump(by_alias=True))  # (2)!
 
     You may also set `alias_priority` on a field to change this behavior.
 
-    You can read more about [Alias Precedence](model_config.md#alias-precedence) in the
-    [Model Config](model_config.md) documentation.
+    You can read more about [Alias Precedence](../concepts/alias.md#alias-precedence) in the
+    [Model Config][pydantic.config.ConfigDict] documentation.
 
 
 ??? tip "VSCode and Pyright users"
@@ -164,7 +164,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     1. VSCode will NOT show a warning here.
 
     When the `'alias'` keyword argument is specified, even if you set `populate_by_name` to `True` in the
-    [Model Config](model_config.md#populate-by-name), VSCode will show a warning when instantiating
+    [Model Config][pydantic.config.ConfigDict.populate_by_name], VSCode will show a warning when instantiating
     a model using the field name (though it will work at runtime) — in this case, `'name'`:
 
     ```py
@@ -180,7 +180,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     user = User(name='johndoe')  # (1)!
     ```
 
-    1. VSCode will show a warning here.
+    2. VSCode will show a warning here.
 
     To "trick" VSCode into preferring the field name, you can use the `str` function to wrap the alias value:
 
