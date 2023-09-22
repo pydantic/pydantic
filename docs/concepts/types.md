@@ -13,16 +13,16 @@ The following sections describe the types supported by Pydantic.
 * [Standard Library Types](../api/standard_library_types.md) &mdash; types from the Python standard library.
 * [Strict Types](#strict-types) &mdash; types that enable you to prevent coercion from compatible types.
 * [Custom Data Types](#custom-types) &mdash; create your own custom data types.
-* [Field Type Conversions](../usage/conversion_table.md) &mdash; strict and lax conversion between different field types.
+* [Field Type Conversions](../concepts/conversion_table.md) &mdash; strict and lax conversion between different field types.
 
 
 ## Type conversion
 
 During validation, Pydantic can coerce data into expected types.
 
-There are two modes of coercion: strict and lax. See [Conversion Table](../usage/conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
+There are two modes of coercion: strict and lax. See [Conversion Table](../concepts/conversion_table.md) for more details on how Pydantic converts data in both strict and lax modes.
 
-See [Strict mode](../usage/strict_mode.md) and [Strict Types](#strict-types) for details on enabling strict coercion.
+See [Strict mode](../concepts/strict_mode.md) and [Strict Types](#strict-types) for details on enabling strict coercion.
 
 
 ## Strict Types
@@ -425,7 +425,7 @@ assert isinstance(res, Username)
 assert res == 'abc'
 ```
 
-See [JSON Schema](../usage/json_schema.md) for more details on how to customize JSON schemas for custom types.
+See [JSON Schema](../concepts/json_schema.md) for more details on how to customize JSON schemas for custom types.
 
 #### As an annotation
 

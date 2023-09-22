@@ -59,7 +59,7 @@ _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.3/usage/models/
+    """Usage docs: https://docs.pydantic.dev/2.3/concepts/models/
 
     A base class for creating Pydantic models.
 
@@ -246,7 +246,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
-        """Usage docs: https://docs.pydantic.dev/2.3/usage/serialization/#model_copy
+        """Usage docs: https://docs.pydantic.dev/2.3/concepts/serialization/#model_copy
 
         Returns a copy of the model.
 
@@ -286,7 +286,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.3/usage/serialization/#modelmodel_dump
+        """Usage docs: https://docs.pydantic.dev/2.3/concepts/serialization/#modelmodel_dump
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -332,7 +332,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.3/usage/serialization/#modelmodel_dump_json
+        """Usage docs: https://docs.pydantic.dev/2.3/concepts/serialization/#modelmodel_dump_json
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 

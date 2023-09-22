@@ -42,7 +42,7 @@ You can use all the standard Pydantic field types. Note, however, that arguments
 order to perform validation and, where necessary coercion.
 
 To perform validation or generate a JSON schema on a Pydantic dataclass, you should now wrap the dataclass
-with a [`TypeAdapter`](type_adapter.md) and make use of its methods.
+with a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] and make use of its methods.
 
 Fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
 

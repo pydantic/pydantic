@@ -156,7 +156,7 @@ In all three modes, the output can be customized by excluding specific fields, e
     ```
 
 !!! tip "Learn more"
-    See the [documentation on serialization](usage/serialization.md).
+    See the [documentation on serialization](concepts/serialization.md).
 
 ## JSON Schema
 
@@ -211,7 +211,7 @@ In all three modes, the output can be customized by excluding specific fields, e
 Pydantic generates [JSON Schema version 2020-12](https://json-schema.org/draft/2020-12/release-notes.html), the latest version of the standard which is compatible with [OpenAPI 3.1](https://www.openapis.org/blog/2021/02/18/openapi-specification-3-1-released).
 
 !!! tip "Learn more"
-    See the [documentation on JSON Schema](usage/json_schema.md).
+    See the [documentation on JSON Schema](concepts/json_schema.md).
 
 {% raw %}
 ## Strict mode and data coercion {#strict-lax}
@@ -262,7 +262,7 @@ To solve this, Pydantic can parse and validate JSON in one step. This allows sen
     ```
 
 !!! tip "Learn more"
-    See the [documentation on strict mode](usage/strict_mode.md).
+    See the [documentation on strict mode](concepts/strict_mode.md).
 
 {% raw %}
 ## Dataclasses, TypedDicts, and more {#typeddict}
@@ -270,10 +270,10 @@ To solve this, Pydantic can parse and validate JSON in one step. This allows sen
 
 Pydantic provides four ways to create schemas and perform validation and serialization:
 
-1. [`BaseModel`](usage/models.md) &mdash; Pydantic's own super class with many common utilities available via instance methods.
-2. [`pydantic.dataclasses.dataclass`](usage/dataclasses.md) &mdash; a wrapper around standard dataclasses which performs validation when a dataclass is initialized.
-3. [`TypeAdapter`](usage/type_adapter.md) &mdash; a general way to adapt any type for validation and serialization. This allows types like [`TypedDict`](api/standard_library_types.md#typeddict) and [`NampedTuple`](api/standard_library_types.md#namedtuple) to be validated as well as simple scalar values like `int` or `timedelta` &mdash; [all types](concepts/types.md) supported can be used with `TypeAdapter`.
-4. [`validate_call`](usage/validation_decorator.md) &mdash; a decorator to perform validation when calling a function.
+1. [`BaseModel`](concepts/models.md) &mdash; Pydantic's own super class with many common utilities available via instance methods.
+2. [`pydantic.dataclasses.dataclass`](concepts/dataclasses.md) &mdash; a wrapper around standard dataclasses which performs validation when a dataclass is initialized.
+3. [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] &mdash; a general way to adapt any type for validation and serialization. This allows types like [`TypedDict`](api/standard_library_types.md#typeddict) and [`NampedTuple`](api/standard_library_types.md#namedtuple) to be validated as well as simple scalar values like `int` or `timedelta` &mdash; [all types](concepts/types.md) supported can be used with `TypeAdapter`.
+4. [`validate_call`](concepts/validation_decorator.md) &mdash; a decorator to perform validation when calling a function.
 
 ??? example "Example - schema based on TypedDict"
     ```py
@@ -352,7 +352,7 @@ Functional validators and serializers, as well as a powerful protocol for custom
     ```
 
 !!! tip "Learn more"
-    See the documentation on [validators](usage/validators.md), [custom serializers](usage/serialization.md#custom-serializers), and [custom types](concepts/types.md#custom-types).
+    See the documentation on [validators](concepts/validators.md), [custom serializers](concepts/serialization.md#custom-serializers), and [custom types](concepts/types.md#custom-types).
 
 ## Ecosystem
 

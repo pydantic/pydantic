@@ -574,7 +574,7 @@ class FieldInfo(_repr.Representation):
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasPath:
-    """Usage docs: https://docs.pydantic.dev/2.3/usage/fields#aliaspath-and-aliaschoices
+    """Usage docs: https://docs.pydantic.dev/2.3/concepts/fields#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -598,7 +598,7 @@ class AliasPath:
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasChoices:
-    """Usage docs: https://docs.pydantic.dev/2.3/usage/fields#aliaspath-and-aliaschoices
+    """Usage docs: https://docs.pydantic.dev/2.3/concepts/fields#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -697,7 +697,7 @@ def Field(  # noqa: C901
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.3/usage/fields
+    """Usage docs: https://docs.pydantic.dev/2.3/concepts/fields
 
     Create a field for objects that can be configured.
 
@@ -728,7 +728,7 @@ def Field(  # noqa: C901
         init_var: Whether the field should be included in the constructor of the dataclass.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
         strict: If `True`, strict validation is applied to the field.
-            See [Strict Mode](../usage/strict_mode.md) for details.
+            See [Strict Mode](../concepts/strict_mode.md) for details.
         gt: Greater than. If set, value must be greater than this. Only applicable to numbers.
         ge: Greater than or equal. If set, value must be greater than or equal to this. Only applicable to numbers.
         lt: Less than. If set, value must be less than this. Only applicable to numbers.
