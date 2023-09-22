@@ -849,7 +849,7 @@ Thereby guaranteeing (as much as possible) that the external interface to pydant
 
 The table below provisionally defines what input value types are allowed to which field types.
 
-**An updated and complete version of this table is available in [V2 conversion table](../usage/conversion_table.md)**.
+**An updated and complete version of this table is available in [V2 conversion table](../concepts/conversion_table.md)**.
 
 !!!note
     Some type conversion shown here is a significant departure from existing behavior, we may have to provide a config

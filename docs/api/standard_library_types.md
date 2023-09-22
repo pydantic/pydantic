@@ -159,7 +159,7 @@ Pydantic supports the following numeric types from the Python standard library:
 ### `int`
 
 * Pydantic uses `int(v)` to coerce types to an `int`;
-  see [Data conversion](../usage/models.md#data-conversion) for details on loss of information during data conversion.
+  see [Data conversion](../concepts/models.md#data-conversion) for details on loss of information during data conversion.
 
 ### `float`
 
@@ -812,13 +812,13 @@ print(user_03_uuid.int)
 
     `Optional[x]` can also be used to specify a required field that can take `None` as a value.
 
-    See more details in [Required fields](../usage/models.md#required-fields).
+    See more details in [Required fields](../concepts/models.md#required-fields).
 
 !!! tip "Union Mode"
 
     By default `Union` validation will try to return the variant which is the best match for the input.
 
-    Consider for example the case of `Union[int, str]`. When [`strict` mode](../usage/strict_mode.md) is not enabled
+    Consider for example the case of `Union[int, str]`. When [`strict` mode](../concepts/strict_mode.md) is not enabled
     then `int` fields will accept `str` inputs. In the example below, the `id` field (which is `Union[int, str]`)
     will accept the string `'123'` as an input, and preserve it as a string:
 
@@ -845,7 +845,7 @@ This is known as `'smart'` mode for `Union` validation.
 At present only one other `Union` validation mode exists, called `'left_to_right'` validation. In this mode
 variants are attempted from left to right and the first successful validation is accepted as input.
 
-Consider the same example, this time with `union_mode='left_to_right'` set as a [`Field`](../usage/fields.md)
+Consider the same example, this time with `union_mode='left_to_right'` set as a [`Field`](../concepts/fields.md)
 parameter on `id`. With this validation mode, the `int` variant will coerce strings of digits into `int`
 values:
 
@@ -922,7 +922,7 @@ except ValidationError as e:
 ```
 
 !!! note
-    Using the [`typing.Annotated` fields syntax](../usage/json_schema.md#typingannotated-fields) can be handy to regroup
+    Using the [`typing.Annotated` fields syntax](../concepts/json_schema.md#typingannotated-fields) can be handy to regroup
     the `Union` and `discriminator` information. See below for an example!
 
 !!! warning
@@ -1283,7 +1283,7 @@ Allows any value, including `None`.
 
 ## `typing.Annotated`
 
-Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../usage/json_schema.md#typingannotated-fields), but otherwise the additional metadata is ignored and the root type is used.
+Allows wrapping another type with arbitrary metadata, as per [PEP-593](https://www.python.org/dev/peps/pep-0593/). The `Annotated` hint may contain a single call to the [`Field` function](../concepts/json_schema.md#typingannotated-fields), but otherwise the additional metadata is ignored and the root type is used.
 
 
 ## `typing.Pattern`

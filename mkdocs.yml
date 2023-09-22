@@ -54,22 +54,21 @@ nav:
   - Version Policy: version-policy.md
   - Contributing: contributing.md
   - Changelog: changelog.md
-- Usage:
-  - Model: usage/models.md
-  - Validators: usage/validators.md
-  - Fields: usage/fields.md
-  - JSON Schema: usage/json_schema.md
-  - Serialization: usage/serialization.md
-  - Dataclasses: usage/dataclasses.md
-  - Validation Decorator: usage/validation_decorator.md
-  - Postponed Annotations: usage/postponed_annotations.md
-  - Strict Mode: usage/strict_mode.md
-  - Conversion Table: usage/conversion_table.md
-  - Settings Management: usage/pydantic_settings.md
 - Concepts:
+  - Models: concepts/models.md
+  - Fields: concepts/fields.md
+  - JSON Schema: concepts/json_schema.md
   - Types: concepts/types.md
   - Alias: concepts/alias.md
   - Configuration: concepts/config.md
+  - Serialization: concepts/serialization.md
+  - Validators: concepts/validators.md
+  - Dataclasses: concepts/dataclasses.md
+  - Postponed Annotations: concepts/postponed_annotations.md
+  - Strict Mode: concepts/strict_mode.md
+  - Validation Decorator: concepts/validation_decorator.md
+  - Conversion Table: concepts/conversion_table.md
+  - Settings Management: concepts/pydantic_settings.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:

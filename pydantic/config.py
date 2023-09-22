@@ -353,9 +353,9 @@ class ConfigDict(TypedDict, total=False):
         age: int
     ```
 
-    See [Strict Mode](../usage/strict_mode.md) for more details.
+    See [Strict Mode](../concepts/strict_mode.md) for more details.
 
-    See the [Conversion Table](../usage/conversion_table.md) for more details on how Pydantic converts data in both
+    See the [Conversion Table](../concepts/conversion_table.md) for more details on how Pydantic converts data in both
     strict and lax modes.
     """
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
