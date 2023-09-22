@@ -2,8 +2,6 @@
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.0)
 
-## What's Changed
-
 ### Packaging
 
 * Update pydantic-core to 2.10.0 by @samuelcolvin in [#7542](https://github.com/pydantic/pydantic/pull/7542)
