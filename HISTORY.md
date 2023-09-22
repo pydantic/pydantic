@@ -14,6 +14,7 @@
 * Implement optional `number` to `str` coercion by @lig in [#7508](https://github.com/pydantic/pydantic/pull/7508)
 * Allow access to `field_name` and `data` in all validators if there is data and a field name by @samuelcolvin in [#7542](https://github.com/pydantic/pydantic/pull/7542)
 * Add `BaseModel.model_validate_strings` and `TypeAdapter.validate_strings` by @hramezani in [#7552](https://github.com/pydantic/pydantic/pull/7552)
+* Add Pydantic `plugins` experimental implementation by @lig @samuelcolvin and in [#6820](https://github.com/pydantic/pydantic/pull/6820)
 
 ### Changes
 
@@ -21,6 +22,7 @@
 * Make fields with defaults not required in the serialization schema by default by @dmontagu in [#7275](https://github.com/pydantic/pydantic/pull/7275)
 * Mark `Extra` as deprecated by @disrupted in [#7299](https://github.com/pydantic/pydantic/pull/7299)
 * Make `EncodedStr` a dataclass by @Kludex in [#7396](https://github.com/pydantic/pydantic/pull/7396)
+* Move `annoated_handlers` to be public by @samuelcolvin in [#7569](https://github.com/pydantic/pydantic/pull/7569)
 
 ### Performance
 
@@ -30,6 +32,7 @@
 * Eagerly resolve discriminated unions and cache cases where we can't by @adriangb in [#7529](https://github.com/pydantic/pydantic/pull/7529)
 * Replace `dict.get` and `dict.setdefault` with more verbose versions in CoreSchema building hot paths by @adriangb in [#7536](https://github.com/pydantic/pydantic/pull/7536)
 * Cache invalid CoreSchema discovery by @adriangb in [#7535](https://github.com/pydantic/pydantic/pull/7535)
+* Allow disabling CoreSchema validation for faster startup times by @adriangb in [#7565](https://github.com/pydantic/pydantic/pull/7565)
 
 ### Fixes
 
@@ -47,6 +50,7 @@
 * Improve enum error message by @hramezani in [#7506](https://github.com/pydantic/pydantic/pull/7506)
 * Make `repr` work for instances that failed initialization when handling `ValidationError`s by @dmontagu in [#7439](https://github.com/pydantic/pydantic/pull/7439)
 * Fixed a regular expression denial of service issue by limiting whitespaces by @prodigysml in [#7360](https://github.com/pydantic/pydantic/pull/7360)
+* Fix handling of `UUID` values having `UUID.version=None` by @lig in [#7566](https://github.com/pydantic/pydantic/pull/7566)
 
 ## New Contributors
 * @15498th made their first contribution in [#7238](https://github.com/pydantic/pydantic/pull/7238)
