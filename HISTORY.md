@@ -1,3 +1,66 @@
+## v2.4.0 (2023-09-22)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.0)
+
+## What's Changed
+
+### Packaging
+
+* Update pydantic-core to 2.10.0 by @samuelcolvin in [#7542](https://github.com/pydantic/pydantic/pull/7542)
+
+### New Features
+
+* Add `Base64Url` types by @dmontagu in [#7286](https://github.com/pydantic/pydantic/pull/7286)
+* Implement optional `number` to `str` coercion by @lig in [#7508](https://github.com/pydantic/pydantic/pull/7508)
+* Allow access to `field_name` and `data` in all validators if there is data and a field name by @samuelcolvin in [#7542](https://github.com/pydantic/pydantic/pull/7542)
+* Add `BaseModel.model_validate_strings` and `TypeAdapter.validate_strings` by @hramezani in [#7552](https://github.com/pydantic/pydantic/pull/7552)
+
+### Changes
+
+* Do not override `model_post_init` in subclass with private attrs by @Viicos in [#7302](https://github.com/pydantic/pydantic/pull/7302)
+* Make fields with defaults not required in the serialization schema by default by @dmontagu in [#7275](https://github.com/pydantic/pydantic/pull/7275)
+* Mark `Extra` as deprecated by @disrupted in [#7299](https://github.com/pydantic/pydantic/pull/7299)
+* Make `EncodedStr` a dataclass by @Kludex in [#7396](https://github.com/pydantic/pydantic/pull/7396)
+
+### Performance
+
+* Simplify flatteining and inlining of Coreschema by @adriangb in [#7523](https://github.com/pydantic/pydantic/pull/7523)
+* Remove unused copies in CoreSchema walking by @adriangb in [#7528](https://github.com/pydantic/pydantic/pull/7528)
+* Add caches for collecting definitions and invalid schemas from a CoreSchema by @adriangb in [#7527](https://github.com/pydantic/pydantic/pull/7527)
+* Eagerly resolve discriminated unions and cache cases where we can't by @adriangb in [#7529](https://github.com/pydantic/pydantic/pull/7529)
+* Replace `dict.get` and `dict.setdefault` with more verbose versions in CoreSchema building hot paths by @adriangb in [#7536](https://github.com/pydantic/pydantic/pull/7536)
+* Cache invalid CoreSchema discovery by @adriangb in [#7535](https://github.com/pydantic/pydantic/pull/7535)
+
+### Fixes
+
+* Fix config detection for `TypedDict` from grandparent classes by @dmontagu in [#7272](https://github.com/pydantic/pydantic/pull/7272)
+* Fix hash function generation for frozen models with unusual MRO by @dmontagu in [#7274](https://github.com/pydantic/pydantic/pull/7274)
+* Make `strict` config overridable in field for Path by @hramezani in [#7281](https://github.com/pydantic/pydantic/pull/7281)
+* Use `ser_json_<timedelta|bytes>` on default in `GenerateJsonSchema` by @Kludex in [#7269](https://github.com/pydantic/pydantic/pull/7269)
+* Adding a check that alias is validated as an identifier for Python by @andree0 in [#7319](https://github.com/pydantic/pydantic/pull/7319)
+* Raise an Error When Computed Field Overrides Field by @sydney-runkle in [#7346](https://github.com/pydantic/pydantic/pull/7346)
+* Fix applying `SkipValidation` to referenced schemas by @adriangb in [#7381](https://github.com/pydantic/pydantic/pull/7381)
+* Enforce behavior of private attributes having double leading underscore by @lig in [#7265](https://github.com/pydantic/pydantic/pull/7265)
+* Standardize `__get_pydantic_core_schema__` signature by @hramezani in [#7415](https://github.com/pydantic/pydantic/pull/7415)
+* Fix Generic Dataclass Fields Mutation Bug (when using `TypeAdapter`) by @sydney-runkle in [#7435](https://github.com/pydantic/pydantic/pull/7435)
+* Fix `TypeError` on `model_validator` in `wrap` mode by @pmmmwh in [#7496](https://github.com/pydantic/pydantic/pull/7496)
+* Improve enum error message by @hramezani in [#7506](https://github.com/pydantic/pydantic/pull/7506)
+* Make `repr` work for instances that failed initialization when handling `ValidationError`s by @dmontagu in [#7439](https://github.com/pydantic/pydantic/pull/7439)
+* Fixed a regular expression denial of service issue by limiting whitespaces by @prodigysml in [#7360](https://github.com/pydantic/pydantic/pull/7360)
+
+## New Contributors
+* @15498th made their first contribution in [#7238](https://github.com/pydantic/pydantic/pull/7238)
+* @GabrielCappelli made their first contribution in [#7213](https://github.com/pydantic/pydantic/pull/7213)
+* @tobni made their first contribution in [#7184](https://github.com/pydantic/pydantic/pull/7184)
+* @redruin1 made their first contribution in [#7282](https://github.com/pydantic/pydantic/pull/7282)
+* @FacerAin made their first contribution in [#7288](https://github.com/pydantic/pydantic/pull/7288)
+* @acdha made their first contribution in [#7297](https://github.com/pydantic/pydantic/pull/7297)
+* @andree0 made their first contribution in [#7319](https://github.com/pydantic/pydantic/pull/7319)
+* @gordonhart made their first contribution in [#7375](https://github.com/pydantic/pydantic/pull/7375)
+* @pmmmwh made their first contribution in [#7496](https://github.com/pydantic/pydantic/pull/7496)
+* @disrupted made their first contribution in [#7299](https://github.com/pydantic/pydantic/pull/7299)
+* @prodigysml made their first contribution in [#7360](https://github.com/pydantic/pydantic/pull/7360)
+
 ## v2.3.0 (2023-08-23)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.3.0)
