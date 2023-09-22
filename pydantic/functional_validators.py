@@ -13,13 +13,8 @@ from pydantic_core import core_schema as _core_schema
 from typing_extensions import Annotated, Literal, TypeAlias
 
 from . import GetCoreSchemaHandler as _GetCoreSchemaHandler
-from ._internal import (
-    _annotated_handlers,
-    _core_metadata,
-    _decorators,
-    _generics,
-    _internal_dataclass,
-)
+from ._internal import _core_metadata, _decorators, _generics, _internal_dataclass
+from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
 
 if sys.version_info < (3, 11):
@@ -530,9 +525,7 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             from pydantic import PydanticSchemaGenerationError
 
             # use the generic _origin_ as the second argument to isinstance when appropriate
@@ -575,9 +568,7 @@ else:
             return Annotated[item, SkipValidation()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             original_schema = handler(source)
             metadata = _core_metadata.build_metadata_dict(js_annotation_functions=[lambda _c, h: h(original_schema)])
             return core_schema.any_schema(

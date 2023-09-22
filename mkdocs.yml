@@ -70,6 +70,7 @@ nav:
   - Conversion Table: concepts/conversion_table.md
   - Settings Management: concepts/pydantic_settings.md
   - Performance: concepts/performance.md
+  - Pydantic Plugins: concepts/plugins.md
 - Examples:
   - Secrets: examples/secrets.md
 - Error Messages:
@@ -105,6 +106,7 @@ nav:
     - Pydantic Types: api/types.md
     - Network Types: api/networks.md
     - Version Information: api/version.md
+    - Pydantic Plugins: api/plugin.md
   - Pydantic Core:
     - pydantic_core: api/pydantic_core.md
     - pydantic_core.core_schema: api/pydantic_core_schema.md

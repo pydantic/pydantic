@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated, TypeAlias
 
-from ._internal import _annotated_handlers, _fields, _repr, _schema_generation_shared
+from ._internal import _fields, _repr, _schema_generation_shared
 from ._migration import getattr_migration
+from .annotated_handlers import GetCoreSchemaHandler
 from .json_schema import JsonSchemaValue
 
 if TYPE_CHECKING:
@@ -384,7 +385,7 @@ else:
         def __get_pydantic_core_schema__(
             cls,
             _source: type[Any],
-            _handler: _annotated_handlers.GetCoreSchemaHandler,
+            _handler: GetCoreSchemaHandler,
         ) -> core_schema.CoreSchema:
             import_email_validator()
             return core_schema.no_info_after_validator_function(cls._validate, core_schema.str_schema())
@@ -459,7 +460,7 @@ class NameEmail(_repr.Representation):
     def __get_pydantic_core_schema__(
         cls,
         _source: type[Any],
-        _handler: _annotated_handlers.GetCoreSchemaHandler,
+        _handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         import_email_validator()
         return core_schema.no_info_after_validator_function(
@@ -540,7 +541,7 @@ class IPvAnyAddress:
     def __get_pydantic_core_schema__(
         cls,
         _source: type[Any],
-        _handler: _annotated_handlers.GetCoreSchemaHandler,
+        _handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
@@ -580,7 +581,7 @@ class IPvAnyInterface:
     def __get_pydantic_core_schema__(
         cls,
         _source: type[Any],
-        _handler: _annotated_handlers.GetCoreSchemaHandler,
+        _handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
@@ -622,7 +623,7 @@ class IPvAnyNetwork:
     def __get_pydantic_core_schema__(
         cls,
         _source: type[Any],
-        _handler: _annotated_handlers.GetCoreSchemaHandler,
+        _handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()

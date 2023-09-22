@@ -15,15 +15,15 @@ from pydantic_core import (
     SchemaSerializer,
     SchemaValidator,
     core_schema,
-    validate_core_schema,
 )
 from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
+from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _discriminated_union, _typing_extra
-from ._core_utils import collect_invalid_schemas, simplify_schema_references
+from ._core_utils import collect_invalid_schemas, simplify_schema_references, validate_core_schema
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
@@ -169,8 +169,11 @@ def complete_dataclass(
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
+
     cls.__pydantic_core_schema__ = schema = validate_core_schema(schema)
-    cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
+    cls.__pydantic_validator__ = validator = create_schema_validator(
+        schema, core_config, config_wrapper.plugin_settings
+    )
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
 
     if config_wrapper.validate_assignment:

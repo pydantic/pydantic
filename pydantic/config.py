@@ -277,7 +277,7 @@ class ConfigDict(TypedDict, total=False):
     """
 
     loc_by_alias: bool
-    """Whether to use the alias for error `loc`s rather than the field's name. Defaults to `True`."""
+    """Whether to use the actual key provided in the data (e.g. alias) for error `loc`s rather than the field's name. Defaults to `True`."""
 
     alias_generator: Callable[[str], str] | None
     """
@@ -638,6 +638,12 @@ class ConfigDict(TypedDict, total=False):
     This can be useful to avoid the overhead of building models which are only
     used nested within other models, or when you want to manually define type namespace via
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
+    """
+
+    plugin_settings: dict[str, object] | None
+    """A `dict` of settings for plugins. Defaults to `None`.
+
+    See [Pydantic Plugins](../usage/plugins.md) for details.
     """
 
     schema_generator: type[_GenerateSchema] | None

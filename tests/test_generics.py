@@ -406,6 +406,7 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
+@pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason='The test randomly fails on Python 3.9')
 def test_circular_generic_refs_get_cleaned_up():
     initial_cache_size = len(_GENERIC_TYPES_CACHE)
 

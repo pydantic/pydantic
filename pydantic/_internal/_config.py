@@ -54,8 +54,8 @@ class ConfigWrapper:
     validate_assignment: bool
     arbitrary_types_allowed: bool
     from_attributes: bool
-    # whether to use the used alias (or first alias for "field required" errors) instead of field_names
-    # to construct error `loc`s, default True
+    # whether to use the actual key provided in the data (e.g. alias or first alias for "field required" errors) instead of field_names
+    # to construct error `loc`s, default `True`
     loc_by_alias: bool
     alias_generator: Callable[[str], str] | None
     ignored_types: tuple[type, ...]
@@ -75,6 +75,7 @@ class ConfigWrapper:
     protected_namespaces: tuple[str, ...]
     hide_input_in_errors: bool
     defer_build: bool
+    plugin_settings: dict[str, object] | None
     schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
     json_schema_mode_override: Literal['validation', 'serialization', None]
@@ -242,6 +243,7 @@ config_defaults = ConfigDict(
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
+    plugin_settings=None,
     schema_generator=None,
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,

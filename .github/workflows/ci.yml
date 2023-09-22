@@ -178,6 +178,29 @@ jobs:
       - name: test
         run: make test-fastapi
 
+  test-plugin:
+    name: test pydantic plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: pdm-project/setup-pdm@v3
+        with:
+          python-version: '3.11'
+          cache: true
+
+      - name: install deps
+        run: |
+          pdm use -f $PYTHON
+          pdm install -G testing
+
+      - name: install example plugin
+        run: pdm add ./tests/plugin
+
+      - run: pdm run pytest ./tests/plugin
+        env:
+          TEST_PLUGIN: 1
+
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -340,6 +363,7 @@ jobs:
       - test-memray
       - test-mypy
       - test-fastapi
+      - test-plugin
 
     runs-on: ubuntu-latest
 

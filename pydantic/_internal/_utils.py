@@ -124,7 +124,7 @@ def unique_list(
 ) -> list[T]:
     """Make a list unique while maintaining order.
     We update the list if another one with the same name is set
-    (e.g. root validator overridden in subclass).
+    (e.g. model validator overridden in subclass).
     """
     result: list[T] = []
     result_names: list[str] = []
