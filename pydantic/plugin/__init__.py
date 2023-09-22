@@ -14,7 +14,10 @@ __all__ = (
     'ValidatePythonHandlerProtocol',
     'ValidateJsonHandlerProtocol',
     'ValidateStringsHandlerProtocol',
+    'NewSchemaReturns',
 )
+
+NewSchemaReturns: TypeAlias = 'tuple[ValidatePythonHandlerProtocol | None, ValidateJsonHandlerProtocol | None, ValidateStringsHandlerProtocol | None]'
 
 
 class PydanticPluginProtocol(Protocol):
@@ -25,9 +28,7 @@ class PydanticPluginProtocol(Protocol):
         schema: CoreSchema,
         config: CoreConfig | None,
         plugin_settings: dict[str, object],
-    ) -> tuple[
-        ValidatePythonHandlerProtocol | None, ValidateJsonHandlerProtocol | None, ValidateStringsHandlerProtocol | None
-    ]:
+    ) -> NewSchemaReturns:
         """This method is called for each plugin every time a new [`SchemaValidator`][pydantic_core.SchemaValidator]
         is created.
 
@@ -58,7 +59,7 @@ class _BaseValidateHandlerProtocol(Protocol):
         Args:
             result: The result of the validation.
         """
-        pass
+        return
 
     def on_error(self, error: ValidationError) -> None:
         """Callback to be notified of validation errors.
@@ -66,7 +67,7 @@ class _BaseValidateHandlerProtocol(Protocol):
         Args:
             error: The validation error.
         """
-        pass
+        return
 
 
 class ValidatePythonHandlerProtocol(_BaseValidateHandlerProtocol, Protocol):
@@ -81,7 +82,7 @@ class ValidatePythonHandlerProtocol(_BaseValidateHandlerProtocol, Protocol):
         context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
     ) -> None:
-        """Callback to be notified of validation start.
+        """Callback to be notified of validation start, and create an instance of the event handler.
 
         Args:
             input: The input to be validated.
@@ -105,7 +106,7 @@ class ValidateJsonHandlerProtocol(_BaseValidateHandlerProtocol, Protocol):
         context: dict[str, Any] | None = None,
         self_instance: Any | None = None,
     ) -> None:
-        """Callback to be notified of validation start.
+        """Callback to be notified of validation start, and create an instance of the event handler.
 
         Args:
             input: The JSON data to be validated.
@@ -126,7 +127,7 @@ class ValidateStringsHandlerProtocol(_BaseValidateHandlerProtocol, Protocol):
     def on_enter(
         self, input: StringInput, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> None:
-        """Callback to be notified of validation start.
+        """Callback to be notified of validation start, and create an instance of the event handler.
 
         Args:
             input: The string data to be validated.

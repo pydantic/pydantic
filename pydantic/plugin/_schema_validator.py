@@ -72,21 +72,39 @@ def build_wrapper(func: Callable[P, R], event_handlers: list[_BaseValidateHandle
     if not event_handlers:
         return func
     else:
+        on_enters = tuple(h.on_enter for h in event_handlers if filter_handlers(h, 'on_enter'))
+        on_successes = tuple(h.on_success for h in event_handlers if filter_handlers(h, 'on_success'))
+        on_errors = tuple(h.on_error for h in event_handlers if filter_handlers(h, 'on_error'))
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-            for handler in event_handlers:
-                handler.on_enter(*args, **kwargs)
+            for on_enter_handler in on_enters:
+                on_enter_handler(*args, **kwargs)
 
             try:
                 result = func(*args, **kwargs)
             except ValidationError as error:
-                for handler in event_handlers:
-                    handler.on_error(error)
+                for on_error_handler in on_errors:
+                    on_error_handler(error)
                 raise
             else:
-                for handler in event_handlers:
-                    handler.on_success(result)
+                for on_success_handler in on_successes:
+                    on_success_handler(result)
                 return result
 
         return wrapper
+
+
+def filter_handlers(handler_cls: _BaseValidateHandlerProtocol, method_name: str) -> bool:
+    """Filter out handler methods which are not implemented by the plugin directly - e.g. are missing
+    or are inherited from the protocol.
+    """
+    handler = getattr(handler_cls, method_name, None)
+    if handler is None:
+        return False
+    elif handler.__module__ == 'pydantic.plugin':
+        # this is the original handler, from the protocol due to runtime inheritance
+        # we don't want to call it
+        return False
+    else:
+        return True
