@@ -395,7 +395,8 @@ class BaseConfig(BaseModel):
     assert module.BaseConfig._FIELD_UPDATE_STRATEGY == {}
 
 
-def test_private_properties_not_included_in_iter() -> None:
+@pytest.mark.skipif(not hasattr(functools, 'cached_property'), reason='cached_property is not available')
+def test_private_properties_not_included_in_iter_cached_property() -> None:
     class Model(BaseModel):
         foo: int
 
@@ -405,17 +406,25 @@ def test_private_properties_not_included_in_iter() -> None:
             return -self.foo
 
     m = Model(foo=1)
-    assert '_foo' not in list(k for k, v in m)
+    assert '_foo' not in list(k for k, _ in m)
 
 
-def test_private_properties_not_included_in_repr_by_default() -> None:
+def test_private_properties_not_included_in_iter_property() -> None:
     class Model(BaseModel):
         foo: int
 
         @computed_field
         @functools.cached_property
-        def _private_cached_property(self) -> int:
+        def _foo(self) -> int:
             return -self.foo
+
+    m = Model(foo=1)
+    assert '_foo' not in list(k for k, _ in m)
+
+
+def test_private_properties_not_included_in_repr_by_default_property() -> None:
+    class Model(BaseModel):
+        foo: int
 
         @computed_field
         @property
@@ -424,5 +433,19 @@ def test_private_properties_not_included_in_repr_by_default() -> None:
 
     m = Model(foo=1)
     m_repr = repr(m)
-    assert '_private_cached_property' not in m_repr
     assert '_private_property' not in m_repr
+
+
+@pytest.mark.skipif(not hasattr(functools, 'cached_property'), reason='cached_property is not available')
+def test_private_properties_not_included_in_repr_by_default_cached_property() -> None:
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @functools.cached_property
+        def _private_cached_property(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    m_repr = repr(m)
+    assert '_private_cached_property' not in m_repr
