@@ -2758,17 +2758,19 @@ def test_uuid_validation():
         b: UUID3
         c: UUID4
         d: UUID5
+        e: UUID
 
     a = uuid.uuid1()
     b = uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
     c = uuid.uuid4()
     d = uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
+    e = UUID('{00000000-7fff-4000-7fff-000000000000}')
 
-    m = UUIDModel(a=a, b=b, c=c, d=d)
-    assert m.model_dump() == {'a': a, 'b': b, 'c': c, 'd': d}
+    m = UUIDModel(a=a, b=b, c=c, d=d, e=e)
+    assert m.model_dump() == {'a': a, 'b': b, 'c': c, 'd': d, 'e': e}
 
     with pytest.raises(ValidationError) as exc_info:
-        UUIDModel(a=d, b=c, c=b, d=a)
+        UUIDModel(a=d, b=c, c=b, d=a, e=e)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
@@ -2797,6 +2799,39 @@ def test_uuid_validation():
             'loc': ('d',),
             'msg': 'UUID version 5 expected',
             'input': a,
+            'ctx': {'expected_version': 5},
+        },
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        UUIDModel(a=e, b=e, c=e, d=e, e=e)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'uuid_version',
+            'loc': ('a',),
+            'msg': 'UUID version 1 expected',
+            'input': e,
+            'ctx': {'expected_version': 1},
+        },
+        {
+            'type': 'uuid_version',
+            'loc': ('b',),
+            'msg': 'UUID version 3 expected',
+            'input': e,
+            'ctx': {'expected_version': 3},
+        },
+        {
+            'type': 'uuid_version',
+            'loc': ('c',),
+            'msg': 'UUID version 4 expected',
+            'input': e,
+            'ctx': {'expected_version': 4},
+        },
+        {
+            'type': 'uuid_version',
+            'loc': ('d',),
+            'msg': 'UUID version 5 expected',
+            'input': e,
             'ctx': {'expected_version': 5},
         },
     ]
