@@ -765,7 +765,7 @@ class ConfigDict(TypedDict, total=False):
         '''
         1 validation error for Model
         value
-        Input should be a valid string [type=string_type, input_value=42, input_type=int]
+          Input should be a valid string [type=string_type, input_value=42, input_type=int]
         '''
 
     class Model(BaseModel):
