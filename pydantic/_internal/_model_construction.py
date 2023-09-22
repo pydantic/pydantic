@@ -9,14 +9,14 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator, validate_core_schema
+from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._core_utils import collect_invalid_schemas, simplify_schema_references
+from ._core_utils import collect_invalid_schemas, simplify_schema_references, validate_core_schema
 from ._decorators import (
     ComputedFieldInfo,
     DecoratorInfos,

@@ -15,7 +15,6 @@ from pydantic_core import (
     SchemaSerializer,
     SchemaValidator,
     core_schema,
-    validate_core_schema,
 )
 from typing_extensions import TypeGuard
 
@@ -23,7 +22,7 @@ from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _discriminated_union, _typing_extra
-from ._core_utils import collect_invalid_schemas, simplify_schema_references
+from ._core_utils import collect_invalid_schemas, simplify_schema_references, validate_core_schema
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
