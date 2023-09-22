@@ -55,7 +55,7 @@ For each method, you can implement the following callbacks:
 Let's see an example of a plugin that _wraps_ the `validate_python` method of the [`SchemaValidator`][pydantic_core.SchemaValidator].
 
 ```py
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from pydantic_core import CoreConfig, CoreSchema, ValidationError
 
@@ -89,7 +89,7 @@ class Plugin(PydanticPluginProtocol):
     def new_schema_validator(
         self,
         schema: CoreSchema,
-        config: CoreConfig | None,
+        config: Union[CoreConfig, None],
         plugin_settings: dict[str, object],
     ) -> NewSchemaReturns:
         return OnValidatePython(), None, None
