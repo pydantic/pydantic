@@ -5,7 +5,7 @@ import sys
 from dataclasses import is_dataclass
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, overload
 
-from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some, validate_core_schema
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Literal, is_typeddict
 
 from pydantic.errors import PydanticUserError
@@ -169,7 +169,7 @@ class TypeAdapter(Generic[T]):
 
         core_schema = _discriminated_union.apply_discriminators(_core_utils.simplify_schema_references(core_schema))
 
-        core_schema = validate_core_schema(core_schema)
+        core_schema = _core_utils.validate_core_schema(core_schema)
 
         core_config = config_wrapper.core_config(None)
         validator: SchemaValidator
