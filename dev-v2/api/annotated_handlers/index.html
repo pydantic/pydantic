@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/annotated_handlers/">
       
       
-        <link rel="prev" href="../pydantic_extra_types_country/">
+        <link rel="prev" href="../networks/">
       
       
-        <link rel="next" href="../pydantic_extra_types_phone_numbers/">
+        <link rel="next" href="../version/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>pydantic_extra_types.payment - Pydantic</title>
+        <title>Annotated Handlers - Pydantic</title>
       
     
     
@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pydantic_extra_types.payment" class="md-skip">
+        <a href="#pydantic.annotated_handlers" class="md-skip">
           Skip to content
         </a>
       
@@ -140,7 +140,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              pydantic_extra_types.payment
+              Annotated Handlers
             
           </span>
         </div>
@@ -2471,17 +2471,19 @@
                 
   
   
+    
+  
   
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" checked>
         
           <label class="md-nav__link" for="__nav_7_1" id="__nav_7_1_label" tabindex="0">
             
@@ -2500,7 +2502,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_7_1">
             <span class="md-nav__icon md-icon"></span>
             
@@ -2853,9 +2855,33 @@
                 
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../annotated_handlers/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotated Handlers
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -2870,6 +2896,115 @@
   
 
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.annotated_handlers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        pydantic.annotated_handlers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GetJsonSchemaHandler
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GetJsonSchemaHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolve_ref_schema()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GetCoreSchemaHandler
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GetCoreSchemaHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        field_name
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        generate_schema()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        resolve_ref_schema()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3095,19 +3230,17 @@
                 
   
   
-    
-  
   
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" >
         
           <label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="0">
             
@@ -3126,7 +3259,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_7_4">
             <span class="md-nav__icon md-icon"></span>
             
@@ -3193,33 +3326,9 @@
                 
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    
-  
-    pydantic_extra_types.payment
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../pydantic_extra_types_payment/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3234,120 +3343,6 @@
   
 
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        pydantic_extra_types.payment
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardBrand" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PaymentCardBrand
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PaymentCardNumber
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="PaymentCardNumber">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.masked" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        masked
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate()
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_digits" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_digits()
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_luhn_check_digit" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_luhn_check_digit()
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_brand" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_brand()
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3447,10 +3442,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment" class="md-nav__link">
+  <a href="#pydantic.annotated_handlers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic_extra_types.payment
+        pydantic.annotated_handlers
       
     </span>
   </a>
@@ -3458,33 +3453,50 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardBrand" class="md-nav__link">
+  <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler" class="md-nav__link">
     <span class="md-ellipsis">
       
-        PaymentCardBrand
+        GetJsonSchemaHandler
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PaymentCardNumber
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="PaymentCardNumber">
+    <nav class="md-nav" aria-label="GetJsonSchemaHandler">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.masked" class="md-nav__link">
+  <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        masked
+        resolve_ref_schema()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GetCoreSchemaHandler
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GetCoreSchemaHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        field_name
       
     </span>
   </a>
@@ -3492,10 +3504,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate" class="md-nav__link">
+  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        validate()
+        generate_schema()
       
     </span>
   </a>
@@ -3503,32 +3515,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_digits" class="md-nav__link">
+  <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        validate_digits()
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_luhn_check_digit" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_luhn_check_digit()
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_brand" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_brand()
+        resolve_ref_schema()
       
     </span>
   </a>
@@ -3560,16 +3550,15 @@
   
 
 
-  <h1>pydantic_extra_types.payment</h1>
+  <h1>Annotated Handlers</h1>
 
 <div class="doc doc-object doc-module">
 
 
-<a id="pydantic_extra_types.payment"></a>
+<a id="pydantic.annotated_handlers"></a>
   <div class="doc doc-contents first">
   
-      <p>Represents and validates payment cards (such as a debit or credit card),
-including validation for payment card number and issuer.</p>
+      <p>Type annotations to use with <code>__get_pydantic_core_schema__</code> and <code>__get_pydantic_json_schema__</code>.</p>
 
   
 
@@ -3586,26 +3575,41 @@ including validation for payment card number and issuer.</p>
 
 
 
-<h2 id="pydantic_extra_types.payment.PaymentCardBrand" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">PaymentCardBrand</span>
+<h2 id="pydantic.annotated_handlers.GetJsonSchemaHandler" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">GetJsonSchemaHandler</span>
 
 
-<a href="#pydantic_extra_types.payment.PaymentCardBrand" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic.annotated_handlers.GetJsonSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
   <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code>str</code>, <code><span title="enum.Enum">Enum</span></code></p>
 
   
-      <p>Enumeration of payment card brands.</p>
-<p><code>PaymentCardBrand</code> can be one of the following based on the BIN:</p>
-<ul>
-<li>PaymentCardBrand.amex</li>
-<li>PaymentCardBrand.mastercard</li>
-<li>PaymentCardBrand.visa</li>
-<li>PaymentCardBrand.other</li>
-</ul>
+      <p>Handler to call into the next JSON schema generation function.</p>
+
+  <p><strong>Attributes:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>mode</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Json schema mode, can be <code>validation</code> or <code>serialization</code>.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
 
 
 
@@ -3620,6 +3624,133 @@ including validation for payment card number and issuer.</p>
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
+
+
+<a href="#pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">__maybe_ref_json_schema</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the real schema for a <code>{"$ref": ...}</code> schema.
+If the schema given is not a <code>$ref</code> schema, it will be returned as is.
+This means you don't have to check before calling this function.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>__maybe_ref_json_schema</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A JsonSchemaValue, ref based or not.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Raises:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>LookupError</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If the ref is not found.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>JsonSchemaValue</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A JsonSchemaValue that has no <code>$ref</code>.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+      <details class="quote">
+        <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">resolve_ref_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__maybe_ref_json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the real schema for a `{&quot;$ref&quot;: ...}` schema.</span>
+<span class="sd">    If the schema given is not a `$ref` schema, it will be returned as is.</span>
+<span class="sd">    This means you don&#39;t have to check before calling this function.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        __maybe_ref_json_schema: A JsonSchemaValue, ref based or not.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        LookupError: If the ref is not found.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        JsonSchemaValue: A JsonSchemaValue that has no `$ref`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
 
 
 
@@ -3633,120 +3764,19 @@ including validation for payment card number and issuer.</p>
 
 
 
-<h2 id="pydantic_extra_types.payment.PaymentCardNumber" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">PaymentCardNumber</span>
+<h2 id="pydantic.annotated_handlers.GetCoreSchemaHandler" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">GetCoreSchemaHandler</span>
 
 
-<a href="#pydantic_extra_types.payment.PaymentCardNumber" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">PaymentCardNumber</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
-</code></pre></div>
+<a href="#pydantic.annotated_handlers.GetCoreSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
+
 
   <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code>str</code></p>
 
   
-      <p>A <a href="https://en.wikipedia.org/wiki/Payment_card_number">payment card number</a>.</p>
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>strip_whitespace</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to strip whitespace from the input value.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>min_length</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The minimum length of the card number.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>max_length</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The maximum length of the card number.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>bin</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The first 6 digits of the card number.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>last4</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The last 4 digits of the card number.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>brand</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_extra_types.payment.PaymentCardBrand" href="#pydantic_extra_types.payment.PaymentCardBrand">PaymentCardBrand</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The brand of the card.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
+      <p>Handler to call into the next CoreSchema schema generation function.</p>
 
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">validate_digits</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
-
-    <span class="n">card_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_luhn_check_digit</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
-
-    <span class="bp">self</span><span class="o">.</span><span class="n">bin</span> <span class="o">=</span> <span class="n">card_number</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">last4</span> <span class="o">=</span> <span class="n">card_number</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">brand</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-          </details>
 
   
 
@@ -3762,21 +3792,21 @@ including validation for payment card number and issuer.</p>
 
 
 
-<h3 id="pydantic_extra_types.payment.PaymentCardNumber.masked" class="doc doc-heading">
-        <span class="doc doc-object-name doc-attribute-name">masked</span>
+<h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">field_name</span>
 
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-property"><code>property</code></small>
   </span>
 
-<a href="#pydantic_extra_types.payment.PaymentCardNumber.masked" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">masked</span><span class="p">:</span> <span class="nb">str</span>
+<a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>The masked card number.</p>
+      <p>Get the name of the closest field to this validator.</p>
   </div>
 
 </div>
@@ -3787,21 +3817,21 @@ including validation for payment card number and issuer.</p>
 
 
 
-<h3 id="pydantic_extra_types.payment.PaymentCardNumber.validate" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">validate</span>
+<h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">generate_schema</span>
 
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
 
-<a href="#pydantic_extra_types.payment.PaymentCardNumber.validate" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">validate</span><span class="p">(</span><span class="n">__input_value</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span>
+<a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">generate_schema</span><span class="p">(</span><span class="n">__source_type</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Validate the <code>PaymentCardNumber</code> instance.</p>
+      <p>Generate a schema unrelated to the current context.
+Use this function if e.g. you are handling schema generation for a sequence
+and want to generate a schema for its items.
+Otherwise, you may end up doing something like applying a <code>min_length</code> constraint
+that was intended for the sequence itself to its items!</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3815,27 +3845,13 @@ including validation for payment card number and issuer.</p>
     </thead>
     <tbody>
         <tr>
-          <td><code>__input_value</code></td>
+          <td><code>__source_type</code></td>
           <td>
-                <code>str</code>
+                <code><span title="typing.Any">Any</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The input value to validate.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>_</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<a class="autorefs autorefs-internal" title="pydantic_core.core_schema.ValidationInfo" href="../pydantic_core_schema/#pydantic_core.core_schema.ValidationInfo">ValidationInfo</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The validation info.</p>
+              <p>The input type.</p>
             </div>
           </td>
           <td>
@@ -3849,18 +3865,18 @@ including validation for payment card number and issuer.</p>
   <table>
     <thead>
       <tr>
-        <th>Type</th>
+<th>Name</th>        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_extra_types.payment.PaymentCardNumber" href="#pydantic_extra_types.payment.PaymentCardNumber">PaymentCardNumber</a></code>
+<td><code>CoreSchema</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The validated <code>PaymentCardNumber</code> instance.</p>
+              <p>The <code>pydantic-core</code> CoreSchema generated.</p>
             </div>
           </td>
         </tr>
@@ -3868,30 +3884,34 @@ including validation for payment card number and issuer.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
+        <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
 <span class="normal">83</span>
-<span class="normal">84</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">__input_value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardNumber</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the `PaymentCardNumber` instance.</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a schema unrelated to the current context.</span>
+<span class="sd">    Use this function if e.g. you are handling schema generation for a sequence</span>
+<span class="sd">    and want to generate a schema for its items.</span>
+<span class="sd">    Otherwise, you may end up doing something like applying a `min_length` constraint</span>
+<span class="sd">    that was intended for the sequence itself to its items!</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __input_value: The input value to validate.</span>
-<span class="sd">        _: The validation info.</span>
+<span class="sd">        __source_type: The input type.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        The validated `PaymentCardNumber` instance.</span>
+<span class="sd">        CoreSchema: The `pydantic-core` CoreSchema generated.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">__input_value</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -3902,21 +3922,19 @@ including validation for payment card number and issuer.</p>
 
 
 
-<h3 id="pydantic_extra_types.payment.PaymentCardNumber.validate_digits" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">validate_digits</span>
+<h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
 
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
 
-<a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_digits" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">validate_digits</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
+<a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">__maybe_ref_schema</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Validate that the card number is all digits.</p>
+      <p>Get the real schema for a <code>definition-ref</code> schema.
+If the schema given is not a <code>definition-ref</code> schema, it will be returned as is.
+This means you don't have to check before calling this function.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3930,13 +3948,13 @@ including validation for payment card number and issuer.</p>
     </thead>
     <tbody>
         <tr>
-          <td><code>card_number</code></td>
+          <td><code>__maybe_ref_schema</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The card number to validate.</p>
+              <p>A <code>CoreSchema</code>, <code>ref</code>-based or not.</p>
             </div>
           </td>
           <td>
@@ -3957,11 +3975,33 @@ including validation for payment card number and issuer.</p>
     <tbody>
         <tr>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.PydanticCustomError" href="../pydantic_core/#pydantic_core.PydanticCustomError">PydanticCustomError</a></code>
+                <code>LookupError</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>If the card number is not all digits.</p>
+              <p>If the <code>ref</code> is not found.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A concrete <code>CoreSchema</code>.</p>
             </div>
           </td>
         </tr>
@@ -3969,385 +4009,36 @@ including validation for payment card number and issuer.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
+        <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 97</span>
 <span class="normal"> 98</span>
 <span class="normal"> 99</span>
 <span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">validate_digits</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that the card number is all digits.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        card_number: The card number to validate.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        PydanticCustomError: If the card number is not all digits.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">card_number</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;payment_card_number_digits&#39;</span><span class="p">,</span> <span class="s1">&#39;Card number is not all digits&#39;</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-      </details>
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-
-<h3 id="pydantic_extra_types.payment.PaymentCardNumber.validate_luhn_check_digit" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">validate_luhn_check_digit</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_luhn_check_digit" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">validate_luhn_check_digit</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Validate the payment card number.
-Based on the <a href="https://en.wikipedia.org/wiki/Luhn_algorithm">Luhn algorithm</a>.</p>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>card_number</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The card number to validate.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The validated card number.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.PydanticCustomError" href="../pydantic_core/#pydantic_core.PydanticCustomError">PydanticCustomError</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If the card number is not valid.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">105</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
 <span class="normal">106</span>
 <span class="normal">107</span>
 <span class="normal">108</span>
 <span class="normal">109</span>
 <span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">validate_luhn_check_digit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the payment card number.</span>
-<span class="sd">    Based on the [Luhn algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm).</span>
+<span class="normal">111</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">resolve_ref_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__maybe_ref_schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the real schema for a `definition-ref` schema.</span>
+<span class="sd">    If the schema given is not a `definition-ref` schema, it will be returned as is.</span>
+<span class="sd">    This means you don&#39;t have to check before calling this function.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        card_number: The card number to validate.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        The validated card number.</span>
+<span class="sd">        __maybe_ref_schema: A `CoreSchema`, `ref`-based or not.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        PydanticCustomError: If the card number is not valid.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">sum_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
-    <span class="n">parity</span> <span class="o">=</span> <span class="n">length</span> <span class="o">%</span> <span class="mi">2</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
-        <span class="n">digit</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="n">parity</span><span class="p">:</span>
-            <span class="n">digit</span> <span class="o">*=</span> <span class="mi">2</span>
-        <span class="k">if</span> <span class="n">digit</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">:</span>
-            <span class="n">digit</span> <span class="o">-=</span> <span class="mi">9</span>
-        <span class="n">sum_</span> <span class="o">+=</span> <span class="n">digit</span>
-    <span class="n">valid</span> <span class="o">=</span> <span class="n">sum_</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">==</span> <span class="mi">0</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">valid</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;payment_card_number_luhn&#39;</span><span class="p">,</span> <span class="s1">&#39;Card number is not luhn valid&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">card_number</span>
-</code></pre></div></td></tr></table></div>
-      </details>
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-
-<h3 id="pydantic_extra_types.payment.PaymentCardNumber.validate_brand" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">validate_brand</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
-  </span>
-
-<a href="#pydantic_extra_types.payment.PaymentCardNumber.validate_brand" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Validate length based on
-<a href="https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)">BIN</a>
-for major brands.</p>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>card_number</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The card number to validate.</p>
-            </div>
-          </td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_extra_types.payment.PaymentCardBrand" href="#pydantic_extra_types.payment.PaymentCardBrand">PaymentCardBrand</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The validated card brand.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Raises:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.PydanticCustomError" href="../pydantic_core/#pydantic_core.PydanticCustomError">PydanticCustomError</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If the card number is not valid.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
-<span class="k">def</span> <span class="nf">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardBrand</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate length based on</span>
-<span class="sd">    [BIN](https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN))</span>
-<span class="sd">    for major brands.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        card_number: The card number to validate.</span>
+<span class="sd">        LookupError: If the `ref` is not found.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        The validated card brand.</span>
-
-<span class="sd">    Raises:</span>
-<span class="sd">        PydanticCustomError: If the card number is not valid.</span>
+<span class="sd">        A concrete `CoreSchema`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">card_number</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;4&#39;</span><span class="p">:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">visa</span>
-    <span class="k">elif</span> <span class="mi">51</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[:</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">55</span><span class="p">:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">mastercard</span>
-    <span class="k">elif</span> <span class="n">card_number</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;34&#39;</span><span class="p">,</span> <span class="s1">&#39;37&#39;</span><span class="p">}:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">amex</span>
-    <span class="k">elif</span> <span class="mi">2200</span> <span class="o">&lt;=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="mi">2204</span><span class="p">:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">mir</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">other</span>
-
-    <span class="n">required_length</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="n">brand</span> <span class="ow">in</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">mastercard</span><span class="p">:</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="mi">16</span>
-        <span class="n">valid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span> <span class="o">==</span> <span class="n">required_length</span>
-    <span class="k">elif</span> <span class="n">brand</span> <span class="o">==</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">visa</span><span class="p">:</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="s1">&#39;13, 16 or 19&#39;</span>
-        <span class="n">valid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span> <span class="ow">in</span> <span class="p">{</span><span class="mi">13</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">19</span><span class="p">}</span>
-    <span class="k">elif</span> <span class="n">brand</span> <span class="o">==</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">amex</span><span class="p">:</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="mi">15</span>
-        <span class="n">valid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span> <span class="o">==</span> <span class="n">required_length</span>
-    <span class="k">elif</span> <span class="n">brand</span> <span class="o">==</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">mir</span><span class="p">:</span>
-        <span class="n">required_length</span> <span class="o">=</span> <span class="s1">&#39;in range from 16 to 19&#39;</span>
-        <span class="n">valid</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">valid</span> <span class="o">=</span> <span class="kc">True</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">valid</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
-            <span class="s1">&#39;payment_card_number_brand&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;Length for a </span><span class="si">{brand}</span><span class="s1"> card must be </span><span class="si">{required_length}</span><span class="s1">&#39;</span><span class="p">,</span>
-            <span class="p">{</span><span class="s1">&#39;brand&#39;</span><span class="p">:</span> <span class="n">brand</span><span class="p">,</span> <span class="s1">&#39;required_length&#39;</span><span class="p">:</span> <span class="n">required_length</span><span class="p">},</span>
-        <span class="p">)</span>
-    <span class="k">return</span> <span class="n">brand</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>

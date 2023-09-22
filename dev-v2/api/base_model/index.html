@@ -3105,6 +3105,32 @@
   
   
     <li class="md-nav__item">
+      <a href="../annotated_handlers/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    Annotated Handlers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../version/" class="md-nav__link">
         
   
@@ -5187,9 +5213,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="normal">1271</span>
 <span class="normal">1272</span>
 <span class="normal">1273</span>
-<span class="normal">1274</span>
-<span class="normal">1275</span>
-<span class="normal">1276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1274</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_model_construction</span><span class="o">.</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.3/usage/models/</span>
 
 <span class="sd">    A base class for creating Pydantic models.</span>
@@ -5684,9 +5708,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_validator__</span><span class="o">.</span><span class="n">validate_strings</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">__source</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">],</span> <span class="n">__handler</span><span class="p">:</span> <span class="n">_annotated_handlers</span><span class="o">.</span><span class="n">GetCoreSchemaHandler</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">__source</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">],</span> <span class="n">__handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hook into generating the model&#39;s CoreSchema.</span>
 
 <span class="sd">        Args:</span>
@@ -5713,7 +5735,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
     <span class="k">def</span> <span class="nf">__get_pydantic_json_schema__</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span>
         <span class="n">__core_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
-        <span class="n">__handler</span><span class="p">:</span> <span class="n">_annotated_handlers</span><span class="o">.</span><span class="n">GetJsonSchemaHandler</span><span class="p">,</span>
+        <span class="n">__handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Hook into generating the model&#39;s JSON schema.</span>
 
@@ -6482,8 +6504,8 @@ allow <code>self</code> as a field name.</p>
 
   
   <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_config" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -8725,7 +8747,9 @@ in the copied model.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1110</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1108</span>
+<span class="normal">1109</span>
+<span class="normal">1110</span>
 <span class="normal">1111</span>
 <span class="normal">1112</span>
 <span class="normal">1113</span>
@@ -8797,9 +8821,7 @@ in the copied model.</p>
 <span class="normal">1179</span>
 <span class="normal">1180</span>
 <span class="normal">1181</span>
-<span class="normal">1182</span>
-<span class="normal">1183</span>
-<span class="normal">1184</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
+<span class="normal">1182</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="n">PydanticDeprecatedSince20</span>
 <span class="p">)</span>
 <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span>
@@ -9090,7 +9112,9 @@ fields.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1307</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1305</span>
+<span class="normal">1306</span>
+<span class="normal">1307</span>
 <span class="normal">1308</span>
 <span class="normal">1309</span>
 <span class="normal">1310</span>
@@ -9170,9 +9194,7 @@ fields.</p>
 <span class="normal">1384</span>
 <span class="normal">1385</span>
 <span class="normal">1386</span>
-<span class="normal">1387</span>
-<span class="normal">1388</span>
-<span class="normal">1389</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1387</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
