@@ -650,7 +650,7 @@ except ValidationError as e:
 ```
 
 You can define `__pydantic_config__` to change the model inherited from `TypedDict`.
-See [Model Config](../usage/model_config.md) for more details.
+See the [`ConfigDict` API reference][pydantic.config.ConfigDict] for more details.
 
 ```py
 from typing import Optional

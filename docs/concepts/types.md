@@ -649,7 +649,7 @@ with `__get_pydantic_core_schema__`.
 
 If the Generic class that you are using as a sub-type has a classmethod
 `__get_pydantic_core_schema__`, you don't need to use
-[`arbitrary_types_allowed`](../usage/model_config.md#arbitrary-types-allowed) for it to work.
+[`arbitrary_types_allowed`][pydantic.config.ConfigDict.arbitrary_types_allowed] for it to work.
 
 Because the `source_type` parameter is not the same as the `cls` parameter, you can use `typing.get_args` (or `typing_extensions.get_args`) to extract the generic parameters.
 Then you can use the `handler` to generate a schema for them by calling `handler.generate_schema`.
