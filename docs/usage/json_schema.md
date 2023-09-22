@@ -171,7 +171,7 @@ and validations.
 See [Customizing JSON Schema](fields.md#customizing-json-schema) for details on field parameters that are used
 exclusively to customize the generated JSON schema.
 
-You can also use [model config](model_config.md) to customize JSON serialization and extra schema properties on a model.
+You can also use [model config][pydantic.config.ConfigDict] to customize JSON serialization and extra schema properties on a model.
 Specifically, the following config options are relevant:
 
 * `title`

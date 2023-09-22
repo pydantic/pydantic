@@ -91,7 +91,7 @@ should also work well with mypy.
 
 ### Generate a signature for `dataclasses`
 * classes decorated with [`@pydantic.dataclasses.dataclass`](../usage/dataclasses.md) are type checked the same as standard Python dataclasses
-* The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](../usage/model_config.md).
+* The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](../concepts/config.md).
 
 ### Respect the type of the `Field`'s `default` and `default_factory`
 * Field with both a `default` and a `default_factory` will result in an error during static checking.
