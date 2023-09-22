@@ -91,6 +91,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/api/plugin/</loc>
+         <lastmod>2023-09-22</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_core/</loc>
          <lastmod>2023-09-22</lastmod>
          <changefreq>daily</changefreq>
@@ -252,6 +257,11 @@
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/usage/models/</loc>
+         <lastmod>2023-09-22</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/usage/plugins/</loc>
          <lastmod>2023-09-22</lastmod>
          <changefreq>daily</changefreq>
     </url>

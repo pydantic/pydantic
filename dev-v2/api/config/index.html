@@ -1846,6 +1846,32 @@
 
               
             
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/plugins/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    Pydantic Plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3040,6 +3066,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.plugin_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plugin_settings
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.schema_generator" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3364,6 +3401,32 @@
     
   
     Version Information
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plugin/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    Pydantic Plugins
   
 
     
@@ -4085,6 +4148,17 @@
     <span class="md-ellipsis">
       
         defer_build
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.plugin_settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plugin_settings
       
     </span>
   </a>
@@ -5059,6 +5133,35 @@ Defaults to <code>('model_', )</code>).</p>
 <p>This can be useful to avoid the overhead of building models which are only
 used nested within other models, or when you want to manually define type namespace via
 <a class="autorefs autorefs-internal" href="../base_model/#pydantic.main.BaseModel.model_rebuild"><code>Model.model_rebuild(_types_namespace=...)</code></a>. Defaults to False.</p>
+  </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.plugin_settings" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">plugin_settings</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.plugin_settings" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">plugin_settings</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A <code>dict</code> of settings for plugins. Defaults to <code>None</code>.</p>
+<p>See <a href="../../usage/plugins/">Pydantic Plugins</a> for details.</p>
   </div>
 
 </div>
