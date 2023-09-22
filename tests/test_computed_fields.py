@@ -402,7 +402,7 @@ def test_private_computed_field():
     class MyModel(BaseModel):
         x: int
 
-        @computed_field
+        @computed_field(repr=True)
         def _double(self) -> int:
             return self.x * 2
 

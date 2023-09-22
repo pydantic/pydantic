@@ -2,6 +2,7 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
+import functools
 import inspect
 import sys
 import typing
@@ -991,6 +992,18 @@ def computed_field(__func: PropertyT) -> PropertyT:
     ...
 
 
+def _wrapped_property_is_private(property_: functools.cached_property | property) -> bool:
+    """Returns true if provided property is private, False otherwise."""
+    wrapped_name: str = ''
+
+    if isinstance(property_, property):
+        wrapped_name = getattr(property_.fget, '__name__', '')
+    elif isinstance(property_, functools.cached_property):
+        wrapped_name = getattr(property_.func, '__name__', '')
+
+    return wrapped_name.startswith('_') and not wrapped_name.startswith('__')
+
+
 def computed_field(
     __f: PropertyT | None = None,
     *,
@@ -998,7 +1011,7 @@ def computed_field(
     alias_priority: int | None = None,
     title: str | None = None,
     description: str | None = None,
-    repr: bool = True,
+    repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
     """Decorator to include `property` and `cached_property` when serializing models or dataclasses.
@@ -1118,7 +1131,13 @@ def computed_field(
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
         alias_priority = (alias_priority or 2) if alias is not None else None
-        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, repr)
+
+        if repr is None:
+            repr_: bool = False if _wrapped_property_is_private(property_=f) else True
+        else:
+            repr_ = repr
+
+        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, repr_)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:

@@ -4,7 +4,7 @@ from typing import ClassVar, Generic, TypeVar
 import pytest
 from pydantic_core import PydanticUndefined
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import BaseModel, ConfigDict, PrivateAttr, computed_field
 
 
 def test_private_attribute():
@@ -393,3 +393,36 @@ class BaseConfig(BaseModel):
     )
 
     assert module.BaseConfig._FIELD_UPDATE_STRATEGY == {}
+
+
+def test_private_properties_not_included_in_iter() -> None:
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @functools.cached_property
+        def _foo(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    assert '_foo' not in list(k for k, v in m)
+
+
+def test_private_properties_not_included_in_repr_by_default() -> None:
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @functools.cached_property
+        def _private_cached_property(self) -> int:
+            return -self.foo
+
+        @computed_field
+        @property
+        def _private_property(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    m_repr = repr(m)
+    assert '_private_cached_property' not in m_repr
+    assert '_private_property' not in m_repr
