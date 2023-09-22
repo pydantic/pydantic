@@ -1924,7 +1924,7 @@ def test_custom_generic_validators():
                     ) from exc
                 return v
 
-            return core_schema.general_after_validator_function(validate, schema)
+            return core_schema.with_info_after_validator_function(validate, schema)
 
     class Model(BaseModel):
         a: str

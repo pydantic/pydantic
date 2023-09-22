@@ -3,7 +3,6 @@ import typing
 import pydantic_core
 from pydantic_core.core_schema import (
     FieldSerializationInfo,
-    FieldValidationInfo,
     SerializationInfo,
     SerializerFunctionWrapHandler,
     ValidationInfo,
@@ -57,7 +56,6 @@ __all__ = [
     'dataclasses',
     # functional validators
     'ValidationInfo',
-    'FieldValidationInfo',
     'ValidatorFunctionWrapHandler',
     'field_validator',
     'model_validator',
@@ -198,8 +196,11 @@ __all__ = [
     'GenerateSchema',
 ]
 
-# A mapping of {<member name>: <module name>} defining dynamic imports
-_dynamic_imports = {'RootModel': '.root_model'}
+# A mapping of {<member name>: (package, <module name>)} defining dynamic imports
+_dynamic_imports: 'dict[str, tuple[str, str]]' = {
+    'RootModel': (__package__, '.root_model'),
+    'FieldValidationInfo': ('pydantic_core', '.core_schema'),
+}
 if typing.TYPE_CHECKING:
     from .root_model import RootModel
 
@@ -211,7 +212,9 @@ def __getattr__(attr_name: str) -> object:
     if dynamic_attr is None:
         return _getattr_migration(attr_name)
 
+    package, module_name = dynamic_attr
+
     from importlib import import_module
 
-    module = import_module(_dynamic_imports[attr_name], package=__package__)
+    module = import_module(module_name, package=package)
     return getattr(module, attr_name)

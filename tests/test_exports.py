@@ -24,14 +24,17 @@ def test_init_export():
             continue
         exported.add(name)
 
-    exported.update(pydantic._dynamic_imports)
+    # add stuff from `pydantic._dynamic_imports` if `package` is "pydantic"
+    exported.update({k for k, v in pydantic._dynamic_imports.items() if v[0] == 'pydantic'})
 
     assert pydantic_all == exported, "pydantic.__all__ doesn't match actual exports"
 
 
-@pytest.mark.parametrize(('attr_name', 'module_name'), list(pydantic._dynamic_imports.items()))
-def test_public_api_dynamic_imports(attr_name, module_name):
-    imported_object = getattr(importlib.import_module(module_name, package='pydantic'), attr_name)
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+@pytest.mark.parametrize(('attr_name', 'value'), list(pydantic._dynamic_imports.items()))
+def test_public_api_dynamic_imports(attr_name, value):
+    package, module_name = value
+    imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
     assert isinstance(imported_object, object)
 
 
