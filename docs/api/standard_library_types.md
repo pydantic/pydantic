@@ -168,10 +168,7 @@ Pydantic supports the following numeric types from the Python standard library:
 ### `enum.IntEnum`
 
 * Validation: Pydantic checks that the value is a valid `IntEnum` instance.
-
-#### subclass of `enum.IntEnum`
-
-* Validation: checks that the value is a valid member of the integer enum;
+* Validation for subclass of `enum.IntEnum`: checks that the value is a valid member of the integer enum;
   see [Enums and Choices](#enum) for more details.
 
 ### `decimal.Decimal`
@@ -212,25 +209,12 @@ print(my_model.model_dump_json())  # (3)!
 2. Using [`model_dump`][pydantic.main.BaseModel.model_dump] with `mode='json'`, `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
 3. Using [`model_dump_json`][pydantic.main.BaseModel.model_dump_json], `x` is serialized as a `string`, and `y` is serialized as a `float` because of the custom serializer applied.
 
-## Enum
+## `Enum`
 
 Pydantic uses Python's standard `enum` classes to define choices.
 
-### `enum.Enum`
-
-Checks that the value is a valid `Enum` instance.
-
-### Subclass of `enum.Enum`
-
-Checks that the value is a valid member of the enum.
-
-### `enum.IntEnum`
-
-Checks that the value is a valid `IntEnum` instance.
-
-### Subclass of `enum.IntEnum`
-
-Checks that the value is a valid member of the integer enum.
+`enum.Enum` checks that the value is a valid `Enum` instance.
+Subclass of `enum.Enum` checks that the value is a valid member of the enum.
 
 ```py
 from enum import Enum, IntEnum
@@ -268,7 +252,7 @@ except ValidationError as e:
     """
 ```
 
-## List
+## Lists and Tuples
 
 ### `list`
 
@@ -296,8 +280,6 @@ print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
 #> [1, 2, 3]
 ```
 
-## Tuple
-
 ### `tuple`
 
 Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `tuple`.
@@ -324,40 +306,11 @@ print(Model(tuple_of_different_types=[3, 2, 1]).tuple_of_different_types)
 #> (3, 2.0, True)
 ```
 
-## Deque
+### `typing.NamedTuple`
 
-### `deque`
+Subclasses of `typing.NamedTuple` are similar to `tuple`, but create instances of the given `namedtuple` class.
 
-Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `deque`.
-When generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`
-
-### `typing.Deque`
-
-Handled the same as `deque` above.
-
-```py
-from typing import Deque, Optional
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    deque: Optional[Deque[int]] = None
-
-
-print(Model(deque=[1, 2, 3]).deque)
-#> deque([1, 2, 3])
-```
-
-## NamedTuple
-
-### Subclasses of `typing.NamedTuple`
-
-Similar to `tuple`, but creates instances of the given `namedtuple` class.
-
-### Types returned from `collections.namedtuple`
-
-Similar to `subclass of typing.NamedTuple`, but since field types are not specified,
+Subclasses of `collections.namedtuple` are similar to subclass of `typing.NamedTuple`, but since field types are not specified,
 all fields are treated as having type `Any`.
 
 ```py
@@ -386,7 +339,32 @@ except ValidationError as e:
     """
 ```
 
-## Set
+## Deque
+
+### `deque`
+
+Allows `list`, `tuple`, `set`, `frozenset`, `deque`, or generators and casts to a `deque`.
+When generic parameters are provided, the appropriate validation is applied to the respective items of the `deque`
+
+### `typing.Deque`
+
+Handled the same as `deque` above.
+
+```py
+from typing import Deque, Optional
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    deque: Optional[Deque[int]] = None
+
+
+print(Model(deque=[1, 2, 3]).deque)
+#> deque([1, 2, 3])
+```
+
+## Sets
 
 ### `set`
 
@@ -415,8 +393,6 @@ print(Model(simple_set=['1', '2', '3']).simple_set)
 print(Model(set_of_ints=['1', '2', '3']).set_of_ints)
 #> {1, 2, 3}
 ```
-
-## Frozenset
 
 ### `frozenset`
 
@@ -452,7 +428,7 @@ print(sorted(m2.frozenset_of_ints))
 ```
 
 
-## Support for iterable types
+## Other Iterables
 
 ### `typing.Sequence`
 
@@ -486,55 +462,6 @@ print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
 #> [1, 2, 3, 4]
 print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)
 #> (1, 2, 3, 4)
-```
-
-### Strings aren't Sequences
-
-While instances of `str` are technically valid instances of the `Sequence[str]` protocol from a type-checker's point of
-view, this is frequently not intended as is a common source of bugs.
-
-As a result, Pydantic raises a `ValidationError` if you attempt to pass a `str` or `bytes` instance into a field of type
-`Sequence[str]` or `Sequence[bytes]`:
-
-```py
-from typing import Optional, Sequence
-
-from pydantic import BaseModel, ValidationError
-
-
-class Model(BaseModel):
-    sequence_of_strs: Optional[Sequence[str]] = None
-    sequence_of_bytes: Optional[Sequence[bytes]] = None
-
-
-print(Model(sequence_of_strs=['a', 'bc']).sequence_of_strs)
-#> ['a', 'bc']
-print(Model(sequence_of_strs=('a', 'bc')).sequence_of_strs)
-#> ('a', 'bc')
-print(Model(sequence_of_bytes=[b'a', b'bc']).sequence_of_bytes)
-#> [b'a', b'bc']
-print(Model(sequence_of_bytes=(b'a', b'bc')).sequence_of_bytes)
-#> (b'a', b'bc')
-
-
-try:
-    Model(sequence_of_strs='abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_strs
-      'str' instances are not allowed as a Sequence value [type=sequence_str, input_value='abc', input_type=str]
-    """
-try:
-    Model(sequence_of_bytes=b'abc')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    sequence_of_bytes
-      'bytes' instances are not allowed as a Sequence value [type=sequence_str, input_value=b'abc', input_type=bytes]
-    """
 ```
 
 ### Infinite Generators
@@ -846,7 +773,7 @@ In case you want to constrained the UUID version, you can check the following ty
 
 ## Union
 
-The `Union` type allows a model attribute to accept different types, e.g.:
+The `typing.Union` type allows a model attribute to accept different types, e.g.:
 
 ```py
 from typing import Union
@@ -887,13 +814,13 @@ print(user_03_uuid.int)
 
     See more details in [Required fields](../usage/models.md#required-fields).
 
-#### Union Mode
+!!! tip "Union Mode"
 
-By default `Union` validation will try to return the variant which is the best match for the input.
+    By default `Union` validation will try to return the variant which is the best match for the input.
 
-Consider for example the case of `Union[int, str]`. When [`strict` mode](../usage/strict_mode.md) is not enabled
-then `int` fields will accept `str` inputs. In the example below, the `id` field (which is `Union[int, str]`)
-will accept the string `'123'` as an input, and preserve it as a string:
+    Consider for example the case of `Union[int, str]`. When [`strict` mode](../usage/strict_mode.md) is not enabled
+    then `int` fields will accept `str` inputs. In the example below, the `id` field (which is `Union[int, str]`)
+    will accept the string `'123'` as an input, and preserve it as a string:
 
 ```py
 from typing import Union
@@ -1182,8 +1109,56 @@ Allows only `None` value.
 
 `str`: Strings are accepted as-is. `bytes` and `bytearray` are converted using `v.decode()`.
 Enum`s inheriting from `str` are converted using `v.value`. All other types cause an error.
-* TODO: add note about optional number to string conversion from lig's PR
+<!-- * TODO: add note about optional number to string conversion from lig's PR -->
 
+!!! warning "Strings aren't Sequences"
+
+    While instances of `str` are technically valid instances of the `Sequence[str]` protocol from a type-checker's point of
+    view, this is frequently not intended as is a common source of bugs.
+
+    As a result, Pydantic raises a `ValidationError` if you attempt to pass a `str` or `bytes` instance into a field of type
+    `Sequence[str]` or `Sequence[bytes]`:
+
+```py
+from typing import Optional, Sequence
+
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    sequence_of_strs: Optional[Sequence[str]] = None
+    sequence_of_bytes: Optional[Sequence[bytes]] = None
+
+
+print(Model(sequence_of_strs=['a', 'bc']).sequence_of_strs)
+#> ['a', 'bc']
+print(Model(sequence_of_strs=('a', 'bc')).sequence_of_strs)
+#> ('a', 'bc')
+print(Model(sequence_of_bytes=[b'a', b'bc']).sequence_of_bytes)
+#> [b'a', b'bc']
+print(Model(sequence_of_bytes=(b'a', b'bc')).sequence_of_bytes)
+#> (b'a', b'bc')
+
+
+try:
+    Model(sequence_of_strs='abc')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    sequence_of_strs
+      'str' instances are not allowed as a Sequence value [type=sequence_str, input_value='abc', input_type=str]
+    """
+try:
+    Model(sequence_of_bytes=b'abc')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    sequence_of_bytes
+      'bytes' instances are not allowed as a Sequence value [type=sequence_str, input_value=b'abc', input_type=bytes]
+    """
+```
 
 ## Bytes
 
@@ -1303,7 +1278,7 @@ print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
 
 ## `typing.Any`
 
-Allows any value including `None`, thus an `Any` field is optional.
+Allows any value, including `None`.
 
 
 ## `typing.Annotated`
