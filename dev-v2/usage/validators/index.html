@@ -3917,8 +3917,8 @@ You can force them to run with <code>Field(validate_default=True)</code>. Settin
 <p>If you want to attach a validator to a specific field of a model you can use the <code>@field_validator</code> decorator.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseModel</span><span class="p">,</span>
-    <span class="n">FieldValidationInfo</span><span class="p">,</span>
     <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">ValidationInfo</span><span class="p">,</span>
     <span class="n">field_validator</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -3937,7 +3937,7 @@ You can force them to run with <code>Field(validate_default=True)</code>. Settin
     <span class="c1"># you can select multiple fields, or use &#39;*&#39; to select all fields</span>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">check_alphanumeric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">check_alphanumeric</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="c1"># info.field_name is the name of the field being validated</span>
             <span class="n">is_alphanumeric</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">isalnum</span><span class="p">()</span>
@@ -3983,7 +3983,7 @@ You can force them to run with <code>Field(validate_default=True)</code>. Settin
 <ul>
 <li><code>@field_validator</code>s are "class methods", so the first argument value they receive is the <code>UserModel</code> class, not an instance of <code>UserModel</code>. We recommend you use the <code>@classmethod</code> decorator on them below the <code>@field_validator</code> decorator to get proper type checking.</li>
 <li>the second argument is the field value to validate; it can be named as you please</li>
-<li>the third argument, if present, is an instance of <code>pydantic.FieldValidationInfo</code></li>
+<li>the third argument, if present, is an instance of <code>pydantic.ValidationInfo</code></li>
 <li>validators should either return the parsed value or raise a <code>ValueError</code> or <code>AssertionError</code> (<code>assert</code> statements may be used).</li>
 <li>A single validator can be applied to multiple fields by passing it multiple field names.</li>
 <li>A single validator can also be called on <em>all</em> fields by passing the special value <code>'*'</code>.</li>
@@ -3994,8 +3994,8 @@ You can force them to run with <code>Field(validate_default=True)</code>. Settin
 Python with the <a href="https://docs.python.org/3/using/cmdline.html#cmdoption-o"><code>-O</code> optimization flag</a>
 disables <code>assert</code> statements, and <strong>validators will stop working</strong>.</p>
 </div>
-<p>If you want to access values from another field inside a <code>@field_validator</code>, this may be possible using <code>FieldValidationInfo.data</code>, which is a dict of field name to field value.
-Validation is done in the order fields are defined, so you have to be careful when using <code>FieldValidationInfo.data</code> to not access a field that has not yet been validated/populated — in the code above, for example, you would not be able to access <code>info.data['id']</code> from within <code>name_must_contain_space</code>.
+<p>If you want to access values from another field inside a <code>@field_validator</code>, this may be possible using <code>ValidationInfo.data</code>, which is a dict of field name to field value.
+Validation is done in the order fields are defined, so you have to be careful when using <code>ValidationInfo.data</code> to not access a field that has not yet been validated/populated — in the code above, for example, you would not be able to access <code>info.data['id']</code> from within <code>name_must_contain_space</code>.
 However, in most cases where you want to perform validation using multiple field values, it is better to use <code>@model_validator</code> which is discussed in the section below.</p>
 <h2 id="model-validators">Model validators<a class="headerlink" href="#model-validators" title="Permanent link">&para;</a></h2>
 <p>Validation can also be performed on the entire model's data using <code>@model_validator</code>.</p>
@@ -4190,7 +4190,7 @@ the validator.</p>
 <h2 id="validation-context">Validation Context<a class="headerlink" href="#validation-context" title="Permanent link">&para;</a></h2>
 <p>You can pass a context object to the validation methods which can be accessed from the <code>info</code>
 argument to decorated validator functions:</p>
-<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FieldValidationInfo</span><span class="p">,</span> <span class="n">field_validator</span>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationInfo</span><span class="p">,</span> <span class="n">field_validator</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -4198,7 +4198,7 @@ argument to decorated validator functions:</p>
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">remove_stopwords</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">remove_stopwords</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span><span class="p">):</span>
         <span class="n">context</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span>
         <span class="k">if</span> <span class="n">context</span><span class="p">:</span>
             <span class="n">stopwords</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stopwords&#39;</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span>
@@ -4221,8 +4221,8 @@ by context, and having a separate mechanism for updating what is allowed:</p>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">BaseModel</span><span class="p">,</span>
-    <span class="n">FieldValidationInfo</span><span class="p">,</span>
     <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">ValidationInfo</span><span class="p">,</span>
     <span class="n">field_validator</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -4243,7 +4243,7 @@ by context, and having a separate mechanism for updating what is allowed:</p>
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;choice&#39;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">validate_choice</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">validate_choice</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span><span class="p">):</span>
         <span class="n">allowed_choices</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;allowed_choices&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">allowed_choices</span> <span class="ow">and</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_choices</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;choice must be one of </span><span class="si">{</span><span class="n">allowed_choices</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -4282,7 +4282,7 @@ the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code
 <span class="kn">from</span> <span class="nn">contextvars</span> <span class="kn">import</span> <span class="n">ContextVar</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FieldValidationInfo</span><span class="p">,</span> <span class="n">field_validator</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationInfo</span><span class="p">,</span> <span class="n">field_validator</span>
 
 <span class="n">_init_context_var</span> <span class="o">=</span> <span class="n">ContextVar</span><span class="p">(</span><span class="s1">&#39;_init_context_var&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
@@ -4308,9 +4308,7 @@ the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code
 
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;my_number&#39;</span><span class="p">)</span>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">multiply_with_context</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">multiply_with_context</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="p">:</span>
             <span class="n">multiplier</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;multiplier&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">value</span> <span class="o">=</span> <span class="n">value</span> <span class="o">*</span> <span class="n">multiplier</span>

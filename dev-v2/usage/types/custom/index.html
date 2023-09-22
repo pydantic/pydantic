@@ -1491,6 +1491,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#access-to-field-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access to field name
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3653,6 +3664,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#access-to-field-name" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Access to field name
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -4393,8 +4415,8 @@ This is less important for custom types, but crucial for annotated metadata that
         <span class="k">else</span><span class="p">:</span>
             <span class="n">sequence_t_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">Sequence</span><span class="p">)</span>
 
-        <span class="n">non_instance_schema</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">general_after_validator_function</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">v</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="n">MySequence</span><span class="p">(</span><span class="n">v</span><span class="p">),</span> <span class="n">sequence_t_schema</span>
+        <span class="n">non_instance_schema</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_after_validator_function</span><span class="p">(</span>
+            <span class="n">MySequence</span><span class="p">,</span> <span class="n">sequence_t_schema</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">union_schema</span><span class="p">([</span><span class="n">instance_schema</span><span class="p">,</span> <span class="n">non_instance_schema</span><span class="p">])</span>
 
@@ -4425,9 +4447,72 @@ This is less important for custom types, but crucial for annotated metadata that
 <span class="sd">    2 validation errors for M</span>
 <span class="sd">    s1.is-instance[MySequence]</span>
 <span class="sd">      Input should be an instance of MySequence [type=is_instance_of, input_value=[&#39;a&#39;], input_type=list]</span>
-<span class="sd">    s1.function-after[&lt;lambda&gt;(), json-or-python[json=list[int],python=chain[is-instance[Sequence],function-wrap[sequence_validator()]]]].0</span>
+<span class="sd">    s1.function-after[MySequence(), json-or-python[json=list[int],python=chain[is-instance[Sequence],function-wrap[sequence_validator()]]]].0</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;a&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<h3 id="access-to-field-name">Access to field name<a class="headerlink" href="#access-to-field-name" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This was not possible with Pydantic V2 to V2.3, it was <a href="https://github.com/pydantic/pydantic/pull/7542">re-added</a> in Pydantic V2.4.</p>
+</div>
+<p>As of Pydantic V2.4, you can access the field name via the <code>handler.field_name</code> within <code>__get_pydantic_core_schema__</code>
+and thereby set the field name which will be available from <code>info.field_name</code>.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">core_schema</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">ValidationInfo</span>
+
+
+<span class="k">class</span> <span class="nc">CustomType</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom type that stores the field it was used in.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">field_name</span> <span class="o">=</span> <span class="n">field_name</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;CustomType&lt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">field_name</span><span class="si">!r}</span><span class="s1">&gt;&#39;</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">info</span><span class="o">.</span><span class="n">field_name</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">with_info_after_validator_function</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">validate</span><span class="p">,</span> <span class="n">handler</span><span class="p">(</span><span class="nb">int</span><span class="p">),</span> <span class="n">field_name</span><span class="o">=</span><span class="n">handler</span><span class="o">.</span><span class="n">field_name</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="n">CustomType</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">my_field</span><span class="p">)</span>
+<span class="c1">#&gt; CustomType&lt;1 &#39;my_field&#39;&gt;</span>
+</code></pre></div>
+<p>You can also access <code>field_name</code> from the markers used with <code>Annotated</code>, like <a class="autorefs autorefs-internal" href="../../../api/functional_validators/#pydantic.functional_validators.AfterValidator"><code>AfterValidator</code></a>.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AfterValidator</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationInfo</span>
+
+
+<span class="k">def</span> <span class="nf">my_validators</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">ValidationInfo</span><span class="p">):</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;&lt;</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">info</span><span class="o">.</span><span class="n">field_name</span><span class="si">!r}</span><span class="s1">&gt;&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">my_field</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="n">my_validators</span><span class="p">)]</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">my_field</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">my_field</span><span class="p">)</span>
+<span class="c1">#&gt; &lt;1 &#39;my_field&#39;&gt;</span>
 </code></pre></div>
 
 
