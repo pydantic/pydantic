@@ -1,4 +1,8 @@
+import os
+
 import pytest
+
+pytestmark = pytest.mark.skipif(not os.getenv('TEST_PLUGIN'), reason='Test only with `TEST_PLUGIN` env var set.')
 
 
 def test_plugin_usage():

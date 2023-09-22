@@ -198,6 +198,8 @@ jobs:
         run: pdm add ./tests/plugin
 
       - run: pdm run pytest ./tests/plugin
+        env:
+          TEST_PLUGIN: 1
 
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
