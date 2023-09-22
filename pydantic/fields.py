@@ -7,7 +7,12 @@ import sys
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
-from functools import cached_property
+
+try:
+    from functools import cached_property  # type: ignore
+except ImportError:
+    # python 3.7
+    cached_property = None
 from typing import Any, ClassVar
 from warnings import warn
 
@@ -992,14 +997,14 @@ def computed_field(__func: PropertyT) -> PropertyT:
     ...
 
 
-def _wrapped_property_is_private(property_: cached_property | property) -> bool:
+def _wrapped_property_is_private(property_: cached_property | property) -> bool:  # type: ignore
     """Returns true if provided property is private, False otherwise."""
     wrapped_name: str = ''
 
     if isinstance(property_, property):
         wrapped_name = getattr(property_.fget, '__name__', '')
-    elif isinstance(property_, cached_property):
-        wrapped_name = getattr(property_.func, '__name__', '')
+    elif isinstance(property_, cached_property):  # type: ignore
+        wrapped_name = getattr(property_.func, '__name__', '')  # type: ignore
 
     return wrapped_name.startswith('_') and not wrapped_name.startswith('__')
 
