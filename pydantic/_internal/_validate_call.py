@@ -10,7 +10,7 @@ import pydantic_core
 from ..config import ConfigDict
 from . import _discriminated_union, _generate_schema, _typing_extra
 from ._config import ConfigWrapper
-from ._core_utils import simplify_schema_references
+from ._core_utils import simplify_schema_references, validate_core_schema
 
 
 @dataclass
@@ -79,7 +79,7 @@ class ValidateCallWrapper:
             schema = _discriminated_union.apply_discriminators(simplify_schema_references(schema))
             self.__return_pydantic_core_schema__ = schema
             core_config = config_wrapper.core_config(self)
-            schema = pydantic_core.validate_core_schema(schema)
+            schema = validate_core_schema(schema)
             validator = pydantic_core.SchemaValidator(schema, core_config)
             if inspect.iscoroutinefunction(self.raw_function):
 
