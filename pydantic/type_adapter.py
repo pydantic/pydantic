@@ -17,11 +17,9 @@ from typing_extensions import TypedDict
 
 from pydantic import TypeAdapter, ValidationError
 
-
 class User(TypedDict):
     name: str
     id: int
-
 
 UserListValidator = TypeAdapter(List[User])
 print(repr(UserListValidator.validate_python([{'name': 'Fred', 'id': '3'}])))
@@ -60,11 +58,9 @@ from typing import List
 
 from pydantic import BaseModel, TypeAdapter
 
-
 class Item(BaseModel):
     id: int
     name: str
-
 
 # `item_data` could come from an API call, eg., via something like:
 # item_data = requests.get('https://my-api.com/items').json()
