@@ -13,7 +13,7 @@ from . import _validators
 from ._fields import PydanticGeneralMetadata, PydanticMetadata
 
 if TYPE_CHECKING:
-    from ._annotated_handlers import GetJsonSchemaHandler
+    from ..annotated_handlers import GetJsonSchemaHandler
 
 
 STRICT = {'strict'}

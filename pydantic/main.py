@@ -12,7 +12,6 @@ import typing_extensions
 from pydantic_core import PydanticUndefined
 
 from ._internal import (
-    _annotated_handlers,
     _config,
     _decorators,
     _fields,
@@ -25,6 +24,7 @@ from ._internal import (
     _utils,
 )
 from ._migration import getattr_migration
+from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
@@ -553,9 +553,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return cls.__pydantic_validator__.validate_strings(obj, strict=strict, context=context)
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, __source: type[BaseModel], __handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> CoreSchema:
+    def __get_pydantic_core_schema__(cls, __source: type[BaseModel], __handler: GetCoreSchemaHandler) -> CoreSchema:
         """Hook into generating the model's CoreSchema.
 
         Args:
@@ -582,7 +580,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __get_pydantic_json_schema__(
         cls,
         __core_schema: CoreSchema,
-        __handler: _annotated_handlers.GetJsonSchemaHandler,
+        __handler: GetJsonSchemaHandler,
     ) -> JsonSchemaValue:
         """Hook into generating the model's JSON schema.
 

@@ -1,3 +1,4 @@
+"""Type annotations to use with `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__`."""
 from __future__ import annotations as _annotations
 
 from typing import TYPE_CHECKING, Any, Union
@@ -5,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Union
 from pydantic_core import core_schema
 
 if TYPE_CHECKING:
-    from ..json_schema import JsonSchemaMode, JsonSchemaValue
+    from .json_schema import JsonSchemaMode, JsonSchemaValue
 
     CoreSchemaOrField = Union[
         core_schema.CoreSchema,
