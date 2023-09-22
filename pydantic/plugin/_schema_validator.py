@@ -10,7 +10,7 @@ from typing import Any, Callable, ClassVar, Iterator, TypeVar
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Literal, ParamSpec
 
-from .plugin import PydanticPlugin, _EventHandlerProtocol
+from ._types import PydanticPlugin, _EventHandlerProtocol
 
 P = ParamSpec('P')
 R = TypeVar('R')

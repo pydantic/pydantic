@@ -6,7 +6,7 @@ from typing import Iterable
 
 from typing_extensions import Final
 
-from .plugin import PydanticPlugin
+from ._types import PydanticPlugin
 
 if sys.version_info >= (3, 8):
     import importlib.metadata as importlib_metadata
@@ -14,22 +14,21 @@ else:
     import importlib_metadata
 
 
-ENTRY_POINT_GROUP: Final[str] = 'pydantic'
+PYDANTIC_ENTRY_POINT_GROUP: Final[str] = 'pydantic'
 
 _plugins: dict[str, PydanticPlugin] = {}
 
 
 def get_plugins() -> Iterable[PydanticPlugin]:
-    """Load plugins for pydantic.
+    """Load plugins for Pydantic.
 
-    Inspired by:
-    - https://github.com/pytest-dev/pytest/blob/5c0e5aa399(16e6a49962e662002c23f578e897c9/src/pluggy/_manager.py#L352-L377
+    Inspired by: https://github.com/pytest-dev/pluggy/blob/1.3.0/src/pluggy/_manager.py#L376-L402
     """
     global _plugins
 
     for dist in importlib_metadata.distributions():
         for entry_point in dist.entry_points:
-            if entry_point.group != ENTRY_POINT_GROUP:
+            if entry_point.group != PYDANTIC_ENTRY_POINT_GROUP:
                 continue
             if entry_point.value in _plugins:
                 continue
@@ -37,8 +36,9 @@ def get_plugins() -> Iterable[PydanticPlugin]:
                 _plugins[entry_point.value] = entry_point.load()
             except ImportError as e:
                 warnings.warn(
-                    f'Import error while loading "{entry_point.name}" Pydantic plugin could be caused by a circular'
-                    f' import, Pydantic will attempt importing this plugin again after other imports are finished. {e}'
+                    f'Import error while loading the `{entry_point.name}` Pydantic plugin, this could be caused '
+                    f'by a circular import issue (e.g. the plugin importing Pydantic), Pydantic will attempt to '
+                    f'import this plugin again each time a Pydantic validators is created. {e}'
                 )
 
     return _plugins.values()

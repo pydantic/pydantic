@@ -720,7 +720,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 except KeyError as exc:
                     raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
             else:
-                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+                try:
+                    pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+                except AttributeError:
+                    pydantic_extra = None
+
                 if pydantic_extra is not None:
                     try:
                         return pydantic_extra[item]
@@ -878,7 +882,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             field = self.model_fields.get(k)
             if field and field.repr:
                 yield k, v
-        pydantic_extra = self.__pydantic_extra__
+
+        try:
+            pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+        except AttributeError:
+            pydantic_extra = None
+
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
