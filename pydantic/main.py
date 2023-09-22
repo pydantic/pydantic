@@ -742,6 +742,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 except KeyError as exc:
                     raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
             else:
+                # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+                # See `BaseModel.__repr_args__` for more details
                 try:
                     pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
                 except AttributeError:

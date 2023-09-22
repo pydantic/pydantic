@@ -38,7 +38,7 @@ class Foo(BaseModel, plugin_settings={'my-plugin': {'observe': 'all'}}):
 ??? api "API Documentation"
     [`pydantic.plugin`][pydantic.plugin]<br>
 
-Pydantic has an API for creating plugins. The API is exposed via the `pydantic.plugin` module.
+Pydantic provides an API for creating plugins. The API is exposed via the `pydantic.plugin` module.
 
 On your plugin you can _wrap_ the following methods:
 
@@ -48,7 +48,7 @@ On your plugin you can _wrap_ the following methods:
 
 For each method, you can implement the following callbacks:
 
-* `enter`: Called before the validation of a field starts.
+* `on_enter`: Called before the validation of a field starts.
 * `on_success`: Called when the validation of a field succeeds.
 * `on_error`: Called when the validation of a field fails.
 
