@@ -2577,7 +2577,7 @@ def test_model_validate_strings(field_type, input_value, expected, raises_match,
         with pytest.raises(expected, match=raises_match):
             Model.model_validate_strings({'x': input_value}, strict=strict)
     else:
-        Model.model_validate_strings({'x': input_value}, strict=strict).x == expected
+        assert Model.model_validate_strings({'x': input_value}, strict=strict).x == expected
 
 
 @pytest.mark.parametrize('strict', [True, False])

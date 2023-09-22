@@ -295,12 +295,12 @@ def test_validate_python_from_attributes() -> None:
     ids=repr,
 )
 def test_validate_strings(field_type, input_value, expected, raises_match, strict):
+    ta = TypeAdapter(field_type)
     if raises_match is not None:
-        print(TypeAdapter(field_type).core_schema)
         with pytest.raises(expected, match=raises_match):
-            TypeAdapter(field_type).validate_strings(input_value, strict=strict)
+            ta.validate_strings(input_value, strict=strict)
     else:
-        TypeAdapter(field_type).validate_strings(input_value, strict=strict) == expected
+        assert ta.validate_strings(input_value, strict=strict) == expected
 
 
 @pytest.mark.parametrize('strict', [True, False])

@@ -1,4 +1,5 @@
 import pickle
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Union
 
 import pytest
@@ -616,3 +617,38 @@ def test_copy_preserves_equality():
 
     deepcopied = model.__deepcopy__()
     assert model == deepcopied
+
+
+@pytest.mark.parametrize(
+    'root_type,input_value,expected,raises_match,strict',
+    [
+        (bool, 'true', True, None, False),
+        (bool, 'true', True, None, True),
+        (bool, 'false', False, None, False),
+        (bool, 'e', ValidationError, 'type=bool_parsing', False),
+        (int, '1', 1, None, False),
+        (int, '1', 1, None, True),
+        (int, 'xxx', ValidationError, 'type=int_parsing', True),
+        (float, '1.1', 1.1, None, False),
+        (float, '1.10', 1.1, None, False),
+        (float, '1.1', 1.1, None, True),
+        (float, '1.10', 1.1, None, True),
+        (date, '2017-01-01', date(2017, 1, 1), None, False),
+        (date, '2017-01-01', date(2017, 1, 1), None, True),
+        (date, '2017-01-01T12:13:14.567', ValidationError, 'type=date_from_datetime_inexact', False),
+        (date, '2017-01-01T12:13:14.567', ValidationError, 'type=date_parsing', True),
+        (date, '2017-01-01T00:00:00', date(2017, 1, 1), None, False),
+        (date, '2017-01-01T00:00:00', ValidationError, 'type=date_parsing', True),
+        (datetime, '2017-01-01T12:13:14.567', datetime(2017, 1, 1, 12, 13, 14, 567_000), None, False),
+        (datetime, '2017-01-01T12:13:14.567', datetime(2017, 1, 1, 12, 13, 14, 567_000), None, True),
+    ],
+    ids=repr,
+)
+def test_model_validate_strings(root_type, input_value, expected, raises_match, strict):
+    Model = RootModel[root_type]
+
+    if raises_match is not None:
+        with pytest.raises(expected, match=raises_match):
+            Model.model_validate_strings(input_value, strict=strict)
+    else:
+        assert Model.model_validate_strings(input_value, strict=strict).root == expected
