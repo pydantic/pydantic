@@ -2,12 +2,12 @@
 from __future__ import annotations as _annotations
 
 import dataclasses
-import functools
 import inspect
 import sys
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
+from functools import cached_property
 from typing import Any, ClassVar
 from warnings import warn
 
@@ -992,13 +992,13 @@ def computed_field(__func: PropertyT) -> PropertyT:
     ...
 
 
-def _wrapped_property_is_private(property_: functools.cached_property | property) -> bool:
+def _wrapped_property_is_private(property_: cached_property | property) -> bool:
     """Returns true if provided property is private, False otherwise."""
     wrapped_name: str = ''
 
     if isinstance(property_, property):
         wrapped_name = getattr(property_.fget, '__name__', '')
-    elif isinstance(property_, functools.cached_property):
+    elif isinstance(property_, cached_property):
         wrapped_name = getattr(property_.func, '__name__', '')
 
     return wrapped_name.startswith('_') and not wrapped_name.startswith('__')
@@ -1105,6 +1105,31 @@ def computed_field(
         #> ValueError("you can't override a field with a computed field")
     ```
 
+    Private properties decorated with `@computed_field` have `repr=False` by default.
+
+    ```py
+    from functools import cached_property
+
+    from pydantic import BaseModel, computed_field
+
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @cached_property
+        def _private_cached_property(self) -> int:
+            return -self.foo
+
+        @computed_field
+        @property
+        def _private_property(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    print(repr(m))
+    #> M(foo=1)
+    ```
+
     Args:
         __f: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
@@ -1112,7 +1137,8 @@ def computed_field(
         title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697
         description: Description to used when including this computed field in JSON Schema, defaults to the functions
             docstring, currently unused waiting for #4697
-        repr: whether to include this computed field in model repr
+        repr: whether to include this computed field in model repr.
+            Default is `False` for private properties and `True` for public properties.
         return_type: optional return for serialization logic to expect when serializing to JSON, if included
             this must be correct, otherwise a `TypeError` is raised.
             If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
