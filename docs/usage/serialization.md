@@ -26,6 +26,10 @@ This is the primary way of converting a model to a dictionary. Sub-models will b
     and its subclasses will have the `root` field value dumped directly, without a wrapping dictionary. This is also
     done recursively.
 
+!!! note
+    Instead of using `model_dump` to add arbitrary fields to a model's serialized dict, consider using [computed fields][pydantic.fields.computed_field]
+    to ensure computed fields are included when serializing nested models.
+
 Example:
 
 ```py
