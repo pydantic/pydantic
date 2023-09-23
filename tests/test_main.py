@@ -46,6 +46,7 @@ from pydantic import (
     ValidationInfo,
     constr,
     field_validator,
+    is_set,
 )
 
 
@@ -3016,3 +3017,37 @@ def test_shadow_attribute() -> None:
     assert getattr(One, 'foo', None) == ' edited!'
     assert getattr(Two, 'foo', None) == ' edited! edited!'
     assert getattr(Three, 'foo', None) == ' edited! edited!'
+
+
+def test_is_set():
+    """https://github.com/pydantic/pydantic/issues/7578"""
+
+    class One(BaseModel):
+        foo: str = 'Test'
+
+    class Subclass(One):
+        y: float
+
+    class Other(BaseModel):
+        bar: str = 'test'
+
+    class Mixed(One, Other):
+        pass
+
+    class NonPydantic:
+        def __init__(self) -> None:
+            pass
+
+    assert not is_set(One.foo, One())
+    assert is_set(One.foo, One(foo='test'))
+    assert is_set(One.foo, One(foo='other'))
+    assert is_set(One.foo, Subclass(foo='test', y=4.5))
+    assert not is_set(One.foo, Subclass(y=4.5))
+    assert is_set(Mixed.foo, Mixed(foo='test'))
+    assert is_set(One.foo, Mixed(foo='test'))
+
+    with pytest.raises(TypeError):
+        is_set(One.foo, Other(x=5))
+
+    with pytest.raises(TypeError):
+        is_set(One.foo, NonPydantic())

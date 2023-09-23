@@ -53,7 +53,7 @@ else:
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
-__all__ = 'BaseModel', 'create_model'
+__all__ = 'BaseModel', 'create_model', 'is_set'
 
 _object_setattr = _model_construction.object_setattr
 
@@ -1399,3 +1399,20 @@ def create_model(
 
 
 __getattr__ = getattr_migration(__name__)
+
+
+def is_set(field: Any, obj: Any) -> bool:
+    """Check whether a field is set on a particular model instance.
+
+    Args:
+        field: The reference to a model field
+        obj: The model instance to check
+
+    Raises:
+        TypeError: If the object is not a model instance
+        TypeError: If the model class does not define the field.
+
+    Returns:
+        bool: Whether the field was set or not
+    """
+    raise NotImplementedError()
