@@ -71,24 +71,6 @@ nav:
   - Settings Management: concepts/pydantic_settings.md
   - Performance: concepts/performance.md
   - Pydantic Plugins: concepts/plugins.md
-- Examples:
-  - Secrets: examples/secrets.md
-- Error Messages:
-  - Error Handling: errors/errors.md
-  - Validation Errors: errors/validation_errors.md
-  - Usage Errors: errors/usage_errors.md
-- Integrations:
-  - Mypy: integrations/mypy.md/.
-  - PyCharm: integrations/pycharm.md
-  - Hypothesis: integrations/hypothesis.md
-  - Visual Studio Code: integrations/visual_studio_code.md
-  - datamodel-code-generator: integrations/datamodel_code_generator.md
-  - devtools: integrations/devtools.md
-  - Rich: integrations/rich.md
-- Blog:
-  - blog/pydantic-v2-final.md
-  - blog/pydantic-v2-alpha.md
-  - blog/pydantic-v2.md
 - API Documentation:
   - Pydantic:
     - BaseModel: api/base_model.md
@@ -120,6 +102,24 @@ nav:
     - Routing Numbers: api/pydantic_extra_types_routing_numbers.md
     - Coordinate: api/pydantic_extra_types_coordinate.md
     - Mac Address: api/pydantic_extra_types_mac_address.md
+- Examples:
+  - Secrets: examples/secrets.md
+- Error Messages:
+  - Error Handling: errors/errors.md
+  - Validation Errors: errors/validation_errors.md
+  - Usage Errors: errors/usage_errors.md
+- Integrations:
+  - Mypy: integrations/mypy.md/.
+  - PyCharm: integrations/pycharm.md
+  - Hypothesis: integrations/hypothesis.md
+  - Visual Studio Code: integrations/visual_studio_code.md
+  - datamodel-code-generator: integrations/datamodel_code_generator.md
+  - devtools: integrations/devtools.md
+  - Rich: integrations/rich.md
+- Blog:
+  - blog/pydantic-v2-final.md
+  - blog/pydantic-v2-alpha.md
+  - blog/pydantic-v2.md
 
 markdown_extensions:
 - tables
