@@ -149,7 +149,7 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
 
 ## Getting schema of a specified type
 
-The [`TypeAdapter`](type_adapter.md) class lets you create an object with methods for validating, serializing,
+The [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] class lets you create an object with methods for validating, serializing,
 and producing JSON schemas for arbitrary types. This serves as a complete replacement for `schema_of` in
 Pydantic V1 (which is now deprecated).
 
@@ -171,7 +171,7 @@ and validations.
 See [Customizing JSON Schema](fields.md#customizing-json-schema) for details on field parameters that are used
 exclusively to customize the generated JSON schema.
 
-You can also use [model config](model_config.md) to customize JSON serialization and extra schema properties on a model.
+You can also use [model config][pydantic.config.ConfigDict] to customize JSON serialization and extra schema properties on a model.
 Specifically, the following config options are relevant:
 
 * `title`

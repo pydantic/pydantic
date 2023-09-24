@@ -70,7 +70,7 @@ rads = 2 * math.pi
 
 @deprecated(
     'The `Color` class is deprecated, use `pydantic_extra_types` instead. '
-    'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/color_types/.',
+    'See https://docs.pydantic.dev/latest/api/pydantic_extra_types_color/.',
     category=PydanticDeprecatedSince20,
 )
 class Color(_repr.Representation):

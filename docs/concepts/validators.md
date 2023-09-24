@@ -51,7 +51,7 @@ except ValidationError as e:
 In this example we used some type aliases (`MyNumber = Annotated[...]`).
 While this can help with legibility of the code, it is not required, you can use `Annotated` directly in a model field type hint.
 These type aliases are also not actual types but you can use a similar approach with `TypeAliasType` to create actual types.
-See [Custom Types](types/custom.md) for a more detailed explanation of custom types.
+See [Custom Types](../concepts/types.md#custom-types) for a more detailed explanation of custom types.
 
 It is also worth noting that you can nest `Annotated` inside other types.
 In this example we used that to apply validation to the inner items of a list.

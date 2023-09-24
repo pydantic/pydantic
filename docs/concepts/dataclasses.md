@@ -42,7 +42,7 @@ You can use all the standard Pydantic field types. Note, however, that arguments
 order to perform validation and, where necessary coercion.
 
 To perform validation or generate a JSON schema on a Pydantic dataclass, you should now wrap the dataclass
-with a [`TypeAdapter`](type_adapter.md) and make use of its methods.
+with a [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] and make use of its methods.
 
 Fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
 
@@ -101,7 +101,7 @@ print(TypeAdapter(User).json_schema())
 ```
 
 `pydantic.dataclasses.dataclass`'s arguments are the same as the standard decorator, except one extra
-keyword argument `config` which has the same meaning as [model_config](model_config.md).
+keyword argument `config` which has the same meaning as [model_config][pydantic.config.ConfigDict].
 
 !!! warning
     After v1.2, [The Mypy plugin](../integrations/mypy.md) must be installed to type check _pydantic_ dataclasses.
@@ -135,10 +135,10 @@ class MyDataclass2:
     a: int
 ```
 
-1. You can read more about `validate_assignment` in [model_config](model_config.md#validate-assignment).
+1. You can read more about `validate_assignment` in [API reference][pydantic.config.ConfigDict.validate_assignment].
 
 !!! note
-    Pydantic dataclasses support [`extra`](model_config.md#extra-attributes) configuration to `ignore`, `forbid`, or
+    Pydantic dataclasses support [`extra`][pydantic.config.ConfigDict.extra] configuration to `ignore`, `forbid`, or
     `allow` extra fields passed to the initializer. However, some default behavior of stdlib dataclasses may prevail.
     For example, any extra fields present on a Pydantic dataclass using `extra='allow'` are omitted when the dataclass
     is `print`ed.

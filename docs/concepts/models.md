@@ -213,7 +213,7 @@ to the model field names. One common application of this functionality is integr
 (ORMs).
 
 To do this, set the config attribute `model_config['from_attributes'] = True`. See
-[Model Config](model_config.md) and [ConfigDict](../api/config.md#pydantic.config.ConfigDict) for more information.
+[Model Config][pydantic.config.ConfigDict.from_attributes] and [ConfigDict][pydantic.config.ConfigDict] for more information.
 
 The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
@@ -998,7 +998,7 @@ print(my_pets.describe())
 ## Faux immutability
 
 Models can be configured to be immutable via `model_config['frozen'] = True`. When this is set, attempting to change the
-values of instance attributes will raise errors. See [Model Config](model_config.md) for more details.
+values of instance attributes will raise errors. See the [API reference][pydantic.config.ConfigDict.frozen] for more details.
 
 !!! note
     This behavior was achieved in Pydantic V1 via the config setting `allow_mutation = False`.
