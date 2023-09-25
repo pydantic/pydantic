@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 PYDANTIC_ENTRY_POINT_GROUP: Final[str] = 'pydantic'
 
 _plugins: dict[str, PydanticPluginProtocol] = {}
+_all_plugins_loaded: bool = False
 
 
 def get_plugins() -> Iterable[PydanticPluginProtocol]:
@@ -26,7 +27,11 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
 
     Inspired by: https://github.com/pytest-dev/pluggy/blob/1.3.0/src/pluggy/_manager.py#L376-L402
     """
-    global _plugins
+    global _plugins, _all_plugins_loaded
+    if _all_plugins_loaded:
+        return _plugins.values()
+
+    _all_plugins_loaded = True
 
     for dist in importlib_metadata.distributions():
         for entry_point in dist.entry_points:
@@ -37,6 +42,7 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
             try:
                 _plugins[entry_point.value] = entry_point.load()
             except (ImportError, AttributeError) as e:
+                _all_plugins_loaded = False
                 error_type = e.__class__.__name__
                 warnings.warn(
                     f'{error_type} while loading the `{entry_point.name}` Pydantic plugin, this could be caused '
