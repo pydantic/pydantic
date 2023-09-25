@@ -2705,7 +2705,7 @@ def test_serialize_unsubstituted_typevars_bound() -> None:
     ids=['default', 'constraint'],
 )
 def test_serialize_unsubstituted_typevars_bound(
-    type_var: type[BaseModel],
+    type_var: Type[BaseModel],
 ) -> None:
     class ErrorDetails(BaseModel):
         foo: str
