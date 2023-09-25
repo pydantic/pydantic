@@ -41,8 +41,9 @@ def version_info() -> str:
     related_packages = []
 
     for dist in importlib_metadata.distributions():
-        if dist.name in package_names:
-            related_packages.append(f'{dist.name}-{dist.version}')
+        name = dist.metadata['Name']
+        if name in package_names:
+            related_packages.append(f'{name}-{dist.version}')
 
     info = {
         'pydantic version': VERSION,
