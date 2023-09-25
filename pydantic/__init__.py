@@ -41,14 +41,19 @@ __version__ = VERSION
 # this encourages pycharm to import `ValidationError` from here, not pydantic_core
 ValidationError = pydantic_core.ValidationError
 
-# WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
-# please use "from pydantic.errors import ..." instead
+if typing.TYPE_CHECKING:
+    from .deprecated.class_validators import root_validator, validator
+    from .deprecated.config import BaseConfig, Extra
+    from .deprecated.tools import *
+    from .root_model import RootModel
+
 __all__ = [
     # dataclasses
     'dataclasses',
-    # functional validators
+    # pydantic_core.core_schema
     'ValidationInfo',
     'ValidatorFunctionWrapHandler',
+    # functional validators
     'field_validator',
     'model_validator',
     'AfterValidator',
@@ -195,11 +200,11 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'root_validator': (__package__, '.deprecated.class_validators'),
     'validator': (__package__, '.deprecated.class_validators'),
     'BaseConfig': (__package__, '.deprecated.config'),
+    'Extra': (__package__, '.deprecated.config'),
     'parse_obj_as': (__package__, '.deprecated.tools'),
     'schema_of': (__package__, '.deprecated.tools'),
     'schema_json_of': (__package__, '.deprecated.tools'),
-    'Extra': (__package__, '.deprecated.config'),
-    # FieldValidationInfo is deprecated, use ValidationInfo instead
+    # FieldValidationInfo is deprecated, and hidden behind module a `__getattr__`
     'FieldValidationInfo': ('pydantic_core', '.core_schema'),
 }
 if typing.TYPE_CHECKING:
