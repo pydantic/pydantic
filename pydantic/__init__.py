@@ -13,10 +13,7 @@ from . import dataclasses
 from ._internal._generate_schema import GenerateSchema as GenerateSchema
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
-from .config import ConfigDict, Extra
-from .deprecated.class_validators import root_validator, validator
-from .deprecated.config import BaseConfig
-from .deprecated.tools import *
+from .config import ConfigDict
 from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .functional_serializers import PlainSerializer, SerializeAsAny, WrapSerializer, field_serializer, model_serializer
@@ -58,7 +55,10 @@ __all__ = [
     'BeforeValidator',
     'PlainValidator',
     'WrapValidator',
-    # deprecated V1 functional validators
+    'SkipValidation',
+    'InstanceOf',
+    'WithJsonSchema',
+    # deprecated V1 functional validators, these are imported via `__getattr__` below
     'root_validator',
     'validator',
     # functional serializers
@@ -71,8 +71,9 @@ __all__ = [
     'SerializationInfo',
     'SerializerFunctionWrapHandler',
     # config
-    'BaseConfig',
     'ConfigDict',
+    # deprecated V1 config, these are imported via `__getattr__` below
+    'BaseConfig',
     'Extra',
     # validate_call
     'validate_call',
@@ -115,7 +116,7 @@ __all__ = [
     'validate_email',
     # root_model
     'RootModel',
-    # tools
+    # deprecated tools, these are imported via `__getattr__` below
     'parse_obj_as',
     'schema_of',
     'schema_json_of',
@@ -174,9 +175,6 @@ __all__ = [
     'Base64Str',
     'Base64UrlBytes',
     'Base64UrlStr',
-    'SkipValidation',
-    'InstanceOf',
-    'WithJsonSchema',
     'GetPydanticSchema',
     # type_adapter
     'TypeAdapter',
@@ -194,6 +192,14 @@ __all__ = [
 # A mapping of {<member name>: (package, <module name>)} defining dynamic imports
 _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'RootModel': (__package__, '.root_model'),
+    'root_validator': (__package__, '.deprecated.class_validators'),
+    'validator': (__package__, '.deprecated.class_validators'),
+    'BaseConfig': (__package__, '.deprecated.config'),
+    'parse_obj_as': (__package__, '.deprecated.tools'),
+    'schema_of': (__package__, '.deprecated.tools'),
+    'schema_json_of': (__package__, '.deprecated.tools'),
+    'Extra': (__package__, '.deprecated.config'),
+    # FieldValidationInfo is deprecated, use ValidationInfo instead
     'FieldValidationInfo': ('pydantic_core', '.core_schema'),
 }
 if typing.TYPE_CHECKING:
