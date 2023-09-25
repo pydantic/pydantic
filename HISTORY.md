@@ -25,7 +25,7 @@
 ### Performance
 
 * Simplify flattening and inlining of `CoreSchema` by @adriangb in [#7523](https://github.com/pydantic/pydantic/pull/7523)
-* Remove unused copies in CoreSchema walking by @adriangb in [#7528](https://github.com/pydantic/pydantic/pull/7528)
+* Remove unused copies in `CoreSchema` walking by @adriangb in [#7528](https://github.com/pydantic/pydantic/pull/7528)
 * Add caches for collecting definitions and invalid schemas from a CoreSchema by @adriangb in [#7527](https://github.com/pydantic/pydantic/pull/7527)
 * Eagerly resolve discriminated unions and cache cases where we can't by @adriangb in [#7529](https://github.com/pydantic/pydantic/pull/7529)
 * Replace `dict.get` and `dict.setdefault` with more verbose versions in CoreSchema building hot paths by @adriangb in [#7536](https://github.com/pydantic/pydantic/pull/7536)
