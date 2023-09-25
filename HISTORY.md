@@ -30,7 +30,7 @@
 * Eagerly resolve discriminated unions and cache cases where we can't by @adriangb in [#7529](https://github.com/pydantic/pydantic/pull/7529)
 * Replace `dict.get` and `dict.setdefault` with more verbose versions in `CoreSchema` building hot paths by @adriangb in [#7536](https://github.com/pydantic/pydantic/pull/7536)
 * Cache invalid CoreSchema discovery by @adriangb in [#7535](https://github.com/pydantic/pydantic/pull/7535)
-* Allow disabling CoreSchema validation for faster startup times by @adriangb in [#7565](https://github.com/pydantic/pydantic/pull/7565)
+* Allow disabling `CoreSchema` validation for faster startup times by @adriangb in [#7565](https://github.com/pydantic/pydantic/pull/7565)
 
 ### Fixes
 
