@@ -727,6 +727,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#whats-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Changed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What's Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#packaging" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -778,6 +790,11 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -4101,6 +4118,18 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#whats-changed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Changed
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What's Changed">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#packaging" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4152,6 +4181,11 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -5500,11 +5534,12 @@
 
 <h2 id="v240-2023-09-22">v2.4.0 (2023-09-22)<a class="headerlink" href="#v240-2023-09-22" title="Permanent link">&para;</a></h2>
 <p><a href="https://github.com/pydantic/pydantic/releases/tag/v2.4.0"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></span> GitHub release</a></p>
-<h3 id="packaging">Packaging<a class="headerlink" href="#packaging" title="Permanent link">&para;</a></h3>
+<h3 id="whats-changed">What's Changed<a class="headerlink" href="#whats-changed" title="Permanent link">&para;</a></h3>
+<h4 id="packaging">Packaging<a class="headerlink" href="#packaging" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Update pydantic-core to 2.10.0 by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/pydantic/pull/7542">#7542</a></li>
 </ul>
-<h3 id="new-features">New Features<a class="headerlink" href="#new-features" title="Permanent link">&para;</a></h3>
+<h4 id="new-features">New Features<a class="headerlink" href="#new-features" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Add <code>Base64Url</code> types by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7286">#7286</a></li>
 <li>Implement optional <code>number</code> to <code>str</code> coercion by <a href="https://github.com/lig">@lig</a> in <a href="https://github.com/pydantic/pydantic/pull/7508">#7508</a></li>
@@ -5512,7 +5547,7 @@
 <li>Add <code>BaseModel.model_validate_strings</code> and <code>TypeAdapter.validate_strings</code> by <a href="https://github.com/hramezani">@hramezani</a> in <a href="https://github.com/pydantic/pydantic/pull/7552">#7552</a></li>
 <li>Add Pydantic <code>plugins</code> experimental implementation by <a href="https://github.com/lig">@lig</a> <a href="https://github.com/samuelcolvin">@samuelcolvin</a> and <a href="https://github.com/Kludex">@Kludex</a> in <a href="https://github.com/pydantic/pydantic/pull/6820">#6820</a></li>
 </ul>
-<h3 id="changes">Changes<a class="headerlink" href="#changes" title="Permanent link">&para;</a></h3>
+<h4 id="changes">Changes<a class="headerlink" href="#changes" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Do not override <code>model_post_init</code> in subclass with private attrs by <a href="https://github.com/Viicos">@Viicos</a> in <a href="https://github.com/pydantic/pydantic/pull/7302">#7302</a></li>
 <li>Make fields with defaults not required in the serialization schema by default by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7275">#7275</a></li>
@@ -5520,7 +5555,7 @@
 <li>Make <code>EncodedStr</code> a dataclass by <a href="https://github.com/Kludex">@Kludex</a> in <a href="https://github.com/pydantic/pydantic/pull/7396">#7396</a></li>
 <li>Move <code>annotated_handlers</code> to be public by <a href="https://github.com/samuelcolvin">@samuelcolvin</a> in <a href="https://github.com/pydantic/pydantic/pull/7569">#7569</a></li>
 </ul>
-<h3 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h3>
+<h4 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Simplify flattening and inlining of <code>CoreSchema</code> by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/7523">#7523</a></li>
 <li>Remove unused copies in <code>CoreSchema</code> walking by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/7528">#7528</a></li>
@@ -5530,7 +5565,7 @@
 <li>Cache invalid <code>CoreSchema</code> discovery by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/7535">#7535</a></li>
 <li>Allow disabling <code>CoreSchema</code> validation for faster startup times by <a href="https://github.com/adriangb">@adriangb</a> in <a href="https://github.com/pydantic/pydantic/pull/7565">#7565</a></li>
 </ul>
-<h3 id="fixes">Fixes<a class="headerlink" href="#fixes" title="Permanent link">&para;</a></h3>
+<h4 id="fixes">Fixes<a class="headerlink" href="#fixes" title="Permanent link">&para;</a></h4>
 <ul>
 <li>Fix config detection for <code>TypedDict</code> from grandparent classes by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7272">#7272</a></li>
 <li>Fix hash function generation for frozen models with unusual MRO by <a href="https://github.com/dmontagu">@dmontagu</a> in <a href="https://github.com/pydantic/pydantic/pull/7274">#7274</a></li>
