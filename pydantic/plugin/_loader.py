@@ -35,8 +35,8 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
         # this happens when plugins themselves use pydantic, we return no plugins
         return ()
     elif _plugins is None:
-        # plugins already loaded
         _plugins = {}
+        # set _loading_plugins so any plugins that use pydantic don't themselves use plugins
         _loading_plugins = True
         try:
             for dist in importlib_metadata.distributions():

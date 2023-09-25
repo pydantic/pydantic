@@ -7,7 +7,7 @@ class MyModel(BaseModel):
 
 m = MyModel(x='10')
 if m.x != 10:
-    raise Exception('m.x should be 10')
+    raise ValueError('m.x should be 10')
 
 log = []
 
