@@ -28,6 +28,7 @@ def on_pre_build(config: Config) -> None:
     Before the build starts.
     """
     add_changelog()
+    add_mkdocs_run_deps()
 
 
 def on_files(files: Files, config: Config) -> Files:
@@ -68,6 +69,26 @@ def add_changelog() -> None:
     # avoid writing file unless the content has changed to avoid infinite build loop
     if not new_file.is_file() or new_file.read_text(encoding='utf-8') != history:
         new_file.write_text(history, encoding='utf-8')
+
+
+def add_mkdocs_run_deps() -> None:
+    # set the pydantic and pydantic-core versions to configure for running examples in the browser
+    pyproject_toml = (PROJECT_ROOT / 'pyproject.toml').read_text()
+    pydantic_core_version = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml).group(1)
+
+    version_py = (PROJECT_ROOT / 'pydantic' / 'version.py').read_text()
+    pydantic_version = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)
+
+    mkdocs_run_deps = json.dumps([f'pydantic=={pydantic_version}', f'pydantic-core=={pydantic_core_version}'])
+    logger.info('Setting mkdocs_run_deps=%s', mkdocs_run_deps)
+
+    html = f"""\
+    <script>
+    window.mkdocs_run_deps = {mkdocs_run_deps}
+    </script>
+"""
+    path = DOCS_DIR / 'theme/mkdocs_run_deps.html'
+    path.write_text(html)
 
 
 MIN_MINOR_VERSION = 7
