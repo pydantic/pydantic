@@ -77,7 +77,7 @@ def get_notes(new_version: str) -> str:
     body = re.sub(pattern='((^|\n)### .+?\n)', repl=r'\1\n', string=body)
 
     # Ensure a blank line before ### headers
-    body = re.sub(pattern='[^\n](\n### .+?\n)', repl=r'\n\1', string=body)
+    body = re.sub(pattern='([^\n])(\n### .+?\n)', repl=r'\1\n\2', string=body)
 
     # Render PR links nicely
     body = re.sub(
