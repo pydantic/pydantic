@@ -10,7 +10,7 @@ on:
 
 env:
   COLUMNS: 150
-  PDM_DEPS: 'urllib3<2,git+https://github.com/adriangb/findpython.git@version-timeout-env'
+  PDM_DEPS: 'urllib3<2'
   FINDPYTHON_GET_VERSION_TIMEOUT: 30
 
 jobs:
