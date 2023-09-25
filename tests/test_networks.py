@@ -424,7 +424,10 @@ def test_sqlite_dsn() -> None:
         a: SQLiteDsn
 
     example_db_path: Path = Path('tests/mocks/test_db.db')
-    assert Model(a=example_db_path).a == str(example_db_path)
+    assert Model(a=example_db_path).a == example_db_path
+
+    example_db_path_str: str = 'tests/mocks/test_db.db'
+    assert Model(a=example_db_path_str).a == Path(example_db_path_str)
 
 
 def test_sqlite_dsn_raises() -> None:
@@ -434,7 +437,7 @@ def test_sqlite_dsn_raises() -> None:
     with pytest.raises(ValidationError, match='type=path_not_file'):
         Model(a=Path('tests/mocks/does_not_exist.db'))
 
-    with pytest.raises(ValidationError, match='SQLiteDsn file name must end in `.db`'):
+    with pytest.raises(ValidationError, match='type=file_type_not_valid'):
         Model(a='tests/mocks/test_not_db')
 
 

@@ -160,9 +160,12 @@ MariaDBDsn = Annotated[
 """A type that will accept any MariaDB DSN."""
 
 
-def _sqlite_dsn_regex_validator(path: Path) -> str:
-    assert re.match(pattern=r'.*\.db', string=str(path)), 'SQLiteDsn file name must end in `.db`'
-    return str(path)
+def _sqlite_dsn_regex_validator(path: Path) -> Path:
+    try:
+        assert re.match(pattern=r'.*\.db', string=str(path))
+        return path
+    except AssertionError:
+        raise PydanticCustomError('file_type_not_valid', 'SQLiteDsn file name must end in `.db`')
 
 
 SQLiteDsn = Annotated[FilePath, AfterValidator(_sqlite_dsn_regex_validator)]
