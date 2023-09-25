@@ -67,17 +67,11 @@ def get_notes(new_version: str) -> str:
     body = response.json()['body']
     body = body.removeprefix('<!-- Release notes generated using configuration in .github/release.yml at main -->\n\n')
 
-    # We don't use the "What's Changed" header, the subgroups are already at `###` which is the correct level
-    body = body.removeprefix("## What's Changed\n")
+    # Add one level to all headers so they match HISTORY.md, and add trailing newline
+    body = re.sub(pattern='^(#+ .+?)$', repl=r'#\1\n', string=body, flags=re.MULTILINE)
 
-    # Correct "New Contributors" header level
-    body = re.sub(pattern='\n## New Contributors', repl='\n### New Contributors', string=body)
-
-    # Add newline after all ### headers as Github doesn't add spacing
-    body = re.sub(pattern='((^|\n)### .+?\n)', repl=r'\1\n', string=body)
-
-    # Ensure a blank line before ### headers
-    body = re.sub(pattern='([^\n])(\n### .+?\n)', repl=r'\1\n\2', string=body)
+    # Ensure a blank line before headers
+    body = re.sub(pattern='([^\n])(\n#+ .+?\n)', repl=r'\1\n\2', string=body)
 
     # Render PR links nicely
     body = re.sub(

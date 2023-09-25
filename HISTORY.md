@@ -2,11 +2,13 @@
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.0)
 
-### Packaging
+### What's Changed
+
+#### Packaging
 
 * Update pydantic-core to 2.10.0 by @samuelcolvin in [#7542](https://github.com/pydantic/pydantic/pull/7542)
 
-### New Features
+#### New Features
 
 * Add `Base64Url` types by @dmontagu in [#7286](https://github.com/pydantic/pydantic/pull/7286)
 * Implement optional `number` to `str` coercion by @lig in [#7508](https://github.com/pydantic/pydantic/pull/7508)
@@ -14,7 +16,7 @@
 * Add `BaseModel.model_validate_strings` and `TypeAdapter.validate_strings` by @hramezani in [#7552](https://github.com/pydantic/pydantic/pull/7552)
 * Add Pydantic `plugins` experimental implementation by @lig @samuelcolvin and @Kludex in [#6820](https://github.com/pydantic/pydantic/pull/6820)
 
-### Changes
+#### Changes
 
 * Do not override `model_post_init` in subclass with private attrs by @Viicos in [#7302](https://github.com/pydantic/pydantic/pull/7302)
 * Make fields with defaults not required in the serialization schema by default by @dmontagu in [#7275](https://github.com/pydantic/pydantic/pull/7275)
@@ -22,7 +24,7 @@
 * Make `EncodedStr` a dataclass by @Kludex in [#7396](https://github.com/pydantic/pydantic/pull/7396)
 * Move `annotated_handlers` to be public by @samuelcolvin in [#7569](https://github.com/pydantic/pydantic/pull/7569)
 
-### Performance
+#### Performance
 
 * Simplify flattening and inlining of `CoreSchema` by @adriangb in [#7523](https://github.com/pydantic/pydantic/pull/7523)
 * Remove unused copies in `CoreSchema` walking by @adriangb in [#7528](https://github.com/pydantic/pydantic/pull/7528)
@@ -32,7 +34,7 @@
 * Cache invalid `CoreSchema` discovery by @adriangb in [#7535](https://github.com/pydantic/pydantic/pull/7535)
 * Allow disabling `CoreSchema` validation for faster startup times by @adriangb in [#7565](https://github.com/pydantic/pydantic/pull/7565)
 
-### Fixes
+#### Fixes
 
 * Fix config detection for `TypedDict` from grandparent classes by @dmontagu in [#7272](https://github.com/pydantic/pydantic/pull/7272)
 * Fix hash function generation for frozen models with unusual MRO by @dmontagu in [#7274](https://github.com/pydantic/pydantic/pull/7274)
