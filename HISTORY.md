@@ -39,7 +39,7 @@
 * Make `strict` config overridable in field for Path by @hramezani in [#7281](https://github.com/pydantic/pydantic/pull/7281)
 * Use `ser_json_<timedelta|bytes>` on default in `GenerateJsonSchema` by @Kludex in [#7269](https://github.com/pydantic/pydantic/pull/7269)
 * Adding a check that alias is validated as an identifier for Python by @andree0 in [#7319](https://github.com/pydantic/pydantic/pull/7319)
-* Raise an Error When Computed Field Overrides Field by @sydney-runkle in [#7346](https://github.com/pydantic/pydantic/pull/7346)
+* Raise an error when computed field overrides field by @sydney-runkle in [#7346](https://github.com/pydantic/pydantic/pull/7346)
 * Fix applying `SkipValidation` to referenced schemas by @adriangb in [#7381](https://github.com/pydantic/pydantic/pull/7381)
 * Enforce behavior of private attributes having double leading underscore by @lig in [#7265](https://github.com/pydantic/pydantic/pull/7265)
 * Standardize `__get_pydantic_core_schema__` signature by @hramezani in [#7415](https://github.com/pydantic/pydantic/pull/7415)
