@@ -73,13 +73,12 @@ def test_on_validate_json_on_error() -> None:
 
         def on_error(self, error: ValidationError) -> None:
             assert error.title == 'Model'
-            assert error.errors() == [
+            assert error.errors(include_url=False) == [
                 {
                     'input': 'potato',
                     'loc': ('a',),
                     'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
                     'type': 'int_parsing',
-                    'url': 'https://errors.pydantic.dev/2.3/v/int_parsing',
                 },
             ]
 
@@ -155,13 +154,12 @@ def test_on_validate_python_on_error() -> None:
 
         def on_error(self, error: ValidationError) -> None:
             assert error.title == 'Model'
-            assert error.errors() == [
+            assert error.errors(include_url=False) == [
                 {
                     'input': 'potato',
                     'loc': ('a',),
                     'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
                     'type': 'int_parsing',
-                    'url': 'https://errors.pydantic.dev/2.3/v/int_parsing',
                 },
             ]
 

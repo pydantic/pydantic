@@ -84,7 +84,7 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.3/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -128,7 +128,7 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.3/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -165,7 +165,7 @@ class PlainValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.3/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -285,7 +285,7 @@ def field_validator(
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/2.3/concepts/validators/#field-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#field-validators
 
     Decorate methods on the class indicating that they should be used to validate fields.
 

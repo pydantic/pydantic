@@ -3,7 +3,7 @@ from typing import Tuple
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.3.0'
+VERSION = '2.4.0'
 """The version of Pydantic."""
 
 
