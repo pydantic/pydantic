@@ -4064,41 +4064,108 @@ for Pydantic to serialize <code>ChildModel</code> as <code>ChildModel</code>.</p
 <p>For example, you should not do <code>isinstance(my_model, MyGenericModel[int])</code>. However, it is fine to do <code>isinstance(my_model, MyGenericModel)</code>. (Note that, for standard generics, it would raise an error to do a subclass check with a parameterized generic.)</p>
 <p>If you need to perform isinstance checks against parametrized generics, you can do this by subclassing the parametrized generic class. This looks like <code>class MyIntModel(MyGenericModel[int]): ...</code> and <code>isinstance(my_model, MyIntModel)</code>.</p>
 </div>
-<p>If a Pydantic model is used in a <code>TypeVar</code> constraint, <a href="../serialization/#serializing-with-duck-typing"><code>SerializeAsAny</code></a> can be used to
-serialize it using the concrete model instead of the model <code>TypeVar</code> is bound to.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+<p>If a Pydantic model is used in a <code>TypeVar</code> bound and the generic type is never parametrized then Pydantic will use the bound for validation but treat the value as <code>Any</code> in terms of serialization:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">ErrorDetails</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">ErrorDataT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;ErrorDataT&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">ErrorDetails</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Error</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">ErrorDataT</span><span class="p">]):</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ErrorDataT</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">MyErrorDetails</span><span class="p">(</span><span class="n">ErrorDetails</span><span class="p">):</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="c1"># serialized as Any</span>
+<span class="n">error</span> <span class="o">=</span> <span class="n">Error</span><span class="p">(</span>
+    <span class="n">message</span><span class="o">=</span><span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="n">details</span><span class="o">=</span><span class="n">MyErrorDetails</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;var&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="s1">&#39;var2&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;details&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;var&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="s1">&#39;var2&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+<span class="c1"># serialized using the concrete parametrization</span>
+<span class="c1"># note that `&#39;bar&#39;: &#39;var2&#39;` is missing</span>
+<span class="n">error</span> <span class="o">=</span> <span class="n">Error</span><span class="p">[</span><span class="n">ErrorDetails</span><span class="p">](</span>
+    <span class="n">message</span><span class="o">=</span><span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="n">details</span><span class="o">=</span><span class="n">ErrorDetails</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;var&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;details&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;var&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>If you use a <code>default=...</code> (available in Python &gt;= 3.13 or via <code>typing-extensions</code>) or constraints (<code>TypeVar('T', str, int)</code>; note that you rarely want to use this form of a <code>TypeVar</code>) then the default value or constraints will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior using <code>pydantic.SerializeAsAny</code>:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SerializeAsAny</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span>
+<span class="k">class</span> <span class="nc">ErrorDetails</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="k">class</span> <span class="nc">DataModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
-    <span class="n">c</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">ErrorDataT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;ErrorDataT&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">ErrorDetails</span><span class="p">)</span>
 
 
-<span class="n">BoundT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;BoundT&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">Model</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Error</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">ErrorDataT</span><span class="p">]):</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ErrorDataT</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">GenericModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">BoundT</span><span class="p">]):</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">BoundT</span>
+<span class="k">class</span> <span class="nc">MyErrorDetails</span><span class="p">(</span><span class="n">ErrorDetails</span><span class="p">):</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span>
 
 
-<span class="k">class</span> <span class="nc">SerializeAsAnyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">BoundT</span><span class="p">]):</span>
-    <span class="n">data</span><span class="p">:</span> <span class="n">SerializeAsAny</span><span class="p">[</span><span class="n">BoundT</span><span class="p">]</span>
+<span class="c1"># serialized using the default&#39;s serializer</span>
+<span class="n">error</span> <span class="o">=</span> <span class="n">Error</span><span class="p">(</span>
+    <span class="n">message</span><span class="o">=</span><span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="n">details</span><span class="o">=</span><span class="n">MyErrorDetails</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;var&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="s1">&#39;var2&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;details&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;var&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
 
 
-<span class="n">data_model</span> <span class="o">=</span> <span class="n">DataModel</span><span class="p">()</span>
+<span class="k">class</span> <span class="nc">SerializeAsAnyError</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">ErrorDataT</span><span class="p">]):</span>
+    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">details</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializeAsAny</span><span class="p">[</span><span class="n">ErrorDataT</span><span class="p">]]</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">GenericModel</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data_model</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;data&#39;: {&#39;a&#39;: 42}}</span>
 
-
-<span class="nb">print</span><span class="p">(</span><span class="n">SerializeAsAnyModel</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data_model</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;data&#39;: {&#39;a&#39;: 42, &#39;b&#39;: 2, &#39;c&#39;: 3}}</span>
+<span class="c1"># serialized as Any</span>
+<span class="n">error</span> <span class="o">=</span> <span class="n">SerializeAsAnyError</span><span class="p">(</span>
+    <span class="n">message</span><span class="o">=</span><span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="n">details</span><span class="o">=</span><span class="n">MyErrorDetails</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;var&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="s1">&#39;baz&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="p">{</span>
+    <span class="s1">&#39;message&#39;</span><span class="p">:</span> <span class="s1">&#39;We just had an error&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;details&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;foo&#39;</span><span class="p">:</span> <span class="s1">&#39;var&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;bar&#39;</span><span class="p">:</span> <span class="s1">&#39;baz&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
 </code></pre></div>
 <h2 id="dynamic-model-creation">Dynamic model creation<a class="headerlink" href="#dynamic-model-creation" title="Permanent link">&para;</a></h2>
 <p>There are some occasions where it is desirable to create a model using runtime information to specify the fields.
