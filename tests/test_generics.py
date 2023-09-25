@@ -2624,21 +2624,59 @@ def test_reverse_order_generic_hashability():
     assert len({m1, m2}) == 1
 
 
-def test_serialize_unsubstituted_typevars_as_any() -> None:
-    ErrorDataT = TypeVar('ErrorDataT', bound=BaseModel)
+@pytest.mark.parametrize(
+    'type_var',
+    [
+        TypeVar('ErrorDataT', bound=BaseModel),
+        TypeVar('ErrorDataT', BaseModel, str),
+    ],
+)
+def test_serialize_unsubstituted_typevars_bound_or_constraint(
+    type_var: TypeVar,
+) -> None:
+    class ErrorDetails(BaseModel):
+        foo: str
+
+    class Error(BaseModel, Generic[type_var]):
+        message: str
+        details: Optional[type_var]
+
+    class MyErrorDetails(ErrorDetails):
+        bar: str
+
+    sample_error = Error(
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+
+def test_serialize_unsubstituted_typevars_default() -> None:
+    from typing_extensions import TypeVar
 
     class ErrorDetails(BaseModel):
         foo: str
 
-    class Error(BaseModel, Generic[ErrorDataT]):
+    DataT = TypeVar('DataT', default=ErrorDetails)
+
+    class Error(BaseModel, Generic[DataT]):
         message: str
-        details: Optional[ErrorDataT]
+        details: Optional[DataT]
+
+    class MyErrorDetails(ErrorDetails):
+        bar: str
 
     sample_error = Error(
         message='We just had an error',
-        details=ErrorDetails(foo='var'),
+        details=MyErrorDetails(foo='var', bar='baz'),
     )
-
     assert sample_error.model_dump() == {
         'message': 'We just had an error',
         'details': {

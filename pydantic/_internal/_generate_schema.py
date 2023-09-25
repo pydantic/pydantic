@@ -1453,6 +1453,8 @@ class GenerateSchema:
             schema = self.generate_schema(typevar.__bound__)
         elif typevar.__constraints__:
             schema = self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
+        elif hasattr(typevar, '__default__'):
+            return self.generate_schema(getattr(typevar, '__default__'))
         else:
             return core_schema.any_schema()
         schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
