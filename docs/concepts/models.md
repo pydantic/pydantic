@@ -815,7 +815,7 @@ class SerializeAsAnyModel(BaseModel, Generic[BoundT]):
 data_model = DataModel()
 
 print(GenericModel(data=data_model).model_dump())
-#> {'data': {'a': 42}}
+#> {'data': {'a': 42, 'b': 2, 'c': 3}}
 
 
 print(SerializeAsAnyModel(data=data_model).model_dump())

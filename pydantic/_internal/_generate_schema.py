@@ -1450,11 +1450,15 @@ class GenerateSchema:
         assert isinstance(typevar, typing.TypeVar)
 
         if typevar.__bound__:
-            return self.generate_schema(typevar.__bound__)
+            schema = self.generate_schema(typevar.__bound__)
         elif typevar.__constraints__:
-            return self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
+            schema = self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
         else:
             return core_schema.any_schema()
+        schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+            lambda x, h: h(x), schema=core_schema.any_schema()
+        )
+        return schema
 
     def _computed_field_schema(
         self,

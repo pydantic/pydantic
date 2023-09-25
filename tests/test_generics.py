@@ -2622,3 +2622,26 @@ def test_reverse_order_generic_hashability():
     m1 = Model[int](x=1)
     m2 = Model[int](x=1)
     assert len({m1, m2}) == 1
+
+
+def test_serialize_unsubstituted_typevars_as_any() -> None:
+    ErrorDataT = TypeVar('ErrorDataT', bound=BaseModel)
+
+    class ErrorDetails(BaseModel):
+        foo: str
+
+    class Error(BaseModel, Generic[ErrorDataT]):
+        message: str
+        details: Optional[ErrorDataT]
+
+    sample_error = Error(
+        message='We just had an error',
+        details=ErrorDetails(foo='var'),
+    )
+
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+        },
+    }

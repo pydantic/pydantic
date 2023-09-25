@@ -989,6 +989,7 @@ def condecimal(
         === ":white_check_mark: Do this"
             ```py
             from decimal import Decimal
+
             from typing_extensions import Annotated
 
             from pydantic import BaseModel, Field
@@ -1080,7 +1081,7 @@ UUID1 = Annotated[UUID, UuidVersion(1)]
 ```py
 import uuid
 
-from pydantic import BaseModel, UUID1
+from pydantic import UUID1, BaseModel
 
 class Model(BaseModel):
     uuid1: UUID1
@@ -1094,7 +1095,7 @@ UUID3 = Annotated[UUID, UuidVersion(3)]
 ```py
 import uuid
 
-from pydantic import BaseModel, UUID3
+from pydantic import UUID3, BaseModel
 
 class Model(BaseModel):
     uuid3: UUID3
@@ -1108,7 +1109,7 @@ UUID4 = Annotated[UUID, UuidVersion(4)]
 ```py
 import uuid
 
-from pydantic import BaseModel, UUID4
+from pydantic import UUID4, BaseModel
 
 class Model(BaseModel):
     uuid4: UUID4
@@ -1122,7 +1123,7 @@ UUID5 = Annotated[UUID, UuidVersion(5)]
 ```py
 import uuid
 
-from pydantic import BaseModel, UUID5
+from pydantic import UUID5, BaseModel
 
 class Model(BaseModel):
     uuid5: UUID5
