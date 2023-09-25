@@ -8,11 +8,9 @@ pytestmark = pytest.mark.skipif(not os.getenv('TEST_PLUGIN'), reason='Test only 
 def test_plugin_usage():
     from pydantic import BaseModel
 
-    with pytest.warns(UserWarning, match='AttributeError while loading the `my_plugin` Pydantic plugin.*'):
-
-        class MyModel(BaseModel):
-            x: int
-            y: str
+    class MyModel(BaseModel):
+        x: int
+        y: str
 
     m = MyModel(x='10', y='hello')
     assert m.x == 10
