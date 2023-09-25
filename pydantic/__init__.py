@@ -42,6 +42,7 @@ __version__ = VERSION
 ValidationError = pydantic_core.ValidationError
 
 if typing.TYPE_CHECKING:
+    # these are imported via `__getattr__` below, but we need them here for type checking and IDE support
     from .deprecated.class_validators import root_validator, validator
     from .deprecated.config import BaseConfig, Extra
     from .deprecated.tools import *
@@ -207,8 +208,6 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     # FieldValidationInfo is deprecated, and hidden behind module a `__getattr__`
     'FieldValidationInfo': ('pydantic_core', '.core_schema'),
 }
-if typing.TYPE_CHECKING:
-    from .root_model import RootModel
 
 _getattr_migration = getattr_migration(__name__)
 
