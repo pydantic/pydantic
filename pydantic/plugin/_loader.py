@@ -33,7 +33,7 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
     global _plugins, _loading_plugins
     if _loading_plugins:
         # this happens when plugins themselves use pydantic, we return no plugins
-        return {}.values()
+        return ()
     elif _plugins is None:
         # plugins already loaded
         _plugins = {}
