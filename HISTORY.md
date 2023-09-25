@@ -51,7 +51,7 @@
 * Fix handling of `UUID` values having `UUID.version=None` by @lig in [#7566](https://github.com/pydantic/pydantic/pull/7566)
 * Fix `__iter__` returning private `cached_property` info by @sydney-runkle in [#7570](https://github.com/pydantic/pydantic/pull/7570)
 
-## New Contributors
+### New Contributors
 * @15498th made their first contribution in [#7238](https://github.com/pydantic/pydantic/pull/7238)
 * @GabrielCappelli made their first contribution in [#7213](https://github.com/pydantic/pydantic/pull/7213)
 * @tobni made their first contribution in [#7184](https://github.com/pydantic/pydantic/pull/7184)
