@@ -32,7 +32,18 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated, Literal, OrderedDict, ParamSpec, TypeVarTuple, Unpack, get_args
+from typing_extensions import (
+    Annotated,
+    Literal,
+    OrderedDict,
+    ParamSpec,
+    TypeVarTuple,
+    Unpack,
+    get_args,
+)
+from typing_extensions import (
+    TypeVar as TypingExtensionsTypeVar,
+)
 
 from pydantic import (
     BaseModel,
@@ -2624,22 +2635,15 @@ def test_reverse_order_generic_hashability():
     assert len({m1, m2}) == 1
 
 
-@pytest.mark.parametrize(
-    'type_var',
-    [
-        TypeVar('ErrorDataT', bound=BaseModel),
-        TypeVar('ErrorDataT', BaseModel, str),
-    ],
-)
-def test_serialize_unsubstituted_typevars_bound_or_constraint(
-    type_var: TypeVar,
-) -> None:
+def test_serialize_unsubstituted_typevars_bound() -> None:
     class ErrorDetails(BaseModel):
         foo: str
 
-    class Error(BaseModel, Generic[type_var]):
+    ErrorDataT = TypeVar('ErrorDataT', bound=ErrorDetails)
+
+    class Error(BaseModel, Generic[ErrorDataT]):
         message: str
-        details: Optional[type_var]
+        details: ErrorDataT
 
     class MyErrorDetails(ErrorDetails):
         bar: str
@@ -2648,7 +2652,41 @@ def test_serialize_unsubstituted_typevars_bound_or_constraint(
         message='We just had an error',
         details=MyErrorDetails(foo='var', bar='baz'),
     )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
 
+    sample_error = Error[ErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+        },
+    }
+
+    sample_error = Error[MyErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
     assert sample_error.model_dump() == {
         'message': 'We just had an error',
         'details': {
@@ -2658,17 +2696,23 @@ def test_serialize_unsubstituted_typevars_bound_or_constraint(
     }
 
 
-def test_serialize_unsubstituted_typevars_default() -> None:
-    from typing_extensions import TypeVar
-
+@pytest.mark.parametrize(
+    'type_var',
+    [
+        TypingExtensionsTypeVar('ErrorDataT', default=BaseModel),
+        TypeVar('ErrorDataT', BaseModel, str),
+    ],
+    ids=['default', 'constraint'],
+)
+def test_serialize_unsubstituted_typevars_bound(
+    type_var: type[BaseModel],
+) -> None:
     class ErrorDetails(BaseModel):
         foo: str
 
-    DataT = TypeVar('DataT', default=ErrorDetails)
-
-    class Error(BaseModel, Generic[DataT]):
+    class Error(BaseModel, Generic[type_var]):  # type: ignore
         message: str
-        details: Optional[DataT]
+        details: type_var
 
     class MyErrorDetails(ErrorDetails):
         bar: str
@@ -2677,9 +2721,52 @@ def test_serialize_unsubstituted_typevars_default() -> None:
         message='We just had an error',
         details=MyErrorDetails(foo='var', bar='baz'),
     )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {},
+    }
+
+    sample_error = Error[ErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
     assert sample_error.model_dump() == {
         'message': 'We just had an error',
         'details': {
             'foo': 'var',
         },
     }
+
+    sample_error = Error[MyErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+
+def test_mix_default_and_constraints() -> None:
+    T = TypingExtensionsTypeVar('T', str, int, default=str)
+
+    msg = 'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
+    with pytest.raises(NotImplementedError, match=msg):
+
+        class _(BaseModel, Generic[T]):
+            x: T

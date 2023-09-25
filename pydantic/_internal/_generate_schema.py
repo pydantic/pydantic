@@ -1449,18 +1449,28 @@ class GenerateSchema:
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
         assert isinstance(typevar, typing.TypeVar)
 
-        if typevar.__bound__:
-            schema = self.generate_schema(typevar.__bound__)
-        elif typevar.__constraints__:
-            schema = self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
-        elif hasattr(typevar, '__default__'):
-            return self.generate_schema(getattr(typevar, '__default__'))
+        bound = typevar.__bound__
+        constraints = typevar.__constraints__
+        not_set = object()
+        default = getattr(typevar, '__default__', not_set)
+
+        if (bound is not None) + (len(constraints) != 0) + (default is not not_set) > 1:
+            raise NotImplementedError(
+                'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
+            )
+
+        if default is not not_set:
+            return self.generate_schema(default)
+        elif constraints:
+            return self._union_schema(typing.Union[constraints])  # type: ignore
+        elif bound:
+            schema = self.generate_schema(bound)
+            schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+                lambda x, h: h(x), schema=core_schema.any_schema()
+            )
+            return schema
         else:
             return core_schema.any_schema()
-        schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-            lambda x, h: h(x), schema=core_schema.any_schema()
-        )
-        return schema
 
     def _computed_field_schema(
         self,

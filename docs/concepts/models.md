@@ -783,7 +783,7 @@ print(concrete_model(a=1, b=1))
 
     If you need to perform isinstance checks against parametrized generics, you can do this by subclassing the parametrized generic class. This looks like `class MyIntModel(MyGenericModel[int]): ...` and `isinstance(my_model, MyIntModel)`.
 
-If a Pydantic model is used in a `TypeVar` constraint or bound and the generic type is never parametrized then Pydantic will use the constraint or `TypeVar` default for validation but treat the value as `Any` in terms of serialization:
+If a Pydantic model is used in a `TypeVar` bound and the generic type is never parametrized then Pydantic will use the bound for validation but treat the value as `Any` in terms of serialization:
 
 ```py
 from typing import Generic, Optional, TypeVar
@@ -834,15 +834,14 @@ assert error.model_dump() == {
 }
 ```
 
-If you use a `default=...` for a `TypeVar` (available in Python >= 3.13 or via `typing-extensions`) the default value will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior using `pydantic.SerializeAsAny`:
+If you use a `default=...` (available in Python >= 3.13 or via `typing-extensions`) or constraints (`TypeVar('T', str, int)`; note that you rarely want to use this form of a `TypeVar`) then the default value or constraints will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior using `pydantic.SerializeAsAny`:
 
 ```py
 from typing import Generic, Optional
 
 from typing_extensions import TypeVar
 
-from pydantic import BaseModel
-from pydantic.functional_serializers import SerializeAsAny
+from pydantic import BaseModel, SerializeAsAny
 
 
 class ErrorDetails(BaseModel):
