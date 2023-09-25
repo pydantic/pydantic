@@ -26,8 +26,6 @@ from ._internal import (
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
-from .deprecated import copy_internals as _deprecated_copy_internals
-from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
@@ -41,6 +39,7 @@ if typing.TYPE_CHECKING:
     from typing_extensions import Literal, Unpack
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
+    from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import Field as _Field
 
     AnyClassMethod = classmethod[Any, Any, Any]
@@ -1022,7 +1021,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         content_type: str | None = None,
         encoding: str = 'utf8',
-        proto: _deprecated_parse.Protocol | None = None,
+        proto: DeprecatedParseProtocol | None = None,
         allow_pickle: bool = False,
     ) -> Model:  # pragma: no cover
         warnings.warn(
@@ -1030,8 +1029,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'otherwise load the data then use `model_validate` instead.',
             DeprecationWarning,
         )
+        from .deprecated import parse
+
         try:
-            obj = _deprecated_parse.load_str_bytes(
+            obj = parse.load_str_bytes(
                 b,
                 proto=proto,
                 content_type=content_type,
@@ -1073,7 +1074,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         content_type: str | None = None,
         encoding: str = 'utf8',
-        proto: _deprecated_parse.Protocol | None = None,
+        proto: DeprecatedParseProtocol | None = None,
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
@@ -1081,7 +1082,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'use `model_validate_json` otherwise `model_validate` instead.',
             DeprecationWarning,
         )
-        obj = _deprecated_parse.load_file(
+        from .deprecated import parse
+
+        obj = parse.load_file(
             path,
             proto=proto,
             content_type=content_type,
@@ -1157,9 +1160,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.',
             DeprecationWarning,
         )
+        from .deprecated import copy_internals
 
         values = dict(
-            _deprecated_copy_internals._iter(
+            copy_internals._iter(
                 self, to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False
             ),
             **(update or {}),
@@ -1190,7 +1194,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if exclude:
             fields_set -= set(exclude)
 
-        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
+        return copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
 
     @classmethod
     @typing_extensions.deprecated(
@@ -1250,7 +1254,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     )
     def _iter(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
-        return _deprecated_copy_internals._iter(self, *args, **kwargs)
+
+        from .deprecated import copy_internals
+
+        return copy_internals._iter(self, *args, **kwargs)
 
     @typing_extensions.deprecated(
         'The private method `_copy_and_set_values` will be removed and should no longer be used.',
@@ -1261,7 +1268,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'The private method  `_copy_and_set_values` will be removed and should no longer be used.',
             DeprecationWarning,
         )
-        return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)
+        from .deprecated import copy_internals
+
+        return copy_internals._copy_and_set_values(self, *args, **kwargs)
 
     @classmethod
     @typing_extensions.deprecated(
@@ -1272,7 +1281,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings.warn(
             'The private method  `_get_value` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._get_value(cls, *args, **kwargs)
+
+        from .deprecated import copy_internals
+
+        return copy_internals._get_value(cls, *args, **kwargs)
 
     @typing_extensions.deprecated(
         'The private method `_calculate_keys` will be removed and should no longer be used.',
@@ -1282,7 +1294,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings.warn(
             'The private method `_calculate_keys` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)
+
+        from .deprecated import copy_internals
+
+        return copy_internals._calculate_keys(self, *args, **kwargs)
 
 
 @typing.overload

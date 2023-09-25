@@ -26,6 +26,8 @@ DEPRECATED_MOVED_IN_V2 = {
     'pydantic.decorator:validate_arguments': 'pydantic.deprecated.decorator:validate_arguments',
     'pydantic.class_validators:validator': 'pydantic.deprecated.class_validators:validator',
     'pydantic.class_validators:root_validator': 'pydantic.deprecated.class_validators:root_validator',
+    'pydantic.config:BaseConfig': 'pydantic.deprecated.config:BaseConfig',
+    'pydantic.config:Extra': 'pydantic.deprecated.config:Extra',
 }
 
 REDIRECT_TO_V1 = {
@@ -270,6 +272,9 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         Returns:
             The object.
         """
+        if name == '__path__':
+            raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
         import_path = f'{module}:{name}'
         if import_path in MOVED_IN_V2.keys():
             new_location = MOVED_IN_V2[import_path]
