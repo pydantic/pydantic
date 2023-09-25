@@ -283,7 +283,7 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
 
 
 def build_conversion_table(markdown: str, page: Page) -> str | None:
-    if page.file.src_uri != 'usage/conversion_table.md':
+    if page.file.src_uri != 'concepts/conversion_table.md':
         return None
 
     filtered_table_predicates = {
