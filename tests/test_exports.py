@@ -1,6 +1,8 @@
 import importlib
 import importlib.util
+import json
 import platform
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -68,3 +70,26 @@ def test_public_internal():
 
     if public_internal_attributes:
         pytest.fail('The following should not be publicly accessible:\n  ' + '\n  '.join(public_internal_attributes))
+
+
+# language=Python
+IMPORTED_MODULES_CODE = """
+import sys
+import pydantic
+
+modules = list(sys.modules.keys())
+
+import json
+print(json.dumps(modules))
+"""
+
+
+def test_imported_modules(tmp_path: Path):
+    py_file = tmp_path / 'test.py'
+    py_file.write_text(IMPORTED_MODULES_CODE)
+
+    output = subprocess.check_output([sys.executable, str(py_file)], cwd=tmp_path)
+    imported_modules = json.loads(output)
+    # debug(imported_modules)
+    assert 'pydantic' in imported_modules
+    assert 'pydantic.deprecated' not in imported_modules
