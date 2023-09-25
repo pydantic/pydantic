@@ -783,43 +783,113 @@ print(concrete_model(a=1, b=1))
 
     If you need to perform isinstance checks against parametrized generics, you can do this by subclassing the parametrized generic class. This looks like `class MyIntModel(MyGenericModel[int]): ...` and `isinstance(my_model, MyIntModel)`.
 
-If a Pydantic model is used in a `TypeVar` constraint, [`SerializeAsAny`](serialization.md#serializing-with-duck-typing) can be used to
-serialize it using the concrete model instead of the model `TypeVar` is bound to.
+If a Pydantic model is used in a `TypeVar` bound and the generic type is never parametrized then Pydantic will use the bound for validation but treat the value as `Any` in terms of serialization:
 
 ```py
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar
+
+from pydantic import BaseModel
+
+
+class ErrorDetails(BaseModel):
+    foo: str
+
+
+ErrorDataT = TypeVar('ErrorDataT', bound=ErrorDetails)
+
+
+class Error(BaseModel, Generic[ErrorDataT]):
+    message: str
+    details: Optional[ErrorDataT]
+
+
+class MyErrorDetails(ErrorDetails):
+    bar: str
+
+
+# serialized as Any
+error = Error(
+    message='We just had an error',
+    details=MyErrorDetails(foo='var', bar='var2'),
+)
+assert error.model_dump() == {
+    'message': 'We just had an error',
+    'details': {
+        'foo': 'var',
+        'bar': 'var2',
+    },
+}
+
+# serialized using the concrete parametrization
+# note that `'bar': 'var2'` is missing
+error = Error[ErrorDetails](
+    message='We just had an error',
+    details=ErrorDetails(foo='var'),
+)
+assert error.model_dump() == {
+    'message': 'We just had an error',
+    'details': {
+        'foo': 'var',
+    },
+}
+```
+
+If you use a `default=...` (available in Python >= 3.13 or via `typing-extensions`) or constraints (`TypeVar('T', str, int)`; note that you rarely want to use this form of a `TypeVar`) then the default value or constraints will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior using `pydantic.SerializeAsAny`:
+
+```py
+from typing import Generic, Optional
+
+from typing_extensions import TypeVar
 
 from pydantic import BaseModel, SerializeAsAny
 
 
-class Model(BaseModel):
-    a: int = 42
+class ErrorDetails(BaseModel):
+    foo: str
 
 
-class DataModel(Model):
-    b: int = 2
-    c: int = 3
+ErrorDataT = TypeVar('ErrorDataT', default=ErrorDetails)
 
 
-BoundT = TypeVar('BoundT', bound=Model)
+class Error(BaseModel, Generic[ErrorDataT]):
+    message: str
+    details: Optional[ErrorDataT]
 
 
-class GenericModel(BaseModel, Generic[BoundT]):
-    data: BoundT
+class MyErrorDetails(ErrorDetails):
+    bar: str
 
 
-class SerializeAsAnyModel(BaseModel, Generic[BoundT]):
-    data: SerializeAsAny[BoundT]
+# serialized using the default's serializer
+error = Error(
+    message='We just had an error',
+    details=MyErrorDetails(foo='var', bar='var2'),
+)
+assert error.model_dump() == {
+    'message': 'We just had an error',
+    'details': {
+        'foo': 'var',
+    },
+}
 
 
-data_model = DataModel()
+class SerializeAsAnyError(BaseModel, Generic[ErrorDataT]):
+    message: str
+    details: Optional[SerializeAsAny[ErrorDataT]]
 
-print(GenericModel(data=data_model).model_dump())
-#> {'data': {'a': 42}}
 
-
-print(SerializeAsAnyModel(data=data_model).model_dump())
-#> {'data': {'a': 42, 'b': 2, 'c': 3}}
+# serialized as Any
+error = SerializeAsAnyError(
+    message='We just had an error',
+    details=MyErrorDetails(foo='var', bar='baz'),
+)
+assert error.model_dump() == {
+    'message': 'We just had an error',
+    'details': {
+        'foo': 'var',
+        'bar': 'baz',
+    },
+}
 ```
 
 ## Dynamic model creation
