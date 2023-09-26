@@ -137,8 +137,7 @@ fn validate_tuple_positional<'s, 'data, T: Iterator<Item = PyResult<&'data I>>, 
     extras_validator: &Option<Box<CombinedValidator>>,
     items_validators: &[CombinedValidator],
     collection_iter: &mut T,
-    collection_len: Option<usize>,
-    expected_length: usize,
+    actual_length: Option<usize>,
 ) -> ValResult<'data, ()> {
     for (index, validator) in items_validators.iter().enumerate() {
         match collection_iter.next() {
@@ -167,7 +166,7 @@ fn validate_tuple_positional<'s, 'data, T: Iterator<Item = PyResult<&'data I>>, 
                     errors.extend(
                         line_errors
                             .into_iter()
-                            .map(|err| err.with_outer_location((index + expected_length).into())),
+                            .map(|err| err.with_outer_location((index + items_validators.len()).into())),
                     );
                 }
                 Err(ValError::Omit) => (),
@@ -177,8 +176,8 @@ fn validate_tuple_positional<'s, 'data, T: Iterator<Item = PyResult<&'data I>>, 
                 errors.push(ValLineError::new(
                     ErrorType::TooLong {
                         field_type: "Tuple".to_string(),
-                        max_length: expected_length,
-                        actual_length: collection_len.unwrap_or(index),
+                        max_length: items_validators.len(),
+                        actual_length,
                         context: None,
                     },
                     input,
@@ -204,8 +203,12 @@ impl Validator for TuplePositionalValidator {
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let collection = input.validate_tuple(state.strict_or(self.strict))?;
-        let expected_length = self.items_validators.len();
-        let collection_len = collection.generic_len();
+        let actual_length = collection.generic_len();
+        let expected_length = if self.extras_validator.is_some() {
+            actual_length.unwrap_or(self.items_validators.len())
+        } else {
+            self.items_validators.len()
+        };
 
         let mut output: Vec<PyObject> = Vec::with_capacity(expected_length);
         let mut errors: Vec<ValLineError> = Vec::new();
@@ -221,8 +224,7 @@ impl Validator for TuplePositionalValidator {
                     &self.extras_validator,
                     &self.items_validators,
                     &mut $collection_iter,
-                    collection_len,
-                    expected_length,
+                    actual_length,
                 )?
             }};
         }

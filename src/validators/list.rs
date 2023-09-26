@@ -58,7 +58,7 @@ macro_rules! length_check {
                     crate::errors::ErrorType::TooLong {
                         field_type: $field_type.to_string(),
                         max_length,
-                        actual_length,
+                        actual_length: Some(actual_length),
                         context: None,
                     },
                     $input,
