@@ -205,6 +205,10 @@ dataclasses without having to subclass `BaseModel`. Pydantic V2 introduces the f
     * `smart_union`.
     * `underscore_attrs_are_private` — the Pydantic V2 behavior is now the same as if this was always set
       to `True` in Pydantic V1.
+    * `json_loads`.
+    * `json_dumps`.
+    * `copy_on_model_validation`.
+    * `post_init_call`.
 
 * The following config settings have been renamed:
     * `allow_population_by_field_name` → `populate_by_name`
