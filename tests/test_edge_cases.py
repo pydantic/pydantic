@@ -2612,3 +2612,25 @@ def test_custom_exception_handler():
         MyModel(**data)
 
     assert len(traceback_exceptions) == 1
+
+
+def test_recursive_walk_fails_on_double_diamond_composition():
+    class A(BaseModel):
+        pass
+
+    class B(BaseModel):
+        a_1: A = None
+        a_2: A = None
+
+    class C(BaseModel):
+        b: B = None
+
+    class D(BaseModel):
+        c_1: C = None
+        c_2: C = None
+
+    class E(BaseModel):
+        c: C
+
+    # This is just to check that above model contraption doesn't fail
+    assert E(c=C()).model_dump() == {'c': {'b': None}}
