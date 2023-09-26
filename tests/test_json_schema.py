@@ -5646,16 +5646,16 @@ def test_models_json_schema_generics() -> None:
         ]
     ) == (
         {
-            (GLiteral, 'serialization'): {'$ref': '#/$defs/G_Literal_str__str__'},
-            (GLiteral, 'validation'): {'$ref': '#/$defs/G_Literal_str__str__'},
+            (GLiteral, 'serialization'): {'$ref': '#/$defs/G_Literal__a____b___'},
+            (GLiteral, 'validation'): {'$ref': '#/$defs/G_Literal__a____b___'},
             (M, 'validation'): {'$ref': '#/$defs/M'},
         },
         {
             '$defs': {
-                'G_Literal_str__str__': {
+                'G_Literal__a____b___': {
                     'properties': {'foo': {'enum': ['a', 'b'], 'title': 'Foo', 'type': 'string'}},
                     'required': ['foo'],
-                    'title': 'G[Literal[str, str]]',
+                    'title': "G[Literal['a', 'b']]",
                     'type': 'object',
                 },
                 'M': {
