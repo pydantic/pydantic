@@ -6,7 +6,12 @@ from pydantic_core import CoreSchema, core_schema
 
 from ..errors import PydanticUserError
 from . import _core_utils
-from ._core_utils import NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY, CoreSchemaField, collect_definitions
+from ._core_utils import (
+    NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
+    CoreSchemaField,
+    collect_definitions,
+    simplify_schema_references,
+)
 
 CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic.internal.union_discriminator'
 
@@ -49,7 +54,7 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
             s = apply_discriminator(s, discriminator, definitions)
         return s
 
-    return _core_utils.walk_core_schema(schema, inner)
+    return simplify_schema_references(_core_utils.walk_core_schema(schema, inner))
 
 
 def apply_discriminator(
@@ -177,6 +182,10 @@ class _ApplyInferredDiscriminator:
         if self._should_be_nullable and not self._is_nullable:
             schema = core_schema.nullable_schema(schema)
         self._used = True
+        new_defs = collect_definitions(schema)
+        missing_defs = self.definitions.keys() - new_defs.keys()
+        if missing_defs:
+            schema = core_schema.definitions_schema(schema, [self.definitions[ref] for ref in missing_defs])
         return schema
 
     def _apply_to_root(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
