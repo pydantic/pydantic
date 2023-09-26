@@ -4707,7 +4707,7 @@ def test_extras_and_examples_are_json_encoded():
 
     class Cat(BaseModel):
         toys: Annotated[
-            list[Toy],
+            List[Toy],
             Field(examples=[[Toy(name='mouse'), Toy(name='ball')]], json_schema_extra={'special': Toy(name='bird')}),
         ]
 
