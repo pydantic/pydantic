@@ -54,6 +54,7 @@ from ._core_utils import (
     NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
     define_expected_missing_refs,
+    get_ref,
     get_type_ref,
     is_list_like_schema_with_items_schema,
 )
@@ -396,6 +397,8 @@ class GenerateSchema:
         ref = cast('str | None', schema.get('ref', None))
         if ref:
             self.defs.definitions[ref] = schema
+        if 'ref' in schema:
+            schema = core_schema.definition_reference_schema(schema['ref'])
         return core_schema.definitions_schema(
             schema,
             list(self.defs.definitions.values()),
@@ -554,19 +557,6 @@ class GenerateSchema:
                 self.defs.definitions[model_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(model_ref)
 
-    def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
-        """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
-        and return the inner schema.
-        """
-
-        def get_ref(s: CoreSchema) -> str:
-            return s['ref']  # type: ignore
-
-        if schema['type'] == 'definitions':
-            self.defs.definitions.update({get_ref(s): s for s in schema['definitions']})
-            schema = schema['schema']
-        return schema
-
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """Try to generate schema from either the `__get_pydantic_core_schema__` function or
         `__pydantic_core_schema__` property.
@@ -603,9 +593,7 @@ class GenerateSchema:
                     source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode)
                 )
 
-        schema = self._unpack_refs_defs(schema)
-
-        ref: str | None = schema.get('ref', None)
+        ref = get_ref(schema)
         if ref:
             self.defs.definitions[ref] = self._post_process_generated_schema(schema)
             return core_schema.definition_reference_schema(ref)
