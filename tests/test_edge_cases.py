@@ -2640,11 +2640,11 @@ def test_recursive_walk_fails_on_double_diamond_composition():
 def test_recursive_root_models_in_discriminated_union():
     class Model1(BaseModel):
         kind: Literal['1'] = '1'
-        two: 'Model2 | None'
+        two: Optional['Model2']
 
     class Model2(BaseModel):
         kind: Literal['2'] = '2'
-        one: Model1 | None
+        one: Optional[Model1]
 
     class Root1(RootModel[Model1]):
         pass
@@ -2653,8 +2653,8 @@ def test_recursive_root_models_in_discriminated_union():
         pass
 
     class Outer(BaseModel):
-        first: Annotated[Root1 | Root2, Field(discriminator='kind')]
-        second: Annotated[Root1 | Root2, Field(discriminator='kind')]
+        first: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
+        second: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
 
     assert Outer.model_json_schema() == {
         '$defs': {
