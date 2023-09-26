@@ -33,6 +33,7 @@ from pydantic import (
     PydanticDeprecatedSince20,
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
+    RootModel,
     TypeAdapter,
     ValidationError,
     constr,
@@ -2634,3 +2635,71 @@ def test_recursive_walk_fails_on_double_diamond_composition():
 
     # This is just to check that above model contraption doesn't fail
     assert E(c=C(b=B(a_1=A(), a_2=A()))).model_dump() == {'c': {'b': {'a_1': {}, 'a_2': {}}}}
+
+
+def test_recursive_root_models_in_discriminated_union():
+    class Model1(BaseModel):
+        kind: Literal['1'] = '1'
+        two: 'Model2 | None'
+
+    class Model2(BaseModel):
+        kind: Literal['2'] = '2'
+        one: Model1 | None
+
+    class Root1(RootModel[Model1]):
+        pass
+
+    class Root2(RootModel[Model2]):
+        pass
+
+    class Outer(BaseModel):
+        first: Annotated[Root1 | Root2, Field(discriminator='kind')]
+        second: Annotated[Root1 | Root2, Field(discriminator='kind')]
+
+    assert Outer.model_json_schema() == {
+        '$defs': {
+            'Model1': {
+                'properties': {
+                    'kind': {'const': '1', 'default': '1', 'title': 'Kind'},
+                    'two': {'anyOf': [{'$ref': '#/$defs/Model2'}, {'type': 'null'}]},
+                },
+                'required': ['two'],
+                'title': 'Model1',
+                'type': 'object',
+            },
+            'Model2': {
+                'properties': {
+                    'kind': {'const': '2', 'default': '2', 'title': 'Kind'},
+                    'one': {'anyOf': [{'$ref': '#/$defs/Model1'}, {'type': 'null'}]},
+                },
+                'required': ['one'],
+                'title': 'Model2',
+                'type': 'object',
+            },
+            'Root1': {'allOf': [{'$ref': '#/$defs/Model1'}], 'title': 'Root1'},
+            'Root2': {
+                'properties': {
+                    'kind': {'const': '2', 'default': '2', 'title': 'Kind'},
+                    'one': {'anyOf': [{'$ref': '#/$defs/Model1'}, {'type': 'null'}]},
+                },
+                'required': ['one'],
+                'title': 'Model2',
+                'type': 'object',
+            },
+        },
+        'properties': {
+            'first': {
+                'discriminator': {'mapping': {'1': '#/$defs/Root1', '2': '#/$defs/Root2'}, 'propertyName': 'kind'},
+                'oneOf': [{'$ref': '#/$defs/Root1'}, {'$ref': '#/$defs/Root2'}],
+                'title': 'First',
+            },
+            'second': {
+                'discriminator': {'mapping': {'1': '#/$defs/Root1', '2': '#/$defs/Root2'}, 'propertyName': 'kind'},
+                'oneOf': [{'$ref': '#/$defs/Root1'}, {'$ref': '#/$defs/Root2'}],
+                'title': 'Second',
+            },
+        },
+        'required': ['first', 'second'],
+        'title': 'Outer',
+        'type': 'object',
+    }
