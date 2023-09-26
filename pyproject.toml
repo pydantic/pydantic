@@ -92,14 +92,6 @@ linting = [
     "ruff",
     "mypy~=1.1.1",
 ]
-testing-extra = [
-    # used when generate devtools docs example
-    "ansi2html",
-    "devtools",
-    # used in docs tests
-    "sqlalchemy>=2.0,<3.0",
-    "greenlet>=3.0.0rc3",
-]
 testing = [
     "coverage[toml]",
     "dirty-equals",
@@ -109,6 +101,14 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
+]
+testing-extra = [
+    # used when generate devtools docs example
+    "ansi2html",
+    "devtools",
+    # used in docs tests
+    "sqlalchemy>=2.0,<3.0",
+    "greenlet>=3.0.0rc3",
 ]
 mypy = [
     "mypy",
