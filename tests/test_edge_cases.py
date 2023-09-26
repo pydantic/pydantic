@@ -2647,14 +2647,23 @@ def test_recursive_root_models_in_discriminated_union():
         one: Optional[Model1]
 
     class Root1(RootModel[Model1]):
-        pass
+        @property
+        def kind(self):
+            # Ensures discriminated union validation works even with model instances
+            return self.root.kind
 
     class Root2(RootModel[Model2]):
-        pass
+        @property
+        def kind(self):
+            # Ensures discriminated union validation works even with model instances
+            return self.root.kind
 
     class Outer(BaseModel):
-        first: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
-        second: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
+        a: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
+        b: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
+
+    validated = Outer.model_validate({'a': {'kind': '1', 'two': None}, 'b': {'kind': '2', 'one': None}})
+    assert validated == Outer(a=Root1(Model1(two=None)), b=Root2(Model2(one=None)))
 
     assert Outer.model_json_schema() == {
         '$defs': {
@@ -2688,18 +2697,18 @@ def test_recursive_root_models_in_discriminated_union():
             },
         },
         'properties': {
-            'first': {
+            'a': {
                 'discriminator': {'mapping': {'1': '#/$defs/Root1', '2': '#/$defs/Root2'}, 'propertyName': 'kind'},
                 'oneOf': [{'$ref': '#/$defs/Root1'}, {'$ref': '#/$defs/Root2'}],
-                'title': 'First',
+                'title': 'A',
             },
-            'second': {
+            'b': {
                 'discriminator': {'mapping': {'1': '#/$defs/Root1', '2': '#/$defs/Root2'}, 'propertyName': 'kind'},
                 'oneOf': [{'$ref': '#/$defs/Root1'}, {'$ref': '#/$defs/Root2'}],
-                'title': 'Second',
+                'title': 'B',
             },
         },
-        'required': ['first', 'second'],
+        'required': ['a', 'b'],
         'title': 'Outer',
         'type': 'object',
     }
