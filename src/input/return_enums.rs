@@ -106,54 +106,33 @@ struct MaxLengthCheck<'a, INPUT> {
     max_length: Option<usize>,
     field_type: &'a str,
     input: &'a INPUT,
-    known_input_length: usize,
+    actual_length: Option<usize>,
 }
 
 impl<'a, INPUT: Input<'a>> MaxLengthCheck<'a, INPUT> {
-    fn new(max_length: Option<usize>, field_type: &'a str, input: &'a INPUT, known_input_length: usize) -> Self {
+    fn new(max_length: Option<usize>, field_type: &'a str, input: &'a INPUT, actual_length: Option<usize>) -> Self {
         Self {
             current_length: 0,
             max_length,
             field_type,
             input,
-            known_input_length,
+            actual_length,
         }
     }
 
     fn incr(&mut self) -> ValResult<'a, ()> {
-        match self.max_length {
-            Some(max_length) => {
-                self.current_length += 1;
-                if self.current_length > max_length {
-                    let biggest_length = if self.known_input_length > self.current_length {
-                        self.known_input_length
-                    } else {
-                        self.current_length
-                    };
-                    return Err(ValError::new(
-                        ErrorType::TooLong {
-                            field_type: self.field_type.to_string(),
-                            max_length,
-                            actual_length: biggest_length,
-                            context: None,
-                        },
-                        self.input,
-                    ));
-                }
-            }
-            None => {
-                self.current_length += 1;
-                if self.current_length > self.known_input_length {
-                    return Err(ValError::new(
-                        ErrorType::TooLong {
-                            field_type: self.field_type.to_string(),
-                            max_length: self.known_input_length,
-                            actual_length: self.current_length,
-                            context: None,
-                        },
-                        self.input,
-                    ));
-                }
+        if let Some(max_length) = self.max_length {
+            self.current_length += 1;
+            if self.current_length > max_length {
+                return Err(ValError::new(
+                    ErrorType::TooLong {
+                        field_type: self.field_type.to_string(),
+                        max_length,
+                        actual_length: self.actual_length,
+                        context: None,
+                    },
+                    self.input,
+                ));
             }
         }
         Ok(())
@@ -255,13 +234,15 @@ fn validate_iter_to_set<'a, 's>(
             Ok(item) => {
                 set.build_add(item)?;
                 if let Some(max_length) = max_length {
-                    let actual_length = set.build_len();
-                    if actual_length > max_length {
+                    if set.build_len() > max_length {
                         return Err(ValError::new(
                             ErrorType::TooLong {
                                 field_type: field_type.to_string(),
                                 max_length,
-                                actual_length,
+                                // The logic here is that it doesn't matter how many elements the
+                                // input actually had; all we know is it had more than the allowed
+                                // number of deduplicated elements.
+                                actual_length: None,
                                 context: None,
                             },
                             input,
@@ -335,10 +316,9 @@ impl<'a> GenericIterable<'a> {
         validator: &'s CombinedValidator,
         state: &mut ValidationState,
     ) -> ValResult<'a, Vec<PyObject>> {
-        let capacity = self
-            .generic_len()
-            .unwrap_or_else(|| max_length.unwrap_or(DEFAULT_CAPACITY));
-        let max_length_check = MaxLengthCheck::new(max_length, field_type, input, capacity);
+        let actual_length = self.generic_len();
+        let capacity = actual_length.unwrap_or(DEFAULT_CAPACITY);
+        let max_length_check = MaxLengthCheck::new(max_length, field_type, input, actual_length);
 
         macro_rules! validate {
             ($iter:expr) => {
@@ -394,10 +374,8 @@ impl<'a> GenericIterable<'a> {
         field_type: &'static str,
         max_length: Option<usize>,
     ) -> ValResult<'a, Vec<PyObject>> {
-        let capacity = self
-            .generic_len()
-            .unwrap_or_else(|| max_length.unwrap_or(DEFAULT_CAPACITY));
-        let max_length_check = MaxLengthCheck::new(max_length, field_type, input, capacity);
+        let actual_length = self.generic_len();
+        let max_length_check = MaxLengthCheck::new(max_length, field_type, input, actual_length);
 
         match self {
             GenericIterable::List(collection) => {

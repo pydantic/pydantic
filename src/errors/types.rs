@@ -227,7 +227,7 @@ error_types! {
     TooLong {
         field_type: {ctx_type: String, ctx_fn: field_from_context},
         max_length: {ctx_type: usize, ctx_fn: field_from_context},
-        actual_length: {ctx_type: usize, ctx_fn: field_from_context},
+        actual_length: {ctx_type: Option<usize>, ctx_fn: field_from_context},
     },
     // ---------------------
     // generic collection and iteration errors
@@ -630,7 +630,7 @@ impl ErrorType {
                 ..
             } => {
                 let expected_plural = plural_s(*min_length);
-                to_string_render!(tmpl, field_type, min_length, actual_length, expected_plural)
+                to_string_render!(tmpl, field_type, min_length, actual_length, expected_plural,)
             }
             Self::TooLong {
                 field_type,
@@ -639,7 +639,8 @@ impl ErrorType {
                 ..
             } => {
                 let expected_plural = plural_s(*max_length);
-                to_string_render!(tmpl, field_type, max_length, actual_length, expected_plural)
+                let actual_length = actual_length.map_or(Cow::Borrowed("more"), |v| Cow::Owned(v.to_string()));
+                to_string_render!(tmpl, field_type, max_length, actual_length, expected_plural,)
             }
             Self::IterationError { error, .. } => render!(tmpl, error),
             Self::StringTooShort { min_length, .. } => to_string_render!(tmpl, min_length),

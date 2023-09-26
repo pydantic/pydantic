@@ -145,7 +145,7 @@ impl ValidatorIterator {
                                         ErrorType::TooLong {
                                             field_type: "Generator".to_string(),
                                             max_length,
-                                            actual_length: index + 1,
+                                            actual_length: None,
                                             context: None,
                                         },
                                         $iter.input_as_error_value(py),

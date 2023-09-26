@@ -107,13 +107,13 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], mode, item
         ),
         (
             {'max_length': 3},
-            [1, 2, 3, 4],
-            Err('Tuple should have at most 3 items after validation, not 4 [type=too_long,'),
+            [1, 2, 3, 4, 5],
+            Err('Tuple should have at most 3 items after validation, not 5 [type=too_long,'),
         ),
         (
             {'max_length': 3},
             infinite_generator(),
-            Err('Tuple should have at most 3 items after validation, not 4 [type=too_long,'),
+            Err('Tuple should have at most 3 items after validation, not more [type=too_long,'),
         ),
     ],
     ids=repr,
