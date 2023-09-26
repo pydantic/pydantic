@@ -5631,7 +5631,7 @@ def test_json_schema_mode_override():
 
 def test_recursive_non_generic_model() -> None:
     class Foo(BaseModel):
-        maybe_bar: 'Bar | None'
+        maybe_bar: Union[None, 'Bar']
 
     class Bar(BaseModel):
         foo: Foo
