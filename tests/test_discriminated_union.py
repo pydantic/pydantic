@@ -1296,8 +1296,8 @@ def test_sequence_discriminated_union():
         '$defs': {
             'Cat': {
                 'properties': {
-                    'meows': {'title': 'Meows', 'type': 'integer'},
                     'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'meows': {'title': 'Meows', 'type': 'integer'},
                 },
                 'required': ['pet_type', 'meows'],
                 'title': 'Cat',
@@ -1305,8 +1305,8 @@ def test_sequence_discriminated_union():
             },
             'Dog': {
                 'properties': {
-                    'barks': {'title': 'Barks', 'type': 'number'},
                     'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'barks': {'title': 'Barks', 'type': 'number'},
                 },
                 'required': ['pet_type', 'barks'],
                 'title': 'Dog',
@@ -1323,12 +1323,23 @@ def test_sequence_discriminated_union():
             },
         },
         'properties': {
-            'n': {'title': 'N', 'type': 'integer'},
             'pet': {
-                'items': {'anyOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}]},
+                'items': {
+                    'discriminator': {
+                        'mapping': {
+                            'cat': '#/$defs/Cat',
+                            'dog': '#/$defs/Dog',
+                            'lizard': '#/$defs/Lizard',
+                            'reptile': '#/$defs/Lizard',
+                        },
+                        'propertyName': 'pet_type',
+                    },
+                    'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}],
+                },
                 'title': 'Pet',
                 'type': 'array',
             },
+            'n': {'title': 'N', 'type': 'integer'},
         },
         'required': ['pet', 'n'],
         'title': 'Model',
