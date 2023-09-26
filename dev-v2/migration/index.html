@@ -3671,13 +3671,17 @@ dataclasses without having to subclass <code>BaseModel</code>. Pydantic V2 intro
 <p>The following config settings have been removed:</p>
 <ul>
 <li><code>allow_mutation</code> — this has been removed. You should be able to use <a href="../api/config/#pydantic.config.ConfigDict">frozen</a> equivalently (inverse of current use).</li>
-<li><code>error_msg_templates</code>.</li>
+<li><code>error_msg_templates</code></li>
 <li><code>fields</code> — this was the source of various bugs, so has been removed.
   You should be able to use <code>Annotated</code> on fields to modify them as desired.</li>
 <li><code>getter_dict</code> — <code>orm_mode</code> has been removed, and this implementation detail is no longer necessary.</li>
 <li><code>smart_union</code>.</li>
 <li><code>underscore_attrs_are_private</code> — the Pydantic V2 behavior is now the same as if this was always set
   to <code>True</code> in Pydantic V1.</li>
+<li><code>json_loads</code></li>
+<li><code>json_dumps</code></li>
+<li><code>copy_on_model_validation</code></li>
+<li><code>post_init_call</code></li>
 </ul>
 </li>
 <li>
