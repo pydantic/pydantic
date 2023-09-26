@@ -1,3 +1,19 @@
+## v2.4.1 (2023-09-26)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.1)
+
+### What's Changed
+
+#### Packaging
+
+* Update pydantic-core to 2.10.1 by @davidhewitt in [#7633](https://github.com/pydantic/pydantic/pull/7633)
+
+#### Fixes
+
+* Serialize unsubstituted type vars as `Any` by @adriangb in [#7606](https://github.com/pydantic/pydantic/pull/7606)
+* Remove schema building caches by @adriangb in [#7624](https://github.com/pydantic/pydantic/pull/7624)
+* Fix an issue where JSON schema extras weren't JSON encoded by @dmontagu in [#7625](https://github.com/pydantic/pydantic/pull/7625)
+
 ## v2.4.0 (2023-09-22)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.0)
