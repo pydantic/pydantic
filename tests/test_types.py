@@ -455,9 +455,9 @@ def test_constrained_set_too_long():
         {
             'type': 'too_long',
             'loc': ('v',),
-            'msg': 'Set should have at most 10 items after validation, not 11',
+            'msg': 'Set should have at most 10 items after validation, not more',
             'input': {'4', '3', '10', '9', '5', '6', '1', '8', '0', '7', '2'},
-            'ctx': {'field_type': 'Set', 'max_length': 10, 'actual_length': 11},
+            'ctx': {'field_type': 'Set', 'max_length': 10, 'actual_length': None},
         }
     ]
 
@@ -541,9 +541,9 @@ def test_constrained_set_constraints():
         {
             'type': 'too_long',
             'loc': ('v',),
-            'msg': 'Set should have at most 11 items after validation, not 12',
+            'msg': 'Set should have at most 11 items after validation, not more',
             'input': {0, 8, 1, 9, 2, 10, 3, 7, 11, 4, 6, 5},
-            'ctx': {'field_type': 'Set', 'max_length': 11, 'actual_length': 12},
+            'ctx': {'field_type': 'Set', 'max_length': 11, 'actual_length': None},
         }
     ]
 
@@ -596,7 +596,7 @@ def test_conset():
     with pytest.raises(ValidationError, match='Set should have at least 2 items after validation, not 1'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='Set should have at most 4 items after validation, not 5'):
+    with pytest.raises(ValidationError, match='Set should have at most 4 items after validation, not more'):
         Model(foo=list(range(5)))
 
     with pytest.raises(ValidationError) as exc_info:
@@ -648,7 +648,7 @@ def test_confrozenset():
     with pytest.raises(ValidationError, match='Frozenset should have at least 2 items after validation, not 1'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='Frozenset should have at most 4 items after validation, not 5'):
+    with pytest.raises(ValidationError, match='Frozenset should have at most 4 items after validation, not more'):
         Model(foo=list(range(5)))
 
     with pytest.raises(ValidationError) as exc_info:

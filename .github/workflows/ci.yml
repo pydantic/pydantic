@@ -201,6 +201,11 @@ jobs:
         env:
           TEST_PLUGIN: 1
 
+      # uninstalling is necessary to avoid creating a pdm cache shared with other jobs
+      # which includes the plugin
+      - name: uninstall example plugin
+        run: pdm remove ./tests/plugin
+
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
