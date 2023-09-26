@@ -375,17 +375,23 @@ class GenerateSchema:
         )
 
     def _apply_discriminator_to_union(self, schema: CoreSchema, discriminator: Any) -> CoreSchema:
-        # defer until defs are resolved
-        _discriminated_union.set_discriminator(
-            schema,
-            discriminator,
-        )
-        if 'metadata' in schema:
-            schema['metadata'][NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = True
-        else:
-            schema['metadata'] = {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: True}
-        self._needs_apply_discriminated_union = True
-        return schema
+        try:
+            return _discriminated_union.apply_discriminator(
+                schema,
+                discriminator,
+            )
+        except _discriminated_union.MissingDefinitionForUnionRef:
+            # defer until defs are resolved
+            _discriminated_union.set_discriminator(
+                schema,
+                discriminator,
+            )
+            if 'metadata' in schema:
+                schema['metadata'][NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = True
+            else:
+                schema['metadata'] = {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: True}
+            self._needs_apply_discriminated_union = True
+            return schema
 
     def collect_definitions(self, schema: CoreSchema) -> CoreSchema:
         ref = cast('str | None', schema.get('ref', None))
