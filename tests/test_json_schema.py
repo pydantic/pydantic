@@ -5627,3 +5627,43 @@ def test_json_schema_mode_override():
     # Ensure the submodels' JSON schemas match the expected mode even when the opposite value is specified:
     assert ValidationModel.model_json_schema(mode='serialization') == Model.model_json_schema(mode='validation')
     assert SerializationModel.model_json_schema(mode='validation') == Model.model_json_schema(mode='serialization')
+
+
+def test_models_json_schema_generics() -> None:
+    class G(BaseModel, Generic[T]):
+        foo: T
+
+    class M(BaseModel):
+        foo: Literal['a', 'b']
+
+    GLiteral = G[Literal['a', 'b']]
+
+    assert models_json_schema(
+        [
+            (GLiteral, 'serialization'),
+            (GLiteral, 'validation'),
+            (M, 'validation'),
+        ]
+    ) == (
+        {
+            (GLiteral, 'serialization'): {'$ref': '#/$defs/G_Literal_str__str__'},
+            (GLiteral, 'validation'): {'$ref': '#/$defs/G_Literal_str__str__'},
+            (M, 'validation'): {'$ref': '#/$defs/M'},
+        },
+        {
+            '$defs': {
+                'G_Literal_str__str__': {
+                    'properties': {'foo': {'enum': ['a', 'b'], 'title': 'Foo', 'type': 'string'}},
+                    'required': ['foo'],
+                    'title': 'G[Literal[str, str]]',
+                    'type': 'object',
+                },
+                'M': {
+                    'properties': {'foo': {'enum': ['a', 'b'], 'title': 'Foo', 'type': 'string'}},
+                    'required': ['foo'],
+                    'title': 'M',
+                    'type': 'object',
+                },
+            }
+        },
+    )

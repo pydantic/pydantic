@@ -2180,6 +2180,10 @@ def models_json_schema(
             - The second element is a JSON schema containing all definitions referenced in the first returned
                     element, along with the optional title and description keys.
     """
+    for cls, _ in models:
+        if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
+            cls.__pydantic_validator__.rebuild()
+
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     inputs = [(m, mode, m.__pydantic_core_schema__) for m, mode in models]
     json_schemas_map, definitions = instance.generate_definitions(inputs)
