@@ -4701,6 +4701,20 @@ def test_serialization_validation_interaction():
     }
 
 
+def test_extras_and_examples_are_json_encoded():
+    class Toy(BaseModel):
+        name: Annotated[str, Field(examples=['mouse', 'ball'])]
+
+    class Cat(BaseModel):
+        toys: Annotated[
+            List[Toy],
+            Field(examples=[[Toy(name='mouse'), Toy(name='ball')]], json_schema_extra={'special': Toy(name='bird')}),
+        ]
+
+    assert Cat.model_json_schema()['properties']['toys']['examples'] == [[{'name': 'mouse'}, {'name': 'ball'}]]
+    assert Cat.model_json_schema()['properties']['toys']['special'] == {'name': 'bird'}
+
+
 def test_computed_field():
     class Model(BaseModel):
         x: int

@@ -33,7 +33,7 @@ from typing import (
 )
 from warnings import warn
 
-from pydantic_core import CoreSchema, PydanticUndefined, core_schema
+from pydantic_core import CoreSchema, PydanticUndefined, core_schema, to_jsonable_python
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -945,7 +945,7 @@ class GenerateSchema:
         json_schema_updates = {
             'title': field_info.title,
             'description': field_info.description,
-            'examples': field_info.examples,
+            'examples': to_jsonable_python(field_info.examples),
         }
         json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
 
@@ -954,7 +954,7 @@ class GenerateSchema:
         def json_schema_update_func(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = {**handler(schema), **json_schema_updates}
             if isinstance(json_schema_extra, dict):
-                json_schema.update(json_schema_extra)
+                json_schema.update(to_jsonable_python(json_schema_extra))
             elif callable(json_schema_extra):
                 json_schema_extra(json_schema)
             return json_schema
@@ -1647,7 +1647,7 @@ class GenerateSchema:
             if metadata.description:
                 json_schema_update['description'] = metadata.description
             if metadata.examples:
-                json_schema_update['examples'] = metadata.examples
+                json_schema_update['examples'] = to_jsonable_python(metadata.examples)
 
             json_schema_extra = metadata.json_schema_extra
             if json_schema_update or json_schema_extra:
@@ -1658,7 +1658,7 @@ class GenerateSchema:
                     json_schema = handler(core_schema)
                     json_schema.update(json_schema_update)
                     if isinstance(json_schema_extra, dict):
-                        json_schema.update(json_schema_extra)
+                        json_schema.update(to_jsonable_python(json_schema_extra))
                     elif callable(json_schema_extra):
                         json_schema_extra(json_schema)
                     return json_schema
