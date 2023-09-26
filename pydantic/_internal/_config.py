@@ -80,6 +80,7 @@ class ConfigWrapper:
     json_schema_serialization_defaults_required: bool
     json_schema_mode_override: Literal['validation', 'serialization', None]
     coerce_numbers_to_str: bool
+    validation_error_cause: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -176,6 +177,7 @@ class ConfigWrapper:
                 str_min_length=self.config_dict.get('str_min_length'),
                 hide_input_in_errors=self.config_dict.get('hide_input_in_errors'),
                 coerce_numbers_to_str=self.config_dict.get('coerce_numbers_to_str'),
+                validation_error_cause=self.config_dict.get('validation_error_cause'),
             )
         )
         return core_config
@@ -248,6 +250,7 @@ config_defaults = ConfigDict(
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,
     coerce_numbers_to_str=False,
+    validation_error_cause=False,
 )
 
 
