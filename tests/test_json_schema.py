@@ -5637,7 +5637,7 @@ def test_recursive_non_generic_model() -> None:
         foo: Foo
 
     # insert_assert(Bar(foo=Foo(maybe_bar=None)).model_dump())
-    assert Bar(foo=Foo(maybe_bar=None)).model_dump() == {'foo': {'maybe_bar': None}}
+    assert Bar.model_validate({'foo': {'maybe_bar': None}}).model_dump() == {'foo': {'maybe_bar': None}}
     # insert_assert(Bar.model_json_schema())
     assert Bar.model_json_schema() == {
         '$defs': {
