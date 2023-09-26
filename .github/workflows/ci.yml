@@ -52,7 +52,7 @@ jobs:
         python-version: '3.8'
 
     - name: install dependencies
-      # Unlike the docs build, we don't use mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
+      # Unlike the docs build, we don't use mkdocs_material-insiders
       # Because the secret for accessing the library is not accessible from forks, but we still want to run
       # this job on public CI runs.
       run: |
