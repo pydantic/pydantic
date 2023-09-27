@@ -22,4 +22,4 @@ pets3 = Pets3(['dog', 'cat'])
 
 class Pets4(RootModel[List[str]]):
     pets: List[str]
-    # MYPY: error: Extra field on RootModel subclass  [pydantic-field]
+# MYPY: error: Only `root` is allowed as a field of a `RootModel`  [pydantic-field]
