@@ -3546,7 +3546,7 @@ For example, you can use the <code>BaseModel</code> class from Pydantic V1 inste
 <p>The following sections provide details on the most important changes in Pydantic V2.</p>
 <h3 id="changes-to-pydanticbasemodel">Changes to <code>pydantic.BaseModel</code><a class="headerlink" href="#changes-to-pydanticbasemodel" title="Permanent link">&para;</a></h3>
 <p>Various method names have been changed; all non-deprecated <code>BaseModel</code> methods now have names matching either the
-format <code>model_.*</code> or <code>__.*pydantic.*__</code>. Where possible, we have retained the deprecated methods with their old names
+format <code>model_.*</code> or <code>__pydantic_.*__</code>. Where possible, we have retained the deprecated methods with their old names
 to help ease migration, but calling them will emit <code>DeprecationWarning</code>s.</p>
 <table>
 <thead>
