@@ -3411,6 +3411,10 @@ You can force them to run with <code>Field(validate_default=True)</code>. Settin
 Python with the <a href="https://docs.python.org/3/using/cmdline.html#cmdoption-o"><code>-O</code> optimization flag</a>
 disables <code>assert</code> statements, and <strong>validators will stop working</strong>.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>FieldValidationInfo</code> is <strong>deprecated</strong> in 2.4, use <code>ValidationInfo</code> instead.</p>
+</div>
 <p>If you want to access values from another field inside a <code>@field_validator</code>, this may be possible using <code>ValidationInfo.data</code>, which is a dict of field name to field value.
 Validation is done in the order fields are defined, so you have to be careful when using <code>ValidationInfo.data</code> to not access a field that has not yet been validated/populated — in the code above, for example, you would not be able to access <code>info.data['id']</code> from within <code>name_must_contain_space</code>.
 However, in most cases where you want to perform validation using multiple field values, it is better to use <code>@model_validator</code> which is discussed in the section below.</p>
