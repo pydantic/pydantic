@@ -134,6 +134,9 @@ The `pydantic.generics.GenericModel` class is no longer necessary, and has been 
 create generic `BaseModel` subclasses by just adding `Generic` as a parent class on a `BaseModel` subclass directly.
 This looks like `class MyGenericModel(BaseModel, Generic[T]): ...`.
 
+Mixing of V1 and V2 models is not supported which means that type parameters of such generic `BaseModel` (V2)
+cannot be V1 models.
+
 While it may not raise an error, we strongly advise against using _parametrized_ generics in `isinstance` checks.
 
   * For example, you should not do `isinstance(my_model, MyGenericModel[int])`.
