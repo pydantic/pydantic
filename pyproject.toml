@@ -168,6 +168,7 @@ addopts = [
 assignees = []
 reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt', 'sydney-runkle']
 require_change_file = false
+unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120
