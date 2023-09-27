@@ -288,21 +288,20 @@ Another example is customizing the way that the `'loc'` value of an error is rep
 ```py
 from typing import Any, Dict, List, Tuple, Union
 
-
 from pydantic import BaseModel, ValidationError
 
 
 def loc_to_dot_sep(loc: Tuple[Union[str, int], ...]) -> str:
-    path = ""
+    path = ''
     for i, x in enumerate(loc):
         if isinstance(x, str):
             if i > 0:
-                path += "."
+                path += '.'
             path += x
         elif isinstance(x, int):
-            path += f"[{x}]"
+            path += f'[{x}]'
         else:
-            raise TypeError("Unexpected type")
+            raise TypeError('Unexpected type')
     return path
 
 
@@ -322,7 +321,7 @@ class TestModel(BaseModel):
     items: list[TestNestedModel]
 
 
-data = {"items": [{"key": "foo", "value": "bar"}, {"key": "baz"}]}
+data = {'items': [{'key': 'foo', 'value': 'bar'}, {'key': 'baz'}]}
 
 try:
     TestModel.model_validate(data)
@@ -335,7 +334,7 @@ except ValidationError as e:
             'loc': ('items', 1, 'value'),
             'msg': 'Field required',
             'input': {'key': 'baz'},
-            'url': 'https://errors.pydantic.dev/2.4/v/missing',
+            'url': 'https://errors.pydantic.dev/2/v/missing',
         }
     ]
     """
@@ -348,7 +347,7 @@ except ValidationError as e:
             'loc': 'items[1].value',
             'msg': 'Field required',
             'input': {'key': 'baz'},
-            'url': 'https://errors.pydantic.dev/2.4/v/missing',
+            'url': 'https://errors.pydantic.dev/2/v/missing',
         }
     ]
     """
