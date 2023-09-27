@@ -5667,3 +5667,32 @@ def test_models_json_schema_generics() -> None:
             }
         },
     )
+
+
+def test_recursive_non_generic_model() -> None:
+    class Foo(BaseModel):
+        maybe_bar: Union[None, 'Bar']
+
+    class Bar(BaseModel):
+        foo: Foo
+
+    # insert_assert(Bar(foo=Foo(maybe_bar=None)).model_dump())
+    assert Bar.model_validate({'foo': {'maybe_bar': None}}).model_dump() == {'foo': {'maybe_bar': None}}
+    # insert_assert(Bar.model_json_schema())
+    assert Bar.model_json_schema() == {
+        '$defs': {
+            'Bar': {
+                'properties': {'foo': {'$ref': '#/$defs/Foo'}},
+                'required': ['foo'],
+                'title': 'Bar',
+                'type': 'object',
+            },
+            'Foo': {
+                'properties': {'maybe_bar': {'anyOf': [{'$ref': '#/$defs/Bar'}, {'type': 'null'}]}},
+                'required': ['maybe_bar'],
+                'title': 'Foo',
+                'type': 'object',
+            },
+        },
+        'allOf': [{'$ref': '#/$defs/Bar'}],
+    }

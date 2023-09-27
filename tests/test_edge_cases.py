@@ -2663,7 +2663,7 @@ def test_recursive_root_models_in_discriminated_union():
         b: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
 
     validated = Outer.model_validate({'a': {'kind': '1', 'two': None}, 'b': {'kind': '2', 'one': None}})
-    assert validated == Outer(a=Root1(Model1(two=None)), b=Root2(Model2(one=None)))
+    assert validated == Outer(a=Root1(root=Model1(two=None)), b=Root2(root=Model2(one=None)))
 
     assert Outer.model_json_schema() == {
         '$defs': {
@@ -2686,15 +2686,7 @@ def test_recursive_root_models_in_discriminated_union():
                 'type': 'object',
             },
             'Root1': {'allOf': [{'$ref': '#/$defs/Model1'}], 'title': 'Root1'},
-            'Root2': {
-                'properties': {
-                    'kind': {'const': '2', 'default': '2', 'title': 'Kind'},
-                    'one': {'anyOf': [{'$ref': '#/$defs/Model1'}, {'type': 'null'}]},
-                },
-                'required': ['one'],
-                'title': 'Model2',
-                'type': 'object',
-            },
+            'Root2': {'allOf': [{'$ref': '#/$defs/Model2'}], 'title': 'Root2'},
         },
         'properties': {
             'a': {
