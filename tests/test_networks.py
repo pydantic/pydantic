@@ -789,6 +789,7 @@ def test_address_valid(value, name, email):
         '\"@example.com',
         ',@example.com',
         'foobar <foobar<@example.com>',
+        'foobar <' + 'a' * 4096 + '@example.com>',
     ],
 )
 def test_address_invalid(value):
