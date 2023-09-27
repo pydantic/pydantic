@@ -101,7 +101,10 @@ def display_as_type(obj: Any) -> str:
         args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
         return f'Union[{args}]'
     elif isinstance(obj, _typing_extra.WithArgsTypes):
-        args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
+        if typing_extensions.get_origin(obj) == typing_extensions.Literal:
+            args = ', '.join(map(repr, typing_extensions.get_args(obj)))
+        else:
+            args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
         return f'{obj.__qualname__}[{args}]'
     elif isinstance(obj, type):
         return obj.__qualname__

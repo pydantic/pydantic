@@ -5629,6 +5629,46 @@ def test_json_schema_mode_override():
     assert SerializationModel.model_json_schema(mode='validation') == Model.model_json_schema(mode='serialization')
 
 
+def test_models_json_schema_generics() -> None:
+    class G(BaseModel, Generic[T]):
+        foo: T
+
+    class M(BaseModel):
+        foo: Literal['a', 'b']
+
+    GLiteral = G[Literal['a', 'b']]
+
+    assert models_json_schema(
+        [
+            (GLiteral, 'serialization'),
+            (GLiteral, 'validation'),
+            (M, 'validation'),
+        ]
+    ) == (
+        {
+            (GLiteral, 'serialization'): {'$ref': '#/$defs/G_Literal__a____b___'},
+            (GLiteral, 'validation'): {'$ref': '#/$defs/G_Literal__a____b___'},
+            (M, 'validation'): {'$ref': '#/$defs/M'},
+        },
+        {
+            '$defs': {
+                'G_Literal__a____b___': {
+                    'properties': {'foo': {'enum': ['a', 'b'], 'title': 'Foo', 'type': 'string'}},
+                    'required': ['foo'],
+                    'title': "G[Literal['a', 'b']]",
+                    'type': 'object',
+                },
+                'M': {
+                    'properties': {'foo': {'enum': ['a', 'b'], 'title': 'Foo', 'type': 'string'}},
+                    'required': ['foo'],
+                    'title': 'M',
+                    'type': 'object',
+                },
+            }
+        },
+    )
+
+
 def test_recursive_non_generic_model() -> None:
     class Foo(BaseModel):
         maybe_bar: Union[None, 'Bar']
