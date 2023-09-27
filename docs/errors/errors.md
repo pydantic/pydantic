@@ -318,7 +318,7 @@ class TestNestedModel(BaseModel):
 
 
 class TestModel(BaseModel):
-    items: list[TestNestedModel]
+    items: List[TestNestedModel]
 
 
 data = {'items': [{'key': 'foo', 'value': 'bar'}, {'key': 'baz'}]}
