@@ -50,7 +50,6 @@ from ._core_metadata import (
     build_metadata_dict,
 )
 from ._core_utils import (
-    HAS_INVALID_SCHEMAS_METADATA_KEY,
     NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
     define_expected_missing_refs,
@@ -535,10 +534,6 @@ class GenerateSchema:
                     new_inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
                     if new_inner_schema is not None:
                         inner_schema = new_inner_schema
-                        self._has_invalid_schema = True
-                        metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = True
-                    else:
-                        metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = False
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
                     model_schema = core_schema.model_schema(
@@ -659,11 +654,9 @@ class GenerateSchema:
         if 'metadata' in schema:
             metadata = schema['metadata']
             metadata[NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = self._needs_apply_discriminated_union
-            metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = self._has_invalid_schema
         else:
             schema['metadata'] = {
                 NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: self._needs_apply_discriminated_union,
-                HAS_INVALID_SCHEMAS_METADATA_KEY: self._has_invalid_schema,
             }
         return schema
 
