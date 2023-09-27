@@ -607,8 +607,9 @@ class PydanticModelTransformer:
                 lhs = stmt.lvalues[0]
                 if is_root_model and lhs.name != 'root':
                     error_extra_fields_on_root_model(self._api, stmt)
-                current_field_names.add(lhs.name)
-                found_fields[lhs.name] = maybe_field
+                else:
+                    current_field_names.add(lhs.name)
+                    found_fields[lhs.name] = maybe_field
 
         return list(found_fields.values())
 
