@@ -1,6 +1,6 @@
 name: 🐛 Pydantic V1.X Bug
 description: Report a bug or unexpected behavior in Pydantic V1.X, e.g. all releases prior to V2
-labels: [bug V1, unconfirmed]
+labels: [bug V1, pending]
 
 body:
   - type: markdown
