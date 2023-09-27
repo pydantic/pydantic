@@ -169,17 +169,10 @@ def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
             metadata = s['metadata']
             if HAS_INVALID_SCHEMAS_METADATA_KEY in metadata:
                 invalid = metadata[HAS_INVALID_SCHEMAS_METADATA_KEY]
-                if invalid is True:
-                    invalid = True
                 return s
         return recurse(s, _is_schema_valid)
 
     walk_core_schema(schema, _is_schema_valid)
-    if 'metadata' in schema:
-        metadata = schema['metadata']
-        metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = invalid
-    else:
-        schema['metadata'] = {HAS_INVALID_SCHEMAS_METADATA_KEY: invalid}
     return invalid
 
 
@@ -444,7 +437,8 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             for definition in s['definitions']:
                 ref = get_ref(definition)
                 assert ref is not None
-                definitions[ref] = definition
+                if ref not in definitions:
+                    definitions[ref] = definition
                 recurse(definition, collect_refs)
             return recurse(s['schema'], collect_refs)
         else:

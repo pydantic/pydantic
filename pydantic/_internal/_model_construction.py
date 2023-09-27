@@ -488,11 +488,11 @@ def complete_model_class(
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
+
+    schema = apply_discriminators(simplify_schema_references(schema))
     if collect_invalid_schemas(schema):
         set_model_mocks(cls, cls_name)
         return False
-
-    schema = apply_discriminators(simplify_schema_references(schema))
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema = validate_core_schema(schema)
