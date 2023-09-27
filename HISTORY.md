@@ -1,3 +1,22 @@
+## v2.4.2 (2023-09-27)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.2)
+
+### What's Changed
+
+#### Fixes
+
+* Fix bug with JSON schema for sequence of discriminated union by @dmontagu in [#7647](https://github.com/pydantic/pydantic/pull/7647)
+* Fix schema references in discriminated unions by @adriangb in [#7646](https://github.com/pydantic/pydantic/pull/7646)
+* Fix json schema generation for recursive models by @adriangb in [#7653](https://github.com/pydantic/pydantic/pull/7653)
+* Fix `models_json_schema` for generic models by @adriangb in [#7654](https://github.com/pydantic/pydantic/pull/7654)
+* Fix xfailed test for generic model signatures by @adriangb in [#7658](https://github.com/pydantic/pydantic/pull/7658)
+
+### New Contributors
+
+* @austinorr made their first contribution in [#7657](https://github.com/pydantic/pydantic/pull/7657)
+* @peterHoburg made their first contribution in [#7670](https://github.com/pydantic/pydantic/pull/7670)
+
 ## v2.4.1 (2023-09-26)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.1)
