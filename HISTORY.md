@@ -377,6 +377,11 @@ First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
 
+## v1.10.13 (2023-09-27)
+
+* Fix: Add max length check to `pydantic.validate_email`, #7673 by @hramezani
+* Docs: Fix pip commands to install v1, #6930 by @chbndrhnns
+
 ## v1.10.12 (2023-07-24)
 
 * Fixes the `maxlen` property being dropped on `deque` validation. Happened only if the deque item has been typed. Changes the `_validate_sequence_like` func, [#6581](https://github.com/pydantic/pydantic/pull/6581) by @maciekglowka

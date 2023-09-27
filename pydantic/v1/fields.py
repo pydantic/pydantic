@@ -263,7 +263,7 @@ def Field(
       Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
     :param include: include this field while dumping.
       Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
-    :param const: this field is required and *must* take its default value
+    :param const: this field is required and *must* take it's default value
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
       will have an ``exclusiveMinimum`` validation keyword
     :param ge: only applies to numbers, requires the field to be "greater than or equal to". The

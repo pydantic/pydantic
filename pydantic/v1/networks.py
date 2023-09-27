@@ -702,6 +702,10 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
 
 
 pretty_email_regex = re.compile(r'([\w ]*?) *<(.*)> *')
+MAX_EMAIL_LENGTH = 2048
+"""Maximum length for an email.
+A somewhat arbitrary but very generous number compared to what is allowed by most implementations.
+"""
 
 
 def validate_email(value: Union[str]) -> Tuple[str, str]:
@@ -714,6 +718,10 @@ def validate_email(value: Union[str]) -> Tuple[str, str]:
     """
     if email_validator is None:
         import_email_validator()
+
+    if len(value) > MAX_EMAIL_LENGTH:
+        raise errors.EmailError()
+
     m = pretty_email_regex.fullmatch(value)
     name: Union[str, None] = None
     if m:
