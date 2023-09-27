@@ -1768,7 +1768,7 @@ generator or a remote data loader, you can define its type with <code>Iterable</
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">infinite</span><span class="o">=</span><span class="n">infinite_ints</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; infinite=&lt;generator object infinite_ints at 0x7f6d10abe570&gt;</span>
+<span class="c1">#&gt; infinite=&lt;generator object infinite_ints at 0x7f93c0cbbe60&gt;</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">infinite</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
@@ -1805,7 +1805,7 @@ generator or a remote data loader, you can define its type with <code>Iterable</
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">infinite</span><span class="o">=</span><span class="n">infinite_ints</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; infinite=&lt;generator object infinite_ints at 0x7f6d10abff40&gt;</span>
+<span class="c1">#&gt; infinite=&lt;generator object infinite_ints at 0x7f93c0cbb920&gt;</span>
 
 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">infinite</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
@@ -1882,7 +1882,7 @@ consuming the infinite generator.</p>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">infinite</span><span class="o">=</span><span class="n">infinite_ints</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; infinite=&lt;itertools.chain object at 0x7f6d10959a80&gt;</span>
+<span class="c1">#&gt; infinite=&lt;itertools.chain object at 0x7f93c0a2c400&gt;</span>
 
 
 <span class="k">def</span> <span class="nf">infinite_strs</span><span class="p">():</span>
@@ -1937,7 +1937,7 @@ consuming the infinite generator.</p>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">infinite</span><span class="o">=</span><span class="n">infinite_ints</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; infinite=&lt;itertools.chain object at 0x7f6d108de6b0&gt;</span>
+<span class="c1">#&gt; infinite=&lt;itertools.chain object at 0x7f93c0a0cc40&gt;</span>
 
 
 <span class="k">def</span> <span class="nf">infinite_strs</span><span class="p">():</span>
@@ -2561,7 +2561,7 @@ use <a href="#strict-types"><code>StrictBool</code></a>.</p>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; callback=&lt;function &lt;lambda&gt; at 0x7f6d1070e290&gt;</span>
+<span class="c1">#&gt; callback=&lt;function &lt;lambda&gt; at 0x7f93c08c6290&gt;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -2575,7 +2575,7 @@ use <a href="#strict-types"><code>StrictBool</code></a>.</p>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">callback</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; callback=&lt;function &lt;lambda&gt; at 0x7f6d1070e3b0&gt;</span>
+<span class="c1">#&gt; callback=&lt;function &lt;lambda&gt; at 0x7f93c08c63b0&gt;</span>
 </code></pre></div>
 </div>
 </div>
@@ -4177,9 +4177,9 @@ formatted with a space, the schema would just include the full pattern and the r
 <span class="c1"># A simple check of instance type is used to validate the data</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">&#39;Harry&#39;</span><span class="p">,</span> <span class="n">pet</span><span class="o">=</span><span class="n">pet</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="c1">#&gt; pet=&lt;types_arbitrary_allowed.Pet object at 0x7f6d1077d2d0&gt; owner=&#39;Harry&#39;</span>
+<span class="c1">#&gt; pet=&lt;types_arbitrary_allowed.Pet object at 0x7f93c0935360&gt; owner=&#39;Harry&#39;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">pet</span><span class="p">)</span>
-<span class="c1">#&gt; &lt;types_arbitrary_allowed.Pet object at 0x7f6d1077d2d0&gt;</span>
+<span class="c1">#&gt; &lt;types_arbitrary_allowed.Pet object at 0x7f93c0935360&gt;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">pet</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 <span class="c1">#&gt; Hedwig</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">pet</span><span class="p">))</span>
@@ -4200,9 +4200,9 @@ formatted with a space, the schema would just include the full pattern and the r
 <span class="n">pet2</span> <span class="o">=</span> <span class="n">Pet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
 <span class="n">model2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">&#39;Harry&#39;</span><span class="p">,</span> <span class="n">pet</span><span class="o">=</span><span class="n">pet2</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="p">)</span>
-<span class="c1">#&gt; pet=&lt;types_arbitrary_allowed.Pet object at 0x7f6d1077f010&gt; owner=&#39;Harry&#39;</span>
+<span class="c1">#&gt; pet=&lt;types_arbitrary_allowed.Pet object at 0x7f93c09370a0&gt; owner=&#39;Harry&#39;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="p">)</span>
-<span class="c1">#&gt; &lt;types_arbitrary_allowed.Pet object at 0x7f6d1077f010&gt;</span>
+<span class="c1">#&gt; &lt;types_arbitrary_allowed.Pet object at 0x7f93c09370a0&gt;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 <span class="c1">#&gt; 42</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="p">))</span>
@@ -4295,9 +4295,9 @@ the <code>sub_fields</code> (from the generic class type parameters) and validat
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">wine=&lt;types_generics.TastingModel object at 0x7f6d10b1c850&gt;</span>
-<span class="sd">cheese=&lt;types_generics.TastingModel object at 0x7f6d10b1fee0&gt;</span>
-<span class="sd">thing=&lt;types_generics.TastingModel object at 0x7f6d10b1e740&gt;</span>
+<span class="sd">wine=&lt;types_generics.TastingModel object at 0x7f93c0eb6ce0&gt;</span>
+<span class="sd">cheese=&lt;types_generics.TastingModel object at 0x7f93c0eb6200&gt;</span>
+<span class="sd">thing=&lt;types_generics.TastingModel object at 0x7f93c0eb4490&gt;</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">wine</span><span class="o">.</span><span class="n">aged</span><span class="p">)</span>
 <span class="c1">#&gt; 20</span>
