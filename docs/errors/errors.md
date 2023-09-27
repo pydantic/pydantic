@@ -295,15 +295,14 @@ from pydantic import BaseModel, ValidationError
 def loc_to_dot_sep(loc: Tuple[Union[str, int], ...]) -> str:
     path = ""
     for i, x in enumerate(loc):
-        match x:
-            case str():
-                if i > 0:
-                    path += "."
-                path += x
-            case int():
-                path += f"[{x}]"
-            case _:
-                raise TypeError("Unexpected type")
+        if isinstance(x, str):
+            if i > 0:
+                path += "."
+            path += x
+        elif isinstance(x, int):
+            path += f"[{x}]"
+        else:
+            raise TypeError("Unexpected type")
     return path
 
 
