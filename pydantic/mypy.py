@@ -89,6 +89,7 @@ CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
+ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
@@ -430,8 +431,9 @@ class PydanticModelTransformer:
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         info = self._cls.info
+        is_root_model = any(ROOT_MODEL_FULLNAME in base.fullname for base in info.mro[:-1])
         config = self.collect_config()
-        fields = self.collect_fields(config)
+        fields = self.collect_fields(config, is_root_model)
         if fields is None:
             # Some definitions are not ready. We need another pass.
             return False
@@ -440,7 +442,6 @@ class PydanticModelTransformer:
                 return False
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
-        is_root_model = any('pydantic.root_model.RootModel' in base.fullname for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings, is_root_model)
         self.add_model_construct_method(fields, config, is_settings)
         self.set_frozen(fields, frozen=config.frozen is True)
@@ -557,7 +558,7 @@ class PydanticModelTransformer:
                 config.setdefault(name, value)
         return config
 
-    def collect_fields(self, model_config: ModelConfigData) -> list[PydanticModelField] | None:
+    def collect_fields(self, model_config: ModelConfigData, is_root_model: bool) -> list[PydanticModelField] | None:
         """Collects the fields for the model, accounting for parent classes."""
         cls = self._cls
 
@@ -604,6 +605,8 @@ class PydanticModelTransformer:
             maybe_field = self.collect_field_from_stmt(stmt, model_config)
             if maybe_field is not None:
                 lhs = stmt.lvalues[0]
+                if is_root_model and lhs.name != 'root':
+                    error_extra_fields_on_root_model(self._api, stmt)
                 current_field_names.add(lhs.name)
                 found_fields[lhs.name] = maybe_field
 
@@ -803,12 +806,8 @@ class PydanticModelTransformer:
                 is_settings=is_settings,
             )
             if is_root_model:
-                if len(fields) > 1:
-                    pass
-                    # error_extra_fields_on_root_model(self._api)
-
                 # convert root argument to positional argument
-                args[0].kind = ARG_POS
+                args[0].kind = ARG_POS if args[0].kind == ARG_NAMED else ARG_OPT
 
             if is_settings:
                 base_settings_node = self._api.lookup_fully_qualified(BASESETTINGS_FULLNAME).node
