@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v11012-2023-07-24" class="md-skip">
+        <a href="#v11013-2023-09-27" class="md-skip">
           Skip to content
         </a>
       
@@ -688,6 +688,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v11013-2023-09-27" class="md-nav__link">
+    v1.10.13 (2023-09-27)
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v11012-2023-07-24" class="md-nav__link">
@@ -1496,6 +1503,13 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v11013-2023-09-27" class="md-nav__link">
+    v1.10.13 (2023-09-27)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v11012-2023-07-24" class="md-nav__link">
     v1.10.12 (2023-07-24)
   </a>
@@ -2291,6 +2305,11 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 
   <h1>Changelog</h1>
 
+<h2 id="v11013-2023-09-27">v1.10.13 (2023-09-27)<a class="headerlink" href="#v11013-2023-09-27" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Fix: Add max length check to <code>pydantic.validate_email</code>, <a href="https://github.com/pydantic/pydantic/issues/7673">#7673</a> by <a href="https://github.com/hramezani">@hramezani</a></li>
+<li>Docs: Fix pip commands to install v1, <a href="https://github.com/pydantic/pydantic/issues/6930">#6930</a> by <a href="https://github.com/chbndrhnns">@chbndrhnns</a></li>
+</ul>
 <h2 id="v11012-2023-07-24">v1.10.12 (2023-07-24)<a class="headerlink" href="#v11012-2023-07-24" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Fixes the <code>maxlen</code> property being dropped on <code>deque</code> validation. Happened only if the deque item has been typed. Changes the <code>_validate_sequence_like</code> func, <a href="https://github.com/pydantic/pydantic/issues/6581">#6581</a> by <a href="https://github.com/maciekglowka">@maciekglowka</a></li>
