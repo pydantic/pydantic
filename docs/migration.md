@@ -78,7 +78,7 @@ The following sections provide details on the most important changes in Pydantic
 ### Changes to `pydantic.BaseModel`
 
 Various method names have been changed; all non-deprecated `BaseModel` methods now have names matching either the
-format `model_.*` or `__pydantic_.*__`. Where possible, we have retained the deprecated methods with their old names
+format `model_.*` or `__.*pydantic.*__`. Where possible, we have retained the deprecated methods with their old names
 to help ease migration, but calling them will emit `DeprecationWarning`s.
 
 | Pydantic V1 | Pydantic V2  |
