@@ -3640,6 +3640,8 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
 <p>The <code>pydantic.generics.GenericModel</code> class is no longer necessary, and has been removed. Instead, you can now
 create generic <code>BaseModel</code> subclasses by just adding <code>Generic</code> as a parent class on a <code>BaseModel</code> subclass directly.
 This looks like <code>class MyGenericModel(BaseModel, Generic[T]): ...</code>.</p>
+<p>Mixing of V1 and V2 models is not supported which means that type parameters of such generic <code>BaseModel</code> (V2)
+cannot be V1 models.</p>
 <p>While it may not raise an error, we strongly advise against using <em>parametrized</em> generics in <code>isinstance</code> checks.</p>
 <ul>
 <li>For example, you should not do <code>isinstance(my_model, MyGenericModel[int])</code>.
