@@ -4,7 +4,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::definitions::{Definitions, DefinitionsBuilder};
+use crate::definitions::DefinitionsBuilder;
 use crate::tools::SchemaDict;
 
 use super::{infer_json_key_known, BuildSerializer, CombinedSerializer, Extra, IsType, ObType, TypeSerializer};
@@ -75,7 +75,7 @@ impl TypeSerializer for NullableSerializer {
         Self::EXPECTED_TYPE
     }
 
-    fn retry_with_lax_check(&self, definitions: &Definitions<CombinedSerializer>) -> bool {
-        self.serializer.retry_with_lax_check(definitions)
+    fn retry_with_lax_check(&self) -> bool {
+        self.serializer.retry_with_lax_check()
     }
 }

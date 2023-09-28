@@ -50,7 +50,7 @@ impl Revalidate {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ModelValidator {
     revalidate: Revalidate,
     validator: Box<CombinedValidator>,
@@ -206,13 +206,9 @@ impl Validator for ModelValidator {
         Ok(model.into_py(py))
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         if ultra_strict {
-            self.validator.different_strict_behavior(definitions, ultra_strict)
+            self.validator.different_strict_behavior(ultra_strict)
         } else {
             true
         }
@@ -222,8 +218,8 @@ impl Validator for ModelValidator {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.validator.complete(definitions)
+    fn complete(&self) -> PyResult<()> {
+        self.validator.complete()
     }
 }
 

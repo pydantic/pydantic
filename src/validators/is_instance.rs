@@ -83,11 +83,7 @@ impl Validator for IsInstanceValidator {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        _ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, _ultra_strict: bool) -> bool {
         false
     }
 
@@ -95,7 +91,7 @@ impl Validator for IsInstanceValidator {
         &self.name
     }
 
-    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+    fn complete(&self) -> PyResult<()> {
         Ok(())
     }
 }

@@ -54,11 +54,7 @@ impl Validator for IntValidator {
         Ok(either_int.into_py(py))
     }
 
-    fn different_strict_behavior(
-        &self,
-        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         !ultra_strict
     }
 
@@ -66,7 +62,7 @@ impl Validator for IntValidator {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+    fn complete(&self) -> PyResult<()> {
         Ok(())
     }
 }
@@ -151,11 +147,7 @@ impl Validator for ConstrainedIntValidator {
         Ok(either_int.into_py(py))
     }
 
-    fn different_strict_behavior(
-        &self,
-        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         !ultra_strict
     }
 
@@ -163,7 +155,7 @@ impl Validator for ConstrainedIntValidator {
         "constrained-int"
     }
 
-    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+    fn complete(&self) -> PyResult<()> {
         Ok(())
     }
 }

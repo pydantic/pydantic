@@ -122,11 +122,7 @@ impl Validator for UuidValidator {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         !ultra_strict
     }
 
@@ -134,7 +130,7 @@ impl Validator for UuidValidator {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+    fn complete(&self) -> PyResult<()> {
         Ok(())
     }
 }

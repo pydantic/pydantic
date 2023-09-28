@@ -11,7 +11,7 @@ use super::InputType;
 use super::ValidationState;
 use super::{build_validator, BuildValidator, CombinedValidator, Validator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct JsonOrPython {
     json: Box<CombinedValidator>,
     python: Box<CombinedValidator>,
@@ -63,21 +63,16 @@ impl Validator for JsonOrPython {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
-        self.json.different_strict_behavior(definitions, ultra_strict)
-            || self.python.different_strict_behavior(definitions, ultra_strict)
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
+        self.json.different_strict_behavior(ultra_strict) || self.python.different_strict_behavior(ultra_strict)
     }
 
     fn get_name(&self) -> &str {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.json.complete(definitions)?;
-        self.python.complete(definitions)
+    fn complete(&self) -> PyResult<()> {
+        self.json.complete()?;
+        self.python.complete()
     }
 }
