@@ -1,0 +1,2 @@
+[build-system]
+requires = ["setuptools", "wheel", "Cython==0.29.32;sys_platform!='win32'"]
