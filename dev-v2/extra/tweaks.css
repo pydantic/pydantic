@@ -110,3 +110,8 @@ aside.blog img {
   -webkit-mask-image: var(--md-admonition-icon--api);
           mask-image: var(--md-admonition-icon--api);
 }
+
+/* Revert hue value to that of pre mkdocs-material v9.4.0 */
+[data-md-color-scheme="slate"] {
+  --md-hue: 230;
+}
