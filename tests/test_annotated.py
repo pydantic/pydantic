@@ -373,3 +373,16 @@ def test_predicate_error_python() -> None:
             'input': -1,
         }
     ]
+
+
+def test_annotated_field_info_not_lost_from_forwardref():
+    from pydantic import BaseModel
+
+    class ForwardRefAnnotatedFieldModel(BaseModel):
+        foo: 'Annotated[Integer, Field(alias="bar")]'
+
+    Integer = int
+
+    ForwardRefAnnotatedFieldModel.model_rebuild()
+
+    assert ForwardRefAnnotatedFieldModel(bar=1).foo == 1

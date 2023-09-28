@@ -897,7 +897,9 @@ class GenerateSchema:
             metadata=common_field['metadata'],
         )
 
-    def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
+    def _common_field_schema(  # noqa C901
+        self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
+    ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
             types_namespace = self._types_namespace
@@ -908,7 +910,9 @@ class GenerateSchema:
 
             evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace, None)
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
-                field_info.annotation = evaluated
+                new_field_info = FieldInfo.from_annotation(evaluated)
+                for k, v in new_field_info._attributes_set.items():
+                    setattr(field_info, k, v)
 
         source_type, annotations = field_info.annotation, field_info.metadata
 
