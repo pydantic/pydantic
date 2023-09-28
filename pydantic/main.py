@@ -798,7 +798,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif self.model_config.get('extra') == 'allow' and name not in self.model_fields:
-            if getattr(self, name, None) and name not in self.model_extra and callable(value):  # type: ignore
+            reassigning_existing_method: bool = (
+                getattr(self, name, None) and name not in self.model_extra and callable(value)  # type: ignore
+            )
+            if reassigning_existing_method:
                 self.__dict__[name] = value.__get__(self, type(self))
             else:
                 # SAFETY: __pydantic_extra__ is not None when extra = 'allow'
