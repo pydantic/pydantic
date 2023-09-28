@@ -11,7 +11,7 @@ use crate::tools::SchemaDict;
 use super::validation_state::ValidationState;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct CallValidator {
     function: PyObject,
     arguments_validator: Box<CombinedValidator>,
@@ -98,28 +98,23 @@ impl Validator for CallValidator {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         if let Some(return_validator) = &self.return_validator {
-            if return_validator.different_strict_behavior(definitions, ultra_strict) {
+            if return_validator.different_strict_behavior(ultra_strict) {
                 return true;
             }
         }
-        self.arguments_validator
-            .different_strict_behavior(definitions, ultra_strict)
+        self.arguments_validator.different_strict_behavior(ultra_strict)
     }
 
     fn get_name(&self) -> &str {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.arguments_validator.complete(definitions)?;
-        match &mut self.return_validator {
-            Some(v) => v.complete(definitions),
+    fn complete(&self) -> PyResult<()> {
+        self.arguments_validator.complete()?;
+        match &self.return_validator {
+            Some(v) => v.complete(),
             None => Ok(()),
         }
     }

@@ -4,7 +4,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::definitions::{Definitions, DefinitionsBuilder};
+use crate::definitions::DefinitionsBuilder;
 use crate::tools::SchemaDict;
 use crate::validators::DefaultType;
 
@@ -67,8 +67,8 @@ impl TypeSerializer for WithDefaultSerializer {
         Self::EXPECTED_TYPE
     }
 
-    fn retry_with_lax_check(&self, definitions: &Definitions<CombinedSerializer>) -> bool {
-        self.serializer.retry_with_lax_check(definitions)
+    fn retry_with_lax_check(&self) -> bool {
+        self.serializer.retry_with_lax_check()
     }
 
     fn get_default(&self, py: Python) -> PyResult<Option<PyObject>> {

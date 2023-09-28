@@ -22,7 +22,7 @@ struct BoolLiteral {
 }
 
 #[derive(Debug, Clone)]
-pub struct LiteralLookup<T: Clone + Debug> {
+pub struct LiteralLookup<T: Debug> {
     // Specialized lookups for ints, bools and strings because they
     // (1) are easy to convert between Rust and Python
     // (2) hashing them in Rust is very fast
@@ -35,7 +35,7 @@ pub struct LiteralLookup<T: Clone + Debug> {
     pub values: Vec<T>,
 }
 
-impl<T: Clone + Debug> LiteralLookup<T> {
+impl<T: Debug> LiteralLookup<T> {
     pub fn new<'py>(py: Python<'py>, expected: impl Iterator<Item = (&'py PyAny, T)>) -> PyResult<Self> {
         let mut expected_int = AHashMap::new();
         let mut expected_str: AHashMap<String, usize> = AHashMap::new();
@@ -135,7 +135,7 @@ impl<T: Clone + Debug> LiteralLookup<T> {
     }
 }
 
-impl<T: PyGcTraverse + Clone + Debug> PyGcTraverse for LiteralLookup<T> {
+impl<T: PyGcTraverse + Debug> PyGcTraverse for LiteralLookup<T> {
     fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.expected_py.py_gc_traverse(visit)?;
         self.values.py_gc_traverse(visit)?;
@@ -198,11 +198,7 @@ impl Validator for LiteralValidator {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         !ultra_strict
     }
 
@@ -210,7 +206,7 @@ impl Validator for LiteralValidator {
         &self.name
     }
 
-    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+    fn complete(&self) -> PyResult<()> {
         Ok(())
     }
 }

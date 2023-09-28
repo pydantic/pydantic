@@ -15,7 +15,7 @@ use crate::tools::SchemaDict;
 use super::validation_state::ValidationState;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct Parameter {
     positional: bool,
     name: String,
@@ -24,7 +24,7 @@ struct Parameter {
     validator: CombinedValidator,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ArgumentsValidator {
     parameters: Vec<Parameter>,
     positional_params_count: usize,
@@ -332,29 +332,25 @@ impl Validator for ArgumentsValidator {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         self.parameters
             .iter()
-            .any(|p| p.validator.different_strict_behavior(definitions, ultra_strict))
+            .any(|p| p.validator.different_strict_behavior(ultra_strict))
     }
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+    fn complete(&self) -> PyResult<()> {
         self.parameters
-            .iter_mut()
-            .try_for_each(|parameter| parameter.validator.complete(definitions))?;
-        if let Some(v) = &mut self.var_args_validator {
-            v.complete(definitions)?;
+            .iter()
+            .try_for_each(|parameter| parameter.validator.complete())?;
+        if let Some(v) = &self.var_args_validator {
+            v.complete()?;
         }
-        if let Some(v) = &mut self.var_kwargs_validator {
-            v.complete(definitions)?;
+        if let Some(v) = &self.var_kwargs_validator {
+            v.complete()?;
         };
         Ok(())
     }

@@ -10,7 +10,7 @@ use crate::tools::SchemaDict;
 use super::validation_state::ValidationState;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ChainValidator {
     steps: Vec<CombinedValidator>,
     name: String,
@@ -83,21 +83,15 @@ impl Validator for ChainValidator {
         steps_iter.try_fold(value, |v, step| step.validate(py, v.into_ref(py), state))
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
-        self.steps
-            .iter()
-            .any(|v| v.different_strict_behavior(definitions, ultra_strict))
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
+        self.steps.iter().any(|v| v.different_strict_behavior(ultra_strict))
     }
 
     fn get_name(&self) -> &str {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.steps.iter_mut().try_for_each(|v| v.complete(definitions))
+    fn complete(&self) -> PyResult<()> {
+        self.steps.iter().try_for_each(CombinedValidator::complete)
     }
 }

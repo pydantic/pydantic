@@ -20,7 +20,7 @@ use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuild
 
 use std::ops::ControlFlow;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct Field {
     name: String,
     lookup_key: LookupKey,
@@ -31,7 +31,7 @@ struct Field {
 
 impl_py_gc_traverse!(Field { validator });
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct ModelFieldsValidator {
     fields: Vec<Field>,
     model_name: String,
@@ -415,26 +415,20 @@ impl Validator for ModelFieldsValidator {
         Ok((new_data.to_object(py), new_extra, fields_set.to_object(py)).to_object(py))
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         self.fields
             .iter()
-            .any(|f| f.validator.different_strict_behavior(definitions, ultra_strict))
+            .any(|f| f.validator.different_strict_behavior(ultra_strict))
     }
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.fields
-            .iter_mut()
-            .try_for_each(|f| f.validator.complete(definitions))?;
-        match &mut self.extras_validator {
-            Some(v) => v.complete(definitions),
+    fn complete(&self) -> PyResult<()> {
+        self.fields.iter().try_for_each(|f| f.validator.complete())?;
+        match &self.extras_validator {
+            Some(v) => v.complete(),
             None => Ok(()),
         }
     }

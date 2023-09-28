@@ -76,11 +76,7 @@ impl Validator for FloatValidator {
         Ok(either_float.into_py(py))
     }
 
-    fn different_strict_behavior(
-        &self,
-        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        _ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, _ultra_strict: bool) -> bool {
         true
     }
 
@@ -88,7 +84,7 @@ impl Validator for FloatValidator {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+    fn complete(&self) -> PyResult<()> {
         Ok(())
     }
 }
@@ -179,11 +175,7 @@ impl Validator for ConstrainedFloatValidator {
         Ok(either_float.into_py(py))
     }
 
-    fn different_strict_behavior(
-        &self,
-        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        _ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, _ultra_strict: bool) -> bool {
         true
     }
 
@@ -191,7 +183,7 @@ impl Validator for ConstrainedFloatValidator {
         "constrained-float"
     }
 
-    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+    fn complete(&self) -> PyResult<()> {
         Ok(())
     }
 }

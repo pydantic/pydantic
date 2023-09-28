@@ -1,25 +1,16 @@
-use crate::{definitions::Definitions, recursion_guard::RecursionGuard};
+use crate::recursion_guard::RecursionGuard;
 
-use super::{CombinedValidator, Extra};
+use super::Extra;
 
 pub struct ValidationState<'a> {
     pub recursion_guard: &'a mut RecursionGuard,
-    pub definitions: &'a Definitions<CombinedValidator>,
     // deliberately make Extra readonly
     extra: Extra<'a>,
 }
 
 impl<'a> ValidationState<'a> {
-    pub fn new(
-        extra: Extra<'a>,
-        definitions: &'a Definitions<CombinedValidator>,
-        recursion_guard: &'a mut RecursionGuard,
-    ) -> Self {
-        Self {
-            recursion_guard,
-            definitions,
-            extra,
-        }
+    pub fn new(extra: Extra<'a>, recursion_guard: &'a mut RecursionGuard) -> Self {
+        Self { recursion_guard, extra }
     }
 
     pub fn with_new_extra<'r, R: 'r>(
@@ -31,7 +22,6 @@ impl<'a> ValidationState<'a> {
         // but lifetimes get in a tangle. Maybe someone brave wants to have a go at unpicking lifetimes.
         let mut new_state = ValidationState {
             recursion_guard: self.recursion_guard,
-            definitions: self.definitions,
             extra,
         };
         f(&mut new_state)

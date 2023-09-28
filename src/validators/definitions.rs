@@ -1,7 +1,12 @@
+use std::cell::RefCell;
+
+use ahash::HashSet;
+use ahash::HashSetExt;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
+use crate::definitions::DefinitionRef;
 use crate::errors::{ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
 
@@ -39,17 +44,12 @@ impl BuildValidator for DefinitionsValidatorBuilder {
 
 #[derive(Debug, Clone)]
 pub struct DefinitionRefValidator {
-    validator_id: usize,
-    inner_name: String,
-    // we have to record the answers to `Question`s as we can't access the validator when `ask()` is called
+    definition: DefinitionRef<CombinedValidator>,
 }
 
 impl DefinitionRefValidator {
-    pub fn new(validator_id: usize) -> Self {
-        Self {
-            validator_id,
-            inner_name: "...".to_string(),
-        }
+    pub fn new(definition: DefinitionRef<CombinedValidator>) -> Self {
+        Self { definition }
     }
 }
 
@@ -61,15 +61,10 @@ impl BuildValidator for DefinitionRefValidator {
         _config: Option<&PyDict>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
-        let schema_ref: String = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
+        let schema_ref = schema.get_as_req(intern!(schema.py(), "schema_ref"))?;
 
-        let validator_id = definitions.get_reference_id(&schema_ref);
-
-        Ok(Self {
-            validator_id,
-            inner_name: "...".to_string(),
-        }
-        .into())
+        let definition = definitions.get_definition(schema_ref);
+        Ok(Self::new(definition).into())
     }
 }
 
@@ -82,21 +77,22 @@ impl Validator for DefinitionRefValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
+        let validator = self.definition.get().unwrap();
         if let Some(id) = input.identity() {
-            if state.recursion_guard.contains_or_insert(id, self.validator_id) {
+            if state.recursion_guard.contains_or_insert(id, self.definition.id()) {
                 // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
                 Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input))
             } else {
                 if state.recursion_guard.incr_depth() {
                     return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, input));
                 }
-                let output = validate(self.validator_id, py, input, state);
-                state.recursion_guard.remove(id, self.validator_id);
+                let output = validator.validate(py, input, state);
+                state.recursion_guard.remove(id, self.definition.id());
                 state.recursion_guard.decr_depth();
                 output
             }
         } else {
-            validate(self.validator_id, py, input, state)
+            validator.validate(py, input, state)
         }
     }
 
@@ -108,69 +104,51 @@ impl Validator for DefinitionRefValidator {
         field_value: &'data PyAny,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
+        let validator = self.definition.get().unwrap();
         if let Some(id) = obj.identity() {
-            if state.recursion_guard.contains_or_insert(id, self.validator_id) {
+            if state.recursion_guard.contains_or_insert(id, self.definition.id()) {
                 // we don't remove id here, we leave that to the validator which originally added id to `recursion_guard`
                 Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj))
             } else {
                 if state.recursion_guard.incr_depth() {
                     return Err(ValError::new(ErrorTypeDefaults::RecursionLoop, obj));
                 }
-                let output = validate_assignment(self.validator_id, py, obj, field_name, field_value, state);
-                state.recursion_guard.remove(id, self.validator_id);
+                let output = validator.validate_assignment(py, obj, field_name, field_value, state);
+                state.recursion_guard.remove(id, self.definition.id());
                 state.recursion_guard.decr_depth();
                 output
             }
         } else {
-            validate_assignment(self.validator_id, py, obj, field_name, field_value, state)
+            validator.validate_assignment(py, obj, field_name, field_value, state)
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
-        if let Some(definitions) = definitions {
-            // have to unwrap here, because we can't return an error from this function, should be okay
-            let validator = definitions.get_definition(self.validator_id).unwrap();
-            validator.different_strict_behavior(None, ultra_strict)
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
+        thread_local! {
+            static RECURSION_SET: RefCell<Option<HashSet<usize>>> = RefCell::new(None);
+        }
+
+        let id = self as *const _ as usize;
+        // have to unwrap here, because we can't return an error from this function, should be okay
+        let validator: &CombinedValidator = self.definition.get().unwrap();
+        if RECURSION_SET.with(
+            |set: &RefCell<Option<std::collections::HashSet<usize, ahash::RandomState>>>| {
+                set.borrow_mut().get_or_insert_with(HashSet::new).insert(id)
+            },
+        ) {
+            let different_strict_behavior = validator.different_strict_behavior(ultra_strict);
+            RECURSION_SET.with(|set| set.borrow_mut().get_or_insert_with(HashSet::new).remove(&id));
+            different_strict_behavior
         } else {
             false
         }
     }
 
     fn get_name(&self) -> &str {
-        &self.inner_name
+        self.definition.get_or_init_name(|v| v.get_name().into())
     }
 
-    /// don't need to call complete on the inner validator here, complete_validators takes care of that.
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        let validator = definitions.get_definition(self.validator_id)?;
-        self.inner_name = validator.get_name().to_string();
+    fn complete(&self) -> PyResult<()> {
         Ok(())
     }
-}
-
-fn validate<'data>(
-    validator_id: usize,
-    py: Python<'data>,
-    input: &'data impl Input<'data>,
-    state: &mut ValidationState,
-) -> ValResult<'data, PyObject> {
-    let validator = state.definitions.get(validator_id).unwrap();
-    validator.validate(py, input, state)
-}
-
-#[allow(clippy::too_many_arguments)]
-fn validate_assignment<'data>(
-    validator_id: usize,
-    py: Python<'data>,
-    obj: &'data PyAny,
-    field_name: &'data str,
-    field_value: &'data PyAny,
-    state: &mut ValidationState,
-) -> ValResult<'data, PyObject> {
-    let validator = state.definitions.get(validator_id).unwrap();
-    validator.validate_assignment(py, obj, field_name, field_value, state)
 }

@@ -19,7 +19,7 @@ use super::{
     build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct Field {
     kw_only: bool,
     name: String,
@@ -30,7 +30,7 @@ struct Field {
     frozen: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DataclassArgsValidator {
     fields: Vec<Field>,
     positional_count: usize,
@@ -426,28 +426,22 @@ impl Validator for DataclassArgsValidator {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         self.fields
             .iter()
-            .any(|f| f.validator.different_strict_behavior(definitions, ultra_strict))
+            .any(|f| f.validator.different_strict_behavior(ultra_strict))
     }
 
     fn get_name(&self) -> &str {
         &self.validator_name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.fields
-            .iter_mut()
-            .try_for_each(|field| field.validator.complete(definitions))
+    fn complete(&self) -> PyResult<()> {
+        self.fields.iter().try_for_each(|field| field.validator.complete())
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct DataclassValidator {
     strict: bool,
     validator: Box<CombinedValidator>,
@@ -588,13 +582,9 @@ impl Validator for DataclassValidator {
         Ok(obj.to_object(py))
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         if ultra_strict {
-            self.validator.different_strict_behavior(definitions, ultra_strict)
+            self.validator.different_strict_behavior(ultra_strict)
         } else {
             true
         }
@@ -604,8 +594,8 @@ impl Validator for DataclassValidator {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.validator.complete(definitions)
+    fn complete(&self) -> PyResult<()> {
+        self.validator.complete()
     }
 }
 
