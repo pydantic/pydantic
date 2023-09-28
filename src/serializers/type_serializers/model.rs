@@ -13,7 +13,7 @@ use super::{
 };
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{py_schema_error_type, ExtraBehavior};
-use crate::definitions::{Definitions, DefinitionsBuilder};
+use crate::definitions::DefinitionsBuilder;
 use crate::serializers::errors::PydanticSerializationUnexpectedValue;
 use crate::tools::SchemaDict;
 
@@ -228,7 +228,7 @@ impl TypeSerializer for ModelSerializer {
         &self.name
     }
 
-    fn retry_with_lax_check(&self, _definitions: &Definitions<CombinedSerializer>) -> bool {
+    fn retry_with_lax_check(&self) -> bool {
         true
     }
 }

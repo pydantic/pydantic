@@ -96,11 +96,7 @@ impl Validator for DateValidator {
         Ok(date.try_into_py(py)?)
     }
 
-    fn different_strict_behavior(
-        &self,
-        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         !ultra_strict
     }
 
@@ -108,7 +104,7 @@ impl Validator for DateValidator {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+    fn complete(&self) -> PyResult<()> {
         Ok(())
     }
 }

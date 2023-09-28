@@ -10,8 +10,6 @@ use serde::ser::Error;
 use super::config::SerializationConfig;
 use super::errors::{PydanticSerializationUnexpectedValue, UNEXPECTED_TYPE_SER_MARKER};
 use super::ob_type::ObTypeLookup;
-use super::shared::CombinedSerializer;
-use crate::definitions::Definitions;
 use crate::recursion_guard::RecursionGuard;
 
 /// this is ugly, would be much better if extra could be stored in `SerializationState`
@@ -48,7 +46,6 @@ impl SerializationState {
         Extra::new(
             py,
             mode,
-            &[],
             by_alias,
             &self.warnings,
             false,
@@ -72,7 +69,6 @@ impl SerializationState {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct Extra<'a> {
     pub mode: &'a SerMode,
-    pub definitions: &'a Definitions<CombinedSerializer>,
     pub ob_type_lookup: &'a ObTypeLookup,
     pub warnings: &'a CollectWarnings,
     pub by_alias: bool,
@@ -98,7 +94,6 @@ impl<'a> Extra<'a> {
     pub fn new(
         py: Python<'a>,
         mode: &'a SerMode,
-        definitions: &'a Definitions<CombinedSerializer>,
         by_alias: bool,
         warnings: &'a CollectWarnings,
         exclude_unset: bool,
@@ -112,7 +107,6 @@ impl<'a> Extra<'a> {
     ) -> Self {
         Self {
             mode,
-            definitions,
             ob_type_lookup: ObTypeLookup::cached(py),
             warnings,
             by_alias,
@@ -156,7 +150,6 @@ impl SerCheck {
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub(crate) struct ExtraOwned {
     mode: SerMode,
-    definitions: Vec<CombinedSerializer>,
     warnings: CollectWarnings,
     by_alias: bool,
     exclude_unset: bool,
@@ -176,7 +169,6 @@ impl ExtraOwned {
     pub fn new(extra: &Extra) -> Self {
         Self {
             mode: extra.mode.clone(),
-            definitions: extra.definitions.to_vec(),
             warnings: extra.warnings.clone(),
             by_alias: extra.by_alias,
             exclude_unset: extra.exclude_unset,
@@ -196,7 +188,6 @@ impl ExtraOwned {
     pub fn to_extra<'py>(&'py self, py: Python<'py>) -> Extra<'py> {
         Extra {
             mode: &self.mode,
-            definitions: &self.definitions,
             ob_type_lookup: ObTypeLookup::cached(py),
             warnings: &self.warnings,
             by_alias: self.by_alias,

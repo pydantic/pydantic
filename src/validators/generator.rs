@@ -1,4 +1,5 @@
 use std::fmt;
+use std::sync::Arc;
 
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -14,7 +15,7 @@ use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, InputT
 
 #[derive(Debug, Clone)]
 pub struct GeneratorValidator {
-    item_validator: Option<Box<CombinedValidator>>,
+    item_validator: Option<Arc<CombinedValidator>>,
     min_length: Option<usize>,
     max_length: Option<usize>,
     name: String,
@@ -30,7 +31,7 @@ impl BuildValidator for GeneratorValidator {
         config: Option<&PyDict>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
-        let item_validator = get_items_schema(schema, config, definitions)?;
+        let item_validator = get_items_schema(schema, config, definitions)?.map(Arc::new);
         let name = match item_validator {
             Some(ref v) => format!("{}[{}]", Self::EXPECTED_TYPE, v.get_name()),
             None => format!("{}[any]", Self::EXPECTED_TYPE),
@@ -67,7 +68,7 @@ impl Validator for GeneratorValidator {
             InternalValidator::new(
                 py,
                 "ValidatorIterator",
-                v,
+                v.clone(),
                 state,
                 self.hide_input_in_errors,
                 self.validation_error_cause,
@@ -85,13 +86,9 @@ impl Validator for GeneratorValidator {
         Ok(v_iterator.into_py(py))
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         if let Some(ref v) = self.item_validator {
-            v.different_strict_behavior(definitions, ultra_strict)
+            v.different_strict_behavior(ultra_strict)
         } else {
             false
         }
@@ -101,16 +98,16 @@ impl Validator for GeneratorValidator {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        match self.item_validator {
-            Some(ref mut v) => v.complete(definitions),
+    fn complete(&self) -> PyResult<()> {
+        match &self.item_validator {
+            Some(v) => v.complete(),
             None => Ok(()),
         }
     }
 }
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 struct ValidatorIterator {
     iterator: GenericIterator,
     validator: Option<InternalValidator>,
@@ -217,13 +214,11 @@ impl ValidatorIterator {
     }
 }
 
-/// Cloneable validator wrapper for use in generators in functions, this can be passed back to python
+/// Owned validator wrapper for use in generators in functions, this can be passed back to python
 /// mid-validation
-#[derive(Clone)]
 pub struct InternalValidator {
     name: String,
-    validator: CombinedValidator,
-    definitions: Vec<CombinedValidator>,
+    validator: Arc<CombinedValidator>,
     // TODO, do we need data?
     data: Option<Py<PyDict>>,
     strict: Option<bool>,
@@ -246,7 +241,7 @@ impl InternalValidator {
     pub fn new(
         py: Python,
         name: &str,
-        validator: &CombinedValidator,
+        validator: Arc<CombinedValidator>,
         state: &ValidationState,
         hide_input_in_errors: bool,
         validation_error_cause: bool,
@@ -254,8 +249,7 @@ impl InternalValidator {
         let extra = state.extra();
         Self {
             name: name.to_string(),
-            validator: validator.clone(),
-            definitions: state.definitions.to_vec(),
+            validator,
             data: extra.data.map(|d| d.into_py(py)),
             strict: extra.strict,
             from_attributes: extra.from_attributes,
@@ -285,7 +279,7 @@ impl InternalValidator {
             context: self.context.as_ref().map(|data| data.as_ref(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
         };
-        let mut state = ValidationState::new(extra, &self.definitions, &mut self.recursion_guard);
+        let mut state = ValidationState::new(extra, &mut self.recursion_guard);
         self.validator
             .validate_assignment(py, model, field_name, field_value, &mut state)
             .map_err(|e| {
@@ -316,7 +310,7 @@ impl InternalValidator {
             context: self.context.as_ref().map(|data| data.as_ref(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
         };
-        let mut state = ValidationState::new(extra, &self.definitions, &mut self.recursion_guard);
+        let mut state = ValidationState::new(extra, &mut self.recursion_guard);
         self.validator.validate(py, input, &mut state).map_err(|e| {
             ValidationError::from_val_error(
                 py,
@@ -333,7 +327,6 @@ impl InternalValidator {
 
 impl_py_gc_traverse!(InternalValidator {
     validator,
-    definitions,
     data,
     context,
     self_instance

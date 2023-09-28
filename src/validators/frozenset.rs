@@ -10,7 +10,7 @@ use super::set::set_build;
 use super::validation_state::ValidationState;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct FrozenSetValidator {
     strict: bool,
     item_validator: Box<CombinedValidator>,
@@ -48,13 +48,9 @@ impl Validator for FrozenSetValidator {
         Ok(f_set.into_py(py))
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         if ultra_strict {
-            self.item_validator.different_strict_behavior(definitions, true)
+            self.item_validator.different_strict_behavior(true)
         } else {
             true
         }
@@ -64,7 +60,7 @@ impl Validator for FrozenSetValidator {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.item_validator.complete(definitions)
+    fn complete(&self) -> PyResult<()> {
+        self.item_validator.complete()
     }
 }

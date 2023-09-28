@@ -10,7 +10,7 @@ use crate::tools::SchemaDict;
 use super::ValidationState;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct LaxOrStrictValidator {
     strict: bool,
     lax_validator: Box<CombinedValidator>,
@@ -68,13 +68,9 @@ impl Validator for LaxOrStrictValidator {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         if ultra_strict {
-            self.strict_validator.different_strict_behavior(definitions, true)
+            self.strict_validator.different_strict_behavior(true)
         } else {
             true
         }
@@ -84,8 +80,8 @@ impl Validator for LaxOrStrictValidator {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.lax_validator.complete(definitions)?;
-        self.strict_validator.complete(definitions)
+    fn complete(&self) -> PyResult<()> {
+        self.lax_validator.complete()?;
+        self.strict_validator.complete()
     }
 }

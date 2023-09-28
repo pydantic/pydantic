@@ -9,7 +9,7 @@ use crate::tools::SchemaDict;
 use super::ValidationState;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct JsonValidator {
     validator: Option<Box<CombinedValidator>>,
     name: String,
@@ -61,13 +61,9 @@ impl Validator for JsonValidator {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         if let Some(ref v) = self.validator {
-            v.different_strict_behavior(definitions, ultra_strict)
+            v.different_strict_behavior(ultra_strict)
         } else {
             false
         }
@@ -77,9 +73,9 @@ impl Validator for JsonValidator {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        match self.validator {
-            Some(ref mut v) => v.complete(definitions),
+    fn complete(&self) -> PyResult<()> {
+        match &self.validator {
+            Some(v) => v.complete(),
             None => Ok(()),
         }
     }

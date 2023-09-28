@@ -1,5 +1,6 @@
 use std::fmt::Write;
 use std::str::FromStr;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
@@ -18,11 +19,11 @@ use super::custom_error::CustomError;
 use super::literal::LiteralLookup;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug)]
 enum UnionMode {
     Smart {
-        strict_required: bool,
-        ultra_strict_required: bool,
+        strict_required: AtomicBool,
+        ultra_strict_required: AtomicBool,
     },
     LeftToRight,
 }
@@ -31,8 +32,23 @@ impl UnionMode {
     // construct smart with some default values
     const fn default_smart() -> Self {
         Self::Smart {
-            strict_required: true,
-            ultra_strict_required: false,
+            strict_required: AtomicBool::new(true),
+            ultra_strict_required: AtomicBool::new(false),
+        }
+    }
+}
+
+impl Clone for UnionMode {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Smart {
+                strict_required,
+                ultra_strict_required,
+            } => Self::Smart {
+                strict_required: AtomicBool::new(strict_required.load(Ordering::SeqCst)),
+                ultra_strict_required: AtomicBool::new(ultra_strict_required.load(Ordering::SeqCst)),
+            },
+            Self::LeftToRight => Self::LeftToRight,
         }
     }
 }
@@ -49,7 +65,7 @@ impl FromStr for UnionMode {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct UnionValidator {
     mode: UnionMode,
     choices: Vec<(CombinedValidator, Option<String>)>,
@@ -216,44 +232,46 @@ impl Validator for UnionValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        match self.mode {
+        match &self.mode {
             UnionMode::Smart {
                 strict_required,
                 ultra_strict_required,
-            } => self.validate_smart(py, input, state, strict_required, ultra_strict_required),
+            } => self.validate_smart(
+                py,
+                input,
+                state,
+                strict_required.load(Ordering::SeqCst),
+                ultra_strict_required.load(Ordering::SeqCst),
+            ),
             UnionMode::LeftToRight => self.validate_left_to_right(py, input, state),
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         self.choices
             .iter()
-            .any(|(v, _)| v.different_strict_behavior(definitions, ultra_strict))
+            .any(|(v, _)| v.different_strict_behavior(ultra_strict))
     }
 
     fn get_name(&self) -> &str {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.choices.iter_mut().try_for_each(|(v, _)| v.complete(definitions))?;
+    fn complete(&self) -> PyResult<()> {
+        self.choices.iter().try_for_each(|(v, _)| v.complete())?;
         if let UnionMode::Smart {
-            ref mut strict_required,
-            ref mut ultra_strict_required,
-        } = self.mode
+            strict_required,
+            ultra_strict_required,
+        } = &self.mode
         {
-            *strict_required = self
-                .choices
-                .iter()
-                .any(|(v, _)| v.different_strict_behavior(Some(definitions), false));
-            *ultra_strict_required = self
-                .choices
-                .iter()
-                .any(|(v, _)| v.different_strict_behavior(Some(definitions), true));
+            strict_required.store(
+                self.choices.iter().any(|(v, _)| v.different_strict_behavior(false)),
+                Ordering::SeqCst,
+            );
+            ultra_strict_required.store(
+                self.choices.iter().any(|(v, _)| v.different_strict_behavior(true)),
+                Ordering::SeqCst,
+            );
         }
 
         Ok(())
@@ -357,7 +375,7 @@ impl PyGcTraverse for Discriminator {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TaggedUnionValidator {
     discriminator: Discriminator,
     lookup: LiteralLookup<CombinedValidator>,
@@ -476,26 +494,19 @@ impl Validator for TaggedUnionValidator {
         }
     }
 
-    fn different_strict_behavior(
-        &self,
-        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
+    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
         self.lookup
             .values
             .iter()
-            .any(|v| v.different_strict_behavior(definitions, ultra_strict))
+            .any(|v| v.different_strict_behavior(ultra_strict))
     }
 
     fn get_name(&self) -> &str {
         &self.name
     }
 
-    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
-        self.lookup
-            .values
-            .iter_mut()
-            .try_for_each(|validator| validator.complete(definitions))
+    fn complete(&self) -> PyResult<()> {
+        self.lookup.values.iter().try_for_each(CombinedValidator::complete)
     }
 }
 
