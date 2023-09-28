@@ -111,7 +111,7 @@ aside.blog img {
           mask-image: var(--md-admonition-icon--api);
 }
 
-/* Revert background color to that of pre v9.4.0 */
+/* Revert hue value to that of pre mkdocs-material v9.4.0 */
 [data-md-color-scheme="slate"] {
   --md-hue: 230;
 }
