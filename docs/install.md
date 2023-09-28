@@ -76,5 +76,5 @@ And if you prefer to install *pydantic* directly from the repository:
 ```bash
 pip install git+https://github.com/pydantic/pydantic@1.10.X-fixes#egg=pydantic
 # or with extras
-pip install git+https;://github.com/pydantic/pydantic@1.10.X-fixes#egg=pydantic[email,dotenv]
+pip install git+https://github.com/pydantic/pydantic@1.10.X-fixes#egg=pydantic[email,dotenv]
 ```
