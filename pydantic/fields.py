@@ -406,7 +406,22 @@ class FieldInfo(_repr.Representation):
         new_kwargs: dict[str, Any] = {}
         metadata = {}
         for field_info in field_infos:
-            new_kwargs.update(field_info._attributes_set)
+            attributes_set = field_info._attributes_set.copy()
+            try:
+                json_schema_extra = attributes_set.pop('json_schema_extra')
+                existing_json_schema_extra = new_kwargs.get('json_schema_extra', {})
+                if isinstance(existing_json_schema_extra, dict) and isinstance(json_schema_extra, dict):
+                    # update json_schema_extra with later FieldInfo specifications if using a dict
+                    new_kwargs['json_schema_extra'] = {**existing_json_schema_extra, **json_schema_extra}
+                else:
+                    # override json_schema_extra with later FieldInfo specifications if using a Callable
+                    new_kwargs['json_schema_extra'] = json_schema_extra
+            except KeyError:
+                pass
+
+            # later FieldInfo instances override everything except json_schema_extra from earlier FieldInfo instances
+            new_kwargs.update(attributes_set)
+
             for x in field_info.metadata:
                 if not isinstance(x, FieldInfo):
                     metadata[type(x)] = x
