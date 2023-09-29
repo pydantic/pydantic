@@ -23,6 +23,10 @@ def foo(bar: str) -> None:
     ...
 
 
+def validator_deprecated(value: Any, info: core_schema.FieldValidationInfo) -> None:
+    ...
+
+
 def validator(value: Any, info: core_schema.ValidationInfo) -> None:
     ...
 
