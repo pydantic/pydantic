@@ -3909,6 +3909,9 @@ _deprecated_import_lookup = {
     'FieldWrapValidatorFunction': WithInfoWrapValidatorFunction,
 }
 
+if TYPE_CHECKING:
+    FieldValidationInfo = ValidationInfo
+
 
 def __getattr__(attr_name: str) -> object:
     new_attr = _deprecated_import_lookup.get(attr_name)
