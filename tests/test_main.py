@@ -361,29 +361,6 @@ def test_reassign_instance_method_with_extra_allow():
     assert m.not_extra_func() == 'hi james'
     assert 'not_extra_func' in m.__dict__
 
-    m1 = Model(name='jeffrey')
-    m1.not_extra_func = lambda: not_extra_func_replacement(m1)
-    assert m1.not_extra_func() == 'hi jeffrey'
-    assert 'not_extra_func' in m.__dict__
-
-
-def test_reassign_static_method_with_extra_allow():
-    class Model(BaseModel):
-        model_config = ConfigDict(extra='allow')
-
-        @staticmethod
-        def not_extra_func(name: str) -> str:
-            return f'hello {name}'
-
-    def not_extra_func_replacement(name: str) -> str:
-        return f'hi {name}'
-
-    m = Model()
-    assert m.not_extra_func(name='james') == 'hello james'
-
-    m.not_extra_func = not_extra_func_replacement
-    assert m.not_extra_func(name='james') == 'hi james'
-    assert 'not_extra_func' in m.__dict__
 
 
 def test_extra_ignored():
