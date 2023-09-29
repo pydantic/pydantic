@@ -801,11 +801,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if self.model_extra and name in self.model_extra:
                 self.__pydantic_extra__[name] = value  # type: ignore
             else:
-                attr_exists_on_instance: Any = getattr(self, name, None)
-                if attr_exists_on_instance:
-                    _object_setattr(self, name, value)
-                else:
+                try:
+                    getattr(self, name)
+                except AttributeError:
+                    # attribute does not already exist on instance, so put it in extra
                     self.__pydantic_extra__[name] = value  # type: ignore
+                else:
+                    # attribute _does_ already exist on instance, and was not in extra, so update it
+                    _object_setattr(self, name, value)
         else:
             self.__dict__[name] = value
             self.__pydantic_fields_set__.add(name)
