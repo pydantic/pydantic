@@ -362,7 +362,6 @@ def test_reassign_instance_method_with_extra_allow():
     assert 'not_extra_func' in m.__dict__
 
 
-
 def test_extra_ignored():
     class Model(BaseModel):
         model_config = ConfigDict(extra='ignore')
