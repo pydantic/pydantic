@@ -342,22 +342,22 @@ def test_extra_allowed():
     assert model.c == 1
 
 
-def test_reassign_instance_method_with_extra_allow():
+def test_reassign_static_method_with_extra_allow():
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
-        name: str
 
-        def not_extra_func(self) -> str:
-            return f'hello {self.name}'
+        @staticmethod
+        def not_extra_func(name: str) -> str:
+            return f'hello {name}'
 
-    def not_extra_func_replacement(self_sub: Model) -> str:
-        return f'hi {self_sub.name}'
+    def not_extra_func_replacement(name: str) -> str:
+        return f'hi {name}'
 
-    m = Model(name='james')
-    assert m.not_extra_func() == 'hello james'
+    m = Model()
+    assert m.not_extra_func(name='james') == 'hello james'
 
     m.not_extra_func = not_extra_func_replacement
-    assert m.not_extra_func() == 'hi james'
+    assert m.not_extra_func(name='james') == 'hi james'
     assert 'not_extra_func' in m.__dict__
 
 
