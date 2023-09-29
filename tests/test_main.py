@@ -7,6 +7,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
+from functools import partial
 from typing import (
     Any,
     Callable,
@@ -342,6 +343,30 @@ def test_extra_allowed():
     assert model.c == 1
 
 
+def test_reassign_instance_method_with_extra_allow():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        name: str
+
+        def not_extra_func(self) -> str:
+            return f'hello {self.name}'
+
+    def not_extra_func_replacement(self_sub: Model) -> str:
+        return f'hi {self_sub.name}'
+
+    m = Model(name='james')
+    assert m.not_extra_func() == 'hello james'
+
+    m.not_extra_func = partial(not_extra_func_replacement, m)
+    assert m.not_extra_func() == 'hi james'
+    assert 'not_extra_func' in m.__dict__
+
+    m1 = Model(name='jeffrey')
+    m1.not_extra_func = lambda: not_extra_func_replacement(m1)
+    assert m1.not_extra_func() == 'hi jeffrey'
+    assert 'not_extra_func' in m.__dict__
+
+
 def test_reassign_static_method_with_extra_allow():
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
@@ -359,24 +384,6 @@ def test_reassign_static_method_with_extra_allow():
     m.not_extra_func = not_extra_func_replacement
     assert m.not_extra_func(name='james') == 'hi james'
     assert 'not_extra_func' in m.__dict__
-
-
-def test_reassign_class_method_with_extra_allow():
-    class Model(BaseModel):
-        model_config = ConfigDict(extra='allow')
-        name: ClassVar[str] = 'julia'
-
-        @classmethod
-        def not_extra_func(cls) -> str:
-            return f'hello {cls.name}'
-
-    def not_extra_func_replacement(cls_sub: Type[Model] = Model) -> str:
-        return f'hi {cls_sub.name}'
-
-    assert Model.not_extra_func() == 'hello julia'
-
-    Model.not_extra_func = not_extra_func_replacement
-    assert Model.not_extra_func() == 'hi julia'
 
 
 def test_extra_ignored():
