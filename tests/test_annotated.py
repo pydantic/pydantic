@@ -305,6 +305,47 @@ def test_merge_field_infos_model() -> None:
     }
 
 
+def test_merge_json_schema_extra_from_field_infos() -> None:
+    StrWithExtraJsonFields = Annotated[
+        str,
+        Field(json_schema_extra={'custom_field': True, 'other_field': 'other_field'}),
+    ]
+
+    class Model(BaseModel):
+        my_field: StrWithExtraJsonFields = Field('foo')
+        my_field_with_overwrite: StrWithExtraJsonFields = Field('bar', json_schema_extra={'custom_field': False})
+        my_field_with_other_field: StrWithExtraJsonFields = Field('bar', json_schema_extra={'new_field': 'my_field'})
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'my_field': {
+                'custom_field': True,
+                'default': 'foo',
+                'other_field': 'other_field',
+                'title': 'My Field',
+                'type': 'string',
+            },
+            'my_field_with_overwrite': {
+                'custom_field': False,
+                'default': 'bar',
+                'other_field': 'other_field',
+                'title': 'My Field With Overwrite',
+                'type': 'string',
+            },
+            'my_field_with_other_field': {
+                'custom_field': True,
+                'default': 'bar',
+                'new_field': 'my_field',
+                'other_field': 'other_field',
+                'title': 'My Field With Other Field',
+                'type': 'string',
+            },
+        },
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_model_dump_doesnt_dump_annotated_dunder():
     class Model(BaseModel):
         one: int
