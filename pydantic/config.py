@@ -131,7 +131,7 @@ class ConfigDict(TypedDict, total=False):
 
     Note:
         The name of this configuration setting was changed in **v2.0** from
-        `allow_population_by_alias` to `populate_by_name`.
+        `allow_population_by_field_name` to `populate_by_name`.
 
     ```py
     from pydantic import BaseModel, ConfigDict, Field
