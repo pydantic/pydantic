@@ -16,7 +16,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -35,7 +35,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -59,12 +59,12 @@ jobs:
 
     steps:
       - name: checkout docs-site
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: docs-site
 
       - name: checkout current branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
