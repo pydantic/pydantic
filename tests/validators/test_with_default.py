@@ -654,3 +654,153 @@ def test_leak_with_default():
     gc.collect()
 
     assert ref() is None
+
+
+validate_default_raises_examples = [
+    (
+        {},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'missing', 'loc': ('z',), 'msg': 'Field required', 'input': {}},
+        ],
+    ),
+    (
+        {'z': 'some str'},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': None},
+        ],
+    ),
+    (
+        {'x': None},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'missing', 'loc': ('z',), 'msg': 'Field required', 'input': {'x': None}},
+        ],
+    ),
+    (
+        {'x': None, 'z': 'some str'},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': None},
+        ],
+    ),
+    (
+        {'y': None},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'missing', 'loc': ('z',), 'msg': 'Field required', 'input': {'y': None}},
+        ],
+    ),
+    (
+        {'y': None, 'z': 'some str'},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': None},
+        ],
+    ),
+    (
+        {'x': None, 'y': None},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'missing', 'loc': ('z',), 'msg': 'Field required', 'input': {'x': None, 'y': None}},
+        ],
+    ),
+    (
+        {'x': None, 'y': None, 'z': 'some str'},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': None},
+        ],
+    ),
+    (
+        {'x': 1, 'y': None, 'z': 'some str'},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': 1},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': None},
+        ],
+    ),
+    (
+        {'x': None, 'y': 1, 'z': 'some str'},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': None},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': 1},
+        ],
+    ),
+    (
+        {'x': 1, 'y': 1, 'z': 'some str'},
+        [
+            {'type': 'assertion_error', 'loc': ('x',), 'msg': 'Assertion failed, ', 'input': 1},
+            {'type': 'assertion_error', 'loc': ('y',), 'msg': 'Assertion failed, ', 'input': 1},
+        ],
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    'core_schema_constructor,field_constructor',
+    [
+        (core_schema.model_fields_schema, core_schema.model_field),
+        (core_schema.typed_dict_schema, core_schema.typed_dict_field),
+    ],
+)
+@pytest.mark.parametrize('input_value,expected', validate_default_raises_examples)
+def test_validate_default_raises(
+    core_schema_constructor: Union[core_schema.ModelFieldsSchema, core_schema.TypedDictSchema],
+    field_constructor: Union[core_schema.model_field, core_schema.typed_dict_field],
+    input_value: dict,
+    expected: Any,
+) -> None:
+    def _raise(ex: Exception) -> None:
+        raise ex()
+
+    inner_schema = core_schema.no_info_after_validator_function(
+        lambda x: _raise(AssertionError), core_schema.nullable_schema(core_schema.int_schema())
+    )
+
+    v = SchemaValidator(
+        core_schema_constructor(
+            {
+                'x': field_constructor(
+                    core_schema.with_default_schema(inner_schema, default=None, validate_default=True)
+                ),
+                'y': field_constructor(
+                    core_schema.with_default_schema(inner_schema, default=None, validate_default=True)
+                ),
+                'z': field_constructor(core_schema.str_schema()),
+            }
+        )
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(input_value)
+        assert exc_info.value.errors(include_url=False, include_context=False) == expected
+
+
+@pytest.mark.parametrize('input_value,expected', validate_default_raises_examples)
+def test_validate_default_raises_dataclass(input_value: dict, expected: Any) -> None:
+    def _raise(ex: Exception) -> None:
+        raise ex()
+
+    inner_schema = core_schema.no_info_after_validator_function(
+        lambda x: _raise(AssertionError), core_schema.nullable_schema(core_schema.int_schema())
+    )
+
+    x = core_schema.dataclass_field(
+        name='x', schema=core_schema.with_default_schema(inner_schema, default=None, validate_default=True)
+    )
+    y = core_schema.dataclass_field(
+        name='y', schema=core_schema.with_default_schema(inner_schema, default=None, validate_default=True)
+    )
+    z = core_schema.dataclass_field(name='z', schema=core_schema.str_schema())
+
+    v = SchemaValidator(core_schema.dataclass_args_schema('XYZ', [x, y, z]))
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(input_value)
+
+    assert exc_info.value.errors(include_url=False, include_context=False) == expected
