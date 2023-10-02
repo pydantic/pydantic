@@ -1452,7 +1452,7 @@ class GenerateSchema:
         not_set = object()
         default = getattr(typevar, '__default__', not_set)
 
-        if (bound is not None) + (len(constraints) != 0) + (default is not not_set) > 1:
+        if (bound is not None) + (len(constraints) != 0) + (default is not not_set and default is not None) > 1:
             raise NotImplementedError(
                 'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
             )
