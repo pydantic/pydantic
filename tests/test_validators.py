@@ -11,7 +11,7 @@ from typing import Any, Callable, Deque, Dict, FrozenSet, List, NamedTuple, Opti
 from unittest.mock import MagicMock
 
 import pytest
-from dirty_equals import HasRepr
+from dirty_equals import HasRepr, IsInstance
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal, TypedDict
 
@@ -2757,7 +2757,23 @@ def test_validate_default_raises_for_basemodel() -> None:
     with pytest.raises(ValidationError) as exc_info:
         Model()
 
-    assert len(exc_info.value.errors()) == 3
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('value_0',), 'msg': 'Field required', 'input': {}},
+        {
+            'type': 'assertion_error',
+            'loc': ('value_a',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+        {
+            'type': 'assertion_error',
+            'loc': ('value_b',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+    ]
 
 
 @pytest.mark.xfail(reason='waiting for new release of pydantic-core')
@@ -2779,4 +2795,20 @@ def test_validate_default_raises_for_dataclasses() -> None:
     with pytest.raises(ValidationError) as exc_info:
         Model()
 
-    assert len(exc_info.value.errors()) == 3
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('value_0',), 'msg': 'Field required', 'input': HasRepr('ArgsKwargs(())')},
+        {
+            'type': 'assertion_error',
+            'loc': ('value_a',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+        {
+            'type': 'assertion_error',
+            'loc': ('value_b',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+    ]
