@@ -212,15 +212,35 @@ impl Validator for TypedDictValidator {
                                 Err(err) => return ControlFlow::Break(err.into_owned(py)),
                             }
                             continue;
-                        } else if let Some(value) = control_flow!(field.validator.default_value(py, Some(field.name.as_str()), state))? {
-                            control_flow!(output_dict.set_item(&field.name_py, value))?;
-                        } else if field.required {
-                            errors.push(field.lookup_key.error(
-                                ErrorTypeDefaults::Missing,
-                                input,
-                                self.loc_by_alias,
-                                &field.name
-                            ));
+                        }
+
+                        match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                            Ok(Some(value)) => {
+                                // Default value exists, and passed validation if required
+                                control_flow!(output_dict.set_item(&field.name_py, value))?;
+                            },
+                            Ok(None) => {
+                                // This means there was no default value
+                                if (field.required) {
+                                    errors.push(field.lookup_key.error(
+                                        ErrorTypeDefaults::Missing,
+                                        input,
+                                        self.loc_by_alias,
+                                        &field.name
+                                    ));
+                                }
+                            },
+                            Err(ValError::Omit) => continue,
+                            Err(ValError::LineErrors(line_errors)) => {
+                                for err in line_errors {
+                                    // Note: this will always use the field name even if there is an alias
+                                    // However, we don't mind so much because this error can only happen if the
+                                    // default value fails validation, which is arguably a developer error.
+                                    // We could try to "fix" this in the future if desired.
+                                    errors.push(err);
+                                }
+                            }
+                            Err(err) => return ControlFlow::Break(err),
                         }
                     }
                     ControlFlow::Continue(())

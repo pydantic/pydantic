@@ -232,19 +232,31 @@ impl Validator for DataclassArgsValidator {
                                 }
                                 // found neither, check if there is a default value, otherwise error
                                 (None, None) => {
-                                    if let Some(value) =
-                                        field
-                                            .validator
-                                            .default_value(py, Some(field.name.as_str()), state)?
-                                    {
-                                        set_item!(field, value);
-                                    } else {
-                                        errors.push(field.lookup_key.error(
-                                            ErrorTypeDefaults::Missing,
-                                            input,
-                                            self.loc_by_alias,
-                                            &field.name,
-                                        ));
+                                    match field.validator.default_value(py, Some(field.name.as_str()), state) {
+                                        Ok(Some(value)) => {
+                                            // Default value exists, and passed validation if required
+                                            set_item!(field, value);
+                                        },
+                                        Ok(None) => {
+                                            // This means there was no default value
+                                            errors.push(field.lookup_key.error(
+                                                ErrorTypeDefaults::Missing,
+                                                input,
+                                                self.loc_by_alias,
+                                                &field.name
+                                            ));
+                                        },
+                                        Err(ValError::Omit) => continue,
+                                        Err(ValError::LineErrors(line_errors)) => {
+                                            for err in line_errors {
+                                                // Note: this will always use the field name even if there is an alias
+                                                // However, we don't mind so much because this error can only happen if the
+                                                // default value fails validation, which is arguably a developer error.
+                                                // We could try to "fix" this in the future if desired.
+                                                errors.push(err);
+                                            }
+                                        }
+                                        Err(err) => return Err(err),
                                     }
                                 }
                             }
