@@ -11,7 +11,7 @@ from typing import Any, Callable, Deque, Dict, FrozenSet, List, NamedTuple, Opti
 from unittest.mock import MagicMock
 
 import pytest
-from dirty_equals import HasRepr
+from dirty_equals import HasRepr, IsInstance
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal, TypedDict
 
@@ -33,6 +33,7 @@ from pydantic import (
     validate_call,
     validator,
 )
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.functional_validators import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
 
 V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
@@ -2736,3 +2737,78 @@ def test_wrap_validator_field_name():
     m = MyModel(x='123', foobar='1')
     # insert_assert(m.foobar)
     assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
+def test_validate_default_raises_for_basemodel() -> None:
+    class Model(BaseModel):
+        value_0: str
+        value_a: Annotated[Optional[str], Field(None, validate_default=True)]
+        value_b: Annotated[Optional[str], Field(None, validate_default=True)]
+
+        @field_validator('value_a', mode='after')
+        def value_a_validator(cls, value):
+            raise AssertionError
+
+        @field_validator('value_b', mode='after')
+        def value_b_validator(cls, value):
+            raise AssertionError
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('value_0',), 'msg': 'Field required', 'input': {}},
+        {
+            'type': 'assertion_error',
+            'loc': ('value_a',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+        {
+            'type': 'assertion_error',
+            'loc': ('value_b',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+    ]
+
+
+@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
+def test_validate_default_raises_for_dataclasses() -> None:
+    @pydantic_dataclass
+    class Model:
+        value_0: str
+        value_a: Annotated[Optional[str], Field(None, validate_default=True)]
+        value_b: Annotated[Optional[str], Field(None, validate_default=True)]
+
+        @field_validator('value_a', mode='after')
+        def value_a_validator(cls, value):
+            raise AssertionError
+
+        @field_validator('value_b', mode='after')
+        def value_b_validator(cls, value):
+            raise AssertionError
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('value_0',), 'msg': 'Field required', 'input': HasRepr('ArgsKwargs(())')},
+        {
+            'type': 'assertion_error',
+            'loc': ('value_a',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+        {
+            'type': 'assertion_error',
+            'loc': ('value_b',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+    ]
