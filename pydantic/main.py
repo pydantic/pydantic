@@ -798,8 +798,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif self.model_config.get('extra') == 'allow' and name not in self.model_fields:
-            # SAFETY: __pydantic_extra__ is not None when extra = 'allow'
-            self.__pydantic_extra__[name] = value  # type: ignore
+            if self.model_extra and name in self.model_extra:
+                self.__pydantic_extra__[name] = value  # type: ignore
+            else:
+                try:
+                    getattr(self, name)
+                except AttributeError:
+                    # attribute does not already exist on instance, so put it in extra
+                    self.__pydantic_extra__[name] = value  # type: ignore
+                else:
+                    # attribute _does_ already exist on instance, and was not in extra, so update it
+                    _object_setattr(self, name, value)
         else:
             self.__dict__[name] = value
             self.__pydantic_fields_set__.add(name)
