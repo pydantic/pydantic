@@ -3921,31 +3921,41 @@ def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     ]
 
 
-def test_secretstr():
+@pytest.mark.parametrize('validate_json', [True, False])
+def test_secretstr(validate_json):
     class Foobar(BaseModel):
         password: SecretStr
         empty_password: SecretStr
 
-    # Initialize the model.
-    f1 = Foobar(password='1234', empty_password='')
-    f2 = Foobar.model_validate_json('{"password": "1234", "empty_password": ""}')
+    if validate_json:
+        f = Foobar.model_validate_json('{"password": "1234", "empty_password": ""}')
+        with pytest.raises(ValidationError) as exc_info:
+            Foobar.model_validate_json('{"password": 1234, "empty_password": null}')
+    else:
+        f = Foobar(password='1234', empty_password='')
+        with pytest.raises(ValidationError) as exc_info:
+            Foobar(password=1234, empty_password=None)
 
-    for f in [f1, f2]:
-        # Assert correct types.
-        assert f.password.__class__.__name__ == 'SecretStr'
-        assert f.empty_password.__class__.__name__ == 'SecretStr'
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'string_type', 'loc': ('password',), 'msg': 'Input should be a valid string', 'input': 1234},
+        {'type': 'string_type', 'loc': ('empty_password',), 'msg': 'Input should be a valid string', 'input': None},
+    ]
 
-        # Assert str and repr are correct.
-        assert str(f.password) == '**********'
-        assert str(f.empty_password) == ''
-        assert repr(f.password) == "SecretStr('**********')"
-        assert repr(f.empty_password) == "SecretStr('')"
-        assert len(f.password) == 4
-        assert len(f.empty_password) == 0
+    # Assert correct types.
+    assert f.password.__class__.__name__ == 'SecretStr'
+    assert f.empty_password.__class__.__name__ == 'SecretStr'
 
-        # Assert retrieval of secret value is correct
-        assert f.password.get_secret_value() == '1234'
-        assert f.empty_password.get_secret_value() == ''
+    # Assert str and repr are correct.
+    assert str(f.password) == '**********'
+    assert str(f.empty_password) == ''
+    assert repr(f.password) == "SecretStr('**********')"
+    assert repr(f.empty_password) == "SecretStr('')"
+    assert len(f.password) == 4
+    assert len(f.empty_password) == 0
+
+    # Assert retrieval of secret value is correct
+    assert f.password.get_secret_value() == '1234'
+    assert f.empty_password.get_secret_value() == ''
 
 
 def test_secretstr_subclass():
