@@ -1448,16 +1448,20 @@ class _SecretField(Generic[SecretType]):
             )
             return json_schema
 
-        s = core_schema.union_schema(
-            [
-                core_schema.is_instance_schema(source),
-                core_schema.no_info_after_validator_function(
-                    source,  # construct the type
-                    inner_schema,
-                ),
-            ],
-            strict=True,
-            custom_error_type=error_kind,
+        json_schema = core_schema.no_info_after_validator_function(
+            source,  # construct the type
+            inner_schema,
+        )
+        s = core_schema.json_or_python_schema(
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(source),
+                    json_schema,
+                ],
+                strict=True,
+                custom_error_type=error_kind,
+            ),
+            json_schema=json_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(
                 serialize,
                 info_arg=True,

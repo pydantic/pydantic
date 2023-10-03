@@ -32,7 +32,7 @@ jobs:
 
       - name: install
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G linting -G email
 
       - uses: pre-commit/action@v3.0.0
@@ -56,7 +56,7 @@ jobs:
       # Because the secret for accessing the library is not accessible from forks, but we still want to run
       # this job on public CI runs.
       run: |
-        pdm venv create --with-pip $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
@@ -86,7 +86,7 @@ jobs:
 
       - name: install deps
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G testing -G testing-extra -G email -G memray
           pdm add pytest-memray
 
@@ -130,7 +130,7 @@ jobs:
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 
     - run: pdm info && pdm list
@@ -191,7 +191,7 @@ jobs:
 
       - name: install deps
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G testing
 
       - name: install example plugin
@@ -240,7 +240,7 @@ jobs:
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G mypy
 
     - name: install mypy
@@ -337,7 +337,7 @@ jobs:
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 
     - name: install typing-extensions
