@@ -1465,6 +1465,8 @@ class _SecretField(Generic[SecretType]):
             serialization=core_schema.plain_serializer_function_ser_schema(
                 serialize,
                 info_arg=True,
+                return_schema=core_schema.str_schema(),
+                when_used='json',
             ),
         )
         s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(get_json_schema)
