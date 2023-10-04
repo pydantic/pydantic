@@ -6,8 +6,7 @@ set -e
 cd fastapi
 git fetch --tags
 
-# temp fix for flask dependency issue
-pip install Werkzeug==2.2.2
+
 pip install -r requirements.txt
 # Install the version of pydantic from the current branch, not the released version used by fastapi
 pip uninstall -y pydantic
