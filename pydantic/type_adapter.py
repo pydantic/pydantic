@@ -417,6 +417,7 @@ class TypeAdapter(Generic[T]):
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
+        sort_schema: bool = True,
     ) -> dict[str, Any]:
         """Generate a JSON schema for the adapted type.
 
@@ -425,12 +426,13 @@ class TypeAdapter(Generic[T]):
             ref_template: The format string used for generating $ref strings.
             schema_generator: The generator class used for creating the schema.
             mode: The mode to use for schema generation.
+            sort_schema: Toggle sorting of the output schema. Defaults to `True`
 
         Returns:
             The JSON schema for the model as a dictionary.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-        return schema_generator_instance.generate(self.core_schema, mode=mode)
+        return schema_generator_instance.generate(self.core_schema, mode=mode, sort_schema=sort_schema)
 
     @staticmethod
     def json_schemas(

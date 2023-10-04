@@ -386,12 +386,15 @@ class GenerateJsonSchema:
         self._used = True
         return json_schemas_map, _sort_json_schema(json_schema['$defs'])  # type: ignore
 
-    def generate(self, schema: CoreSchema, mode: JsonSchemaMode = 'validation') -> JsonSchemaValue:
+    def generate(
+        self, schema: CoreSchema, mode: JsonSchemaMode = 'validation', sort_schema: bool = True
+    ) -> JsonSchemaValue:
         """Generates a JSON schema for a specified schema in a specified mode.
 
         Args:
             schema: A Pydantic model.
             mode: The mode in which to generate the schema. Defaults to 'validation'.
+            sort_schema: Toggle sorting of the output schema. Defaults to `True`
 
         Returns:
             A JSON schema representing the specified schema.
@@ -436,7 +439,10 @@ class GenerateJsonSchema:
         # json_schema['$schema'] = self.schema_dialect
 
         self._used = True
-        return _sort_json_schema(json_schema)
+        if sort_schema:
+            return _sort_json_schema(json_schema)
+        else:
+            return json_schema
 
     def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:  # noqa: C901
         """Generates a JSON schema for a given core schema.
@@ -2129,6 +2135,7 @@ def model_json_schema(
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     mode: JsonSchemaMode = 'validation',
+    sort_schema: bool = True,
 ) -> dict[str, Any]:
     """Utility function to generate a JSON Schema for a model.
 
@@ -2142,6 +2149,7 @@ def model_json_schema(
 
             - 'validation': Generate a JSON Schema for validating data.
             - 'serialization': Generate a JSON Schema for serializing data.
+        sort_schema: Toggle sorting of the output schema. Defaults to `True`
 
     Returns:
         The generated JSON Schema.
@@ -2150,7 +2158,7 @@ def model_json_schema(
     if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
         cls.__pydantic_validator__.rebuild()
     assert '__pydantic_core_schema__' in cls.__dict__, 'this is a bug! please report it'
-    return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
+    return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode, sort_schema=sort_schema)
 
 
 def models_json_schema(

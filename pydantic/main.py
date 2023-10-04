@@ -369,6 +369,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
+        sort_schema: bool = True,
     ) -> dict[str, Any]:
         """Generates a JSON schema for a model class.
 
@@ -378,12 +379,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             schema_generator: To override the logic used to generate the JSON schema, as a subclass of
                 `GenerateJsonSchema` with your desired modifications
             mode: The mode in which to generate the schema.
+            sort_schema: Toggle sorting of the output schema. Defaults to `True`
 
         Returns:
             The JSON schema for the given model class.
         """
         return model_json_schema(
-            cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
+            cls,
+            by_alias=by_alias,
+            ref_template=ref_template,
+            schema_generator=schema_generator,
+            mode=mode,
+            sort_schema=sort_schema,
         )
 
     @classmethod

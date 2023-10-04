@@ -4264,8 +4264,8 @@ def test_secrets_schema(secret_cls, field_kw, schema_kw):
 
 def test_override_generate_json_schema():
     class MyGenerateJsonSchema(GenerateJsonSchema):
-        def generate(self, schema, mode='validation'):
-            json_schema = super().generate(schema, mode=mode)
+        def generate(self, schema, mode='validation', sort_schema=True):
+            json_schema = super().generate(schema, mode=mode, sort_schema=sort_schema)
             json_schema['$schema'] = self.schema_dialect
             return json_schema
 
@@ -5696,3 +5696,20 @@ def test_recursive_non_generic_model() -> None:
         },
         'allOf': [{'$ref': '#/$defs/Bar'}],
     }
+
+
+def test_schema_sorting() -> None:
+    class Step(BaseModel):
+        z: Literal['step']
+        a: bool
+
+    class Move(BaseModel):
+        step: Step = Field(default=Step(z='step', a=True))
+
+    sorted = Move.model_json_schema(sort_schema=True)
+    assert list(sorted.keys()) == ['$defs', 'properties', 'title', 'type']
+    assert sorted['properties']['step']['default'] == {'a': True, 'z': 'step'}
+
+    un_sorted = Move.model_json_schema(sort_schema=False)
+    assert list(un_sorted.keys()) == ['type', 'properties', 'title', '$defs']
+    assert un_sorted['properties']['step']['default'] == {'z': 'step', 'a': True}
