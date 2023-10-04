@@ -454,7 +454,7 @@ jobs:
 
   publish_docs:
     needs: [check]
-    if: "success() && (github.ref == 'refs/heads/1.10.X-fixes' || startsWith(github.ref, 'refs/tags/'))"
+    if: "success() && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
     steps:
@@ -481,18 +481,14 @@ jobs:
 
       - run: make docs
 
-      - run: mike deploy -b docs-site dev-v1 --push
-        if: github.ref == 'refs/heads/1.10.X-fixes'
-
       - name: check version
-        if: "startsWith(github.ref, 'refs/tags/')"
         id: check-version
         uses: samuelcolvin/check-python-version@v3.2
         with:
           version_file_path: 'pydantic/version.py'
 
       - run: mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} --update-aliases --push
-        if: "startsWith(github.ref, 'refs/tags/') && !fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
+        if: "!fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
 
   release:
     needs: [check]
