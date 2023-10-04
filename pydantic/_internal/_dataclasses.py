@@ -27,7 +27,7 @@ from ._core_utils import collect_invalid_schemas, simplify_schema_references, va
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
-from ._mock_val_ser import set_dataclass_mock_validator
+from ._mock_val_ser import set_dataclass_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._utils import is_valid_identifier
 
@@ -153,14 +153,14 @@ def complete_dataclass(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_dataclass_mock_validator(cls, cls.__name__, f'`{e.name}`')
+        set_dataclass_mocks(cls, cls.__name__, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(cls)
 
     schema = gen_schema.collect_definitions(schema)
     if collect_invalid_schemas(schema):
-        set_dataclass_mock_validator(cls, cls.__name__, 'all referenced types')
+        set_dataclass_mocks(cls, cls.__name__, 'all referenced types')
         return False
 
     schema = _discriminated_union.apply_discriminators(simplify_schema_references(schema))
