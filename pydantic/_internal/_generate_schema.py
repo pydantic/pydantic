@@ -1449,17 +1449,14 @@ class GenerateSchema:
 
         bound = typevar.__bound__
         constraints = typevar.__constraints__
-        not_set = object()
-        default = getattr(typevar, '__default__', not_set)
-        if default is None:
-            default = not_set
+        default = getattr(typevar, '__default__', None)
 
-        if (bound is not None) + (len(constraints) != 0) + (default is not not_set) > 1:
+        if (bound is not None) + (len(constraints) != 0) + (default is not None) > 1:
             raise NotImplementedError(
                 'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
             )
 
-        if default is not not_set:
+        if default is not None:
             return self.generate_schema(default)
         elif constraints:
             return self._union_schema(typing.Union[constraints])  # type: ignore
