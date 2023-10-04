@@ -1,12 +1,7 @@
 [
   {
-    "version": "dev-v2",
-    "title": "dev-v2",
-    "aliases": []
-  },
-  {
-    "version": "dev-v1",
-    "title": "dev-v1",
+    "version": "dev",
+    "title": "dev",
     "aliases": []
   },
   {
