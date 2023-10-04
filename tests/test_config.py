@@ -687,6 +687,36 @@ def test_config_model_defer_build():
     assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
 
 
+def test_config_type_adapter_defer_build():
+    class MyModel(BaseModel, defer_build=True):
+        x: int
+
+    ta = TypeAdapter(MyModel)
+
+    assert isinstance(ta.validator, MockValSer)
+    assert isinstance(ta.serializer, MockValSer)
+
+    m = ta.validate_python({'x': 1})
+    assert m.x == 1
+    m2 = ta.validate_python({'x': 2})
+    assert m2.x == 2
+
+
+def test_config_dataclass_defer_build():
+    @pydantic_dataclass(config={'defer_build': True})
+    class MyModel:
+        x: int
+
+    assert isinstance(MyModel.__pydantic_validator__, MockValSer)
+    assert isinstance(MyModel.__pydantic_serializer__, MockValSer)
+
+    m = MyModel(x=1)
+    assert m.x == 1
+
+    assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
+    assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
+
+
 def test_config_model_defer_build_nested():
     class MyNestedModel(BaseModel, defer_build=True):
         x: int
