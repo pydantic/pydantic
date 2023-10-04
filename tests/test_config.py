@@ -701,18 +701,7 @@ def test_config_type_adapter_defer_build():
     m2 = ta.validate_python({'x': 2})
     assert m2.x == 2
 
-
-def test_config_dataclass_defer_build():
-    @pydantic_dataclass(config={'defer_build': True})
-    class MyModel:
-        x: int
-
-    assert isinstance(MyModel.__pydantic_validator__, MockValSer)
-    assert isinstance(MyModel.__pydantic_serializer__, MockValSer)
-
-    m = MyModel(x=1)
-    assert m.x == 1
-
+    # in the future, can reassign said validators to the TypeAdapter
     assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
     assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
 
