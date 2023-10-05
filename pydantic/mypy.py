@@ -347,7 +347,8 @@ class PydanticModelField:
 
     def expand_type(self, current_info: TypeInfo) -> Type | None:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.expand_type."""
-        if self.type is not None and self.info.self_type is not None:
+        # The getattr in the next line is used to prevent errors in legacy versions of mypy without this attribute
+        if self.type is not None and getattr(self.info, 'self_type', None) is not None:
             # In general, it is not safe to call `expand_type()` during semantic analyzis,
             # however this plugin is called very late, so all types should be fully ready.
             # Also, it is tricky to avoid eager expansion of Self types here (e.g. because
