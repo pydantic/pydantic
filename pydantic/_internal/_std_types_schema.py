@@ -388,12 +388,24 @@ def identity(s: CoreSchema) -> CoreSchema:
     return s
 
 
+def get_sequence_origin_from_subclass(source_type: Any):
+    mro = source_type.mro()[1:]
+    for item in mro:
+        mapped_origin = SEQUENCE_ORIGIN_MAP.get(item)
+        if mapped_origin:
+            return mapped_origin
+
+
 def sequence_like_prepare_pydantic_annotations(
     source_type: Any, annotations: Iterable[Any], _config: ConfigDict
 ) -> tuple[Any, list[Any]] | None:
     origin: Any = get_origin(source_type)
 
     mapped_origin = SEQUENCE_ORIGIN_MAP.get(origin, None) if origin else SEQUENCE_ORIGIN_MAP.get(source_type, None)
+
+    if mapped_origin is None:
+        mapped_origin = get_sequence_origin_from_subclass(origin or source_type)
+
     if mapped_origin is None:
         return None
 

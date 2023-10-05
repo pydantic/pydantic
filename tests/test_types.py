@@ -4297,6 +4297,32 @@ def test_literal_multiple():
     ]
 
 
+def test_mutable_set_subclass():
+    class MySet(typing.MutableSet):
+        def __init__(self):
+            self._data = set()
+
+        def add(self, value):
+            self._data.add(value)
+
+        def discard(self, value):
+            self._data.discard(value)
+
+        def __contains__(self, x):
+            return x in self._data
+
+        def __len__(self):
+            return len(self._data)
+
+        def __iter__(self):
+            return iter(self._data)
+
+    class Model(BaseModel):
+        data: MySet
+
+    assert Model(data=MySet())
+
+
 def test_typing_mutable_set():
     s1 = TypeAdapter(Set[int]).core_schema
     s1.pop('metadata', None)
