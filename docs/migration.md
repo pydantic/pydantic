@@ -166,6 +166,8 @@ The following properties have been removed from or changed in `Field`:
 - `regex` (use `pattern` instead)
 - `final` (use the `typing.Final` type hint instead)
 
+Field constraints are no longer automatically pushed down to the parameters of generics.  For example, you can no longer validate every element of a list matches a regex by providing `my_list: list[str] = Field(pattern=".*")`.  Instead, use `typing.Annotated` to provide an annotation on the `str` itself: `my_list: list[Annotated[str, Field(pattern=".*")]]`
+
 * [TODO: Need to document any other backwards-incompatible changes to `pydantic.Field`]
 
 
