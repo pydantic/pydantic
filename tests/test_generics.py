@@ -2639,7 +2639,70 @@ def test_serialize_unsubstituted_typevars_bound() -> None:
     class ErrorDetails(BaseModel):
         foo: str
 
+    # This version of `TypeVar` does not support `default` on Python <3.12
     ErrorDataT = TypeVar('ErrorDataT', bound=ErrorDetails)
+
+    class Error(BaseModel, Generic[ErrorDataT]):
+        message: str
+        details: ErrorDataT
+
+    class MyErrorDetails(ErrorDetails):
+        bar: str
+
+    sample_error = Error(
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+    sample_error = Error[ErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+        },
+    }
+
+    sample_error = Error[MyErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+
+def test_serialize_unsubstituted_typevars_bound_default_supported() -> None:
+    class ErrorDetails(BaseModel):
+        foo: str
+
+    # This version of `TypeVar` always support `default`
+    ErrorDataT = TypingExtensionsTypeVar('ErrorDataT', bound=ErrorDetails)
 
     class Error(BaseModel, Generic[ErrorDataT]):
         message: str
@@ -2704,7 +2767,7 @@ def test_serialize_unsubstituted_typevars_bound() -> None:
     ],
     ids=['default', 'constraint'],
 )
-def test_serialize_unsubstituted_typevars_bound(
+def test_serialize_unsubstituted_typevars_variants(
     type_var: Type[BaseModel],
 ) -> None:
     class ErrorDetails(BaseModel):
