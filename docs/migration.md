@@ -764,6 +764,29 @@ classes using `Annotated`.
 Inheriting from `str` had upsides and downsides, and for V2 we decided it would be better to remove this. To use these
 types in APIs which expect `str` you'll now need to convert them (with `str(url)`).
 
+Pydantic V2 uses Rust's [Url](https://crates.io/crates/url) crate for URL validation.
+Some of the URL validation differs slightly from the previous behavior in V1.
+One notable difference is that the new `Url` types append slashes to the validated version if no path is included,
+even if a slash is not specified in the argument to a `Url` type constructor. See the example below for this behavior:
+
+```py
+from pydantic import AnyUrl
+
+
+assert str(AnyUrl(url="https://google.com")) == "https://google.com/"
+assert str(AnyUrl(url="https://google.com/")) == "https://google.com/"
+assert str(AnyUrl(url="https://google.com/api")) == "https://google.com/api"
+assert str(AnyUrl(url="https://google.com/api/")) == "https://google.com/api/"
+```
+
+If you still want to use the old behavior without the appended slash, take a look at this [solution](https://github.com/pydantic/pydantic/issues/7186#issuecomment-1690235887).
+A solution like the one suggested in [this discussion](https://github.com/pydantic/pydantic/discussions/6996) could also be a viable workaround.
+
+
+```py
+from pydantic
+```
+
 ### Constrained types
 
 The `Constrained*` classes were _removed_, and you should replace them by `Annotated[<type>, Field(...)]`, for example:
