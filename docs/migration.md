@@ -127,6 +127,8 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
   [Subclass instances for fields of BaseModel, dataclasses, TypedDict](concepts/serialization.md#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict)
   section of the model exporting docs.
 * `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
+* In many cases, arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion.
+  This is notable in the case of passing mutable objects as arguments to a constructor. You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
 
 ### Changes to `pydantic.generics.GenericModel`
 
@@ -772,11 +774,10 @@ even if a slash is not specified in the argument to a `Url` type constructor. Se
 ```py
 from pydantic import AnyUrl
 
-
-assert str(AnyUrl(url="https://google.com")) == "https://google.com/"
-assert str(AnyUrl(url="https://google.com/")) == "https://google.com/"
-assert str(AnyUrl(url="https://google.com/api")) == "https://google.com/api"
-assert str(AnyUrl(url="https://google.com/api/")) == "https://google.com/api/"
+assert str(AnyUrl(url='https://google.com')) == 'https://google.com/'
+assert str(AnyUrl(url='https://google.com/')) == 'https://google.com/'
+assert str(AnyUrl(url='https://google.com/api')) == 'https://google.com/api'
+assert str(AnyUrl(url='https://google.com/api/')) == 'https://google.com/api/'
 ```
 
 If you still want to use the old behavior without the appended slash, take a look at this [solution](https://github.com/pydantic/pydantic/issues/7186#issuecomment-1690235887).
