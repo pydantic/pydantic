@@ -402,6 +402,7 @@ def confloat(
         === ":white_check_mark: Do this"
             ```py
             from typing_extensions import Annotated
+
             from pydantic import BaseModel, Field
 
             class Foo(BaseModel):
@@ -725,7 +726,9 @@ def constr(
 
         === ":white_check_mark: Do this"
             ```py
-            from pydantic import BaseModel, Annotated, StringConstraints
+            from typing_extensions import Annotated
+
+            from pydantic import BaseModel, StringConstraints
 
             class Foo(BaseModel):
                 bar: Annotated[str, StringConstraints(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')]
