@@ -783,10 +783,6 @@ If you still want to use the old behavior without the appended slash, take a loo
 A solution like the one suggested in [this discussion](https://github.com/pydantic/pydantic/discussions/6996) could also be a viable workaround.
 
 
-```py
-from pydantic
-```
-
 ### Constrained types
 
 The `Constrained*` classes were _removed_, and you should replace them by `Annotated[<type>, Field(...)]`, for example:
