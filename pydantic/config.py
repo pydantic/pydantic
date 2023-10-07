@@ -787,5 +787,38 @@ class ConfigDict(TypedDict, total=False):
     ```
     """
 
+    regex_engine: Literal['rust-regex', 'python-re']
+    """
+    The regex engine to used for pattern validation
+    Defaults to `'rust-regex'`.
+
+    - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust crate,
+      which is non-backtracking and therefore more DDoS resistant, but does not support all regex features.
+    - `python-re` use the [`re`](https://docs.python.org/3/library/re.html) module,
+      which supports all regex features, but may be slower.
+
+    ```py
+    from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+    class Model(BaseModel):
+        model_config = ConfigDict(regex_engine='python-re')
+
+        value: str = Field(pattern=r'^abc(?=def)')
+
+    print(Model(value='abcdef').value)
+    #> abcdef
+
+    try:
+        print(Model(value='abxyzcdef'))
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        value
+          String should match pattern '^abc(?=def)' [type=string_pattern_mismatch, input_value='abxyzcdef', input_type=str]
+        '''
+    ```
+    """
+
 
 __getattr__ = getattr_migration(__name__)
