@@ -781,7 +781,6 @@ assert str(AnyUrl(url='https://google.com/api/')) == 'https://google.com/api/'
 ```
 
 If you still want to use the old behavior without the appended slash, take a look at this [solution](https://github.com/pydantic/pydantic/issues/7186#issuecomment-1690235887).
-A solution like the one suggested in [this discussion](https://github.com/pydantic/pydantic/discussions/6996) could also be a viable workaround.
 
 
 ### Constrained types
