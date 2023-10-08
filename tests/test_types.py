@@ -1700,6 +1700,28 @@ def test_enum_from_json(enum_base, strict):
         ]
 
 
+def test_strict_enum() -> None:
+    class Demo(Enum):
+        A = 0
+        B = 1
+
+    class User(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        demo_strict: Demo
+        demo_not_strict: Demo = Field(strict=False)
+
+    user = User(demo_strict=Demo.A, demo_not_strict=1)
+
+    assert isinstance(user.demo_strict, Demo)
+    assert isinstance(user.demo_not_strict, Demo)
+    assert user.demo_strict.value == 0
+    assert user.demo_not_strict.value == 1
+
+    with pytest.raises(ValidationError, match='Input should be an instance of test_strict_enum.<locals>.Demo'):
+        User(demo_strict=0, demo_not_strict=1)
+
+
 @pytest.mark.parametrize(
     'kwargs,type_',
     [
