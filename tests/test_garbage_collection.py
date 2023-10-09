@@ -27,7 +27,9 @@ def test_gc_schema_serializer() -> None:
         __schema__: SchemaSerializer
 
         def __init_subclass__(cls) -> None:
-            cls.__schema__ = SchemaSerializer(core_schema.model_schema(cls, GC_TEST_SCHEMA_INNER))
+            cls.__schema__ = SchemaSerializer(
+                core_schema.model_schema(cls, GC_TEST_SCHEMA_INNER), config={'ser_json_timedelta': 'float'}
+            )
 
     cache: 'WeakValueDictionary[int, Any]' = WeakValueDictionary()
 
@@ -56,7 +58,10 @@ def test_gc_schema_validator() -> None:
         __validator__: SchemaValidator
 
         def __init_subclass__(cls) -> None:
-            cls.__validator__ = SchemaValidator(core_schema.model_schema(cls, GC_TEST_SCHEMA_INNER))
+            cls.__validator__ = SchemaValidator(
+                core_schema.model_schema(cls, GC_TEST_SCHEMA_INNER),
+                config=core_schema.CoreConfig(extra_fields_behavior='allow'),
+            )
 
     cache: 'WeakValueDictionary[int, Any]' = WeakValueDictionary()
 

@@ -26,13 +26,17 @@ mod ob_type;
 mod shared;
 mod type_serializers;
 
-#[pyclass(module = "pydantic_core._pydantic_core")]
+#[pyclass(module = "pydantic_core._pydantic_core", frozen)]
 #[derive(Debug)]
 pub struct SchemaSerializer {
     serializer: CombinedSerializer,
     definitions: Definitions<CombinedSerializer>,
     expected_json_size: AtomicUsize,
     config: SerializationConfig,
+    // References to the Python schema and config objects are saved to enable
+    // reconstructing the object for pickle support (see `__reduce__`).
+    py_schema: Py<PyDict>,
+    py_config: Option<Py<PyDict>>,
 }
 
 impl SchemaSerializer {
@@ -71,15 +75,19 @@ impl SchemaSerializer {
 #[pymethods]
 impl SchemaSerializer {
     #[new]
-    pub fn py_new(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
+    pub fn py_new(py: Python, schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         let mut definitions_builder = DefinitionsBuilder::new();
-
         let serializer = CombinedSerializer::build(schema.downcast()?, config, &mut definitions_builder)?;
         Ok(Self {
             serializer,
             definitions: definitions_builder.finish()?,
             expected_json_size: AtomicUsize::new(1024),
             config: SerializationConfig::from_config(config)?,
+            py_schema: schema.into_py(py),
+            py_config: match config {
+                Some(c) if !c.is_empty() => Some(c.into_py(py)),
+                _ => None,
+            },
         })
     }
 
@@ -174,6 +182,14 @@ impl SchemaSerializer {
         Ok(py_bytes.into())
     }
 
+    pub fn __reduce__(slf: &PyCell<Self>) -> PyResult<(PyObject, (PyObject, PyObject))> {
+        // Enables support for `pickle` serialization.
+        let py = slf.py();
+        let cls = slf.get_type().into();
+        let init_args = (slf.get().py_schema.to_object(py), slf.get().py_config.to_object(py));
+        Ok((cls, init_args))
+    }
+
     pub fn __repr__(&self) -> String {
         format!(
             "SchemaSerializer(serializer={:#?}, definitions={:#?})",
@@ -182,6 +198,10 @@ impl SchemaSerializer {
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
+        visit.call(&self.py_schema)?;
+        if let Some(ref py_config) = self.py_config {
+            visit.call(py_config)?;
+        }
         self.serializer.py_gc_traverse(&visit)?;
         self.definitions.py_gc_traverse(&visit)?;
         Ok(())
