@@ -2,7 +2,7 @@
 /2.0.1/* /2.0/:splat 301
 /2.0.2/* /2.0/:splat 301
 /dev-v2/* /dev/:splat 301
-/dev-v1/* /1.10/ 301
+/dev-v1/* /1.10/:splat 301
 /changelog/ /latest/changelog/ 301
 /contributing/ /latest/contributing/ 301
 /datamodel_code_generator/ /latest/datamodel_code_generator/ 301
