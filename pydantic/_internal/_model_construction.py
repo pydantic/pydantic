@@ -588,7 +588,7 @@ def generate_model_signature(
 
 
 class _PydanticWeakRef:
-    """Wrapper for `weakref.ref` that enables cloudpickle serialization.
+    """Wrapper for `weakref.ref` that enables `pickle` serialization.
 
     Cloudpickle fails to serialize `weakref.ref` objects due to an arcane error related
     to abstract base classes (`abc.ABC`). This class works around the issue by wrapping
