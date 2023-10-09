@@ -1,3 +1,4 @@
+import gc
 import pickle
 
 from pydantic._internal._model_construction import _PydanticWeakRef
@@ -24,6 +25,7 @@ def test_pickle_pydantic_weakref():
     assert ref2() is obj2
 
     ref3 = _PydanticWeakRef(IntWrapper(3))
+    gc.collect() # PyPy does not use reference counting and always relies on GC.
     assert ref3() is None
 
     d = {
@@ -42,6 +44,7 @@ def test_pickle_pydantic_weakref():
     }
 
     loaded = pickle.loads(pickle.dumps(d))
+    gc.collect() # PyPy does not use reference counting and always relies on GC.
 
     assert loaded['hard_ref'] == IntWrapper(1)
     assert loaded['has_hard_ref']() is loaded['hard_ref']
