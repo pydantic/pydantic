@@ -498,7 +498,7 @@ fn check_sub_defaults(
         if let Some(default_port) = default_port {
             lib_url
                 .set_port(Some(default_port))
-                .map_err(|_| map_parse_err(ParseError::EmptyHost))?;
+                .map_err(|()| map_parse_err(ParseError::EmptyHost))?;
         }
     }
     if let Some(ref default_path) = default_path {
