@@ -106,6 +106,7 @@ class CoreConfig(TypedDict, total=False):
     hide_input_in_errors: bool
     validation_error_cause: bool  # default: False
     coerce_numbers_to_str: bool  # default: False
+    regex_engine: Literal['rust-regex', 'python-re']  # default: 'rust-regex'
 
 
 IncExCall: TypeAlias = 'set[int | str] | dict[int | str, IncExCall] | None'
