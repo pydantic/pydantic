@@ -465,7 +465,7 @@ then pass it to `model_validate`.
     behavior and errors you'd get from `model_validate_json`, our recommendation for now is to use
     `model_validate_json(json.dumps(data))`.
 
-!!! warning
+!!! note
     If you're passing in an instance of a model to `model_validate`, you will want to consider setting
     [`revalidate_instances`](https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.revalidate_instances)
     in the model's config. If you don't set this value, then validation will be skipped on model instances. See the below example:
