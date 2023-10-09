@@ -597,10 +597,10 @@ class _PydanticWeakRef:
     See https://github.com/pydantic/pydantic/issues/6763 for context.
 
     Semantics:
-        - If not pickled, `__call__` behaves the same as a `weakref.ref`.
-        - If pickled along with the underlying reference, the same `weakref.ref`
-          behavior will be maintained between them after unpickling.
-        - If pickled without the underlying reference, after unpickling the underlying
+        - If not pickled, behaves the same as a `weakref.ref`.
+        - If pickled along with the referenced object, the same `weakref.ref` behavior
+          will be maintained between them after unpickling.
+        - If pickled without the referenced object, after unpickling the underlying
           reference will be cleared (`__call__` will always return `None`).
     """
 
