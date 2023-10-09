@@ -7,7 +7,7 @@ import weakref
 from abc import ABCMeta
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable, Generic, Mapping, Optional, Tuple
+from typing import Any, Callable, Generic, Mapping
 
 from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import dataclass_transform, deprecated
@@ -610,7 +610,7 @@ class _PydanticWeakRef:
         else:
             return self._wr()
 
-    def __reduce__(self) -> Tuple[Callable, Tuple[Optional[weakref.ReferenceType]]]:
+    def __reduce__(self) -> tuple[Callable, tuple[weakref.ReferenceType | None]]:
         return _PydanticWeakRef, (self(),)
 
 
