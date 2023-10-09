@@ -593,6 +593,8 @@ class _PydanticWeakRef:
     Cloudpickle fails to serialize `weakref.ref` objects due to an arcane error related
     to abstract base classes (`abc.ABC`). This class works around the issue by wrapping
     `weakref.ref` instead of subclassing.
+
+    See https://github.com/pydantic/pydantic/issues/6763 for context.
     """
     def __init__(self, obj: Any):
         if obj is None:
