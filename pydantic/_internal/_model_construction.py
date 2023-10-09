@@ -596,6 +596,7 @@ class _PydanticWeakRef:
 
     See https://github.com/pydantic/pydantic/issues/6763 for context.
     """
+
     def __init__(self, obj: Any):
         if obj is None:
             # The object will be `None` upon deserialization if the serialized weakref
