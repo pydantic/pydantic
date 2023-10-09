@@ -10,7 +10,7 @@ pytest-examples==0.0.10
 pytest-speed==0.3.5
 pytest-mock==3.11.1
 pytest-pretty==1.2.0
-pytest-timeout==2.1.0
+pytest-timeout==2.2.0
 pytz==2023.3.post1
 # numpy doesn't offer prebuilt wheels for all versions and platforms we test in CI e.g. aarch64 musllinux
 numpy==1.25.2; python_version >= "3.9" and python_version < "3.12" and implementation_name == "cpython" and platform_machine == 'x86_64'
