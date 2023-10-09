@@ -13,6 +13,7 @@ class IntWrapper:
     def __eq__(self, other: 'IntWrapper') -> bool:
         return self.get() == other.get()
 
+
 def test_pickle_pydantic_weakref():
     obj1 = IntWrapper(1)
     ref1 = _PydanticWeakRef(obj1)
