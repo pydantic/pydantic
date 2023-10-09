@@ -2,6 +2,7 @@ import pickle
 
 from pydantic._internal._model_construction import _PydanticWeakRef
 
+
 class IntWrapper:
     def __init__(self, v: int):
         self._v = v
@@ -9,7 +10,7 @@ class IntWrapper:
     def get(self) -> int:
         return self._v
 
-    def __eq__(self, other: "IntWrapper") -> bool:
+    def __eq__(self, other: 'IntWrapper') -> bool:
         return self.get() == other.get()
 
 def test_pickle_pydantic_weakref():
@@ -27,21 +28,21 @@ def test_pickle_pydantic_weakref():
     d = {
         # Hold a hard reference to the underlying object for ref1 that will also
         # be pickled.
-        "hard_ref": obj1,
+        'hard_ref': obj1,
         # ref1's underlying object has a hard reference in the pickled object so it
         # should maintain the reference after deserialization.
-        "has_hard_ref": ref1,
+        'has_hard_ref': ref1,
         # ref2's underlying object has no hard reference in the pickled object so it
         # should be `None` after deserialization.
-        "has_no_hard_ref": ref2,
+        'has_no_hard_ref': ref2,
         # ref3's underlying object had already gone out of scope before pickling so it
         # should be `None` after deserialization.
-        "ref_out_of_scope": ref3,
+        'ref_out_of_scope': ref3,
     }
 
     loaded = pickle.loads(pickle.dumps(d))
 
-    assert loaded["hard_ref"] == IntWrapper(1)
-    assert loaded["has_hard_ref"]() is loaded["hard_ref"]
-    assert loaded["has_no_hard_ref"]() is None
-    assert loaded["ref_out_of_scope"]() is None
+    assert loaded['hard_ref'] == IntWrapper(1)
+    assert loaded['has_hard_ref']() is loaded['hard_ref']
+    assert loaded['has_no_hard_ref']() is None
+    assert loaded['ref_out_of_scope']() is None
