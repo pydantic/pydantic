@@ -3749,7 +3749,8 @@ and that <code>ValidationError</code> will contain information about all of the 
 <p><em>Pydantic</em> provides two <code>classmethod</code> helper functions on models for parsing data:</p>
 <ul>
 <li><strong><code>model_validate</code></strong>: this is very similar to the <code>__init__</code> method of the model, except it takes a dict or an object
-  rather than keyword arguments. If the object passed is not a dict a <code>ValidationError</code> will be raised.</li>
+  rather than keyword arguments. If the object passed cannot be validated, or if it's not a dictionary
+  or instance of the model in question, a <code>ValidationError</code> will be raised.</li>
 <li><strong><code>model_validate_json</code></strong>: this takes a <em>str</em> or <em>bytes</em> and parses it as <em>json</em>, then passes the result to <code>model_validate</code>.</li>
 </ul>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
@@ -3808,6 +3809,57 @@ then pass it to <code>model_validate</code>.</p>
 different validation behavior. If you have data coming from a non-JSON source, but want the same validation
 behavior and errors you'd get from <code>model_validate_json</code>, our recommendation for now is to use
 <code>model_validate_json(json.dumps(data))</code>.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you're passing in an instance of a model to <code>model_validate</code>, you will want to consider setting
+<a href="https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.revalidate_instances"><code>revalidate_instances</code></a>
+in the model's config. If you don't set this value, then validation will be skipped on model instances. See the below example:</p>
+</div>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1"><img alt="❌" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/274c.svg" title=":x:" /> <code>revalidate_instances='never'</code></label><label for="__tabbed_1_2"><img alt="✅" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@14.1.2/assets/svg/2705.svg" title=":white_check_mark:" /> <code>revalidate_instances='always'</code></label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="c1"># note: the `model_config` setting validate_assignment=True` can prevent this kind of misbehavior</span>
+<span class="n">m</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="s1">&#39;not an int&#39;</span>
+
+<span class="c1"># doesn&#39;t raise a validation error even though m is invalid</span>
+<span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="c1"># note: the `model_config` setting validate_assignment=True` can prevent this kind of misbehavior</span>
+<span class="n">m</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="s1">&#39;not an int&#39;</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    a</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;not an int&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
 </div>
 <h3 id="creating-models-without-validation">Creating models without validation<a class="headerlink" href="#creating-models-without-validation" title="Permanent link">&para;</a></h3>
 <p>Pydantic also provides the <code>model_construct()</code> method, which allows models to be created <strong>without validation</strong>. This
