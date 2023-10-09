@@ -3635,6 +3635,8 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
   <a href="../concepts/serialization/#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict">Subclass instances for fields of BaseModel, dataclasses, TypedDict</a>
   section of the model exporting docs.</li>
 <li><code>GetterDict</code> has been removed as it was just an implementation detail of <code>orm_mode</code>, which has been removed.</li>
+<li>In many cases, arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion.
+  This is notable in the case of passing mutable objects as arguments to a constructor. You can see an example + more detail <a href="https://docs.pydantic.dev/latest/concepts/models/#attribute-copies">here</a>.</li>
 </ul>
 <h3 id="changes-to-pydanticgenericsgenericmodel">Changes to <code>pydantic.generics.GenericModel</code><a class="headerlink" href="#changes-to-pydanticgenericsgenericmodel" title="Permanent link">&para;</a></h3>
 <p>The <code>pydantic.generics.GenericModel</code> class is no longer necessary, and has been removed. Instead, you can now
@@ -4228,6 +4230,18 @@ which may be installed separately if needed.</p>
 classes using <code>Annotated</code>.</p>
 <p>Inheriting from <code>str</code> had upsides and downsides, and for V2 we decided it would be better to remove this. To use these
 types in APIs which expect <code>str</code> you'll now need to convert them (with <code>str(url)</code>).</p>
+<p>Pydantic V2 uses Rust's <a href="https://crates.io/crates/url">Url</a> crate for URL validation.
+Some of the URL validation differs slightly from the previous behavior in V1.
+One notable difference is that the new <code>Url</code> types append slashes to the validated version if no path is included,
+even if a slash is not specified in the argument to a <code>Url</code> type constructor. See the example below for this behavior:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnyUrl</span>
+
+<span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">AnyUrl</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;https://google.com&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;https://google.com/&#39;</span>
+<span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">AnyUrl</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;https://google.com/&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;https://google.com/&#39;</span>
+<span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">AnyUrl</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;https://google.com/api&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;https://google.com/api&#39;</span>
+<span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">AnyUrl</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s1">&#39;https://google.com/api/&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="s1">&#39;https://google.com/api/&#39;</span>
+</code></pre></div>
+<p>If you still want to use the old behavior without the appended slash, take a look at this <a href="https://github.com/pydantic/pydantic/issues/7186#issuecomment-1690235887">solution</a>.</p>
 <h3 id="constrained-types">Constrained types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h3>
 <p>The <code>Constrained*</code> classes were <em>removed</em>, and you should replace them by <code>Annotated[&lt;type&gt;, Field(...)]</code>, for example:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConstrainedInt</span>
