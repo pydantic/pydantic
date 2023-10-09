@@ -611,7 +611,7 @@ class _PydanticWeakRef:
             return self._wr()
 
     def __reduce__(self) -> Tuple[Callable, Tuple[Optional[weakref.ReferenceType]]]:
-        return _PydanticWeakRef, (self._wr if self._wr is None else self._wr(),)
+        return _PydanticWeakRef, (self(),)
 
 
 def build_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | None:
