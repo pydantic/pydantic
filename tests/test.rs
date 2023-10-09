@@ -46,7 +46,7 @@ mod tests {
                 ]
             }"#;
             let schema: &PyDict = py.eval(code, None, None).unwrap().extract().unwrap();
-            SchemaSerializer::py_new(schema, None).unwrap();
+            SchemaSerializer::py_new(py, schema, None).unwrap();
         });
     }
 
@@ -77,7 +77,7 @@ a = A()
             py.run(code, None, Some(locals)).unwrap();
             let a: &PyAny = locals.get_item("a").unwrap().extract().unwrap();
             let schema: &PyDict = locals.get_item("schema").unwrap().extract().unwrap();
-            let serialized: Vec<u8> = SchemaSerializer::py_new(schema, None)
+            let serialized: Vec<u8> = SchemaSerializer::py_new(py, schema, None)
                 .unwrap()
                 .to_json(py, a, None, None, None, true, false, false, false, false, true, None)
                 .unwrap()
