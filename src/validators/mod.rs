@@ -97,12 +97,15 @@ impl PySome {
     }
 }
 
-#[pyclass(module = "pydantic_core._pydantic_core")]
+#[pyclass(module = "pydantic_core._pydantic_core", frozen)]
 #[derive(Debug)]
 pub struct SchemaValidator {
     validator: CombinedValidator,
     definitions: Definitions<CombinedValidator>,
-    schema: PyObject,
+    // References to the Python schema and config objects are saved to enable
+    // reconstructing the object for cloudpickle support (see `__reduce__`).
+    py_schema: Py<PyAny>,
+    py_config: Option<Py<PyDict>>,
     #[pyo3(get)]
     title: PyObject,
     hide_input_in_errors: bool,
@@ -121,6 +124,11 @@ impl SchemaValidator {
         for val in definitions.values() {
             val.get().unwrap().complete()?;
         }
+        let py_schema = schema.into_py(py);
+        let py_config = match config {
+            Some(c) if !c.is_empty() => Some(c.into_py(py)),
+            _ => None,
+        };
         let config_title = match config {
             Some(c) => c.get_item("title"),
             None => None,
@@ -134,18 +142,20 @@ impl SchemaValidator {
         Ok(Self {
             validator,
             definitions,
-            schema: schema.into_py(py),
+            py_schema,
+            py_config,
             title,
             hide_input_in_errors,
             validation_error_cause,
         })
     }
 
-    pub fn __reduce__(slf: &PyCell<Self>) -> PyResult<PyObject> {
+    pub fn __reduce__(slf: &PyCell<Self>) -> PyResult<(PyObject, (PyObject, PyObject))> {
+        // Enables support for `pickle` serialization.
         let py = slf.py();
-        let args = (slf.try_borrow()?.schema.to_object(py),);
-        let cls = slf.getattr("__class__")?;
-        Ok((cls, args).into_py(py))
+        let cls = slf.get_type().into();
+        let init_args = (slf.get().py_schema.to_object(py), slf.get().py_config.to_object(py));
+        Ok((cls, init_args))
     }
 
     #[pyo3(signature = (input, *, strict=None, from_attributes=None, context=None, self_instance=None))]
@@ -307,7 +317,10 @@ impl SchemaValidator {
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.validator.py_gc_traverse(&visit)?;
-        visit.call(&self.schema)?;
+        visit.call(&self.py_schema)?;
+        if let Some(ref py_config) = self.py_config {
+            visit.call(py_config)?;
+        }
         Ok(())
     }
 }
@@ -396,7 +409,8 @@ impl<'py> SelfValidator<'py> {
         Ok(SchemaValidator {
             validator,
             definitions,
-            schema: py.None(),
+            py_schema: py.None(),
+            py_config: None,
             title: "Self Schema".into_py(py),
             hide_input_in_errors: false,
             validation_error_cause: false,
