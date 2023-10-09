@@ -1,6 +1,7 @@
 """Private logic for creating models."""
 from __future__ import annotations as _annotations
 
+import operator
 import typing
 import warnings
 import weakref
@@ -123,9 +124,6 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            if config_wrapper.frozen:
-                set_default_hash_func(namespace, bases)
-
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
             from ..main import BaseModel
@@ -181,6 +179,10 @@ class ModelMetaclass(ABCMeta):
 
             types_namespace = get_cls_types_namespace(cls, parent_namespace)
             set_model_fields(cls, bases, config_wrapper, types_namespace)
+
+            if config_wrapper.frozen and '__hash__' not in namespace:
+                set_default_hash_func(cls, bases)
+
             complete_model_class(
                 cls,
                 cls_name,
@@ -388,19 +390,19 @@ def inspect_namespace(  # noqa C901
     return private_attributes
 
 
-def set_default_hash_func(namespace: dict[str, Any], bases: tuple[type[Any], ...]) -> None:
-    if '__hash__' in namespace:
-        return
-
+def set_default_hash_func(cls: type[BaseModel], bases: tuple[type[Any], ...]) -> None:
     base_hash_func = get_attribute_from_bases(bases, '__hash__')
     if base_hash_func in {None, object.__hash__}:
         # If `__hash__` is None _or_ `object.__hash__`, we generate a hash function.
         # It will be `None` if not overridden from BaseModel, but may be `object.__hash__` if there is another
         # parent class earlier in the bases which doesn't override `__hash__` (e.g. `typing.Generic`).
-        def hash_func(self: Any) -> int:
-            return hash(self.__class__) + hash(tuple(self.__dict__.values()))
 
-        namespace['__hash__'] = hash_func
+        getter = operator.itemgetter(*cls.model_fields.keys()) if cls.model_fields else lambda _: None
+
+        def hash_func(self: Any) -> int:
+            return hash(self.__class__) + hash(getter(self.__dict__))
+
+        cls.__hash__ = hash_func  # type: ignore
 
 
 def set_model_fields(
