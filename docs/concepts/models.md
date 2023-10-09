@@ -402,7 +402,8 @@ except ValidationError as e:
 *Pydantic* provides two `classmethod` helper functions on models for parsing data:
 
 * **`model_validate`**: this is very similar to the `__init__` method of the model, except it takes a dict or an object
-  rather than keyword arguments. If the object passed is not a dict a `ValidationError` will be raised.
+  rather than keyword arguments. If the object passed cannot be validated, or if it's not a dictionary
+  or instance of the model in question, a `ValidationError` will be raised.
 * **`model_validate_json`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `model_validate`.
 
 ```py
@@ -463,6 +464,55 @@ then pass it to `model_validate`.
     different validation behavior. If you have data coming from a non-JSON source, but want the same validation
     behavior and errors you'd get from `model_validate_json`, our recommendation for now is to use
     `model_validate_json(json.dumps(data))`.
+
+!!! note
+    If you're passing in an instance of a model to `model_validate`, you will want to consider setting
+    [`revalidate_instances`](https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.revalidate_instances)
+    in the model's config. If you don't set this value, then validation will be skipped on model instances. See the below example:
+
+
+=== ":x: `revalidate_instances='never'`"
+    ```py
+    from pydantic import BaseModel
+
+
+    class Model(BaseModel):
+        a: int
+
+
+    m = Model(a=0)
+    # note: the `model_config` setting validate_assignment=True` can prevent this kind of misbehavior
+    m.a = 'not an int'
+
+    # doesn't raise a validation error even though m is invalid
+    m2 = Model.model_validate(m)
+    ```
+
+=== ":white_check_mark: `revalidate_instances='always'`"
+    ```py
+    from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+    class Model(BaseModel):
+        a: int
+
+        model_config = ConfigDict(revalidate_instances='always')
+
+
+    m = Model(a=0)
+    # note: the `model_config` setting validate_assignment=True` can prevent this kind of misbehavior
+    m.a = 'not an int'
+
+    try:
+        m2 = Model.model_validate(m)
+    except ValidationError as e:
+        print(e)
+        """
+        1 validation error for Model
+        a
+          Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not an int', input_type=str]
+        """
+    ```
 
 ### Creating models without validation
 
