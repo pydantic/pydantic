@@ -587,8 +587,29 @@ def generate_model_signature(
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
-class _PydanticWeakRef(weakref.ReferenceType):
-    pass
+class _PydanticWeakRef:
+    """Wrapper for `weakref.ref` that enables cloudpickle serialization.
+
+    Cloudpickle fails to serialize `weakref.ref` objects due to an arcane error related
+    to abstract base classes (`abc.ABC`). This class works around the issue by wrapping
+    `weakref.ref` instead of subclassing.
+    """
+    def __init__(self, obj: Any):
+        if obj is None:
+            # The object will be `None` upon deserialization if the serialized weakref
+            # had lost its underlying object.
+            self._wr = None
+        else:
+            self._wr = weakref.ref(obj)
+
+    def __call__(self) -> Any:
+        if self._wr is None:
+            return None
+        else:
+            return self._wr()
+
+    def __reduce__(self) -> Tuple[Callable, Tuple[Optional[weakref.ReferenceType]]]:
+        return _PydanticWeakRef, (self._wr if self._wr is None else self._wr())
 
 
 def build_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | None:
