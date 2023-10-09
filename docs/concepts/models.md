@@ -481,6 +481,7 @@ then pass it to `model_validate`.
 
 
     m = Model(a=0)
+    # note: the `model_config` setting validate_assignment=True` can prevent this kind of misbehavior
     m.a = 'not an int'
 
     # doesn't raise a validation error even though m is invalid
@@ -499,6 +500,7 @@ then pass it to `model_validate`.
 
 
     m = Model(a=0)
+    # note: the `model_config` setting validate_assignment=True` can prevent this kind of misbehavior
     m.a = 'not an int'
 
     try:
