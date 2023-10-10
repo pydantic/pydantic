@@ -259,11 +259,13 @@ def init_private_attributes(self: BaseModel, __context: Any) -> None:
         self: The BaseModel instance.
         __context: The context.
     """
-    pydantic_private = getattr(self, '__pydantic_private__', None) or {}
+    if getattr(self, '__pydantic_private__', None) is not None:
+        return
+    pydantic_private = {}
     for name, private_attr in self.__private_attributes__.items():
         default = private_attr.get_default()
         if default is not PydanticUndefined:
-            pydantic_private.setdefault(name, default)
+            pydantic_private[name] = default
     object_setattr(self, '__pydantic_private__', pydantic_private)
 
 
