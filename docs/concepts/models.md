@@ -942,6 +942,50 @@ assert error.model_dump() == {
 }
 ```
 
+Due to the way that bounds are treated at runtime, and the way much of the python type-related tooling works, you may get some surprising behavior when serializing and deserializing values in circumstances where type-inference of generic arguments can occur.
+
+In the following code, we have two factories for creating `ItemHolder`s.  They are both generic and capture a `TypeVar` bound by `ItemBase`.  The first one creates an `ItemHolder` using the following syntax: `ItemHolder[TItem](**vals)` - the type information is propagated using the bound `TypeVar`.  The second factory does it this way: `ItemHolder[self.item_type](**vals)` - the *runtime `type` object* corresponding to the `TItem` generic argument (`self.item_type`) is passed directly into the `__class_getitem__` method of the generic type.
+
+```py
+from typing import TypeVar, Generic
+from pydantic import BaseModel
+
+TItem = TypeVar("TItem", bound="ItemBase")
+
+class ItemBase(BaseModel):
+    ...
+
+class IntItem(ItemBase):
+    value: int
+
+class ItemHolder(BaseModel, Generic[TItem]):
+    item: TItem
+
+class ItemHolderFactory(Generic[TItem]):
+    def __call__(self, vals: dict) -> ItemHolder[TItem]:
+        # THIS IS IMPORTANT
+        return ItemHolder[TItem](**vals)
+
+class RealItemHolderFactory(Generic[TItem]):
+    def __init__(self, item_type: type[TItem]) -> None:
+        self.item_type = item_type
+
+    def __call__(self, vals: dict) -> ItemHolder[TItem]:
+        # SO IS THIS
+        return ItemHolder[self.item_type](**vals)
+
+loaded_data = {"item": {"value": 1}}
+
+# THIS FACTORY FAILS
+print(ItemHolderFactory[IntItem]()(loaded_data).model_dump())   # {'item': {}}
+# THIS FACTORY SUCCEEDS
+print(RealItemHolderFactory(IntItem)(loaded_data).model_dump()) # {'item': {'value': 1}}
+```
+
+The reason `'item'` is empty in `ItemHolderFactory[IntItem]()(loaded_data)` is that `ItemBase` has no keys, and `ItemBase` is the class that was chosen to represent the `TItem` type variable in `__call__(self, vals: dict) -> ItemHolder[TItem]`.  The typechecker is able to determine that the type "should be" `IntItem`, but at runtime that information is lost, so pydantic has to make a decision, and currently pydantic decides to use the `bound` if there is one.
+
+In the second case, the runtime type information is provided explicitly, so pydantic has no problem doing what you want it to do.
+
 ## Dynamic model creation
 
 There are some occasions where it is desirable to create a model using runtime information to specify the fields.
