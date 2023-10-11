@@ -9,21 +9,20 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
+from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
+from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._core_utils import collect_invalid_schemas, simplify_schema_references
 from ._decorators import (
     ComputedFieldInfo,
     DecoratorInfos,
     PydanticDescriptorProxy,
     get_attribute_from_bases,
 )
-from ._discriminated_union import apply_discriminators
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
@@ -258,12 +257,13 @@ def init_private_attributes(self: BaseModel, __context: Any) -> None:
         self: The BaseModel instance.
         __context: The context.
     """
-    pydantic_private = {}
-    for name, private_attr in self.__private_attributes__.items():
-        default = private_attr.get_default()
-        if default is not PydanticUndefined:
-            pydantic_private[name] = default
-    object_setattr(self, '__pydantic_private__', pydantic_private)
+    if getattr(self, '__pydantic_private__', None) is None:
+        pydantic_private = {}
+        for name, private_attr in self.__private_attributes__.items():
+            default = private_attr.get_default()
+            if default is not PydanticUndefined:
+                pydantic_private[name] = default
+        object_setattr(self, '__pydantic_private__', pydantic_private)
 
 
 def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...]) -> Callable[..., Any] | None:
@@ -486,16 +486,15 @@ def complete_model_class(
 
     core_config = config_wrapper.core_config(cls)
 
-    schema = gen_schema.collect_definitions(schema)
-    if collect_invalid_schemas(schema):
+    try:
+        schema = gen_schema.clean_schema(schema)
+    except gen_schema.CollectedInvalid:
         set_model_mocks(cls, cls_name)
         return False
 
-    schema = apply_discriminators(simplify_schema_references(schema))
-
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-    cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
+    cls.__pydantic_validator__ = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True
 
@@ -586,8 +585,39 @@ def generate_model_signature(
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
-class _PydanticWeakRef(weakref.ReferenceType):
-    pass
+class _PydanticWeakRef:
+    """Wrapper for `weakref.ref` that enables `pickle` serialization.
+
+    Cloudpickle fails to serialize `weakref.ref` objects due to an arcane error related
+    to abstract base classes (`abc.ABC`). This class works around the issue by wrapping
+    `weakref.ref` instead of subclassing it.
+
+    See https://github.com/pydantic/pydantic/issues/6763 for context.
+
+    Semantics:
+        - If not pickled, behaves the same as a `weakref.ref`.
+        - If pickled along with the referenced object, the same `weakref.ref` behavior
+          will be maintained between them after unpickling.
+        - If pickled without the referenced object, after unpickling the underlying
+          reference will be cleared (`__call__` will always return `None`).
+    """
+
+    def __init__(self, obj: Any):
+        if obj is None:
+            # The object will be `None` upon deserialization if the serialized weakref
+            # had lost its underlying object.
+            self._wr = None
+        else:
+            self._wr = weakref.ref(obj)
+
+    def __call__(self) -> Any:
+        if self._wr is None:
+            return None
+        else:
+            return self._wr()
+
+    def __reduce__(self) -> tuple[Callable, tuple[weakref.ReferenceType | None]]:
+        return _PydanticWeakRef, (self(),)
 
 
 def build_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | None:

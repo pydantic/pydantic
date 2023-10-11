@@ -1,6 +1,7 @@
 import json
 import sys
 from dataclasses import dataclass
+from datetime import date, datetime
 from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Tuple, TypeVar, Union
 
 import pytest
@@ -266,3 +267,45 @@ def test_validate_python_from_attributes() -> None:
 
     res = ta.validate_python(UnrelatedClass(), from_attributes=True)
     assert res == ModelFromAttributesFalse(x=1)
+
+
+@pytest.mark.parametrize(
+    'field_type,input_value,expected,raises_match,strict',
+    [
+        (bool, 'true', True, None, False),
+        (bool, 'true', True, None, True),
+        (bool, 'false', False, None, False),
+        (bool, 'e', ValidationError, 'type=bool_parsing', False),
+        (int, '1', 1, None, False),
+        (int, '1', 1, None, True),
+        (int, 'xxx', ValidationError, 'type=int_parsing', True),
+        (float, '1.1', 1.1, None, False),
+        (float, '1.10', 1.1, None, False),
+        (float, '1.1', 1.1, None, True),
+        (float, '1.10', 1.1, None, True),
+        (date, '2017-01-01', date(2017, 1, 1), None, False),
+        (date, '2017-01-01', date(2017, 1, 1), None, True),
+        (date, '2017-01-01T12:13:14.567', ValidationError, 'type=date_from_datetime_inexact', False),
+        (date, '2017-01-01T12:13:14.567', ValidationError, 'type=date_parsing', True),
+        (date, '2017-01-01T00:00:00', date(2017, 1, 1), None, False),
+        (date, '2017-01-01T00:00:00', ValidationError, 'type=date_parsing', True),
+        (datetime, '2017-01-01T12:13:14.567', datetime(2017, 1, 1, 12, 13, 14, 567_000), None, False),
+        (datetime, '2017-01-01T12:13:14.567', datetime(2017, 1, 1, 12, 13, 14, 567_000), None, True),
+    ],
+    ids=repr,
+)
+def test_validate_strings(field_type, input_value, expected, raises_match, strict):
+    ta = TypeAdapter(field_type)
+    if raises_match is not None:
+        with pytest.raises(expected, match=raises_match):
+            ta.validate_strings(input_value, strict=strict)
+    else:
+        assert ta.validate_strings(input_value, strict=strict) == expected
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_validate_strings_dict(strict):
+    assert TypeAdapter(Dict[int, date]).validate_strings({'1': '2017-01-01', '2': '2017-01-02'}, strict=strict) == {
+        1: date(2017, 1, 1),
+        2: date(2017, 1, 2),
+    }

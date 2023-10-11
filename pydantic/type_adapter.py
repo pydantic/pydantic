@@ -1,4 +1,79 @@
-"""A class representing the type adapter."""
+"""
+You may have types that are not `BaseModel`s that you want to validate data against.
+Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
+
+For use cases like this, Pydantic provides [`TypeAdapter`][pydantic.type_adapter.TypeAdapter],
+which can be used for type validation, serialization, and JSON schema generation without creating a
+[`BaseModel`][pydantic.main.BaseModel].
+
+A [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] instance exposes some of the functionality from
+[`BaseModel`][pydantic.main.BaseModel] instance methods for types that do not have such methods
+(such as dataclasses, primitive types, and more):
+
+```py
+from typing import List
+
+from typing_extensions import TypedDict
+
+from pydantic import TypeAdapter, ValidationError
+
+class User(TypedDict):
+    name: str
+    id: int
+
+UserListValidator = TypeAdapter(List[User])
+print(repr(UserListValidator.validate_python([{'name': 'Fred', 'id': '3'}])))
+#> [{'name': 'Fred', 'id': 3}]
+
+try:
+    UserListValidator.validate_python(
+        [{'name': 'Fred', 'id': 'wrong', 'other': 'no'}]
+    )
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for list[typed-dict]
+    0.id
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
+    '''
+```
+
+Note:
+    Despite some overlap in use cases with [`RootModel`][pydantic.root_model.RootModel],
+    [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] should not be used as a type annotation for
+    specifying fields of a `BaseModel`, etc.
+
+## Parsing data into a specified type
+
+[`TypeAdapter`][pydantic.type_adapter.TypeAdapter] can be used to apply the parsing logic to populate Pydantic models
+in a more ad-hoc way. This function behaves similarly to
+[`BaseModel.model_validate`][pydantic.main.BaseModel.model_validate],
+but works with arbitrary Pydantic-compatible types.
+
+This is especially useful when you want to parse results into a type that is not a direct subclass of
+[`BaseModel`][pydantic.main.BaseModel]. For example:
+
+```py
+from typing import List
+
+from pydantic import BaseModel, TypeAdapter
+
+class Item(BaseModel):
+    id: int
+    name: str
+
+# `item_data` could come from an API call, eg., via something like:
+# item_data = requests.get('https://my-api.com/items').json()
+item_data = [{'id': 1, 'name': 'My Item'}]
+
+items = TypeAdapter(List[Item]).validate_python(item_data)
+print(items)
+#> [Item(id=1, name='My Item')]
+```
+
+[`TypeAdapter`][pydantic.type_adapter.TypeAdapter] is capable of parsing data into any of the types Pydantic can
+handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
+"""  # noqa: D212
 from __future__ import annotations as _annotations
 
 import sys
@@ -11,7 +86,7 @@ from typing_extensions import Literal, is_typeddict
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
 
-from ._internal import _config, _core_utils, _discriminated_union, _generate_schema, _typing_extra
+from ._internal import _config, _generate_schema, _typing_extra
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -20,6 +95,7 @@ from .json_schema import (
     JsonSchemaMode,
     JsonSchemaValue,
 )
+from .plugin._schema_validator import create_schema_validator
 
 T = TypeVar('T')
 
@@ -78,7 +154,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     global_ns.update(local_ns or {})
     gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
     schema = gen.generate_schema(type_)
-    schema = gen.collect_definitions(schema)
+    schema = gen.clean_schema(schema)
     return schema
 
 
@@ -98,9 +174,7 @@ def _getattr_no_parents(obj: Any, attribute: str) -> Any:
 
 
 class TypeAdapter(Generic[T]):
-    """Usage docs: https://docs.pydantic.dev/2.3/usage/type_adapter/
-
-    Type adapters provide a flexible way to perform validation and serialization based on a Python type.
+    """Type adapters provide a flexible way to perform validation and serialization based on a Python type.
 
     A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
     for types that do not have such methods (such as dataclasses, primitive types, and more).
@@ -166,14 +240,12 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
 
-        core_schema = _discriminated_union.apply_discriminators(_core_utils.simplify_schema_references(core_schema))
-
         core_config = config_wrapper.core_config(None)
         validator: SchemaValidator
         try:
             validator = _getattr_no_parents(type, '__pydantic_validator__')
         except AttributeError:
-            validator = SchemaValidator(core_schema, core_config)
+            validator = create_schema_validator(core_schema, core_config, config_wrapper.plugin_settings)
 
         serializer: SchemaSerializer
         try:
@@ -220,6 +292,19 @@ class TypeAdapter(Generic[T]):
             The validated object.
         """
         return self.validator.validate_json(__data, strict=strict, context=context)
+
+    def validate_strings(self, __obj: Any, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
+        """Validate object contains string data against the model.
+
+        Args:
+            __obj: The object contains string data to validate.
+            strict: Whether to strictly check types.
+            context: Additional context to use during validation.
+
+        Returns:
+            The validated object.
+        """
+        return self.validator.validate_strings(__obj, strict=strict, context=context)
 
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
         """Get the default value for the wrapped type.

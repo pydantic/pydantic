@@ -40,7 +40,6 @@ from pydantic_core.core_schema import ComputedField
 from typing_extensions import Annotated, Literal, assert_never
 
 from ._internal import (
-    _annotated_handlers,
     _config,
     _core_metadata,
     _core_utils,
@@ -50,6 +49,7 @@ from ._internal import (
     _schema_generation_shared,
     _typing_extra,
 )
+from .annotated_handlers import GetJsonSchemaHandler
 from .config import JsonSchemaExtraCallable, JsonType
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
@@ -57,7 +57,7 @@ if TYPE_CHECKING:
     from . import ConfigDict
     from ._internal._core_utils import CoreSchemaField, CoreSchemaOrField
     from ._internal._dataclasses import PydanticDataclass
-    from ._internal._schema_generation_shared import GetJsonSchemaFunction, GetJsonSchemaHandler
+    from ._internal._schema_generation_shared import GetJsonSchemaFunction
     from .main import BaseModel
 
 
@@ -2180,6 +2180,10 @@ def models_json_schema(
             - The second element is a JSON schema containing all definitions referenced in the first returned
                     element, along with the optional title and description keys.
     """
+    for cls, _ in models:
+        if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
+            cls.__pydantic_validator__.rebuild()
+
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     inputs = [(m, mode, m.__pydantic_core_schema__) for m, mode in models]
     json_schemas_map, definitions = instance.generate_definitions(inputs)
@@ -2251,7 +2255,7 @@ class WithJsonSchema:
     mode: Literal['validation', 'serialization'] | None = None
 
     def __get_pydantic_json_schema__(
-        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         mode = self.mode or handler.mode
         if mode != handler.mode:
@@ -2281,7 +2285,7 @@ class Examples:
     mode: Literal['validation', 'serialization'] | None = None
 
     def __get_pydantic_json_schema__(
-        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         mode = self.mode or handler.mode
         json_schema = handler(core_schema)

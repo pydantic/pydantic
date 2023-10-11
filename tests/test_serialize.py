@@ -205,7 +205,7 @@ def test_annotated_customisation():
         @classmethod
         def __get_pydantic_core_schema__(cls, _source, _handler):
             # here we ignore the schema argument (which is just `{'type': 'int'}`) and return our own
-            return core_schema.general_before_validator_function(
+            return core_schema.with_info_before_validator_function(
                 parse_int,
                 core_schema.int_schema(),
                 serialization=core_schema.format_ser_schema(',', when_used='unless-none'),

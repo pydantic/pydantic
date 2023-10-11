@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from typing import (
     Any,
@@ -12,7 +13,8 @@ from typing import (
 )
 
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import TypeAliasType, TypedDict, TypeGuard, get_args
+from pydantic_core import validate_core_schema as _validate_core_schema
+from typing_extensions import TypeAliasType, TypeGuard, get_args
 
 from . import _repr
 
@@ -42,6 +44,14 @@ _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozense
 _DEFINITIONS_CACHE_METADATA_KEY = 'pydantic.definitions_cache'
 
 NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY = 'pydantic.internal.needs_apply_discriminated_union'
+"""Used to mark a schema that has a discriminated union that needs to be checked for validity at the end of
+schema building because one of it's members refers to a definition that was not yet defined when the union
+was first encountered.
+"""
+HAS_INVALID_SCHEMAS_METADATA_KEY = 'pydantic.internal.invalid'
+"""Used to mark a schema that is invalid because it refers to a definition that was not yet defined when the
+schema was first encountered.
+"""
 
 
 def is_core_schema(
@@ -118,12 +128,6 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
     defs: dict[str, CoreSchema] = {}
 
     def _record_valid_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if 'metadata' in s:
-            definitions_cache: _DefinitionsState | None = s['metadata'].get(_DEFINITIONS_CACHE_METADATA_KEY, None)
-            if definitions_cache is not None:
-                defs.update(definitions_cache['definitions'])
-                return s
-
         ref = get_ref(s)
         if ref:
             defs[ref] = s
@@ -136,43 +140,40 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
 
 def define_expected_missing_refs(
     schema: core_schema.CoreSchema, allowed_missing_refs: set[str]
-) -> core_schema.CoreSchema:
+) -> core_schema.CoreSchema | None:
     if not allowed_missing_refs:
         # in this case, there are no missing refs to potentially substitute, so there's no need to walk the schema
         # this is a common case (will be hit for all non-generic models), so it's worth optimizing for
-        return schema
-    refs: set[str] = set()
+        return None
 
-    def _record_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        ref = get_ref(s)
-        if ref:
-            refs.add(ref)
-        return recurse(s, _record_refs)
-
-    walk_core_schema(schema, _record_refs)
+    refs = collect_definitions(schema).keys()
 
     expected_missing_refs = allowed_missing_refs.difference(refs)
     if expected_missing_refs:
         definitions: list[core_schema.CoreSchema] = [
             # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
             #   Issue: https://github.com/pydantic/pydantic-core/issues/619
-            core_schema.none_schema(ref=ref, metadata={'pydantic_debug_missing_ref': True, 'invalid': True})
+            core_schema.none_schema(ref=ref, metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})
             for ref in expected_missing_refs
         ]
         return core_schema.definitions_schema(schema, definitions)
-    return schema
+    return None
 
 
-def collect_invalid_schemas(schema: core_schema.CoreSchema) -> list[core_schema.CoreSchema]:
-    invalid_schemas: list[core_schema.CoreSchema] = []
+def collect_invalid_schemas(schema: core_schema.CoreSchema) -> bool:
+    invalid = False
 
     def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if s.get('metadata', {}).get('invalid'):
-            invalid_schemas.append(s)
+        nonlocal invalid
+        if 'metadata' in s:
+            metadata = s['metadata']
+            if HAS_INVALID_SCHEMAS_METADATA_KEY in metadata:
+                invalid = metadata[HAS_INVALID_SCHEMAS_METADATA_KEY]
+                return s
         return recurse(s, _is_schema_valid)
 
     walk_core_schema(schema, _is_schema_valid)
-    return invalid_schemas
+    return invalid
 
 
 T = TypeVar('T')
@@ -201,7 +202,7 @@ class _WalkCoreSchema:
         return f(schema, self._walk)
 
     def _walk(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
-        schema = self._schema_type_to_method[schema['type']](schema, f)
+        schema = self._schema_type_to_method[schema['type']](schema.copy(), f)
         ser_schema: core_schema.SerSchema | None = schema.get('serialization')  # type: ignore
         if ser_schema:
             schema['serialization'] = self._handle_ser_schemas(ser_schema, f)
@@ -422,47 +423,31 @@ def walk_core_schema(schema: core_schema.CoreSchema, f: Walk) -> core_schema.Cor
     Returns:
         core_schema.CoreSchema: A processed CoreSchema.
     """
-    return f(schema, _dispatch)
-
-
-class _DefinitionsState(TypedDict):
-    definitions: dict[str, core_schema.CoreSchema]
-    ref_counts: dict[str, int]
-    involved_in_recursion: dict[str, bool]
-    current_recursion_ref_count: dict[str, int]
+    return f(schema.copy(), _dispatch)
 
 
 def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:  # noqa: C901
-    """Simplify schema references by:
-    1. Inlining any definitions that are only referenced in one place and are not involved in a cycle.
-    2. Removing any unused `ref` references from schemas.
-    """
-    state = _DefinitionsState(
-        definitions={},
-        ref_counts=defaultdict(int),
-        involved_in_recursion={},
-        current_recursion_ref_count=defaultdict(int),
-    )
+    definitions: dict[str, core_schema.CoreSchema] = {}
+    ref_counts: dict[str, int] = defaultdict(int)
+    involved_in_recursion: dict[str, bool] = {}
+    current_recursion_ref_count: dict[str, int] = defaultdict(int)
 
     def collect_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if 'metadata' in s:
-            definitions_cache: _DefinitionsState | None = s['metadata'].get(_DEFINITIONS_CACHE_METADATA_KEY, None)
-            if definitions_cache is not None:
-                state['definitions'].update(definitions_cache['definitions'])
-                return s
-
         if s['type'] == 'definitions':
             for definition in s['definitions']:
                 ref = get_ref(definition)
                 assert ref is not None
-                state['definitions'][ref] = definition
+                if ref not in definitions:
+                    definitions[ref] = definition
                 recurse(definition, collect_refs)
             return recurse(s['schema'], collect_refs)
         else:
             ref = get_ref(s)
             if ref is not None:
-                state['definitions'][ref] = s
-                recurse(s, collect_refs)
+                new = recurse(s, collect_refs)
+                new_ref = get_ref(new)
+                if new_ref:
+                    definitions[new_ref] = new
                 return core_schema.definition_reference_schema(schema_ref=ref)
             else:
                 return recurse(s, collect_refs)
@@ -470,53 +455,31 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
     schema = walk_core_schema(schema, collect_refs)
 
     def count_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
-        if 'metadata' in s:
-            definitions_cache: _DefinitionsState | None = s['metadata'].get(_DEFINITIONS_CACHE_METADATA_KEY, None)
-            if definitions_cache is not None:
-                for ref in definitions_cache['ref_counts']:
-                    state['ref_counts'][ref] += definitions_cache['ref_counts'][ref]
-                    # it's possible that a schema was seen before we hit the cache
-                    # and also exists in the cache, in which case it is involved in a recursion
-                    if state['current_recursion_ref_count'][ref] != 0:
-                        state['involved_in_recursion'][ref] = True
-                # if it's involved in recursion in the inner schema mark it globally as involved in a recursion
-                for ref_in_recursion in definitions_cache['involved_in_recursion']:
-                    if ref_in_recursion:
-                        state['involved_in_recursion'][ref_in_recursion] = True
-                return s
-
         if s['type'] != 'definition-ref':
             return recurse(s, count_refs)
         ref = s['schema_ref']
-        state['ref_counts'][ref] += 1
+        ref_counts[ref] += 1
 
-        if state['ref_counts'][ref] >= 2:
+        if ref_counts[ref] >= 2:
             # If this model is involved in a recursion this should be detected
             # on its second encounter, we can safely stop the walk here.
-            if state['current_recursion_ref_count'][ref] != 0:
-                state['involved_in_recursion'][ref] = True
+            if current_recursion_ref_count[ref] != 0:
+                involved_in_recursion[ref] = True
             return s
 
-        state['current_recursion_ref_count'][ref] += 1
-        recurse(state['definitions'][ref], count_refs)
-        state['current_recursion_ref_count'][ref] -= 1
+        current_recursion_ref_count[ref] += 1
+        recurse(definitions[ref], count_refs)
+        current_recursion_ref_count[ref] -= 1
         return s
 
     schema = walk_core_schema(schema, count_refs)
 
-    assert all(c == 0 for c in state['current_recursion_ref_count'].values()), 'this is a bug! please report it'
-
-    definitions_cache = _DefinitionsState(
-        definitions=state['definitions'],
-        ref_counts=dict(state['ref_counts']),
-        involved_in_recursion=state['involved_in_recursion'],
-        current_recursion_ref_count=dict(state['current_recursion_ref_count']),
-    )
+    assert all(c == 0 for c in current_recursion_ref_count.values()), 'this is a bug! please report it'
 
     def can_be_inlined(s: core_schema.DefinitionReferenceSchema, ref: str) -> bool:
-        if state['ref_counts'][ref] > 1:
+        if ref_counts[ref] > 1:
             return False
-        if state['involved_in_recursion'].get(ref, False):
+        if involved_in_recursion.get(ref, False):
             return False
         if 'serialization' in s:
             return False
@@ -539,8 +502,8 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             # any extra keys (like 'serialization')
             if can_be_inlined(s, ref):
                 # Inline the reference by replacing the reference with the actual schema
-                new = state['definitions'].pop(ref)
-                state['ref_counts'][ref] -= 1  # because we just replaced it!
+                new = definitions.pop(ref)
+                ref_counts[ref] -= 1  # because we just replaced it!
                 # put all other keys that were on the def-ref schema into the inlined version
                 # in particular this is needed for `serialization`
                 if 'serialization' in s:
@@ -554,12 +517,42 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 
     schema = walk_core_schema(schema, inline_refs)
 
-    definitions = [d for d in state['definitions'].values() if state['ref_counts'][d['ref']] > 0]  # type: ignore
+    def_values = [v for v in definitions.values() if ref_counts[v['ref']] > 0]  # type: ignore
 
-    if definitions:
-        schema = core_schema.definitions_schema(schema=schema, definitions=definitions)
-    schema.setdefault('metadata', {})[_DEFINITIONS_CACHE_METADATA_KEY] = definitions_cache  # type: ignore
+    if def_values:
+        schema = core_schema.definitions_schema(schema=schema, definitions=def_values)
     return schema
+
+
+def _strip_metadata(schema: CoreSchema) -> CoreSchema:
+    def strip_metadata(s: CoreSchema, recurse: Recurse) -> CoreSchema:
+        s = s.copy()
+        s.pop('metadata', None)
+        if s['type'] == 'model-fields':
+            s = s.copy()
+            s['fields'] = {k: v.copy() for k, v in s['fields'].items()}
+            for field_name, field_schema in s['fields'].items():
+                field_schema.pop('metadata', None)
+                s['fields'][field_name] = field_schema
+            computed_fields = s.get('computed_fields', None)
+            if computed_fields:
+                s['computed_fields'] = [cf.copy() for cf in computed_fields]
+                for cf in computed_fields:
+                    cf.pop('metadata', None)
+            else:
+                s.pop('computed_fields', None)
+        elif s['type'] == 'model':
+            # remove some defaults
+            if s.get('custom_init', True) is False:
+                s.pop('custom_init')
+            if s.get('root_model', True) is False:
+                s.pop('root_model')
+            if {'title'}.issuperset(s.get('config', {}).keys()):
+                s.pop('config', None)
+
+        return recurse(s, strip_metadata)
+
+    return walk_core_schema(schema, strip_metadata)
 
 
 def pretty_print_core_schema(
@@ -576,33 +569,12 @@ def pretty_print_core_schema(
     from rich import print  # type: ignore  # install it manually in your dev env
 
     if not include_metadata:
-
-        def strip_metadata(s: CoreSchema, recurse: Recurse) -> CoreSchema:
-            s.pop('metadata', None)
-            if s['type'] == 'model-fields':
-                s = s.copy()
-                s['fields'] = {k: v.copy() for k, v in s['fields'].items()}
-                for field_name, field_schema in s['fields'].items():
-                    field_schema.pop('metadata', None)
-                    s['fields'][field_name] = field_schema
-                computed_fields = s.get('computed_fields', None)
-                if computed_fields:
-                    s['computed_fields'] = [cf.copy() for cf in computed_fields]
-                    for cf in computed_fields:
-                        cf.pop('metadata', None)
-                else:
-                    s.pop('computed_fields', None)
-            elif s['type'] == 'model':
-                # remove some defaults
-                if s.get('custom_init', True) is False:
-                    s.pop('custom_init')
-                if s.get('root_model', True) is False:
-                    s.pop('root_model')
-                if {'title'}.issuperset(s.get('config', {}).keys()):
-                    s.pop('config')
-
-            return recurse(s, strip_metadata)
-
-        schema = walk_core_schema(schema, strip_metadata)
+        schema = _strip_metadata(schema)
 
     return print(schema)
+
+
+def validate_core_schema(schema: CoreSchema) -> CoreSchema:
+    if 'PYDANTIC_SKIP_VALIDATING_CORE_SCHEMAS' in os.environ:
+        return schema
+    return _validate_core_schema(schema)

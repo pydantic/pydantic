@@ -3074,7 +3074,7 @@ def test_schema_for_generic_field():
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
             metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler.generate_schema(param))])
-            return core_schema.general_plain_validator_function(
+            return core_schema.with_info_plain_validator_function(
                 GenModel,
                 metadata=metadata,
             )
@@ -3205,7 +3205,7 @@ def test_advanced_generic_schema():  # noqa: C901
                     s = handler.generate_schema(Optional[arg])
                     return h(s)
 
-                return core_schema.general_plain_validator_function(
+                return core_schema.with_info_plain_validator_function(
                     Gen,
                     metadata={'pydantic_js_annotation_functions': [js_func]},
                 )
@@ -3244,7 +3244,7 @@ def test_advanced_generic_schema():  # noqa: C901
             if hasattr(source, '__args__'):
                 # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
                 metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))])
-                return core_schema.general_plain_validator_function(
+                return core_schema.with_info_plain_validator_function(
                     GenTwoParams,
                     metadata=metadata,
                 )
@@ -4701,6 +4701,20 @@ def test_serialization_validation_interaction():
     }
 
 
+def test_extras_and_examples_are_json_encoded():
+    class Toy(BaseModel):
+        name: Annotated[str, Field(examples=['mouse', 'ball'])]
+
+    class Cat(BaseModel):
+        toys: Annotated[
+            List[Toy],
+            Field(examples=[[Toy(name='mouse'), Toy(name='ball')]], json_schema_extra={'special': Toy(name='bird')}),
+        ]
+
+    assert Cat.model_json_schema()['properties']['toys']['examples'] == [[{'name': 'mouse'}, {'name': 'ball'}]]
+    assert Cat.model_json_schema()['properties']['toys']['special'] == {'name': 'bird'}
+
+
 def test_computed_field():
     class Model(BaseModel):
         x: int
@@ -5613,3 +5627,72 @@ def test_json_schema_mode_override():
     # Ensure the submodels' JSON schemas match the expected mode even when the opposite value is specified:
     assert ValidationModel.model_json_schema(mode='serialization') == Model.model_json_schema(mode='validation')
     assert SerializationModel.model_json_schema(mode='validation') == Model.model_json_schema(mode='serialization')
+
+
+def test_models_json_schema_generics() -> None:
+    class G(BaseModel, Generic[T]):
+        foo: T
+
+    class M(BaseModel):
+        foo: Literal['a', 'b']
+
+    GLiteral = G[Literal['a', 'b']]
+
+    assert models_json_schema(
+        [
+            (GLiteral, 'serialization'),
+            (GLiteral, 'validation'),
+            (M, 'validation'),
+        ]
+    ) == (
+        {
+            (GLiteral, 'serialization'): {'$ref': '#/$defs/G_Literal__a____b___'},
+            (GLiteral, 'validation'): {'$ref': '#/$defs/G_Literal__a____b___'},
+            (M, 'validation'): {'$ref': '#/$defs/M'},
+        },
+        {
+            '$defs': {
+                'G_Literal__a____b___': {
+                    'properties': {'foo': {'enum': ['a', 'b'], 'title': 'Foo', 'type': 'string'}},
+                    'required': ['foo'],
+                    'title': "G[Literal['a', 'b']]",
+                    'type': 'object',
+                },
+                'M': {
+                    'properties': {'foo': {'enum': ['a', 'b'], 'title': 'Foo', 'type': 'string'}},
+                    'required': ['foo'],
+                    'title': 'M',
+                    'type': 'object',
+                },
+            }
+        },
+    )
+
+
+def test_recursive_non_generic_model() -> None:
+    class Foo(BaseModel):
+        maybe_bar: Union[None, 'Bar']
+
+    class Bar(BaseModel):
+        foo: Foo
+
+    # insert_assert(Bar(foo=Foo(maybe_bar=None)).model_dump())
+    assert Bar.model_validate({'foo': {'maybe_bar': None}}).model_dump() == {'foo': {'maybe_bar': None}}
+    # insert_assert(Bar.model_json_schema())
+    assert Bar.model_json_schema() == {
+        '$defs': {
+            'Bar': {
+                'properties': {'foo': {'$ref': '#/$defs/Foo'}},
+                'required': ['foo'],
+                'title': 'Bar',
+                'type': 'object',
+            },
+            'Foo': {
+                'properties': {'maybe_bar': {'anyOf': [{'$ref': '#/$defs/Bar'}, {'type': 'null'}]}},
+                'required': ['maybe_bar'],
+                'title': 'Foo',
+                'type': 'object',
+            },
+        },
+        'allOf': [{'$ref': '#/$defs/Bar'}],
+    }

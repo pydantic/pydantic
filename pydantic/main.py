@@ -12,7 +12,6 @@ import typing_extensions
 from pydantic_core import PydanticUndefined
 
 from ._internal import (
-    _annotated_handlers,
     _config,
     _decorators,
     _fields,
@@ -25,9 +24,8 @@ from ._internal import (
     _utils,
 )
 from ._migration import getattr_migration
+from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
-from .deprecated import copy_internals as _deprecated_copy_internals
-from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
@@ -41,6 +39,7 @@ if typing.TYPE_CHECKING:
     from typing_extensions import Literal, Unpack
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
+    from .deprecated.parse import Protocol as DeprecatedParseProtocol
     from .fields import Field as _Field
 
     AnyClassMethod = classmethod[Any, Any, Any]
@@ -59,7 +58,7 @@ _object_setattr = _model_construction.object_setattr
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """Usage docs: https://docs.pydantic.dev/2.3/usage/models/
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/models/
 
     A base class for creating Pydantic models.
 
@@ -246,7 +245,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
-        """Usage docs: https://docs.pydantic.dev/2.3/usage/serialization/#model_copy
+        """Usage docs: https://docs.pydantic.dev/2.4/concepts/serialization/#model_copy
 
         Returns a copy of the model.
 
@@ -286,7 +285,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> dict[str, Any]:
-        """Usage docs: https://docs.pydantic.dev/2.3/usage/serialization/#modelmodel_dump
+        """Usage docs: https://docs.pydantic.dev/2.4/concepts/serialization/#modelmodel_dump
 
         Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
@@ -332,7 +331,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> str:
-        """Usage docs: https://docs.pydantic.dev/2.3/usage/serialization/#modelmodel_dump_json
+        """Usage docs: https://docs.pydantic.dev/2.4/concepts/serialization/#modelmodel_dump_json
 
         Generates a JSON representation of the model using Pydantic's `to_json` method.
 
@@ -531,9 +530,29 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return cls.__pydantic_validator__.validate_json(json_data, strict=strict, context=context)
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, __source: type[BaseModel], __handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> CoreSchema:
+    def model_validate_strings(
+        cls: type[Model],
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> Model:
+        """Validate the given object contains string data against the Pydantic model.
+
+        Args:
+            obj: The object contains string data to validate.
+            strict: Whether to enforce types strictly.
+            context: Extra variables to pass to the validator.
+
+        Returns:
+            The validated Pydantic model.
+        """
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        __tracebackhide__ = True
+        return cls.__pydantic_validator__.validate_strings(obj, strict=strict, context=context)
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, __source: type[BaseModel], __handler: GetCoreSchemaHandler) -> CoreSchema:
         """Hook into generating the model's CoreSchema.
 
         Args:
@@ -560,7 +579,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __get_pydantic_json_schema__(
         cls,
         __core_schema: CoreSchema,
-        __handler: _annotated_handlers.GetJsonSchemaHandler,
+        __handler: GetJsonSchemaHandler,
     ) -> JsonSchemaValue:
         """Hook into generating the model's JSON schema.
 
@@ -720,7 +739,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 except KeyError as exc:
                     raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
             else:
-                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+                # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+                # See `BaseModel.__repr_args__` for more details
+                try:
+                    pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+                except AttributeError:
+                    pydantic_extra = None
+
                 if pydantic_extra is not None:
                     try:
                         return pydantic_extra[item]
@@ -773,8 +798,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif self.model_config.get('extra') == 'allow' and name not in self.model_fields:
-            # SAFETY: __pydantic_extra__ is not None when extra = 'allow'
-            self.__pydantic_extra__[name] = value  # type: ignore
+            if self.model_extra and name in self.model_extra:
+                self.__pydantic_extra__[name] = value  # type: ignore
+            else:
+                try:
+                    getattr(self, name)
+                except AttributeError:
+                    # attribute does not already exist on instance, so put it in extra
+                    self.__pydantic_extra__[name] = value  # type: ignore
+                else:
+                    # attribute _does_ already exist on instance, and was not in extra, so update it
+                    _object_setattr(self, name, value)
         else:
             self.__dict__[name] = value
             self.__pydantic_fields_set__.add(name)
@@ -865,7 +899,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     def __iter__(self) -> TupleGenerator:
         """So `dict(model)` works."""
-        yield from self.__dict__.items()
+        yield from [(k, v) for (k, v) in self.__dict__.items() if not k.startswith('_')]
         extra = self.__pydantic_extra__
         if extra:
             yield from extra.items()
@@ -878,11 +912,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             field = self.model_fields.get(k)
             if field and field.repr:
                 yield k, v
+
         # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
         # This can happen if a `ValidationError` is raised during initialization and the instance's
         # repr is generated as part of the exception handling. Therefore, we use `getattr` here
         # with a fallback, even though the type hints indicate the attribute will always be present.
-        pydantic_extra = getattr(self, '__pydantic_extra__', None)
+        try:
+            pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+        except AttributeError:
+            pydantic_extra = None
+
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
@@ -991,7 +1030,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         content_type: str | None = None,
         encoding: str = 'utf8',
-        proto: _deprecated_parse.Protocol | None = None,
+        proto: DeprecatedParseProtocol | None = None,
         allow_pickle: bool = False,
     ) -> Model:  # pragma: no cover
         warnings.warn(
@@ -999,8 +1038,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'otherwise load the data then use `model_validate` instead.',
             DeprecationWarning,
         )
+        from .deprecated import parse
+
         try:
-            obj = _deprecated_parse.load_str_bytes(
+            obj = parse.load_str_bytes(
                 b,
                 proto=proto,
                 content_type=content_type,
@@ -1042,7 +1083,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         *,
         content_type: str | None = None,
         encoding: str = 'utf8',
-        proto: _deprecated_parse.Protocol | None = None,
+        proto: DeprecatedParseProtocol | None = None,
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
@@ -1050,7 +1091,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'use `model_validate_json` otherwise `model_validate` instead.',
             DeprecationWarning,
         )
-        obj = _deprecated_parse.load_file(
+        from .deprecated import parse
+
+        obj = parse.load_file(
             path,
             proto=proto,
             content_type=content_type,
@@ -1126,9 +1169,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.',
             DeprecationWarning,
         )
+        from .deprecated import copy_internals
 
         values = dict(
-            _deprecated_copy_internals._iter(
+            copy_internals._iter(
                 self, to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False
             ),
             **(update or {}),
@@ -1159,7 +1203,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if exclude:
             fields_set -= set(exclude)
 
-        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
+        return copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
 
     @classmethod
     @typing_extensions.deprecated(
@@ -1219,7 +1263,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     )
     def _iter(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
-        return _deprecated_copy_internals._iter(self, *args, **kwargs)
+
+        from .deprecated import copy_internals
+
+        return copy_internals._iter(self, *args, **kwargs)
 
     @typing_extensions.deprecated(
         'The private method `_copy_and_set_values` will be removed and should no longer be used.',
@@ -1230,7 +1277,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             'The private method  `_copy_and_set_values` will be removed and should no longer be used.',
             DeprecationWarning,
         )
-        return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)
+        from .deprecated import copy_internals
+
+        return copy_internals._copy_and_set_values(self, *args, **kwargs)
 
     @classmethod
     @typing_extensions.deprecated(
@@ -1241,7 +1290,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings.warn(
             'The private method  `_get_value` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._get_value(cls, *args, **kwargs)
+
+        from .deprecated import copy_internals
+
+        return copy_internals._get_value(cls, *args, **kwargs)
 
     @typing_extensions.deprecated(
         'The private method `_calculate_keys` will be removed and should no longer be used.',
@@ -1251,7 +1303,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings.warn(
             'The private method `_calculate_keys` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)
+
+        from .deprecated import copy_internals
+
+        return copy_internals._calculate_keys(self, *args, **kwargs)
 
 
 @typing.overload

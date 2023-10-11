@@ -1,6 +1,6 @@
 name: 🐛 Pydantic V2 Bug
 description: Report a bug or unexpected behavior in Pydantic V2
-labels: [bug V2, unconfirmed]
+labels: [bug V2, pending]
 
 body:
   - type: markdown

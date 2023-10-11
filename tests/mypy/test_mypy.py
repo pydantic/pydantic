@@ -98,6 +98,7 @@ cases = (
     + [
         ('mypy-plugin.ini', 'custom_constructor.py'),
         ('mypy-plugin.ini', 'generics.py'),
+        ('mypy-plugin.ini', 'root_models.py'),
         ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
         ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
         ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),

@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
+from numbers import Number
 from pathlib import Path
 from typing import (
     Any,
@@ -454,9 +455,9 @@ def test_constrained_set_too_long():
         {
             'type': 'too_long',
             'loc': ('v',),
-            'msg': 'Set should have at most 10 items after validation, not 11',
+            'msg': 'Set should have at most 10 items after validation, not more',
             'input': {'4', '3', '10', '9', '5', '6', '1', '8', '0', '7', '2'},
-            'ctx': {'field_type': 'Set', 'max_length': 10, 'actual_length': 11},
+            'ctx': {'field_type': 'Set', 'max_length': 10, 'actual_length': None},
         }
     ]
 
@@ -540,9 +541,9 @@ def test_constrained_set_constraints():
         {
             'type': 'too_long',
             'loc': ('v',),
-            'msg': 'Set should have at most 11 items after validation, not 12',
+            'msg': 'Set should have at most 11 items after validation, not more',
             'input': {0, 8, 1, 9, 2, 10, 3, 7, 11, 4, 6, 5},
-            'ctx': {'field_type': 'Set', 'max_length': 11, 'actual_length': 12},
+            'ctx': {'field_type': 'Set', 'max_length': 11, 'actual_length': None},
         }
     ]
 
@@ -595,7 +596,7 @@ def test_conset():
     with pytest.raises(ValidationError, match='Set should have at least 2 items after validation, not 1'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='Set should have at most 4 items after validation, not 5'):
+    with pytest.raises(ValidationError, match='Set should have at most 4 items after validation, not more'):
         Model(foo=list(range(5)))
 
     with pytest.raises(ValidationError) as exc_info:
@@ -647,7 +648,7 @@ def test_confrozenset():
     with pytest.raises(ValidationError, match='Frozenset should have at least 2 items after validation, not 1'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='Frozenset should have at most 4 items after validation, not 5'):
+    with pytest.raises(ValidationError, match='Frozenset should have at most 4 items after validation, not more'):
         Model(foo=list(range(5)))
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1697,6 +1698,28 @@ def test_enum_from_json(enum_base, strict):
                 'type': 'enum',
             }
         ]
+
+
+def test_strict_enum() -> None:
+    class Demo(Enum):
+        A = 0
+        B = 1
+
+    class User(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        demo_strict: Demo
+        demo_not_strict: Demo = Field(strict=False)
+
+    user = User(demo_strict=Demo.A, demo_not_strict=1)
+
+    assert isinstance(user.demo_strict, Demo)
+    assert isinstance(user.demo_not_strict, Demo)
+    assert user.demo_strict.value == 0
+    assert user.demo_not_strict.value == 1
+
+    with pytest.raises(ValidationError, match='Input should be an instance of test_strict_enum.<locals>.Demo'):
+        User(demo_strict=0, demo_not_strict=1)
 
 
 @pytest.mark.parametrize(
@@ -2757,17 +2780,19 @@ def test_uuid_validation():
         b: UUID3
         c: UUID4
         d: UUID5
+        e: UUID
 
     a = uuid.uuid1()
     b = uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org')
     c = uuid.uuid4()
     d = uuid.uuid5(uuid.NAMESPACE_DNS, 'python.org')
+    e = UUID('{00000000-7fff-4000-7fff-000000000000}')
 
-    m = UUIDModel(a=a, b=b, c=c, d=d)
-    assert m.model_dump() == {'a': a, 'b': b, 'c': c, 'd': d}
+    m = UUIDModel(a=a, b=b, c=c, d=d, e=e)
+    assert m.model_dump() == {'a': a, 'b': b, 'c': c, 'd': d, 'e': e}
 
     with pytest.raises(ValidationError) as exc_info:
-        UUIDModel(a=d, b=c, c=b, d=a)
+        UUIDModel(a=d, b=c, c=b, d=a, e=e)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
@@ -2796,6 +2821,39 @@ def test_uuid_validation():
             'loc': ('d',),
             'msg': 'UUID version 5 expected',
             'input': a,
+            'ctx': {'expected_version': 5},
+        },
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        UUIDModel(a=e, b=e, c=e, d=e, e=e)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'uuid_version',
+            'loc': ('a',),
+            'msg': 'UUID version 1 expected',
+            'input': e,
+            'ctx': {'expected_version': 1},
+        },
+        {
+            'type': 'uuid_version',
+            'loc': ('b',),
+            'msg': 'UUID version 3 expected',
+            'input': e,
+            'ctx': {'expected_version': 3},
+        },
+        {
+            'type': 'uuid_version',
+            'loc': ('c',),
+            'msg': 'UUID version 4 expected',
+            'input': e,
+            'ctx': {'expected_version': 4},
+        },
+        {
+            'type': 'uuid_version',
+            'loc': ('d',),
+            'msg': 'UUID version 5 expected',
+            'input': e,
             'ctx': {'expected_version': 5},
         },
     ]
@@ -3885,13 +3943,25 @@ def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     ]
 
 
-def test_secretstr():
+@pytest.mark.parametrize('validate_json', [True, False])
+def test_secretstr(validate_json):
     class Foobar(BaseModel):
         password: SecretStr
         empty_password: SecretStr
 
-    # Initialize the model.
-    f = Foobar(password='1234', empty_password='')
+    if validate_json:
+        f = Foobar.model_validate_json('{"password": "1234", "empty_password": ""}')
+        with pytest.raises(ValidationError) as exc_info:
+            Foobar.model_validate_json('{"password": 1234, "empty_password": null}')
+    else:
+        f = Foobar(password='1234', empty_password='')
+        with pytest.raises(ValidationError) as exc_info:
+            Foobar(password=1234, empty_password=None)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'string_type', 'loc': ('password',), 'msg': 'Input should be a valid string', 'input': 1234},
+        {'type': 'string_type', 'loc': ('empty_password',), 'msg': 'Input should be a valid string', 'input': None},
+    ]
 
     # Assert correct types.
     assert f.password.__class__.__name__ == 'SecretStr'
@@ -5870,3 +5940,46 @@ def test_decimal_float_precision() -> None:
     assert ta.validate_python('1.1') == Decimal('1.1')
     assert ta.validate_json('1') == Decimal('1')
     assert ta.validate_python(1) == Decimal('1')
+
+
+def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(strict=True, coerce_numbers_to_str=True)
+        value: str
+
+    with pytest.raises(ValidationError, match='value'):
+        Model.model_validate({'value': 42})
+    with pytest.raises(ValidationError, match='value'):
+        Model.model_validate_json('{"value": 42}')
+
+
+@pytest.mark.parametrize(
+    ('number', 'expected_str'),
+    [
+        pytest.param(42, '42', id='42'),
+        pytest.param(42.0, '42.0', id='42.0'),
+        pytest.param(Decimal('42.0'), '42.0', id="Decimal('42.0')"),
+    ],
+)
+def test_coerce_numbers_to_str(number: Number, expected_str: str) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=True)
+        value: str
+
+    assert Model.model_validate({'value': number}).model_dump() == {'value': expected_str}
+
+
+@pytest.mark.parametrize(
+    ('number', 'expected_str'),
+    [
+        pytest.param('42', '42', id='42'),
+        pytest.param('42.0', '42', id='42.0'),
+        pytest.param('42.13', '42.13', id='42.13'),
+    ],
+)
+def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=True)
+        value: str
+
+    assert Model.model_validate_json(f'{{"value": {number}}}').model_dump() == {'value': expected_str}

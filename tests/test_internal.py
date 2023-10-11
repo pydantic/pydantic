@@ -7,7 +7,13 @@ import pytest
 from pydantic_core import CoreSchema, SchemaValidator
 from pydantic_core import core_schema as cs
 
-from pydantic._internal._core_utils import Walk, simplify_schema_references, walk_core_schema
+from pydantic._internal._core_utils import (
+    HAS_INVALID_SCHEMAS_METADATA_KEY,
+    Walk,
+    collect_invalid_schemas,
+    simplify_schema_references,
+    walk_core_schema,
+)
 from pydantic._internal._repr import Representation
 
 
@@ -192,3 +198,11 @@ def test_representation_integrations():
         '    ) (Obj)',
     ]
     assert list(obj.__rich_repr__()) == [('int_attr', 42), ('str_attr', 'Marvin')]
+
+
+def test_schema_is_valid():
+    assert collect_invalid_schemas(cs.none_schema()) is False
+    assert (
+        collect_invalid_schemas(cs.nullable_schema(cs.int_schema(metadata={HAS_INVALID_SCHEMAS_METADATA_KEY: True})))
+        is True
+    )

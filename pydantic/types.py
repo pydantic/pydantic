@@ -30,14 +30,9 @@ from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, deprecated
 
-from ._internal import (
-    _annotated_handlers,
-    _fields,
-    _internal_dataclass,
-    _utils,
-    _validators,
-)
+from ._internal import _fields, _internal_dataclass, _utils, _validators
 from ._migration import getattr_migration
+from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
@@ -140,7 +135,35 @@ def conint(
     le: int | None = None,
     multiple_of: int | None = None,
 ) -> type[int]:
-    """A wrapper around `int` that allows for additional constraints.
+    """
+    !!! warning "Discouraged"
+        This function is **discouraged** in favor of using
+        [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
+        [`Field`][pydantic.fields.Field] instead.
+
+        This function will be **deprecated** in Pydantic 3.0.
+
+        The reason is that `conint` returns a type, which doesn't play well with static analysis tools.
+
+        === ":x: Don't do this"
+            ```py
+            from pydantic import BaseModel, conint
+
+            class Foo(BaseModel):
+                bar: conint(strict=True, gt=0)
+            ```
+
+        === ":white_check_mark: Do this"
+            ```py
+            from typing_extensions import Annotated
+
+            from pydantic import BaseModel, Field
+
+            class Foo(BaseModel):
+                bar: Annotated[int, Field(strict=True, gt=0)]
+            ```
+
+    A wrapper around `int` that allows for additional constraints.
 
     Args:
         strict: Whether to validate the integer in strict mode. Defaults to `None`.
@@ -152,7 +175,36 @@ def conint(
 
     Returns:
         The wrapped integer type.
-    """
+
+    ```py
+    from pydantic import BaseModel, ValidationError, conint
+
+    class ConstrainedExample(BaseModel):
+        constrained_int: conint(gt=1)
+
+    m = ConstrainedExample(constrained_int=2)
+    print(repr(m))
+    #> ConstrainedExample(constrained_int=2)
+
+    try:
+        ConstrainedExample(constrained_int=0)
+    except ValidationError as e:
+        print(e.errors())
+        '''
+        [
+            {
+                'type': 'greater_than',
+                'loc': ('constrained_int',),
+                'msg': 'Input should be greater than 1',
+                'input': 0,
+                'ctx': {'gt': 1},
+                'url': 'https://errors.pydantic.dev/2/v/greater_than',
+            }
+        ]
+        '''
+    ```
+
+    """  # noqa: D212
     return Annotated[
         int,
         Strict(strict) if strict is not None else None,
@@ -162,15 +214,149 @@ def conint(
 
 
 PositiveInt = Annotated[int, annotated_types.Gt(0)]
-"""An integer that must be greater than zero."""
+"""An integer that must be greater than zero.
+
+```py
+from pydantic import BaseModel, PositiveInt, ValidationError
+
+class Model(BaseModel):
+    positive_int: PositiveInt
+
+m = Model(positive_int=1)
+print(repr(m))
+#> Model(positive_int=1)
+
+try:
+    Model(positive_int=-1)
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'greater_than',
+            'loc': ('positive_int',),
+            'msg': 'Input should be greater than 0',
+            'input': -1,
+            'ctx': {'gt': 0},
+            'url': 'https://errors.pydantic.dev/2/v/greater_than',
+        }
+    ]
+    '''
+```
+"""
 NegativeInt = Annotated[int, annotated_types.Lt(0)]
-"""An integer that must be less than zero."""
+"""An integer that must be less than zero.
+
+```py
+from pydantic import BaseModel, NegativeInt, ValidationError
+
+class Model(BaseModel):
+    negative_int: NegativeInt
+
+m = Model(negative_int=-1)
+print(repr(m))
+#> Model(negative_int=-1)
+
+try:
+    Model(negative_int=1)
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'less_than',
+            'loc': ('negative_int',),
+            'msg': 'Input should be less than 0',
+            'input': 1,
+            'ctx': {'lt': 0},
+            'url': 'https://errors.pydantic.dev/2/v/less_than',
+        }
+    ]
+    '''
+```
+"""
 NonPositiveInt = Annotated[int, annotated_types.Le(0)]
-"""An integer that must be less than or equal to zero."""
+"""An integer that must be less than or equal to zero.
+
+```py
+from pydantic import BaseModel, NonPositiveInt, ValidationError
+
+class Model(BaseModel):
+    non_positive_int: NonPositiveInt
+
+m = Model(non_positive_int=0)
+print(repr(m))
+#> Model(non_positive_int=0)
+
+try:
+    Model(non_positive_int=1)
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'less_than_equal',
+            'loc': ('non_positive_int',),
+            'msg': 'Input should be less than or equal to 0',
+            'input': 1,
+            'ctx': {'le': 0},
+            'url': 'https://errors.pydantic.dev/2/v/less_than_equal',
+        }
+    ]
+    '''
+```
+"""
 NonNegativeInt = Annotated[int, annotated_types.Ge(0)]
-"""An integer that must be greater than or equal to zero."""
+"""An integer that must be greater than or equal to zero.
+
+```py
+from pydantic import BaseModel, NonNegativeInt, ValidationError
+
+class Model(BaseModel):
+    non_negative_int: NonNegativeInt
+
+m = Model(non_negative_int=0)
+print(repr(m))
+#> Model(non_negative_int=0)
+
+try:
+    Model(non_negative_int=-1)
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'greater_than_equal',
+            'loc': ('non_negative_int',),
+            'msg': 'Input should be greater than or equal to 0',
+            'input': -1,
+            'ctx': {'ge': 0},
+            'url': 'https://errors.pydantic.dev/2/v/greater_than_equal',
+        }
+    ]
+    '''
+```
+"""
 StrictInt = Annotated[int, Strict()]
-"""An integer that must be validated in strict mode."""
+"""An integer that must be validated in strict mode.
+
+```py
+from pydantic import BaseModel, StrictInt, ValidationError
+
+class StrictIntModel(BaseModel):
+    strict_int: StrictInt
+
+try:
+    StrictIntModel(strict_int=3.14159)
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for StrictIntModel
+    strict_int
+      Input should be a valid integer [type=int_type, input_value=3.14159, input_type=float]
+    '''
+```
+"""
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FLOAT TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -195,7 +381,35 @@ def confloat(
     multiple_of: float | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[float]:
-    """A wrapper around `float` that allows for additional constraints.
+    """
+    !!! warning "Discouraged"
+        This function is **discouraged** in favor of using
+        [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
+        [`Field`][pydantic.fields.Field] instead.
+
+        This function will be **deprecated** in Pydantic 3.0.
+
+        The reason is that `confloat` returns a type, which doesn't play well with static analysis tools.
+
+        === ":x: Don't do this"
+            ```py
+            from pydantic import BaseModel, confloat
+
+            class Foo(BaseModel):
+                bar: confloat(strict=True, gt=0)
+            ```
+
+        === ":white_check_mark: Do this"
+            ```py
+            from typing_extensions import Annotated
+
+            from pydantic import BaseModel, Field
+
+            class Foo(BaseModel):
+                bar: Annotated[float, Field(strict=True, gt=0)]
+            ```
+
+    A wrapper around `float` that allows for additional constraints.
 
     Args:
         strict: Whether to validate the float in strict mode.
@@ -208,7 +422,35 @@ def confloat(
 
     Returns:
         The wrapped float type.
-    """
+
+    ```py
+    from pydantic import BaseModel, ValidationError, confloat
+
+    class ConstrainedExample(BaseModel):
+        constrained_float: confloat(gt=1.0)
+
+    m = ConstrainedExample(constrained_float=1.1)
+    print(repr(m))
+    #> ConstrainedExample(constrained_float=1.1)
+
+    try:
+        ConstrainedExample(constrained_float=0.9)
+    except ValidationError as e:
+        print(e.errors())
+        '''
+        [
+            {
+                'type': 'greater_than',
+                'loc': ('constrained_float',),
+                'msg': 'Input should be greater than 1',
+                'input': 0.9,
+                'ctx': {'gt': 1.0},
+                'url': 'https://errors.pydantic.dev/2/v/greater_than',
+            }
+        ]
+        '''
+    ```
+    """  # noqa: D212
     return Annotated[
         float,
         Strict(strict) if strict is not None else None,
@@ -219,17 +461,163 @@ def confloat(
 
 
 PositiveFloat = Annotated[float, annotated_types.Gt(0)]
-"""A float that must be greater than zero."""
+"""A float that must be greater than zero.
+
+```py
+from pydantic import BaseModel, PositiveFloat, ValidationError
+
+class Model(BaseModel):
+    positive_float: PositiveFloat
+
+m = Model(positive_float=1.0)
+print(repr(m))
+#> Model(positive_float=1.0)
+
+try:
+    Model(positive_float=-1.0)
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'greater_than',
+            'loc': ('positive_float',),
+            'msg': 'Input should be greater than 0',
+            'input': -1.0,
+            'ctx': {'gt': 0.0},
+            'url': 'https://errors.pydantic.dev/2/v/greater_than',
+        }
+    ]
+    '''
+```
+"""
 NegativeFloat = Annotated[float, annotated_types.Lt(0)]
-"""A float that must be less than zero."""
+"""A float that must be less than zero.
+
+```py
+from pydantic import BaseModel, NegativeFloat, ValidationError
+
+class Model(BaseModel):
+    negative_float: NegativeFloat
+
+m = Model(negative_float=-1.0)
+print(repr(m))
+#> Model(negative_float=-1.0)
+
+try:
+    Model(negative_float=1.0)
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'less_than',
+            'loc': ('negative_float',),
+            'msg': 'Input should be less than 0',
+            'input': 1.0,
+            'ctx': {'lt': 0.0},
+            'url': 'https://errors.pydantic.dev/2/v/less_than',
+        }
+    ]
+    '''
+```
+"""
 NonPositiveFloat = Annotated[float, annotated_types.Le(0)]
-"""A float that must be less than or equal to zero.""" ''
+"""A float that must be less than or equal to zero.
+
+```py
+from pydantic import BaseModel, NonPositiveFloat, ValidationError
+
+class Model(BaseModel):
+    non_positive_float: NonPositiveFloat
+
+m = Model(non_positive_float=0.0)
+print(repr(m))
+#> Model(non_positive_float=0.0)
+
+try:
+    Model(non_positive_float=1.0)
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'less_than_equal',
+            'loc': ('non_positive_float',),
+            'msg': 'Input should be less than or equal to 0',
+            'input': 1.0,
+            'ctx': {'le': 0.0},
+            'url': 'https://errors.pydantic.dev/2/v/less_than_equal',
+        }
+    ]
+    '''
+```
+"""
 NonNegativeFloat = Annotated[float, annotated_types.Ge(0)]
-"""A float that must be greater than or equal to zero."""
+"""A float that must be greater than or equal to zero.
+
+```py
+from pydantic import BaseModel, NonNegativeFloat, ValidationError
+
+class Model(BaseModel):
+    non_negative_float: NonNegativeFloat
+
+m = Model(non_negative_float=0.0)
+print(repr(m))
+#> Model(non_negative_float=0.0)
+
+try:
+    Model(non_negative_float=-1.0)
+except ValidationError as e:
+    print(e.errors())
+    '''
+    [
+        {
+            'type': 'greater_than_equal',
+            'loc': ('non_negative_float',),
+            'msg': 'Input should be greater than or equal to 0',
+            'input': -1.0,
+            'ctx': {'ge': 0.0},
+            'url': 'https://errors.pydantic.dev/2/v/greater_than_equal',
+        }
+    ]
+    '''
+```
+"""
 StrictFloat = Annotated[float, Strict(True)]
-"""A float that must be validated in strict mode."""
+"""A float that must be validated in strict mode.
+
+```py
+from pydantic import BaseModel, StrictFloat, ValidationError
+
+class StrictFloatModel(BaseModel):
+    strict_float: StrictFloat
+
+try:
+    StrictFloatModel(strict_float='1.0')
+except ValidationError as e:
+    print(e)
+    '''
+    1 validation error for StrictFloatModel
+    strict_float
+      Input should be a valid number [type=float_type, input_value='1.0', input_type=str]
+    '''
+```
+"""
 FiniteFloat = Annotated[float, AllowInfNan(False)]
-"""A float that must be finite (not ``-inf``, ``inf``, or ``nan``)."""
+"""A float that must be finite (not ``-inf``, ``inf``, or ``nan``).
+
+```py
+from pydantic import BaseModel, FiniteFloat
+
+class Model(BaseModel):
+    finite: FiniteFloat
+
+m = Model(finite=1.0)
+print(m)
+#> finite=1.0
+```
+"""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -338,7 +726,9 @@ def constr(
 
         === ":white_check_mark: Do this"
             ```py
-            from pydantic import BaseModel, Annotated, StringConstraints
+            from typing_extensions import Annotated
+
+            from pydantic import BaseModel, StringConstraints
 
             class Foo(BaseModel):
                 bar: Annotated[str, StringConstraints(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')]
@@ -540,7 +930,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             serializer = core_schema.plain_serializer_function_ser_schema(cls._serialize, when_used='json')
             if cls is source:
@@ -581,7 +971,36 @@ def condecimal(
     decimal_places: int | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[Decimal]:
-    """A wrapper around Decimal that adds validation.
+    """
+    !!! warning "Discouraged"
+        This function is **discouraged** in favor of using
+        [`Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated) with
+        [`Field`][pydantic.fields.Field] instead.
+
+        This function will be **deprecated** in Pydantic 3.0.
+
+        The reason is that `condecimal` returns a type, which doesn't play well with static analysis tools.
+
+        === ":x: Don't do this"
+            ```py
+            from pydantic import BaseModel, condecimal
+
+            class Foo(BaseModel):
+                bar: condecimal(strict=True, allow_inf_nan=True)
+            ```
+
+        === ":white_check_mark: Do this"
+            ```py
+            from decimal import Decimal
+            from typing_extensions import Annotated
+
+            from pydantic import BaseModel, Field
+
+            class Foo(BaseModel):
+                bar: Annotated[Decimal, Field(strict=True, allow_inf_nan=True)]
+            ```
+
+    A wrapper around Decimal that adds validation.
 
     Args:
         strict: Whether to validate the value in strict mode. Defaults to `None`.
@@ -593,7 +1012,37 @@ def condecimal(
         max_digits: The maximum number of digits. Defaults to `None`.
         decimal_places: The number of decimal places. Defaults to `None`.
         allow_inf_nan: Whether to allow infinity and NaN. Defaults to `None`.
-    """
+
+    ```py
+    from decimal import Decimal
+
+    from pydantic import BaseModel, ValidationError, condecimal
+
+    class ConstrainedExample(BaseModel):
+        constrained_decimal: condecimal(gt=Decimal('1.0'))
+
+    m = ConstrainedExample(constrained_decimal=Decimal('1.1'))
+    print(repr(m))
+    #> ConstrainedExample(constrained_decimal=Decimal('1.1'))
+
+    try:
+        ConstrainedExample(constrained_decimal=Decimal('0.9'))
+    except ValidationError as e:
+        print(e.errors())
+        '''
+        [
+            {
+                'type': 'greater_than',
+                'loc': ('constrained_decimal',),
+                'msg': 'Input should be greater than 1.0',
+                'input': Decimal('0.9'),
+                'ctx': {'gt': Decimal('1.0')},
+                'url': 'https://errors.pydantic.dev/2/v/greater_than',
+            }
+        ]
+        '''
+    ```
+    """  # noqa: D212
     return Annotated[
         Decimal,
         Strict(strict) if strict is not None else None,
@@ -609,19 +1058,19 @@ def condecimal(
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class UuidVersion:
+    """A field metadata class to indicate a [UUID](https://docs.python.org/3/library/uuid.html) version."""
+
     uuid_version: Literal[1, 3, 4, 5]
 
     def __get_pydantic_json_schema__(
-        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         field_schema.pop('anyOf', None)  # remove the bytes/str union
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.uuid_schema(version=self.uuid_version)
 
     def __hash__(self) -> int:
@@ -629,13 +1078,61 @@ class UuidVersion:
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
-"""A UUID1 annotated type."""
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 1.
+
+```py
+import uuid
+
+from pydantic import BaseModel, UUID1
+
+class Model(BaseModel):
+    uuid1: UUID1
+
+Model(uuid1=uuid.uuid1())
+```
+"""
 UUID3 = Annotated[UUID, UuidVersion(3)]
-"""A UUID3 annotated type."""
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 3.
+
+```py
+import uuid
+
+from pydantic import BaseModel, UUID3
+
+class Model(BaseModel):
+    uuid3: UUID3
+
+Model(uuid3=uuid.uuid3(uuid.NAMESPACE_DNS, 'pydantic.org'))
+```
+"""
 UUID4 = Annotated[UUID, UuidVersion(4)]
-"""A UUID4 annotated type."""
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 4.
+
+```py
+import uuid
+
+from pydantic import BaseModel, UUID4
+
+class Model(BaseModel):
+    uuid4: UUID4
+
+Model(uuid4=uuid.uuid4())
+```
+"""
 UUID5 = Annotated[UUID, UuidVersion(5)]
-"""A UUID5 annotated type."""
+"""A [UUID](https://docs.python.org/3/library/uuid.html) that must be version 5.
+
+```py
+import uuid
+
+from pydantic import BaseModel, UUID5
+
+class Model(BaseModel):
+    uuid5: UUID5
+
+Model(uuid5=uuid.uuid5(uuid.NAMESPACE_DNS, 'pydantic.org'))
+```
+"""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -646,23 +1143,21 @@ class PathType:
     path_type: Literal['file', 'dir', 'new']
 
     def __get_pydantic_json_schema__(
-        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         format_conversion = {'file': 'file-path', 'dir': 'directory-path'}
         field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         function_lookup = {
-            'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
-            'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
-            'new': cast(core_schema.GeneralValidatorFunction, self.validate_new),
+            'file': cast(core_schema.WithInfoValidatorFunction, self.validate_file),
+            'dir': cast(core_schema.WithInfoValidatorFunction, self.validate_directory),
+            'new': cast(core_schema.WithInfoValidatorFunction, self.validate_new),
         }
 
-        return core_schema.general_after_validator_function(
+        return core_schema.with_info_after_validator_function(
             function_lookup[self.path_type],
             handler(source),
         )
@@ -790,16 +1285,91 @@ if TYPE_CHECKING:
 else:
 
     class Json:
-        """A special type wrapper which loads JSON before parsing."""
+        """A special type wrapper which loads JSON before parsing.
+
+        You can use the `Json` data type to make Pydantic first load a raw JSON string before
+        validating the loaded data into the parametrized type:
+
+        ```py
+        from typing import Any, List
+
+        from pydantic import BaseModel, Json, ValidationError
+
+
+        class AnyJsonModel(BaseModel):
+            json_obj: Json[Any]
+
+
+        class ConstrainedJsonModel(BaseModel):
+            json_obj: Json[List[int]]
+
+
+        print(AnyJsonModel(json_obj='{"b": 1}'))
+        #> json_obj={'b': 1}
+        print(ConstrainedJsonModel(json_obj='[1, 2, 3]'))
+        #> json_obj=[1, 2, 3]
+
+        try:
+            ConstrainedJsonModel(json_obj=12)
+        except ValidationError as e:
+            print(e)
+            '''
+            1 validation error for ConstrainedJsonModel
+            json_obj
+            JSON input should be string, bytes or bytearray [type=json_type, input_value=12, input_type=int]
+            '''
+
+        try:
+            ConstrainedJsonModel(json_obj='[a, b]')
+        except ValidationError as e:
+            print(e)
+            '''
+            1 validation error for ConstrainedJsonModel
+            json_obj
+            Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value='[a, b]', input_type=str]
+            '''
+
+        try:
+            ConstrainedJsonModel(json_obj='["a", "b"]')
+        except ValidationError as e:
+            print(e)
+            '''
+            2 validation errors for ConstrainedJsonModel
+            json_obj.0
+            Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+            json_obj.1
+            Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='b', input_type=str]
+            '''
+        ```
+
+        When you dump the model using `model_dump` or `model_dump_json`, the dumped value will be the result of validation,
+        not the original JSON string. However, you can use the argument `round_trip=True` to get the original JSON string back:
+
+        ```py
+        from typing import List
+
+        from pydantic import BaseModel, Json
+
+
+        class ConstrainedJsonModel(BaseModel):
+            json_obj: Json[List[int]]
+
+
+        print(ConstrainedJsonModel(json_obj='[1, 2, 3]').model_dump_json())
+        #> {"json_obj":[1,2,3]}
+        print(
+            ConstrainedJsonModel(json_obj='[1, 2, 3]').model_dump_json(round_trip=True)
+        )
+        #> {"json_obj":"[1,2,3]"}
+        ```
+        """
 
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             if cls is source:
                 return core_schema.json_schema(None)
             else:
@@ -851,9 +1421,7 @@ class _SecretField(Generic[SecretType]):
         raise NotImplementedError
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         if issubclass(source, SecretStr):
             field_type = str
             inner_schema = core_schema.str_schema()
@@ -873,9 +1441,7 @@ class _SecretField(Generic[SecretType]):
             else:
                 return value
 
-        def get_json_schema(
-            _core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
-        ) -> JsonSchemaValue:
+        def get_json_schema(_core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             json_schema = handler(inner_schema)
             _utils.update_not_none(
                 json_schema,
@@ -885,16 +1451,20 @@ class _SecretField(Generic[SecretType]):
             )
             return json_schema
 
-        s = core_schema.union_schema(
-            [
-                core_schema.is_instance_schema(source),
-                core_schema.no_info_after_validator_function(
-                    source,  # construct the type
-                    inner_schema,
-                ),
-            ],
-            strict=True,
-            custom_error_type=error_kind,
+        json_schema = core_schema.no_info_after_validator_function(
+            source,  # construct the type
+            inner_schema,
+        )
+        s = core_schema.json_or_python_schema(
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(source),
+                    json_schema,
+                ],
+                strict=True,
+                custom_error_type=error_kind,
+            ),
+            json_schema=json_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(
                 serialize,
                 info_arg=True,
@@ -975,7 +1545,7 @@ class PaymentCardBrand(str, Enum):
 
 @deprecated(
     'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. '
-    'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/payment_cards/.',
+    'See https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.',
     category=PydanticDeprecatedSince20,
 )
 class PaymentCardNumber(str):
@@ -998,10 +1568,8 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        return core_schema.general_after_validator_function(
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        return core_schema.with_info_after_validator_function(
             cls.validate,
             core_schema.str_schema(
                 min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
@@ -1140,10 +1708,8 @@ class ByteSize(int):
     """
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(cls._validate)
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        return core_schema.with_info_plain_validator_function(cls._validate)
 
     @classmethod
     def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
@@ -1233,7 +1799,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1252,7 +1818,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1309,7 +1875,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1328,7 +1894,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1347,7 +1913,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1366,7 +1932,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -1559,16 +2125,14 @@ class EncodedBytes:
     encoder: type[EncoderProtocol]
 
     def __get_pydantic_json_schema__(
-        self, core_schema: core_schema.CoreSchema, handler: _annotated_handlers.GetJsonSchemaHandler
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         field_schema.update(type='string', format=self.encoder.get_json_format())
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        return core_schema.general_after_validator_function(
+    def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        return core_schema.with_info_after_validator_function(
             function=self.decode,
             schema=core_schema.bytes_schema(),
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode),
@@ -1655,10 +2219,8 @@ class EncodedStr(EncodedBytes):
     ```
     """
 
-    def __get_pydantic_core_schema__(
-        self, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> core_schema.CoreSchema:
-        return core_schema.general_after_validator_function(
+    def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        return core_schema.with_info_after_validator_function(
             function=self.decode_str,
             schema=super(EncodedStr, self).__get_pydantic_core_schema__(source=source, handler=handler),  # noqa: UP008
             serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
@@ -1839,8 +2401,8 @@ class GetPydanticSchema:
     ```
     """
 
-    get_pydantic_core_schema: Callable[[Any, _annotated_handlers.GetCoreSchemaHandler], CoreSchema] | None = None
-    get_pydantic_json_schema: Callable[[Any, _annotated_handlers.GetJsonSchemaHandler], JsonSchemaValue] | None = None
+    get_pydantic_core_schema: Callable[[Any, GetCoreSchemaHandler], CoreSchema] | None = None
+    get_pydantic_json_schema: Callable[[Any, GetJsonSchemaHandler], JsonSchemaValue] | None = None
 
     # Note: we may want to consider adding a convenience staticmethod `def for_type(type_: Any) -> GetPydanticSchema:`
     #   which returns `GetPydanticSchema(lambda _s, h: h(type_))`

@@ -373,3 +373,30 @@ def test_predicate_error_python() -> None:
             'input': -1,
         }
     ]
+
+
+def test_annotated_field_info_not_lost_from_forwardref():
+    from pydantic import BaseModel
+
+    class ForwardRefAnnotatedFieldModel(BaseModel):
+        foo: 'Annotated[Integer, Field(alias="bar", default=1)]' = 2
+        foo2: 'Annotated[Integer, Field(alias="bar2", default=1)]' = Field(default=2, alias='baz')
+
+    Integer = int
+
+    ForwardRefAnnotatedFieldModel.model_rebuild()
+
+    assert ForwardRefAnnotatedFieldModel(bar=3).foo == 3
+    assert ForwardRefAnnotatedFieldModel(baz=3).foo2 == 3
+
+    with pytest.raises(ValidationError) as exc_info:
+        ForwardRefAnnotatedFieldModel(bar='bar')
+    assert exc_info.value.errors() == [
+        {
+            'input': 'bar',
+            'loc': ('bar',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        }
+    ]

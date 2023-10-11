@@ -70,7 +70,7 @@ rads = 2 * math.pi
 
 @deprecated(
     'The `Color` class is deprecated, use `pydantic_extra_types` instead. '
-    'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/color_types/.',
+    'See https://docs.pydantic.dev/latest/api/pydantic_extra_types_color/.',
     category=PydanticDeprecatedSince20,
 )
 class Color(_repr.Representation):
@@ -233,7 +233,7 @@ class Color(_repr.Representation):
     def __get_pydantic_core_schema__(
         cls, source: Type[Any], handler: Callable[[Any], CoreSchema]
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(
+        return core_schema.with_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
         )
 

@@ -63,7 +63,7 @@ for all fields with `None` as the default. (This is standard with mypy.)
 
 ### Other Pydantic interfaces
 
-Pydantic [dataclasses](../usage/dataclasses.md) and the [`validate_call` decorator](../usage/validation_decorator.md)
+Pydantic [dataclasses](../concepts/dataclasses.md) and the [`validate_call` decorator](../concepts/validation_decorator.md)
 should also work well with mypy.
 
 ## Mypy Plugin Capabilities
@@ -81,17 +81,17 @@ should also work well with mypy.
   will use the types of the model fields (otherwise they will be annotated as `Any` to allow parsing).
 
 ### Generate a typed signature for `Model.model_construct`
-* The [`model_construct`](../usage/models.md#creating-models-without-validation) method is an alternative to `__init__`
+* The [`model_construct`](../concepts/models.md#creating-models-without-validation) method is an alternative to `__init__`
   when input data is known to be valid and should not be parsed. Because this method performs no runtime validation,
   static checking is important to detect errors.
 
 ### Respect `Config.frozen`
 * If `Config.frozen` is `True`, you'll get a mypy error if you try to change
-  the value of a model field; cf. [faux immutability](../usage/models.md#faux-immutability).
+  the value of a model field; cf. [faux immutability](../concepts/models.md#faux-immutability).
 
 ### Generate a signature for `dataclasses`
-* classes decorated with [`@pydantic.dataclasses.dataclass`](../usage/dataclasses.md) are type checked the same as standard Python dataclasses
-* The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](../usage/model_config.md).
+* classes decorated with [`@pydantic.dataclasses.dataclass`](../concepts/dataclasses.md) are type checked the same as standard Python dataclasses
+* The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](../concepts/config.md).
 
 ### Respect the type of the `Field`'s `default` and `default_factory`
 * Field with both a `default` and a `default_factory` will result in an error during static checking.

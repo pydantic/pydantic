@@ -4,7 +4,7 @@ If you need help getting started with Pydantic or with advanced usage, the follo
 
 ## :material-help: Usage Documentation
 
-The [usage documentation](usage/models.md) is the most complete guide on how to use Pydantic.
+The [usage documentation](concepts/models.md) is the most complete guide on how to use Pydantic.
 
 ## :material-api: API Documentation
 

@@ -6,7 +6,7 @@ import os
 import re
 import textwrap
 from pathlib import Path
-from textwrap import dedent, indent
+from textwrap import indent
 
 import autoflake  # type: ignore
 import pyupgrade._main as pyupgrade_main  # type: ignore
@@ -28,6 +28,7 @@ def on_pre_build(config: Config) -> None:
     Before the build starts.
     """
     add_changelog()
+    add_mkdocs_run_deps()
 
 
 def on_files(files: Files, config: Config) -> Files:
@@ -54,8 +55,6 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
         return md
     elif md := devtools_example(markdown, page):
         return md
-    elif md := install_pydantic_extra_types(markdown, page):
-        return md
     else:
         return markdown
 
@@ -70,6 +69,26 @@ def add_changelog() -> None:
     # avoid writing file unless the content has changed to avoid infinite build loop
     if not new_file.is_file() or new_file.read_text(encoding='utf-8') != history:
         new_file.write_text(history, encoding='utf-8')
+
+
+def add_mkdocs_run_deps() -> None:
+    # set the pydantic and pydantic-core versions to configure for running examples in the browser
+    pyproject_toml = (PROJECT_ROOT / 'pyproject.toml').read_text()
+    pydantic_core_version = re.search(r'pydantic-core==(.+?)["\']', pyproject_toml).group(1)
+
+    version_py = (PROJECT_ROOT / 'pydantic' / 'version.py').read_text()
+    pydantic_version = re.search(r'^VERSION ?= (["\'])(.+)\1', version_py, flags=re.M).group(2)
+
+    mkdocs_run_deps = json.dumps([f'pydantic=={pydantic_version}', f'pydantic-core=={pydantic_core_version}'])
+    logger.info('Setting mkdocs_run_deps=%s', mkdocs_run_deps)
+
+    html = f"""\
+    <script>
+    window.mkdocs_run_deps = {mkdocs_run_deps}
+    </script>
+"""
+    path = DOCS_DIR / 'theme/mkdocs_run_deps.html'
+    path.write_text(html)
 
 
 MIN_MINOR_VERSION = 7
@@ -264,7 +283,7 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
 
 
 def build_conversion_table(markdown: str, page: Page) -> str | None:
-    if page.file.src_uri != 'usage/conversion_table.md':
+    if page.file.src_uri != 'concepts/conversion_table.md':
         return None
 
     filtered_table_predicates = {
@@ -290,22 +309,3 @@ def devtools_example(markdown: str, page: Page) -> str | None:
     html = (THIS_DIR / 'devtools_output.html').read_text().strip('\n')
     full_html = f'<div class="highlight">\n<pre><code>{html}</code></pre>\n</div>'
     return re.sub(r'{{ *devtools_example *}}', full_html, markdown)
-
-
-def install_pydantic_extra_types(markdown: str, page: Page) -> str | None:
-    if not page.file.src_uri.startswith('usage/types/extra_types'):
-        return None
-
-    recommendation_text = dedent(
-        """
-    !!! warning
-        To use this type, you need to install the optional
-        [pydantic-extra-types](https://pypi.org/project/pydantic-extra-types/) package:
-
-        ```bash
-        pip install pydantic-extra-types
-        ```
-    """
-    )
-
-    return re.sub(r'{{ *install_pydantic_extra_types *}}', recommendation_text, markdown)

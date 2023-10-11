@@ -2,24 +2,27 @@ import contextlib
 import re
 import sys
 from collections import deque
+from dataclasses import dataclass
 from datetime import date, datetime
 from enum import Enum
 from functools import partial, partialmethod
 from itertools import product
-from typing import Any, Callable, Deque, Dict, FrozenSet, List, Optional, Tuple, Union
+from typing import Any, Callable, Deque, Dict, FrozenSet, List, NamedTuple, Optional, Tuple, Union
 from unittest.mock import MagicMock
 
 import pytest
-from dirty_equals import HasRepr
-from typing_extensions import Annotated, Literal
+from dirty_equals import HasRepr, IsInstance
+from pydantic_core import core_schema
+from typing_extensions import Annotated, Literal, TypedDict
 
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    FieldValidationInfo,
+    GetCoreSchemaHandler,
     PydanticDeprecatedSince20,
     PydanticUserError,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     ValidatorFunctionWrapHandler,
@@ -27,8 +30,10 @@ from pydantic import (
     field_validator,
     model_validator,
     root_validator,
+    validate_call,
     validator,
 )
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.functional_validators import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
 
 V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
@@ -455,7 +460,7 @@ def test_validating_assignment_values_dict():
 
         @field_validator('b')
         @classmethod
-        def validate_b(cls, b, info: FieldValidationInfo):
+        def validate_b(cls, b, info: ValidationInfo):
             if 'm' in info.data:
                 return b + info.data['m'].a  # this fails if info.data['m'] is a dict
             else:
@@ -476,7 +481,7 @@ def test_validate_multiple():
 
         @field_validator('a', 'b')
         @classmethod
-        def check_a_and_b(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def check_a_and_b(cls, v: Any, info: ValidationInfo) -> Any:
             if len(v) < 4:
                 field = cls.model_fields[info.field_name]
                 raise AssertionError(f'{field.alias or info.field_name} is too short')
@@ -1687,13 +1692,13 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values():
 
         @field_validator('foo')
         @classmethod
-        def validate_foo(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def validate_foo(cls, v: Any, info: ValidationInfo) -> Any:
             check_values({**info.data})
             return v
 
         @field_validator('bar')
         @classmethod
-        def validate_bar(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def validate_bar(cls, v: Any, info: ValidationInfo) -> Any:
             check_values({**info.data})
             return v
 
@@ -1932,7 +1937,7 @@ def test_info_field_name_data_before():
 
         @field_validator('b', mode='before')
         @classmethod
-        def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def check_a(cls, v: Any, info: ValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
             assert info.data == {'a': 'your foobar is good'}
@@ -2177,7 +2182,7 @@ def partial_values_val_func2(
 
 def partial_info_val_func(
     value: int,
-    info: FieldValidationInfo,
+    info: ValidationInfo,
     *,
     allowed: int,
 ) -> int:
@@ -2240,7 +2245,7 @@ def partial_cls_values_val_func2(
 def partial_cls_info_val_func(
     cls: Any,
     value: int,
-    info: FieldValidationInfo,
+    info: ValidationInfo,
     *,
     allowed: int,
     expected_cls: Any,
@@ -2610,3 +2615,200 @@ def test_validator_function_error_hide_input(mode, config, input_str):
 
     with pytest.raises(ValidationError, match=re.escape(f'Value error, foo [{input_str}]')):
         Model(x='123')
+
+
+def foobar_validate(value: Any, info: core_schema.ValidationInfo):
+    data = info.data
+    if isinstance(data, dict):
+        data = data.copy()
+    return {'value': value, 'field_name': info.field_name, 'data': data}
+
+
+class Foobar:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        return core_schema.with_info_plain_validator_function(foobar_validate, field_name=handler.field_name)
+
+
+def test_custom_type_field_name_model():
+    class MyModel(BaseModel):
+        foobar: Foobar
+
+    m = MyModel(foobar=1, tuple_nesting=(1, 2))
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {}}
+
+
+def test_custom_type_field_name_model_nested():
+    class MyModel(BaseModel):
+        x: int
+        tuple_nested: Tuple[int, Foobar]
+
+    m = MyModel(x='123', tuple_nested=(1, 2))
+    # insert_assert(m.tuple_nested[1])
+    assert m.tuple_nested[1] == {'value': 2, 'field_name': 'tuple_nested', 'data': {'x': 123}}
+
+
+def test_custom_type_field_name_typed_dict():
+    class MyDict(TypedDict):
+        x: int
+        foobar: Foobar
+
+    ta = TypeAdapter(MyDict)
+    m = ta.validate_python({'x': '123', 'foobar': 1})
+    # insert_assert(m['foobar'])
+    assert m['foobar'] == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_custom_type_field_name_dataclass():
+    @dataclass
+    class MyDc:
+        x: int
+        foobar: Foobar
+
+    ta = TypeAdapter(MyDc)
+    m = ta.validate_python({'x': '123', 'foobar': 1})
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_custom_type_field_name_named_tuple():
+    class MyNamedTuple(NamedTuple):
+        x: int
+        foobar: Foobar
+
+    ta = TypeAdapter(MyNamedTuple)
+    m = ta.validate_python({'x': '123', 'foobar': 1})
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': None}
+
+
+def test_custom_type_field_name_validate_call():
+    @validate_call
+    def foobar(x: int, y: Foobar):
+        return x, y
+
+    # insert_assert(foobar(1, 2))
+    assert foobar(1, 2) == (1, {'value': 2, 'field_name': 'y', 'data': None})
+
+
+def test_after_validator_field_name():
+    class MyModel(BaseModel):
+        x: int
+        foobar: Annotated[int, AfterValidator(foobar_validate)]
+
+    m = MyModel(x='123', foobar='1')
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_before_validator_field_name():
+    class MyModel(BaseModel):
+        x: int
+        foobar: Annotated[Dict[Any, Any], BeforeValidator(foobar_validate)]
+
+    m = MyModel(x='123', foobar='1')
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': '1', 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def test_plain_validator_field_name():
+    class MyModel(BaseModel):
+        x: int
+        foobar: Annotated[int, PlainValidator(foobar_validate)]
+
+    m = MyModel(x='123', foobar='1')
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': '1', 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+def validate_wrap(value: Any, handler: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo):
+    data = info.data
+    if isinstance(data, dict):
+        data = data.copy()
+    return {'value': handler(value), 'field_name': info.field_name, 'data': data}
+
+
+def test_wrap_validator_field_name():
+    class MyModel(BaseModel):
+        x: int
+        foobar: Annotated[int, WrapValidator(validate_wrap)]
+
+    m = MyModel(x='123', foobar='1')
+    # insert_assert(m.foobar)
+    assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
+
+
+@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
+def test_validate_default_raises_for_basemodel() -> None:
+    class Model(BaseModel):
+        value_0: str
+        value_a: Annotated[Optional[str], Field(None, validate_default=True)]
+        value_b: Annotated[Optional[str], Field(None, validate_default=True)]
+
+        @field_validator('value_a', mode='after')
+        def value_a_validator(cls, value):
+            raise AssertionError
+
+        @field_validator('value_b', mode='after')
+        def value_b_validator(cls, value):
+            raise AssertionError
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('value_0',), 'msg': 'Field required', 'input': {}},
+        {
+            'type': 'assertion_error',
+            'loc': ('value_a',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+        {
+            'type': 'assertion_error',
+            'loc': ('value_b',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+    ]
+
+
+@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
+def test_validate_default_raises_for_dataclasses() -> None:
+    @pydantic_dataclass
+    class Model:
+        value_0: str
+        value_a: Annotated[Optional[str], Field(None, validate_default=True)]
+        value_b: Annotated[Optional[str], Field(None, validate_default=True)]
+
+        @field_validator('value_a', mode='after')
+        def value_a_validator(cls, value):
+            raise AssertionError
+
+        @field_validator('value_b', mode='after')
+        def value_b_validator(cls, value):
+            raise AssertionError
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model()
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('value_0',), 'msg': 'Field required', 'input': HasRepr('ArgsKwargs(())')},
+        {
+            'type': 'assertion_error',
+            'loc': ('value_a',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+        {
+            'type': 'assertion_error',
+            'loc': ('value_b',),
+            'msg': 'Assertion failed, ',
+            'input': None,
+            'ctx': {'error': IsInstance(AssertionError)},
+        },
+    ]

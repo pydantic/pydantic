@@ -61,7 +61,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.8.0",
+    "pydantic-core==2.10.1",
 ]
 dynamic = ['version', 'readme']
 
@@ -92,13 +92,6 @@ linting = [
     "ruff",
     "mypy~=1.1.1",
 ]
-testing-extra = [
-    # used when generate devtools docs example
-    "ansi2html",
-    "devtools",
-    # used in docs tests
-    "sqlalchemy==1.4.0",
-]
 testing = [
     "coverage[toml]",
     "dirty-equals",
@@ -108,6 +101,14 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
+]
+testing-extra = [
+    # used when generate devtools docs example
+    "ansi2html",
+    "devtools",
+    # used in docs tests
+    "sqlalchemy>=2.0,<3.0",
+    "greenlet>=3.0.0rc3",
 ]
 mypy = [
     "mypy",
@@ -119,7 +120,7 @@ memray = [
 
 [tool.pdm.resolution.overrides]
 # requires Python > 3.8, we only test with 3.8 in CI but because of it won't lock properly
-pytest-memray = "1.4.0"
+pytest-memray = "1.5.0"
 
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic'
@@ -152,6 +153,8 @@ filterwarnings = [
     'ignore:path is deprecated.*:DeprecationWarning:',
     # Work around https://github.com/pytest-dev/pytest/issues/10977 for Python 3.12
     'ignore:(ast\.Str|ast\.NameConstant|ast\.Num|Attribute s) is deprecated and will be removed.*:DeprecationWarning:',
+    # pytest-examples needs to remove `co_lnotab` in favor of `co_lines`.
+    'ignore:co_lnotab is deprecated, use co_lines instead.:DeprecationWarning:',
 ]
 addopts = [
     '--benchmark-columns', 'min,mean,stddev,outliers,rounds,iterations',
@@ -165,6 +168,7 @@ addopts = [
 assignees = []
 reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt', 'sydney-runkle']
 require_change_file = false
+unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120

@@ -13,7 +13,7 @@ from . import _validators
 from ._fields import PydanticGeneralMetadata, PydanticMetadata
 
 if TYPE_CHECKING:
-    from ._annotated_handlers import GetJsonSchemaHandler
+    from ..annotated_handlers import GetJsonSchemaHandler
 
 
 STRICT = {'strict'}
@@ -37,6 +37,7 @@ BOOL_CONSTRAINTS = STRICT
 DATE_TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 TIMEDELTA_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+LAX_OR_STRICT_CONSTRAINTS = {*STRICT}
 
 UNION_CONSTRAINTS = {'union_mode'}
 URL_CONSTRAINTS = {
@@ -85,6 +86,8 @@ for constraint in URL_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('url', 'multi-host-url'))
 for constraint in BOOL_CONSTRAINTS:
     CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('bool',))
+for constraint in LAX_OR_STRICT_CONSTRAINTS:
+    CONSTRAINTS_TO_ALLOWED_SCHEMAS[constraint].update(('lax-or-strict',))
 
 
 def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> None:
@@ -93,7 +96,14 @@ def add_js_update_schema(s: cs.CoreSchema, f: Callable[[], dict[str, Any]]) -> N
         js_schema.update(f())
         return js_schema
 
-    s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(update_js_schema)
+    if 'metadata' in s:
+        metadata = s['metadata']
+        if 'pydantic_js_functions' in s:
+            metadata['pydantic_js_functions'].append(update_js_schema)
+        else:
+            metadata['pydantic_js_functions'] = [update_js_schema]
+    else:
+        s['metadata'] = {'pydantic_js_functions': [update_js_schema]}
 
 
 def as_jsonable_value(v: Any) -> Any:

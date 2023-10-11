@@ -5,7 +5,9 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import date, datetime
 from enum import Enum
+from functools import partial
 from typing import (
     Any,
     Callable,
@@ -339,6 +341,25 @@ def test_extra_allowed():
     model.c = 1
     assert hasattr(model, 'c')
     assert model.c == 1
+
+
+def test_reassign_instance_method_with_extra_allow():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        name: str
+
+        def not_extra_func(self) -> str:
+            return f'hello {self.name}'
+
+    def not_extra_func_replacement(self_sub: Model) -> str:
+        return f'hi {self_sub.name}'
+
+    m = Model(name='james')
+    assert m.not_extra_func() == 'hello james'
+
+    m.not_extra_func = partial(not_extra_func_replacement, m)
+    assert m.not_extra_func() == 'hi james'
+    assert 'not_extra_func' in m.__dict__
 
 
 def test_extra_ignored():
@@ -2000,6 +2021,38 @@ def test_model_post_init_subclass_private_attrs():
     assert calls == ['C.model_post_init']
 
 
+def test_model_post_init_subclass_setting_private_attrs():
+    """https://github.com/pydantic/pydantic/issues/7091"""
+
+    class Model(BaseModel):
+        _priv1: int = PrivateAttr(91)
+        _priv2: int = PrivateAttr(92)
+
+        def model_post_init(self, __context) -> None:
+            self._priv1 = 100
+
+    class SubModel(Model):
+        _priv3: int = PrivateAttr(93)
+        _priv4: int = PrivateAttr(94)
+        _priv5: int = PrivateAttr()
+        _priv6: int = PrivateAttr()
+
+        def model_post_init(self, __context) -> None:
+            self._priv3 = 200
+            self._priv5 = 300
+            super().model_post_init(__context)
+
+    m = SubModel()
+
+    assert m._priv1 == 100
+    assert m._priv2 == 92
+    assert m._priv3 == 200
+    assert m._priv4 == 94
+    assert m._priv5 == 300
+    with pytest.raises(AttributeError):
+        assert m._priv6 == 94
+
+
 def test_model_post_init_correct_mro():
     """https://github.com/pydantic/pydantic/issues/7293"""
     calls = []
@@ -2541,6 +2594,53 @@ def test_validate_python_from_attributes() -> None:
 
     res = ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=True)
     assert res == ModelFromAttributesFalse(x=1)
+
+
+@pytest.mark.parametrize(
+    'field_type,input_value,expected,raises_match,strict',
+    [
+        (bool, 'true', True, None, False),
+        (bool, 'true', True, None, True),
+        (bool, 'false', False, None, False),
+        (bool, 'e', ValidationError, 'type=bool_parsing', False),
+        (int, '1', 1, None, False),
+        (int, '1', 1, None, True),
+        (int, 'xxx', ValidationError, 'type=int_parsing', True),
+        (float, '1.1', 1.1, None, False),
+        (float, '1.10', 1.1, None, False),
+        (float, '1.1', 1.1, None, True),
+        (float, '1.10', 1.1, None, True),
+        (date, '2017-01-01', date(2017, 1, 1), None, False),
+        (date, '2017-01-01', date(2017, 1, 1), None, True),
+        (date, '2017-01-01T12:13:14.567', ValidationError, 'type=date_from_datetime_inexact', False),
+        (date, '2017-01-01T12:13:14.567', ValidationError, 'type=date_parsing', True),
+        (date, '2017-01-01T00:00:00', date(2017, 1, 1), None, False),
+        (date, '2017-01-01T00:00:00', ValidationError, 'type=date_parsing', True),
+        (datetime, '2017-01-01T12:13:14.567', datetime(2017, 1, 1, 12, 13, 14, 567_000), None, False),
+        (datetime, '2017-01-01T12:13:14.567', datetime(2017, 1, 1, 12, 13, 14, 567_000), None, True),
+    ],
+    ids=repr,
+)
+def test_model_validate_strings(field_type, input_value, expected, raises_match, strict):
+    class Model(BaseModel):
+        x: field_type
+
+    if raises_match is not None:
+        with pytest.raises(expected, match=raises_match):
+            Model.model_validate_strings({'x': input_value}, strict=strict)
+    else:
+        assert Model.model_validate_strings({'x': input_value}, strict=strict).x == expected
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_model_validate_strings_dict(strict):
+    class Model(BaseModel):
+        x: Dict[int, date]
+
+    assert Model.model_validate_strings({'x': {'1': '2017-01-01', '2': '2017-01-02'}}, strict=strict).x == {
+        1: date(2017, 1, 1),
+        2: date(2017, 1, 2),
+    }
 
 
 def test_model_signature_annotated() -> None:

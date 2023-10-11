@@ -3,7 +3,6 @@ import typing
 import pydantic_core
 from pydantic_core.core_schema import (
     FieldSerializationInfo,
-    FieldValidationInfo,
     SerializationInfo,
     SerializerFunctionWrapHandler,
     ValidationInfo,
@@ -11,18 +10,10 @@ from pydantic_core.core_schema import (
 )
 
 from . import dataclasses
-from ._internal._annotated_handlers import (
-    GetCoreSchemaHandler as GetCoreSchemaHandler,
-)
-from ._internal._annotated_handlers import (
-    GetJsonSchemaHandler as GetJsonSchemaHandler,
-)
 from ._internal._generate_schema import GenerateSchema as GenerateSchema
 from ._migration import getattr_migration
-from .config import ConfigDict, Extra
-from .deprecated.class_validators import root_validator, validator
-from .deprecated.config import BaseConfig
-from .deprecated.tools import *
+from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
+from .config import ConfigDict
 from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .functional_serializers import PlainSerializer, SerializeAsAny, WrapSerializer, field_serializer, model_serializer
@@ -50,22 +41,30 @@ __version__ = VERSION
 # this encourages pycharm to import `ValidationError` from here, not pydantic_core
 ValidationError = pydantic_core.ValidationError
 
-# WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
-# please use "from pydantic.errors import ..." instead
+if typing.TYPE_CHECKING:
+    # these are imported via `__getattr__` below, but we need them here for type checking and IDE support
+    from .deprecated.class_validators import root_validator, validator
+    from .deprecated.config import BaseConfig, Extra
+    from .deprecated.tools import *
+    from .root_model import RootModel
+
 __all__ = [
     # dataclasses
     'dataclasses',
-    # functional validators
+    # pydantic_core.core_schema
     'ValidationInfo',
-    'FieldValidationInfo',
     'ValidatorFunctionWrapHandler',
+    # functional validators
     'field_validator',
     'model_validator',
     'AfterValidator',
     'BeforeValidator',
     'PlainValidator',
     'WrapValidator',
-    # deprecated V1 functional validators
+    'SkipValidation',
+    'InstanceOf',
+    'WithJsonSchema',
+    # deprecated V1 functional validators, these are imported via `__getattr__` below
     'root_validator',
     'validator',
     # functional serializers
@@ -78,8 +77,9 @@ __all__ = [
     'SerializationInfo',
     'SerializerFunctionWrapHandler',
     # config
-    'BaseConfig',
     'ConfigDict',
+    # deprecated V1 config, these are imported via `__getattr__` below
+    'BaseConfig',
     'Extra',
     # validate_call
     'validate_call',
@@ -122,7 +122,7 @@ __all__ = [
     'validate_email',
     # root_model
     'RootModel',
-    # tools
+    # deprecated tools, these are imported via `__getattr__` below
     'parse_obj_as',
     'schema_of',
     'schema_json_of',
@@ -181,9 +181,6 @@ __all__ = [
     'Base64Str',
     'Base64UrlBytes',
     'Base64UrlStr',
-    'SkipValidation',
-    'InstanceOf',
-    'WithJsonSchema',
     'GetPydanticSchema',
     # type_adapter
     'TypeAdapter',
@@ -198,10 +195,19 @@ __all__ = [
     'GenerateSchema',
 ]
 
-# A mapping of {<member name>: <module name>} defining dynamic imports
-_dynamic_imports = {'RootModel': '.root_model'}
-if typing.TYPE_CHECKING:
-    from .root_model import RootModel
+# A mapping of {<member name>: (package, <module name>)} defining dynamic imports
+_dynamic_imports: 'dict[str, tuple[str, str]]' = {
+    'RootModel': (__package__, '.root_model'),
+    'root_validator': (__package__, '.deprecated.class_validators'),
+    'validator': (__package__, '.deprecated.class_validators'),
+    'BaseConfig': (__package__, '.deprecated.config'),
+    'Extra': (__package__, '.deprecated.config'),
+    'parse_obj_as': (__package__, '.deprecated.tools'),
+    'schema_of': (__package__, '.deprecated.tools'),
+    'schema_json_of': (__package__, '.deprecated.tools'),
+    # FieldValidationInfo is deprecated, and hidden behind module a `__getattr__`
+    'FieldValidationInfo': ('pydantic_core', '.core_schema'),
+}
 
 _getattr_migration = getattr_migration(__name__)
 
@@ -211,7 +217,9 @@ def __getattr__(attr_name: str) -> object:
     if dynamic_attr is None:
         return _getattr_migration(attr_name)
 
+    package, module_name = dynamic_attr
+
     from importlib import import_module
 
-    module = import_module(_dynamic_imports[attr_name], package=__package__)
+    module = import_module(module_name, package=package)
     return getattr(module, attr_name)

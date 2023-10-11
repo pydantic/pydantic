@@ -13,7 +13,7 @@ import pytest
 from _pytest.assertion.rewrite import AssertionRewritingHook
 
 
-def pytest_addoption(parser):
+def pytest_addoption(parser: pytest.Parser):
     parser.addoption('--test-mypy', action='store_true', help='run mypy tests')
     parser.addoption('--update-mypy', action='store_true', help='update mypy tests')
 

@@ -1,6 +1,8 @@
 import importlib
 import importlib.util
+import json
 import platform
+import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -24,14 +26,17 @@ def test_init_export():
             continue
         exported.add(name)
 
-    exported.update(pydantic._dynamic_imports)
+    # add stuff from `pydantic._dynamic_imports` if `package` is "pydantic"
+    exported.update({k for k, v in pydantic._dynamic_imports.items() if v[0] == 'pydantic'})
 
     assert pydantic_all == exported, "pydantic.__all__ doesn't match actual exports"
 
 
-@pytest.mark.parametrize(('attr_name', 'module_name'), list(pydantic._dynamic_imports.items()))
-def test_public_api_dynamic_imports(attr_name, module_name):
-    imported_object = getattr(importlib.import_module(module_name, package='pydantic'), attr_name)
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
+@pytest.mark.parametrize(('attr_name', 'value'), list(pydantic._dynamic_imports.items()))
+def test_public_api_dynamic_imports(attr_name, value):
+    package, module_name = value
+    imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
     assert isinstance(imported_object, object)
 
 
@@ -65,3 +70,26 @@ def test_public_internal():
 
     if public_internal_attributes:
         pytest.fail('The following should not be publicly accessible:\n  ' + '\n  '.join(public_internal_attributes))
+
+
+# language=Python
+IMPORTED_MODULES_CODE = """
+import sys
+import pydantic
+
+modules = list(sys.modules.keys())
+
+import json
+print(json.dumps(modules))
+"""
+
+
+def test_imported_modules(tmp_path: Path):
+    py_file = tmp_path / 'test.py'
+    py_file.write_text(IMPORTED_MODULES_CODE)
+
+    output = subprocess.check_output([sys.executable, str(py_file)], cwd=tmp_path)
+    imported_modules = json.loads(output)
+    # debug(imported_modules)
+    assert 'pydantic' in imported_modules
+    assert 'pydantic.deprecated' not in imported_modules

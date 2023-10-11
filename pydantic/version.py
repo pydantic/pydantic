@@ -3,14 +3,14 @@ from typing import Tuple
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.3.0'
+VERSION = '2.4.2'
 """The version of Pydantic."""
 
 
 def version_short() -> str:
-    """Return the major.minor part of Pydantic version.
+    """Return the `major.minor` part of Pydantic version.
 
-    It return '2.1' if Pydantic version is '2.1.1'.
+    It returns '2.1' if Pydantic version is '2.1.1'.
     """
     return '.'.join(VERSION.split('.')[:2])
 
@@ -19,18 +19,31 @@ def version_info() -> str:
     """Return complete version information for Pydantic and its dependencies."""
     import platform
     import sys
-    from importlib import import_module
     from pathlib import Path
 
     import pydantic_core._pydantic_core as pdc
 
-    optional_deps = []
-    for p in 'devtools', 'email-validator', 'typing-extensions':
-        try:
-            import_module(p.replace('-', '_'))
-        except ImportError:  # pragma: no cover
-            continue
-        optional_deps.append(p)
+    if sys.version_info >= (3, 8):
+        import importlib.metadata as importlib_metadata
+    else:
+        import importlib_metadata
+
+    # get data about packages that are closely related to pydantic, use pydantic or often conflict with pydantic
+    package_names = {
+        'email-validator',
+        'fastapi',
+        'mypy',
+        'pydantic-extra-types',
+        'pydantic-settings',
+        'pyright',
+        'typing_extensions',
+    }
+    related_packages = []
+
+    for dist in importlib_metadata.distributions():
+        name = dist.metadata['Name']
+        if name in package_names:
+            related_packages.append(f'{name}-{dist.version}')
 
     info = {
         'pydantic version': VERSION,
@@ -39,7 +52,7 @@ def version_info() -> str:
         'install path': Path(__file__).resolve().parent,
         'python version': sys.version,
         'platform': platform.platform(),
-        'optional deps. installed': optional_deps,
+        'related packages': ' '.join(related_packages),
     }
     return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
 
