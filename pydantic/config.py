@@ -19,8 +19,8 @@ JsonDict: TypeAlias = Dict[str, JsonValue]
 JsonEncoder = Callable[[Any], Any]
 
 JsonSchemaExtraCallable: TypeAlias = Union[
-    Callable[[Dict[str, Any]], None],
-    Callable[[Dict[str, Any], Type[Any]], None],
+    Callable[[JsonDict], None],
+    Callable[[JsonDict, Type[Any]], None],
 ]
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
