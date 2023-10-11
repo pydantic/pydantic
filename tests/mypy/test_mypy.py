@@ -173,9 +173,6 @@ def test_mypy_results(config_filename: str, python_filename: str, request: pytes
         '--show-error-codes',
         '--show-traceback',
     ]
-    if MYPY_VERSION_TUPLE < (1, 4, 1):
-        # I don't know exactly what version this got fixed in, but it definitely works in 1.4.1
-        command.append('--disable-recursive-aliases')
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     mypy_out, mypy_err, mypy_returncode = mypy_api.run(command)
 
