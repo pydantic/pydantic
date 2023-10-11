@@ -23,7 +23,7 @@ from pydantic import (
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic._internal._mock_val_ser import MockValSer
-from pydantic.config import ConfigDict
+from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import FieldInfo
@@ -524,7 +524,7 @@ def test_multiple_inheritance_config():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_wrapper_match():
-    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema, 'JsonValue': JsonValue}
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
     config_dict_annotations.sort()
     # remove config

@@ -17,7 +17,7 @@ from typing_extensions import (
     Self,
 )
 
-from ..config import ConfigDict, ExtraValues, JsonEncoder, JsonSchemaExtraCallable, JsonType
+from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20
 
@@ -60,7 +60,7 @@ class ConfigWrapper:
     alias_generator: Callable[[str], str] | None
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
-    json_schema_extra: JsonType | JsonSchemaExtraCallable | None
+    json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     json_encoders: dict[type[object], JsonEncoder] | None
 
     # new in V2

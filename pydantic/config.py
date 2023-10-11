@@ -13,6 +13,9 @@ if TYPE_CHECKING:
 __all__ = ('ConfigDict',)
 
 
+JsonValue: TypeAlias = Union[int, float, None, List['JsonValue'], 'JsonDict']
+JsonDict: TypeAlias = Dict[str, JsonValue]
+
 JsonEncoder = Callable[[Any], Any]
 
 JsonSchemaExtraCallable: TypeAlias = Union[
@@ -21,8 +24,6 @@ JsonSchemaExtraCallable: TypeAlias = Union[
 ]
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
-JsonValue = Union[str, int, float, None]
-JsonType = Dict[str, Union[JsonValue, Dict[JsonValue, JsonValue], List[JsonValue]]]
 
 
 class ConfigDict(TypedDict, total=False):
@@ -319,7 +320,7 @@ class ConfigDict(TypedDict, total=False):
     allow_inf_nan: bool
     """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`."""
 
-    json_schema_extra: JsonType | JsonSchemaExtraCallable | None
+    json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     """A dict or callable to provide extra JSON schema properties. Defaults to `None`."""
 
     json_encoders: dict[type[object], JsonEncoder] | None
