@@ -87,7 +87,6 @@ from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
 
 from ._internal import _config, _generate_schema, _typing_extra
-from ._internal._config import SchemaConfigHelper
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -240,7 +239,7 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
 
-        helper = SchemaConfigHelper(None, core_schema, config_wrapper)
+        helper = _config.SchemaConfigHelper(None, core_schema, config_wrapper)
 
         validator: SchemaValidator
         try:
