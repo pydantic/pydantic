@@ -17,14 +17,12 @@ from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._core_utils import collect_invalid_schemas, simplify_schema_references, validate_core_schema
 from ._decorators import (
     ComputedFieldInfo,
     DecoratorInfos,
     PydanticDescriptorProxy,
     get_attribute_from_bases,
 )
-from ._discriminated_union import apply_discriminators
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
@@ -488,15 +486,14 @@ def complete_model_class(
 
     core_config = config_wrapper.core_config(cls)
 
-    schema = gen_schema.collect_definitions(schema)
-
-    schema = apply_discriminators(simplify_schema_references(schema))
-    if collect_invalid_schemas(schema):
+    try:
+        schema = gen_schema.clean_schema(schema)
+    except gen_schema.CollectedInvalid:
         set_model_mocks(cls, cls_name)
         return False
 
     # debug(schema)
-    cls.__pydantic_core_schema__ = schema = validate_core_schema(schema)
+    cls.__pydantic_core_schema__ = schema
     cls.__pydantic_validator__ = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True
