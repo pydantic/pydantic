@@ -11,7 +11,7 @@ from typing import (
     cast,
 )
 
-from pydantic_core import core_schema
+from pydantic_core import SchemaSerializer, core_schema
 from typing_extensions import (
     Literal,
     Self,
@@ -19,6 +19,7 @@ from typing_extensions import (
 
 from ..config import ConfigDict, ExtraValues, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
+from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 
 if not TYPE_CHECKING:
@@ -183,6 +184,15 @@ class ConfigWrapper:
     def __repr__(self):
         c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
         return f'ConfigWrapper({c})'
+
+    def add_schema_validator_serializer(
+        self, obj: Any, schema: core_schema.CoreSchema, serializer: bool = True
+    ) -> None:
+        core_config = self.core_config(obj)
+        obj.__pydantic_core_schema__ = schema
+        obj.__pydantic_validator__ = create_schema_validator(schema, core_config, self.plugin_settings)
+        if serializer:
+            obj.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
 
 
 class ConfigWrapperStack:
