@@ -185,14 +185,28 @@ class ConfigWrapper:
         c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
         return f'ConfigWrapper({c})'
 
-    def add_schema_validator_serializer(
-        self, obj: Any, schema: core_schema.CoreSchema, serializer: bool = True
-    ) -> None:
-        core_config = self.core_config(obj)
-        obj.__pydantic_core_schema__ = schema
-        obj.__pydantic_validator__ = create_schema_validator(schema, core_config, self.plugin_settings)
-        if serializer:
-            obj.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+
+class SchemaConfigHelper:
+    def __init__(self, obj: Any, schema: core_schema.CoreSchema, config_wrapper: ConfigWrapper):
+        self.obj = obj
+        self.schema = schema
+        self.config_wrapper = config_wrapper
+        self.core_config = config_wrapper.core_config(obj)
+
+    def validator(self):
+        return create_schema_validator(self.schema, self.core_config, self.config_wrapper.plugin_settings)
+
+    def serializer(self):
+        return SchemaSerializer(self.schema, self.core_config)
+
+    def set_schema(self):
+        self.obj.__pydantic_core_schema__ = self.schema
+
+    def set_validator(self):
+        self.obj.__pydantic_validator__ = self.validator()
+
+    def set_serializer(self):
+        self.obj.__pydantic_serializer__ = self.serializer()
 
 
 class ConfigWrapperStack:

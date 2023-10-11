@@ -87,6 +87,7 @@ from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
 
 from ._internal import _config, _generate_schema, _typing_extra
+from ._internal._config import SchemaConfigHelper
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -95,7 +96,6 @@ from .json_schema import (
     JsonSchemaMode,
     JsonSchemaValue,
 )
-from .plugin._schema_validator import create_schema_validator
 
 T = TypeVar('T')
 
@@ -240,18 +240,19 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
 
-        core_config = config_wrapper.core_config(None)
+        helper = SchemaConfigHelper(None, core_schema, config_wrapper)
+
         validator: SchemaValidator
         try:
             validator = _getattr_no_parents(type, '__pydantic_validator__')
         except AttributeError:
-            validator = create_schema_validator(core_schema, core_config, config_wrapper.plugin_settings)
+            validator = helper.validator()
 
         serializer: SchemaSerializer
         try:
             serializer = _getattr_no_parents(type, '__pydantic_serializer__')
         except AttributeError:
-            serializer = SchemaSerializer(core_schema, core_config)
+            serializer = helper.serializer()
 
         self.core_schema = core_schema
         self.validator = validator

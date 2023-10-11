@@ -9,7 +9,7 @@ import pydantic_core
 
 from ..config import ConfigDict
 from . import _generate_schema, _typing_extra
-from ._config import ConfigWrapper
+from ._config import ConfigWrapper, SchemaConfigHelper
 
 
 @dataclass
@@ -61,7 +61,9 @@ class ValidateCallWrapper:
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
-        config_wrapper.add_schema_validator_serializer(self, schema, serializer=False)
+        helper = SchemaConfigHelper(self, schema, config_wrapper)
+        helper.set_schema()
+        helper.set_validator()
 
         if self._validate_return:
             return_type = (

@@ -15,7 +15,7 @@ from typing_extensions import dataclass_transform, deprecated
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..warnings import PydanticDeprecatedSince20
-from ._config import ConfigWrapper
+from ._config import ConfigWrapper, SchemaConfigHelper
 from ._decorators import (
     ComputedFieldInfo,
     DecoratorInfos,
@@ -489,7 +489,10 @@ def complete_model_class(
         return False
 
     # debug(schema)
-    config_wrapper.add_schema_validator_serializer(cls, schema)
+    helper = SchemaConfigHelper(cls, schema, config_wrapper)
+    helper.set_schema()
+    helper.set_validator()
+    helper.set_serializer()
     cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances

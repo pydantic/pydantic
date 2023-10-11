@@ -22,6 +22,7 @@ from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _typing_extra
+from ._config import SchemaConfigHelper
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
@@ -165,7 +166,10 @@ def complete_dataclass(
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
 
-    config_wrapper.add_schema_validator_serializer(cls, schema)
+    helper = SchemaConfigHelper(cls, schema, config_wrapper)
+    helper.set_schema()
+    helper.set_validator()
+    helper.set_serializer()
 
     if config_wrapper.validate_assignment:
         validator = cls.__pydantic_validator__
