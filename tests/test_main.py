@@ -515,13 +515,21 @@ def test_frozen_model():
         a: int = 10
 
     m = FrozenModel()
-
     assert m.a == 10
+
     with pytest.raises(ValidationError) as exc_info:
         m.a = 11
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': 11}
     ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        del m.a
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': None}
+    ]
+
+    assert m.a == 10
 
 
 def test_frozen_field():
@@ -529,12 +537,21 @@ def test_frozen_field():
         a: int = Field(10, frozen=True)
 
     m = FrozenModel()
+    assert m.a == 10
 
     with pytest.raises(ValidationError) as exc_info:
         m.a = 11
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'frozen_field', 'loc': ('a',), 'msg': 'Field is frozen', 'input': 11}
     ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        del m.a
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_field', 'loc': ('a',), 'msg': 'Field is frozen', 'input': None}
+    ]
+
+    assert m.a == 10
 
 
 def test_not_frozen_are_not_hashable():
