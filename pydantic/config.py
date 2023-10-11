@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 __all__ = ('ConfigDict',)
 
 
-JsonValue: TypeAlias = int | float | str | bool | None | List['JsonValue'] | 'JsonDict'
+JsonValue: TypeAlias = Union[int, float, str, bool, None, List['JsonValue'], 'JsonDict']
 JsonDict: TypeAlias = Dict[str, JsonValue]
 
 JsonEncoder = Callable[[Any], Any]
