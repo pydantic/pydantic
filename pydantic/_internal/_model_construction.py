@@ -9,13 +9,14 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import PydanticUndefined
+from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
+from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
-from ._config import ConfigWrapper, SchemaConfigHelper
+from ._config import ConfigWrapper
 from ._decorators import (
     ComputedFieldInfo,
     DecoratorInfos,
@@ -482,6 +483,8 @@ def complete_model_class(
         set_model_mocks(cls, cls_name, f'`{e.name}`')
         return False
 
+    core_config = config_wrapper.core_config(cls)
+
     try:
         schema = gen_schema.clean_schema(schema)
     except gen_schema.CollectedInvalid:
@@ -489,10 +492,9 @@ def complete_model_class(
         return False
 
     # debug(schema)
-    helper = SchemaConfigHelper(cls, schema, config_wrapper)
-    helper.set_schema()
-    helper.set_validator()
-    helper.set_serializer()
+    cls.__pydantic_core_schema__ = schema
+    cls.__pydantic_validator__ = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances

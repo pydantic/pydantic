@@ -20,9 +20,9 @@ from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
+from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from . import _config, _decorators, _typing_extra
-from ._config import SchemaConfigHelper
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
@@ -155,6 +155,8 @@ def complete_dataclass(
         set_dataclass_mocks(cls, cls.__name__, f'`{e.name}`')
         return False
 
+    core_config = config_wrapper.core_config(cls)
+
     try:
         schema = gen_schema.clean_schema(schema)
     except gen_schema.CollectedInvalid:
@@ -166,13 +168,13 @@ def complete_dataclass(
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
 
-    helper = SchemaConfigHelper(cls, schema, config_wrapper)
-    helper.set_schema()
-    helper.set_validator()
-    helper.set_serializer()
+    cls.__pydantic_core_schema__ = schema
+    cls.__pydantic_validator__ = validator = create_schema_validator(
+        schema, core_config, config_wrapper.plugin_settings
+    )
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
 
     if config_wrapper.validate_assignment:
-        validator = cls.__pydantic_validator__
 
         @wraps(cls.__setattr__)
         def validated_setattr(instance: Any, __field: str, __value: str) -> None:

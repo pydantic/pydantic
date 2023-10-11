@@ -11,7 +11,7 @@ from typing import (
     cast,
 )
 
-from pydantic_core import SchemaSerializer, core_schema
+from pydantic_core import core_schema
 from typing_extensions import (
     Literal,
     Self,
@@ -19,7 +19,6 @@ from typing_extensions import (
 
 from ..config import ConfigDict, ExtraValues, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
-from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 
 if not TYPE_CHECKING:
@@ -184,29 +183,6 @@ class ConfigWrapper:
     def __repr__(self):
         c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
         return f'ConfigWrapper({c})'
-
-
-class SchemaConfigHelper:
-    def __init__(self, obj: Any, schema: core_schema.CoreSchema, config_wrapper: ConfigWrapper):
-        self.obj = obj
-        self.schema = schema
-        self.config_wrapper = config_wrapper
-        self.core_config = config_wrapper.core_config(obj)
-
-    def validator(self):
-        return create_schema_validator(self.schema, self.core_config, self.config_wrapper.plugin_settings)
-
-    def serializer(self):
-        return SchemaSerializer(self.schema, self.core_config)
-
-    def set_schema(self):
-        self.obj.__pydantic_core_schema__ = self.schema
-
-    def set_validator(self):
-        self.obj.__pydantic_validator__ = self.validator()
-
-    def set_serializer(self):
-        self.obj.__pydantic_serializer__ = self.serializer()
 
 
 class ConfigWrapperStack:
