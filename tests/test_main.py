@@ -2021,6 +2021,38 @@ def test_model_post_init_subclass_private_attrs():
     assert calls == ['C.model_post_init']
 
 
+def test_model_post_init_subclass_setting_private_attrs():
+    """https://github.com/pydantic/pydantic/issues/7091"""
+
+    class Model(BaseModel):
+        _priv1: int = PrivateAttr(91)
+        _priv2: int = PrivateAttr(92)
+
+        def model_post_init(self, __context) -> None:
+            self._priv1 = 100
+
+    class SubModel(Model):
+        _priv3: int = PrivateAttr(93)
+        _priv4: int = PrivateAttr(94)
+        _priv5: int = PrivateAttr()
+        _priv6: int = PrivateAttr()
+
+        def model_post_init(self, __context) -> None:
+            self._priv3 = 200
+            self._priv5 = 300
+            super().model_post_init(__context)
+
+    m = SubModel()
+
+    assert m._priv1 == 100
+    assert m._priv2 == 92
+    assert m._priv3 == 200
+    assert m._priv4 == 94
+    assert m._priv5 == 300
+    with pytest.raises(AttributeError):
+        assert m._priv6 == 94
+
+
 def test_model_post_init_correct_mro():
     """https://github.com/pydantic/pydantic/issues/7293"""
     calls = []
