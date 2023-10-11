@@ -86,7 +86,7 @@ from typing_extensions import Literal, is_typeddict
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
 
-from ._internal import _config, _core_utils, _discriminated_union, _generate_schema, _typing_extra
+from ._internal import _config, _generate_schema, _typing_extra
 from .config import ConfigDict
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
@@ -154,7 +154,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     global_ns.update(local_ns or {})
     gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
     schema = gen.generate_schema(type_)
-    schema = gen.collect_definitions(schema)
+    schema = gen.clean_schema(schema)
     return schema
 
 
@@ -239,10 +239,6 @@ class TypeAdapter(Generic[T]):
             core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
         except AttributeError:
             core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
-
-        core_schema = _discriminated_union.apply_discriminators(_core_utils.simplify_schema_references(core_schema))
-
-        core_schema = _core_utils.validate_core_schema(core_schema)
 
         core_config = config_wrapper.core_config(None)
         validator: SchemaValidator

@@ -9,9 +9,8 @@ import pydantic_core
 
 from ..config import ConfigDict
 from ..plugin._schema_validator import create_schema_validator
-from . import _discriminated_union, _generate_schema, _typing_extra
+from . import _generate_schema, _typing_extra
 from ._config import ConfigWrapper
-from ._core_utils import simplify_schema_references, validate_core_schema
 
 
 @dataclass
@@ -62,11 +61,9 @@ class ValidateCallWrapper:
         namespace = _typing_extra.add_module_globals(function, None)
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
-        schema = gen_schema.collect_definitions(gen_schema.generate_schema(function))
-        schema = simplify_schema_references(schema)
-        self.__pydantic_core_schema__ = schema = schema
+        schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
+        self.__pydantic_core_schema__ = schema
         core_config = config_wrapper.core_config(self)
-        schema = _discriminated_union.apply_discriminators(schema)
         self.__pydantic_validator__ = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
 
         if self._validate_return:
@@ -76,11 +73,9 @@ class ValidateCallWrapper:
                 else Any
             )
             gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
-            schema = gen_schema.collect_definitions(gen_schema.generate_schema(return_type))
-            schema = _discriminated_union.apply_discriminators(simplify_schema_references(schema))
+            schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
             self.__return_pydantic_core_schema__ = schema
             core_config = config_wrapper.core_config(self)
-            schema = validate_core_schema(schema)
             validator = pydantic_core.SchemaValidator(schema, core_config)
             if inspect.iscoroutinefunction(self.raw_function):
 
