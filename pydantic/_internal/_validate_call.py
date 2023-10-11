@@ -75,8 +75,7 @@ class ValidateCallWrapper:
             gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
             schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
             self.__return_pydantic_core_schema__ = schema
-            core_config = config_wrapper.core_config(self)
-            validator = pydantic_core.SchemaValidator(schema, core_config)
+            validator = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
             if inspect.iscoroutinefunction(self.raw_function):
 
                 async def return_val_wrapper(aw: Awaitable[Any]) -> None:
