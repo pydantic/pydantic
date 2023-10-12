@@ -774,20 +774,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 else:
                     self.__pydantic_private__[name] = value
             return
-        elif self.model_config.get('frozen', None):
-            error: pydantic_core.InitErrorDetails = {
-                'type': 'frozen_instance',
-                'loc': (name,),
-                'input': value,
-            }
-            raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
-        elif getattr(self.model_fields.get(name), 'frozen', False):
-            error: pydantic_core.InitErrorDetails = {
-                'type': 'frozen_field',
-                'loc': (name,),
-                'input': value,
-            }
-            raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
+
+        self._check_frozen(name, value)
 
         attr = getattr(self.__class__, name, None)
         if isinstance(attr, property):
@@ -823,9 +811,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             try:
                 # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
                 del self.__pydantic_private__[item]  # type: ignore
+                return
             except KeyError as exc:
                 raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-        elif item in self.model_fields:
+
+        self._check_frozen(item, None)
+
+        if item in self.model_fields:
             object.__delattr__(self, item)
         elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
             del self.__pydantic_extra__[item]
@@ -834,6 +826,20 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 object.__delattr__(self, item)
             except AttributeError:
                 raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
+    def _check_frozen(self, name: str, value: Any) -> None:
+        if self.model_config.get('frozen', None):
+            typ = 'frozen_instance'
+        elif getattr(self.model_fields.get(name), 'frozen', False):
+            typ = 'frozen_field'
+        else:
+            return
+        error: pydantic_core.InitErrorDetails = {
+            'type': typ,
+            'loc': (name,),
+            'input': value,
+        }
+        raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
 
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
