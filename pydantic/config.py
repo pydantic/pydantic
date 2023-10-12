@@ -1,7 +1,7 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 
@@ -13,11 +13,14 @@ if TYPE_CHECKING:
 __all__ = ('ConfigDict',)
 
 
+JsonValue: TypeAlias = Union[int, float, str, bool, None, List['JsonValue'], 'JsonDict']
+JsonDict: TypeAlias = Dict[str, JsonValue]
+
 JsonEncoder = Callable[[Any], Any]
 
 JsonSchemaExtraCallable: TypeAlias = Union[
-    Callable[[Dict[str, Any]], None],
-    Callable[[Dict[str, Any], Type[Any]], None],
+    Callable[[JsonDict], None],
+    Callable[[JsonDict, Type[Any]], None],
 ]
 
 ExtraValues = Literal['allow', 'ignore', 'forbid']
@@ -317,7 +320,7 @@ class ConfigDict(TypedDict, total=False):
     allow_inf_nan: bool
     """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`."""
 
-    json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
+    json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     """A dict or callable to provide extra JSON schema properties. Defaults to `None`."""
 
     json_encoders: dict[type[object], JsonEncoder] | None
