@@ -76,7 +76,7 @@ impl TypeSerializer for DefinitionRefSerializer {
     }
 
     fn json_key<'py>(&self, key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
-        self._invalid_as_json_key(key, extra, Self::EXPECTED_TYPE)
+        self.definition.get().unwrap().json_key(key, extra)
     }
 
     fn serde_serialize<S: serde::ser::Serializer>(

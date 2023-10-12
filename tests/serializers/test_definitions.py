@@ -113,3 +113,24 @@ def test_use_after():
         )
     )
     assert v.to_python((1, 2)) == ('1', '2')
+
+
+def test_defs_with_dict():
+    s = SchemaSerializer(
+        core_schema.definitions_schema(
+            schema=core_schema.typed_dict_schema(
+                {
+                    'foo': core_schema.typed_dict_field(
+                        core_schema.dict_schema(
+                            keys_schema=core_schema.definition_reference_schema('key'),
+                            values_schema=core_schema.definition_reference_schema('val'),
+                        )
+                    )
+                }
+            ),
+            definitions=[core_schema.str_schema(ref='key'), core_schema.str_schema(ref='val')],
+        )
+    )
+
+    assert s.to_json({'foo': {'key': 'val'}}) == b'{"foo":{"key":"val"}}'
+    assert s.to_python({'foo': {'key': 'val'}}) == {'foo': {'key': 'val'}}
