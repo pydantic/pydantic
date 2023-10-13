@@ -2,7 +2,7 @@ Pydantic allows automatic creation of JSON schemas from models.
 
 Using Pydantic, there are several ways to generate JSON schemas or JSON representations from fields or models:
 
-* [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a dict of the schema.
+* [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a jsonable dict of the schema.
 * [`BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json] returns a JSON string representation of the
     dict of the schema.
 * [`TypeAdapter.dump_json`][pydantic.type_adapter.TypeAdapter.dump_json] serializes an instance of the adapted type to
@@ -146,6 +146,11 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
     argument.
 * The format of `$ref`s can be altered by calling `model_json_schema()` or `model_dump_json()`
     with the `ref_template` keyword argument.
+
+!!! note
+    Regarding the "jsonable" nature of the `model_json_schema()` results, calling `json.dumps(m.model_json_schema())`
+    on some `BaseModel` `m` returns a valid JSON string.
+
 
 ## Getting schema of a specified type
 

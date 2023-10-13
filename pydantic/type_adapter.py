@@ -273,6 +273,10 @@ class TypeAdapter(Generic[T]):
             from_attributes: Whether to extract data from object attributes.
             context: Additional context to pass to the validator.
 
+        !!! note
+            When using `TypeAdapter` with a Pydantic `dataclass`, the use of the `from_attributes`
+            argument is not supported.
+
         Returns:
             The validated object.
         """

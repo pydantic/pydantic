@@ -102,7 +102,7 @@ Models possess the following methods and attributes:
     [Serialization](serialization.md#modeldumpjson).
 * `model_extra`: get extra fields set during validation.
 * `model_fields_set`: set of fields which were set when the model instance was initialized.
-* `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
+* `model_json_schema()`: returns a jsonable dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
 * `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
     See [JSON Schema](json_schema.md).
 * `model_parametrized_name()`: compute the class name for parametrizations of generic classes.
@@ -777,16 +777,10 @@ except ValidationError as e:
 When using bound type parameters, and when leaving type parameters unspecified, Pydantic treats generic models
 similarly to how it treats built-in generic types like `List` and `Dict`:
 
-* If you don't specify parameters before instantiating the generic model, they are treated as the bound of the `TypeVar`.
+* If you don't specify parameters before instantiating the generic model, they are validated as the bound of the `TypeVar`.
 * If the `TypeVar`s involved have no bounds, they are treated as `Any`.
 
-Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
-
-!!! note
-    For serialization this means: when a `TypeVar` is constrained or bound using a parent model `ParentModel`
-    and a child model `ChildModel` is used as a concrete value, Pydantic will serialize `ChildModel` as `ParentModel`.
-    `TypeVar` needs to be wrapped inside [`SerializeAsAny`](serialization.md#serializing-with-duck-typing)
-    for Pydantic to serialize `ChildModel` as `ChildModel`.
+Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types:
 
 ```py requires="3.12"
 from typing import Generic, TypeVar
@@ -884,7 +878,43 @@ assert error.model_dump() == {
 }
 ```
 
-If you use a `default=...` (available in Python >= 3.13 or via `typing-extensions`) or constraints (`TypeVar('T', str, int)`; note that you rarely want to use this form of a `TypeVar`) then the default value or constraints will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior using `pydantic.SerializeAsAny`:
+Here's another example of the above behavior, enumerating all permutations regarding bound specification and generic type parametrization:
+```py
+from typing import Generic
+
+from typing_extensions import TypeVar
+
+from pydantic import BaseModel
+
+TBound = TypeVar('TBound', bound=BaseModel)
+TNoBound = TypeVar('TNoBound')
+
+
+class IntValue(BaseModel):
+    value: int
+
+
+class ItemBound(BaseModel, Generic[TBound]):
+    item: TBound
+
+
+class ItemNoBound(BaseModel, Generic[TNoBound]):
+    item: TNoBound
+
+
+item_bound_inferred = ItemBound(item=IntValue(value=3))
+item_bound_explicit = ItemBound[IntValue](item=IntValue(value=3))
+item_no_bound_inferred = ItemNoBound(item=IntValue(value=3))
+item_no_bound_explicit = ItemNoBound[IntValue](item=IntValue(value=3))
+
+# calling `print(x.model_dump())` on any of the above instances results in the following:
+#> {'item': {'value': 3}}
+```
+
+If you use a `default=...` (available in Python >= 3.13 or via `typing-extensions`) or constraints (`TypeVar('T', str, int)`;
+note that you rarely want to use this form of a `TypeVar`) then the default value or constraints will be used for both
+validation and serialization if the type variable is not parametrized.
+You can override this behavior using `pydantic.SerializeAsAny`:
 
 ```py
 from typing import Generic, Optional
@@ -941,6 +971,47 @@ assert error.model_dump() == {
     },
 }
 ```
+
+!!! note
+    Note, you may run into a bit of trouble if you don't parametrize a generic when the case of validating against the generic's bound
+    could cause data loss. See the example below:
+
+```py
+from typing import Generic
+
+from typing_extensions import TypeVar
+
+from pydantic import BaseModel
+
+TItem = TypeVar('TItem', bound='ItemBase')
+
+
+class ItemBase(BaseModel):
+    ...
+
+
+class IntItem(ItemBase):
+    value: int
+
+
+class ItemHolder(BaseModel, Generic[TItem]):
+    item: TItem
+
+
+loaded_data = {'item': {'value': 1}}
+
+
+print(ItemHolder(**loaded_data).model_dump())  # (1)!
+#> {'item': {}}
+
+print(ItemHolder[IntItem](**loaded_data).model_dump())  # (2)!
+#> {'item': {'value': 1}}
+```
+
+1. When the generic isn't parametrized, the input data is validated against the generic bound.
+   Given that `ItemBase` has no fields, the `item` field information is lost.
+2. In this case, the runtime type information is provided explicitly via the generic parametrization,
+   so the input data is validated against the `IntItem` class and the serialization output matches what's expected.
 
 ## Dynamic model creation
 
