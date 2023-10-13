@@ -204,6 +204,10 @@ print(Foo.model_json_schema())
 Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
 call `model_rebuild()` proactively when dealing with recursive models or generics.
 
+In V2, `model_rebuild()` replaced `update_forward_refs()` from V1. There are some slight differences with the new behavior.
+The biggest change is that when calling `model_rebuild` on the outermost model, it builds a core schema used for validation of the
+whole model (nested models and all), so all types at all levels need to be ready before `model_rebuild` is called.
+
 ## Arbitrary class instances
 
 (Formerly known as "ORM Mode"/`from_orm`.)

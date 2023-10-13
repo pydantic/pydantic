@@ -92,6 +92,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 | `json_schema()` | `model_json_schema()` |
 | `json()` | `model_dump_json()` |
 | `parse_obj()` | `model_validate()` |
+| `update_forward_refs()` | `model_rebuild()` |
 
 * Some of the built-in data-loading functionality has been slated for removal. In particular,
     `parse_raw` and `parse_file` are now deprecated. In Pydantic V2, `model_validate_json` works like `parse_raw`. Otherwise, you should load the data and then pass it to `model_validate`.
@@ -128,7 +129,8 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
   section of the model exporting docs.
 * `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
 * In many cases, arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion.
-  This is notable in the case of passing mutable objects as arguments to a constructor. You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
+  This is notable in the case of passing mutable objects as arguments to a constructor.
+  You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
 
 ### Changes to `pydantic.generics.GenericModel`
 
