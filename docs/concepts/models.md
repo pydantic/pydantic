@@ -886,9 +886,8 @@ from typing_extensions import TypeVar
 
 from pydantic import BaseModel
 
-
-TBound = TypeVar("TBound", bound=BaseModel)
-TNoBound = TypeVar("TNoBound")
+TBound = TypeVar('TBound', bound=BaseModel)
+TNoBound = TypeVar('TNoBound')
 
 
 class IntValue(BaseModel):
@@ -901,6 +900,7 @@ class ItemBound(BaseModel, Generic[TBound]):
 
 class ItemNoBound(BaseModel, Generic[TNoBound]):
     item: TNoBound
+
 
 item_bound_inferred = ItemBound(item=IntValue(value=3))
 item_bound_explicit = ItemBound[IntValue](item=IntValue(value=3))
@@ -978,12 +978,12 @@ assert error.model_dump() == {
 
 ```py
 from typing import Generic
-from pydantic import BaseModel
 
 from typing_extensions import TypeVar
 
+from pydantic import BaseModel
 
-TItem = TypeVar("TItem", bound="ItemBase")
+TItem = TypeVar('TItem', bound='ItemBase')
 
 
 class ItemBase(BaseModel):
@@ -998,7 +998,7 @@ class ItemHolder(BaseModel, Generic[TItem]):
     item: TItem
 
 
-loaded_data = {"item": {"value": 1}}
+loaded_data = {'item': {'value': 1}}
 
 
 print(ItemHolder(**loaded_data).model_dump())  # (1)!
