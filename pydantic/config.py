@@ -164,6 +164,40 @@ class ConfigDict(TypedDict, total=False):
     """
     Whether to populate models with the `value` property of enums, rather than the raw enum.
     This may be useful if you want to serialize `model.model_dump()` later. Defaults to `False`.
+
+    !!! note
+        If you have an `Optional[Enum]` value that you set a default for, you need to use `validate_default=True`
+        for said Field to ensure that the `use_enum_values` flag takes effect on the default, as extracting an
+        enum's value occurs during validation, not serialization.
+
+    ```py
+    from enum import Enum
+    from typing import Optional
+
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class SomeEnum(Enum):
+        FOO = 'foo'
+        BAR = 'bar'
+        BAZ = 'baz'
+
+
+    class SomeModel(BaseModel):
+        model_config = ConfigDict(use_enum_values=True)
+
+        some_enum: SomeEnum
+        another_enum: Optional[SomeEnum] = Field(default=SomeEnum.FOO, validate_default=True)
+
+
+    model1 = SomeModel(some_enum=SomeEnum.BAR)
+    print(model1.model_dump())
+    # {'some_enum': 'bar', 'another_enum': 'foo'}
+
+    model2 = SomeModel(some_enum=SomeEnum.BAR, another_enum=SomeEnum.BAZ)
+    print(model2.model_dump())
+    #> {'some_enum': 'bar', 'another_enum': 'baz'}
+    ```
     """
 
     validate_assignment: bool
