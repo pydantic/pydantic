@@ -5260,7 +5260,7 @@ def test_json_schema_keys_sorting() -> None:
         a: str
 
     class OuterModel(BaseModel):
-        inner: List[Model]
+        inner: List[Model] = Field(default=[Model(b=1, a='fruit')])
 
     # verify the schema contents
     # this is just to get a nicer error message / diff if it fails
@@ -5273,8 +5273,14 @@ def test_json_schema_keys_sorting() -> None:
                 'type': 'object',
             }
         },
-        'properties': {'inner': {'items': {'$ref': '#/$defs/Model'}, 'title': 'Inner', 'type': 'array'}},
-        'required': ['inner'],
+        'properties': {
+            'inner': {
+                'default': [{'b': 1, 'a': 'fruit'}],
+                'items': {'$ref': '#/$defs/Model'},
+                'title': 'Inner',
+                'type': 'array',
+            }
+        },
         'title': 'OuterModel',
         'type': 'object',
     }
