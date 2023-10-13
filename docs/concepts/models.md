@@ -102,7 +102,7 @@ Models possess the following methods and attributes:
     [Serialization](serialization.md#modeldumpjson).
 * `model_extra`: get extra fields set during validation.
 * `model_fields_set`: set of fields which were set when the model instance was initialized.
-* `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
+* `model_json_schema()`: returns a jsonable dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
 * `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
     See [JSON Schema](json_schema.md).
 * `model_parametrized_name()`: compute the class name for parametrizations of generic classes.
