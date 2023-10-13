@@ -884,6 +884,39 @@ assert error.model_dump() == {
 }
 ```
 
+Here's another example of the above behavior, enumerating all permutations regarding bound specification and generic type parametrization:
+```py
+from typing import Generic
+
+from typing_extensions import TypeVar
+
+from pydantic import BaseModel
+
+
+TBound = TypeVar("TBound", bound=BaseModel)
+TNoBound = TypeVar("TNoBound")
+
+
+class IntValue(BaseModel):
+    value: int
+
+    
+class ItemBound(BaseModel, Generic[TBound]):
+    item: TBound
+
+    
+class ItemNoBound(BaseModel, Generic[TNoBound]):
+    item: TNoBound
+
+item_bound_inferred = ItemBound(item=IntValue(value=3))
+item_bound_explicit = ItemBound[IntValue](item=IntValue(value=3))
+item_no_bound_inferred = ItemNoBound(item=IntValue(value=3))
+item_no_bound_explicit = ItemNoBound[IntValue](item=IntValue(value=3))
+
+# calling `print(x.model_dump())` on any of the above instances results in the following:
+#> {'item': {'value': 3}}
+```
+
 If you use a `default=...` (available in Python >= 3.13 or via `typing-extensions`) or constraints (`TypeVar('T', str, int)`; note that you rarely want to use this form of a `TypeVar`) then the default value or constraints will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior using `pydantic.SerializeAsAny`:
 
 ```py
@@ -942,49 +975,46 @@ assert error.model_dump() == {
 }
 ```
 
-Due to the way that bounds are treated at runtime, and the way much of the python type-related tooling works, you may get some surprising behavior when serializing and deserializing values in circumstances where type-inference of generic arguments can occur.
-
-In the following code, we have two factories for creating `ItemHolder`s.  They are both generic and capture a `TypeVar` bound by `ItemBase`.  The first one creates an `ItemHolder` using the following syntax: `ItemHolder[TItem](**vals)` - the type information is propagated using the bound `TypeVar`.  The second factory does it this way: `ItemHolder[self.item_type](**vals)` - the *runtime `type` object* corresponding to the `TItem` generic argument (`self.item_type`) is passed directly into the `__class_getitem__` method of the generic type.
+!!! note
+    Note, you may run into a bit of trouble if you don't parametrize a generic when the case of validating against the generic's bound
+    could cause data loss. Thus, it's safer to lean on the side of parametrization to prevent data loss during validation. See the example below:
 
 ```py
-from typing import TypeVar, Generic
+from typing import Generic
 from pydantic import BaseModel
 
+from typing_extensions import TypeVar
+
+
 TItem = TypeVar("TItem", bound="ItemBase")
+
 
 class ItemBase(BaseModel):
     ...
 
+
 class IntItem(ItemBase):
     value: int
+
 
 class ItemHolder(BaseModel, Generic[TItem]):
     item: TItem
 
-class ItemHolderFactory(Generic[TItem]):
-    def __call__(self, vals: dict) -> ItemHolder[TItem]:
-        # THIS IS IMPORTANT
-        return ItemHolder[TItem](**vals)
-
-class RealItemHolderFactory(Generic[TItem]):
-    def __init__(self, item_type: type[TItem]) -> None:
-        self.item_type = item_type
-
-    def __call__(self, vals: dict) -> ItemHolder[TItem]:
-        # SO IS THIS
-        return ItemHolder[self.item_type](**vals)
 
 loaded_data = {"item": {"value": 1}}
 
-# THIS FACTORY FAILS
-print(ItemHolderFactory[IntItem]()(loaded_data).model_dump())   # {'item': {}}
-# THIS FACTORY SUCCEEDS
-print(RealItemHolderFactory(IntItem)(loaded_data).model_dump()) # {'item': {'value': 1}}
+
+print(ItemHolder(**loaded_data).model_dump())  # (1)!
+#> {'item': {}}
+
+print(ItemHolder[IntItem](**loaded_data).model_dump())  # (2)!
+#> {'item': {'value': 1}}
 ```
 
-The reason `'item'` is empty in `ItemHolderFactory[IntItem]()(loaded_data)` is that `ItemBase` has no keys, and `ItemBase` is the class that was chosen to represent the `TItem` type variable in `__call__(self, vals: dict) -> ItemHolder[TItem]`.  The typechecker is able to determine that the type "should be" `IntItem`, but at runtime that information is lost, so pydantic has to make a decision, and currently pydantic decides to use the `bound` if there is one.
-
-In the second case, the runtime type information is provided explicitly, so pydantic has no problem doing what you want it to do.
+1. When the generic isn't parametrized, the input data is validated against the generic bound. 
+   Given that `ItemBase` has no fields, the `item` field information is lost.
+2. In this case, the runtime type information is provided explicitly, so the input data is validated against the 
+   `IntItem` class and the serialization output matches what's expected.
 
 ## Dynamic model creation
 
