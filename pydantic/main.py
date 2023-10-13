@@ -82,7 +82,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         __pydantic_extra__: An instance attribute with the values of extra fields from validation when
             `model_config['extra'] == 'allow'`.
-        __pydantic_fields_set__: An instance attribute with the names of fields explicitly specified during validation.
+        __pydantic_fields_set__: An instance attribute with the names of fields explicitly set.
         __pydantic_private__: Instance attribute with the values of private attributes set on the model instance.
     """
 
@@ -186,7 +186,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @property
     def model_fields_set(self) -> set[str]:
-        """Returns the set of fields that have been set on this model instance.
+        """Returns the set of fields that have been explicitly set on this model instance.
 
         Returns:
             A set of strings representing the fields that have been set,
@@ -296,7 +296,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             include: A list of fields to include in the output.
             exclude: A list of fields to exclude from the output.
             by_alias: Whether to use the field's alias in the dictionary key if defined.
-            exclude_unset: Whether to exclude fields that are unset or None from the output.
+            exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value from the output.
             exclude_none: Whether to exclude fields that have a value of `None` from the output.
             round_trip: Whether to enable serialization and deserialization round-trip support.
