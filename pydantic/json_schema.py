@@ -2224,7 +2224,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
     if isinstance(value, dict):
         sorted_dict: dict[str, JsonSchemaValue] = {}
         keys = value.keys()
-        if parent_key != 'properties':
+        if (parent_key != 'properties') and (parent_key != 'default'):
             keys = sorted(keys)
         for key in keys:
             sorted_dict[key] = _sort_json_schema(value[key], parent_key=key)
@@ -2232,7 +2232,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
     elif isinstance(value, list):
         sorted_list: list[JsonSchemaValue] = []
         for item in value:  # type: ignore
-            sorted_list.append(_sort_json_schema(item))
+            sorted_list.append(_sort_json_schema(item, parent_key))
         return sorted_list  # type: ignore
     else:
         return value
