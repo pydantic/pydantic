@@ -148,8 +148,8 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
     with the `ref_template` keyword argument.
 
 !!! note
-    Regarding the "jsonable" nature of the `model_json_schema()` results, if you call `json.dumps(m.model_json_schema())`
-    for some `BaseModel` `m`, you'll get a valid JSON string.
+    Regarding the "jsonable" nature of the `model_json_schema()` results, calling `json.dumps(m.model_json_schema())`
+    on some `BaseModel` `m` returns a valid JSON string.
 
 
 ## Getting schema of a specified type
