@@ -2996,7 +2996,7 @@
 <p>Pydantic allows automatic creation of JSON schemas from models.</p>
 <p>Using Pydantic, there are several ways to generate JSON schemas or JSON representations from fields or models:</p>
 <ul>
-<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_json_schema"><code>BaseModel.model_json_schema</code></a> returns a dict of the schema.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_json_schema"><code>BaseModel.model_json_schema</code></a> returns a jsonable dict of the schema.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_dump_json"><code>BaseModel.model_dump_json</code></a> returns a JSON string representation of the
     dict of the schema.</li>
 <li><a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.dump_json"><code>TypeAdapter.dump_json</code></a> serializes an instance of the adapted type to
@@ -3139,6 +3139,11 @@
 <li>The format of <code>$ref</code>s can be altered by calling <code>model_json_schema()</code> or <code>model_dump_json()</code>
     with the <code>ref_template</code> keyword argument.</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Regarding the "jsonable" nature of the <code>model_json_schema()</code> results, calling <code>json.dumps(m.model_json_schema())</code>
+on some <code>BaseModel</code> <code>m</code> returns a valid JSON string.</p>
+</div>
 <h2 id="getting-schema-of-a-specified-type">Getting schema of a specified type<a class="headerlink" href="#getting-schema-of-a-specified-type" title="Permanent link">&para;</a></h2>
 <p>The <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> class lets you create an object with methods for validating, serializing,
 and producing JSON schemas for arbitrary types. This serves as a complete replacement for <code>schema_of</code> in

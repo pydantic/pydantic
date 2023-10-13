@@ -3480,7 +3480,7 @@ Models possess the following methods and attributes:</p>
     <a href="../serialization/#modeldumpjson">Serialization</a>.</li>
 <li><code>model_extra</code>: get extra fields set during validation.</li>
 <li><code>model_fields_set</code>: set of fields which were set when the model instance was initialized.</li>
-<li><code>model_json_schema()</code>: returns a dictionary representing the model as JSON Schema. See <a href="../json_schema/">JSON Schema</a>.</li>
+<li><code>model_json_schema()</code>: returns a jsonable dictionary representing the model as JSON Schema. See <a href="../json_schema/">JSON Schema</a>.</li>
 <li><code>model_modify_json_schema()</code>: a method for how the "generic" properties of the JSON schema are populated.
     See <a href="../json_schema/">JSON Schema</a>.</li>
 <li><code>model_parametrized_name()</code>: compute the class name for parametrizations of generic classes.</li>
@@ -4102,17 +4102,10 @@ superclass:</p>
 <p>When using bound type parameters, and when leaving type parameters unspecified, Pydantic treats generic models
 similarly to how it treats built-in generic types like <code>List</code> and <code>Dict</code>:</p>
 <ul>
-<li>If you don't specify parameters before instantiating the generic model, they are treated as the bound of the <code>TypeVar</code>.</li>
+<li>If you don't specify parameters before instantiating the generic model, they are validated as the bound of the <code>TypeVar</code>.</li>
 <li>If the <code>TypeVar</code>s involved have no bounds, they are treated as <code>Any</code>.</li>
 </ul>
-<p>Also, like <code>List</code> and <code>Dict</code>, any parameters specified using a <code>TypeVar</code> can later be substituted with concrete types.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>For serialization this means: when a <code>TypeVar</code> is constrained or bound using a parent model <code>ParentModel</code>
-and a child model <code>ChildModel</code> is used as a concrete value, Pydantic will serialize <code>ChildModel</code> as <code>ParentModel</code>.
-<code>TypeVar</code> needs to be wrapped inside <a href="../serialization/#serializing-with-duck-typing"><code>SerializeAsAny</code></a>
-for Pydantic to serialize <code>ChildModel</code> as <code>ChildModel</code>.</p>
-</div>
+<p>Also, like <code>List</code> and <code>Dict</code>, any parameters specified using a <code>TypeVar</code> can later be substituted with concrete types:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4203,7 +4196,41 @@ for Pydantic to serialize <code>ChildModel</code> as <code>ChildModel</code>.</p
     <span class="p">},</span>
 <span class="p">}</span>
 </code></pre></div>
-<p>If you use a <code>default=...</code> (available in Python &gt;= 3.13 or via <code>typing-extensions</code>) or constraints (<code>TypeVar('T', str, int)</code>; note that you rarely want to use this form of a <code>TypeVar</code>) then the default value or constraints will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior using <code>pydantic.SerializeAsAny</code>:</p>
+<p>Here's another example of the above behavior, enumerating all permutations regarding bound specification and generic type parametrization:
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="n">TBound</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TBound&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">)</span>
+<span class="n">TNoBound</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TNoBound&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">IntValue</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">ItemBound</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">TBound</span><span class="p">]):</span>
+    <span class="n">item</span><span class="p">:</span> <span class="n">TBound</span>
+
+
+<span class="k">class</span> <span class="nc">ItemNoBound</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">TNoBound</span><span class="p">]):</span>
+    <span class="n">item</span><span class="p">:</span> <span class="n">TNoBound</span>
+
+
+<span class="n">item_bound_inferred</span> <span class="o">=</span> <span class="n">ItemBound</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="n">IntValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">item_bound_explicit</span> <span class="o">=</span> <span class="n">ItemBound</span><span class="p">[</span><span class="n">IntValue</span><span class="p">](</span><span class="n">item</span><span class="o">=</span><span class="n">IntValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">item_no_bound_inferred</span> <span class="o">=</span> <span class="n">ItemNoBound</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="n">IntValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">item_no_bound_explicit</span> <span class="o">=</span> <span class="n">ItemNoBound</span><span class="p">[</span><span class="n">IntValue</span><span class="p">](</span><span class="n">item</span><span class="o">=</span><span class="n">IntValue</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span>
+
+<span class="c1"># calling `print(x.model_dump())` on any of the above instances results in the following:</span>
+<span class="c1">#&gt; {&#39;item&#39;: {&#39;value&#39;: 3}}</span>
+</code></pre></div></p>
+<p>If you use a <code>default=...</code> (available in Python &gt;= 3.13 or via <code>typing-extensions</code>) or constraints (<code>TypeVar('T', str, int)</code>;
+note that you rarely want to use this form of a <code>TypeVar</code>) then the default value or constraints will be used for both
+validation and serialization if the type variable is not parametrized.
+You can override this behavior using <code>pydantic.SerializeAsAny</code>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypeVar</span>
@@ -4258,6 +4285,47 @@ for Pydantic to serialize <code>ChildModel</code> as <code>ChildModel</code>.</p
     <span class="p">},</span>
 <span class="p">}</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note, you may run into a bit of trouble if you don't parametrize a generic when the case of validating against the generic's bound
+could cause data loss. See the example below:</p>
+</div>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="n">TItem</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;TItem&#39;</span><span class="p">,</span> <span class="n">bound</span><span class="o">=</span><span class="s1">&#39;ItemBase&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">ItemBase</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="o">...</span>
+
+
+<span class="k">class</span> <span class="nc">IntItem</span><span class="p">(</span><span class="n">ItemBase</span><span class="p">):</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">ItemHolder</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">Generic</span><span class="p">[</span><span class="n">TItem</span><span class="p">]):</span>
+    <span class="n">item</span><span class="p">:</span> <span class="n">TItem</span>
+
+
+<span class="n">loaded_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;item&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ItemHolder</span><span class="p">(</span><span class="o">**</span><span class="n">loaded_data</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (1)!</span>
+<span class="c1">#&gt; {&#39;item&#39;: {}}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ItemHolder</span><span class="p">[</span><span class="n">IntItem</span><span class="p">](</span><span class="o">**</span><span class="n">loaded_data</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>  <span class="c1"># (2)!</span>
+<span class="c1">#&gt; {&#39;item&#39;: {&#39;value&#39;: 1}}</span>
+</code></pre></div>
+<ol>
+<li>When the generic isn't parametrized, the input data is validated against the generic bound.
+   Given that <code>ItemBase</code> has no fields, the <code>item</code> field information is lost.</li>
+<li>In this case, the runtime type information is provided explicitly via the generic parametrization,
+   so the input data is validated against the <code>IntItem</code> class and the serialization output matches what's expected.</li>
+</ol>
 <h2 id="dynamic-model-creation">Dynamic model creation<a class="headerlink" href="#dynamic-model-creation" title="Permanent link">&para;</a></h2>
 <p>There are some occasions where it is desirable to create a model using runtime information to specify the fields.
 For this Pydantic provides the <code>create_model</code> function to allow models to be created on the fly:</p>

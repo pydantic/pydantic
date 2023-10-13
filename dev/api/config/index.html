@@ -4083,6 +4083,39 @@ attribute, as well as the alias. Defaults to <code>False</code>.</p>
   
       <p>Whether to populate models with the <code>value</code> property of enums, rather than the raw enum.
 This may be useful if you want to serialize <code>model.model_dump()</code> later. Defaults to <code>False</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you have an <code>Optional[Enum]</code> value that you set a default for, you need to use <code>validate_default=True</code>
+for said Field to ensure that the <code>use_enum_values</code> flag takes effect on the default, as extracting an
+enum's value occurs during validation, not serialization.</p>
+</div>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">SomeEnum</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">FOO</span> <span class="o">=</span> <span class="s1">&#39;foo&#39;</span>
+    <span class="n">BAR</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+    <span class="n">BAZ</span> <span class="o">=</span> <span class="s1">&#39;baz&#39;</span>
+
+
+<span class="k">class</span> <span class="nc">SomeModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">use_enum_values</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">some_enum</span><span class="p">:</span> <span class="n">SomeEnum</span>
+    <span class="n">another_enum</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SomeEnum</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">SomeEnum</span><span class="o">.</span><span class="n">FOO</span><span class="p">,</span> <span class="n">validate_default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="n">model1</span> <span class="o">=</span> <span class="n">SomeModel</span><span class="p">(</span><span class="n">some_enum</span><span class="o">=</span><span class="n">SomeEnum</span><span class="o">.</span><span class="n">BAR</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model1</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1"># {&#39;some_enum&#39;: &#39;bar&#39;, &#39;another_enum&#39;: &#39;foo&#39;}</span>
+
+<span class="n">model2</span> <span class="o">=</span> <span class="n">SomeModel</span><span class="p">(</span><span class="n">some_enum</span><span class="o">=</span><span class="n">SomeEnum</span><span class="o">.</span><span class="n">BAR</span><span class="p">,</span> <span class="n">another_enum</span><span class="o">=</span><span class="n">SomeEnum</span><span class="o">.</span><span class="n">BAZ</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;some_enum&#39;: &#39;bar&#39;, &#39;another_enum&#39;: &#39;baz&#39;}</span>
+</code></pre></div>
   </div>
 
 </div>
