@@ -3574,6 +3574,9 @@ Models possess the following methods and attributes:</p>
 </code></pre></div>
 <p>Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
 call <code>model_rebuild()</code> proactively when dealing with recursive models or generics.</p>
+<p>In V2, <code>model_rebuild()</code> replaced <code>update_forward_refs()</code> from V1. There are some slight differences with the new behavior.
+The biggest change is that when calling <code>model_rebuild</code> on the outermost model, it builds a core schema used for validation of the
+whole model (nested models and all), so all types at all levels need to be ready before <code>model_rebuild</code> is called.</p>
 <h2 id="arbitrary-class-instances">Arbitrary class instances<a class="headerlink" href="#arbitrary-class-instances" title="Permanent link">&para;</a></h2>
 <p>(Formerly known as "ORM Mode"/<code>from_orm</code>.)</p>
 <p>Pydantic models can also be created from arbitrary class instances by reading the instance attributes corresponding

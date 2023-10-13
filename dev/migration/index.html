@@ -3592,6 +3592,10 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
 <td><code>parse_obj()</code></td>
 <td><code>model_validate()</code></td>
 </tr>
+<tr>
+<td><code>update_forward_refs()</code></td>
+<td><code>model_rebuild()</code></td>
+</tr>
 </tbody>
 </table>
 <ul>
@@ -3636,7 +3640,8 @@ to help ease migration, but calling them will emit <code>DeprecationWarning</cod
   section of the model exporting docs.</li>
 <li><code>GetterDict</code> has been removed as it was just an implementation detail of <code>orm_mode</code>, which has been removed.</li>
 <li>In many cases, arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion.
-  This is notable in the case of passing mutable objects as arguments to a constructor. You can see an example + more detail <a href="https://docs.pydantic.dev/latest/concepts/models/#attribute-copies">here</a>.</li>
+  This is notable in the case of passing mutable objects as arguments to a constructor.
+  You can see an example + more detail <a href="https://docs.pydantic.dev/latest/concepts/models/#attribute-copies">here</a>.</li>
 </ul>
 <h3 id="changes-to-pydanticgenericsgenericmodel">Changes to <code>pydantic.generics.GenericModel</code><a class="headerlink" href="#changes-to-pydanticgenericsgenericmodel" title="Permanent link">&para;</a></h3>
 <p>The <code>pydantic.generics.GenericModel</code> class is no longer necessary, and has been removed. Instead, you can now

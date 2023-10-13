@@ -3370,7 +3370,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
           </td>
           <td>
             <div class="doc-md-description">
-              <p>An instance attribute with the names of fields explicitly specified during validation.</p>
+              <p>An instance attribute with the names of fields explicitly set.</p>
             </div>
           </td>
         </tr>
@@ -4671,7 +4671,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 
 <span class="sd">        __pydantic_extra__: An instance attribute with the values of extra fields from validation when</span>
 <span class="sd">            `model_config[&#39;extra&#39;] == &#39;allow&#39;`.</span>
-<span class="sd">        __pydantic_fields_set__: An instance attribute with the names of fields explicitly specified during validation.</span>
+<span class="sd">        __pydantic_fields_set__: An instance attribute with the names of fields explicitly set.</span>
 <span class="sd">        __pydantic_private__: Instance attribute with the values of private attributes set on the model instance.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -4775,7 +4775,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">model_fields_set</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the set of fields that have been set on this model instance.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the set of fields that have been explicitly set on this model instance.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A set of strings representing the fields that have been set,</span>
@@ -4885,7 +4885,7 @@ This replaces <code>Model.__validators__</code> and <code>Model.__root_validator
 <span class="sd">            include: A list of fields to include in the output.</span>
 <span class="sd">            exclude: A list of fields to exclude from the output.</span>
 <span class="sd">            by_alias: Whether to use the field&#39;s alias in the dictionary key if defined.</span>
-<span class="sd">            exclude_unset: Whether to exclude fields that are unset or None from the output.</span>
+<span class="sd">            exclude_unset: Whether to exclude fields that have not been explicitly set.</span>
 <span class="sd">            exclude_defaults: Whether to exclude fields that are set to their default value from the output.</span>
 <span class="sd">            exclude_none: Whether to exclude fields that have a value of `None` from the output.</span>
 <span class="sd">            round_trip: Whether to enable serialization and deserialization round-trip support.</span>
@@ -6117,7 +6117,7 @@ allow <code>self</code> as a field name.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Returns the set of fields that have been set on this model instance.</p>
+      <p>Returns the set of fields that have been explicitly set on this model instance.</p>
 
   <p><strong>Returns:</strong></p>
   <table>
@@ -6605,7 +6605,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude fields that are unset or None from the output.</p>
+              <p>Whether to exclude fields that have not been explicitly set.</p>
             </div>
           </td>
           <td>
@@ -6763,7 +6763,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p>
 <span class="sd">        include: A list of fields to include in the output.</span>
 <span class="sd">        exclude: A list of fields to exclude from the output.</span>
 <span class="sd">        by_alias: Whether to use the field&#39;s alias in the dictionary key if defined.</span>
-<span class="sd">        exclude_unset: Whether to exclude fields that are unset or None from the output.</span>
+<span class="sd">        exclude_unset: Whether to exclude fields that have not been explicitly set.</span>
 <span class="sd">        exclude_defaults: Whether to exclude fields that are set to their default value from the output.</span>
 <span class="sd">        exclude_none: Whether to exclude fields that have a value of `None` from the output.</span>
 <span class="sd">        round_trip: Whether to enable serialization and deserialization round-trip support.</span>
