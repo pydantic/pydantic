@@ -12,7 +12,7 @@ from ._internal import _config, _decorators, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
-from .fields import Field
+from .fields import Field, FieldInfo
 
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
@@ -143,8 +143,23 @@ def dataclass(
 
     if sys.version_info >= (3, 10):
         kwargs = dict(kw_only=kw_only, slots=slots)
+
+        def make_pydantic_fields_compatible(cls: type[Any]) -> None:
+            """Make sure that stdlib `dataclasses` understands `Field` kwargs like `kw_only`"""
+            for field_name in cls.__annotations__:
+                try:
+                    field_value = getattr(cls, field_name)
+                except AttributeError:
+                    # no default value has been set for this field
+                    continue
+                if isinstance(field_value, FieldInfo) and field_value.kw_only:
+                    setattr(cls, field_name, dataclasses.field(default=field_value, kw_only=True))
+
     else:
         kwargs = {}
+
+        def make_pydantic_fields_compatible(_):
+            return None
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.
@@ -184,6 +199,8 @@ def dataclass(
                 generic_base = Generic[cls.__parameters__]  # type: ignore
                 bases = bases + (generic_base,)
             cls = types.new_class(cls.__name__, bases)
+
+        make_pydantic_fields_compatible(cls)
 
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
