@@ -256,7 +256,7 @@ impl TZConstraint {
 
     pub(super) fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
         let py = schema.py();
-        let tz_constraint = match schema.get_item(intern!(py, "tz_constraint")) {
+        let tz_constraint = match schema.get_item(intern!(py, "tz_constraint"))? {
             Some(c) => c,
             None => return Ok(None),
         };

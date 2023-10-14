@@ -56,7 +56,7 @@ impl BuildValidator for DataclassArgsValidator {
 
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
-        let extras_validator = match (schema.get_item(intern!(py, "extras_schema")), &extra_behavior) {
+        let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
             (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(v, config, definitions)?)),
             (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
@@ -73,7 +73,7 @@ impl BuildValidator for DataclassArgsValidator {
             let py_name: &PyString = field.get_as_req(intern!(py, "name"))?;
             let name: String = py_name.extract()?;
 
-            let lookup_key = match field.get_item(intern!(py, "validation_alias")) {
+            let lookup_key = match field.get_item(intern!(py, "validation_alias"))? {
                 Some(alias) => {
                     let alt_alias = if populate_by_name { Some(name.as_str()) } else { None };
                     LookupKey::from_py(py, alias, alt_alias)?
@@ -584,7 +584,7 @@ impl Validator for DataclassValidator {
 
         if self.slots {
             let value = dc_dict
-                .get_item(field_name)
+                .get_item(field_name)?
                 .ok_or_else(|| PyKeyError::new_err(field_name.to_string()))?;
             force_setattr(py, obj, field_name, value)?;
         } else {

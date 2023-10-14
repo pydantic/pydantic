@@ -25,7 +25,7 @@ struct TimedeltaConstraints {
 }
 
 fn get_constraint(schema: &PyDict, key: &str) -> PyResult<Option<Duration>> {
-    match schema.get_item(key) {
+    match schema.get_item(key)? {
         Some(value) => {
             let either_timedelta = EitherTimedelta::try_from(value)?;
             Ok(Some(either_timedelta.to_duration()?))

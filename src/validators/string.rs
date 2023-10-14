@@ -189,10 +189,10 @@ impl StrConstrainedValidator {
         let to_upper: bool =
             schema_or_config(schema, config, intern!(py, "to_upper"), intern!(py, "str_to_upper"))?.unwrap_or(false);
 
-        let coerce_numbers_to_str = config
-            .and_then(|c| c.get_item("coerce_numbers_to_str"))
-            .and_then(|v| v.is_true().ok())
-            .unwrap_or(false);
+        let coerce_numbers_to_str = match config {
+            Some(c) => c.get_item("coerce_numbers_to_str")?.map_or(Ok(false), PyAny::is_true)?,
+            None => false,
+        };
 
         Ok(Self {
             strict: is_strict(schema, config)?,
