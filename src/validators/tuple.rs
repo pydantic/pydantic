@@ -113,7 +113,7 @@ impl BuildValidator for TuplePositionalValidator {
         Ok(Self {
             strict: is_strict(schema, config)?,
             items_validators: validators,
-            extras_validator: match schema.get_item(intern!(py, "extras_schema")) {
+            extras_validator: match schema.get_item(intern!(py, "extras_schema"))? {
                 Some(v) => Some(Box::new(build_validator(v, config, definitions)?)),
                 None => None,
             },

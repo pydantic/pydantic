@@ -13,7 +13,7 @@ use pyo3::types::{
     PyByteArray, PyBytes, PyDict, PyFloat, PyFrozenSet, PyIterator, PyList, PyMapping, PySequence, PySet, PyString,
     PyTuple,
 };
-use pyo3::{ffi, intern, AsPyPointer, PyNativeType};
+use pyo3::{ffi, intern, PyNativeType};
 
 #[cfg(not(PyPy))]
 use pyo3::types::PyFunction;

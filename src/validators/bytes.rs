@@ -24,8 +24,8 @@ impl BuildValidator for BytesValidator {
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let use_constrained = schema.get_item(intern!(py, "max_length")).is_some()
-            || schema.get_item(intern!(py, "min_length")).is_some();
+        let use_constrained = schema.get_item(intern!(py, "max_length"))?.is_some()
+            || schema.get_item(intern!(py, "min_length"))?.is_some();
         if use_constrained {
             BytesConstrainedValidator::build(schema, config)
         } else {

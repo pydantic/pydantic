@@ -50,7 +50,7 @@ fn field_from_context<'py, T: FromPyObject<'py>>(
 ) -> PyResult<T> {
     context
         .ok_or_else(|| py_error_type!(PyTypeError; "{}: '{}' required in context", enum_name, field_name))?
-        .get_item(field_name)
+        .get_item(field_name)?
         .ok_or_else(|| py_error_type!(PyTypeError; "{}: '{}' required in context", enum_name, field_name))?
         .extract::<T>()
         .map_err(|_| py_error_type!(PyTypeError; "{}: '{}' context value must be a {}", enum_name, field_name, type_name_fn()))

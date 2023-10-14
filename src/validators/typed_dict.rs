@@ -61,7 +61,7 @@ impl BuildValidator for TypedDictValidator {
 
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
-        let extras_validator = match (schema.get_item(intern!(py, "extras_schema")), &extra_behavior) {
+        let extras_validator = match (schema.get_item(intern!(py, "extras_schema"))?, &extra_behavior) {
             (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(v, config, definitions)?)),
             (Some(_), _) => return py_schema_err!("extras_schema can only be used if extra_behavior=allow"),
             (_, _) => None,
@@ -109,7 +109,7 @@ impl BuildValidator for TypedDictValidator {
                 }
             }
 
-            let lookup_key = match field_info.get_item(intern!(py, "validation_alias")) {
+            let lookup_key = match field_info.get_item(intern!(py, "validation_alias"))? {
                 Some(alias) => {
                     let alt_alias = if populate_by_name { Some(field_name) } else { None };
                     LookupKey::from_py(py, alias, alt_alias)?

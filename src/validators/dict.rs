@@ -35,11 +35,11 @@ impl BuildValidator for DictValidator {
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let key_validator = match schema.get_item(intern!(py, "keys_schema")) {
+        let key_validator = match schema.get_item(intern!(py, "keys_schema"))? {
             Some(schema) => Box::new(build_validator(schema, config, definitions)?),
             None => Box::new(AnyValidator::build(schema, config, definitions)?),
         };
-        let value_validator = match schema.get_item(intern!(py, "values_schema")) {
+        let value_validator = match schema.get_item(intern!(py, "values_schema"))? {
             Some(d) => Box::new(build_validator(d, config, definitions)?),
             None => Box::new(AnyValidator::build(schema, config, definitions)?),
         };

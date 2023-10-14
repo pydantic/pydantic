@@ -23,7 +23,7 @@ pub fn get_items_schema(
     config: Option<&PyDict>,
     definitions: &mut DefinitionsBuilder<CombinedValidator>,
 ) -> PyResult<Option<CombinedValidator>> {
-    match schema.get_item(pyo3::intern!(schema.py(), "items_schema")) {
+    match schema.get_item(pyo3::intern!(schema.py(), "items_schema"))? {
         Some(d) => {
             let validator = build_validator(d, config, definitions)?;
             match validator {

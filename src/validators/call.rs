@@ -32,7 +32,7 @@ impl BuildValidator for CallValidator {
         let arguments_schema: &PyAny = schema.get_as_req(intern!(py, "arguments_schema"))?;
         let arguments_validator = Box::new(build_validator(arguments_schema, config, definitions)?);
 
-        let return_schema = schema.get_item(intern!(py, "return_schema"));
+        let return_schema = schema.get_item(intern!(py, "return_schema"))?;
         let return_validator = match return_schema {
             Some(return_schema) => Some(Box::new(build_validator(return_schema, config, definitions)?)),
             None => None,

@@ -60,8 +60,8 @@ impl SchemaFilter<usize> {
         let py = schema.py();
         match schema.get_as::<&PyDict>(intern!(py, "serialization"))? {
             Some(ser) => {
-                let include = Self::build_set_ints(ser.get_item(intern!(py, "include")))?;
-                let exclude = Self::build_set_ints(ser.get_item(intern!(py, "exclude")))?;
+                let include = Self::build_set_ints(ser.get_item(intern!(py, "include"))?)?;
+                let exclude = Self::build_set_ints(ser.get_item(intern!(py, "exclude"))?)?;
                 Ok(Self { include, exclude })
             }
             None => Ok(SchemaFilter::default()),
@@ -325,8 +325,8 @@ fn is_ellipsis_like(v: &PyAny) -> bool {
 
 /// lookup the dict, for the key and "__all__" key, and merge them following the same rules as pydantic V1
 fn merge_all_value(dict: &PyDict, py_key: impl ToPyObject + Copy) -> PyResult<Option<&PyAny>> {
-    let op_item_value = dict.get_item(py_key);
-    let op_all_value = dict.get_item(intern!(dict.py(), "__all__"));
+    let op_item_value = dict.get_item(py_key)?;
+    let op_all_value = dict.get_item(intern!(dict.py(), "__all__"))?;
 
     match (op_item_value, op_all_value) {
         (Some(item_value), Some(all_value)) => {
@@ -365,7 +365,7 @@ fn merge_dicts<'py>(item_dict: &'py PyDict, all_value: &'py PyAny) -> PyResult<&
     let item_dict = item_dict.copy()?;
     if let Ok(all_dict) = all_value.downcast::<PyDict>() {
         for (all_key, all_value) in all_dict {
-            if let Some(item_value) = item_dict.get_item(all_key) {
+            if let Some(item_value) = item_dict.get_item(all_key)? {
                 if is_ellipsis_like(item_value) {
                     continue;
                 }

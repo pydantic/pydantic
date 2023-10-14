@@ -25,7 +25,7 @@ macro_rules! set_build {
             definitions: &mut DefinitionsBuilder<CombinedValidator>,
         ) -> PyResult<CombinedValidator> {
             let py = schema.py();
-            let item_validator = match schema.get_item(pyo3::intern!(schema.py(), "items_schema")) {
+            let item_validator = match schema.get_item(pyo3::intern!(schema.py(), "items_schema"))? {
                 Some(d) => Box::new(crate::validators::build_validator(d, config, definitions)?),
                 None => Box::new(crate::validators::any::AnyValidator::build(
                     schema,

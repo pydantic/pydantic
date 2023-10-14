@@ -126,7 +126,7 @@ impl<T: Debug> LiteralLookup<T> {
         }
         // must be an enum or bytes
         if let Some(expected_py) = &self.expected_py {
-            if let Some(v) = expected_py.as_ref(py).get_item(input) {
+            if let Some(v) = expected_py.as_ref(py).get_item(input)? {
                 let id: usize = v.extract().unwrap();
                 return Ok(Some((input, &self.values[id])));
             }

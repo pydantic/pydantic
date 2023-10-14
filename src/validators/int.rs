@@ -25,11 +25,11 @@ impl BuildValidator for IntValidator {
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let use_constrained = schema.get_item(intern!(py, "multiple_of")).is_some()
-            || schema.get_item(intern!(py, "le")).is_some()
-            || schema.get_item(intern!(py, "lt")).is_some()
-            || schema.get_item(intern!(py, "ge")).is_some()
-            || schema.get_item(intern!(py, "gt")).is_some();
+        let use_constrained = schema.get_item(intern!(py, "multiple_of"))?.is_some()
+            || schema.get_item(intern!(py, "le"))?.is_some()
+            || schema.get_item(intern!(py, "lt"))?.is_some()
+            || schema.get_item(intern!(py, "ge"))?.is_some()
+            || schema.get_item(intern!(py, "gt"))?.is_some();
         if use_constrained {
             ConstrainedIntValidator::build(schema, config)
         } else {

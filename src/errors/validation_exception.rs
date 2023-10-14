@@ -4,10 +4,10 @@ use std::str::from_utf8;
 
 use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
 use pyo3::ffi;
+use pyo3::intern;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-use pyo3::{intern, AsPyPointer};
 use serde::ser::{Error, SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 
@@ -445,7 +445,7 @@ impl TryFrom<&PyAny> for PyLineError {
         let py = value.py();
 
         let type_raw = dict
-            .get_item(intern!(py, "type"))
+            .get_item(intern!(py, "type"))?
             .ok_or_else(|| PyKeyError::new_err("type"))?;
 
         let error_type = if let Ok(type_str) = type_raw.downcast::<PyString>() {
@@ -459,9 +459,9 @@ impl TryFrom<&PyAny> for PyLineError {
             ));
         };
 
-        let location = Location::try_from(dict.get_item("loc"))?;
+        let location = Location::try_from(dict.get_item("loc")?)?;
 
-        let input_value = match dict.get_item("input") {
+        let input_value = match dict.get_item("input")? {
             Some(i) => i.into_py(py),
             None => py.None(),
         };

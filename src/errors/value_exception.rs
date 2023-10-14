@@ -72,7 +72,7 @@ impl PydanticCustomError {
         }
     }
 
-    #[getter(type)]
+    #[getter(r#type)]
     pub fn error_type(&self) -> String {
         self.error_type.clone()
     }
@@ -147,7 +147,7 @@ impl PydanticKnownError {
         Ok(Self { error_type })
     }
 
-    #[getter(type)]
+    #[getter(r#type)]
     pub fn error_type(&self) -> String {
         self.error_type.to_string()
     }
