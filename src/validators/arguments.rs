@@ -66,7 +66,7 @@ impl BuildValidator for ArgumentsValidator {
             let mut kw_lookup_key = None;
             let mut kwarg_key = None;
             if mode == "keyword_only" || mode == "positional_or_keyword" {
-                kw_lookup_key = match arg.get_item(intern!(py, "alias")) {
+                kw_lookup_key = match arg.get_item(intern!(py, "alias"))? {
                     Some(alias) => {
                         let alt_alias = if populate_by_name { Some(name.as_str()) } else { None };
                         Some(LookupKey::from_py(py, alias, alt_alias)?)
@@ -110,11 +110,11 @@ impl BuildValidator for ArgumentsValidator {
         Ok(Self {
             parameters,
             positional_params_count,
-            var_args_validator: match schema.get_item(intern!(py, "var_args_schema")) {
+            var_args_validator: match schema.get_item(intern!(py, "var_args_schema"))? {
                 Some(v) => Some(Box::new(build_validator(v, config, definitions)?)),
                 None => None,
             },
-            var_kwargs_validator: match schema.get_item(intern!(py, "var_kwargs_schema")) {
+            var_kwargs_validator: match schema.get_item(intern!(py, "var_kwargs_schema"))? {
                 Some(v) => Some(Box::new(build_validator(v, config, definitions)?)),
                 None => None,
             },

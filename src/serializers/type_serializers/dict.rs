@@ -43,8 +43,8 @@ impl BuildSerializer for DictSerializer {
         };
         let filter = match schema.get_as::<&PyDict>(intern!(py, "serialization"))? {
             Some(ser) => {
-                let include = ser.get_item(intern!(py, "include"));
-                let exclude = ser.get_item(intern!(py, "exclude"));
+                let include = ser.get_item(intern!(py, "include"))?;
+                let exclude = ser.get_item(intern!(py, "exclude"))?;
                 SchemaFilter::from_set_hash(include, exclude)?
             }
             None => SchemaFilter::default(),

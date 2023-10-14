@@ -130,7 +130,7 @@ impl SchemaValidator {
             _ => None,
         };
         let config_title = match config {
-            Some(c) => c.get_item("title"),
+            Some(c) => c.get_item("title")?,
             None => None,
         };
         let title = match config_title {

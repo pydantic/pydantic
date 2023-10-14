@@ -2,8 +2,8 @@ use std::cell::RefCell;
 use std::fmt;
 
 use pyo3::exceptions::PyValueError;
+use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::{intern, AsPyPointer};
 
 use serde::ser::Error;
 

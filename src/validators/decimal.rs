@@ -1,7 +1,7 @@
 use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::intern;
 use pyo3::sync::GILOnceCell;
 use pyo3::types::{IntoPyDict, PyDict, PyTuple, PyType};
-use pyo3::{intern, AsPyPointer};
 use pyo3::{prelude::*, PyTypeInfo};
 
 use crate::build_tools::{is_strict, schema_or_config_same};

@@ -20,7 +20,7 @@ impl<'py> SchemaDict<'py> for PyDict {
     where
         T: FromPyObject<'py>,
     {
-        match self.get_item(key) {
+        match self.get_item(key)? {
             Some(t) => Ok(Some(<T>::extract(t)?)),
             None => Ok(None),
         }
@@ -30,7 +30,7 @@ impl<'py> SchemaDict<'py> for PyDict {
     where
         T: FromPyObject<'py>,
     {
-        match self.get_item(key) {
+        match self.get_item(key)? {
             Some(t) => <T>::extract(t),
             None => py_err!(PyKeyError; "{}", key),
         }

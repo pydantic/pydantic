@@ -518,7 +518,7 @@ impl TaggedUnionValidator {
     ) -> ValResult<'data, &'data PyString> {
         let dict = input.strict_dict()?;
         let either_tag = match dict {
-            GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type")) {
+            GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type"))? {
                 Some(t) => t.strict_str()?,
                 None => return Err(self.tag_not_found(input)),
             },
@@ -529,7 +529,7 @@ impl TaggedUnionValidator {
         // custom logic to distinguish between different function and tuple schemas
         if tag == "function" || tag == "tuple" {
             let mode = match dict {
-                GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "mode")) {
+                GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "mode"))? {
                     Some(m) => Some(m.strict_str()?),
                     None => None,
                 },

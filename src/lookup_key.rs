@@ -111,7 +111,7 @@ impl LookupKey {
         dict: &'data PyDict,
     ) -> ValResult<'data, Option<(&'s LookupPath, &'data PyAny)>> {
         match self {
-            Self::Simple { py_key, path, .. } => match dict.get_item(py_key) {
+            Self::Simple { py_key, path, .. } => match dict.get_item(py_key)? {
                 Some(value) => Ok(Some((path, value))),
                 None => Ok(None),
             },
@@ -121,9 +121,9 @@ impl LookupKey {
                 py_key2,
                 path2,
                 ..
-            } => match dict.get_item(py_key1) {
+            } => match dict.get_item(py_key1)? {
                 Some(value) => Ok(Some((path1, value))),
-                None => match dict.get_item(py_key2) {
+                None => match dict.get_item(py_key2)? {
                     Some(value) => Ok(Some((path2, value))),
                     None => Ok(None),
                 },
