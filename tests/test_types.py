@@ -5953,6 +5953,18 @@ def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
         Model.model_validate_json('{"value": 42}')
 
 
+@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
+def test_coerce_numbers_to_str_raises_for_bool() -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(strict=True, coerce_numbers_to_str=True)
+        value: str
+
+    with pytest.raises(ValidationError, match='value'):
+        Model.model_validate({'value': True})
+    with pytest.raises(ValidationError, match='value'):
+        Model.model_validate_json('{"value": true}')
+
+
 @pytest.mark.parametrize(
     ('number', 'expected_str'),
     [
