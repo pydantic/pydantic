@@ -145,7 +145,12 @@ def dataclass(
         kwargs = dict(kw_only=kw_only, slots=slots)
 
         def make_pydantic_fields_compatible(cls: type[Any]) -> None:
-            """Make sure that stdlib `dataclasses` understands `Field` kwargs like `kw_only`"""
+            """Make sure that stdlib `dataclasses` understands `Field` kwargs like `kw_only`
+            To do that, we simply change
+              `x: int = pydantic.Field(..., kw_only=True)`
+            into
+              `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
+            """
             for field_name in cls.__annotations__:
                 try:
                     field_value = getattr(cls, field_name)
