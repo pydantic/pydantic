@@ -105,6 +105,13 @@ def test_bytes_base64():
     assert base64.b64decode(s.to_python(b'foo bar', mode='json').encode()) == b'foo bar'
 
 
+def test_bytes_hex():
+    s = SchemaSerializer(core_schema.bytes_schema(), {'ser_json_bytes': 'hex'})
+    assert s.to_python(b'\xff\xff') == b'\xff\xff'
+    assert s.to_json(b'\xff\xff') == b'"ffff"'
+    assert s.to_python(b'\xff\xff', mode='json') == 'ffff' == b'\xff\xff'.hex()
+
+
 def test_bytes_base64_dict_key():
     s = SchemaSerializer(core_schema.dict_schema(core_schema.bytes_schema()), {'ser_json_bytes': 'base64'})
 

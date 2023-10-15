@@ -129,6 +129,7 @@ pub(crate) enum BytesMode {
     #[default]
     Utf8,
     Base64,
+    Hex,
 }
 
 impl FromStr for BytesMode {
@@ -138,7 +139,11 @@ impl FromStr for BytesMode {
         match s {
             "utf8" => Ok(Self::Utf8),
             "base64" => Ok(Self::Base64),
-            s => py_schema_err!("Invalid bytes serialization mode: `{}`, expected `utf8` or `base64`", s),
+            "hex" => Ok(Self::Hex),
+            s => py_schema_err!(
+                "Invalid bytes serialization mode: `{}`, expected `utf8`, `base64` or `hex`",
+                s
+            ),
         }
     }
 }
@@ -158,6 +163,9 @@ impl BytesMode {
                 .map_err(|err| utf8_py_error(py, err, bytes))
                 .map(Cow::Borrowed),
             Self::Base64 => Ok(Cow::Owned(base64::engine::general_purpose::URL_SAFE.encode(bytes))),
+            Self::Hex => Ok(Cow::Owned(
+                bytes.iter().fold(String::new(), |acc, b| acc + &format!("{b:02x}")),
+            )),
         }
     }
 
@@ -168,6 +176,9 @@ impl BytesMode {
                 Err(e) => Err(Error::custom(e.to_string())),
             },
             Self::Base64 => serializer.serialize_str(&base64::engine::general_purpose::URL_SAFE.encode(bytes)),
+            Self::Hex => {
+                serializer.serialize_str(&bytes.iter().fold(String::new(), |acc, b| acc + &format!("{b:02x}")))
+            }
         }
     }
 }
