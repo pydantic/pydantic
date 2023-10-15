@@ -590,6 +590,16 @@ def test_frozen_with_unhashable_fields_are_not_hashable():
     assert "unhashable type: 'list'" in exc_info.value.args[0]
 
 
+def test_hash_function_empty_model():
+    class TestModel(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+    m = TestModel()
+    m2 = TestModel()
+    assert m == m2
+    assert hash(m) == hash(m2)
+
+
 def test_hash_function_give_different_result_for_different_object():
     class TestModel(BaseModel):
         model_config = ConfigDict(frozen=True)
