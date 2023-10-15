@@ -602,13 +602,30 @@ def test_hash_function_give_different_result_for_different_object():
     assert hash(m) == hash(m2)
     assert hash(m) != hash(m3)
 
-    # Redefined `TestModel`
+
+def test_hash_function_works_when_instance_dict_modified():
     class TestModel(BaseModel):
         model_config = ConfigDict(frozen=True)
-        a: int = 10
 
-    m4 = TestModel()
-    assert hash(m) != hash(m4)
+        a: int
+        b: int
+
+    m = TestModel(a=1, b=2)
+    h = hash(m)
+
+    # Test edge cases where __dict__ is modified
+    # @functools.cached_property can add keys to __dict__, these should be ignored.
+    m.__dict__['c'] = 1
+    assert hash(m) == h
+
+    # Order of keys can be changed, e.g. with the deprecated copy method, which shouldn't matter.
+    m.__dict__ = {'b': 2, 'a': 1}
+    assert hash(m) == h
+
+    # Keys can be missing, e.g. when using the deprecated copy method.
+    # This should change the hash, and more importantly hashing shouldn't raise a KeyError.
+    del m.__dict__['a']
+    assert h != hash(m)
 
 
 def test_hash_method_is_inherited_for_frozen_models():
