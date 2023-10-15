@@ -101,7 +101,7 @@ class CoreConfig(TypedDict, total=False):
     allow_inf_nan: bool  # default: True
     # the config options are used to customise serialization to JSON
     ser_json_timedelta: Literal['iso8601', 'float']  # default: 'iso8601'
-    ser_json_bytes: Literal['utf8', 'base64']  # default: 'utf8'
+    ser_json_bytes: Literal['utf8', 'base64', 'hex']  # default: 'utf8'
     # used to hide input data from ValidationError repr
     hide_input_in_errors: bool
     validation_error_cause: bool  # default: False
