@@ -2252,7 +2252,7 @@ def test_model_parametrized_name_not_generic():
 def test_model_equality_generics():
     T = TypeVar('T')
 
-    class GenericModel(BaseModel, Generic[T]):
+    class GenericModel(BaseModel, Generic[T], frozen=True):
         x: T
 
     class ConcreteModel(BaseModel):
@@ -2265,20 +2265,22 @@ def test_model_equality_generics():
     assert GenericModel(x=1) != GenericModel(x=2)
 
     S = TypeVar('S')
-    assert GenericModel(x=1) == GenericModel(x=1)
-    assert GenericModel(x=1) == GenericModel[S](x=1)
-    assert GenericModel(x=1) == GenericModel[Any](x=1)
-    assert GenericModel(x=1) == GenericModel[float](x=1)
-
-    assert GenericModel[int](x=1) == GenericModel[int](x=1)
-    assert GenericModel[int](x=1) == GenericModel[S](x=1)
-    assert GenericModel[int](x=1) == GenericModel[Any](x=1)
-    assert GenericModel[int](x=1) == GenericModel[float](x=1)
-
-    # Test that it works with nesting as well
-    nested_any = GenericModel[GenericModel[Any]](x=GenericModel[Any](x=1))
-    nested_int = GenericModel[GenericModel[int]](x=GenericModel[int](x=1))
-    assert nested_any == nested_int
+    models = [
+        GenericModel(x=1),
+        GenericModel[S](x=1),
+        GenericModel[Any](x=1),
+        GenericModel[int](x=1),
+        GenericModel[float](x=1),
+    ]
+    for m1 in models:
+        for m2 in models:
+            # Test that it works with nesting as well
+            m3 = GenericModel[type(m1)](x=m1)
+            m4 = GenericModel[type(m2)](x=m2)
+            assert m1 == m2
+            assert m3 == m4
+            assert hash(m1) == hash(m2)
+            assert hash(m3) == hash(m4)
 
 
 def test_model_validate_strict() -> None:
