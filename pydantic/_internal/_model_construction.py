@@ -396,13 +396,34 @@ def set_default_hash_func(cls: type[BaseModel], bases: tuple[type[Any], ...]) ->
         # If `__hash__` is None _or_ `object.__hash__`, we generate a hash function.
         # It will be `None` if not overridden from BaseModel, but may be `object.__hash__` if there is another
         # parent class earlier in the bases which doesn't override `__hash__` (e.g. `typing.Generic`).
+        cls.__hash__ = make_hash_func(cls)  # type: ignore
 
-        getter = operator.itemgetter(*cls.model_fields.keys()) if cls.model_fields else lambda _: None
 
-        def hash_func(self: Any) -> int:
-            return hash(self.__class__) + hash(getter(self.__dict__))
+def make_hash_func(cls: type[BaseModel]) -> Callable[[BaseModel], int]:
+    if not cls.model_fields:
+        return lambda _: 0
 
-        cls.__hash__ = hash_func  # type: ignore
+    getter = operator.itemgetter(*cls.model_fields.keys())
+
+    def hash_func(self: Any) -> int:
+        try:
+            return hash(getter(self.__dict__))
+        except KeyError:
+            # In rare cases (such as when using the deprecated copy method), the __dict__ may not contain
+            # all model fields, which is how we can get here.
+            # getter(self.__dict__) is much faster than any 'safe' method that accounts for missing keys,
+            # and wrapping it in a `try` doesn't slow things down much in the common case.
+            return hash(getter(FallbackDict(self.__dict__)))  # type: ignore
+
+    return hash_func
+
+
+class FallbackDict:
+    def __init__(self, inner):
+        self.inner = inner
+
+    def __getitem__(self, key):
+        return self.inner.get(key)
 
 
 def set_model_fields(
