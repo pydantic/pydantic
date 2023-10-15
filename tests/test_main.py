@@ -628,6 +628,21 @@ def test_hash_function_works_when_instance_dict_modified():
     assert h != hash(m)
 
 
+def test_default_hash_function_overrides_default_hash_function():
+    class A(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+        x: int
+
+    class B(A):
+        model_config = ConfigDict(frozen=True)
+
+        y: int
+
+    assert A.__hash__ != B.__hash__
+    assert hash(A(x=1)) != hash(B(x=1, y=2)) != hash(B(x=1, y=3))
+
+
 def test_hash_method_is_inherited_for_frozen_models():
     from functools import lru_cache
 

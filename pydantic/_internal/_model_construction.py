@@ -392,18 +392,19 @@ def inspect_namespace(  # noqa C901
 
 def set_default_hash_func(cls: type[BaseModel], bases: tuple[type[Any], ...]) -> None:
     base_hash_func = get_attribute_from_bases(bases, '__hash__')
-    if base_hash_func in {None, object.__hash__}:
-        # If `__hash__` is None _or_ `object.__hash__`, we generate a hash function.
-        # It will be `None` if not overridden from BaseModel, but may be `object.__hash__` if there is another
+    new_hash_func = make_hash_func(cls)
+    if base_hash_func in {None, object.__hash__} or getattr(base_hash_func, '__code__', None) == new_hash_func.__code__:
+        # If `__hash__` is some default, we generate a hash function.
+        # It will be `None` if not overridden from BaseModel.
+        # It may be `object.__hash__` if there is another
         # parent class earlier in the bases which doesn't override `__hash__` (e.g. `typing.Generic`).
-        cls.__hash__ = make_hash_func(cls)  # type: ignore
+        # It may be a value set by `set_default_hash_func` if `cls` is a subclass of another frozen model.
+        # In the last case we still need a new hash function to account for new `model_fields`.
+        cls.__hash__ = new_hash_func
 
 
-def make_hash_func(cls: type[BaseModel]) -> Callable[[BaseModel], int]:
-    if not cls.model_fields:
-        return lambda _: 0
-
-    getter = operator.itemgetter(*cls.model_fields.keys())
+def make_hash_func(cls: type[BaseModel]) -> Any:
+    getter = operator.itemgetter(*cls.model_fields.keys()) if cls.model_fields else lambda _: 0
 
     def hash_func(self: Any) -> int:
         try:
