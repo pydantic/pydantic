@@ -246,10 +246,11 @@ impl<'a> Input<'a> for PyAny {
                 Err(_) => return Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
             };
             Ok(s.into())
-        } else if coerce_numbers_to_str && {
+        } else if coerce_numbers_to_str && !PyBool::is_exact_type_of(self) && {
             let py = self.py();
             let decimal_type: Py<PyType> = get_decimal_type(py);
 
+            // only allow int, float, and decimal (not bool)
             self.is_instance_of::<PyInt>()
                 || self.is_instance_of::<PyFloat>()
                 || self.is_instance(decimal_type.as_ref(py)).unwrap_or_default()
