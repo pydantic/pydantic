@@ -103,6 +103,7 @@ from pydantic import (
     field_validator,
     validate_call,
 )
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
 from pydantic.types import AllowInfNan, GetPydanticSchema, ImportString, Strict, StringConstraints
@@ -5951,6 +5952,29 @@ def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
         Model.model_validate({'value': 42})
     with pytest.raises(ValidationError, match='value'):
         Model.model_validate_json('{"value": 42}')
+
+
+@pytest.mark.parametrize('value_param', [True, False])
+@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
+def test_coerce_numbers_to_str_raises_for_bool(value_param: bool) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=True)
+        value: str
+
+    with pytest.raises(ValidationError, match='value'):
+        Model.model_validate({'value': value_param})
+    with pytest.raises(ValidationError, match='value'):
+        if value_param is True:
+            Model.model_validate_json('{"value": true}')
+        elif value_param is False:
+            Model.model_validate_json('{"value": false}')
+
+    @pydantic_dataclass(config=ConfigDict(coerce_numbers_to_str=True))
+    class Model:
+        value: str
+
+    with pytest.raises(ValidationError, match='value'):
+        Model(value=value_param)
 
 
 @pytest.mark.parametrize(
