@@ -3672,12 +3672,11 @@ In Pydantic V2, this behavior has changed to return <code>None</code> when no al
 <li><code>unique_items</code></li>
 <li><code>allow_mutation</code> (use <code>frozen</code> instead)</li>
 <li><code>regex</code> (use <code>pattern</code> instead)</li>
-<li>
-<p><code>final</code> (use the <code>typing.Final</code> type hint instead)</p>
-</li>
-<li>
-<p>[TODO: Need to document any other backwards-incompatible changes to <code>pydantic.Field</code>]</p>
-</li>
+<li><code>final</code> (use the <code>typing.Final</code> type hint instead)</li>
+</ul>
+<p>Field constraints are no longer automatically pushed down to the parameters of generics.  For example, you can no longer validate every element of a list matches a regex by providing <code>my_list: list[str] = Field(pattern=".*")</code>.  Instead, use <code>typing.Annotated</code> to provide an annotation on the <code>str</code> itself: <code>my_list: list[Annotated[str, Field(pattern=".*")]]</code></p>
+<ul>
+<li>[TODO: Need to document any other backwards-incompatible changes to <code>pydantic.Field</code>]</li>
 </ul>
 <h3 id="changes-to-dataclasses">Changes to dataclasses<a class="headerlink" href="#changes-to-dataclasses" title="Permanent link">&para;</a></h3>
 <p>Pydantic <a href="../concepts/dataclasses/">dataclasses</a> continue to be useful for enabling the data validation on standard
