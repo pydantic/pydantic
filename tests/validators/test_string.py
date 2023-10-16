@@ -277,6 +277,16 @@ def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
         v.validate_json('42')
 
 
+def test_coerce_numbers_to_str_raises_for_bool() -> None:
+    config = core_schema.CoreConfig(coerce_numbers_to_str=True)
+
+    v = SchemaValidator(core_schema.str_schema(), config)
+    with pytest.raises(ValidationError):
+        v.validate_python(True)
+    with pytest.raises(ValidationError):
+        v.validate_json(False)
+
+
 @pytest.mark.parametrize(
     ('number', 'expected_str'),
     [
