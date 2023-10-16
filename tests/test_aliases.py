@@ -216,6 +216,64 @@ def test_alias_generator_on_child():
     assert [f.alias for f in Child.model_fields.values()] == ['abc', 'Y', 'Z']
 
 
+def test_alias_generator_used_by_default():
+    class Model(BaseModel):
+        model_config = ConfigDict(alias_generator=lambda x: x.upper())
+
+        a: str
+        b: str = Field(..., alias='b_alias')
+        c: str = Field(..., validation_alias='c_val_alias')
+        d: str = Field(..., serialization_alias='d_ser_alias')
+        e: str = Field(..., alias='e_alias', validation_alias='e_val_alias')
+        f: str = Field(..., alias='f_alias', serialization_alias='f_ser_alias')
+        g: str = Field(..., alias='g_alias', validation_alias='g_val_alias', serialization_alias='g_ser_alias')
+
+    assert {
+        name: {k: getattr(f, k) for k in ('alias', 'validation_alias', 'serialization_alias')}
+        for name, f in Model.model_fields.items()
+    } == {
+        # Validation/serialization aliases should be:
+        # 1. The specific alias, if specified, or
+        # 2. The alias, if specified, or
+        # 3. The generated alias (i.e. the field name in upper case)
+        'a': {
+            'alias': 'A',
+            'validation_alias': 'A',
+            'serialization_alias': 'A',
+        },
+        'b': {
+            'alias': 'b_alias',
+            'validation_alias': 'b_alias',
+            'serialization_alias': 'b_alias',
+        },
+        'c': {
+            'alias': 'C',
+            'validation_alias': 'c_val_alias',
+            'serialization_alias': 'C',
+        },
+        'd': {
+            'alias': 'D',
+            'validation_alias': 'D',
+            'serialization_alias': 'd_ser_alias',
+        },
+        'e': {
+            'alias': 'e_alias',
+            'validation_alias': 'e_val_alias',
+            'serialization_alias': 'e_alias',
+        },
+        'f': {
+            'alias': 'f_alias',
+            'validation_alias': 'f_alias',
+            'serialization_alias': 'f_ser_alias',
+        },
+        'g': {
+            'alias': 'g_alias',
+            'validation_alias': 'g_val_alias',
+            'serialization_alias': 'g_ser_alias',
+        },
+    }
+
+
 def test_low_priority_alias():
     class Parent(BaseModel):
         w: bool = Field(..., alias='w_', validation_alias='w_val_alias', serialization_alias='w_ser_alias')

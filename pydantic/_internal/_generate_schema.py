@@ -996,14 +996,22 @@ class GenerateSchema:
 
         # apply alias generator
         alias_generator = self._config_wrapper.alias_generator
-        if alias_generator and (field_info.alias_priority is None or field_info.alias_priority <= 1):
+        if alias_generator and (
+            field_info.alias_priority is None or field_info.alias_priority <= 1 or field_info.alias is None
+        ):
             alias = alias_generator(name)
             if not isinstance(alias, str):
                 raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+            if field_info.alias is None:
+                if field_info.serialization_alias is None:
+                    field_info.serialization_alias = alias
+                if field_info.validation_alias is None:
+                    field_info.validation_alias = alias
+            else:
+                field_info.serialization_alias = alias
+                field_info.validation_alias = alias
+                field_info.alias_priority = 1
             field_info.alias = alias
-            field_info.validation_alias = alias
-            field_info.serialization_alias = alias
-            field_info.alias_priority = 1
 
         if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
             validation_alias = field_info.validation_alias.convert_to_aliases()
