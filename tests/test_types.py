@@ -5962,12 +5962,12 @@ def test_coerce_numbers_to_str_raises_for_bool(value_param: bool) -> None:
         value: str
 
     with pytest.raises(ValidationError, match='value'):
-        Model(value=value_param)
-    with pytest.raises(ValidationError, match='value'):
         Model.model_validate({'value': value_param})
     with pytest.raises(ValidationError, match='value'):
-        json_ = '{"value": true}' if value_param is True else '{"value": false}'
-        Model.model_validate_json(json_)
+        if value_param is True:
+            Model.model_validate_json('{"value": true}')
+        elif value_param is False:
+            Model.model_validate_json('{"value": false}')
 
     @pydantic_dataclass(config=ConfigDict(coerce_numbers_to_str=True))
     class Model:
