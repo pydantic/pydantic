@@ -1,12 +1,14 @@
 """Logic for creating models."""
 from __future__ import annotations as _annotations
 
+import enum
+import operator
 import sys
 import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Generic, Mapping, TypeVar
 
 import pydantic_core
 import typing_extensions
@@ -55,6 +57,42 @@ else:
 __all__ = 'BaseModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
+
+_K = TypeVar('_K')
+_V = TypeVar('_V')
+
+
+# We need a sentinel value for missing fields when comparing models
+# Models are equals if-and-only-if they miss the same fields, and since None is a legitimate value
+# we can't default to None
+# We use the single-value enum trick to allow correct typing when using a sentinel
+class _SentinelType(enum.Enum):
+    SENTINEL = enum.auto()
+
+
+_SENTINEL = _SentinelType.SENTINEL
+
+
+class _SafeGetItemProxy(Generic[_K, _V]):
+    """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
+
+    This makes is safe to use in `operator.itemgetter` when some keys may be missing
+    """
+
+    wrapped: Mapping[_K, _V]
+
+    def __init__(self, __mapping: Mapping[_K, _V]) -> None:
+        self.wrapped = __mapping
+
+    def __getitem__(self, __key: _K) -> _SentinelType | _V:
+        return self.wrapped.get(__key, _SENTINEL)
+
+    # required to pass the proxy to operator.itemgetter instances
+    def __contains__(self, __key: _K) -> bool:
+        return self.wrapped.__contains__(__key)
+
+    def __repr__(self) -> str:
+        return f'{type(self).__name__}({self.wrapped!r})'
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
@@ -868,12 +906,41 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
             other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
 
-            return (
+            # Perform common checks first
+            if not (
                 self_type == other_type
-                and self.__dict__ == other.__dict__
                 and self.__pydantic_private__ == other.__pydantic_private__
                 and self.__pydantic_extra__ == other.__pydantic_extra__
-            )
+            ):
+                return False
+
+            # Fix GH-7444 by comparing only pydantic fields
+            # We provide a fast-path for performance: __dict__ comparison is *much* faster
+            # See tests/benchmarks/test_basemodel_eq_performances.py and GH-7825 for benchmarks
+            if self.__dict__ == other.__dict__:
+                # If the check above passes, then pydantic fields are equal, we can return early
+                return True
+            else:
+                # Else, we need to perform a more detailed, costlier comparison
+                # We use operator.itemgetter because it is much faster than dict comprehensions
+                # NOTE: Contratry to standard python class and instances, when the Model class has
+                #       attribute default values and the model instance doesn't has a corresponding
+                #       attribute, accessing the missing attribute raises an error in
+                #       __getattr__ instance of returning the class attribute
+                #      Thus, using operator.itemgetter() instead of operator.attrgetter() is valid
+                model_fields = type(self).model_fields.keys()
+                getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _SENTINEL
+                try:
+                    return getter(self.__dict__) == getter(other.__dict__)
+                except KeyError:
+                    # In rare cases (such as when using the deprecated BaseModel.copy() method),
+                    # the __dict__ may not contain all model fields, which is how we can get here.
+                    # getter(self.__dict__) is much faster than any 'safe' method that accounts
+                    # for missing keys, and wrapping it in a `try` doesn't slow things down much
+                    # in the common case.
+                    self_fields_proxy = _SafeGetItemProxy(self.__dict__)
+                    other_fields_proxy = _SafeGetItemProxy(other.__dict__)
+                    return getter(self_fields_proxy) == getter(other_fields_proxy)
         else:
             return NotImplemented  # delegate to the other item in the comparison
 
