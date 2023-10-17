@@ -3,7 +3,7 @@ sources = pydantic tests docs/plugins
 
 .PHONY: .pdm  ## Check that PDM is installed
 .pdm:
-	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/\#installation'
+	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/#installation'
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
 .pre-commit:
