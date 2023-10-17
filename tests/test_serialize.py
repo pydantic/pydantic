@@ -1104,7 +1104,6 @@ def test_forward_ref_for_classmethod_computed_fields():
     assert Model().model_dump() == {'two_y': 8}
 
 
-@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
 def test_enum_as_dict_key() -> None:
     # See https://github.com/pydantic/pydantic/issues/7639
     class MyEnum(Enum):
