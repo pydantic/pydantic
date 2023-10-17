@@ -1833,6 +1833,25 @@ except ValidationError as exc:
     #> 'unexpected_keyword_argument'
 ```
 
+It is also raised when using pydantic.dataclasses and `extra=forbid`:
+
+```py
+from pydantic import TypeAdapter, ValidationError
+from pydantic.dataclasses import dataclass
+
+
+@dataclass(config={'extra': 'forbid'})
+class Foo:
+    bar: int
+
+
+try:
+    TypeAdapter(Foo).validate_python({'bar': 1, 'foobar': 2})
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'unexpected_keyword_argument'
+```
+
 ## `unexpected_positional_argument`
 
 This error is raised when you provide a positional value for a keyword-only
