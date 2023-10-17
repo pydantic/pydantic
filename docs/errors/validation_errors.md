@@ -1848,7 +1848,7 @@ class Foo:
 try:
     TypeAdapter(Foo).validate_python({'bar': 1, 'foobar': 2})
 except ValidationError as exc:
-    print(repr(exc.errors()[1]['type']))
+    print(repr(exc.errors()[0]['type']))
     #> 'unexpected_keyword_argument'
 ```
 
