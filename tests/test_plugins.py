@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import contextlib
-from typing import Any, Generator
+from functools import partial
+from typing import Any, Generator, List
 
 from pydantic_core import ValidationError
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, TypeAdapter, create_model, dataclasses, field_validator, validate_call
 from pydantic.plugin import (
     PydanticPluginProtocol,
     ValidateJsonHandlerProtocol,
@@ -43,9 +44,10 @@ def test_on_validate_json_on_success() -> None:
             assert isinstance(result, Model)
 
     class CustomPlugin(PydanticPluginProtocol):
-        def new_schema_validator(self, schema, config, plugin_settings):
+        def new_schema_validator(self, schema, path, config, plugin_settings):
             assert config == {'title': 'Model'}
             assert plugin_settings == {'observe': 'all'}
+            assert path == 'tests.test_plugins:Model'
             return None, CustomOnValidateJson(), None
 
     plugin = CustomPlugin()
@@ -85,7 +87,7 @@ def test_on_validate_json_on_error() -> None:
             ]
 
     class Plugin(PydanticPluginProtocol):
-        def new_schema_validator(self, schema, config, plugin_settings):
+        def new_schema_validator(self, schema, path, config, plugin_settings):
             assert config == {'title': 'Model'}
             assert plugin_settings == {'observe': 'all'}
             return None, CustomOnValidateJson(), None
@@ -121,7 +123,7 @@ def test_on_validate_python_on_success() -> None:
             assert isinstance(result, Model)
 
     class Plugin:
-        def new_schema_validator(self, schema, config, plugin_settings):
+        def new_schema_validator(self, schema, path, config, plugin_settings):
             assert config == {'title': 'Model'}
             assert plugin_settings == {'observe': 'all'}
             return CustomOnValidatePython(), None, None
@@ -164,7 +166,7 @@ def test_on_validate_python_on_error() -> None:
             ]
 
     class Plugin(PydanticPluginProtocol):
-        def new_schema_validator(self, schema, config, plugin_settings):
+        def new_schema_validator(self, schema, path, config, plugin_settings):
             assert config == {'title': 'Model'}
             assert plugin_settings == {'observe': 'all'}
             return CustomOnValidatePython(), None, None
@@ -205,7 +207,7 @@ def test_stateful_plugin() -> None:
             stack.pop()
 
     class Plugin(PydanticPluginProtocol):
-        def new_schema_validator(self, schema, config, plugin_settings):
+        def new_schema_validator(self, schema, path, config, plugin_settings):
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin()
@@ -268,7 +270,7 @@ def test_all_handlers():
             log.append(f'strings error error={error}')
 
     class Plugin(PydanticPluginProtocol):
-        def new_schema_validator(self, schema, config, plugin_settings):
+        def new_schema_validator(self, schema, path, config, plugin_settings):
             return Python(), Json(), Strings()
 
     plugin = Plugin()
@@ -294,3 +296,79 @@ def test_all_handlers():
             "strings enter input={'a': '3'} kwargs={'strict': True, 'context': {'c': 3}}",
             'strings success result=a=3',
         ]
+
+
+def test_plugin_path_dataclass() -> None:
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        pass
+
+    class Plugin:
+        def new_schema_validator(self, schema, path, config, plugin_settings):
+            assert path == 'tests.test_plugins:Bar'
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin()
+    with install_plugin(plugin):
+
+        @dataclasses.dataclass
+        class Bar:
+            a: int
+
+
+def test_plugin_path_type_adapter() -> None:
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        pass
+
+    class Plugin:
+        def new_schema_validator(self, schema, path, config, plugin_settings):
+            assert path == 'tests.test_plugins:typing.List[str]'
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin()
+    with install_plugin(plugin):
+        TypeAdapter(List[str])
+
+
+def test_plugin_path_validate_call() -> None:
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        pass
+
+    class Plugin1:
+        def new_schema_validator(self, schema, path, config, plugin_settings):
+            assert path == 'tests.test_plugins:foo'
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin1()
+    with install_plugin(plugin):
+
+        @validate_call()
+        def foo(a: int):
+            return a
+
+    class Plugin2:
+        def new_schema_validator(self, schema, path, config, plugin_settings):
+            assert path == 'tests.test_plugins:partial(my_wrapped_function)'
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin2()
+    with install_plugin(plugin):
+
+        def my_wrapped_function(a: int, b: int, c: int):
+            return a + b + c
+
+        my_partial_function = partial(my_wrapped_function, c=3)
+        validate_call(my_partial_function)
+
+
+def test_plugin_path_create_model() -> None:
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        pass
+
+    class Plugin:
+        def new_schema_validator(self, schema, path, config, plugin_settings):
+            assert path == 'tests.test_plugins:FooModel'
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin()
+    with install_plugin(plugin):
+        create_model('FooModel', foo=(str, ...), bar=(int, 123))

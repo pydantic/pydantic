@@ -264,7 +264,10 @@ class TypeAdapter(Generic[T]):
         try:
             validator = _getattr_no_parents(type, '__pydantic_validator__')
         except AttributeError:
-            validator = create_schema_validator(core_schema, core_config, config_wrapper.plugin_settings)
+            f = sys._getframe(1)
+            validator = create_schema_validator(
+                core_schema, f'{f.f_globals["__name__"]}:{type}', core_config, config_wrapper.plugin_settings
+            )
 
         serializer: SchemaSerializer
         try:

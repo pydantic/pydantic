@@ -172,7 +172,7 @@ def complete_dataclass(
 
     cls.__pydantic_core_schema__ = schema
     cls.__pydantic_validator__ = validator = create_schema_validator(
-        schema, core_config, config_wrapper.plugin_settings
+        schema, f'{cls.__module__}:{cls.__name__}', core_config, config_wrapper.plugin_settings
     )
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
 

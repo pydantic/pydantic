@@ -1431,6 +1431,7 @@ def create_model(
     if resolved_bases is not __base__:
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
+    kwds['is_dynamic_model'] = True
     return meta(__model_name, resolved_bases, namespace, __pydantic_reset_parent_namespace__=False, **kwds)
 
 
