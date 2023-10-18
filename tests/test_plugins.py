@@ -372,3 +372,34 @@ def test_plugin_path_create_model() -> None:
     plugin = Plugin()
     with install_plugin(plugin):
         create_model('FooModel', foo=(str, ...), bar=(int, 123))
+
+
+def test_plugin_path_complex() -> None:
+    paths: list[str] = []
+
+    class CustomOnValidatePython(ValidatePythonHandlerProtocol):
+        pass
+
+    class Plugin:
+        def new_schema_validator(self, schema, path, config, plugin_settings):
+            paths.append(path)
+            return CustomOnValidatePython(), None, None
+
+    plugin = Plugin()
+    with install_plugin(plugin):
+
+        def foo():
+            class Model(BaseModel):
+                pass
+
+        def bar():
+            class Model(BaseModel):
+                pass
+
+        foo()
+        bar()
+
+    assert paths == [
+        'tests.test_plugins:test_plugin_path_complex.<locals>.foo.<locals>.Model',
+        'tests.test_plugins:test_plugin_path_complex.<locals>.bar.<locals>.Model',
+    ]
