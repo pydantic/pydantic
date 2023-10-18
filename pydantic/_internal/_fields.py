@@ -274,7 +274,7 @@ def collect_dataclass_fields(
 
 
 def is_valid_field_name(name: str) -> bool:
-    return not name.startswith('_')
+    return name == '__doc__' or not name.startswith('_')
 
 
 def is_valid_privateattr_name(name: str) -> bool:

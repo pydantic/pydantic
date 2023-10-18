@@ -59,6 +59,20 @@ def test_success():
     m = Model(a=10.2)
     assert m.a == 10.2
     assert m.b == 10
+    assert m.__doc__ is None
+
+
+def test_success_docstring():
+    class Model(BaseModel):
+        """Another model"""
+
+        a: float
+        b: int = 10
+
+    m = Model(a=10.2)
+    assert m.a == 10.2
+    assert m.b == 10
+    assert m.__doc__ == 'Another model'
 
 
 @pytest.fixture(name='UltraSimpleModel', scope='session')
