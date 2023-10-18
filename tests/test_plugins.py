@@ -47,7 +47,7 @@ def test_on_validate_json_on_success() -> None:
         def new_schema_validator(self, schema, path, config, plugin_settings):
             assert config == {'title': 'Model'}
             assert plugin_settings == {'observe': 'all'}
-            assert path == 'tests.test_plugins:Model'
+            assert path == 'tests.test_plugins:test_on_validate_json_on_success.<locals>.Model'
             return None, CustomOnValidateJson(), None
 
     plugin = CustomPlugin()
@@ -304,7 +304,7 @@ def test_plugin_path_dataclass() -> None:
 
     class Plugin:
         def new_schema_validator(self, schema, path, config, plugin_settings):
-            assert path == 'tests.test_plugins:Bar'
+            assert path == 'tests.test_plugins:test_plugin_path_dataclass.<locals>.Bar'
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin()
@@ -335,7 +335,7 @@ def test_plugin_path_validate_call() -> None:
 
     class Plugin1:
         def new_schema_validator(self, schema, path, config, plugin_settings):
-            assert path == 'tests.test_plugins:foo'
+            assert path == 'tests.test_plugins:test_plugin_path_validate_call.<locals>.foo'
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin1()
@@ -347,7 +347,7 @@ def test_plugin_path_validate_call() -> None:
 
     class Plugin2:
         def new_schema_validator(self, schema, path, config, plugin_settings):
-            assert path == 'tests.test_plugins:partial(my_wrapped_function)'
+            assert path == 'tests.test_plugins:partial(test_plugin_path_validate_call.<locals>.my_wrapped_function)'
             return CustomOnValidatePython(), None, None
 
     plugin = Plugin2()

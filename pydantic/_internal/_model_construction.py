@@ -506,7 +506,7 @@ def complete_model_class(
         cls_module = cls.__module__
 
     cls.__pydantic_validator__ = create_schema_validator(
-        schema, f'{cls_module}:{cls_name}', core_config, config_wrapper.plugin_settings
+        schema, f'{cls_module}:{cls.__qualname__}', core_config, config_wrapper.plugin_settings
     )
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True

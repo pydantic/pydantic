@@ -64,7 +64,7 @@ class ValidateCallWrapper:
         schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
         self.__pydantic_core_schema__ = schema
         core_config = config_wrapper.core_config(self)
-        path = f'{self.__module__}:{self.__name__}'
+        path = f'{self.__module__}:{self.__qualname__}'
 
         self.__pydantic_validator__ = create_schema_validator(schema, path, core_config, config_wrapper.plugin_settings)
 
