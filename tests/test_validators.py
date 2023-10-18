@@ -2739,7 +2739,6 @@ def test_wrap_validator_field_name():
     assert m.foobar == {'value': 1, 'field_name': 'foobar', 'data': {'x': 123}}
 
 
-@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
 def test_validate_default_raises_for_basemodel() -> None:
     class Model(BaseModel):
         value_0: str
@@ -2776,7 +2775,6 @@ def test_validate_default_raises_for_basemodel() -> None:
     ]
 
 
-@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
 def test_validate_default_raises_for_dataclasses() -> None:
     @pydantic_dataclass
     class Model:

@@ -5975,7 +5975,6 @@ def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
 
 
 @pytest.mark.parametrize('value_param', [True, False])
-@pytest.mark.xfail(reason='waiting for new release of pydantic-core')
 def test_coerce_numbers_to_str_raises_for_bool(value_param: bool) -> None:
     class Model(BaseModel):
         model_config = ConfigDict(coerce_numbers_to_str=True)
