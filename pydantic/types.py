@@ -1071,7 +1071,15 @@ class UuidVersion:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.uuid_schema(version=self.uuid_version)
+        if isinstance(self, source):
+            # used directly as a type
+            return core_schema.uuid_schema(version=self.uuid_version)
+        else:
+            # update existing schema with self.uuid_version
+            schema = handler(source)
+            _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
+            schema['version'] = self.uuid_version  # type: ignore
+            return schema
 
     def __hash__(self) -> int:
         return hash(type(self.uuid_version))
