@@ -2861,22 +2861,29 @@ def test_uuid_validation():
 
 
 def test_uuid_strict() -> None:
-    class UUIDModel(BaseModel):
+    class StrictByConfig(BaseModel):
         a: UUID1
         b: UUID3
         c: UUID4
         d: UUID5
+        e: uuid.UUID
 
         model_config = ConfigDict(strict=True)
+
+    class StrictByField(BaseModel):
+        a: UUID1 = Field(..., strict=True)
+        b: UUID3 = Field(..., strict=True)
+        c: UUID4 = Field(..., strict=True)
+        d: UUID5 = Field(..., strict=True)
+        e: uuid.UUID = Field(..., strict=True)
 
     a = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # uuid1
     b = uuid.UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')  # uuid3
     c = uuid.UUID('260d1600-3680-4f4f-a968-f6fa622ffd8d')  # uuid4
     d = uuid.UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')  # uuid5
+    e = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # any uuid
 
-    with pytest.raises(ValidationError) as exc_info:
-        UUIDModel(a=str(a), b=str(b), c=str(c), d=str(d))
-    assert exc_info.value.errors(include_url=False) == [
+    strict_errors = [
         {
             'type': 'is_instance_of',
             'loc': ('a',),
@@ -2905,13 +2912,26 @@ def test_uuid_strict() -> None:
             'input': '886313e1-3b8a-5372-9b90-0c9aee199e5d',
             'ctx': {'class': 'UUID'},
         },
+        {
+            'type': 'is_instance_of',
+            'loc': ('e',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '7fb48116-ca6b-11ed-a439-3274d3adddac',
+            'ctx': {'class': 'UUID'},
+        },
     ]
 
-    m = UUIDModel(a=a, b=b, c=c, d=d)
-    assert isinstance(m.a, type(a)) and m.a == a
-    assert isinstance(m.b, type(b)) and m.b == b
-    assert isinstance(m.c, type(c)) and m.c == c
-    assert isinstance(m.d, type(d)) and m.d == d
+    for model in [StrictByConfig, StrictByField]:
+        with pytest.raises(ValidationError) as exc_info:
+            model(a=str(a), b=str(b), c=str(c), d=str(d), e=str(e))
+        assert exc_info.value.errors(include_url=False) == strict_errors
+
+        m = model(a=a, b=b, c=c, d=d, e=e)
+        assert isinstance(m.a, type(a)) and m.a == a
+        assert isinstance(m.b, type(b)) and m.b == b
+        assert isinstance(m.c, type(c)) and m.c == c
+        assert isinstance(m.d, type(d)) and m.d == d
+        assert isinstance(m.e, type(e)) and m.e == e
 
 
 @pytest.mark.parametrize(
