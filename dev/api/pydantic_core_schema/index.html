@@ -4599,7 +4599,7 @@ as well as the alias. (Replaces 'allow_population_by_field_name' in Pydantic v1.
         <tr>
           <td><code>ser_json_bytes</code></td>
           <td>
-                <code><span title="typing.Literal">Literal</span>[&#39;utf8&#39;, &#39;base64&#39;]</code>
+                <code><span title="typing.Literal">Literal</span>[&#39;utf8&#39;, &#39;base64&#39;, &#39;hex&#39;]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4644,7 +4644,7 @@ Requires exceptiongroup backport pre Python 3.11.</p>
         <tr>
           <td><code>regex_engine</code></td>
           <td>
-                <code>bool</code>
+                <code><span title="typing.Literal">Literal</span>[&#39;rust-regex&#39;, &#39;python-re&#39;]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4880,14 +4880,14 @@ attached to a model field.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">226</span>
-<span class="normal">227</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">227</span>
 <span class="normal">228</span>
 <span class="normal">229</span>
 <span class="normal">230</span>
 <span class="normal">231</span>
 <span class="normal">232</span>
-<span class="normal">233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">simple_ser_schema</span><span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">ExpectedSerializationTypes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleSerSchema</span><span class="p">:</span>
+<span class="normal">233</span>
+<span class="normal">234</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">simple_ser_schema</span><span class="p">(</span><span class="nb">type</span><span class="p">:</span> <span class="n">ExpectedSerializationTypes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SimpleSerSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a schema for serialization with a custom type.</span>
 
@@ -5011,8 +5011,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">271</span>
-<span class="normal">272</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">272</span>
 <span class="normal">273</span>
 <span class="normal">274</span>
 <span class="normal">275</span>
@@ -5040,7 +5039,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">297</span>
 <span class="normal">298</span>
 <span class="normal">299</span>
-<span class="normal">300</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">plain_serializer_function_ser_schema</span><span class="p">(</span>
+<span class="normal">300</span>
+<span class="normal">301</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">plain_serializer_function_ser_schema</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">SerializerFunction</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">is_field_serializer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5201,8 +5201,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">334</span>
-<span class="normal">335</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">335</span>
 <span class="normal">336</span>
 <span class="normal">337</span>
 <span class="normal">338</span>
@@ -5233,7 +5232,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">363</span>
 <span class="normal">364</span>
 <span class="normal">365</span>
-<span class="normal">366</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">wrap_serializer_function_ser_schema</span><span class="p">(</span>
+<span class="normal">366</span>
+<span class="normal">367</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">wrap_serializer_function_ser_schema</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">WrapSerializerFunction</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">is_field_serializer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5334,8 +5334,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">375</span>
-<span class="normal">376</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">376</span>
 <span class="normal">377</span>
 <span class="normal">378</span>
 <span class="normal">379</span>
@@ -5345,7 +5344,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">383</span>
 <span class="normal">384</span>
 <span class="normal">385</span>
-<span class="normal">386</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">format_ser_schema</span><span class="p">(</span><span class="n">formatting_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">when_used</span><span class="p">:</span> <span class="n">WhenUsed</span> <span class="o">=</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FormatSerSchema</span><span class="p">:</span>
+<span class="normal">386</span>
+<span class="normal">387</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">format_ser_schema</span><span class="p">(</span><span class="n">formatting_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">when_used</span><span class="p">:</span> <span class="n">WhenUsed</span> <span class="o">=</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FormatSerSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a schema for serialization using python&#39;s `format` method.</span>
 
@@ -5409,8 +5409,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">394</span>
-<span class="normal">395</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">395</span>
 <span class="normal">396</span>
 <span class="normal">397</span>
 <span class="normal">398</span>
@@ -5420,7 +5419,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">402</span>
 <span class="normal">403</span>
 <span class="normal">404</span>
-<span class="normal">405</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_string_ser_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">when_used</span><span class="p">:</span> <span class="n">WhenUsed</span> <span class="o">=</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToStringSerSchema</span><span class="p">:</span>
+<span class="normal">405</span>
+<span class="normal">406</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_string_ser_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">when_used</span><span class="p">:</span> <span class="n">WhenUsed</span> <span class="o">=</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToStringSerSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a schema for serialization using python&#39;s `str()` / `__str__` method.</span>
 
@@ -5498,15 +5498,15 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">414</span>
-<span class="normal">415</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">415</span>
 <span class="normal">416</span>
 <span class="normal">417</span>
 <span class="normal">418</span>
 <span class="normal">419</span>
 <span class="normal">420</span>
 <span class="normal">421</span>
-<span class="normal">422</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_ser_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelSerSchema</span><span class="p">:</span>
+<span class="normal">422</span>
+<span class="normal">423</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_ser_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelSerSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a schema for serialization using a model.</span>
 
@@ -5615,8 +5615,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">443</span>
-<span class="normal">444</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">444</span>
 <span class="normal">445</span>
 <span class="normal">446</span>
 <span class="normal">447</span>
@@ -5629,7 +5628,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">454</span>
 <span class="normal">455</span>
 <span class="normal">456</span>
-<span class="normal">457</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">457</span>
+<span class="normal">458</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">property_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">return_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ComputedField</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -5730,8 +5730,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">467</span>
-<span class="normal">468</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">468</span>
 <span class="normal">469</span>
 <span class="normal">470</span>
 <span class="normal">471</span>
@@ -5747,7 +5746,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">481</span>
 <span class="normal">482</span>
 <span class="normal">483</span>
-<span class="normal">484</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">any_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="p">:</span> <span class="n">SerSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnySchema</span><span class="p">:</span>
+<span class="normal">484</span>
+<span class="normal">485</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">any_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="p">:</span> <span class="n">SerSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnySchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a schema that matches any value, e.g.:</span>
 
@@ -5851,8 +5851,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">494</span>
-<span class="normal">495</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">495</span>
 <span class="normal">496</span>
 <span class="normal">497</span>
 <span class="normal">498</span>
@@ -5868,7 +5867,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">508</span>
 <span class="normal">509</span>
 <span class="normal">510</span>
-<span class="normal">511</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">none_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="p">:</span> <span class="n">SerSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoneSchema</span><span class="p">:</span>
+<span class="normal">511</span>
+<span class="normal">512</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">none_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="p">:</span> <span class="n">SerSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoneSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a schema that matches a None value, e.g.:</span>
 
@@ -5988,8 +5988,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">522</span>
-<span class="normal">523</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">523</span>
 <span class="normal">524</span>
 <span class="normal">525</span>
 <span class="normal">526</span>
@@ -6008,7 +6007,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">539</span>
 <span class="normal">540</span>
 <span class="normal">541</span>
-<span class="normal">542</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">bool_schema</span><span class="p">(</span>
+<span class="normal">542</span>
+<span class="normal">543</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">bool_schema</span><span class="p">(</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="p">:</span> <span class="n">SerSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BoolSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -6210,8 +6210,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">558</span>
-<span class="normal">559</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">559</span>
 <span class="normal">560</span>
 <span class="normal">561</span>
 <span class="normal">562</span>
@@ -6255,7 +6254,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">600</span>
 <span class="normal">601</span>
 <span class="normal">602</span>
-<span class="normal">603</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">int_schema</span><span class="p">(</span>
+<span class="normal">603</span>
+<span class="normal">604</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">int_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">multiple_of</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6497,8 +6497,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">620</span>
-<span class="normal">621</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">621</span>
 <span class="normal">622</span>
 <span class="normal">623</span>
 <span class="normal">624</span>
@@ -6545,7 +6544,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">665</span>
 <span class="normal">666</span>
 <span class="normal">667</span>
-<span class="normal">668</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">float_schema</span><span class="p">(</span>
+<span class="normal">668</span>
+<span class="normal">669</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">float_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">allow_inf_nan</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">multiple_of</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -6821,8 +6821,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">687</span>
-<span class="normal">688</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">688</span>
 <span class="normal">689</span>
 <span class="normal">690</span>
 <span class="normal">691</span>
@@ -6876,7 +6875,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">739</span>
 <span class="normal">740</span>
 <span class="normal">741</span>
-<span class="normal">742</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decimal_schema</span><span class="p">(</span>
+<span class="normal">742</span>
+<span class="normal">743</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">decimal_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">allow_inf_nan</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">multiple_of</span><span class="p">:</span> <span class="n">Decimal</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7148,8 +7148,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">760</span>
-<span class="normal">761</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">761</span>
 <span class="normal">762</span>
 <span class="normal">763</span>
 <span class="normal">764</span>
@@ -7204,7 +7203,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">813</span>
 <span class="normal">814</span>
 <span class="normal">815</span>
-<span class="normal">816</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">str_schema</span><span class="p">(</span>
+<span class="normal">816</span>
+<span class="normal">817</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">str_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7397,8 +7397,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">829</span>
-<span class="normal">830</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">830</span>
 <span class="normal">831</span>
 <span class="normal">832</span>
 <span class="normal">833</span>
@@ -7433,7 +7432,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">862</span>
 <span class="normal">863</span>
 <span class="normal">864</span>
-<span class="normal">865</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">bytes_schema</span><span class="p">(</span>
+<span class="normal">865</span>
+<span class="normal">866</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">bytes_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7667,8 +7667,7 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">884</span>
-<span class="normal">885</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">885</span>
 <span class="normal">886</span>
 <span class="normal">887</span>
 <span class="normal">888</span>
@@ -7716,7 +7715,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="normal">930</span>
 <span class="normal">931</span>
 <span class="normal">932</span>
-<span class="normal">933</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">date_schema</span><span class="p">(</span>
+<span class="normal">933</span>
+<span class="normal">934</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">date_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="p">:</span> <span class="n">date</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -7963,56 +7963,56 @@ and <code>info</code> includes <code>field_name</code></p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">950</span>
-<span class="normal">951</span>
-<span class="normal">952</span>
-<span class="normal">953</span>
-<span class="normal">954</span>
-<span class="normal">955</span>
-<span class="normal">956</span>
-<span class="normal">957</span>
-<span class="normal">958</span>
-<span class="normal">959</span>
-<span class="normal">960</span>
-<span class="normal">961</span>
-<span class="normal">962</span>
-<span class="normal">963</span>
-<span class="normal">964</span>
-<span class="normal">965</span>
-<span class="normal">966</span>
-<span class="normal">967</span>
-<span class="normal">968</span>
-<span class="normal">969</span>
-<span class="normal">970</span>
-<span class="normal">971</span>
-<span class="normal">972</span>
-<span class="normal">973</span>
-<span class="normal">974</span>
-<span class="normal">975</span>
-<span class="normal">976</span>
-<span class="normal">977</span>
-<span class="normal">978</span>
-<span class="normal">979</span>
-<span class="normal">980</span>
-<span class="normal">981</span>
-<span class="normal">982</span>
-<span class="normal">983</span>
-<span class="normal">984</span>
-<span class="normal">985</span>
-<span class="normal">986</span>
-<span class="normal">987</span>
-<span class="normal">988</span>
-<span class="normal">989</span>
-<span class="normal">990</span>
-<span class="normal">991</span>
-<span class="normal">992</span>
-<span class="normal">993</span>
-<span class="normal">994</span>
-<span class="normal">995</span>
-<span class="normal">996</span>
-<span class="normal">997</span>
-<span class="normal">998</span>
-<span class="normal">999</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">time_schema</span><span class="p">(</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 951</span>
+<span class="normal"> 952</span>
+<span class="normal"> 953</span>
+<span class="normal"> 954</span>
+<span class="normal"> 955</span>
+<span class="normal"> 956</span>
+<span class="normal"> 957</span>
+<span class="normal"> 958</span>
+<span class="normal"> 959</span>
+<span class="normal"> 960</span>
+<span class="normal"> 961</span>
+<span class="normal"> 962</span>
+<span class="normal"> 963</span>
+<span class="normal"> 964</span>
+<span class="normal"> 965</span>
+<span class="normal"> 966</span>
+<span class="normal"> 967</span>
+<span class="normal"> 968</span>
+<span class="normal"> 969</span>
+<span class="normal"> 970</span>
+<span class="normal"> 971</span>
+<span class="normal"> 972</span>
+<span class="normal"> 973</span>
+<span class="normal"> 974</span>
+<span class="normal"> 975</span>
+<span class="normal"> 976</span>
+<span class="normal"> 977</span>
+<span class="normal"> 978</span>
+<span class="normal"> 979</span>
+<span class="normal"> 980</span>
+<span class="normal"> 981</span>
+<span class="normal"> 982</span>
+<span class="normal"> 983</span>
+<span class="normal"> 984</span>
+<span class="normal"> 985</span>
+<span class="normal"> 986</span>
+<span class="normal"> 987</span>
+<span class="normal"> 988</span>
+<span class="normal"> 989</span>
+<span class="normal"> 990</span>
+<span class="normal"> 991</span>
+<span class="normal"> 992</span>
+<span class="normal"> 993</span>
+<span class="normal"> 994</span>
+<span class="normal"> 995</span>
+<span class="normal"> 996</span>
+<span class="normal"> 997</span>
+<span class="normal"> 998</span>
+<span class="normal"> 999</span>
+<span class="normal">1000</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">time_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="p">:</span> <span class="n">time</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8291,8 +8291,7 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1020</span>
-<span class="normal">1021</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1021</span>
 <span class="normal">1022</span>
 <span class="normal">1023</span>
 <span class="normal">1024</span>
@@ -8348,7 +8347,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="normal">1074</span>
 <span class="normal">1075</span>
 <span class="normal">1076</span>
-<span class="normal">1077</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">datetime_schema</span><span class="p">(</span>
+<span class="normal">1077</span>
+<span class="normal">1078</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">datetime_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8588,8 +8588,7 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1093</span>
-<span class="normal">1094</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1094</span>
 <span class="normal">1095</span>
 <span class="normal">1096</span>
 <span class="normal">1097</span>
@@ -8634,7 +8633,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="normal">1136</span>
 <span class="normal">1137</span>
 <span class="normal">1138</span>
-<span class="normal">1139</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">timedelta_schema</span><span class="p">(</span>
+<span class="normal">1139</span>
+<span class="normal">1140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">timedelta_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="p">:</span> <span class="n">timedelta</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8783,8 +8783,7 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1150</span>
-<span class="normal">1151</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1151</span>
 <span class="normal">1152</span>
 <span class="normal">1153</span>
 <span class="normal">1154</span>
@@ -8803,7 +8802,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="normal">1167</span>
 <span class="normal">1168</span>
 <span class="normal">1169</span>
-<span class="normal">1170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">literal_schema</span><span class="p">(</span>
+<span class="normal">1170</span>
+<span class="normal">1171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">literal_schema</span><span class="p">(</span>
     <span class="n">expected</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="p">:</span> <span class="n">SerSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LiteralSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -8948,8 +8948,7 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1186</span>
-<span class="normal">1187</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1187</span>
 <span class="normal">1188</span>
 <span class="normal">1189</span>
 <span class="normal">1190</span>
@@ -8979,7 +8978,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="normal">1214</span>
 <span class="normal">1215</span>
 <span class="normal">1216</span>
-<span class="normal">1217</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_instance_schema</span><span class="p">(</span>
+<span class="normal">1217</span>
+<span class="normal">1218</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_instance_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">cls_repr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9138,8 +9138,7 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1229</span>
-<span class="normal">1230</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1230</span>
 <span class="normal">1231</span>
 <span class="normal">1232</span>
 <span class="normal">1233</span>
@@ -9172,7 +9171,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="normal">1260</span>
 <span class="normal">1261</span>
 <span class="normal">1262</span>
-<span class="normal">1263</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_subclass_schema</span><span class="p">(</span>
+<span class="normal">1263</span>
+<span class="normal">1264</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_subclass_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">cls_repr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9295,8 +9295,7 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1273</span>
-<span class="normal">1274</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1274</span>
 <span class="normal">1275</span>
 <span class="normal">1276</span>
 <span class="normal">1277</span>
@@ -9314,7 +9313,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="normal">1289</span>
 <span class="normal">1290</span>
 <span class="normal">1291</span>
-<span class="normal">1292</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">callable_schema</span><span class="p">(</span>
+<span class="normal">1292</span>
+<span class="normal">1293</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">callable_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="p">:</span> <span class="n">SerSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CallableSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -9485,8 +9485,7 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1341</span>
-<span class="normal">1342</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1342</span>
 <span class="normal">1343</span>
 <span class="normal">1344</span>
 <span class="normal">1345</span>
@@ -9524,7 +9523,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="normal">1377</span>
 <span class="normal">1378</span>
 <span class="normal">1379</span>
-<span class="normal">1380</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">list_schema</span><span class="p">(</span>
+<span class="normal">1380</span>
+<span class="normal">1381</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">list_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9705,8 +9705,7 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1393</span>
-<span class="normal">1394</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1394</span>
 <span class="normal">1395</span>
 <span class="normal">1396</span>
 <span class="normal">1397</span>
@@ -9746,7 +9745,8 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 <span class="normal">1431</span>
 <span class="normal">1432</span>
 <span class="normal">1433</span>
-<span class="normal">1434</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">tuple_positional_schema</span><span class="p">(</span>
+<span class="normal">1434</span>
+<span class="normal">1435</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">tuple_positional_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">extras_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -9941,8 +9941,7 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1448</span>
-<span class="normal">1449</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1449</span>
 <span class="normal">1450</span>
 <span class="normal">1451</span>
 <span class="normal">1452</span>
@@ -9982,7 +9981,8 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 <span class="normal">1486</span>
 <span class="normal">1487</span>
 <span class="normal">1488</span>
-<span class="normal">1489</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">tuple_variable_schema</span><span class="p">(</span>
+<span class="normal">1489</span>
+<span class="normal">1490</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">tuple_variable_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10177,8 +10177,7 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1503</span>
-<span class="normal">1504</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1504</span>
 <span class="normal">1505</span>
 <span class="normal">1506</span>
 <span class="normal">1507</span>
@@ -10218,7 +10217,8 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 <span class="normal">1541</span>
 <span class="normal">1542</span>
 <span class="normal">1543</span>
-<span class="normal">1544</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_schema</span><span class="p">(</span>
+<span class="normal">1544</span>
+<span class="normal">1545</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">set_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10413,8 +10413,7 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1558</span>
-<span class="normal">1559</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1559</span>
 <span class="normal">1560</span>
 <span class="normal">1561</span>
 <span class="normal">1562</span>
@@ -10454,7 +10453,8 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 <span class="normal">1596</span>
 <span class="normal">1597</span>
 <span class="normal">1598</span>
-<span class="normal">1599</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">frozenset_schema</span><span class="p">(</span>
+<span class="normal">1599</span>
+<span class="normal">1600</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">frozenset_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10639,8 +10639,7 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1612</span>
-<span class="normal">1613</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1613</span>
 <span class="normal">1614</span>
 <span class="normal">1615</span>
 <span class="normal">1616</span>
@@ -10683,7 +10682,8 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
 <span class="normal">1653</span>
 <span class="normal">1654</span>
 <span class="normal">1655</span>
-<span class="normal">1656</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generator_schema</span><span class="p">(</span>
+<span class="normal">1656</span>
+<span class="normal">1657</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generator_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -10896,8 +10896,7 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1687</span>
-<span class="normal">1688</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1688</span>
 <span class="normal">1689</span>
 <span class="normal">1690</span>
 <span class="normal">1691</span>
@@ -10940,7 +10939,8 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
 <span class="normal">1728</span>
 <span class="normal">1729</span>
 <span class="normal">1730</span>
-<span class="normal">1731</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dict_schema</span><span class="p">(</span>
+<span class="normal">1731</span>
+<span class="normal">1732</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dict_schema</span><span class="p">(</span>
     <span class="n">keys_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">values_schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11113,8 +11113,7 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1768</span>
-<span class="normal">1769</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1769</span>
 <span class="normal">1770</span>
 <span class="normal">1771</span>
 <span class="normal">1772</span>
@@ -11153,7 +11152,8 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
 <span class="normal">1805</span>
 <span class="normal">1806</span>
 <span class="normal">1807</span>
-<span class="normal">1808</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">no_info_before_validator_function</span><span class="p">(</span>
+<span class="normal">1808</span>
+<span class="normal">1809</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">no_info_before_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">NoInfoValidatorFunction</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11340,8 +11340,7 @@ an <code>info</code> argument, e.g.:</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1811</span>
-<span class="normal">1812</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1812</span>
 <span class="normal">1813</span>
 <span class="normal">1814</span>
 <span class="normal">1815</span>
@@ -11385,7 +11384,8 @@ an <code>info</code> argument, e.g.:</p>
 <span class="normal">1853</span>
 <span class="normal">1854</span>
 <span class="normal">1855</span>
-<span class="normal">1856</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_info_before_validator_function</span><span class="p">(</span>
+<span class="normal">1856</span>
+<span class="normal">1857</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_info_before_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">WithInfoValidatorFunction</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11557,8 +11557,7 @@ an <code>info</code> argument, e.g.:</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1863</span>
-<span class="normal">1864</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1864</span>
 <span class="normal">1865</span>
 <span class="normal">1866</span>
 <span class="normal">1867</span>
@@ -11595,7 +11594,8 @@ an <code>info</code> argument, e.g.:</p>
 <span class="normal">1898</span>
 <span class="normal">1899</span>
 <span class="normal">1900</span>
-<span class="normal">1901</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">no_info_after_validator_function</span><span class="p">(</span>
+<span class="normal">1901</span>
+<span class="normal">1902</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">no_info_after_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">NoInfoValidatorFunction</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11780,8 +11780,7 @@ an <code>info</code> argument, e.g.:</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1904</span>
-<span class="normal">1905</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1905</span>
 <span class="normal">1906</span>
 <span class="normal">1907</span>
 <span class="normal">1908</span>
@@ -11825,7 +11824,8 @@ an <code>info</code> argument, e.g.:</p>
 <span class="normal">1946</span>
 <span class="normal">1947</span>
 <span class="normal">1948</span>
-<span class="normal">1949</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_info_after_validator_function</span><span class="p">(</span>
+<span class="normal">1949</span>
+<span class="normal">1950</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_info_after_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">WithInfoValidatorFunction</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -12002,8 +12002,7 @@ optionally be used to call inner validation with the function logic, this is muc
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1988</span>
-<span class="normal">1989</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1989</span>
 <span class="normal">1990</span>
 <span class="normal">1991</span>
 <span class="normal">1992</span>
@@ -12045,7 +12044,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="normal">2028</span>
 <span class="normal">2029</span>
 <span class="normal">2030</span>
-<span class="normal">2031</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">no_info_wrap_validator_function</span><span class="p">(</span>
+<span class="normal">2031</span>
+<span class="normal">2032</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">no_info_wrap_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">NoInfoWrapValidatorFunction</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -12236,8 +12236,7 @@ optionally be used to call inner validation with the function logic, this is muc
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2034</span>
-<span class="normal">2035</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2035</span>
 <span class="normal">2036</span>
 <span class="normal">2037</span>
 <span class="normal">2038</span>
@@ -12282,7 +12281,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="normal">2077</span>
 <span class="normal">2078</span>
 <span class="normal">2079</span>
-<span class="normal">2080</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_info_wrap_validator_function</span><span class="p">(</span>
+<span class="normal">2080</span>
+<span class="normal">2081</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_info_wrap_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">WithInfoWrapValidatorFunction</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -12435,8 +12435,7 @@ optionally be used to call inner validation with the function logic, this is muc
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2091</span>
-<span class="normal">2092</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2092</span>
 <span class="normal">2093</span>
 <span class="normal">2094</span>
 <span class="normal">2095</span>
@@ -12469,7 +12468,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="normal">2122</span>
 <span class="normal">2123</span>
 <span class="normal">2124</span>
-<span class="normal">2125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">no_info_plain_validator_function</span><span class="p">(</span>
+<span class="normal">2125</span>
+<span class="normal">2126</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">no_info_plain_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">NoInfoValidatorFunction</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -12629,8 +12629,7 @@ optionally be used to call inner validation with the function logic, this is muc
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2128</span>
-<span class="normal">2129</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2129</span>
 <span class="normal">2130</span>
 <span class="normal">2131</span>
 <span class="normal">2132</span>
@@ -12665,7 +12664,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="normal">2161</span>
 <span class="normal">2162</span>
 <span class="normal">2163</span>
-<span class="normal">2164</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_info_plain_validator_function</span><span class="p">(</span>
+<span class="normal">2164</span>
+<span class="normal">2165</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_info_plain_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">WithInfoValidatorFunction</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -12886,8 +12886,7 @@ optionally be used to call inner validation with the function logic, this is muc
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2180</span>
-<span class="normal">2181</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2181</span>
 <span class="normal">2182</span>
 <span class="normal">2183</span>
 <span class="normal">2184</span>
@@ -12936,7 +12935,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="normal">2227</span>
 <span class="normal">2228</span>
 <span class="normal">2229</span>
-<span class="normal">2230</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_default_schema</span><span class="p">(</span>
+<span class="normal">2230</span>
+<span class="normal">2231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">with_default_schema</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
@@ -13108,8 +13108,7 @@ optionally be used to call inner validation with the function logic, this is muc
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2242</span>
-<span class="normal">2243</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2243</span>
 <span class="normal">2244</span>
 <span class="normal">2245</span>
 <span class="normal">2246</span>
@@ -13136,7 +13135,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="normal">2267</span>
 <span class="normal">2268</span>
 <span class="normal">2269</span>
-<span class="normal">2270</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">nullable_schema</span><span class="p">(</span>
+<span class="normal">2270</span>
+<span class="normal">2271</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">nullable_schema</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -13364,8 +13364,7 @@ optionally be used to call inner validation with the function logic, this is muc
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2288</span>
-<span class="normal">2289</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2289</span>
 <span class="normal">2290</span>
 <span class="normal">2291</span>
 <span class="normal">2292</span>
@@ -13415,7 +13414,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="normal">2336</span>
 <span class="normal">2337</span>
 <span class="normal">2338</span>
-<span class="normal">2339</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">union_schema</span><span class="p">(</span>
+<span class="normal">2339</span>
+<span class="normal">2340</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">union_schema</span><span class="p">(</span>
     <span class="n">choices</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CoreSchema</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">auto_collapse</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -13695,8 +13695,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2356</span>
-<span class="normal">2357</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2357</span>
 <span class="normal">2358</span>
 <span class="normal">2359</span>
 <span class="normal">2360</span>
@@ -13775,7 +13774,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="normal">2433</span>
 <span class="normal">2434</span>
 <span class="normal">2435</span>
-<span class="normal">2436</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">tagged_union_schema</span><span class="p">(</span>
+<span class="normal">2436</span>
+<span class="normal">2437</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">tagged_union_schema</span><span class="p">(</span>
     <span class="n">choices</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">CoreSchema</span><span class="p">],</span>
     <span class="n">discriminator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Hashable</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
@@ -13965,8 +13965,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2447</span>
-<span class="normal">2448</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2448</span>
 <span class="normal">2449</span>
 <span class="normal">2450</span>
 <span class="normal">2451</span>
@@ -13992,7 +13991,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="normal">2471</span>
 <span class="normal">2472</span>
 <span class="normal">2473</span>
-<span class="normal">2474</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">chain_schema</span><span class="p">(</span>
+<span class="normal">2474</span>
+<span class="normal">2475</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">chain_schema</span><span class="p">(</span>
     <span class="n">steps</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="p">:</span> <span class="n">SerSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChainSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -14171,8 +14171,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2487</span>
-<span class="normal">2488</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2488</span>
 <span class="normal">2489</span>
 <span class="normal">2490</span>
 <span class="normal">2491</span>
@@ -14222,7 +14221,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="normal">2535</span>
 <span class="normal">2536</span>
 <span class="normal">2537</span>
-<span class="normal">2538</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">lax_or_strict_schema</span><span class="p">(</span>
+<span class="normal">2538</span>
+<span class="normal">2539</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">lax_or_strict_schema</span><span class="p">(</span>
     <span class="n">lax_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="n">strict_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -14407,8 +14407,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2550</span>
-<span class="normal">2551</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2551</span>
 <span class="normal">2552</span>
 <span class="normal">2553</span>
 <span class="normal">2554</span>
@@ -14452,7 +14451,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="normal">2592</span>
 <span class="normal">2593</span>
 <span class="normal">2594</span>
-<span class="normal">2595</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_or_python_schema</span><span class="p">(</span>
+<span class="normal">2595</span>
+<span class="normal">2596</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_or_python_schema</span><span class="p">(</span>
     <span class="n">json_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="n">python_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -14632,8 +14632,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2608</span>
-<span class="normal">2609</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2609</span>
 <span class="normal">2610</span>
 <span class="normal">2611</span>
 <span class="normal">2612</span>
@@ -14666,7 +14665,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="normal">2639</span>
 <span class="normal">2640</span>
 <span class="normal">2641</span>
-<span class="normal">2642</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">typed_dict_field</span><span class="p">(</span>
+<span class="normal">2642</span>
+<span class="normal">2643</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">typed_dict_field</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">required</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -14900,8 +14900,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2661</span>
-<span class="normal">2662</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2662</span>
 <span class="normal">2663</span>
 <span class="normal">2664</span>
 <span class="normal">2665</span>
@@ -14952,7 +14951,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="normal">2710</span>
 <span class="normal">2711</span>
 <span class="normal">2712</span>
-<span class="normal">2713</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">typed_dict_schema</span><span class="p">(</span>
+<span class="normal">2713</span>
+<span class="normal">2714</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">typed_dict_schema</span><span class="p">(</span>
     <span class="n">fields</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TypedDictField</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">computed_fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ComputedField</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -15139,8 +15139,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2726</span>
-<span class="normal">2727</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2727</span>
 <span class="normal">2728</span>
 <span class="normal">2729</span>
 <span class="normal">2730</span>
@@ -15173,7 +15172,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="normal">2757</span>
 <span class="normal">2758</span>
 <span class="normal">2759</span>
-<span class="normal">2760</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_field</span><span class="p">(</span>
+<span class="normal">2760</span>
+<span class="normal">2761</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_field</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">validation_alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -15422,8 +15422,7 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2779</span>
-<span class="normal">2780</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2780</span>
 <span class="normal">2781</span>
 <span class="normal">2782</span>
 <span class="normal">2783</span>
@@ -15476,7 +15475,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="normal">2830</span>
 <span class="normal">2831</span>
 <span class="normal">2832</span>
-<span class="normal">2833</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_fields_schema</span><span class="p">(</span>
+<span class="normal">2833</span>
+<span class="normal">2834</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_fields_schema</span><span class="p">(</span>
     <span class="n">fields</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ModelField</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -15792,8 +15792,7 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2853</span>
-<span class="normal">2854</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2854</span>
 <span class="normal">2855</span>
 <span class="normal">2856</span>
 <span class="normal">2857</span>
@@ -15870,7 +15869,8 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
 <span class="normal">2928</span>
 <span class="normal">2929</span>
 <span class="normal">2930</span>
-<span class="normal">2931</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_schema</span><span class="p">(</span>
+<span class="normal">2931</span>
+<span class="normal">2932</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -16133,8 +16133,7 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2947</span>
-<span class="normal">2948</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2948</span>
 <span class="normal">2949</span>
 <span class="normal">2950</span>
 <span class="normal">2951</span>
@@ -16181,7 +16180,8 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
 <span class="normal">2992</span>
 <span class="normal">2993</span>
 <span class="normal">2994</span>
-<span class="normal">2995</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dataclass_field</span><span class="p">(</span>
+<span class="normal">2995</span>
+<span class="normal">2996</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dataclass_field</span><span class="p">(</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -16417,8 +16417,7 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3011</span>
-<span class="normal">3012</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3012</span>
 <span class="normal">3013</span>
 <span class="normal">3014</span>
 <span class="normal">3015</span>
@@ -16468,7 +16467,8 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
 <span class="normal">3059</span>
 <span class="normal">3060</span>
 <span class="normal">3061</span>
-<span class="normal">3062</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dataclass_args_schema</span><span class="p">(</span>
+<span class="normal">3062</span>
+<span class="normal">3063</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dataclass_args_schema</span><span class="p">(</span>
     <span class="n">dataclass_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">fields</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DataclassField</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
@@ -16745,8 +16745,7 @@ simply setting <code>__dict__</code>, default false</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3082</span>
-<span class="normal">3083</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3083</span>
 <span class="normal">3084</span>
 <span class="normal">3085</span>
 <span class="normal">3086</span>
@@ -16797,7 +16796,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="normal">3131</span>
 <span class="normal">3132</span>
 <span class="normal">3133</span>
-<span class="normal">3134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dataclass_schema</span><span class="p">(</span>
+<span class="normal">3134</span>
+<span class="normal">3135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dataclass_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="n">fields</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
@@ -16953,8 +16953,7 @@ simply setting <code>__dict__</code>, default false</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3144</span>
-<span class="normal">3145</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3145</span>
 <span class="normal">3146</span>
 <span class="normal">3147</span>
 <span class="normal">3148</span>
@@ -16980,7 +16979,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="normal">3168</span>
 <span class="normal">3169</span>
 <span class="normal">3170</span>
-<span class="normal">3171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">arguments_parameter</span><span class="p">(</span>
+<span class="normal">3171</span>
+<span class="normal">3172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">arguments_parameter</span><span class="p">(</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -17165,8 +17165,7 @@ simply setting <code>__dict__</code>, default false</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3185</span>
-<span class="normal">3186</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3186</span>
 <span class="normal">3187</span>
 <span class="normal">3188</span>
 <span class="normal">3189</span>
@@ -17210,7 +17209,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="normal">3227</span>
 <span class="normal">3228</span>
 <span class="normal">3229</span>
-<span class="normal">3230</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">arguments_schema</span><span class="p">(</span>
+<span class="normal">3230</span>
+<span class="normal">3231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">arguments_schema</span><span class="p">(</span>
     <span class="n">arguments</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ArgumentsParameter</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">populate_by_name</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -17419,8 +17419,7 @@ simply setting <code>__dict__</code>, default false</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3244</span>
-<span class="normal">3245</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3245</span>
 <span class="normal">3246</span>
 <span class="normal">3247</span>
 <span class="normal">3248</span>
@@ -17470,7 +17469,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="normal">3292</span>
 <span class="normal">3293</span>
 <span class="normal">3294</span>
-<span class="normal">3295</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">call_schema</span><span class="p">(</span>
+<span class="normal">3295</span>
+<span class="normal">3296</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">call_schema</span><span class="p">(</span>
     <span class="n">arguments</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="n">function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
@@ -17677,8 +17677,7 @@ simply setting <code>__dict__</code>, default false</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3309</span>
-<span class="normal">3310</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3310</span>
 <span class="normal">3311</span>
 <span class="normal">3312</span>
 <span class="normal">3313</span>
@@ -17720,7 +17719,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="normal">3349</span>
 <span class="normal">3350</span>
 <span class="normal">3351</span>
-<span class="normal">3352</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">custom_error_schema</span><span class="p">(</span>
+<span class="normal">3352</span>
+<span class="normal">3353</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">custom_error_schema</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
     <span class="n">custom_error_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -17889,8 +17889,7 @@ simply setting <code>__dict__</code>, default false</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3363</span>
-<span class="normal">3364</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3364</span>
 <span class="normal">3365</span>
 <span class="normal">3366</span>
 <span class="normal">3367</span>
@@ -17932,7 +17931,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="normal">3403</span>
 <span class="normal">3404</span>
 <span class="normal">3405</span>
-<span class="normal">3406</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
+<span class="normal">3406</span>
+<span class="normal">3407</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -18173,8 +18173,7 @@ simply setting <code>__dict__</code>, default false</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3423</span>
-<span class="normal">3424</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3424</span>
 <span class="normal">3425</span>
 <span class="normal">3426</span>
 <span class="normal">3427</span>
@@ -18222,7 +18221,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="normal">3469</span>
 <span class="normal">3470</span>
 <span class="normal">3471</span>
-<span class="normal">3472</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">url_schema</span><span class="p">(</span>
+<span class="normal">3472</span>
+<span class="normal">3473</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">url_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">allowed_schemes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -18469,8 +18469,7 @@ simply setting <code>__dict__</code>, default false</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3489</span>
-<span class="normal">3490</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3490</span>
 <span class="normal">3491</span>
 <span class="normal">3492</span>
 <span class="normal">3493</span>
@@ -18518,7 +18517,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="normal">3535</span>
 <span class="normal">3536</span>
 <span class="normal">3537</span>
-<span class="normal">3538</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">multi_host_url_schema</span><span class="p">(</span>
+<span class="normal">3538</span>
+<span class="normal">3539</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">multi_host_url_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">allowed_schemes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -18644,8 +18644,7 @@ within the inner schema.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3549</span>
-<span class="normal">3550</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3550</span>
 <span class="normal">3551</span>
 <span class="normal">3552</span>
 <span class="normal">3553</span>
@@ -18664,7 +18663,8 @@ within the inner schema.</p>
 <span class="normal">3566</span>
 <span class="normal">3567</span>
 <span class="normal">3568</span>
-<span class="normal">3569</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">definitions_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">definitions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">DefinitionsSchema</span><span class="p">:</span>
+<span class="normal">3569</span>
+<span class="normal">3570</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">definitions_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">definitions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">DefinitionsSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Build a schema that contains both an inner schema and a list of definitions which can be used</span>
 <span class="sd">    within the inner schema.</span>
@@ -18780,8 +18780,7 @@ models and also when you want to define validators separately from the main sche
 
       <details class="quote">
         <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3579</span>
-<span class="normal">3580</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3580</span>
 <span class="normal">3581</span>
 <span class="normal">3582</span>
 <span class="normal">3583</span>
@@ -18806,7 +18805,8 @@ models and also when you want to define validators separately from the main sche
 <span class="normal">3602</span>
 <span class="normal">3603</span>
 <span class="normal">3604</span>
-<span class="normal">3605</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">definition_reference_schema</span><span class="p">(</span>
+<span class="normal">3605</span>
+<span class="normal">3606</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">definition_reference_schema</span><span class="p">(</span>
     <span class="n">schema_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">metadata</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="p">:</span> <span class="n">SerSchema</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefinitionReferenceSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -18855,7 +18855,7 @@ models and also when you want to define validators separately from the main sche
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.4.2", "pydantic-core==2.10.1"]
+    window.mkdocs_run_deps = ["pydantic==2.4.2", "pydantic-core==2.11.0"]
     </script>
 
               </article>
