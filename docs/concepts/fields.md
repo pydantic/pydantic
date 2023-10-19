@@ -651,7 +651,7 @@ See [Conversion Table](conversion_table.md) for more details on how Pydantic con
 
 ## Immutability
 
-The parameter `frozen` is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being
+The parameter `frozen` is used to emulate the frozen dataclass behaviour. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).
 
 See the [frozen dataclass documentation] for more details.
