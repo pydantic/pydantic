@@ -8,6 +8,7 @@ import pytest
 
 import pydantic
 from pydantic import BaseModel, PositiveFloat, ValidationError
+from pydantic.config import ConfigDict
 from pydantic._internal._model_construction import _PydanticWeakRef
 
 
@@ -73,9 +74,15 @@ def model_factory() -> Type:
     return NonImportableModel
 
 @pytest.mark.parametrize(
-    "model_type,use_cloudpickle", [(ImportableModel, False), (model_factory(), True)]
+    "model_type,use_cloudpickle", [
+        # Importable model can be pickled with either pickle or cloudpickle.
+        (ImportableModel, False),
+        (ImportableModel, True),
+        # Locally-defined model can only be pickled with cloudpickle.
+        (model_factory(), True)
+    ]
 )
-def test_pickle_base_model(model_type: Type, use_cloudpickle: bool):
+def test_pickle_model(model_type: Type, use_cloudpickle: bool):
     if use_cloudpickle:
         model_type = cloudpickle.loads(cloudpickle.dumps(model_type))
     else:
@@ -118,9 +125,14 @@ def builtin_dataclass_factory() -> Type:
 
 @pytest.mark.parametrize(
     "dataclass_type,use_cloudpickle", [
+        # Importable Pydantic dataclass can be pickled with either pickle or cloudpickle.
         (ImportableDataclass, False),
+        (ImportableDataclass, True),
+        # Locally-defined Pydantic dataclass can only be pickled with cloudpickle.
         (dataclass_factory(), True),
+        # Pydantic dataclass generated from builtin can only be pickled with cloudpickle.
         (pydantic.dataclasses.dataclass(ImportableBuiltinDataclass), True),
+        # Pydantic dataclass generated from locally-defined builtin can only be pickled with cloudpickle.
         (pydantic.dataclasses.dataclass(builtin_dataclass_factory()), True)
     ]
 )
@@ -137,3 +149,29 @@ def test_pickle_dataclass(dataclass_type: Type, use_cloudpickle: bool):
     d = dataclass_type(b=10, a=20)
     assert d.a == 20
     assert d.b == 10
+
+
+class ImportableModelWithConfig(BaseModel):
+    model_config = ConfigDict(title='MyTitle')
+
+
+def model_with_config_factory() -> Type:
+    class NonImportableModelWithConfig(BaseModel):
+        model_config = ConfigDict(title='MyTitle')
+
+    return NonImportableModelWithConfig
+
+@pytest.mark.parametrize(
+    "model_type,use_cloudpickle", [
+        (ImportableModelWithConfig, False),
+        (ImportableModelWithConfig, True),
+        (model_with_config_factory(), True),
+    ]
+)
+def test_pickle_model_with_config(model_type: Type, use_cloudpickle: bool):
+    if use_cloudpickle:
+        model_type = cloudpickle.loads(cloudpickle.dumps(model_type))
+    else:
+        model_type = pickle.loads(pickle.dumps(model_type))
+
+    assert model_type.model_config['title'] == 'MyTitle'
