@@ -8,8 +8,8 @@ import pytest
 
 import pydantic
 from pydantic import BaseModel, PositiveFloat, ValidationError
-from pydantic.config import ConfigDict
 from pydantic._internal._model_construction import _PydanticWeakRef
+from pydantic.config import ConfigDict
 
 
 class IntWrapper:
