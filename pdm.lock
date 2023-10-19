@@ -6,7 +6,7 @@ groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "t
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:9a0342f275ccb2b75d3ee4545919aa22a089124725a60e172c1d7d6aa4851f42"
+content_hash = "sha256:c904144edbc9623ee817e1b4204e9599cf2791538f8db58d8ed87da404c986b3"
 
 [[package]]
 name = "annotated-types"
@@ -230,6 +230,16 @@ dependencies = [
 files = [
     {file = "click-8.1.7-py3-none-any.whl", hash = "sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28"},
     {file = "click-8.1.7.tar.gz", hash = "sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de"},
+]
+
+[[package]]
+name = "cloudpickle"
+version = "2.2.1"
+requires_python = ">=3.6"
+summary = "Extended pickling support for Python objects"
+files = [
+    {file = "cloudpickle-2.2.1-py3-none-any.whl", hash = "sha256:61f594d1f4c295fa5cd9014ceb3a1fc4a70b0de1164b94fbc2d854ccba056f9f"},
+    {file = "cloudpickle-2.2.1.tar.gz", hash = "sha256:d89684b8de9e34a2a43b3460fbca07d09d6e25ce858df4d5a44240403b6178f5"},
 ]
 
 [[package]]
