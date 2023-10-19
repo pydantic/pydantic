@@ -119,6 +119,7 @@ def nested_model_factory() -> Type:
 
     return NonImportableNestedModel
 
+
 @pytest.mark.parametrize(
     'model_type,use_cloudpickle',
     [
@@ -182,6 +183,7 @@ def builtin_dataclass_factory() -> Type:
 
 class ImportableChildDataclass(ImportableDataclass):
     pass
+
 
 def child_dataclass_factory() -> Type:
     class NonImportableChildDataclass(ImportableDataclass):
@@ -247,6 +249,7 @@ def nested_dataclass_model_factory() -> Type:
         inner: ImportableBuiltinDataclass
 
     return NonImportableNestedDataclassModel
+
 
 @pytest.mark.parametrize(
     'model_type,use_cloudpickle',
