@@ -3733,7 +3733,7 @@ In strict mode, Pydantic throws an error during validation instead of coercing d
 <p>See <a href="../strict_mode/">Strict Mode</a> for more details.</p>
 <p>See <a href="../conversion_table/">Conversion Table</a> for more details on how Pydantic converts data in both strict and lax modes.</p>
 <h2 id="immutability">Immutability<a class="headerlink" href="#immutability" title="Permanent link">&para;</a></h2>
-<p>The parameter <code>frozen</code> is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being
+<p>The parameter <code>frozen</code> is used to emulate the frozen dataclass behaviour. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).</p>
 <p>See the <a href="https://docs.python.org/3/library/dataclasses.html#frozen-instances">frozen dataclass documentation</a> for more details.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
