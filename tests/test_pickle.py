@@ -96,8 +96,58 @@ def test_pickle_model(model_type: Type, use_cloudpickle: bool):
     assert m.bar is None
     assert m.val == 1.0
 
+    if use_cloudpickle:
+        m = cloudpickle.loads(cloudpickle.dumps(m))
+    else:
+        m = pickle.loads(pickle.dumps(m))
+
+    assert m.foo == 'hi'
+    assert m.bar is None
+    assert m.val == 1.0
+
     with pytest.raises(ValidationError):
         model_type(foo='hi', val=-1.1)
+
+
+class ImportableNestedModel(BaseModel):
+    inner: ImportableModel
+
+
+def nested_model_factory() -> Type:
+    class NonImportableNestedModel(BaseModel):
+        inner: ImportableModel
+
+    return NonImportableNestedModel
+
+@pytest.mark.parametrize(
+    'model_type,use_cloudpickle',
+    [
+        # Importable model can be pickled with either pickle or cloudpickle.
+        (ImportableNestedModel, False),
+        (ImportableNestedModel, True),
+        # Locally-defined model can only be pickled with cloudpickle.
+        (nested_model_factory(), True),
+    ],
+)
+def test_pickle_nested_model(model_type: Type, use_cloudpickle: bool):
+    if use_cloudpickle:
+        model_type = cloudpickle.loads(cloudpickle.dumps(model_type))
+    else:
+        model_type = pickle.loads(pickle.dumps(model_type))
+
+    m = model_type(inner=ImportableModel(foo='hi', val=1))
+    assert m.inner.foo == 'hi'
+    assert m.inner.bar is None
+    assert m.inner.val == 1.0
+
+    if use_cloudpickle:
+        m = cloudpickle.loads(cloudpickle.dumps(m))
+    else:
+        m = pickle.loads(pickle.dumps(m))
+
+    assert m.inner.foo == 'hi'
+    assert m.inner.bar is None
+    assert m.inner.val == 1.0
 
 
 @pydantic.dataclasses.dataclass
@@ -130,14 +180,27 @@ def builtin_dataclass_factory() -> Type:
     return NonImportableBuiltinDataclass
 
 
+class ImportableChildDataclass(ImportableDataclass):
+    pass
+
+def child_dataclass_factory() -> Type:
+    class NonImportableChildDataclass(ImportableDataclass):
+        pass
+
+    return NonImportableChildDataclass
+
+
 @pytest.mark.parametrize(
     'dataclass_type,use_cloudpickle',
     [
         # Importable Pydantic dataclass can be pickled with either pickle or cloudpickle.
         (ImportableDataclass, False),
         (ImportableDataclass, True),
+        (ImportableChildDataclass, False),
+        (ImportableChildDataclass, True),
         # Locally-defined Pydantic dataclass can only be pickled with cloudpickle.
         (dataclass_factory(), True),
+        (child_dataclass_factory(), True),
         # Pydantic dataclass generated from builtin can only be pickled with cloudpickle.
         (pydantic.dataclasses.dataclass(ImportableBuiltinDataclass), True),
         # Pydantic dataclass generated from locally-defined builtin can only be pickled with cloudpickle.
@@ -154,9 +217,64 @@ def test_pickle_dataclass(dataclass_type: Type, use_cloudpickle: bool):
     assert d.a == 1
     assert d.b == 2.5
 
+    if use_cloudpickle:
+        d = cloudpickle.loads(cloudpickle.dumps(d))
+    else:
+        d = pickle.loads(pickle.dumps(d))
+
+    assert d.a == 1
+    assert d.b == 2.5
+
     d = dataclass_type(b=10, a=20)
     assert d.a == 20
     assert d.b == 10
+
+    if use_cloudpickle:
+        d = cloudpickle.loads(cloudpickle.dumps(d))
+    else:
+        d = pickle.loads(pickle.dumps(d))
+
+    assert d.a == 20
+    assert d.b == 10
+
+
+class ImportableNestedDataclassModel(BaseModel):
+    inner: ImportableBuiltinDataclass
+
+
+def nested_dataclass_model_factory() -> Type:
+    class NonImportableNestedDataclassModel(BaseModel):
+        inner: ImportableBuiltinDataclass
+
+    return NonImportableNestedDataclassModel
+
+@pytest.mark.parametrize(
+    'model_type,use_cloudpickle',
+    [
+        # Importable model can be pickled with either pickle or cloudpickle.
+        (ImportableNestedDataclassModel, False),
+        (ImportableNestedDataclassModel, True),
+        # Locally-defined model can only be pickled with cloudpickle.
+        (nested_dataclass_model_factory(), True),
+    ],
+)
+def test_pickle_dataclass_nested_in_model(model_type: Type, use_cloudpickle: bool):
+    if use_cloudpickle:
+        model_type = cloudpickle.loads(cloudpickle.dumps(model_type))
+    else:
+        model_type = pickle.loads(pickle.dumps(model_type))
+
+    m = model_type(inner=ImportableBuiltinDataclass(a=10, b=20))
+    assert m.inner.a == 10
+    assert m.inner.b == 20
+
+    if use_cloudpickle:
+        m = cloudpickle.loads(cloudpickle.dumps(m))
+    else:
+        m = pickle.loads(pickle.dumps(m))
+
+    assert m.inner.a == 10
+    assert m.inner.b == 20
 
 
 class ImportableModelWithConfig(BaseModel):
