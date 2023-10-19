@@ -74,7 +74,7 @@ def model_factory() -> Type:
     return NonImportableModel
 
 @pytest.mark.parametrize(
-    "model_type,use_cloudpickle", [
+    'model_type,use_cloudpickle', [
         # Importable model can be pickled with either pickle or cloudpickle.
         (ImportableModel, False),
         (ImportableModel, True),
@@ -88,13 +88,13 @@ def test_pickle_model(model_type: Type, use_cloudpickle: bool):
     else:
         model_type = pickle.loads(pickle.dumps(model_type))
 
-    m = model_type(foo="hi", val=1)
-    assert m.foo == "hi"
+    m = model_type(foo='hi', val=1)
+    assert m.foo == 'hi'
     assert m.bar is None
     assert m.val == 1.0
 
     with pytest.raises(ValidationError):
-        model_type(foo="hi", val=-1.1)
+        model_type(foo='hi', val=-1.1)
 
 
 @pydantic.dataclasses.dataclass
@@ -124,7 +124,7 @@ def builtin_dataclass_factory() -> Type:
     return NonImportableBuiltinDataclass
 
 @pytest.mark.parametrize(
-    "dataclass_type,use_cloudpickle", [
+    'dataclass_type,use_cloudpickle', [
         # Importable Pydantic dataclass can be pickled with either pickle or cloudpickle.
         (ImportableDataclass, False),
         (ImportableDataclass, True),
@@ -162,7 +162,7 @@ def model_with_config_factory() -> Type:
     return NonImportableModelWithConfig
 
 @pytest.mark.parametrize(
-    "model_type,use_cloudpickle", [
+    'model_type,use_cloudpickle', [
         (ImportableModelWithConfig, False),
         (ImportableModelWithConfig, True),
         (model_with_config_factory(), True),
