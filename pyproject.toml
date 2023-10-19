@@ -94,6 +94,7 @@ linting = [
     "mypy~=1.1.1",
 ]
 testing = [
+    "cloudpickle",
     "coverage[toml]",
     "dirty-equals",
     "pytest",
@@ -107,8 +108,6 @@ testing-extra = [
     # used when generate devtools docs example
     "ansi2html",
     "devtools",
-    # used to test cloudpickle serialization
-    "cloudpickle",
     # used in docs tests
     "sqlalchemy>=2.0,<3.0",
     "greenlet>=3.0.0rc3",
