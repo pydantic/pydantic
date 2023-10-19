@@ -1419,8 +1419,9 @@ def create_model(
         fields[f_name] = f_value
 
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
-    if __doc__:
-        namespace.update({'__doc__': __doc__})
+    doc = __doc__ if __doc__ else (__base__[0].__doc__ if __base__ and __base__[0] is not BaseModel else None)
+    namespace.update({'__doc__': doc})
+
     if __validators__:
         namespace.update(__validators__)
     namespace.update(fields)

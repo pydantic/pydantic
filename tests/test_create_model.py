@@ -270,6 +270,19 @@ def test_create_model_with_doc():
     assert model.__doc__ == 'The Foo model'
 
 
+def test_create_model_doc_inheritance():
+    class BarModel(BaseModel):
+        """The Bar model"""
+
+        x: int = 1
+        y: int = 2
+
+    model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __base__=BarModel)
+    assert model.__name__ == 'FooModel'
+    assert model.__doc__ == 'The Bar model'
+    assert model.model_fields.keys() == {'foo', 'bar', 'x', 'y'}
+
+
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
 @pytest.mark.parametrize('use_annotation', [True, False])
 def test_private_descriptors(base, use_annotation):
