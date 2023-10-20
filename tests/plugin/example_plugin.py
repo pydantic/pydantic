@@ -24,7 +24,7 @@ class ValidatePythonHandler:
 
 
 class Plugin:
-    def new_schema_validator(self, schema, type_path, config, plugin_settings):
+    def new_schema_validator(self, schema, type_path, item_type, config, plugin_settings):
         return ValidatePythonHandler(), None, None
 
 

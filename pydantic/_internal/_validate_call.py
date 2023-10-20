@@ -66,7 +66,7 @@ class ValidateCallWrapper:
         core_config = config_wrapper.core_config(self)
 
         self.__pydantic_validator__ = create_schema_validator(
-            schema, self.__module__, self.__qualname__, core_config, config_wrapper.plugin_settings
+            schema, self.__module__, self.__qualname__, 'validate_call', core_config, config_wrapper.plugin_settings
         )
 
         if self._validate_return:
@@ -79,7 +79,7 @@ class ValidateCallWrapper:
             schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
             self.__return_pydantic_core_schema__ = schema
             validator = create_schema_validator(
-                schema, self.__module__, self.__qualname__, core_config, config_wrapper.plugin_settings
+                schema, self.__module__, self.__qualname__, 'validate_call', core_config, config_wrapper.plugin_settings
             )
             if inspect.iscoroutinefunction(self.raw_function):
 

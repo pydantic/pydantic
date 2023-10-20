@@ -90,6 +90,7 @@ class Plugin(PydanticPluginProtocol):
         self,
         schema: CoreSchema,
         type_path: str,
+        item_type: str,
         config: Union[CoreConfig, None],
         plugin_settings: Dict[str, object],
     ) -> NewSchemaReturns:

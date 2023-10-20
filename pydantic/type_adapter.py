@@ -272,7 +272,7 @@ class TypeAdapter(Generic[T]):
             if module is None:
                 f = sys._getframe(1)
                 module = f.f_globals['__name__']
-            validator = create_schema_validator(core_schema, module, type, core_config, config_wrapper.plugin_settings)  # type: ignore
+            validator = create_schema_validator(core_schema, module, type, 'type_adapter', core_config, config_wrapper.plugin_settings)  # type: ignore
 
         serializer: SchemaSerializer
         try:

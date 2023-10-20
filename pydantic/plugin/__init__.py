@@ -28,6 +28,7 @@ class PydanticPluginProtocol(Protocol):
         self,
         schema: CoreSchema,
         type_path: str,
+        item_type: str,
         config: CoreConfig | None,
         plugin_settings: dict[str, object],
     ) -> tuple[
@@ -42,6 +43,7 @@ class PydanticPluginProtocol(Protocol):
         Args:
             schema: The schema to validate against.
             type_path: The path of item to validate against.
+            item_type: The type of item to validate against.
             config: The config to use for validation.
             plugin_settings: Any plugin settings.
 
