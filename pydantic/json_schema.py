@@ -1195,7 +1195,9 @@ class GenerateJsonSchema:
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
-        extra = config.get('extra', 'ignore')
+        extra = schema.get('extra_behavior')
+        if extra is None:
+            extra = config.get('extra', 'ignore')
         if extra == 'forbid':
             json_schema['additionalProperties'] = False
         elif extra == 'allow':
