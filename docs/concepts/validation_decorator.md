@@ -24,7 +24,7 @@ a = repeat('hello', 3)
 print(a)
 #> b'hellohellohello'
 
-b = repeat('x', '4', separator=' ')
+b = repeat('x', '4', separator=b' ')
 print(b)
 #> b'x x x x'
 
