@@ -725,3 +725,32 @@ def test_async_func() -> None:
             'input': 'x',
         }
     ]
+
+
+def test_validate_call_with_slots() -> None:
+    class ClassWithSlots:
+        __slots__ = {}
+
+        @validate_call(validate_return=True)
+        def some_instance_method(self, x: str) -> str:
+            return x
+
+        @classmethod
+        @validate_call(validate_return=True)
+        def some_class_method(cls, x: str) -> str:
+            return x
+
+        @staticmethod
+        @validate_call(validate_return=True)
+        def some_static_method(x: str) -> str:
+            return x
+
+    c = ClassWithSlots()
+    assert c.some_instance_method(x='potato') == 'potato'
+    assert c.some_class_method(x='pepper') == 'pepper'
+    assert c.some_static_method(x='onion') == 'onion'
+
+    # verify that equality still holds for instance methods
+    assert c.some_instance_method == c.some_instance_method
+    assert c.some_class_method == c.some_class_method
+    assert c.some_static_method == c.some_static_method
