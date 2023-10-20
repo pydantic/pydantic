@@ -89,6 +89,7 @@ class Plugin(PydanticPluginProtocol):
     def new_schema_validator(
         self,
         schema: CoreSchema,
+        type_path: str,
         config: Union[CoreConfig, None],
         plugin_settings: Dict[str, object],
     ) -> NewSchemaReturns:

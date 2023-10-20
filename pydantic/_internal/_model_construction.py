@@ -1,7 +1,6 @@
 """Private logic for creating models."""
 from __future__ import annotations as _annotations
 
-import sys
 import typing
 import warnings
 import weakref
@@ -64,6 +63,7 @@ class ModelMetaclass(ABCMeta):
         namespace: dict[str, Any],
         __pydantic_generic_metadata__: PydanticGenericMetadata | None = None,
         __pydantic_reset_parent_namespace__: bool = True,
+        cls_module: str | None = None,
         **kwargs: Any,
     ) -> type:
         """Metaclass for creating Pydantic models.
@@ -74,6 +74,7 @@ class ModelMetaclass(ABCMeta):
             namespace: The attribute dictionary of the class to be created.
             __pydantic_generic_metadata__: Metadata for generic models.
             __pydantic_reset_parent_namespace__: Reset parent namespace.
+            cls_module: The module of the class to be created.
             **kwargs: Catch-all for any other keyword arguments.
 
         Returns:
@@ -82,7 +83,6 @@ class ModelMetaclass(ABCMeta):
         # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we rely on the fact
         # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine whether the `__new__`
         # call we're in the middle of is for the `BaseModel` class.
-        is_dynamic_model: bool = kwargs.pop('is_dynamic_model', False)
         if bases:
             base_field_names, class_vars, base_private_attributes = mcs._collect_bases_data(bases)
 
@@ -184,7 +184,7 @@ class ModelMetaclass(ABCMeta):
                 config_wrapper,
                 raise_errors=False,
                 types_namespace=types_namespace,
-                is_dynamic_model=is_dynamic_model,
+                cls_module=cls_module,
             )
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
@@ -441,7 +441,7 @@ def complete_model_class(
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
-    is_dynamic_model: bool = False,
+    cls_module: str | None = None,
 ) -> bool:
     """Finish building a model class.
 
@@ -454,7 +454,7 @@ def complete_model_class(
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors.
         types_namespace: Optional extra namespace to look for types in.
-        is_dynamic_model: Whether the model is a dynamic model (function is called from `create_model`).
+        cls_module: The module of the class to be created.
 
     Returns:
         `True` if the model is successfully completed, else `False`.
@@ -499,14 +499,11 @@ def complete_model_class(
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
 
-    if is_dynamic_model:
-        f = sys._getframe(3)
-        cls_module = f.f_globals['__name__']
-    else:
+    if cls_module is None:
         cls_module = cls.__module__
 
     cls.__pydantic_validator__ = create_schema_validator(
-        schema, f'{cls_module}:{cls.__qualname__}', core_config, config_wrapper.plugin_settings
+        schema, cls_module, cls.__qualname__, core_config, config_wrapper.plugin_settings
     )
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True

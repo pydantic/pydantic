@@ -17,8 +17,16 @@ Event = Literal['on_validate_python', 'on_validate_json', 'on_validate_strings']
 events: list[Event] = list(Event.__args__)  # type: ignore
 
 
+def build_type_path(module: str, name: str) -> str:
+    return f'{module}:{name}'
+
+
 def create_schema_validator(
-    schema: CoreSchema, path: str, config: CoreConfig | None = None, plugin_settings: dict[str, Any] | None = None
+    schema: CoreSchema,
+    module: str,
+    type_name: str,
+    config: CoreConfig | None = None,
+    plugin_settings: dict[str, Any] | None = None,
 ) -> SchemaValidator:
     """Create a `SchemaValidator` or `PluggableSchemaValidator` if plugins are installed.
 
@@ -29,7 +37,8 @@ def create_schema_validator(
 
     plugins = get_plugins()
     if plugins:
-        return PluggableSchemaValidator(schema, path, config, plugins, plugin_settings or {})  # type: ignore
+        type_path = build_type_path(module, type_name)
+        return PluggableSchemaValidator(schema, type_path, config, plugins, plugin_settings or {})  # type: ignore
     else:
         return SchemaValidator(schema, config)
 
@@ -42,7 +51,7 @@ class PluggableSchemaValidator:
     def __init__(
         self,
         schema: CoreSchema,
-        path: str,
+        type_path: str,
         config: CoreConfig | None,
         plugins: Iterable[PydanticPluginProtocol],
         plugin_settings: dict[str, Any],
@@ -53,7 +62,7 @@ class PluggableSchemaValidator:
         json_event_handlers: list[BaseValidateHandlerProtocol] = []
         strings_event_handlers: list[BaseValidateHandlerProtocol] = []
         for plugin in plugins:
-            p, j, s = plugin.new_schema_validator(schema, path, config, plugin_settings)
+            p, j, s = plugin.new_schema_validator(schema, type_path, config, plugin_settings)
             if p is not None:
                 python_event_handlers.append(p)
             if j is not None:

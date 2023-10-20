@@ -1,6 +1,7 @@
 """Logic for creating models."""
 from __future__ import annotations as _annotations
 
+import sys
 import types
 import typing
 import warnings
@@ -1431,8 +1432,18 @@ def create_model(
     if resolved_bases is not __base__:
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
-    kwds['is_dynamic_model'] = True
-    return meta(__model_name, resolved_bases, namespace, __pydantic_reset_parent_namespace__=False, **kwds)
+
+    f = sys._getframe(1)
+    cls_module = f.f_globals['__name__']
+
+    return meta(
+        __model_name,
+        resolved_bases,
+        namespace,
+        __pydantic_reset_parent_namespace__=False,
+        cls_module=cls_module,
+        **kwds,
+    )
 
 
 __getattr__ = getattr_migration(__name__)

@@ -205,23 +205,28 @@ class TypeAdapter(Generic[T]):
             raise NotImplementedError
 
         @overload
-        def __init__(self, type: type[T], *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
+        def __init__(
+            self, type: type[T], *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
+        ) -> None:
             ...
 
         # this overload is for non-type things like Union[int, str]
         # Pyright currently handles this "correctly", but MyPy understands this as TypeAdapter[object]
         # so an explicit type cast is needed
         @overload
-        def __init__(self, type: T, *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
+        def __init__(
+            self, type: T, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
+        ) -> None:
             ...
 
-    def __init__(self, type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
+    def __init__(self, type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None) -> None:
         """Initializes the TypeAdapter object.
 
         Args:
             type: The type associated with the `TypeAdapter`.
             config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
             _parent_depth: depth at which to search the parent namespace to construct the local namespace.
+
 
         !!! note
             You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you're using has its own
@@ -264,10 +269,10 @@ class TypeAdapter(Generic[T]):
         try:
             validator = _getattr_no_parents(type, '__pydantic_validator__')
         except AttributeError:
-            f = sys._getframe(1)
-            validator = create_schema_validator(
-                core_schema, f'{f.f_globals["__name__"]}:{type}', core_config, config_wrapper.plugin_settings
-            )
+            if module is None:
+                f = sys._getframe(1)
+                module = f.f_globals['__name__']
+            validator = create_schema_validator(core_schema, module, type, core_config, config_wrapper.plugin_settings)  # type: ignore
 
         serializer: SchemaSerializer
         try:
