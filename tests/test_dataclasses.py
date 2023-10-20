@@ -1644,6 +1644,21 @@ def test_kw_only():
     assert A(b='hi').b == 'hi'
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
+def test_kw_only_subclass():
+    @pydantic.dataclasses.dataclass
+    class A:
+        x: int
+        y: int = pydantic.Field(default=0, kw_only=True)
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        z: int
+
+    assert B(1, 2) == B(x=1, y=0, z=2)
+    assert B(1, y=2, z=3) == B(x=1, y=2, z=3)
+
+
 def dataclass_decorators(include_identity: bool = False, exclude_combined: bool = False):
     decorators = [pydantic.dataclasses.dataclass, dataclasses.dataclass]
     ids = ['pydantic', 'stdlib']
