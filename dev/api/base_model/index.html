@@ -5979,8 +5979,8 @@ allow <code>self</code> as a field name.</p>
 
   
   <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
       <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_config" class="headerlink" title="Permanent link">&para;</a></h3>
@@ -8401,6 +8401,7 @@ in the copied model.</p>
     <span class="n">__model_name</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="vm">__doc__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">__base__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="vm">__module__</span><span class="o">=</span><span class="vm">__name__</span><span class="p">,</span>
     <span class="n">__validators__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -8448,6 +8449,20 @@ subclass of <a class="autorefs autorefs-internal" href="#pydantic.BaseModel"><co
           <td>
             <div class="doc-md-description">
               <p>The configuration of the new model.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>__doc__</code></td>
+          <td>
+                <code>str | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The docstring of the new model.</p>
             </div>
           </td>
           <td>
@@ -8589,9 +8604,7 @@ fields.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1346</span>
-<span class="normal">1347</span>
-<span class="normal">1348</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1348</span>
 <span class="normal">1349</span>
 <span class="normal">1350</span>
 <span class="normal">1351</span>
@@ -8671,10 +8684,17 @@ fields.</p>
 <span class="normal">1425</span>
 <span class="normal">1426</span>
 <span class="normal">1427</span>
-<span class="normal">1428</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1428</span>
+<span class="normal">1429</span>
+<span class="normal">1430</span>
+<span class="normal">1431</span>
+<span class="normal">1432</span>
+<span class="normal">1433</span>
+<span class="normal">1434</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="vm">__doc__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">__base__</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Model</span><span class="p">]</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">Model</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="vm">__module__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="vm">__name__</span><span class="p">,</span>
     <span class="n">__validators__</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AnyClassMethod</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -8688,6 +8708,7 @@ fields.</p>
 <span class="sd">    Args:</span>
 <span class="sd">        __model_name: The name of the newly created model.</span>
 <span class="sd">        __config__: The configuration of the new model.</span>
+<span class="sd">        __doc__: The docstring of the new model.</span>
 <span class="sd">        __base__: The base class for the new model.</span>
 <span class="sd">        __module__: The name of the module that the model belongs to.</span>
 <span class="sd">        __validators__: A dictionary of methods that validate</span>
@@ -8743,6 +8764,8 @@ fields.</p>
         <span class="n">fields</span><span class="p">[</span><span class="n">f_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">f_value</span>
 
     <span class="n">namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;__annotations__&#39;</span><span class="p">:</span> <span class="n">annotations</span><span class="p">,</span> <span class="s1">&#39;__module__&#39;</span><span class="p">:</span> <span class="vm">__module__</span><span class="p">}</span>
+    <span class="k">if</span> <span class="vm">__doc__</span><span class="p">:</span>
+        <span class="n">namespace</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s1">&#39;__doc__&#39;</span><span class="p">:</span> <span class="vm">__doc__</span><span class="p">})</span>
     <span class="k">if</span> <span class="n">__validators__</span><span class="p">:</span>
         <span class="n">namespace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">__validators__</span><span class="p">)</span>
     <span class="n">namespace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
