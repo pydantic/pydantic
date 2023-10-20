@@ -23,6 +23,7 @@ def build_type_path(module: str, name: str) -> str:
 
 def create_schema_validator(
     schema: CoreSchema,
+    source_type: Any,
     module: str,
     type_name: str,
     item_type: str,
@@ -39,7 +40,7 @@ def create_schema_validator(
     plugins = get_plugins()
     if plugins:
         type_path = build_type_path(module, type_name)
-        return PluggableSchemaValidator(schema, type_path, item_type, config, plugins, plugin_settings or {})  # type: ignore
+        return PluggableSchemaValidator(schema, source_type, type_path, item_type, config, plugins, plugin_settings or {})  # type: ignore
     else:
         return SchemaValidator(schema, config)
 
@@ -52,6 +53,7 @@ class PluggableSchemaValidator:
     def __init__(
         self,
         schema: CoreSchema,
+        source_type: Any,
         type_path: str,
         item_type: str,
         config: CoreConfig | None,
@@ -64,7 +66,7 @@ class PluggableSchemaValidator:
         json_event_handlers: list[BaseValidateHandlerProtocol] = []
         strings_event_handlers: list[BaseValidateHandlerProtocol] = []
         for plugin in plugins:
-            p, j, s = plugin.new_schema_validator(schema, type_path, item_type, config, plugin_settings)
+            p, j, s = plugin.new_schema_validator(schema, source_type, type_path, item_type, config, plugin_settings)
             if p is not None:
                 python_event_handlers.append(p)
             if j is not None:

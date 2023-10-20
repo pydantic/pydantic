@@ -89,6 +89,7 @@ class Plugin(PydanticPluginProtocol):
     def new_schema_validator(
         self,
         schema: CoreSchema,
+        source_type: str,
         type_path: str,
         item_type: str,
         config: Union[CoreConfig, None],

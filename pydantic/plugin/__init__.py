@@ -27,6 +27,7 @@ class PydanticPluginProtocol(Protocol):
     def new_schema_validator(
         self,
         schema: CoreSchema,
+        source_type: str,
         type_path: str,
         item_type: str,
         config: CoreConfig | None,
@@ -42,6 +43,7 @@ class PydanticPluginProtocol(Protocol):
 
         Args:
             schema: The schema to validate against.
+            source_type: The item to validate against.
             type_path: The path of item to validate against.
             item_type: The type of item to validate against.
             config: The config to use for validation.

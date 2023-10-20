@@ -501,6 +501,7 @@ def complete_model_class(
 
     cls.__pydantic_validator__ = create_schema_validator(
         schema,
+        cls,
         cls_module if cls_module else cls.__module__,
         cls.__qualname__,
         'create_model' if cls_module else 'BaseModel',
