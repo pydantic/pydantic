@@ -163,7 +163,7 @@ def dataclass(
     else:
         kwargs = {}
 
-        def make_pydantic_fields_compatible(_):
+        def make_pydantic_fields_compatible(_) -> None:
             return None
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
