@@ -1509,6 +1509,9 @@ class GenerateSchema:
             )
 
         return_type = replace_types(return_type, self._typevars_map)
+        # Create a new ComputedFieldInfo so that different type parametrizations of the same
+        # generic model's computed field can have different return types.
+        d.info = dataclasses.replace(d.info, return_type=return_type)
         return_type_schema = self.generate_schema(return_type)
         # Apply serializers to computed field if there exist
         return_type_schema = self._apply_field_serializers(
