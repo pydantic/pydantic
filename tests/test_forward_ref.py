@@ -711,6 +711,7 @@ class Foobar(BaseModel):
     assert f.y.model_fields_set == {'x'}
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='needs 3.10 or newer')
 def test_recursive_models_union(create_module):
     module = create_module(
         # language=Python
@@ -724,12 +725,14 @@ T = TypeVar("T")
 
 class Foo(BaseModel):
     bar: Bar[str] | None = None
+    bar2: int | Bar[float]
 
 class Bar(BaseModel, Generic[T]):
     foo: Foo
 """
     )
     assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
+    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, module.Bar[float]]
     assert module.Bar.model_fields['foo'].annotation == module.Foo
 
 
