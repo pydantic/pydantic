@@ -711,6 +711,28 @@ class Foobar(BaseModel):
     assert f.y.model_fields_set == {'x'}
 
 
+def test_recursive_models_union(create_module):
+    module = create_module(
+        # language=Python
+        """
+from __future__ import annotations
+
+from pydantic import BaseModel
+from typing import TypeVar, Generic
+
+T = TypeVar("T")
+
+class Foo(BaseModel):
+    bar: Bar[str] | None = None
+
+class Bar(BaseModel, Generic[T]):
+    foo: Foo
+"""
+    )
+    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
+    assert module.Bar.model_fields['foo'].annotation == module.Foo
+
+
 def test_force_rebuild():
     class Foobar(BaseModel):
         b: int
