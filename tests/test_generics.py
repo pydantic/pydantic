@@ -1941,6 +1941,11 @@ def test_generic_with_user_defined_generic_field():
     with pytest.raises(ValidationError):
         model = Model[int](field=['a'])
 
+    # The global `get_args` variable here may not be the monkeypatched one.
+    import typing_extensions
+
+    assert typing_extensions.get_args(Model[int]) == (int,)
+
 
 def test_generic_annotated():
     T = TypeVar('T')

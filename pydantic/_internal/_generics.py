@@ -228,8 +228,8 @@ def get_origin(v: Any) -> Any:
 
 typing_extensions.get_args = get_args
 typing_extensions.get_origin = get_origin
-typing.get_args = get_args
-typing.get_origin = get_origin
+typing.get_args = get_args  # type: ignore
+typing.get_origin = get_origin  # type: ignore
 
 
 def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:

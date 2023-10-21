@@ -4,7 +4,6 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import sys
-import typing
 from functools import partialmethod
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast, overload
@@ -14,7 +13,7 @@ from pydantic_core import core_schema as _core_schema
 from typing_extensions import Annotated, Literal, TypeAlias
 
 from . import GetCoreSchemaHandler as _GetCoreSchemaHandler
-from ._internal import _core_metadata, _decorators, _internal_dataclass
+from ._internal import _core_metadata, _decorators, _generics, _internal_dataclass
 from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
 
@@ -530,7 +529,7 @@ else:
             from pydantic import PydanticSchemaGenerationError
 
             # use the generic _origin_ as the second argument to isinstance when appropriate
-            instance_of_schema = core_schema.is_instance_schema(typing.get_origin(source) or source)
+            instance_of_schema = core_schema.is_instance_schema(_generics.get_origin(source) or source)
 
             try:
                 # Try to generate the "standard" schema, which will be used when loading from JSON
