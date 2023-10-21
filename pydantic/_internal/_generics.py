@@ -208,18 +208,28 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
             yield from iter_contained_typevars(arg)
 
 
+original_get_args = typing_extensions.get_args
+original_get_origin = typing_extensions.get_origin
+
+
 def get_args(v: Any) -> Any:
     pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, '__pydantic_generic_metadata__', None)
     if pydantic_generic_metadata:
         return pydantic_generic_metadata.get('args')
-    return typing_extensions.get_args(v)
+    return original_get_args(v)
 
 
 def get_origin(v: Any) -> Any:
     pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, '__pydantic_generic_metadata__', None)
     if pydantic_generic_metadata:
         return pydantic_generic_metadata.get('origin')
-    return typing_extensions.get_origin(v)
+    return original_get_origin(v)
+
+
+typing_extensions.get_args = get_args
+typing_extensions.get_origin = get_origin
+typing.get_args = get_args
+typing.get_origin = get_origin
 
 
 def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
