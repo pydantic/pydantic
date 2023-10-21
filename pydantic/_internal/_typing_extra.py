@@ -439,4 +439,4 @@ def is_generic_alias(type_: type[Any]) -> bool:
     if sys.version_info >= (3, 10):
         return isinstance(type_, (types.GenericAlias, typing._GenericAlias))  # type: ignore[attr-defined]
     else:
-        return isinstance(type_, typing._GenericAlias)
+        return isinstance(type_, typing._GenericAlias)  # type: ignore
