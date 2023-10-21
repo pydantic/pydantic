@@ -1052,11 +1052,12 @@ class GenerateSchema:
         self,
         obj: Any,  # TypeAliasType
     ) -> CoreSchema:
-        origin = get_origin(obj)
-        origin = origin or obj
-        with self.defs.get_schema_or_ref(origin) as (ref, maybe_schema):
+        with self.defs.get_schema_or_ref(obj) as (ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
+
+            origin = get_origin(obj)
+            origin = origin or obj
 
             namespace = (self._types_namespace or {}).copy()
             new_namespace = {**_typing_extra.get_cls_types_namespace(origin), **namespace}
@@ -1064,6 +1065,8 @@ class GenerateSchema:
 
             self._types_namespace = new_namespace
             typevars_map = get_standard_typevars_map(obj)
+
+            annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace, None)
             annotation = replace_types(annotation, typevars_map)
             schema = self.generate_schema(annotation)
             assert schema['type'] != 'definitions'

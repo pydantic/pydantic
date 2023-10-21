@@ -10,6 +10,7 @@ from typing import (
     Union,
     _GenericAlias,  # type: ignore
     cast,
+    get_origin,
 )
 
 from pydantic_core import CoreSchema, core_schema
@@ -86,7 +87,9 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     This `args_override` argument was added for the purpose of creating valid recursive references
     when creating generic models without needing to create a concrete class.
     """
-    origin = type_
+    origin = get_origin(type_)
+    origin = origin or type_
+
     args = get_args(type_) if isinstance(type_, _GenericAlias) else (args_override or ())
     generic_metadata = getattr(type_, '__pydantic_generic_metadata__', None)
     if generic_metadata:
