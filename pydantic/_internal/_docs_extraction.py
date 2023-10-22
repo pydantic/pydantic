@@ -6,8 +6,6 @@ import inspect
 import textwrap
 from typing import Any, Sequence
 
-from ._model_construction import ModelMetaclass
-
 
 class DocstringVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
@@ -53,12 +51,17 @@ def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
         source: Sequence[str] = []
         frame = inspect.currentframe()
 
+        # Avoid circular import
+        from ._model_construction import ModelMetaclass
+
         if frame is None:
             return {}
 
-        while frame:
+        while frame and frame.f_back:
             if frame.f_code is ModelMetaclass.__new__.__code__:
                 lnum = frame.f_back.f_lineno
+                if not isinstance(lnum, int):
+                    return {}
                 source = inspect.getblock(lines[lnum - 1 : lnum + 1])
                 break
             frame = frame.f_back
