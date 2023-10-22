@@ -4,7 +4,9 @@ from __future__ import annotations
 import ast
 import inspect
 import textwrap
-from typing import Any
+from typing import Any, Sequence
+
+from ._model_construction import ModelMetaclass
 
 
 class DocstringVisitor(ast.NodeVisitor):
@@ -42,14 +44,30 @@ def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
         A mapping containing attribute names and their corresponding docstring.
     """
     try:
-        source = inspect.getsource(cls)
+        lines, _ = inspect.findsource(cls)
     except OSError:
         # Source can't be parsed (maybe because running in an interactive terminal),
         # we don't want to error here.
         return {}
+    else:
+        source: Sequence[str] = []
+        frame = inspect.currentframe()
+
+        if frame is None:
+            return {}
+
+        while frame:
+            if frame.f_code is ModelMetaclass.__new__.__code__:
+                lnum = frame.f_back.f_lineno
+                source = inspect.getblock(lines[lnum - 1 : lnum + 1])
+                break
+            frame = frame.f_back
+
+        if not source:
+            return {}
 
     # Required for nested class definitions, e.g. in a function block
-    dedent_source = textwrap.dedent(source)
+    dedent_source = textwrap.dedent(''.join(source))
 
     visitor = DocstringVisitor()
     visitor.visit(ast.parse(dedent_source))
