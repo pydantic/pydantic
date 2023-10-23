@@ -250,8 +250,8 @@ def collect_dataclass_fields(
 
         if (
             not dataclass_field.init
-            and dataclass_field.default_factory == dataclasses.MISSING
             and dataclass_field.default == dataclasses.MISSING
+            and dataclass_field.default_factory == dataclasses.MISSING
         ):
             # TODO: We should probably do something with this so that validate_assignment behaves properly
             #   Issue: https://github.com/pydantic/pydantic/issues/5470
