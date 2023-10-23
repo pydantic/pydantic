@@ -1,6 +1,6 @@
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, create_model
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 
@@ -192,3 +192,13 @@ def test_typeddict_as_field():
 
     a_property = ModelWithTDField.model_json_schema()['$defs']['ModelTDAsField']['properties']['a']
     assert a_property['description'] == 'A docs'
+
+
+def test_create_model():
+    MyModel = create_model(
+        'MyModel',
+        foo=(int, 123),
+        __config__=ConfigDict(use_attributes_docstring=True),
+    )
+
+    assert MyModel.model_fields['foo'].description is None
