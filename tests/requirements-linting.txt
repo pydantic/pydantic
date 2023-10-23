@@ -1,5 +1,5 @@
 black==23.9.1
 griffe==0.36.5
 pyright==1.1.331
-ruff==0.0.292
+ruff==0.1.1
 mypy==1.6.0
