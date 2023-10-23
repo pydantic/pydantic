@@ -1291,7 +1291,7 @@ class GenerateSchema:
             else:
                 return self._type_schema()
         elif _typing_extra.origin_is_union(get_origin(type_param)):
-            return self._union_is_subclass_schema(type_param.__bound__)
+            return self._union_is_subclass_schema(type_param)
         else:
             return core_schema.is_subclass_schema(type_param)
 
