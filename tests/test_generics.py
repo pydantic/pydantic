@@ -1508,6 +1508,22 @@ def test_generic_with_referenced_generic_type_bound():
     ReferenceModel[MyInt]
 
 
+def test_generic_with_referenced_generic_union_type_bound():
+    T = TypeVar('T', bound=Union[str, int])
+
+    class ModelWithType(BaseModel, Generic[T]):
+        some_type: Type[T]
+
+    class MyInt(int):
+        ...
+
+    class MyStr(str):
+        ...
+
+    ModelWithType[MyInt]
+    ModelWithType[MyStr]
+
+
 def test_generic_with_referenced_generic_type_constraints():
     T = TypeVar('T', int, str)
 
