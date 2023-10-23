@@ -3,8 +3,9 @@ from __future__ import annotations
 
 import ast
 import inspect
+import re
 import textwrap
-from typing import Any, Sequence
+from typing import Any
 
 
 class DocstringVisitor(ast.NodeVisitor):
@@ -32,6 +33,26 @@ class DocstringVisitor(ast.NodeVisitor):
             self.target = None
 
 
+def _extract_source_from_frame(lines: list[str], cls_name: str) -> list[str] | None:
+    source: list[str] = []
+    frame = inspect.currentframe()
+
+    if frame is None:
+        return None
+
+    while frame and frame.f_back:
+        lnum = frame.f_back.f_lineno
+        if isinstance(lnum, int) and len(lines) >= lnum and re.match(fr"$class\s+{cls_name}", lines[lnum - 1].strip()):
+            source = inspect.getblock(lines[lnum - 1 :])
+            break
+        frame = frame.f_back
+    breakpoint()
+    if not source:
+        return None
+
+    return source
+
+
 def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
     """Map model attributes and their corresponding docstring.
 
@@ -47,27 +68,13 @@ def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
         # Source can't be parsed (maybe because running in an interactive terminal),
         # we don't want to error here.
         return {}
-    else:
-        source: Sequence[str] = []
-        frame = inspect.currentframe()
 
-        # Avoid circular import
-        from ._model_construction import ModelMetaclass
-
-        if frame is None:
-            return {}
-
-        while frame and frame.f_back:
-            if frame.f_code is ModelMetaclass.__new__.__code__:
-                lnum = frame.f_back.f_lineno
-                if not isinstance(lnum, int):
-                    return {}
-                source = inspect.getblock(lines[lnum - 1 :])
-                break
-            frame = frame.f_back
-
-        if not source:
-            return {}
+    # We first try to fetch the source lines by walking back the frames:
+    source = _extract_source_from_frame(lines, cls.__name__)
+    if not source:
+        # Fallback to how inspect fetch the source lines, might not work as expected
+        # if two classes have the same name in the same source file.
+        source, _ = inspect.getsourcelines(cls)
 
     # Required for nested class definitions, e.g. in a function block
     dedent_source = textwrap.dedent(''.join(source))
