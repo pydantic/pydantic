@@ -42,7 +42,7 @@ idna = "0.4.0"
 base64 = "0.21.4"
 num-bigint = "0.4.4"
 python3-dll-a = "0.2.7"
-uuid = "1.4.1"
+uuid = "1.5.0"
 
 [lib]
 name = "_pydantic_core"
