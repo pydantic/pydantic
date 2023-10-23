@@ -219,9 +219,14 @@ class TypeAdapter(Generic[T]):
         """Initializes the TypeAdapter object.
 
         Args:
-            type: The Python type associated with the `TypeAdapter`.
+            type: The type associated with the `TypeAdapter`.
             config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
             _parent_depth: depth at which to search the parent namespace to construct the local namespace.
+
+        !!! note
+            You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you're using has its own
+            config that cannot be overridden (ex: `BaseModel`, `TypedDict`, and `dataclass`). A
+            [`type-adapter-config-unused`](../errors/usage_errors.md#type-adapter-config-unused) error will be raised in this case.
 
         !!! note
             The `_parent_depth` argument is named with an underscore to suggest its private nature and discourage use.
