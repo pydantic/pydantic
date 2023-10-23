@@ -55,6 +55,46 @@ def test_model_docs_extraction():
     assert ModelDocs.model_fields['g'].description == 'G docs'
 
 
+def test_model_docs_duplicate_class():
+    """Ensure source parsing is working correctly when using frames."""
+
+    class MyModel(BaseModel):
+        a: int
+        """A docs"""
+
+        model_config = ConfigDict(
+            use_attributes_docstring=True,
+        )
+
+    class MyModel(BaseModel):
+        b: int
+        """B docs"""
+
+        model_config = ConfigDict(
+            use_attributes_docstring=True,
+        )
+
+    assert MyModel.model_fields['b'].description == 'B docs'
+
+
+def test_model_docs_dedented_string():
+    # fmt: off
+    class MyModel(BaseModel):
+        def bar(self):
+            """
+An inconveniently dedented string
+            """
+
+        a: int
+        """A docs"""
+
+        model_config = ConfigDict(
+            use_attributes_docstring=True,
+        )
+    # fmt: on
+    assert MyModel.model_fields['a'].description == 'A docs'
+
+
 def test_dataclass_no_docs_extraction():
     @pydantic_dataclass
     class ModelDCNoDocs:

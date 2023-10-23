@@ -42,11 +42,11 @@ def _extract_source_from_frame(lines: list[str], cls_name: str) -> list[str] | N
 
     while frame and frame.f_back:
         lnum = frame.f_back.f_lineno
-        if isinstance(lnum, int) and len(lines) >= lnum and re.match(fr"$class\s+{cls_name}", lines[lnum - 1].strip()):
-            source = inspect.getblock(lines[lnum - 1 :])
+        if isinstance(lnum, int) and len(lines) >= lnum and re.match(fr'class\s+{cls_name}', lines[lnum - 1].strip()):
+            source = inspect.getblock(lines[lnum - 1 :])  # type: ignore
             break
         frame = frame.f_back
-    breakpoint()
+
     if not source:
         return None
 
@@ -78,6 +78,11 @@ def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
 
     # Required for nested class definitions, e.g. in a function block
     dedent_source = textwrap.dedent(''.join(source))
+    if not dedent_source.startswith('class'):
+        # We are in the case where there's a dedented (usually multiline) string
+        # at a lower indentation level than the class itself. We wrap our class
+        # in a function as a workaround.
+        dedent_source = f'def _():\n{dedent_source}'
 
     visitor = DocstringVisitor()
     visitor.visit(ast.parse(dedent_source))
