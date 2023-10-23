@@ -24,6 +24,7 @@ from pydantic import (
     PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
+    RootModel,
     TypeAdapter,
     ValidationError,
     ValidationInfo,
@@ -2459,7 +2460,21 @@ def test_dataclass_field_default_factory_with_init():
     class Model:
         x: int = dataclasses.field(default_factory=lambda: 3, init=False)
 
-    assert Model().x == 3
+    m = Model()
+    assert 'x' in Model.__pydantic_fields__
+    assert m.x == 3
+    assert RootModel[Model](m).model_dump() == {'x': 3}
+
+
+def test_dataclass_field_default_with_init():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int = dataclasses.field(default=3, init=False)
+
+    m = Model()
+    assert 'x' in Model.__pydantic_fields__
+    assert m.x == 3
+    assert RootModel[Model](m).model_dump() == {'x': 3}
 
 
 def test_metadata():
