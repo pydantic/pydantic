@@ -62,7 +62,7 @@ def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
                 lnum = frame.f_back.f_lineno
                 if not isinstance(lnum, int):
                     return {}
-                source = inspect.getblock(lines[lnum - 1 : lnum + 1])
+                source = inspect.getblock(lines[lnum - 1 :])
                 break
             frame = frame.f_back
 
