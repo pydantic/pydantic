@@ -1320,6 +1320,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: ConfigDict | None = None,
+    __doc__: str | None = None,
     __base__: None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] | None = None,
@@ -1334,6 +1335,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: ConfigDict | None = None,
+    __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] | None = None,
@@ -1347,6 +1349,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: ConfigDict | None = None,
+    __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] | None = None,
@@ -1360,6 +1363,7 @@ def create_model(
     Args:
         __model_name: The name of the newly created model.
         __config__: The configuration of the new model.
+        __doc__: The docstring of the new model.
         __base__: The base class for the new model.
         __module__: The name of the module that the model belongs to.
         __validators__: A dictionary of methods that validate
@@ -1415,6 +1419,8 @@ def create_model(
         fields[f_name] = f_value
 
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
+    if __doc__:
+        namespace.update({'__doc__': __doc__})
     if __validators__:
         namespace.update(__validators__)
     namespace.update(fields)

@@ -38,14 +38,19 @@ class Foo(BaseModel):
     a: Optional['Bar'] = None
 
 
+try:
+    # this doesn't work, see raised error
+    foo = Foo(a={'b': {'a': None}})
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'class-not-fully-defined'
+
+
 class Bar(BaseModel):
     b: 'Foo'
 
 
-try:
-    foo = Foo(a={'b': {'a': None}})
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'class-not-fully-defined'
+# this works, though
+foo = Foo(a={'b': {'a': None}})
 ```
 
 For BaseModel subclasses, it can be fixed by defining the type and then calling `.model_rebuild()`:

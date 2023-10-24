@@ -108,6 +108,11 @@ class ValidateCallWrapper:
 
         bound_function = self.raw_function.__get__(obj, objtype)
         result = self.__class__(bound_function, self._config, self._validate_return)
+
+        # skip binding to instance when obj or objtype has __slots__ attribute
+        if hasattr(obj, '__slots__') or hasattr(objtype, '__slots__'):
+            return result
+
         if self._name is not None:
             if obj is not None:
                 object.__setattr__(obj, self._name, result)
@@ -120,3 +125,6 @@ class ValidateCallWrapper:
 
     def __repr__(self) -> str:
         return f'ValidateCallWrapper({self.raw_function})'
+
+    def __eq__(self, other):
+        return self.raw_function == other.raw_function
