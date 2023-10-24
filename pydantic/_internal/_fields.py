@@ -236,7 +236,7 @@ def collect_model_fields(  # noqa: C901
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
 
-    if config_wrapper.use_attributes_docstring:
+    if config_wrapper.use_attribute_docstrings:
         fields_docs = extract_docstrings_from_cls(cls)
         _update_fields_from_docstrings(fields, fields_docs)
 
@@ -311,7 +311,7 @@ def collect_dataclass_fields(
         for field in fields.values():
             field.apply_typevars_map(typevars_map, types_namespace)
 
-    if config_wrapper is not None and config_wrapper.use_attributes_docstring:
+    if config_wrapper is not None and config_wrapper.use_attribute_docstrings:
         fields_docs = extract_docstrings_from_cls(cls)
         _update_fields_from_docstrings(fields, fields_docs)
 

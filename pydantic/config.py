@@ -868,7 +868,7 @@ class ConfigDict(TypedDict, total=False):
         The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.
     """
 
-    use_attributes_docstring: bool
+    use_attribute_docstrings: bool
     """
     Whether attributes docstring should be used for `FieldInfo.description`.
 

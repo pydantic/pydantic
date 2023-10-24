@@ -1,8 +1,13 @@
+import textwrap
+
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, create_model
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
+
+def dec_noop(obj):
+    return obj
 
 def test_model_no_docs_extraction():
     class ModelNoDocs(BaseModel):
@@ -18,6 +23,11 @@ def test_model_no_docs_extraction():
 
 
 def test_model_docs_extraction():
+
+    # Using a couple dummy decorators to make sure the frame is pointing at
+    # the `class` line:
+    @dec_noop
+    @dec_noop
     class ModelDocs(BaseModel):
         a: int
         """A docs"""
@@ -44,7 +54,7 @@ def test_model_docs_extraction():
         """G docs"""
 
         model_config = ConfigDict(
-            use_attributes_docstring=True,
+            use_attribute_docstrings=True,
         )
 
     assert ModelDocs.model_fields['a'].description == 'A docs'
@@ -63,7 +73,7 @@ def test_model_docs_duplicate_class():
         """A docs"""
 
         model_config = ConfigDict(
-            use_attributes_docstring=True,
+            use_attribute_docstrings=True,
         )
 
     class MyModel(BaseModel):
@@ -71,7 +81,7 @@ def test_model_docs_duplicate_class():
         """B docs"""
 
         model_config = ConfigDict(
-            use_attributes_docstring=True,
+            use_attribute_docstrings=True,
         )
 
     assert MyModel.model_fields['b'].description == 'B docs'
@@ -89,7 +99,7 @@ An inconveniently dedented string
         """A docs"""
 
         model_config = ConfigDict(
-            use_attributes_docstring=True,
+            use_attribute_docstrings=True,
         )
     # fmt: on
     assert MyModel.model_fields['a'].description == 'A docs'
@@ -110,7 +120,8 @@ def test_dataclass_no_docs_extraction():
 
 
 def test_dataclass_docs_extraction():
-    @pydantic_dataclass(config=ConfigDict(use_attributes_docstring=True))
+    @pydantic_dataclass(config=ConfigDict(use_attribute_docstrings=True))
+    @dec_noop
     class ModelDCDocs:
         a: int
         """A docs"""
@@ -168,7 +179,7 @@ def test_typeddict():
         a: int
         """A docs"""
 
-        __pydantic_config__ = ConfigDict(use_attributes_docstring=True)
+        __pydantic_config__ = ConfigDict(use_attribute_docstrings=True)
 
     ta = TypeAdapter(ModelTDDocs)
 
@@ -185,7 +196,7 @@ def test_typeddict_as_field():
         a: int
         """A docs"""
 
-        __pydantic_config__ = ConfigDict(use_attributes_docstring=True)
+        __pydantic_config__ = ConfigDict(use_attribute_docstrings=True)
 
     class ModelWithTDField(BaseModel):
         td: ModelTDAsField
@@ -198,7 +209,24 @@ def test_create_model():
     MyModel = create_model(
         'MyModel',
         foo=(int, 123),
-        __config__=ConfigDict(use_attributes_docstring=True),
+        __config__=ConfigDict(use_attribute_docstrings=True),
     )
 
     assert MyModel.model_fields['foo'].description is None
+
+
+def test_exec_cant_be_parsed():
+    source = textwrap.dedent(
+        """
+        class MyModelExec(BaseModel):
+            a: int
+            \"\"\"A docs\"\"\"
+
+            model_config = ConfigDict(use_attribute_docstrings=True)
+        """
+    )
+
+    locals_dict = {}
+
+    exec(source, globals(), locals_dict)
+    assert locals_dict['MyModelExec'].model_fields['a'].description is None
