@@ -947,7 +947,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `__fields__` attribute is deprecated, use `model_fields` instead.', category=PydanticDeprecatedSince20
     )
     def __fields__(self) -> dict[str, FieldInfo]:
-        warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning, stacklevel=2
+        )
         return self.model_fields
 
     @property
@@ -974,7 +976,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
     ) -> typing.Dict[str, Any]:  # noqa UP006
-        warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', DeprecationWarning)
+        warnings.warn('The `dict` method is deprecated; use `model_dump` instead.', DeprecationWarning, stacklevel=2)
         return self.model_dump(
             include=include,
             exclude=exclude,
@@ -1000,7 +1002,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         models_as_dict: bool = PydanticUndefined,  # type: ignore[assignment]
         **dumps_kwargs: Any,
     ) -> str:
-        warnings.warn('The `json` method is deprecated; use `model_dump_json` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `json` method is deprecated; use `model_dump_json` instead.', DeprecationWarning, stacklevel=2
+        )
         if encoder is not PydanticUndefined:
             raise TypeError('The `encoder` argument is no longer supported; use field serializers instead.')
         if models_as_dict is not PydanticUndefined:
@@ -1021,7 +1025,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `parse_obj` method is deprecated; use `model_validate` instead.', category=PydanticDeprecatedSince20
     )
     def parse_obj(cls: type[Model], obj: Any) -> Model:  # noqa: D102
-        warnings.warn('The `parse_obj` method is deprecated; use `model_validate` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `parse_obj` method is deprecated; use `model_validate` instead.', DeprecationWarning, stacklevel=2
+        )
         return cls.model_validate(obj)
 
     @classmethod
@@ -1131,7 +1137,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `construct` method is deprecated; use `model_construct` instead.', category=PydanticDeprecatedSince20
     )
     def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:  # noqa: D102
-        warnings.warn('The `construct` method is deprecated; use `model_construct` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `construct` method is deprecated; use `model_construct` instead.', DeprecationWarning, stacklevel=2
+        )
         return cls.model_construct(_fields_set=_fields_set, **values)
 
     @typing_extensions.deprecated(
@@ -1218,7 +1226,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def schema(  # noqa: D102
         cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
     ) -> typing.Dict[str, Any]:  # noqa UP006
-        warnings.warn('The `schema` method is deprecated; use `model_json_schema` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `schema` method is deprecated; use `model_json_schema` instead.', DeprecationWarning, stacklevel=2
+        )
         return cls.model_json_schema(by_alias=by_alias, ref_template=ref_template)
 
     @classmethod
@@ -1248,7 +1258,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The `validate` method is deprecated; use `model_validate` instead.', category=PydanticDeprecatedSince20
     )
     def validate(cls: type[Model], value: Any) -> Model:  # noqa: D102
-        warnings.warn('The `validate` method is deprecated; use `model_validate` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `validate` method is deprecated; use `model_validate` instead.', DeprecationWarning, stacklevel=2
+        )
         return cls.model_validate(value)
 
     @classmethod
@@ -1268,7 +1280,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         'The private method `_iter` will be removed and should no longer be used.', category=PydanticDeprecatedSince20
     )
     def _iter(self, *args: Any, **kwargs: Any) -> Any:
-        warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
+        warnings.warn(
+            'The private method `_iter` will be removed and should no longer be used.', DeprecationWarning, stacklevel=2
+        )
 
         from .deprecated import copy_internals
 

@@ -141,7 +141,7 @@ def truncate(v: Union[str], *, max_len: int = 80) -> str:
     """
     Truncate a value and add a unicode ellipsis (three dots) to the end if it was too long
     """
-    warnings.warn('`truncate` is no-longer used by pydantic and is deprecated', DeprecationWarning)
+    warnings.warn('`truncate` is no-longer used by pydantic and is deprecated', DeprecationWarning, stacklevel=2)
     if isinstance(v, str) and len(v) > (max_len - 2):
         # -3 so quote + string + … + quote has correct length
         return (v[: (max_len - 3)] + '…').__repr__()

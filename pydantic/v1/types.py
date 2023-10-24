@@ -907,7 +907,7 @@ class SecretStr(SecretField):
         return len(self._secret_value)
 
     def display(self) -> str:
-        warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning)
+        warnings.warn('`secret_str.display()` is deprecated, use `str(secret_str)` instead', DeprecationWarning, stacklevel=2)
         return str(self)
 
     def get_secret_value(self) -> str:
@@ -951,7 +951,7 @@ class SecretBytes(SecretField):
         return len(self._secret_value)
 
     def display(self) -> str:
-        warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning)
+        warnings.warn('`secret_bytes.display()` is deprecated, use `str(secret_bytes)` instead', DeprecationWarning, stacklevel=2)
         return str(self)
 
     def get_secret_value(self) -> bytes:

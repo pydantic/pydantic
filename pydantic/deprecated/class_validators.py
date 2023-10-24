@@ -110,7 +110,7 @@ def validator(
             function to be used as a validator.
     """
     if allow_reuse is True:  # pragma: no cover
-        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
+        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning, stacklevel=2)
     fields = tuple((__field, *fields))
     if isinstance(fields[0], FunctionType):
         raise PydanticUserError(
@@ -222,7 +222,7 @@ def root_validator(
         return root_validator()(*__args)  # type: ignore
 
     if allow_reuse is True:  # pragma: no cover
-        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
+        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning, stacklevel=2)
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
         raise PydanticUserError(

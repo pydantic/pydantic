@@ -264,7 +264,7 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
         return ConfigDict()
 
     if not isinstance(config, dict):
-        warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
+        warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
         config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
     config_dict = cast(ConfigDict, config)

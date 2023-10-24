@@ -18,7 +18,7 @@ __all__ = 'BaseConfig', 'Extra'
 
 class _ConfigMetaclass(type):
     def __getattr__(self, item: str) -> Any:
-        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
+        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
 
         try:
             return _config.config_defaults[item]
@@ -35,7 +35,7 @@ class BaseConfig(metaclass=_ConfigMetaclass):
     """
 
     def __getattr__(self, item: str) -> Any:
-        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
+        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
         try:
             return super().__getattribute__(item)
         except AttributeError as exc:
@@ -46,7 +46,7 @@ class BaseConfig(metaclass=_ConfigMetaclass):
                 raise AttributeError(str(exc)) from exc
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
+        warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=2)
         return super().__init_subclass__(**kwargs)
 
 
