@@ -34,23 +34,13 @@ class DocstringVisitor(ast.NodeVisitor):
 
 
 def _extract_source_from_frame(lines: list[str], cls_name: str) -> list[str] | None:
-    source: list[str] = []
     frame = inspect.currentframe()
 
-    if frame is None:
-        return None
-
-    while frame and frame.f_back:
-        lnum = frame.f_back.f_lineno
+    while frame:
+        lnum = frame.f_lineno
         if isinstance(lnum, int) and len(lines) >= lnum and re.match(fr'class\s+{cls_name}', lines[lnum - 1].strip()):
-            source = inspect.getblock(lines[lnum - 1 :])  # type: ignore
-            break
+            return inspect.getblock(lines[lnum - 1 :])  # type: ignore
         frame = frame.f_back
-
-    if not source:
-        return None
-
-    return source
 
 
 def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
@@ -71,6 +61,7 @@ def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
 
     # We first try to fetch the source lines by walking back the frames:
     source = _extract_source_from_frame(lines, cls.__name__)
+
     if not source:
         # Fallback to how inspect fetch the source lines, might not work as expected
         # if two classes have the same name in the same source file.

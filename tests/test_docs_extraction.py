@@ -9,6 +9,7 @@ from pydantic.dataclasses import dataclass as pydantic_dataclass
 def dec_noop(obj):
     return obj
 
+
 def test_model_no_docs_extraction():
     class ModelNoDocs(BaseModel):
         a: int = 1
@@ -23,7 +24,6 @@ def test_model_no_docs_extraction():
 
 
 def test_model_docs_extraction():
-
     # Using a couple dummy decorators to make sure the frame is pointing at
     # the `class` line:
     @dec_noop
@@ -68,6 +68,7 @@ def test_model_docs_extraction():
 def test_model_docs_duplicate_class():
     """Ensure source parsing is working correctly when using frames."""
 
+    @dec_noop
     class MyModel(BaseModel):
         a: int
         """A docs"""
@@ -76,6 +77,7 @@ def test_model_docs_duplicate_class():
             use_attribute_docstrings=True,
         )
 
+    @dec_noop
     class MyModel(BaseModel):
         b: int
         """B docs"""
@@ -85,6 +87,31 @@ def test_model_docs_duplicate_class():
         )
 
     assert MyModel.model_fields['b'].description == 'B docs'
+
+    # With https://github.com/python/cpython/pull/106815/ introduced,
+    # inspect will fallback to the last found class in the source file.
+    # The following is to ensure using frames will still get the correct one
+    if True:
+
+        class MyModelEnclosed(BaseModel):
+            a: int
+            """A docs"""
+
+            model_config = ConfigDict(
+                use_attribute_docstrings=True,
+            )
+
+    else:
+
+        class MyModelEnclosed(BaseModel):
+            b: int
+            """B docs"""
+
+            model_config = ConfigDict(
+                use_attribute_docstrings=True,
+            )
+
+    assert MyModelEnclosed.model_fields['a'].description == 'A docs'
 
 
 def test_model_docs_dedented_string():
@@ -103,6 +130,26 @@ An inconveniently dedented string
         )
     # fmt: on
     assert MyModel.model_fields['a'].description == 'A docs'
+
+
+def test_model_docs_inheritance():
+    class FirstModel(BaseModel):
+        a: int
+        """A docs"""
+
+        b: int
+        """B docs"""
+
+        model_config = ConfigDict(
+            use_attribute_docstrings=True,
+        )
+
+    class SecondModel(FirstModel):
+        a: int
+        """A overridden docs"""
+
+    assert SecondModel.model_fields['a'].description == 'A overridden docs'
+    assert SecondModel.model_fields['b'].description == 'B docs'
 
 
 def test_dataclass_no_docs_extraction():
@@ -205,14 +252,21 @@ def test_typeddict_as_field():
     assert a_property['description'] == 'A docs'
 
 
-def test_create_model():
-    MyModel = create_model(
-        'MyModel',
+def test_create_model_test():
+    # Duplicate class creation to ensure create_model
+    # doesn't fallback to using inspect, which could
+    # in turn use the wrong class:
+    class CreatedModel(BaseModel):
+        foo: int = 123
+        """Shouldn't be used"""
+
+    CreatedModel = create_model(
+        'CreatedModel',
         foo=(int, 123),
         __config__=ConfigDict(use_attribute_docstrings=True),
     )
 
-    assert MyModel.model_fields['foo'].description is None
+    assert CreatedModel.model_fields['foo'].description is None
 
 
 def test_exec_cant_be_parsed():
