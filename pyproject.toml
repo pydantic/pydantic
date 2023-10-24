@@ -95,6 +95,7 @@ linting = [
     "mypy~=1.1.1",
 ]
 testing = [
+    "cloudpickle",
     "coverage[toml]",
     "dirty-equals",
     "pytest",
