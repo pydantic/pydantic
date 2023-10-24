@@ -1863,6 +1863,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.regex_engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        regex_engine
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3581,6 +3592,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.regex_engine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        regex_engine
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5234,6 +5256,61 @@ from being added to the definition references.</p>
 <span class="c1">#&gt; &quot;42.13&quot;</span>
 <span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;42.13&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 <span class="c1">#&gt; &quot;42.13&quot;</span>
+</code></pre></div>
+  </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.regex_engine" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">regex_engine</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.regex_engine" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">regex_engine</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;rust-regex&#39;</span><span class="p">,</span> <span class="s1">&#39;python-re&#39;</span><span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The regex engine to used for pattern validation
+Defaults to <code>'rust-regex'</code>.</p>
+<ul>
+<li><code>rust-regex</code> uses the <a href="https://docs.rs/regex"><code>regex</code></a> Rust crate,
+  which is non-backtracking and therefore more DDoS resistant, but does not support all regex features.</li>
+<li><code>python-re</code> use the <a href="https://docs.python.org/3/library/re.html"><code>re</code></a> module,
+  which supports all regex features, but may be slower.</li>
+</ul>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">regex_engine</span><span class="o">=</span><span class="s1">&#39;python-re&#39;</span><span class="p">)</span>
+
+    <span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;^abc(?=def)&#39;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;abcdef&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="c1">#&gt; abcdef</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s1">&#39;abxyzcdef&#39;</span><span class="p">))</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    value</span>
+<span class="sd">      String should match pattern &#39;^abc(?=def)&#39; [type=string_pattern_mismatch, input_value=&#39;abxyzcdef&#39;, input_type=str]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
   </div>
 
