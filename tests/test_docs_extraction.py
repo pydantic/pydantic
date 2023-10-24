@@ -11,7 +11,7 @@ def dec_noop(obj):
 
 
 def test_model_no_docs_extraction():
-    class ModelNoDocs(BaseModel):
+    class MyModel(BaseModel):
         a: int = 1
         """A docs"""
 
@@ -19,8 +19,8 @@ def test_model_no_docs_extraction():
 
         """B docs"""
 
-    assert ModelNoDocs.model_fields['a'].description is None
-    assert ModelNoDocs.model_fields['b'].description is None
+    assert MyModel.model_fields['a'].description is None
+    assert MyModel.model_fields['b'].description is None
 
 
 def test_model_docs_extraction():
@@ -28,7 +28,7 @@ def test_model_docs_extraction():
     # the `class` line:
     @dec_noop
     @dec_noop
-    class ModelDocs(BaseModel):
+    class MyModel(BaseModel):
         a: int
         """A docs"""
         b: int = 1
@@ -57,12 +57,12 @@ def test_model_docs_extraction():
             use_attribute_docstrings=True,
         )
 
-    assert ModelDocs.model_fields['a'].description == 'A docs'
-    assert ModelDocs.model_fields['b'].description == 'B docs'
-    assert ModelDocs.model_fields['c'].description is None
-    assert ModelDocs.model_fields['d'].description is None
-    assert ModelDocs.model_fields['e'].description == 'Real description'
-    assert ModelDocs.model_fields['g'].description == 'G docs'
+    assert MyModel.model_fields['a'].description == 'A docs'
+    assert MyModel.model_fields['b'].description == 'B docs'
+    assert MyModel.model_fields['c'].description is None
+    assert MyModel.model_fields['d'].description is None
+    assert MyModel.model_fields['e'].description == 'Real description'
+    assert MyModel.model_fields['g'].description == 'G docs'
 
 
 def test_model_docs_duplicate_class():
@@ -148,13 +148,14 @@ def test_model_docs_inheritance():
         a: int
         """A overridden docs"""
 
+    assert SecondModel.model_fields['a'].description == 'A docs'
     assert SecondModel.model_fields['a'].description == 'A overridden docs'
     assert SecondModel.model_fields['b'].description == 'B docs'
 
 
 def test_dataclass_no_docs_extraction():
     @pydantic_dataclass
-    class ModelDCNoDocs:
+    class MyModel:
         a: int = 1
         """A docs"""
 
@@ -162,14 +163,14 @@ def test_dataclass_no_docs_extraction():
 
         """B docs"""
 
-    assert ModelDCNoDocs.__pydantic_fields__['a'].description is None
-    assert ModelDCNoDocs.__pydantic_fields__['b'].description is None
+    assert MyModel.__pydantic_fields__['a'].description is None
+    assert MyModel.__pydantic_fields__['b'].description is None
 
 
 def test_dataclass_docs_extraction():
     @pydantic_dataclass(config=ConfigDict(use_attribute_docstrings=True))
     @dec_noop
-    class ModelDCDocs:
+    class MyModel:
         a: int
         """A docs"""
         b: int = 1
@@ -200,40 +201,40 @@ def test_dataclass_docs_extraction():
         i: Annotated[int, Field(description='Real description')] = 1
         """Won't be used"""
 
-    assert ModelDCDocs.__pydantic_fields__['a'].description == 'A docs'
-    assert ModelDCDocs.__pydantic_fields__['b'].description == 'B docs'
-    assert ModelDCDocs.__pydantic_fields__['c'].description is None
-    assert ModelDCDocs.__pydantic_fields__['d'].description is None
-    assert ModelDCDocs.__pydantic_fields__['e'].description == 'Real description'
-    assert ModelDCDocs.__pydantic_fields__['g'].description == 'G docs'
-    assert ModelDCDocs.__pydantic_fields__['i'].description == 'Real description'
+    assert MyModel.__pydantic_fields__['a'].description == 'A docs'
+    assert MyModel.__pydantic_fields__['b'].description == 'B docs'
+    assert MyModel.__pydantic_fields__['c'].description is None
+    assert MyModel.__pydantic_fields__['d'].description is None
+    assert MyModel.__pydantic_fields__['e'].description == 'Real description'
+    assert MyModel.__pydantic_fields__['g'].description == 'G docs'
+    assert MyModel.__pydantic_fields__['i'].description == 'Real description'
 
 
 def test_typeddict():
-    class ModelTDNoDocs(TypedDict):
+    class MyModel(TypedDict):
         a: int
         """A docs"""
 
-    ta = TypeAdapter(ModelTDNoDocs)
+    ta = TypeAdapter(MyModel)
     assert ta.json_schema() == {
         'properties': {'a': {'title': 'A', 'type': 'integer'}},
         'required': ['a'],
-        'title': 'ModelTDNoDocs',
+        'title': 'MyModel',
         'type': 'object',
     }
 
-    class ModelTDDocs(TypedDict):
+    class MyModel(TypedDict):
         a: int
         """A docs"""
 
         __pydantic_config__ = ConfigDict(use_attribute_docstrings=True)
 
-    ta = TypeAdapter(ModelTDDocs)
+    ta = TypeAdapter(MyModel)
 
     assert ta.json_schema() == {
         'properties': {'a': {'title': 'A', 'type': 'integer', 'description': 'A docs'}},
         'required': ['a'],
-        'title': 'ModelTDDocs',
+        'title': 'MyModel',
         'type': 'object',
     }
 
@@ -245,10 +246,10 @@ def test_typeddict_as_field():
 
         __pydantic_config__ = ConfigDict(use_attribute_docstrings=True)
 
-    class ModelWithTDField(BaseModel):
+    class MyModel(BaseModel):
         td: ModelTDAsField
 
-    a_property = ModelWithTDField.model_json_schema()['$defs']['ModelTDAsField']['properties']['a']
+    a_property = MyModel.model_json_schema()['$defs']['ModelTDAsField']['properties']['a']
     assert a_property['description'] == 'A docs'
 
 
