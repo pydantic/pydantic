@@ -244,7 +244,7 @@ class ConfigDict(TypedDict, total=False):
         1 validation error for User
         name
           Input should be a valid string [type=string_type, input_value=123, input_type=int]
-            '''
+        '''
     ```
 
     1. You can either use class keyword arguments, or `model_config` to set `validate_assignment=True`.
@@ -869,11 +869,35 @@ class ConfigDict(TypedDict, total=False):
     """
 
     use_attribute_docstrings: bool
-    """
-    Whether attributes docstring should be used for `FieldInfo.description`.
+    '''
+    Whether docstrings of attributes (bare string literals immediately following the attribute declaration)
+    should be used for field descriptions.
 
-    Defaults to `False`.
-    """
+    ```py
+    from pydantic import BaseModel, ConfigDict, Field
+
+
+    class Model(BaseModel):
+        model_config = ConfigDict(use_attribute_docstrings=True)
+
+        x: str
+        """
+        Example of an attribute docstring
+        """
+
+        y: int = Field(description="Description in Field")
+        """
+        Description in Field overrides attribute docstring
+        """
+
+
+    print(Model.model_fields["x"].description)
+    # > Example of an attribute docstring
+    print(Model.model_fields["y"].description)
+    # > Description in Field
+    ```
+    This requires the source code of the class to be available at runtime.
+    '''
 
 
 __getattr__ = getattr_migration(__name__)

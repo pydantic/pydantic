@@ -43,7 +43,7 @@ def _extract_source_from_frame(cls_name: str) -> list[str] | None:
         except OSError:
             # Source can't be parsed (maybe because running in an interactive terminal),
             # we don't want to error here.
-            continue
+            pass
         if isinstance(lnum, int) and len(lines) >= lnum and re.match(fr'class\s+{cls_name}', lines[lnum - 1].strip()):
             return inspect.getblock(lines[lnum - 1 :])  # type: ignore
         frame = frame.f_back
@@ -64,7 +64,10 @@ def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
     if not source:
         # Fallback to how inspect fetch the source lines, might not work as expected
         # if two classes have the same name in the same source file.
-        source, _ = inspect.getsourcelines(cls)
+        try:
+            source, _ = inspect.getsourcelines(cls)
+        except OSError:
+            return {}
 
     # Required for nested class definitions, e.g. in a function block
     dedent_source = textwrap.dedent(''.join(source))

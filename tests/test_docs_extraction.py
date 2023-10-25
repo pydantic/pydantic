@@ -93,7 +93,7 @@ def test_model_docs_duplicate_class():
     # The following is to ensure using frames will still get the correct one
     if True:
 
-        class MyModelEnclosed(BaseModel):
+        class MyModel(BaseModel):
             a: int
             """A docs"""
 
@@ -103,7 +103,7 @@ def test_model_docs_duplicate_class():
 
     else:
 
-        class MyModelEnclosed(BaseModel):
+        class MyModel(BaseModel):
             b: int
             """B docs"""
 
@@ -111,7 +111,7 @@ def test_model_docs_duplicate_class():
                 use_attribute_docstrings=True,
             )
 
-    assert MyModelEnclosed.model_fields['a'].description == 'A docs'
+    assert MyModel.model_fields['a'].description == 'A docs'
 
 
 def test_model_docs_dedented_string():
@@ -133,7 +133,7 @@ An inconveniently dedented string
 
 
 def test_model_docs_inheritance():
-    class FirstModel(BaseModel):
+    class MyModel(BaseModel):
         a: int
         """A docs"""
 
@@ -144,13 +144,15 @@ def test_model_docs_inheritance():
             use_attribute_docstrings=True,
         )
 
-    class SecondModel(FirstModel):
+    FirstModel = MyModel
+
+    class MyModel(FirstModel):
         a: int
         """A overridden docs"""
 
-    assert SecondModel.model_fields['a'].description == 'A docs'
-    assert SecondModel.model_fields['a'].description == 'A overridden docs'
-    assert SecondModel.model_fields['b'].description == 'B docs'
+    assert FirstModel.model_fields['a'].description == 'A docs'
+    assert MyModel.model_fields['a'].description == 'A overridden docs'
+    assert MyModel.model_fields['b'].description == 'B docs'
 
 
 def test_dataclass_no_docs_extraction():
@@ -257,31 +259,37 @@ def test_create_model_test():
     # Duplicate class creation to ensure create_model
     # doesn't fallback to using inspect, which could
     # in turn use the wrong class:
-    class CreatedModel(BaseModel):
-        foo: int = 123
+    class MyModel(BaseModel):
+        foo: str = '123'
         """Shouldn't be used"""
 
-    CreatedModel = create_model(
-        'CreatedModel',
+        model_config = ConfigDict(
+            use_attribute_docstrings=True,
+        )
+
+    assert MyModel.model_fields['foo'].description == "Shouldn't be used"
+
+    MyModel = create_model(
+        'MyModel',
         foo=(int, 123),
         __config__=ConfigDict(use_attribute_docstrings=True),
     )
 
-    assert CreatedModel.model_fields['foo'].description is None
+    assert MyModel.model_fields['foo'].description is None
 
 
 def test_exec_cant_be_parsed():
     source = textwrap.dedent(
-        """
-        class MyModelExec(BaseModel):
+        '''
+        class MyModel(BaseModel):
             a: int
-            \"\"\"A docs\"\"\"
+            """A docs"""
 
             model_config = ConfigDict(use_attribute_docstrings=True)
-        """
+        '''
     )
 
     locals_dict = {}
 
     exec(source, globals(), locals_dict)
-    assert locals_dict['MyModelExec'].model_fields['a'].description is None
+    assert locals_dict['MyModel'].model_fields['a'].description is None
