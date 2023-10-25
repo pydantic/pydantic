@@ -3109,6 +3109,11 @@ to refer to both of these situations, even though it does not always imply conve
 and its subclasses will have the <code>root</code> field value dumped directly, without a wrapping dictionary. This is also
 done recursively.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can use <a href="../../api/fields/#pydantic.fields.computed_field">computed fields</a> to include <code>property</code> and
+<code>cached_property</code> data in the <code>model.model_dump(...)</code> output.</p>
+</div>
 <p>Example:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
