@@ -45,7 +45,11 @@ def _extract_source_from_frame(cls_name: str) -> list[str] | None:
             # we don't want to error here.
             pass
         else:
-            if isinstance(lnum, int) and len(lines) >= lnum and re.match(fr'class\s+{cls_name}', lines[lnum - 1].strip()):
+            if (
+                isinstance(lnum, int)
+                and len(lines) >= lnum
+                and re.match(fr'class\s+{cls_name}', lines[lnum - 1].strip())
+            ):
                 return inspect.getblock(lines[lnum - 1 :])  # type: ignore
         frame = frame.f_back
 
