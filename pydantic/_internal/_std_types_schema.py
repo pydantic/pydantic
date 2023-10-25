@@ -79,12 +79,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         # subclass enum.Enum (or subclasses of enum.Enum) if all parent classes have no cases.
         # We use the get_json_schema function when an Enum subclass has been declared with no cases
         # so that we can still generate a valid json schema.
-        if enum_type.__name__ in ['IntEnum', 'Enum']:
-            pydantic_js_functions = []
-        else:
-            pydantic_js_functions = [get_json_schema]
-
-        return core_schema.is_instance_schema(enum_type, metadata={'pydantic_js_functions': pydantic_js_functions})
+        return core_schema.is_instance_schema(enum_type, metadata={'pydantic_js_functions': [get_json_schema]})
 
     use_enum_values = config.get('use_enum_values', False)
 
