@@ -1723,6 +1723,17 @@ def test_strict_enum() -> None:
         User(demo_strict=0, demo_not_strict=1)
 
 
+def test_enum_with_no_cases() -> None:
+    class MyEnum(Enum):
+        pass
+
+    class MyModel(BaseModel):
+        e: MyEnum
+
+    json_schema = MyModel.model_json_schema()
+    assert json_schema['properties']['e']['enum'] == []
+
+
 @pytest.mark.parametrize(
     'kwargs,type_',
     [
