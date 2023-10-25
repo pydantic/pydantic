@@ -27,6 +27,7 @@ from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._mock_val_ser import set_dataclass_mocks
+from ._model_construction import generate_model_signature
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._utils import is_valid_identifier
 
@@ -123,19 +124,25 @@ def complete_dataclass(
         typevars_map,
     )
 
-    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied.
+    # Get a temporary signature before we change the __init__
+    fields = cls.__pydantic_fields__  # type: ignore
+    temp_sig = generate_model_signature(cls.__init__, fields, config_wrapper)
 
+    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied.
     def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
         __tracebackhide__ = True
         s = __dataclass_self__
         s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
 
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
-    sig = generate_dataclass_signature(cls)
-    cls.__init__ = __init__  # type: ignore
-    cls.__signature__ = sig  # type: ignore
-    cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
+    cls.__init__ = __init__  # type: ignore
+    cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
+    # Set to the temporary signature
+    cls.__signature__ = temp_sig  # type: ignore
+    # Get the final signature by running the generate_dataclass_signature
+    sig = generate_dataclass_signature(cls)
+    cls.__signature__ = sig  # type: ignore
     get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
     try:
         if get_core_schema:
