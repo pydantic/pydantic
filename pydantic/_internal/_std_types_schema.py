@@ -59,13 +59,19 @@ class SchemaTransformer:
 def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchema:
     cases: list[Any] = list(enum_type.__members__.values())
 
+    def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        json_schema = handler(core_schema.literal_schema([x.value for x in cases], ref=enum_ref))
+        original_schema = handler.resolve_ref_schema(json_schema)
+        update_json_schema(original_schema, updates)
+        return json_schema
+
     if not cases:
         # Use an isinstance check for enums with no cases.
         # This won't work with serialization or JSON schema, but that's okay -- the most important
         # use case for this is creating typevar bounds for generics that should be restricted to enums.
         # This is more consistent than it might seem at first, since you can only subclass enum.Enum
         # (or subclasses of enum.Enum) if all parent classes have no cases.
-        return core_schema.is_instance_schema(enum_type)
+        return core_schema.is_instance_schema(enum_type, metadata={'pydantic_js_functions': [get_json_schema]})
 
     use_enum_values = config.get('use_enum_values', False)
 
@@ -91,11 +97,6 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
     updates = {'title': enum_type.__name__, 'description': description}
     updates = {k: v for k, v in updates.items() if v is not None}
 
-    def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        json_schema = handler(core_schema.literal_schema([x.value for x in cases], ref=enum_ref))
-        original_schema = handler.resolve_ref_schema(json_schema)
-        update_json_schema(original_schema, updates)
-        return json_schema
 
     strict_python_schema = core_schema.is_instance_schema(enum_type)
     if use_enum_values:
