@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -129,7 +131,7 @@ impl Validator for ConstrainedFloatValidator {
             }
         }
         if let Some(le) = self.le {
-            if float > le {
+            if !matches!(float.partial_cmp(&le), Some(Ordering::Less | Ordering::Equal)) {
                 return Err(ValError::new(
                     ErrorType::LessThanEqual {
                         le: le.into(),
@@ -140,7 +142,7 @@ impl Validator for ConstrainedFloatValidator {
             }
         }
         if let Some(lt) = self.lt {
-            if float >= lt {
+            if !matches!(float.partial_cmp(&lt), Some(Ordering::Less)) {
                 return Err(ValError::new(
                     ErrorType::LessThan {
                         lt: lt.into(),
@@ -151,7 +153,7 @@ impl Validator for ConstrainedFloatValidator {
             }
         }
         if let Some(ge) = self.ge {
-            if float < ge {
+            if !matches!(float.partial_cmp(&ge), Some(Ordering::Greater | Ordering::Equal)) {
                 return Err(ValError::new(
                     ErrorType::GreaterThanEqual {
                         ge: ge.into(),
@@ -162,7 +164,7 @@ impl Validator for ConstrainedFloatValidator {
             }
         }
         if let Some(gt) = self.gt {
-            if float <= gt {
+            if !matches!(float.partial_cmp(&gt), Some(Ordering::Greater)) {
                 return Err(ValError::new(
                     ErrorType::GreaterThan {
                         gt: gt.into(),
