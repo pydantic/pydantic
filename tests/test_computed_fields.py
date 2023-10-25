@@ -736,6 +736,10 @@ def test_generic_computed_field():
     assert A[int](x=1).model_dump() == {'x': 1, 'double_x': 2}
     assert A[str](x='abc').model_dump() == {'x': 'abc', 'double_x': 'abcabc'}
 
+    assert A(x='xxxxxx').model_computed_fields['double_x'].return_type == T
+    assert A[int](x=123).model_computed_fields['double_x'].return_type == int
+    assert A[str](x='x').model_computed_fields['double_x'].return_type == str
+
     class B(BaseModel, Generic[T]):
         @computed_field
         @property
