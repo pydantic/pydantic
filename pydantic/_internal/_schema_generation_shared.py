@@ -49,14 +49,14 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
         Raises:
             LookupError: If it can't find the definition for `$ref`.
         """
-        if '$ref' not in maybe_ref_json_schema:
+        if "$ref" not in maybe_ref_json_schema:
             return maybe_ref_json_schema
-        ref = maybe_ref_json_schema['$ref']
+        ref = maybe_ref_json_schema["$ref"]
         json_schema = self.generate_json_schema.get_schema_from_definitions(ref)
         if json_schema is None:
             raise LookupError(
-                f'Could not find a ref for {ref}.'
-                ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
+                f"Could not find a ref for {ref}."
+                " Maybe you tried to call resolve_ref_schema from within a recursive model?"
             )
         return json_schema
 
@@ -72,7 +72,7 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         self,
         handler: Callable[[Any], core_schema.CoreSchema],
         generate_schema: GenerateSchema,
-        ref_mode: Literal['to-def', 'unpack'] = 'to-def',
+        ref_mode: Literal["to-def", "unpack"] = "to-def",
     ) -> None:
         self._handler = handler
         self._generate_schema = generate_schema
@@ -80,8 +80,8 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
 
     def __call__(self, __source_type: Any) -> core_schema.CoreSchema:
         schema = self._handler(__source_type)
-        ref = schema.get('ref')
-        if self._ref_mode == 'to-def':
+        ref = schema.get("ref")
+        if self._ref_mode == "to-def":
             if ref is not None:
                 self._generate_schema.defs.definitions[ref] = schema
                 return core_schema.definition_reference_schema(ref)
@@ -111,14 +111,14 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
         Raises:
             LookupError: If it can't find the definition for reference.
         """
-        if maybe_ref_schema['type'] == 'definition-ref':
-            ref = maybe_ref_schema['schema_ref']
+        if maybe_ref_schema["type"] == "definition-ref":
+            ref = maybe_ref_schema["schema_ref"]
             if ref not in self._generate_schema.defs.definitions:
                 raise LookupError(
-                    f'Could not find a ref for {ref}.'
-                    ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
+                    f"Could not find a ref for {ref}."
+                    " Maybe you tried to call resolve_ref_schema from within a recursive model?"
                 )
             return self._generate_schema.defs.definitions[ref]
-        elif maybe_ref_schema['type'] == 'definitions':
-            return self.resolve_ref_schema(maybe_ref_schema['schema'])
+        elif maybe_ref_schema["type"] == "definitions":
+            return self.resolve_ref_schema(maybe_ref_schema["schema"])
         return maybe_ref_schema

@@ -14,7 +14,7 @@ class Model(BaseModel):
 
 
 class SelfReferencingModel(BaseModel):
-    submodel: Optional['SelfReferencingModel']
+    submodel: Optional["SelfReferencingModel"]
 
     @property
     def prop(self) -> None:
@@ -23,8 +23,8 @@ class SelfReferencingModel(BaseModel):
 
 SelfReferencingModel.model_rebuild()
 
-model = Model(x=1, y='y')
-Model(x=1, y='y', z='z')
+model = Model(x=1, y="y")
+Model(x=1, y="y", z="z")
 model.x = 2
 model.model_validate(model)
 
@@ -36,8 +36,8 @@ class KwargsModel(BaseModel, from_attributes=True):
     y: str
 
 
-kwargs_model = KwargsModel(x=1, y='y')
-KwargsModel(x=1, y='y', z='z')
+kwargs_model = KwargsModel(x=1, y="y")
+KwargsModel(x=1, y="y", z="z")
 kwargs_model.x = 2
 kwargs_model.model_validate(kwargs_model.__dict__)
 
@@ -50,7 +50,7 @@ InheritingModel.model_validate(model.__dict__)
 
 
 class ForwardReferencingModel(Model):
-    future: 'FutureModel'
+    future: "FutureModel"
 
 
 class FutureModel(Model):
@@ -58,8 +58,8 @@ class FutureModel(Model):
 
 
 ForwardReferencingModel.model_rebuild()
-future_model = FutureModel(x=1, y='a')
-forward_model = ForwardReferencingModel(x=1, y='a', future=future_model)
+future_model = FutureModel(x=1, y="a")
+forward_model = ForwardReferencingModel(x=1, y="a", future=future_model)
 
 
 class NoMutationModel(BaseModel):
@@ -94,7 +94,7 @@ class OverrideModel(Model):
     x: int
 
 
-OverrideModel(x=1, y='b')
+OverrideModel(x=1, y="b")
 
 
 class Mixin:
@@ -110,11 +110,11 @@ MultiInheritanceModel().f()
 
 
 class AliasModel(BaseModel):
-    x: str = Field(..., alias='y')
+    x: str = Field(..., alias="y")
 
 
-alias_model = AliasModel(y='hello')
-assert alias_model.x == 'hello'
+alias_model = AliasModel(y="hello")
+assert alias_model.x == "hello"
 
 
 class ClassVarModel(BaseModel):
@@ -125,14 +125,14 @@ class ClassVarModel(BaseModel):
 ClassVarModel(x=1)
 
 
-@dataclass(config={'validate_assignment': True})
+@dataclass(config={"validate_assignment": True})
 class AddProject:
     name: str
     slug: Optional[str]
     description: Optional[str]
 
 
-p = AddProject(name='x', slug='y', description='z')
+p = AddProject(name="x", slug="y", description="z")
 
 
 class TypeAliasAsAttribute(BaseModel):
@@ -149,9 +149,9 @@ class NestedModel(BaseModel):
 _ = NestedModel.Model
 
 
-DynamicModel = create_model('DynamicModel', __base__=Model)
+DynamicModel = create_model("DynamicModel", __base__=Model)
 
-dynamic_model = DynamicModel(x=1, y='y')
+dynamic_model = DynamicModel(x=1, y="y")
 dynamic_model.x = 2
 
 
@@ -193,13 +193,13 @@ def f(name: str) -> str:
 
 class ModelWithAllowReuseValidator(BaseModel):
     name: str
-    normalize_name = field_validator('name')(f)
+    normalize_name = field_validator("name")(f)
 
 
-model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
+model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name="xyz")
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Response(BaseModel, Generic[T]):
@@ -213,13 +213,13 @@ response = Response[Model](data=model, error=None)
 class ModelWithAnnotatedValidator(BaseModel):
     name: str
 
-    @field_validator('name')
+    @field_validator("name")
     def noop_validator_with_annotations(cls, name: str) -> str:
         return name
 
 
 def _default_factory_str() -> str:
-    return 'x'
+    return "x"
 
 
 def _default_factory_list() -> List[int]:
@@ -238,11 +238,11 @@ class FieldDefaultTestingModel(BaseModel):
     # Default factory
     g: List[int] = Field(default_factory=_default_factory_list)
     h: str = Field(default_factory=_default_factory_str)
-    i: str = Field(default_factory=lambda: 'test')
+    i: str = Field(default_factory=lambda: "test")
 
 
-_TModel = TypeVar('_TModel')
-_TType = TypeVar('_TType')
+_TModel = TypeVar("_TModel")
+_TType = TypeVar("_TType")
 
 
 class OrmMixin(Generic[_TModel, _TType]):
@@ -274,7 +274,7 @@ class MyDataClass:
     bar: str
 
 
-MyDataClass(foo='foo', bar='bar')
+MyDataClass(foo="foo", bar="bar")
 
 
 def get_my_custom_validator(field_name: str) -> Any:
@@ -288,14 +288,14 @@ def get_my_custom_validator(field_name: str) -> Any:
 def foo() -> None:
     class MyModel(BaseModel):
         number: int
-        custom_validator = get_my_custom_validator('number')  # type: ignore[pydantic-field]
+        custom_validator = get_my_custom_validator("number")  # type: ignore[pydantic-field]
 
-        @model_validator(mode='before')
+        @model_validator(mode="before")
         @classmethod
         def validate_before(cls, values: Any) -> Any:
             return values
 
-        @model_validator(mode='after')
+        @model_validator(mode="after")
         def validate_after(self) -> Self:
             return self
 

@@ -5,22 +5,22 @@ class MyModel(BaseModel):
     x: int
 
 
-m = MyModel(x='10')
+m = MyModel(x="10")
 if m.x != 10:
-    raise ValueError('m.x should be 10')
+    raise ValueError("m.x should be 10")
 
 log = []
 
 
 class ValidatePythonHandler:
     def on_enter(self, *args, **kwargs) -> None:
-        log.append(f'on_enter args={args} kwargs={kwargs}')
+        log.append(f"on_enter args={args} kwargs={kwargs}")
 
     def on_success(self, result) -> None:
-        log.append(f'on_success result={result}')
+        log.append(f"on_success result={result}")
 
     def on_error(self, error) -> None:
-        log.append(f'on_error error={error}')
+        log.append(f"on_error error={error}")
 
 
 class Plugin:

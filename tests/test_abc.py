@@ -11,7 +11,7 @@ def test_model_subclassing_abstract_base_classes():
         some_field: str
 
 
-@pytest.mark.skipif(sys.version_info < (3, 12), reason='error value different on older versions')
+@pytest.mark.skipif(sys.version_info < (3, 12), reason="error value different on older versions")
 def test_model_subclassing_abstract_base_classes_without_implementation_raises_exception():
     class Model(BaseModel, abc.ABC):
         some_field: str
@@ -41,7 +41,7 @@ def test_model_subclassing_abstract_base_classes_without_implementation_raises_e
             pass
 
     with pytest.raises(TypeError) as excinfo:
-        Model(some_field='some_value')
+        Model(some_field="some_value")
     assert str(excinfo.value) == (
         "Can't instantiate abstract class Model without an implementation for abstract methods "
         "'my_abstract_classmethod', 'my_abstract_method', 'my_abstract_property', 'my_abstract_staticmethod'"

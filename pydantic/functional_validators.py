@@ -73,7 +73,7 @@ class AfterValidator:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        info_arg = _inspect_validator(self.func, 'after')
+        info_arg = _inspect_validator(self.func, "after")
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_after_validator_function(func, schema=schema, field_name=handler.field_name)
@@ -117,7 +117,7 @@ class BeforeValidator:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        info_arg = _inspect_validator(self.func, 'before')
+        info_arg = _inspect_validator(self.func, "before")
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_before_validator_function(func, schema=schema, field_name=handler.field_name)
@@ -154,7 +154,7 @@ class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        info_arg = _inspect_validator(self.func, 'plain')
+        info_arg = _inspect_validator(self.func, "plain")
         if info_arg:
             func = cast(core_schema.WithInfoValidatorFunction, self.func)
             return core_schema.with_info_plain_validator_function(func, field_name=handler.field_name)
@@ -205,7 +205,7 @@ class WrapValidator:
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        info_arg = _inspect_validator(self.func, 'wrap')
+        info_arg = _inspect_validator(self.func, "wrap")
         if info_arg:
             func = cast(core_schema.WithInfoWrapValidatorFunction, self.func)
             return core_schema.with_info_wrap_validator_function(func, schema=schema, field_name=handler.field_name)
@@ -249,18 +249,18 @@ if TYPE_CHECKING:
     _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
 
     _V2BeforeAfterOrPlainValidatorType = TypeVar(
-        '_V2BeforeAfterOrPlainValidatorType',
+        "_V2BeforeAfterOrPlainValidatorType",
         _V2Validator,
         _PartialClsOrStaticMethod,
     )
-    _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', _V2WrapValidator, _PartialClsOrStaticMethod)
+    _V2WrapValidatorType = TypeVar("_V2WrapValidatorType", _V2WrapValidator, _PartialClsOrStaticMethod)
 
 
 @overload
 def field_validator(
     __field: str,
     *fields: str,
-    mode: Literal['before', 'after', 'plain'] = ...,
+    mode: Literal["before", "after", "plain"] = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]:
     ...
@@ -270,19 +270,19 @@ def field_validator(
 def field_validator(
     __field: str,
     *fields: str,
-    mode: Literal['wrap'],
+    mode: Literal["wrap"],
     check_fields: bool | None = ...,
 ) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]:
     ...
 
 
-FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
+FieldValidatorModes: TypeAlias = Literal["before", "after", "wrap", "plain"]
 
 
 def field_validator(
     __field: str,
     *fields: str,
-    mode: FieldValidatorModes = 'after',
+    mode: FieldValidatorModes = "after",
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
     """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#field-validators
@@ -307,16 +307,16 @@ def field_validator(
     """
     if isinstance(__field, FunctionType):
         raise PydanticUserError(
-            '`@field_validator` should be used with fields and keyword arguments, not bare. '
+            "`@field_validator` should be used with fields and keyword arguments, not bare. "
             "E.g. usage should be `@validator('<field_name>', ...)`",
-            code='validator-no-fields',
+            code="validator-no-fields",
         )
     fields = __field, *fields
     if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
-            '`@field_validator` fields should be passed as separate string args. '
+            "`@field_validator` fields should be passed as separate string args. "
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
-            code='validator-invalid-fields',
+            code="validator-invalid-fields",
         )
 
     def dec(
@@ -324,7 +324,7 @@ def field_validator(
     ) -> _decorators.PydanticDescriptorProxy[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
-                '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
+                "`@field_validator` cannot be applied to instance methods", code="validator-instance-method"
             )
 
         # auto apply the @classmethod decorator
@@ -336,8 +336,8 @@ def field_validator(
     return dec
 
 
-_ModelType = TypeVar('_ModelType')
-_ModelTypeCo = TypeVar('_ModelTypeCo', covariant=True)
+_ModelType = TypeVar("_ModelType")
+_ModelTypeCo = TypeVar("_ModelTypeCo", covariant=True)
 
 
 class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Protocol[_ModelTypeCo]):
@@ -429,7 +429,7 @@ _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValid
 @overload
 def model_validator(
     *,
-    mode: Literal['wrap'],
+    mode: Literal["wrap"],
 ) -> Callable[
     [_AnyModelWrapValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
 ]:
@@ -439,7 +439,7 @@ def model_validator(
 @overload
 def model_validator(
     *,
-    mode: Literal['before'],
+    mode: Literal["before"],
 ) -> Callable[[_AnyModeBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
     ...
 
@@ -447,7 +447,7 @@ def model_validator(
 @overload
 def model_validator(
     *,
-    mode: Literal['after'],
+    mode: Literal["after"],
 ) -> Callable[
     [_AnyModelAfterValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
 ]:
@@ -456,7 +456,7 @@ def model_validator(
 
 def model_validator(
     *,
-    mode: Literal['wrap', 'before', 'after'],
+    mode: Literal["wrap", "before", "after"],
 ) -> Any:
     """Decorate model methods for validation purposes.
 
@@ -477,7 +477,7 @@ def model_validator(
     return dec
 
 
-AnyType = TypeVar('AnyType')
+AnyType = TypeVar("AnyType")
 
 
 if TYPE_CHECKING:
@@ -539,7 +539,7 @@ else:
                 return instance_of_schema
             else:
                 # Use the "original" approach to serialization
-                instance_of_schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+                instance_of_schema["serialization"] = core_schema.wrap_serializer_function_ser_schema(
                     function=lambda v, h: h(v), schema=original_schema
                 )
                 return core_schema.json_or_python_schema(python_schema=instance_of_schema, json_schema=original_schema)

@@ -17,9 +17,9 @@ from .fields import Field, FieldInfo
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
 
-__all__ = 'dataclass', 'rebuild_dataclass'
+__all__ = "dataclass", "rebuild_dataclass"
 
-_T = TypeVar('_T')
+_T = TypeVar("_T")
 
 if sys.version_info >= (3, 10):
 
@@ -138,8 +138,8 @@ def dataclass(
     Raises:
         AssertionError: Raised if `init` is not `False` or `validate_on_init` is `False`.
     """
-    assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
-    assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
+    assert init is False, "pydantic.dataclasses.dataclass only supports init=False"
+    assert validate_on_init is not False, "validate_on_init=False is no longer supported"
 
     if sys.version_info >= (3, 10):
         kwargs = dict(kw_only=kw_only, slots=slots)
@@ -180,7 +180,7 @@ def dataclass(
         config_dict = config
         if config_dict is None:
             # if not explicitly provided, read from the type
-            cls_config = getattr(cls, '__pydantic_config__', None)
+            cls_config = getattr(cls, "__pydantic_config__", None)
             if cls_config is not None:
                 config_dict = cls_config
         config_wrapper = _config.ConfigWrapper(config_dict)
@@ -309,4 +309,4 @@ def is_pydantic_dataclass(__cls: type[Any]) -> TypeGuard[type[PydanticDataclass]
     Returns:
         `True` if the class is a pydantic dataclass, `False` otherwise.
     """
-    return dataclasses.is_dataclass(__cls) and '__pydantic_validator__' in __cls.__dict__
+    return dataclasses.is_dataclass(__cls) and "__pydantic_validator__" in __cls.__dict__

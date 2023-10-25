@@ -9,54 +9,54 @@ from ._migration import getattr_migration
 from .version import version_short
 
 __all__ = (
-    'PydanticUserError',
-    'PydanticUndefinedAnnotation',
-    'PydanticImportError',
-    'PydanticSchemaGenerationError',
-    'PydanticInvalidForJsonSchema',
-    'PydanticErrorCodes',
+    "PydanticUserError",
+    "PydanticUndefinedAnnotation",
+    "PydanticImportError",
+    "PydanticSchemaGenerationError",
+    "PydanticInvalidForJsonSchema",
+    "PydanticErrorCodes",
 )
 
 # We use this URL to allow for future flexibility about how we host the docs, while allowing for Pydantic
 # code in the while with "old" URLs to still work.
 # 'u' refers to "user errors" - e.g. errors caused by developers using pydantic, as opposed to validation errors.
-DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{version_short()}/u/'
+DEV_ERROR_DOCS_URL = f"https://errors.pydantic.dev/{version_short()}/u/"
 PydanticErrorCodes = Literal[
-    'class-not-fully-defined',
-    'custom-json-schema',
-    'decorator-missing-field',
-    'discriminator-no-field',
-    'discriminator-alias-type',
-    'discriminator-needs-literal',
-    'discriminator-alias',
-    'discriminator-validator',
-    'typed-dict-version',
-    'model-field-overridden',
-    'model-field-missing-annotation',
-    'config-both',
-    'removed-kwargs',
-    'invalid-for-json-schema',
-    'json-schema-already-used',
-    'base-model-instantiated',
-    'undefined-annotation',
-    'schema-for-unknown-type',
-    'import-error',
-    'create-model-field-definitions',
-    'create-model-config-base',
-    'validator-no-fields',
-    'validator-invalid-fields',
-    'validator-instance-method',
-    'root-validator-pre-skip',
-    'model-serializer-instance-method',
-    'validator-field-config-info',
-    'validator-v1-signature',
-    'validator-signature',
-    'field-serializer-signature',
-    'model-serializer-signature',
-    'multiple-field-serializers',
-    'invalid_annotated_type',
-    'type-adapter-config-unused',
-    'root-model-extra',
+    "class-not-fully-defined",
+    "custom-json-schema",
+    "decorator-missing-field",
+    "discriminator-no-field",
+    "discriminator-alias-type",
+    "discriminator-needs-literal",
+    "discriminator-alias",
+    "discriminator-validator",
+    "typed-dict-version",
+    "model-field-overridden",
+    "model-field-missing-annotation",
+    "config-both",
+    "removed-kwargs",
+    "invalid-for-json-schema",
+    "json-schema-already-used",
+    "base-model-instantiated",
+    "undefined-annotation",
+    "schema-for-unknown-type",
+    "import-error",
+    "create-model-field-definitions",
+    "create-model-config-base",
+    "validator-no-fields",
+    "validator-invalid-fields",
+    "validator-instance-method",
+    "root-validator-pre-skip",
+    "model-serializer-instance-method",
+    "validator-field-config-info",
+    "validator-v1-signature",
+    "validator-signature",
+    "field-serializer-signature",
+    "model-serializer-signature",
+    "multiple-field-serializers",
+    "invalid_annotated_type",
+    "type-adapter-config-unused",
+    "root-model-extra",
 ]
 
 
@@ -76,7 +76,7 @@ class PydanticErrorMixin:
         if self.code is None:
             return self.message
         else:
-            return f'{self.message}\n\nFor further information visit {DEV_ERROR_DOCS_URL}{self.code}'
+            return f"{self.message}\n\nFor further information visit {DEV_ERROR_DOCS_URL}{self.code}"
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
@@ -93,7 +93,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
 
     def __init__(self, name: str, message: str) -> None:
         self.name = name
-        super().__init__(message=message, code='undefined-annotation')
+        super().__init__(message=message, code="undefined-annotation")
 
     @classmethod
     def from_name_error(cls, name_error: NameError) -> Self:
@@ -120,7 +120,7 @@ class PydanticImportError(PydanticErrorMixin, ImportError):
     """
 
     def __init__(self, message: str) -> None:
-        super().__init__(message, code='import-error')
+        super().__init__(message, code="import-error")
 
 
 class PydanticSchemaGenerationError(PydanticUserError):
@@ -131,7 +131,7 @@ class PydanticSchemaGenerationError(PydanticUserError):
     """
 
     def __init__(self, message: str) -> None:
-        super().__init__(message, code='schema-for-unknown-type')
+        super().__init__(message, code="schema-for-unknown-type")
 
 
 class PydanticInvalidForJsonSchema(PydanticUserError):
@@ -142,7 +142,7 @@ class PydanticInvalidForJsonSchema(PydanticUserError):
     """
 
     def __init__(self, message: str) -> None:
-        super().__init__(message, code='invalid-for-json-schema')
+        super().__init__(message, code="invalid-for-json-schema")
 
 
 __getattr__ = getattr_migration(__name__)

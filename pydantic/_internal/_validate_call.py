@@ -27,16 +27,16 @@ class ValidateCallWrapper:
     """
 
     __slots__ = (
-        'raw_function',
-        '_config',
-        '_validate_return',
-        '__pydantic_core_schema__',
-        '__pydantic_validator__',
-        '__signature__',
-        '__name__',
-        '__qualname__',
-        '__annotations__',
-        '__dict__',  # required for __module__
+        "raw_function",
+        "_config",
+        "_validate_return",
+        "__pydantic_core_schema__",
+        "__pydantic_validator__",
+        "__signature__",
+        "__name__",
+        "__qualname__",
+        "__annotations__",
+        "__dict__",  # required for __module__
     )
 
     def __init__(self, function: Callable[..., Any], config: ConfigDict | None, validate_return: bool):
@@ -46,8 +46,8 @@ class ValidateCallWrapper:
         self.__signature__ = inspect.signature(function)
         if isinstance(function, partial):
             func = function.func
-            self.__name__ = f'partial({func.__name__})'
-            self.__qualname__ = f'partial({func.__qualname__})'
+            self.__name__ = f"partial({func.__name__})"
+            self.__qualname__ = f"partial({func.__qualname__})"
             self.__annotations__ = func.__annotations__
             self.__module__ = func.__module__
             self.__doc__ = func.__doc__
@@ -110,7 +110,7 @@ class ValidateCallWrapper:
         result = self.__class__(bound_function, self._config, self._validate_return)
 
         # skip binding to instance when obj or objtype has __slots__ attribute
-        if hasattr(obj, '__slots__') or hasattr(objtype, '__slots__'):
+        if hasattr(obj, "__slots__") or hasattr(objtype, "__slots__"):
             return result
 
         if self._name is not None:
@@ -124,7 +124,7 @@ class ValidateCallWrapper:
         self._name = name
 
     def __repr__(self) -> str:
-        return f'ValidateCallWrapper({self.raw_function})'
+        return f"ValidateCallWrapper({self.raw_function})"
 
     def __eq__(self, other):
         return self.raw_function == other.raw_function

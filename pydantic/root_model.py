@@ -16,13 +16,13 @@ if typing.TYPE_CHECKING:
 
     from typing_extensions import Literal
 
-    Model = typing.TypeVar('Model', bound='BaseModel')
+    Model = typing.TypeVar("Model", bound="BaseModel")
 
 
-__all__ = ('RootModel',)
+__all__ = ("RootModel",)
 
 
-RootModelRootType = typing.TypeVar('RootModelRootType')
+RootModelRootType = typing.TypeVar("RootModelRootType")
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType]):
@@ -45,10 +45,10 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     root: RootModelRootType
 
     def __init_subclass__(cls, **kwargs):
-        extra = cls.model_config.get('extra')
+        extra = cls.model_config.get("extra")
         if extra is not None:
             raise PydanticUserError(
-                "`RootModel` does not support setting `model_config['extra']`", code='root-model-extra'
+                "`RootModel` does not support setting `model_config['extra']`", code="root-model-extra"
             )
         super().__init_subclass__(**kwargs)
 
@@ -82,30 +82,30 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     def __getstate__(self) -> dict[Any, Any]:
         return {
-            '__dict__': self.__dict__,
-            '__pydantic_fields_set__': self.__pydantic_fields_set__,
+            "__dict__": self.__dict__,
+            "__pydantic_fields_set__": self.__pydantic_fields_set__,
         }
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
-        _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
-        _object_setattr(self, '__dict__', state['__dict__'])
+        _object_setattr(self, "__pydantic_fields_set__", state["__pydantic_fields_set__"])
+        _object_setattr(self, "__dict__", state["__dict__"])
 
     def __copy__(self: Model) -> Model:
         """Returns a shallow copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', copy(self.__dict__))
-        _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
+        _object_setattr(m, "__dict__", copy(self.__dict__))
+        _object_setattr(m, "__pydantic_fields_set__", copy(self.__pydantic_fields_set__))
         return m
 
     def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
         """Returns a deep copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
+        _object_setattr(m, "__dict__", deepcopy(self.__dict__, memo=memo))
         # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
         # and attempting a deepcopy would be marginally slower.
-        _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
+        _object_setattr(m, "__pydantic_fields_set__", copy(self.__pydantic_fields_set__))
         return m
 
     if typing.TYPE_CHECKING:
@@ -113,7 +113,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
         def model_dump(
             self,
             *,
-            mode: Literal['json', 'python'] | str = 'python',
+            mode: Literal["json", "python"] | str = "python",
             include: Any = None,
             exclude: Any = None,
             by_alias: bool = False,
@@ -133,7 +133,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, RootModel):
             return NotImplemented
-        return self.model_fields['root'].annotation == other.model_fields['root'].annotation and super().__eq__(other)
+        return self.model_fields["root"].annotation == other.model_fields["root"].annotation and super().__eq__(other)
 
     def __repr_args__(self) -> _repr.ReprArgs:
-        yield 'root', self.root
+        yield "root", self.root

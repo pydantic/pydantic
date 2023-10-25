@@ -61,9 +61,9 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
 
     enum_ref = get_type_ref(enum_type)
     description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
-    if description == 'An enumeration.':  # This is the default value provided by enum.EnumMeta.__new__; don't use it
+    if description == "An enumeration.":  # This is the default value provided by enum.EnumMeta.__new__; don't use it
         description = None
-    updates = {'title': enum_type.__name__, 'description': description}
+    updates = {"title": enum_type.__name__, "description": description}
     updates = {k: v for k, v in updates.items() if v is not None}
 
     def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
@@ -79,14 +79,14 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         # subclass enum.Enum (or subclasses of enum.Enum) if all parent classes have no cases.
         # We use the get_json_schema function when an Enum subclass has been declared with no cases
         # so that we can still generate a valid json schema.
-        return core_schema.is_instance_schema(enum_type, metadata={'pydantic_js_functions': [get_json_schema]})
+        return core_schema.is_instance_schema(enum_type, metadata={"pydantic_js_functions": [get_json_schema]})
 
-    use_enum_values = config.get('use_enum_values', False)
+    use_enum_values = config.get("use_enum_values", False)
 
     if len(cases) == 1:
         expected = repr(cases[0].value)
     else:
-        expected = ', '.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
+        expected = ", ".join([repr(case.value) for case in cases[:-1]]) + f" or {cases[-1].value!r}"
 
     def to_enum(__input_value: Any) -> Enum:
         try:
@@ -96,7 +96,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
             return enum_field
         except ValueError:
             # The type: ignore on the next line is to ignore the requirement of LiteralString
-            raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})  # type: ignore
+            raise PydanticCustomError("enum", f"Input should be {expected}", {"expected": expected})  # type: ignore
 
     strict_python_schema = core_schema.is_instance_schema(enum_type)
     if use_enum_values:
@@ -107,7 +107,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
     to_enum_validator = core_schema.no_info_plain_validator_function(to_enum)
     if issubclass(enum_type, int):
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
-        updates['type'] = 'integer'
+        updates["type"] = "integer"
         lax = core_schema.chain_schema([core_schema.int_schema(), to_enum_validator])
         # Disallow float from JSON due to strict mode
         strict = core_schema.json_or_python_schema(
@@ -116,14 +116,14 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         )
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
-        updates['type'] = 'string'
+        updates["type"] = "string"
         lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
         strict = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.str_schema()),
             python_schema=strict_python_schema,
         )
     elif issubclass(enum_type, float):
-        updates['type'] = 'numeric'
+        updates["type"] = "numeric"
         lax = core_schema.chain_schema([core_schema.float_schema(), to_enum_validator])
         strict = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.float_schema()),
@@ -133,7 +133,7 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         lax = to_enum_validator
         strict = core_schema.json_or_python_schema(json_schema=to_enum_validator, python_schema=strict_python_schema)
     return core_schema.lax_or_strict_schema(
-        lax_schema=lax, strict_schema=strict, ref=enum_ref, metadata={'pydantic_js_functions': [get_json_schema]}
+        lax_schema=lax, strict_schema=strict, ref=enum_ref, metadata={"pydantic_js_functions": [get_json_schema]}
     )
 
 
@@ -166,12 +166,12 @@ def decimal_prepare_pydantic_annotations(
 
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
 
-    config_allow_inf_nan = config.get('allow_inf_nan')
+    config_allow_inf_nan = config.get("allow_inf_nan")
     if config_allow_inf_nan is not None:
-        metadata.setdefault('allow_inf_nan', config_allow_inf_nan)
+        metadata.setdefault("allow_inf_nan", config_allow_inf_nan)
 
     _known_annotated_metadata.check_metadata(
-        metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, decimal.Decimal
+        metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, "max_digits", "decimal_places"}, decimal.Decimal
     )
     return source, [InnerSchemaValidator(core_schema.decimal_schema(**metadata)), *remaining_annotations]
 
@@ -234,7 +234,7 @@ def path_schema_prepare_pydantic_annotations(
         try:
             return construct_path(input_value)
         except TypeError as e:
-            raise PydanticCustomError('path_type', 'Input is not a valid path') from e
+            raise PydanticCustomError("path_type", "Input is not a valid path") from e
 
     constrained_str_schema = core_schema.str_schema(**metadata)
 
@@ -254,8 +254,8 @@ def path_schema_prepare_pydantic_annotations(
                 instance_schema,
                 core_schema.no_info_after_validator_function(path_validator, constrained_str_schema),
             ],
-            custom_error_type='path_type',
-            custom_error_message='Input is not a valid path',
+            custom_error_type="path_type",
+            custom_error_message="Input is not a valid path",
             strict=True,
         ),
         strict_schema=instance_schema,
@@ -266,7 +266,7 @@ def path_schema_prepare_pydantic_annotations(
     return (
         source_type,
         [
-            InnerSchemaValidator(schema, js_core_schema=constrained_str_schema, js_schema_update={'format': 'path'}),
+            InnerSchemaValidator(schema, js_core_schema=constrained_str_schema, js_schema_update={"format": "path"}),
             *remaining_annotations,
         ],
     )
@@ -315,7 +315,7 @@ class SequenceValidator:
         else:
             items_schema = handler.generate_schema(self.item_source_type)
 
-        metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
+        metadata = {"min_length": self.min_length, "max_length": self.max_length, "strict": self.strict}
 
         if self.mapped_origin in (list, set, frozenset):
             if self.mapped_origin is list:
@@ -337,7 +337,7 @@ class SequenceValidator:
                 # that e.g. comes from JSON
                 coerce_instance_wrap = partial(
                     core_schema.no_info_wrap_validator_function,
-                    partial(dequeue_validator, maxlen=metadata.get('max_length', None)),
+                    partial(dequeue_validator, maxlen=metadata.get("max_length", None)),
                 )
             else:
                 coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
@@ -355,12 +355,12 @@ class SequenceValidator:
 
             strict = core_schema.chain_schema([check_instance, coerce_instance_wrap(constrained_schema)])
 
-            if metadata.get('strict', False):
+            if metadata.get("strict", False):
                 schema = strict
             else:
                 lax = coerce_instance_wrap(constrained_schema)
                 schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
-            schema['serialization'] = serialization
+            schema["serialization"] = serialization
 
         return schema
 
@@ -403,7 +403,7 @@ def sequence_like_prepare_pydantic_annotations(
     if not args:
         args = (Any,)
     elif len(args) != 1:
-        raise ValueError('Expected sequence to have exactly 1 generic parameter')
+        raise ValueError("Expected sequence to have exactly 1 generic parameter")
 
     item_source_type = args[0]
 
@@ -466,23 +466,23 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             bool: bool,
         }
         values_type_origin = get_origin(values_source_type) or values_source_type
-        instructions = 'set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]`'
+        instructions = "set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]`"
         if isinstance(values_type_origin, TypeVar):
 
             def type_var_default_factory() -> None:
                 raise RuntimeError(
-                    'Generic defaultdict cannot be used without a concrete value type or an'
-                    ' explicit default factory, ' + instructions
+                    "Generic defaultdict cannot be used without a concrete value type or an"
+                    " explicit default factory, " + instructions
                 )
 
             return type_var_default_factory
         elif values_type_origin not in allowed_default_types:
             # a somewhat subjective set of types that have reasonable default values
-            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
+            allowed_msg = ", ".join([t.__name__ for t in set(allowed_default_types.values())])
             raise PydanticSchemaGenerationError(
-                f'Unable to infer a default factory for keys of type {values_source_type}.'
-                f' Only {allowed_msg} are supported, other types require an explicit default factory'
-                ' ' + instructions
+                f"Unable to infer a default factory for keys of type {values_source_type}."
+                f" Only {allowed_msg} are supported, other types require an explicit default factory"
+                " " + instructions
             )
         return allowed_default_types[values_type_origin]
 
@@ -520,7 +520,7 @@ class MappingValidator:
         else:
             values_schema = handler.generate_schema(self.values_source_type)
 
-        metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
+        metadata = {"min_length": self.min_length, "max_length": self.max_length, "strict": self.strict}
 
         if self.mapped_origin is dict:
             schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
@@ -550,12 +550,12 @@ class MappingValidator:
 
             strict = core_schema.chain_schema([check_instance, coerce_instance_wrap(constrained_schema)])
 
-            if metadata.get('strict', False):
+            if metadata.get("strict", False):
                 schema = strict
             else:
                 lax = coerce_instance_wrap(constrained_schema)
                 schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
-                schema['serialization'] = serialization
+                schema["serialization"] = serialization
 
         return schema
 
@@ -576,10 +576,10 @@ def mapping_like_prepare_pydantic_annotations(
     elif mapped_origin is collections.Counter:
         # a single generic
         if len(args) != 1:
-            raise ValueError('Expected Counter to have exactly 1 generic parameter')
+            raise ValueError("Expected Counter to have exactly 1 generic parameter")
         args = (args[0], int)  # keys are always an int
     elif len(args) != 2:
-        raise ValueError('Expected mapping to have exactly 2 generic parameters')
+        raise ValueError("Expected mapping to have exactly 2 generic parameters")
 
     keys_source_type, values_source_type = args
 
@@ -612,7 +612,7 @@ def ip_prepare_pydantic_annotations(
                     strict_schema=make_strict_ip_schema(IPv4Address),
                     serialization=core_schema.to_string_ser_schema(),
                 ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv4'},
+                lambda _1, _2: {"type": "string", "format": "ipv4"},
             ),
             *annotations,
         ]
@@ -624,7 +624,7 @@ def ip_prepare_pydantic_annotations(
                     strict_schema=make_strict_ip_schema(IPv4Network),
                     serialization=core_schema.to_string_ser_schema(),
                 ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv4network'},
+                lambda _1, _2: {"type": "string", "format": "ipv4network"},
             ),
             *annotations,
         ]
@@ -636,7 +636,7 @@ def ip_prepare_pydantic_annotations(
                     strict_schema=make_strict_ip_schema(IPv4Interface),
                     serialization=core_schema.to_string_ser_schema(),
                 ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv4interface'},
+                lambda _1, _2: {"type": "string", "format": "ipv4interface"},
             ),
             *annotations,
         ]
@@ -649,7 +649,7 @@ def ip_prepare_pydantic_annotations(
                     strict_schema=make_strict_ip_schema(IPv6Address),
                     serialization=core_schema.to_string_ser_schema(),
                 ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv6'},
+                lambda _1, _2: {"type": "string", "format": "ipv6"},
             ),
             *annotations,
         ]
@@ -661,7 +661,7 @@ def ip_prepare_pydantic_annotations(
                     strict_schema=make_strict_ip_schema(IPv6Network),
                     serialization=core_schema.to_string_ser_schema(),
                 ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv6network'},
+                lambda _1, _2: {"type": "string", "format": "ipv6network"},
             ),
             *annotations,
         ]
@@ -673,7 +673,7 @@ def ip_prepare_pydantic_annotations(
                     strict_schema=make_strict_ip_schema(IPv6Interface),
                     serialization=core_schema.to_string_ser_schema(),
                 ),
-                lambda _1, _2: {'type': 'string', 'format': 'ipv6interface'},
+                lambda _1, _2: {"type": "string", "format": "ipv6interface"},
             ),
             *annotations,
         ]

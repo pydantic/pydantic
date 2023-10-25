@@ -9,7 +9,7 @@ from typing_extensions import Annotated
 from pydantic import BaseModel, TypeAdapter, create_model
 from pydantic.fields import FieldInfo
 
-TYPES_DEFAULTS = {int: 0, str: '', bool: False}  # some dummy basic types with defaults for some fields
+TYPES_DEFAULTS = {int: 0, str: "", bool: False}  # some dummy basic types with defaults for some fields
 TYPES = [*TYPES_DEFAULTS.keys()]
 # these are set low to minimise test time, they're increased below in the cProfile call
 INNER_DATA_MODEL_COUNT = 5
@@ -29,8 +29,8 @@ def create_data_models() -> list[Any]:
                 type_default = []
 
             default = ... if j % 2 == 0 else type_default
-            fields[f'f{j}'] = (type_, default)
-        models.append(create_model(f'M1{i}', **fields))
+            fields[f"f{j}"] = (type_, default)
+        models.append(create_model(f"M1{i}", **fields))
 
     # Crate varying outer models where some fields use the inner models (not really realistic)
     models_with_nested = []
@@ -40,8 +40,8 @@ def create_data_models() -> list[Any]:
             type_ = models[j % len(models)] if j % 2 == 0 else TYPES[j % len(TYPES)]
             if j % 4 == 0:
                 type_ = List[type_]
-            fields[f'f{j}'] = (type_, ...)
-        models_with_nested.append(create_model(f'M2{i}', **fields))
+            fields[f"f{j}"] = (type_, ...)
+        models_with_nested.append(create_model(f"M2{i}", **fields))
 
     return [*models, *models_with_nested]
 
@@ -49,7 +49,7 @@ def create_data_models() -> list[Any]:
 def test_fastapi_startup_perf(benchmark: Any):
     data_models = create_data_models()
     # API models for reading / writing the different data models
-    T = TypeVar('T')
+    T = TypeVar("T")
 
     class GetModel(BaseModel, Generic[T]):
         res: T
@@ -111,9 +111,9 @@ def test_fastapi_startup_perf(benchmark: Any):
                 concrete_api_models.append(concrete_api_model)
 
                 # Emulate FastAPI creating its TypeAdapters
-                adapt = TypeAdapter(Annotated[concrete_api_model, FieldInfo(description='foo')])
+                adapt = TypeAdapter(Annotated[concrete_api_model, FieldInfo(description="foo")])
                 adapters.append(adapt)
-                adapt = TypeAdapter(Annotated[concrete_api_model, FieldInfo(description='bar')])
+                adapt = TypeAdapter(Annotated[concrete_api_model, FieldInfo(description="bar")])
                 adapters.append(adapt)
 
         assert len(concrete_api_models) == len(data_models) * len(api_models)
@@ -122,7 +122,7 @@ def test_fastapi_startup_perf(benchmark: Any):
     benchmark(bench)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # run with `pdm run tests/benchmarks/test_fastapi_startup.py`
     import cProfile
     import sys
@@ -130,15 +130,15 @@ if __name__ == '__main__':
 
     INNER_DATA_MODEL_COUNT = 50
     OUTER_DATA_MODEL_COUNT = 50
-    print(f'Python version: {sys.version}')
-    if sys.argv[-1] == 'cProfile':
+    print(f"Python version: {sys.version}")
+    if sys.argv[-1] == "cProfile":
         cProfile.run(
-            'test_fastapi_startup_perf(lambda f: f())',
-            sort='tottime',
-            filename=Path(__file__).name.strip('.py') + '.cprof',
+            "test_fastapi_startup_perf(lambda f: f())",
+            sort="tottime",
+            filename=Path(__file__).name.strip(".py") + ".cprof",
         )
     else:
         start = time.perf_counter()
         test_fastapi_startup_perf(lambda f: f())
         end = time.perf_counter()
-        print(f'Time taken: {end - start:.2f}s')
+        print(f"Time taken: {end - start:.2f}s")

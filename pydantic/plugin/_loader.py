@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from . import PydanticPluginProtocol
 
 
-PYDANTIC_ENTRY_POINT_GROUP: Final[str] = 'pydantic'
+PYDANTIC_ENTRY_POINT_GROUP: Final[str] = "pydantic"
 
 # cache of plugins
 _plugins: dict[str, PydanticPluginProtocol] | None = None
@@ -49,8 +49,8 @@ def get_plugins() -> Iterable[PydanticPluginProtocol]:
                         _plugins[entry_point.value] = entry_point.load()
                     except (ImportError, AttributeError) as e:
                         warnings.warn(
-                            f'{e.__class__.__name__} while loading the `{entry_point.name}` Pydantic plugin, '
-                            f'this plugin will not be installed.\n\n{e!r}'
+                            f"{e.__class__.__name__} while loading the `{entry_point.name}` Pydantic plugin, "
+                            f"this plugin will not be installed.\n\n{e!r}"
                         )
         finally:
             _loading_plugins = False
