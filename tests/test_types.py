@@ -1621,12 +1621,6 @@ def test_enum_type():
         }
     ]
 
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'Enum'>)"),
-    ):
-        Model.model_json_schema()
-
 
 def test_int_enum_type():
     class Model(BaseModel):
@@ -1654,12 +1648,6 @@ def test_int_enum_type():
             'type': 'is_instance_of',
         }
     ]
-
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'IntEnum'>)"),
-    ):
-        Model.model_json_schema()
 
 
 @pytest.mark.parametrize('enum_base,strict', [(Enum, False), (IntEnum, False), (IntEnum, True)])
@@ -1721,6 +1709,17 @@ def test_strict_enum() -> None:
 
     with pytest.raises(ValidationError, match='Input should be an instance of test_strict_enum.<locals>.Demo'):
         User(demo_strict=0, demo_not_strict=1)
+
+
+def test_enum_with_no_cases() -> None:
+    class MyEnum(Enum):
+        pass
+
+    class MyModel(BaseModel):
+        e: MyEnum
+
+    json_schema = MyModel.model_json_schema()
+    assert json_schema['properties']['e']['enum'] == []
 
 
 @pytest.mark.parametrize(
