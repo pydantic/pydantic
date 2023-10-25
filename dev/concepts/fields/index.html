@@ -3286,14 +3286,18 @@ a model using the field name (though it will work at runtime) — in this case, 
 <li>VSCode will show a warning here.</li>
 </ol>
 <p>To "trick" VSCode into preferring the field name, you can use the <code>str</code> function to wrap the alias value:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+<p><div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">populate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">))</span>  <span class="c1"># noqa: UP018</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;johndoe&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
 </code></pre></div>
+1. Now VSCode will not show a warning</p>
 <p>This is discussed in more detail in <a href="https://github.com/pydantic/pydantic/issues/5893">this issue</a>.</p>
 <h3 id="validation-alias">Validation Alias<a class="headerlink" href="#validation-alias" title="Permanent link">&para;</a></h3>
 <p>Even though Pydantic treats <code>alias</code> and <code>validation_alias</code> the same when creating model instances, VSCode will not
