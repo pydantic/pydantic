@@ -193,11 +193,12 @@ print(user.model_dump(by_alias=True))  # (2)!
 
         name: str = Field(..., alias=str('username'))
 
-        user = User(name='johndoe')  # (1)!
+
+    user = User(name='johndoe')  # (1)!
     ```
-     1. Now VSCode will not show a warning
-    
-     This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
+    1. Now VSCode will not show a warning
+
+    This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
 
     ### Validation Alias
 
