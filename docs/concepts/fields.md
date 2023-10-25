@@ -191,7 +191,7 @@ print(user.model_dump(by_alias=True))  # (2)!
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        name: str = Field(..., alias=str('username'))
+        name: str = Field(..., alias=str('username'))  # type: ignore
 
 
     user = User(name='johndoe')  # (1)!
