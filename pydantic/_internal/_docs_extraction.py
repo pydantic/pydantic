@@ -33,11 +33,17 @@ class DocstringVisitor(ast.NodeVisitor):
             self.target = None
 
 
-def _extract_source_from_frame(lines: list[str], cls_name: str) -> list[str] | None:
+def _extract_source_from_frame(cls_name: str) -> list[str] | None:
     frame = inspect.currentframe()
 
     while frame:
         lnum = frame.f_lineno
+        try:
+            lines, _ = inspect.findsource(frame)
+        except OSError:
+            # Source can't be parsed (maybe because running in an interactive terminal),
+            # we don't want to error here.
+            continue
         if isinstance(lnum, int) and len(lines) >= lnum and re.match(fr'class\s+{cls_name}', lines[lnum - 1].strip()):
             return inspect.getblock(lines[lnum - 1 :])  # type: ignore
         frame = frame.f_back
@@ -52,15 +58,8 @@ def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
     Returns:
         A mapping containing attribute names and their corresponding docstring.
     """
-    try:
-        lines, _ = inspect.findsource(cls)
-    except OSError:
-        # Source can't be parsed (maybe because running in an interactive terminal),
-        # we don't want to error here.
-        return {}
-
     # We first try to fetch the source lines by walking back the frames:
-    source = _extract_source_from_frame(lines, cls.__name__)
+    source = _extract_source_from_frame(cls.__name__)
 
     if not source:
         # Fallback to how inspect fetch the source lines, might not work as expected
