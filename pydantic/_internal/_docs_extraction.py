@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import itertools
 import re
 import textwrap
 from typing import Any
@@ -47,14 +48,12 @@ def _extract_source_from_frame(cls_name: str) -> list[str] | None:
         else:
             if isinstance(lnum, int) and len(lines) >= lnum:
                 block_lines = inspect.getblock(lines[lnum - 1 :])
-                filtered_lines = [
-                    line
-                    for line in block_lines
-                    if not line.strip().startswith('@')  # Strip out decorators
-                    if not line.strip() == ''  # And potential empty lines between the decorators and the class def
-                ]
+                # Drop potential decorators and empty lines between them and the class def
+                filtered_lines = list(
+                    itertools.dropwhile(lambda line: line.strip().startswith('@') or line.strip() == '', block_lines)
+                )
                 if re.match(fr'class\s+{cls_name}', filtered_lines[0].strip()):
-                    return block_lines  # type: ignore
+                    return filtered_lines
         frame = frame.f_back
 
 
