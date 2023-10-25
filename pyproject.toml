@@ -90,7 +90,6 @@ docs = [
     "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
 ]
 linting = [
-    "black",
     "ruff",
     "mypy~=1.1.1",
 ]
@@ -176,8 +175,7 @@ unconfirmed_label = 'pending'
 [tool.ruff]
 line-length = 120
 extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D', 'T']
-# E501 is handled by black
-extend-ignore = ['D105', 'D107', 'D205', 'D415', 'E501']
+extend-ignore = ['D105', 'D107', 'D205', 'D415']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
@@ -228,19 +226,6 @@ source = [
     'D:\a\pydantic\pydantic\pydantic',
 ]
 
-[tool.black]
-color = true
-line-length = 120
-target-version = ['py310']
-skip-string-normalization = true
-exclude = '''
-(
-  /(
-    pydantic/v1
-    | tests/mypy/outputs
-  )/
-)
-'''
 
 [tool.pyright]
 include = ['pydantic']
