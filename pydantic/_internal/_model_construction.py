@@ -24,12 +24,12 @@ from ._decorators import (
     get_attribute_from_bases,
 )
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
-from ._generate_schema import GenerateSchema
+from ._generate_schema import GenerateSchema, generate_pydantic_signature
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_val_ser import MockValSer, set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_types_namespace, is_classvar, parent_frame_namespace
-from ._utils import ClassAttribute, is_valid_identifier
+from ._utils import ClassAttribute
 from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
@@ -518,71 +518,7 @@ def generate_model_signature(
     Returns:
         The model signature.
     """
-    from inspect import Parameter, Signature, signature
-    from itertools import islice
-
-    present_params = signature(init).parameters.values()
-    merged_params: dict[str, Parameter] = {}
-    var_kw = None
-    use_var_kw = False
-
-    for param in islice(present_params, 1, None):  # skip self arg
-        # inspect does "clever" things to show annotations as strings because we have
-        # `from __future__ import annotations` in main, we don't want that
-        if param.annotation == 'Any':
-            param = param.replace(annotation=Any)
-        if param.kind is param.VAR_KEYWORD:
-            var_kw = param
-            continue
-        merged_params[param.name] = param
-
-    if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
-        allow_names = config_wrapper.populate_by_name
-        for field_name, field in fields.items():
-            # when alias is a str it should be used for signature generation
-            if isinstance(field.alias, str):
-                param_name = field.alias
-            else:
-                param_name = field_name
-
-            if field_name in merged_params or param_name in merged_params:
-                continue
-
-            if not is_valid_identifier(param_name):
-                if allow_names and is_valid_identifier(field_name):
-                    param_name = field_name
-                else:
-                    use_var_kw = True
-                    continue
-
-            kwargs = {} if field.is_required() else {'default': field.get_default(call_default_factory=False)}
-            merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
-            )
-
-    if config_wrapper.extra == 'allow':
-        use_var_kw = True
-
-    if var_kw and use_var_kw:
-        # Make sure the parameter for extra kwargs
-        # does not have the same name as a field
-        default_model_signature = [
-            ('__pydantic_self__', Parameter.POSITIONAL_OR_KEYWORD),
-            ('data', Parameter.VAR_KEYWORD),
-        ]
-        if [(p.name, p.kind) for p in present_params] == default_model_signature:
-            # if this is the standard model signature, use extra_data as the extra args name
-            var_kw_name = 'extra_data'
-        else:
-            # else start from var_kw
-            var_kw_name = var_kw.name
-
-        # generate a name that's definitely unique
-        while var_kw_name in fields:
-            var_kw_name += '_'
-        merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
-
-    return Signature(parameters=list(merged_params.values()), return_annotation=None)
+    return generate_pydantic_signature(init, fields, config_wrapper)
 
 
 class _PydanticWeakRef:
