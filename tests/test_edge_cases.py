@@ -1127,7 +1127,7 @@ def test_annotation_inheritance():
         TypeError,
         match=(
             "Field 'integer' defined on a base class was overridden by a non-annotated attribute. "
-            "All field definitions, including overrides, require a type annotation."
+            'All field definitions, including overrides, require a type annotation.'
         ),
     ):
 
@@ -1197,8 +1197,8 @@ def test_unable_to_infer():
     with pytest.raises(
         errors.PydanticUserError,
         match=re.escape(
-            "A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; "
-            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it as a "
+            'A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; '
+            'if `x` is not meant to be a field, you may be able to resolve this error by annotating it as a '
             "`ClassVar` or updating `model_config['ignored_types']`"
         ),
     ):
@@ -1541,7 +1541,7 @@ def test_field_type_display(type_, expected):
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    assert re.search(fr'\(annotation={re.escape(expected)},', str(Model.model_fields))
+    assert re.search(rf'\(annotation={re.escape(expected)},', str(Model.model_fields))
 
 
 def test_any_none():

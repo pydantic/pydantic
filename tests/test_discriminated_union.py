@@ -361,7 +361,7 @@ def test_discriminated_union_int():
             'ctx': {'discriminator': "'m'", 'expected_tags': '1, 2', 'tag': '3'},
             'input': {'m': 3},
             'loc': ('sub',),
-            'msg': "Input tag '3' found using 'm' does not match any of the expected " "tags: 1, 2",
+            'msg': "Input tag '3' found using 'm' does not match any of the expected " 'tags: 1, 2',
             'type': 'union_tag_invalid',
         }
     ]
@@ -911,7 +911,7 @@ def test_wrap_function_schema() -> None:
 def test_plain_function_schema_is_invalid() -> None:
     with pytest.raises(
         TypeError,
-        match="'function-plain' is not a valid discriminated union variant; " "should be a `BaseModel` or `dataclass`",
+        match="'function-plain' is not a valid discriminated union variant; " 'should be a `BaseModel` or `dataclass`',
     ):
         apply_discriminator(
             core_schema.union_schema(

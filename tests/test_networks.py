@@ -805,7 +805,6 @@ def test_address_valid(value, name, email):
         ('\u0020@example.com', None),
         ('\u001f@example.com', None),
         ('"@example.com', None),
-        ('\"@example.com', None),
         (',@example.com', None),
         ('foobar <foobar<@example.com>', None),
         ('foobar <foobar@example.com>>', None),

@@ -271,7 +271,7 @@ def test_must_inherit_from_generic():
 
     assert str(exc_info.value) == (
         "<class 'tests.test_generics.test_must_inherit_from_generic.<locals>.Result'> cannot be "
-        "parametrized because it does not inherit from typing.Generic"
+        'parametrized because it does not inherit from typing.Generic'
     )
 
 
