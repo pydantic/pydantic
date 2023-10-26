@@ -17,7 +17,7 @@ from typing_extensions import (
     Self,
 )
 
-from ..config import ConfigDict, ExtraValues, JsonEncoder, JsonSchemaExtraCallable
+from ..config import ConfigDict, ExtraValues, JsonDict, JsonEncoder, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 from ..warnings import PydanticDeprecatedSince20
 
@@ -60,7 +60,7 @@ class ConfigWrapper:
     alias_generator: Callable[[str], str] | None
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
-    json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
+    json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
     json_encoders: dict[type[object], JsonEncoder] | None
 
     # new in V2
@@ -80,6 +80,7 @@ class ConfigWrapper:
     json_schema_serialization_defaults_required: bool
     json_schema_mode_override: Literal['validation', 'serialization', None]
     coerce_numbers_to_str: bool
+    regex_engine: Literal['rust-regex', 'python-re']
     validation_error_cause: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
@@ -177,6 +178,7 @@ class ConfigWrapper:
                 str_min_length=self.config_dict.get('str_min_length'),
                 hide_input_in_errors=self.config_dict.get('hide_input_in_errors'),
                 coerce_numbers_to_str=self.config_dict.get('coerce_numbers_to_str'),
+                regex_engine=self.config_dict.get('regex_engine'),
                 validation_error_cause=self.config_dict.get('validation_error_cause'),
             )
         )
@@ -250,8 +252,8 @@ config_defaults = ConfigDict(
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,
     coerce_numbers_to_str=False,
+    regex_engine='rust-regex',
     validation_error_cause=False,
-)
 
 
 def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> ConfigDict:

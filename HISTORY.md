@@ -1,3 +1,38 @@
+## v2.4.2 (2023-09-27)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.2)
+
+### What's Changed
+
+#### Fixes
+
+* Fix bug with JSON schema for sequence of discriminated union by @dmontagu in [#7647](https://github.com/pydantic/pydantic/pull/7647)
+* Fix schema references in discriminated unions by @adriangb in [#7646](https://github.com/pydantic/pydantic/pull/7646)
+* Fix json schema generation for recursive models by @adriangb in [#7653](https://github.com/pydantic/pydantic/pull/7653)
+* Fix `models_json_schema` for generic models by @adriangb in [#7654](https://github.com/pydantic/pydantic/pull/7654)
+* Fix xfailed test for generic model signatures by @adriangb in [#7658](https://github.com/pydantic/pydantic/pull/7658)
+
+### New Contributors
+
+* @austinorr made their first contribution in [#7657](https://github.com/pydantic/pydantic/pull/7657)
+* @peterHoburg made their first contribution in [#7670](https://github.com/pydantic/pydantic/pull/7670)
+
+## v2.4.1 (2023-09-26)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.1)
+
+### What's Changed
+
+#### Packaging
+
+* Update pydantic-core to 2.10.1 by @davidhewitt in [#7633](https://github.com/pydantic/pydantic/pull/7633)
+
+#### Fixes
+
+* Serialize unsubstituted type vars as `Any` by @adriangb in [#7606](https://github.com/pydantic/pydantic/pull/7606)
+* Remove schema building caches by @adriangb in [#7624](https://github.com/pydantic/pydantic/pull/7624)
+* Fix an issue where JSON schema extras weren't JSON encoded by @dmontagu in [#7625](https://github.com/pydantic/pydantic/pull/7625)
+
 ## v2.4.0 (2023-09-22)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.4.0)
@@ -360,6 +395,11 @@ See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/
 First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
+
+## v1.10.13 (2023-09-27)
+
+* Fix: Add max length check to `pydantic.validate_email`, #7673 by @hramezani
+* Docs: Fix pip commands to install v1, #6930 by @chbndrhnns
 
 ## v1.10.12 (2023-07-24)
 

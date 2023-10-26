@@ -382,6 +382,10 @@ A few things to note on validators:
     Python with the [`-O` optimization flag](https://docs.python.org/3/using/cmdline.html#cmdoption-o)
     disables `assert` statements, and **validators will stop working**.
 
+!!! note
+    `FieldValidationInfo` is **deprecated** in 2.4, use `ValidationInfo` instead.
+
+
 If you want to access values from another field inside a `@field_validator`, this may be possible using `ValidationInfo.data`, which is a dict of field name to field value.
 Validation is done in the order fields are defined, so you have to be careful when using `ValidationInfo.data` to not access a field that has not yet been validated/populated — in the code above, for example, you would not be able to access `info.data['id']` from within `name_must_contain_space`.
 However, in most cases where you want to perform validation using multiple field values, it is better to use `@model_validator` which is discussed in the section below.

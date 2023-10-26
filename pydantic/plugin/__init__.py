@@ -76,6 +76,14 @@ class BaseValidateHandlerProtocol(Protocol):
         """
         return
 
+    def on_exception(self, exception: Exception) -> None:
+        """Callback to be notified of validation exceptions.
+
+        Args:
+            exception: The exception raised during validation.
+        """
+        return
+
 
 class ValidatePythonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
     """Event handler for `SchemaValidator.validate_python`."""

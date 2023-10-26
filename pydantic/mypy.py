@@ -89,6 +89,7 @@ CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 BASESETTINGS_FULLNAME = 'pydantic_settings.main.BaseSettings'
+ROOT_MODEL_FULLNAME = 'pydantic.root_model.RootModel'
 MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
@@ -346,7 +347,8 @@ class PydanticModelField:
 
     def expand_type(self, current_info: TypeInfo) -> Type | None:
         """Based on mypy.plugins.dataclasses.DataclassAttribute.expand_type."""
-        if self.type is not None and self.info.self_type is not None:
+        # The getattr in the next line is used to prevent errors in legacy versions of mypy without this attribute
+        if self.type is not None and getattr(self.info, 'self_type', None) is not None:
             # In general, it is not safe to call `expand_type()` during semantic analyzis,
             # however this plugin is called very late, so all types should be fully ready.
             # Also, it is tricky to avoid eager expansion of Self types here (e.g. because
@@ -430,8 +432,9 @@ class PydanticModelTransformer:
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         info = self._cls.info
+        is_root_model = any(ROOT_MODEL_FULLNAME in base.fullname for base in info.mro[:-1])
         config = self.collect_config()
-        fields = self.collect_fields(config)
+        fields = self.collect_fields(config, is_root_model)
         if fields is None:
             # Some definitions are not ready. We need another pass.
             return False
@@ -440,7 +443,7 @@ class PydanticModelTransformer:
                 return False
 
         is_settings = any(base.fullname == BASESETTINGS_FULLNAME for base in info.mro[:-1])
-        self.add_initializer(fields, config, is_settings)
+        self.add_initializer(fields, config, is_settings, is_root_model)
         self.add_model_construct_method(fields, config, is_settings)
         self.set_frozen(fields, frozen=config.frozen is True)
 
@@ -556,7 +559,7 @@ class PydanticModelTransformer:
                 config.setdefault(name, value)
         return config
 
-    def collect_fields(self, model_config: ModelConfigData) -> list[PydanticModelField] | None:
+    def collect_fields(self, model_config: ModelConfigData, is_root_model: bool) -> list[PydanticModelField] | None:
         """Collects the fields for the model, accounting for parent classes."""
         cls = self._cls
 
@@ -603,8 +606,11 @@ class PydanticModelTransformer:
             maybe_field = self.collect_field_from_stmt(stmt, model_config)
             if maybe_field is not None:
                 lhs = stmt.lvalues[0]
-                current_field_names.add(lhs.name)
-                found_fields[lhs.name] = maybe_field
+                if is_root_model and lhs.name != 'root':
+                    error_extra_fields_on_root_model(self._api, stmt)
+                else:
+                    current_field_names.add(lhs.name)
+                    found_fields[lhs.name] = maybe_field
 
         return list(found_fields.values())
 
@@ -780,7 +786,9 @@ class PydanticModelTransformer:
 
         return default
 
-    def add_initializer(self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool) -> None:
+    def add_initializer(
+        self, fields: list[PydanticModelField], config: ModelConfigData, is_settings: bool, is_root_model: bool
+    ) -> None:
         """Adds a fields-aware `__init__` method to the class.
 
         The added `__init__` will be annotated with types vs. all `Any` depending on the plugin settings.
@@ -799,6 +807,10 @@ class PydanticModelTransformer:
                 use_alias=use_alias,
                 is_settings=is_settings,
             )
+            if is_root_model:
+                # convert root argument to positional argument
+                args[0].kind = ARG_POS if args[0].kind == ARG_NAMED else ARG_OPT
+
             if is_settings:
                 base_settings_node = self._api.lookup_fully_qualified(BASESETTINGS_FULLNAME).node
                 if '__init__' in base_settings_node.names:
@@ -1048,6 +1060,7 @@ ERROR_ALIAS = ErrorCode('pydantic-alias', 'Dynamic alias disallowed', 'Pydantic'
 ERROR_UNEXPECTED = ErrorCode('pydantic-unexpected', 'Unexpected behavior', 'Pydantic')
 ERROR_UNTYPED = ErrorCode('pydantic-field', 'Untyped field disallowed', 'Pydantic')
 ERROR_FIELD_DEFAULTS = ErrorCode('pydantic-field', 'Invalid Field defaults', 'Pydantic')
+ERROR_EXTRA_FIELD_ROOT_MODEL = ErrorCode('pydantic-field', 'Extra field on RootModel subclass', 'Pydantic')
 
 
 def error_from_attributes(model_name: str, api: CheckerPluginInterface, context: Context) -> None:
@@ -1082,6 +1095,11 @@ def error_unexpected_behavior(
 def error_untyped_fields(api: SemanticAnalyzerPluginInterface, context: Context) -> None:
     """Emits an error when there is an untyped field in the model."""
     api.fail('Untyped fields disallowed', context, code=ERROR_UNTYPED)
+
+
+def error_extra_fields_on_root_model(api: CheckerPluginInterface, context: Context) -> None:
+    """Emits an error when there is more than just a root field defined for a subclass of RootModel."""
+    api.fail('Only `root` is allowed as a field of a `RootModel`', context, code=ERROR_EXTRA_FIELD_ROOT_MODEL)
 
 
 def error_default_and_default_factory_specified(api: CheckerPluginInterface, context: Context) -> None:

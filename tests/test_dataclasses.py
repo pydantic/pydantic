@@ -24,6 +24,7 @@ from pydantic import (
     PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
+    RootModel,
     TypeAdapter,
     ValidationError,
     ValidationInfo,
@@ -1644,6 +1645,21 @@ def test_kw_only():
     assert A(b='hi').b == 'hi'
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
+def test_kw_only_subclass():
+    @pydantic.dataclasses.dataclass
+    class A:
+        x: int
+        y: int = pydantic.Field(default=0, kw_only=True)
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        z: int
+
+    assert B(1, 2) == B(x=1, y=0, z=2)
+    assert B(1, y=2, z=3) == B(x=1, y=2, z=3)
+
+
 def dataclass_decorators(include_identity: bool = False, exclude_combined: bool = False):
     decorators = [pydantic.dataclasses.dataclass, dataclasses.dataclass]
     ids = ['pydantic', 'stdlib']
@@ -2444,7 +2460,21 @@ def test_dataclass_field_default_factory_with_init():
     class Model:
         x: int = dataclasses.field(default_factory=lambda: 3, init=False)
 
-    assert Model().x == 3
+    m = Model()
+    assert 'x' in Model.__pydantic_fields__
+    assert m.x == 3
+    assert RootModel[Model](m).model_dump() == {'x': 3}
+
+
+def test_dataclass_field_default_with_init():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int = dataclasses.field(default=3, init=False)
+
+    m = Model()
+    assert 'x' in Model.__pydantic_fields__
+    assert m.x == 3
+    assert RootModel[Model](m).model_dump() == {'x': 3}
 
 
 def test_metadata():

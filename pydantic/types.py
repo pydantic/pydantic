@@ -402,6 +402,7 @@ def confloat(
         === ":white_check_mark: Do this"
             ```py
             from typing_extensions import Annotated
+
             from pydantic import BaseModel, Field
 
             class Foo(BaseModel):
@@ -725,7 +726,9 @@ def constr(
 
         === ":white_check_mark: Do this"
             ```py
-            from pydantic import BaseModel, Annotated, StringConstraints
+            from typing_extensions import Annotated
+
+            from pydantic import BaseModel, StringConstraints
 
             class Foo(BaseModel):
                 bar: Annotated[str, StringConstraints(strip_whitespace=True, to_upper=True, pattern=r'^[A-Z]+$')]
@@ -1068,7 +1071,15 @@ class UuidVersion:
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        return core_schema.uuid_schema(version=self.uuid_version)
+        if isinstance(self, source):
+            # used directly as a type
+            return core_schema.uuid_schema(version=self.uuid_version)
+        else:
+            # update existing schema with self.uuid_version
+            schema = handler(source)
+            _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
+            schema['version'] = self.uuid_version  # type: ignore
+            return schema
 
     def __hash__(self) -> int:
         return hash(type(self.uuid_version))
@@ -1448,16 +1459,20 @@ class _SecretField(Generic[SecretType]):
             )
             return json_schema
 
-        s = core_schema.union_schema(
-            [
-                core_schema.is_instance_schema(source),
-                core_schema.no_info_after_validator_function(
-                    source,  # construct the type
-                    inner_schema,
-                ),
-            ],
-            strict=True,
-            custom_error_type=error_kind,
+        json_schema = core_schema.no_info_after_validator_function(
+            source,  # construct the type
+            inner_schema,
+        )
+        s = core_schema.json_or_python_schema(
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(source),
+                    json_schema,
+                ],
+                strict=True,
+                custom_error_type=error_kind,
+            ),
+            json_schema=json_schema,
             serialization=core_schema.plain_serializer_function_ser_schema(
                 serialize,
                 info_arg=True,

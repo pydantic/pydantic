@@ -955,54 +955,60 @@ def test_lax_or_strict_definitions() -> None:
     discriminated_schema = apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
     # insert_assert(discriminated_schema)
     assert discriminated_schema == {
-        'type': 'tagged-union',
-        'choices': {
-            'cat': {
-                'type': 'typed-dict',
-                'fields': {'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}},
-            },
-            'DOG': {
-                'type': 'lax-or-strict',
-                'lax_schema': {
+        'type': 'definitions',
+        'schema': {
+            'type': 'tagged-union',
+            'choices': {
+                'cat': {
                     'type': 'typed-dict',
                     'fields': {
-                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}
                     },
                 },
-                'strict_schema': {
-                    'type': 'definitions',
-                    'schema': {
+                'DOG': {
+                    'type': 'lax-or-strict',
+                    'lax_schema': {
                         'type': 'typed-dict',
                         'fields': {
-                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
                         },
                     },
-                    'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
-                },
-            },
-            'dog': {
-                'type': 'lax-or-strict',
-                'lax_schema': {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                    'strict_schema': {
+                        'type': 'definitions',
+                        'schema': {
+                            'type': 'typed-dict',
+                            'fields': {
+                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            },
+                        },
+                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
                     },
                 },
-                'strict_schema': {
-                    'type': 'definitions',
-                    'schema': {
+                'dog': {
+                    'type': 'lax-or-strict',
+                    'lax_schema': {
                         'type': 'typed-dict',
                         'fields': {
-                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
                         },
                     },
-                    'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
+                    'strict_schema': {
+                        'type': 'definitions',
+                        'schema': {
+                            'type': 'typed-dict',
+                            'fields': {
+                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            },
+                        },
+                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
+                    },
                 },
             },
+            'discriminator': 'kind',
+            'strict': False,
+            'from_attributes': True,
         },
-        'discriminator': 'kind',
-        'strict': False,
-        'from_attributes': True,
+        'definitions': [{'type': 'str', 'ref': 'my-str-definition'}],
     }
 
 
@@ -1296,8 +1302,8 @@ def test_sequence_discriminated_union():
         '$defs': {
             'Cat': {
                 'properties': {
-                    'meows': {'title': 'Meows', 'type': 'integer'},
                     'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'meows': {'title': 'Meows', 'type': 'integer'},
                 },
                 'required': ['pet_type', 'meows'],
                 'title': 'Cat',
@@ -1305,8 +1311,8 @@ def test_sequence_discriminated_union():
             },
             'Dog': {
                 'properties': {
-                    'barks': {'title': 'Barks', 'type': 'number'},
                     'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'barks': {'title': 'Barks', 'type': 'number'},
                 },
                 'required': ['pet_type', 'barks'],
                 'title': 'Dog',
@@ -1323,12 +1329,23 @@ def test_sequence_discriminated_union():
             },
         },
         'properties': {
-            'n': {'title': 'N', 'type': 'integer'},
             'pet': {
-                'items': {'anyOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}]},
+                'items': {
+                    'discriminator': {
+                        'mapping': {
+                            'cat': '#/$defs/Cat',
+                            'dog': '#/$defs/Dog',
+                            'lizard': '#/$defs/Lizard',
+                            'reptile': '#/$defs/Lizard',
+                        },
+                        'propertyName': 'pet_type',
+                    },
+                    'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}],
+                },
                 'title': 'Pet',
                 'type': 'array',
             },
+            'n': {'title': 'N', 'type': 'integer'},
         },
         'required': ['pet', 'n'],
         'title': 'Model',

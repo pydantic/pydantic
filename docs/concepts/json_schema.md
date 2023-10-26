@@ -2,7 +2,7 @@ Pydantic allows automatic creation of JSON schemas from models.
 
 Using Pydantic, there are several ways to generate JSON schemas or JSON representations from fields or models:
 
-* [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a dict of the schema.
+* [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a jsonable dict of the schema.
 * [`BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json] returns a JSON string representation of the
     dict of the schema.
 * [`TypeAdapter.dump_json`][pydantic.type_adapter.TypeAdapter.dump_json] serializes an instance of the adapted type to
@@ -146,6 +146,11 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
     argument.
 * The format of `$ref`s can be altered by calling `model_json_schema()` or `model_dump_json()`
     with the `ref_template` keyword argument.
+
+!!! note
+    Regarding the "jsonable" nature of the `model_json_schema()` results, calling `json.dumps(m.model_json_schema())`
+    on some `BaseModel` `m` returns a valid JSON string.
+
 
 ## Getting schema of a specified type
 
@@ -517,6 +522,52 @@ except ValidationError as e:
     f
       Value error, Expected an instance of <class '__main__.Foo'>, got an instance of <class '__main__.NotFoo'> [type=value_error, input_value=<__main__.NotFoo object at 0x0123456789ab>, input_type=NotFoo]
     """
+```
+
+As seen above, annotating a field with a `BaseModel` type can be used to modify or override the generated json schema.
+However, if you want to take advantage of storing metadata via `Annotated`, but you don't want to override the generated JSON
+schema, you can use the following approach with a no-op version of `__get_pydantic_core_schema__` implemented on the
+metadata class:
+
+```py
+from typing import Type
+
+from pydantic_core import CoreSchema
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, GetCoreSchemaHandler
+
+
+class Metadata(BaseModel):
+    foo: str = 'metadata!'
+    bar: int = 100
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Type[BaseModel], handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        if cls is not source_type:
+            return handler(source_type)
+        return super().__get_pydantic_core_schema__(source_type, handler)
+
+
+class Model(BaseModel):
+    state: Annotated[int, Metadata()]
+
+
+m = Model.model_validate({'state': 2})
+print(repr(m))
+#> Model(state=2)
+print(m.model_fields)
+"""
+{
+    'state': FieldInfo(
+        annotation=int,
+        required=True,
+        metadata=[Metadata(foo='metadata!', bar=100)],
+    )
+}
+"""
 ```
 
 ## JSON schema types

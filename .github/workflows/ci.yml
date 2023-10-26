@@ -22,7 +22,7 @@ jobs:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -32,7 +32,7 @@ jobs:
 
       - name: install
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G linting -G email
 
       - uses: pre-commit/action@v3.0.0
@@ -44,7 +44,7 @@ jobs:
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
@@ -52,11 +52,11 @@ jobs:
         python-version: '3.8'
 
     - name: install dependencies
-      # Unlike the docs build, we don't use mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
+      # Unlike the docs build, we don't use mkdocs_material-insiders
       # Because the secret for accessing the library is not accessible from forks, but we still want to run
       # this job on public CI runs.
       run: |
-        pdm venv create --with-pip $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
@@ -77,7 +77,7 @@ jobs:
     name: test memray
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -86,7 +86,7 @@ jobs:
 
       - name: install deps
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G testing -G testing-extra -G email -G memray
           pdm add pytest-memray
 
@@ -120,7 +120,7 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
@@ -130,7 +130,7 @@ jobs:
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 
     - run: pdm info && pdm list
@@ -168,7 +168,7 @@ jobs:
     name: test fastapi
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
         uses: actions/setup-python@v4
@@ -182,7 +182,7 @@ jobs:
     name: test pydantic plugin
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -191,7 +191,7 @@ jobs:
 
       - name: install deps
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G testing
 
       - name: install example plugin
@@ -200,6 +200,11 @@ jobs:
       - run: pdm run pytest ./tests/plugin
         env:
           TEST_PLUGIN: 1
+
+      # uninstalling is necessary to avoid creating a pdm cache shared with other jobs
+      # which includes the plugin
+      - name: uninstall example plugin
+        run: pdm remove ./tests/plugin
 
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
@@ -225,7 +230,7 @@ jobs:
             python-version: '3.12'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
@@ -235,7 +240,7 @@ jobs:
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G mypy
 
     - name: install mypy
@@ -283,7 +288,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v4
         with:
@@ -322,7 +327,7 @@ jobs:
             python-version: '3.7'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
@@ -332,7 +337,7 @@ jobs:
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 
     - name: install typing-extensions
@@ -387,7 +392,7 @@ jobs:
       pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
         uses: actions/setup-python@v4

@@ -35,8 +35,10 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import (
     Annotated,
     Literal,
+    NotRequired,
     OrderedDict,
     ParamSpec,
+    TypedDict,
     TypeVarTuple,
     Unpack,
     get_args,
@@ -53,6 +55,7 @@ from pydantic import (
     PositiveInt,
     PydanticSchemaGenerationError,
     PydanticUserError,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     computed_field,
@@ -1508,6 +1511,22 @@ def test_generic_with_referenced_generic_type_bound():
     ReferenceModel[MyInt]
 
 
+def test_generic_with_referenced_generic_union_type_bound():
+    T = TypeVar('T', bound=Union[str, int])
+
+    class ModelWithType(BaseModel, Generic[T]):
+        some_type: Type[T]
+
+    class MyInt(int):
+        ...
+
+    class MyStr(str):
+        ...
+
+    ModelWithType[MyInt]
+    ModelWithType[MyStr]
+
+
 def test_generic_with_referenced_generic_type_constraints():
     T = TypeVar('T', int, str)
 
@@ -2639,7 +2658,70 @@ def test_serialize_unsubstituted_typevars_bound() -> None:
     class ErrorDetails(BaseModel):
         foo: str
 
+    # This version of `TypeVar` does not support `default` on Python <3.12
     ErrorDataT = TypeVar('ErrorDataT', bound=ErrorDetails)
+
+    class Error(BaseModel, Generic[ErrorDataT]):
+        message: str
+        details: ErrorDataT
+
+    class MyErrorDetails(ErrorDetails):
+        bar: str
+
+    sample_error = Error(
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+    sample_error = Error[ErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+        },
+    }
+
+    sample_error = Error[MyErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+
+def test_serialize_unsubstituted_typevars_bound_default_supported() -> None:
+    class ErrorDetails(BaseModel):
+        foo: str
+
+    # This version of `TypeVar` always support `default`
+    ErrorDataT = TypingExtensionsTypeVar('ErrorDataT', bound=ErrorDetails)
 
     class Error(BaseModel, Generic[ErrorDataT]):
         message: str
@@ -2704,7 +2786,7 @@ def test_serialize_unsubstituted_typevars_bound() -> None:
     ],
     ids=['default', 'constraint'],
 )
-def test_serialize_unsubstituted_typevars_bound(
+def test_serialize_unsubstituted_typevars_variants(
     type_var: Type[BaseModel],
 ) -> None:
     class ErrorDetails(BaseModel):
@@ -2770,3 +2852,20 @@ def test_mix_default_and_constraints() -> None:
 
         class _(BaseModel, Generic[T]):
             x: T
+
+
+def test_generic_with_not_required_in_typed_dict() -> None:
+    T = TypingExtensionsTypeVar('T')
+
+    class FooStr(TypedDict):
+        type: NotRequired[str]
+
+    class FooGeneric(TypedDict, Generic[T]):
+        type: NotRequired[T]
+
+    ta_foo_str = TypeAdapter(FooStr)
+    assert ta_foo_str.validate_python({'type': 'tomato'}) == {'type': 'tomato'}
+    assert ta_foo_str.validate_python({}) == {}
+    ta_foo_generic = TypeAdapter(FooGeneric[str])
+    assert ta_foo_generic.validate_python({'type': 'tomato'}) == {'type': 'tomato'}
+    assert ta_foo_generic.validate_python({}) == {}

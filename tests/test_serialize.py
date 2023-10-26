@@ -4,6 +4,7 @@ New tests for v2 of serialization logic.
 import json
 import re
 import sys
+from enum import Enum
 from functools import partial, partialmethod
 from typing import Any, Callable, ClassVar, Dict, Optional, Pattern
 
@@ -1101,3 +1102,16 @@ def test_forward_ref_for_classmethod_computed_fields():
     }
 
     assert Model().model_dump() == {'two_y': 8}
+
+
+def test_enum_as_dict_key() -> None:
+    # See https://github.com/pydantic/pydantic/issues/7639
+    class MyEnum(Enum):
+        A = 'a'
+        B = 'b'
+
+    class MyModel(BaseModel):
+        foo: Dict[MyEnum, str]
+        bar: MyEnum
+
+    assert MyModel(foo={MyEnum.A: 'hello'}, bar=MyEnum.B).model_dump_json() == '{"foo":{"a":"hello"},"bar":"b"}'

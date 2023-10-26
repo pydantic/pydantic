@@ -102,7 +102,7 @@ Models possess the following methods and attributes:
     [Serialization](serialization.md#modeldumpjson).
 * `model_extra`: get extra fields set during validation.
 * `model_fields_set`: set of fields which were set when the model instance was initialized.
-* `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
+* `model_json_schema()`: returns a jsonable dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
 * `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
     See [JSON Schema](json_schema.md).
 * `model_parametrized_name()`: compute the class name for parametrizations of generic classes.
@@ -203,6 +203,10 @@ print(Foo.model_json_schema())
 
 Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
 call `model_rebuild()` proactively when dealing with recursive models or generics.
+
+In V2, `model_rebuild()` replaced `update_forward_refs()` from V1. There are some slight differences with the new behavior.
+The biggest change is that when calling `model_rebuild` on the outermost model, it builds a core schema used for validation of the
+whole model (nested models and all), so all types at all levels need to be ready before `model_rebuild` is called.
 
 ## Arbitrary class instances
 
@@ -402,7 +406,8 @@ except ValidationError as e:
 *Pydantic* provides two `classmethod` helper functions on models for parsing data:
 
 * **`model_validate`**: this is very similar to the `__init__` method of the model, except it takes a dict or an object
-  rather than keyword arguments. If the object passed is not a dict a `ValidationError` will be raised.
+  rather than keyword arguments. If the object passed cannot be validated, or if it's not a dictionary
+  or instance of the model in question, a `ValidationError` will be raised.
 * **`model_validate_json`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `model_validate`.
 
 ```py
@@ -463,6 +468,55 @@ then pass it to `model_validate`.
     different validation behavior. If you have data coming from a non-JSON source, but want the same validation
     behavior and errors you'd get from `model_validate_json`, our recommendation for now is to use
     `model_validate_json(json.dumps(data))`.
+
+!!! note
+    If you're passing in an instance of a model to `model_validate`, you will want to consider setting
+    [`revalidate_instances`](https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.revalidate_instances)
+    in the model's config. If you don't set this value, then validation will be skipped on model instances. See the below example:
+
+
+=== ":x: `revalidate_instances='never'`"
+    ```py
+    from pydantic import BaseModel
+
+
+    class Model(BaseModel):
+        a: int
+
+
+    m = Model(a=0)
+    # note: the `model_config` setting validate_assignment=True` can prevent this kind of misbehavior
+    m.a = 'not an int'
+
+    # doesn't raise a validation error even though m is invalid
+    m2 = Model.model_validate(m)
+    ```
+
+=== ":white_check_mark: `revalidate_instances='always'`"
+    ```py
+    from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+    class Model(BaseModel):
+        a: int
+
+        model_config = ConfigDict(revalidate_instances='always')
+
+
+    m = Model(a=0)
+    # note: the `model_config` setting validate_assignment=True` can prevent this kind of misbehavior
+    m.a = 'not an int'
+
+    try:
+        m2 = Model.model_validate(m)
+    except ValidationError as e:
+        print(e)
+        """
+        1 validation error for Model
+        a
+          Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='not an int', input_type=str]
+        """
+    ```
 
 ### Creating models without validation
 
@@ -727,16 +781,10 @@ except ValidationError as e:
 When using bound type parameters, and when leaving type parameters unspecified, Pydantic treats generic models
 similarly to how it treats built-in generic types like `List` and `Dict`:
 
-* If you don't specify parameters before instantiating the generic model, they are treated as the bound of the `TypeVar`.
+* If you don't specify parameters before instantiating the generic model, they are validated as the bound of the `TypeVar`.
 * If the `TypeVar`s involved have no bounds, they are treated as `Any`.
 
-Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types.
-
-!!! note
-    For serialization this means: when a `TypeVar` is constrained or bound using a parent model `ParentModel`
-    and a child model `ChildModel` is used as a concrete value, Pydantic will serialize `ChildModel` as `ParentModel`.
-    `TypeVar` needs to be wrapped inside [`SerializeAsAny`](serialization.md#serializing-with-duck-typing)
-    for Pydantic to serialize `ChildModel` as `ChildModel`.
+Also, like `List` and `Dict`, any parameters specified using a `TypeVar` can later be substituted with concrete types:
 
 ```py requires="3.12"
 from typing import Generic, TypeVar
@@ -834,7 +882,43 @@ assert error.model_dump() == {
 }
 ```
 
-If you use a `default=...` (available in Python >= 3.13 or via `typing-extensions`) or constraints (`TypeVar('T', str, int)`; note that you rarely want to use this form of a `TypeVar`) then the default value or constraints will be used for both validation and serialization if the type variable is not parametrized. You can override this behavior using `pydantic.SerializeAsAny`:
+Here's another example of the above behavior, enumerating all permutations regarding bound specification and generic type parametrization:
+```py
+from typing import Generic
+
+from typing_extensions import TypeVar
+
+from pydantic import BaseModel
+
+TBound = TypeVar('TBound', bound=BaseModel)
+TNoBound = TypeVar('TNoBound')
+
+
+class IntValue(BaseModel):
+    value: int
+
+
+class ItemBound(BaseModel, Generic[TBound]):
+    item: TBound
+
+
+class ItemNoBound(BaseModel, Generic[TNoBound]):
+    item: TNoBound
+
+
+item_bound_inferred = ItemBound(item=IntValue(value=3))
+item_bound_explicit = ItemBound[IntValue](item=IntValue(value=3))
+item_no_bound_inferred = ItemNoBound(item=IntValue(value=3))
+item_no_bound_explicit = ItemNoBound[IntValue](item=IntValue(value=3))
+
+# calling `print(x.model_dump())` on any of the above instances results in the following:
+#> {'item': {'value': 3}}
+```
+
+If you use a `default=...` (available in Python >= 3.13 or via `typing-extensions`) or constraints (`TypeVar('T', str, int)`;
+note that you rarely want to use this form of a `TypeVar`) then the default value or constraints will be used for both
+validation and serialization if the type variable is not parametrized.
+You can override this behavior using `pydantic.SerializeAsAny`:
 
 ```py
 from typing import Generic, Optional
@@ -891,6 +975,47 @@ assert error.model_dump() == {
     },
 }
 ```
+
+!!! note
+    Note, you may run into a bit of trouble if you don't parametrize a generic when the case of validating against the generic's bound
+    could cause data loss. See the example below:
+
+```py
+from typing import Generic
+
+from typing_extensions import TypeVar
+
+from pydantic import BaseModel
+
+TItem = TypeVar('TItem', bound='ItemBase')
+
+
+class ItemBase(BaseModel):
+    ...
+
+
+class IntItem(ItemBase):
+    value: int
+
+
+class ItemHolder(BaseModel, Generic[TItem]):
+    item: TItem
+
+
+loaded_data = {'item': {'value': 1}}
+
+
+print(ItemHolder(**loaded_data).model_dump())  # (1)!
+#> {'item': {}}
+
+print(ItemHolder[IntItem](**loaded_data).model_dump())  # (2)!
+#> {'item': {'value': 1}}
+```
+
+1. When the generic isn't parametrized, the input data is validated against the generic bound.
+   Given that `ItemBase` has no fields, the `item` field information is lost.
+2. In this case, the runtime type information is provided explicitly via the generic parametrization,
+   so the input data is validated against the `IntItem` class and the serialization output matches what's expected.
 
 ## Dynamic model creation
 

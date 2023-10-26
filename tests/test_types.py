@@ -103,6 +103,7 @@ from pydantic import (
     field_validator,
     validate_call,
 )
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
 from pydantic.types import AllowInfNan, GetPydanticSchema, ImportString, Strict, StringConstraints
@@ -455,9 +456,9 @@ def test_constrained_set_too_long():
         {
             'type': 'too_long',
             'loc': ('v',),
-            'msg': 'Set should have at most 10 items after validation, not 11',
+            'msg': 'Set should have at most 10 items after validation, not more',
             'input': {'4', '3', '10', '9', '5', '6', '1', '8', '0', '7', '2'},
-            'ctx': {'field_type': 'Set', 'max_length': 10, 'actual_length': 11},
+            'ctx': {'field_type': 'Set', 'max_length': 10, 'actual_length': None},
         }
     ]
 
@@ -541,9 +542,9 @@ def test_constrained_set_constraints():
         {
             'type': 'too_long',
             'loc': ('v',),
-            'msg': 'Set should have at most 11 items after validation, not 12',
+            'msg': 'Set should have at most 11 items after validation, not more',
             'input': {0, 8, 1, 9, 2, 10, 3, 7, 11, 4, 6, 5},
-            'ctx': {'field_type': 'Set', 'max_length': 11, 'actual_length': 12},
+            'ctx': {'field_type': 'Set', 'max_length': 11, 'actual_length': None},
         }
     ]
 
@@ -596,7 +597,7 @@ def test_conset():
     with pytest.raises(ValidationError, match='Set should have at least 2 items after validation, not 1'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='Set should have at most 4 items after validation, not 5'):
+    with pytest.raises(ValidationError, match='Set should have at most 4 items after validation, not more'):
         Model(foo=list(range(5)))
 
     with pytest.raises(ValidationError) as exc_info:
@@ -648,7 +649,7 @@ def test_confrozenset():
     with pytest.raises(ValidationError, match='Frozenset should have at least 2 items after validation, not 1'):
         Model(foo=[1])
 
-    with pytest.raises(ValidationError, match='Frozenset should have at most 4 items after validation, not 5'):
+    with pytest.raises(ValidationError, match='Frozenset should have at most 4 items after validation, not more'):
         Model(foo=list(range(5)))
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1620,12 +1621,6 @@ def test_enum_type():
         }
     ]
 
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'Enum'>)"),
-    ):
-        Model.model_json_schema()
-
 
 def test_int_enum_type():
     class Model(BaseModel):
@@ -1653,12 +1648,6 @@ def test_int_enum_type():
             'type': 'is_instance_of',
         }
     ]
-
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'IntEnum'>)"),
-    ):
-        Model.model_json_schema()
 
 
 @pytest.mark.parametrize('enum_base,strict', [(Enum, False), (IntEnum, False), (IntEnum, True)])
@@ -1698,6 +1687,39 @@ def test_enum_from_json(enum_base, strict):
                 'type': 'enum',
             }
         ]
+
+
+def test_strict_enum() -> None:
+    class Demo(Enum):
+        A = 0
+        B = 1
+
+    class User(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        demo_strict: Demo
+        demo_not_strict: Demo = Field(strict=False)
+
+    user = User(demo_strict=Demo.A, demo_not_strict=1)
+
+    assert isinstance(user.demo_strict, Demo)
+    assert isinstance(user.demo_not_strict, Demo)
+    assert user.demo_strict.value == 0
+    assert user.demo_not_strict.value == 1
+
+    with pytest.raises(ValidationError, match='Input should be an instance of test_strict_enum.<locals>.Demo'):
+        User(demo_strict=0, demo_not_strict=1)
+
+
+def test_enum_with_no_cases() -> None:
+    class MyEnum(Enum):
+        pass
+
+    class MyModel(BaseModel):
+        e: MyEnum
+
+    json_schema = MyModel.model_json_schema()
+    assert json_schema['properties']['e']['enum'] == []
 
 
 @pytest.mark.parametrize(
@@ -2838,22 +2860,29 @@ def test_uuid_validation():
 
 
 def test_uuid_strict() -> None:
-    class UUIDModel(BaseModel):
+    class StrictByConfig(BaseModel):
         a: UUID1
         b: UUID3
         c: UUID4
         d: UUID5
+        e: uuid.UUID
 
         model_config = ConfigDict(strict=True)
+
+    class StrictByField(BaseModel):
+        a: UUID1 = Field(..., strict=True)
+        b: UUID3 = Field(..., strict=True)
+        c: UUID4 = Field(..., strict=True)
+        d: UUID5 = Field(..., strict=True)
+        e: uuid.UUID = Field(..., strict=True)
 
     a = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # uuid1
     b = uuid.UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')  # uuid3
     c = uuid.UUID('260d1600-3680-4f4f-a968-f6fa622ffd8d')  # uuid4
     d = uuid.UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')  # uuid5
+    e = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # any uuid
 
-    with pytest.raises(ValidationError) as exc_info:
-        UUIDModel(a=str(a), b=str(b), c=str(c), d=str(d))
-    assert exc_info.value.errors(include_url=False) == [
+    strict_errors = [
         {
             'type': 'is_instance_of',
             'loc': ('a',),
@@ -2882,13 +2911,26 @@ def test_uuid_strict() -> None:
             'input': '886313e1-3b8a-5372-9b90-0c9aee199e5d',
             'ctx': {'class': 'UUID'},
         },
+        {
+            'type': 'is_instance_of',
+            'loc': ('e',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '7fb48116-ca6b-11ed-a439-3274d3adddac',
+            'ctx': {'class': 'UUID'},
+        },
     ]
 
-    m = UUIDModel(a=a, b=b, c=c, d=d)
-    assert isinstance(m.a, type(a)) and m.a == a
-    assert isinstance(m.b, type(b)) and m.b == b
-    assert isinstance(m.c, type(c)) and m.c == c
-    assert isinstance(m.d, type(d)) and m.d == d
+    for model in [StrictByConfig, StrictByField]:
+        with pytest.raises(ValidationError) as exc_info:
+            model(a=str(a), b=str(b), c=str(c), d=str(d), e=str(e))
+        assert exc_info.value.errors(include_url=False) == strict_errors
+
+        m = model(a=a, b=b, c=c, d=d, e=e)
+        assert isinstance(m.a, type(a)) and m.a == a
+        assert isinstance(m.b, type(b)) and m.b == b
+        assert isinstance(m.c, type(c)) and m.c == c
+        assert isinstance(m.d, type(d)) and m.d == d
+        assert isinstance(m.e, type(e)) and m.e == e
 
 
 @pytest.mark.parametrize(
@@ -3921,13 +3963,25 @@ def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     ]
 
 
-def test_secretstr():
+@pytest.mark.parametrize('validate_json', [True, False])
+def test_secretstr(validate_json):
     class Foobar(BaseModel):
         password: SecretStr
         empty_password: SecretStr
 
-    # Initialize the model.
-    f = Foobar(password='1234', empty_password='')
+    if validate_json:
+        f = Foobar.model_validate_json('{"password": "1234", "empty_password": ""}')
+        with pytest.raises(ValidationError) as exc_info:
+            Foobar.model_validate_json('{"password": 1234, "empty_password": null}')
+    else:
+        f = Foobar(password='1234', empty_password='')
+        with pytest.raises(ValidationError) as exc_info:
+            Foobar(password=1234, empty_password=None)
+
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'string_type', 'loc': ('password',), 'msg': 'Input should be a valid string', 'input': 1234},
+        {'type': 'string_type', 'loc': ('empty_password',), 'msg': 'Input should be a valid string', 'input': None},
+    ]
 
     # Assert correct types.
     assert f.password.__class__.__name__ == 'SecretStr'
@@ -5917,6 +5971,28 @@ def test_coerce_numbers_to_str_disabled_in_strict_mode() -> None:
         Model.model_validate({'value': 42})
     with pytest.raises(ValidationError, match='value'):
         Model.model_validate_json('{"value": 42}')
+
+
+@pytest.mark.parametrize('value_param', [True, False])
+def test_coerce_numbers_to_str_raises_for_bool(value_param: bool) -> None:
+    class Model(BaseModel):
+        model_config = ConfigDict(coerce_numbers_to_str=True)
+        value: str
+
+    with pytest.raises(ValidationError, match='value'):
+        Model.model_validate({'value': value_param})
+    with pytest.raises(ValidationError, match='value'):
+        if value_param is True:
+            Model.model_validate_json('{"value": true}')
+        elif value_param is False:
+            Model.model_validate_json('{"value": false}')
+
+    @pydantic_dataclass(config=ConfigDict(coerce_numbers_to_str=True))
+    class Model:
+        value: str
+
+    with pytest.raises(ValidationError, match='value'):
+        Model(value=value_param)
 
 
 @pytest.mark.parametrize(

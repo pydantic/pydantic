@@ -191,10 +191,14 @@ print(user.model_dump(by_alias=True))  # (2)!
     class User(BaseModel):
         model_config = ConfigDict(populate_by_name=True)
 
-        name: str = Field(..., alias='username')
-    ```
+        name: str = Field(..., alias=str('username'))  # noqa: UP018
 
-     This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
+
+    user = User(name='johndoe')  # (1)!
+    ```
+    1. Now VSCode will not show a warning
+
+    This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
 
     ### Validation Alias
 
@@ -651,7 +655,7 @@ See [Conversion Table](conversion_table.md) for more details on how Pydantic con
 
 ## Immutability
 
-The parameter `frozen` is used to emulate the [frozen dataclass] behaviour. It is used to prevent the field from being
+The parameter `frozen` is used to emulate the frozen dataclass behaviour. It is used to prevent the field from being
 assigned a new value after the model is created (immutability).
 
 See the [frozen dataclass documentation] for more details.

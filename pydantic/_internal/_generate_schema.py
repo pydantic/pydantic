@@ -50,13 +50,15 @@ from ._core_metadata import (
     build_metadata_dict,
 )
 from ._core_utils import (
-    HAS_INVALID_SCHEMAS_METADATA_KEY,
     NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
+    collect_invalid_schemas,
     define_expected_missing_refs,
     get_ref,
     get_type_ref,
     is_list_like_schema_with_items_schema,
+    simplify_schema_references,
+    validate_core_schema,
 )
 from ._decorators import (
     ComputedFieldInfo,
@@ -393,6 +395,18 @@ class GenerateSchema:
             self._needs_apply_discriminated_union = True
             return schema
 
+    class CollectedInvalid(Exception):
+        pass
+
+    def clean_schema(self, schema: CoreSchema) -> CoreSchema:
+        schema = self.collect_definitions(schema)
+        schema = simplify_schema_references(schema)
+        schema = _discriminated_union.apply_discriminators(schema)
+        if collect_invalid_schemas(schema):
+            raise self.CollectedInvalid()
+        schema = validate_core_schema(schema)
+        return schema
+
     def collect_definitions(self, schema: CoreSchema) -> CoreSchema:
         ref = cast('str | None', schema.get('ref', None))
         if ref:
@@ -535,10 +549,6 @@ class GenerateSchema:
                     new_inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
                     if new_inner_schema is not None:
                         inner_schema = new_inner_schema
-                        self._has_invalid_schema = True
-                        metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = True
-                    else:
-                        metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = False
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
                     model_schema = core_schema.model_schema(
@@ -556,6 +566,19 @@ class GenerateSchema:
                 schema = apply_model_validators(schema, model_validators, 'outer')
                 self.defs.definitions[model_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(model_ref)
+
+    def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
+        """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
+        and return the inner schema.
+        """
+
+        def get_ref(s: CoreSchema) -> str:
+            return s['ref']  # type: ignore
+
+        if schema['type'] == 'definitions':
+            self.defs.definitions.update({get_ref(s): s for s in schema['definitions']})
+            schema = schema['schema']
+        return schema
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """Try to generate schema from either the `__get_pydantic_core_schema__` function or
@@ -592,6 +615,8 @@ class GenerateSchema:
                 schema = get_schema(
                     source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode)
                 )
+
+        schema = self._unpack_refs_defs(schema)
 
         ref = get_ref(schema)
         if ref:
@@ -659,11 +684,9 @@ class GenerateSchema:
         if 'metadata' in schema:
             metadata = schema['metadata']
             metadata[NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = self._needs_apply_discriminated_union
-            metadata[HAS_INVALID_SCHEMAS_METADATA_KEY] = self._has_invalid_schema
         else:
             schema['metadata'] = {
                 NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: self._needs_apply_discriminated_union,
-                HAS_INVALID_SCHEMAS_METADATA_KEY: self._has_invalid_schema,
             }
         return schema
 
@@ -889,7 +912,9 @@ class GenerateSchema:
             metadata=common_field['metadata'],
         )
 
-    def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
+    def _common_field_schema(  # noqa C901
+        self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
+    ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
             types_namespace = self._types_namespace
@@ -901,6 +926,14 @@ class GenerateSchema:
             evaluated = _typing_extra.eval_type_lenient(field_info.annotation, types_namespace, None)
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
                 field_info.annotation = evaluated
+
+                # Handle any field info attributes that may have been obtained from now-resolved annotations
+                new_field_info = FieldInfo.from_annotation(evaluated)
+                for k, v in new_field_info._attributes_set.items():
+                    # If an attribute is already set, it means it was set by assigning to a call to Field (or just a
+                    # default value), and that should take the highest priority. So don't overwrite existing attributes.
+                    if k not in field_info._attributes_set:
+                        setattr(field_info, k, v)
 
         source_type, annotations = field_info.annotation, field_info.metadata
 
@@ -963,14 +996,22 @@ class GenerateSchema:
 
         # apply alias generator
         alias_generator = self._config_wrapper.alias_generator
-        if alias_generator and (field_info.alias_priority is None or field_info.alias_priority <= 1):
+        if alias_generator and (
+            field_info.alias_priority is None or field_info.alias_priority <= 1 or field_info.alias is None
+        ):
             alias = alias_generator(name)
             if not isinstance(alias, str):
                 raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+            if field_info.alias is None:
+                if field_info.serialization_alias is None:
+                    field_info.serialization_alias = alias
+                if field_info.validation_alias is None:
+                    field_info.validation_alias = alias
+            else:
+                field_info.serialization_alias = alias
+                field_info.validation_alias = alias
+                field_info.alias_priority = 1
             field_info.alias = alias
-            field_info.validation_alias = alias
-            field_info.serialization_alias = alias
-            field_info.alias_priority = 1
 
         if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
             validation_alias = field_info.validation_alias.convert_to_aliases()
@@ -1228,6 +1269,11 @@ class GenerateSchema:
             custom_error_message='Input should be a type',
         )
 
+    def _union_is_subclass_schema(self, union_type: Any) -> core_schema.CoreSchema:
+        """Generate schema for `Type[Union[X, ...]]`."""
+        args = self._get_args_resolving_forward_refs(union_type, required=True)
+        return core_schema.union_schema([self.generate_schema(typing.Type[args]) for args in args])
+
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """Generate schema for a Type, e.g. `Type[int]`."""
         type_param = self._get_first_arg_or_any(type_)
@@ -1235,6 +1281,8 @@ class GenerateSchema:
             return self._type_schema()
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:
+                if _typing_extra.origin_is_union(get_origin(type_param.__bound__)):
+                    return self._union_is_subclass_schema(type_param.__bound__)
                 return core_schema.is_subclass_schema(type_param.__bound__)
             elif type_param.__constraints__:
                 return core_schema.union_schema(
@@ -1243,20 +1291,13 @@ class GenerateSchema:
             else:
                 return self._type_schema()
         elif _typing_extra.origin_is_union(get_origin(type_param)):
-            args = self._get_args_resolving_forward_refs(type_param, required=True)
-            return core_schema.union_schema([self.generate_schema(typing.Type[args]) for args in args])
+            return self._union_is_subclass_schema(type_param)
         else:
             return core_schema.is_subclass_schema(type_param)
 
     def _sequence_schema(self, sequence_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Sequence, e.g. `Sequence[int]`."""
         item_type = self._get_first_arg_or_any(sequence_type)
-
-        def json_schema_func(_schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            items_schema = self._generate_schema(item_type)
-            return handler(core_schema.list_schema(items_schema))
-
-        metadata = build_metadata_dict(js_functions=[json_schema_func])
 
         list_schema = core_schema.list_schema(self.generate_schema(item_type))
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
@@ -1266,9 +1307,7 @@ class GenerateSchema:
             python_schema = core_schema.chain_schema(
                 [python_schema, core_schema.no_info_wrap_validator_function(sequence_validator, list_schema)],
             )
-        return core_schema.json_or_python_schema(
-            json_schema=list_schema, python_schema=python_schema, metadata=metadata
-        )
+        return core_schema.json_or_python_schema(json_schema=list_schema, python_schema=python_schema)
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
         """Generate a schema for an `Iterable`."""
@@ -1439,15 +1478,14 @@ class GenerateSchema:
 
         bound = typevar.__bound__
         constraints = typevar.__constraints__
-        not_set = object()
-        default = getattr(typevar, '__default__', not_set)
+        default = getattr(typevar, '__default__', None)
 
-        if (bound is not None) + (len(constraints) != 0) + (default is not not_set) > 1:
+        if (bound is not None) + (len(constraints) != 0) + (default is not None) > 1:
             raise NotImplementedError(
                 'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
             )
 
-        if default is not not_set:
+        if default is not None:
             return self.generate_schema(default)
         elif constraints:
             return self._union_schema(typing.Union[constraints])  # type: ignore
@@ -1477,6 +1515,9 @@ class GenerateSchema:
             )
 
         return_type = replace_types(return_type, self._typevars_map)
+        # Create a new ComputedFieldInfo so that different type parametrizations of the same
+        # generic model's computed field can have different return types.
+        d.info = dataclasses.replace(d.info, return_type=return_type)
         return_type_schema = self.generate_schema(return_type)
         # Apply serializers to computed field if there exist
         return_type_schema = self._apply_field_serializers(

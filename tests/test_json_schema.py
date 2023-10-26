@@ -2406,6 +2406,23 @@ def test_typeddict_with_extra_allow():
     }
 
 
+def test_typeddict_with_extra_behavior_allow():
+    class Model:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.typed_dict_schema(
+                {'a': core_schema.typed_dict_field(core_schema.str_schema())},
+                extra_behavior='allow',
+            )
+
+    assert TypeAdapter(Model).json_schema() == {
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': True,
+    }
+
+
 def test_typeddict_with_extra_ignore():
     class Model(TypedDict):
         __pydantic_config__ = ConfigDict(extra='ignore')  # type: ignore
@@ -2413,6 +2430,22 @@ def test_typeddict_with_extra_ignore():
 
     assert TypeAdapter(Model).json_schema() == {
         'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_extra_behavior_ignore():
+    class Model:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.typed_dict_schema(
+                {'a': core_schema.typed_dict_field(core_schema.str_schema())},
+                extra_behavior='ignore',
+            )
+
+    assert TypeAdapter(Model).json_schema() == {
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
@@ -2427,6 +2460,23 @@ def test_typeddict_with_extra_forbid():
 
     assert TypeAdapter(Model).json_schema() == {
         'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': False,
+    }
+
+
+def test_typeddict_with_extra_behavior_forbid():
+    class Model:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.typed_dict_schema(
+                {'a': core_schema.typed_dict_field(core_schema.str_schema())},
+                extra_behavior='forbid',
+            )
+
+    assert TypeAdapter(Model).json_schema() == {
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
@@ -5260,7 +5310,7 @@ def test_json_schema_keys_sorting() -> None:
         a: str
 
     class OuterModel(BaseModel):
-        inner: List[Model]
+        inner: List[Model] = Field(default=[Model(b=1, a='fruit')])
 
     # verify the schema contents
     # this is just to get a nicer error message / diff if it fails
@@ -5273,8 +5323,14 @@ def test_json_schema_keys_sorting() -> None:
                 'type': 'object',
             }
         },
-        'properties': {'inner': {'items': {'$ref': '#/$defs/Model'}, 'title': 'Inner', 'type': 'array'}},
-        'required': ['inner'],
+        'properties': {
+            'inner': {
+                'default': [{'b': 1, 'a': 'fruit'}],
+                'items': {'$ref': '#/$defs/Model'},
+                'title': 'Inner',
+                'type': 'array',
+            }
+        },
         'title': 'OuterModel',
         'type': 'object',
     }
@@ -5627,3 +5683,72 @@ def test_json_schema_mode_override():
     # Ensure the submodels' JSON schemas match the expected mode even when the opposite value is specified:
     assert ValidationModel.model_json_schema(mode='serialization') == Model.model_json_schema(mode='validation')
     assert SerializationModel.model_json_schema(mode='validation') == Model.model_json_schema(mode='serialization')
+
+
+def test_models_json_schema_generics() -> None:
+    class G(BaseModel, Generic[T]):
+        foo: T
+
+    class M(BaseModel):
+        foo: Literal['a', 'b']
+
+    GLiteral = G[Literal['a', 'b']]
+
+    assert models_json_schema(
+        [
+            (GLiteral, 'serialization'),
+            (GLiteral, 'validation'),
+            (M, 'validation'),
+        ]
+    ) == (
+        {
+            (GLiteral, 'serialization'): {'$ref': '#/$defs/G_Literal__a____b___'},
+            (GLiteral, 'validation'): {'$ref': '#/$defs/G_Literal__a____b___'},
+            (M, 'validation'): {'$ref': '#/$defs/M'},
+        },
+        {
+            '$defs': {
+                'G_Literal__a____b___': {
+                    'properties': {'foo': {'enum': ['a', 'b'], 'title': 'Foo', 'type': 'string'}},
+                    'required': ['foo'],
+                    'title': "G[Literal['a', 'b']]",
+                    'type': 'object',
+                },
+                'M': {
+                    'properties': {'foo': {'enum': ['a', 'b'], 'title': 'Foo', 'type': 'string'}},
+                    'required': ['foo'],
+                    'title': 'M',
+                    'type': 'object',
+                },
+            }
+        },
+    )
+
+
+def test_recursive_non_generic_model() -> None:
+    class Foo(BaseModel):
+        maybe_bar: Union[None, 'Bar']
+
+    class Bar(BaseModel):
+        foo: Foo
+
+    # insert_assert(Bar(foo=Foo(maybe_bar=None)).model_dump())
+    assert Bar.model_validate({'foo': {'maybe_bar': None}}).model_dump() == {'foo': {'maybe_bar': None}}
+    # insert_assert(Bar.model_json_schema())
+    assert Bar.model_json_schema() == {
+        '$defs': {
+            'Bar': {
+                'properties': {'foo': {'$ref': '#/$defs/Foo'}},
+                'required': ['foo'],
+                'title': 'Bar',
+                'type': 'object',
+            },
+            'Foo': {
+                'properties': {'maybe_bar': {'anyOf': [{'$ref': '#/$defs/Bar'}, {'type': 'null'}]}},
+                'required': ['maybe_bar'],
+                'title': 'Foo',
+                'type': 'object',
+            },
+        },
+        'allOf': [{'$ref': '#/$defs/Bar'}],
+    }

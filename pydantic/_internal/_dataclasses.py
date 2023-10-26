@@ -22,12 +22,11 @@ from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
-from . import _config, _decorators, _discriminated_union, _typing_extra
-from ._core_utils import collect_invalid_schemas, simplify_schema_references, validate_core_schema
+from . import _config, _decorators, _typing_extra
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
-from ._mock_val_ser import set_dataclass_mock_validator
+from ._mock_val_ser import set_dataclass_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._utils import is_valid_identifier
 
@@ -153,24 +152,23 @@ def complete_dataclass(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_dataclass_mock_validator(cls, cls.__name__, f'`{e.name}`')
+        set_dataclass_mocks(cls, cls.__name__, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(cls)
 
-    schema = gen_schema.collect_definitions(schema)
-    if collect_invalid_schemas(schema):
-        set_dataclass_mock_validator(cls, cls.__name__, 'all referenced types')
+    try:
+        schema = gen_schema.clean_schema(schema)
+    except gen_schema.CollectedInvalid:
+        set_dataclass_mocks(cls, cls.__name__, 'all referenced types')
         return False
-
-    schema = _discriminated_union.apply_discriminators(simplify_schema_references(schema))
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
 
-    cls.__pydantic_core_schema__ = schema = validate_core_schema(schema)
+    cls.__pydantic_core_schema__ = schema
     cls.__pydantic_validator__ = validator = create_schema_validator(
         schema, core_config, config_wrapper.plugin_settings
     )

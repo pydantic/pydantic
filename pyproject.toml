@@ -44,6 +44,7 @@ classifiers = [
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
     'Intended Audience :: System Administrators',
@@ -61,7 +62,8 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.10.0",
+    "pydantic-core==2.11.0",
+    "importlib_metadata; python_version=='3.7'"
 ]
 dynamic = ['version', 'readme']
 
@@ -92,15 +94,8 @@ linting = [
     "ruff",
     "mypy~=1.1.1",
 ]
-testing-extra = [
-    # used when generate devtools docs example
-    "ansi2html",
-    "devtools",
-    # used in docs tests
-    "sqlalchemy>=2.0,<3.0",
-    "greenlet>=3.0.0rc3",
-]
 testing = [
+    "cloudpickle",
     "coverage[toml]",
     "dirty-equals",
     "pytest",
@@ -109,6 +104,14 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
+]
+testing-extra = [
+    # used when generate devtools docs example
+    "ansi2html",
+    "devtools",
+    # used in docs tests
+    "sqlalchemy>=2.0,<3.0",
+    "greenlet>=3.0.0rc3",
 ]
 mypy = [
     "mypy",
@@ -168,6 +171,7 @@ addopts = [
 assignees = []
 reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex', 'davidhewitt', 'sydney-runkle']
 require_change_file = false
+unconfirmed_label = 'pending'
 
 [tool.ruff]
 line-length = 120

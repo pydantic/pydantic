@@ -82,7 +82,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         __pydantic_extra__: An instance attribute with the values of extra fields from validation when
             `model_config['extra'] == 'allow'`.
-        __pydantic_fields_set__: An instance attribute with the names of fields explicitly specified during validation.
+        __pydantic_fields_set__: An instance attribute with the names of fields explicitly set.
         __pydantic_private__: Instance attribute with the values of private attributes set on the model instance.
     """
 
@@ -186,7 +186,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @property
     def model_fields_set(self) -> set[str]:
-        """Returns the set of fields that have been set on this model instance.
+        """Returns the set of fields that have been explicitly set on this model instance.
 
         Returns:
             A set of strings representing the fields that have been set,
@@ -296,7 +296,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             include: A list of fields to include in the output.
             exclude: A list of fields to exclude from the output.
             by_alias: Whether to use the field's alias in the dictionary key if defined.
-            exclude_unset: Whether to exclude fields that are unset or None from the output.
+            exclude_unset: Whether to exclude fields that have not been explicitly set.
             exclude_defaults: Whether to exclude fields that are set to their default value from the output.
             exclude_none: Whether to exclude fields that have a value of `None` from the output.
             round_trip: Whether to enable serialization and deserialization round-trip support.
@@ -774,20 +774,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 else:
                     self.__pydantic_private__[name] = value
             return
-        elif self.model_config.get('frozen', None):
-            error: pydantic_core.InitErrorDetails = {
-                'type': 'frozen_instance',
-                'loc': (name,),
-                'input': value,
-            }
-            raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
-        elif getattr(self.model_fields.get(name), 'frozen', False):
-            error: pydantic_core.InitErrorDetails = {
-                'type': 'frozen_field',
-                'loc': (name,),
-                'input': value,
-            }
-            raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
+
+        self._check_frozen(name, value)
 
         attr = getattr(self.__class__, name, None)
         if isinstance(attr, property):
@@ -798,8 +786,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         elif self.model_config.get('extra') == 'allow' and name not in self.model_fields:
-            # SAFETY: __pydantic_extra__ is not None when extra = 'allow'
-            self.__pydantic_extra__[name] = value  # type: ignore
+            if self.model_extra and name in self.model_extra:
+                self.__pydantic_extra__[name] = value  # type: ignore
+            else:
+                try:
+                    getattr(self, name)
+                except AttributeError:
+                    # attribute does not already exist on instance, so put it in extra
+                    self.__pydantic_extra__[name] = value  # type: ignore
+                else:
+                    # attribute _does_ already exist on instance, and was not in extra, so update it
+                    _object_setattr(self, name, value)
         else:
             self.__dict__[name] = value
             self.__pydantic_fields_set__.add(name)
@@ -814,9 +811,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             try:
                 # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
                 del self.__pydantic_private__[item]  # type: ignore
+                return
             except KeyError as exc:
                 raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-        elif item in self.model_fields:
+
+        self._check_frozen(item, None)
+
+        if item in self.model_fields:
             object.__delattr__(self, item)
         elif self.__pydantic_extra__ is not None and item in self.__pydantic_extra__:
             del self.__pydantic_extra__[item]
@@ -825,6 +826,20 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 object.__delattr__(self, item)
             except AttributeError:
                 raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
+    def _check_frozen(self, name: str, value: Any) -> None:
+        if self.model_config.get('frozen', None):
+            typ = 'frozen_instance'
+        elif getattr(self.model_fields.get(name), 'frozen', False):
+            typ = 'frozen_field'
+        else:
+            return
+        error: pydantic_core.InitErrorDetails = {
+            'type': typ,
+            'loc': (name,),
+            'input': value,
+        }
+        raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
 
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
@@ -1305,6 +1320,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: ConfigDict | None = None,
+    __doc__: str | None = None,
     __base__: None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] | None = None,
@@ -1319,6 +1335,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: ConfigDict | None = None,
+    __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] | None = None,
@@ -1332,6 +1349,7 @@ def create_model(
     __model_name: str,
     *,
     __config__: ConfigDict | None = None,
+    __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
     __validators__: dict[str, AnyClassMethod] | None = None,
@@ -1345,6 +1363,7 @@ def create_model(
     Args:
         __model_name: The name of the newly created model.
         __config__: The configuration of the new model.
+        __doc__: The docstring of the new model.
         __base__: The base class for the new model.
         __module__: The name of the module that the model belongs to.
         __validators__: A dictionary of methods that validate
@@ -1400,6 +1419,8 @@ def create_model(
         fields[f_name] = f_value
 
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
+    if __doc__:
+        namespace.update({'__doc__': __doc__})
     if __validators__:
         namespace.update(__validators__)
     namespace.update(fields)

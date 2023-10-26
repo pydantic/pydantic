@@ -311,7 +311,8 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         # We also cannot use isinstance() since we have to compare types.
         if sys.version_info >= (3, 10) and origin_type is types.UnionType:
             return _UnionGenericAlias(origin_type, resolved_type_args)
-        return origin_type[resolved_type_args]
+        # NotRequired[T] and Required[T] don't support tuple type resolved_type_args, hence the condition below
+        return origin_type[resolved_type_args[0] if len(resolved_type_args) == 1 else resolved_type_args]
 
     # We handle pydantic generic models separately as they don't have the same
     # semantics as "typing" classes or generic aliases

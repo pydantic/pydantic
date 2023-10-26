@@ -24,7 +24,7 @@ from pydantic import (
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic._internal._mock_val_ser import MockValSer
-from pydantic.config import ConfigDict
+from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import FieldInfo
@@ -525,7 +525,7 @@ def test_multiple_inheritance_config():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_wrapper_match():
-    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema, 'JsonValue': JsonValue}
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
     config_dict_annotations.sort()
     # remove config
@@ -712,6 +712,25 @@ def test_config_model_defer_build():
     m = MyModel(x=1)
     assert m.x == 1
 
+    assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
+    assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
+
+
+def test_config_type_adapter_defer_build():
+    class MyModel(BaseModel, defer_build=True):
+        x: int
+
+    ta = TypeAdapter(MyModel)
+
+    assert isinstance(ta.validator, MockValSer)
+    assert isinstance(ta.serializer, MockValSer)
+
+    m = ta.validate_python({'x': 1})
+    assert m.x == 1
+    m2 = ta.validate_python({'x': 2})
+    assert m2.x == 2
+
+    # in the future, can reassign said validators to the TypeAdapter
     assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
     assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
 

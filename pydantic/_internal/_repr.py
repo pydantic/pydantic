@@ -101,8 +101,14 @@ def display_as_type(obj: Any) -> str:
         args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
         return f'Union[{args}]'
     elif isinstance(obj, _typing_extra.WithArgsTypes):
-        args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
-        return f'{obj.__qualname__}[{args}]'
+        if typing_extensions.get_origin(obj) == typing_extensions.Literal:
+            args = ', '.join(map(repr, typing_extensions.get_args(obj)))
+        else:
+            args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
+        try:
+            return f'{obj.__qualname__}[{args}]'
+        except AttributeError:
+            return str(obj)  # handles TypeAliasType in 3.12
     elif isinstance(obj, type):
         return obj.__qualname__
     else:

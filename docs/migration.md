@@ -92,6 +92,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 | `json_schema()` | `model_json_schema()` |
 | `json()` | `model_dump_json()` |
 | `parse_obj()` | `model_validate()` |
+| `update_forward_refs()` | `model_rebuild()` |
 
 * Some of the built-in data-loading functionality has been slated for removal. In particular,
     `parse_raw` and `parse_file` are now deprecated. In Pydantic V2, `model_validate_json` works like `parse_raw`. Otherwise, you should load the data and then pass it to `model_validate`.
@@ -127,12 +128,18 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
   [Subclass instances for fields of BaseModel, dataclasses, TypedDict](concepts/serialization.md#subclass-instances-for-fields-of-basemodel-dataclasses-typeddict)
   section of the model exporting docs.
 * `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
+* In many cases, arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion.
+  This is notable in the case of passing mutable objects as arguments to a constructor.
+  You can see an example + more detail [here](https://docs.pydantic.dev/latest/concepts/models/#attribute-copies).
 
 ### Changes to `pydantic.generics.GenericModel`
 
 The `pydantic.generics.GenericModel` class is no longer necessary, and has been removed. Instead, you can now
 create generic `BaseModel` subclasses by just adding `Generic` as a parent class on a `BaseModel` subclass directly.
 This looks like `class MyGenericModel(BaseModel, Generic[T]): ...`.
+
+Mixing of V1 and V2 models is not supported which means that type parameters of such generic `BaseModel` (V2)
+cannot be V1 models.
 
 While it may not raise an error, we strongly advise against using _parametrized_ generics in `isinstance` checks.
 
@@ -162,6 +169,8 @@ The following properties have been removed from or changed in `Field`:
 - `allow_mutation` (use `frozen` instead)
 - `regex` (use `pattern` instead)
 - `final` (use the `typing.Final` type hint instead)
+
+Field constraints are no longer automatically pushed down to the parameters of generics.  For example, you can no longer validate every element of a list matches a regex by providing `my_list: list[str] = Field(pattern=".*")`.  Instead, use `typing.Annotated` to provide an annotation on the `str` itself: `my_list: list[Annotated[str, Field(pattern=".*")]]`
 
 * [TODO: Need to document any other backwards-incompatible changes to `pydantic.Field`]
 
@@ -198,13 +207,17 @@ dataclasses without having to subclass `BaseModel`. Pydantic V2 introduces the f
 
 * The following config settings have been removed:
     * `allow_mutation` — this has been removed. You should be able to use [frozen](api/config.md#pydantic.config.ConfigDict) equivalently (inverse of current use).
-    * `error_msg_templates`.
+    * `error_msg_templates`
     * `fields` — this was the source of various bugs, so has been removed.
       You should be able to use `Annotated` on fields to modify them as desired.
     * `getter_dict` — `orm_mode` has been removed, and this implementation detail is no longer necessary.
     * `smart_union`.
     * `underscore_attrs_are_private` — the Pydantic V2 behavior is now the same as if this was always set
       to `True` in Pydantic V1.
+    * `json_loads`
+    * `json_dumps`
+    * `copy_on_model_validation`
+    * `post_init_call`
 
 * The following config settings have been renamed:
     * `allow_population_by_field_name` → `populate_by_name`
@@ -756,6 +769,23 @@ classes using `Annotated`.
 
 Inheriting from `str` had upsides and downsides, and for V2 we decided it would be better to remove this. To use these
 types in APIs which expect `str` you'll now need to convert them (with `str(url)`).
+
+Pydantic V2 uses Rust's [Url](https://crates.io/crates/url) crate for URL validation.
+Some of the URL validation differs slightly from the previous behavior in V1.
+One notable difference is that the new `Url` types append slashes to the validated version if no path is included,
+even if a slash is not specified in the argument to a `Url` type constructor. See the example below for this behavior:
+
+```py
+from pydantic import AnyUrl
+
+assert str(AnyUrl(url='https://google.com')) == 'https://google.com/'
+assert str(AnyUrl(url='https://google.com/')) == 'https://google.com/'
+assert str(AnyUrl(url='https://google.com/api')) == 'https://google.com/api'
+assert str(AnyUrl(url='https://google.com/api/')) == 'https://google.com/api/'
+```
+
+If you still want to use the old behavior without the appended slash, take a look at this [solution](https://github.com/pydantic/pydantic/issues/7186#issuecomment-1690235887).
+
 
 ### Constrained types
 

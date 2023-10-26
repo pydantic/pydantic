@@ -50,7 +50,7 @@ from ._internal import (
     _typing_extra,
 )
 from .annotated_handlers import GetJsonSchemaHandler
-from .config import JsonSchemaExtraCallable
+from .config import JsonDict, JsonSchemaExtraCallable
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
@@ -1195,7 +1195,9 @@ class GenerateJsonSchema:
         with self._config_wrapper_stack.push(config):
             json_schema = self._named_required_fields_schema(named_required_fields)
 
-        extra = config.get('extra', 'ignore')
+        extra = schema.get('extra_behavior')
+        if extra is None:
+            extra = config.get('extra', 'ignore')
         if extra == 'forbid':
             json_schema['additionalProperties'] = False
         elif extra == 'allow':
@@ -1338,7 +1340,7 @@ class GenerateJsonSchema:
         title: str | None,
         extra: Literal['allow', 'ignore', 'forbid'] | None,
         cls: type[Any],
-        json_schema_extra: dict[str, Any] | JsonSchemaExtraCallable | None,
+        json_schema_extra: JsonDict | JsonSchemaExtraCallable | None,
     ) -> JsonSchemaValue:
         if '$ref' in json_schema:
             schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref'])) or json_schema
@@ -2180,6 +2182,10 @@ def models_json_schema(
             - The second element is a JSON schema containing all definitions referenced in the first returned
                     element, along with the optional title and description keys.
     """
+    for cls, _ in models:
+        if isinstance(cls.__pydantic_validator__, _mock_val_ser.MockValSer):
+            cls.__pydantic_validator__.rebuild()
+
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     inputs = [(m, mode, m.__pydantic_core_schema__) for m, mode in models]
     json_schemas_map, definitions = instance.generate_definitions(inputs)
@@ -2220,7 +2226,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
     if isinstance(value, dict):
         sorted_dict: dict[str, JsonSchemaValue] = {}
         keys = value.keys()
-        if parent_key != 'properties':
+        if (parent_key != 'properties') and (parent_key != 'default'):
             keys = sorted(keys)
         for key in keys:
             sorted_dict[key] = _sort_json_schema(value[key], parent_key=key)
@@ -2228,7 +2234,7 @@ def _sort_json_schema(value: JsonSchemaValue, parent_key: str | None = None) -> 
     elif isinstance(value, list):
         sorted_list: list[JsonSchemaValue] = []
         for item in value:  # type: ignore
-            sorted_list.append(_sort_json_schema(item))
+            sorted_list.append(_sort_json_schema(item, parent_key))
         return sorted_list  # type: ignore
     else:
         return value
