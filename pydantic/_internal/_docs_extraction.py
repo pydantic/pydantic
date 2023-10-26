@@ -69,7 +69,7 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
                     selected_nodes = list(itertools.islice(ast.walk(block_tree), 4))
                     cls_is_second_node = cls_is_third_node = False
                     if len(selected_nodes) >= 4:
-                        # Or if `_dedent_source_lines` wrapped the class around the workaround function
+                        # If `_dedent_source_lines` wrapped the class around the workaround function
                         # second node is `FunctionNode`, third node is `ast.arguments`, fourth node is our class:
                         cls_is_third_node = (
                             isinstance(selected_nodes[1], ast.FunctionDef)
@@ -78,7 +78,7 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
                             and selected_nodes[3].name == cls.__name__
                         )
                     if not cls_is_third_node and len(selected_nodes) >= 2:
-                        # If the second element (the first one being `ast.Module`) is `ast.ClassDef` matching our class:
+                        # ...or the second element (the first one being `ast.Module`) is `ast.ClassDef` matching our class:
                         cls_is_second_node = (
                             isinstance(selected_nodes[1], ast.ClassDef) and selected_nodes[1].name == cls.__name__
                         )
