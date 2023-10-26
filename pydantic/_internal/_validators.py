@@ -26,9 +26,9 @@ def sequence_validator(
     # Relevant issue: https://github.com/pydantic/pydantic/issues/5595
     if issubclass(value_type, (str, bytes)):
         raise PydanticCustomError(
-            "sequence_str",
+            'sequence_str',
             "'{type_name}' instances are not allowed as a Sequence value",
-            {"type_name": value_type.__name__},
+            {'type_name': value_type.__name__},
         )
 
     v_list = validator(__input_value)
@@ -49,7 +49,7 @@ def import_string(value: Any) -> Any:
         try:
             return _import_string_logic(value)
         except ImportError as e:
-            raise PydanticCustomError("import_error", "Invalid python path: {error}", {"error": str(e)})
+            raise PydanticCustomError('import_error', 'Invalid python path: {error}', {'error': str(e)})
     else:
         # otherwise we just return the value and let the next validator do the rest of the work
         return value
@@ -75,25 +75,25 @@ def _import_string_logic(dotted_path: str) -> Any:
     """
     from importlib import import_module
 
-    components = dotted_path.strip().split(":")
+    components = dotted_path.strip().split(':')
     if len(components) > 2:
         raise ImportError(f"Import strings should have at most one ':'; received {dotted_path!r}")
 
     module_path = components[0]
     if not module_path:
-        raise ImportError(f"Import strings should have a nonempty module name; received {dotted_path!r}")
+        raise ImportError(f'Import strings should have a nonempty module name; received {dotted_path!r}')
 
     try:
         module = import_module(module_path)
     except ModuleNotFoundError as e:
-        if "." in module_path:
+        if '.' in module_path:
             # Check if it would be valid if the final item was separated from its module with a `:`
-            maybe_module_path, maybe_attribute = dotted_path.strip().rsplit(".", 1)
+            maybe_module_path, maybe_attribute = dotted_path.strip().rsplit('.', 1)
             try:
-                return _import_string_logic(f"{maybe_module_path}:{maybe_attribute}")
+                return _import_string_logic(f'{maybe_module_path}:{maybe_attribute}')
             except ImportError:
                 pass
-            raise ImportError(f"No module named {module_path!r}") from e
+            raise ImportError(f'No module named {module_path!r}') from e
         raise e
 
     if len(components) > 1:
@@ -101,7 +101,7 @@ def _import_string_logic(dotted_path: str) -> Any:
         try:
             return getattr(module, attribute)
         except AttributeError as e:
-            raise ImportError(f"cannot import name {attribute!r} from {module_path!r}") from e
+            raise ImportError(f'cannot import name {attribute!r} from {module_path!r}') from e
     else:
         return module
 
@@ -113,7 +113,7 @@ def pattern_either_validator(__input_value: Any) -> typing.Pattern[Any]:
         # todo strict mode
         return compile_pattern(__input_value)  # type: ignore
     else:
-        raise PydanticCustomError("pattern_type", "Input should be a valid pattern")
+        raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
 def pattern_str_validator(__input_value: Any) -> typing.Pattern[str]:
@@ -121,13 +121,13 @@ def pattern_str_validator(__input_value: Any) -> typing.Pattern[str]:
         if isinstance(__input_value.pattern, str):
             return __input_value
         else:
-            raise PydanticCustomError("pattern_str_type", "Input should be a string pattern")
+            raise PydanticCustomError('pattern_str_type', 'Input should be a string pattern')
     elif isinstance(__input_value, str):
         return compile_pattern(__input_value)
     elif isinstance(__input_value, bytes):
-        raise PydanticCustomError("pattern_str_type", "Input should be a string pattern")
+        raise PydanticCustomError('pattern_str_type', 'Input should be a string pattern')
     else:
-        raise PydanticCustomError("pattern_type", "Input should be a valid pattern")
+        raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
 def pattern_bytes_validator(__input_value: Any) -> typing.Pattern[bytes]:
@@ -135,23 +135,23 @@ def pattern_bytes_validator(__input_value: Any) -> typing.Pattern[bytes]:
         if isinstance(__input_value.pattern, bytes):
             return __input_value
         else:
-            raise PydanticCustomError("pattern_bytes_type", "Input should be a bytes pattern")
+            raise PydanticCustomError('pattern_bytes_type', 'Input should be a bytes pattern')
     elif isinstance(__input_value, bytes):
         return compile_pattern(__input_value)
     elif isinstance(__input_value, str):
-        raise PydanticCustomError("pattern_bytes_type", "Input should be a bytes pattern")
+        raise PydanticCustomError('pattern_bytes_type', 'Input should be a bytes pattern')
     else:
-        raise PydanticCustomError("pattern_type", "Input should be a valid pattern")
+        raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-PatternType = typing.TypeVar("PatternType", str, bytes)
+PatternType = typing.TypeVar('PatternType', str, bytes)
 
 
 def compile_pattern(pattern: PatternType) -> typing.Pattern[PatternType]:
     try:
         return re.compile(pattern)
     except re.error:
-        raise PydanticCustomError("pattern_regex", "Input should be a valid regular expression")
+        raise PydanticCustomError('pattern_regex', 'Input should be a valid regular expression')
 
 
 def ip_v4_address_validator(__input_value: Any) -> IPv4Address:
@@ -161,7 +161,7 @@ def ip_v4_address_validator(__input_value: Any) -> IPv4Address:
     try:
         return IPv4Address(__input_value)
     except ValueError:
-        raise PydanticCustomError("ip_v4_address", "Input is not a valid IPv4 address")
+        raise PydanticCustomError('ip_v4_address', 'Input is not a valid IPv4 address')
 
 
 def ip_v6_address_validator(__input_value: Any) -> IPv6Address:
@@ -171,7 +171,7 @@ def ip_v6_address_validator(__input_value: Any) -> IPv6Address:
     try:
         return IPv6Address(__input_value)
     except ValueError:
-        raise PydanticCustomError("ip_v6_address", "Input is not a valid IPv6 address")
+        raise PydanticCustomError('ip_v6_address', 'Input is not a valid IPv6 address')
 
 
 def ip_v4_network_validator(__input_value: Any) -> IPv4Network:
@@ -186,7 +186,7 @@ def ip_v4_network_validator(__input_value: Any) -> IPv4Network:
     try:
         return IPv4Network(__input_value)
     except ValueError:
-        raise PydanticCustomError("ip_v4_network", "Input is not a valid IPv4 network")
+        raise PydanticCustomError('ip_v4_network', 'Input is not a valid IPv4 network')
 
 
 def ip_v6_network_validator(__input_value: Any) -> IPv6Network:
@@ -201,7 +201,7 @@ def ip_v6_network_validator(__input_value: Any) -> IPv6Network:
     try:
         return IPv6Network(__input_value)
     except ValueError:
-        raise PydanticCustomError("ip_v6_network", "Input is not a valid IPv6 network")
+        raise PydanticCustomError('ip_v6_network', 'Input is not a valid IPv6 network')
 
 
 def ip_v4_interface_validator(__input_value: Any) -> IPv4Interface:
@@ -211,7 +211,7 @@ def ip_v4_interface_validator(__input_value: Any) -> IPv4Interface:
     try:
         return IPv4Interface(__input_value)
     except ValueError:
-        raise PydanticCustomError("ip_v4_interface", "Input is not a valid IPv4 interface")
+        raise PydanticCustomError('ip_v4_interface', 'Input is not a valid IPv4 interface')
 
 
 def ip_v6_interface_validator(__input_value: Any) -> IPv6Interface:
@@ -221,44 +221,44 @@ def ip_v6_interface_validator(__input_value: Any) -> IPv6Interface:
     try:
         return IPv6Interface(__input_value)
     except ValueError:
-        raise PydanticCustomError("ip_v6_interface", "Input is not a valid IPv6 interface")
+        raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
 
 
 def greater_than_validator(x: Any, gt: Any) -> Any:
     if not (x > gt):
-        raise PydanticKnownError("greater_than", {"gt": gt})
+        raise PydanticKnownError('greater_than', {'gt': gt})
     return x
 
 
 def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
     if not (x >= ge):
-        raise PydanticKnownError("greater_than_equal", {"ge": ge})
+        raise PydanticKnownError('greater_than_equal', {'ge': ge})
     return x
 
 
 def less_than_validator(x: Any, lt: Any) -> Any:
     if not (x < lt):
-        raise PydanticKnownError("less_than", {"lt": lt})
+        raise PydanticKnownError('less_than', {'lt': lt})
     return x
 
 
 def less_than_or_equal_validator(x: Any, le: Any) -> Any:
     if not (x <= le):
-        raise PydanticKnownError("less_than_equal", {"le": le})
+        raise PydanticKnownError('less_than_equal', {'le': le})
     return x
 
 
 def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
     if not (x % multiple_of == 0):
-        raise PydanticKnownError("multiple_of", {"multiple_of": multiple_of})
+        raise PydanticKnownError('multiple_of', {'multiple_of': multiple_of})
     return x
 
 
 def min_length_validator(x: Any, min_length: Any) -> Any:
     if not (len(x) >= min_length):
         raise PydanticKnownError(
-            "too_short",
-            {"field_type": "Value", "min_length": min_length, "actual_length": len(x)},
+            'too_short',
+            {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)},
         )
     return x
 
@@ -266,13 +266,13 @@ def min_length_validator(x: Any, min_length: Any) -> Any:
 def max_length_validator(x: Any, max_length: Any) -> Any:
     if len(x) > max_length:
         raise PydanticKnownError(
-            "too_long",
-            {"field_type": "Value", "max_length": max_length, "actual_length": len(x)},
+            'too_long',
+            {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
         )
     return x
 
 
 def forbid_inf_nan_check(x: Any) -> Any:
     if not math.isfinite(x):
-        raise PydanticKnownError("finite_number")
+        raise PydanticKnownError('finite_number')
     return x

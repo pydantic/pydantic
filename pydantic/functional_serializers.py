@@ -27,7 +27,7 @@ class PlainSerializer:
 
     func: core_schema.SerializerFunction
     return_type: Any = PydanticUndefined
-    when_used: Literal["always", "unless-none", "json", "json-unless-none"] = "always"
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         """Gets the Pydantic core schema.
@@ -47,9 +47,9 @@ class PlainSerializer:
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
         return_schema = None if return_type is PydanticUndefined else handler.generate_schema(return_type)
-        schema["serialization"] = core_schema.plain_serializer_function_ser_schema(
+        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
             function=self.func,
-            info_arg=_decorators.inspect_annotated_serializer(self.func, "plain"),
+            info_arg=_decorators.inspect_annotated_serializer(self.func, 'plain'),
             return_schema=return_schema,
             when_used=self.when_used,
         )
@@ -70,7 +70,7 @@ class WrapSerializer:
 
     func: core_schema.WrapSerializerFunction
     return_type: Any = PydanticUndefined
-    when_used: Literal["always", "unless-none", "json", "json-unless-none"] = "always"
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         """This method is used to get the Pydantic core schema of the class.
@@ -90,9 +90,9 @@ class WrapSerializer:
         except NameError as e:
             raise PydanticUndefinedAnnotation.from_name_error(e) from e
         return_schema = None if return_type is PydanticUndefined else handler.generate_schema(return_type)
-        schema["serialization"] = core_schema.wrap_serializer_function_ser_schema(
+        schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
             function=self.func,
-            info_arg=_decorators.inspect_annotated_serializer(self.func, "wrap"),
+            info_arg=_decorators.inspect_annotated_serializer(self.func, 'wrap'),
             return_schema=return_schema,
             when_used=self.when_used,
         )
@@ -103,8 +103,8 @@ if TYPE_CHECKING:
     _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
     _PlainSerializationFunction = Union[_core_schema.SerializerFunction, _PartialClsOrStaticMethod]
     _WrapSerializationFunction = Union[_core_schema.WrapSerializerFunction, _PartialClsOrStaticMethod]
-    _PlainSerializeMethodType = TypeVar("_PlainSerializeMethodType", bound=_PlainSerializationFunction)
-    _WrapSerializeMethodType = TypeVar("_WrapSerializeMethodType", bound=_WrapSerializationFunction)
+    _PlainSerializeMethodType = TypeVar('_PlainSerializeMethodType', bound=_PlainSerializationFunction)
+    _WrapSerializeMethodType = TypeVar('_WrapSerializeMethodType', bound=_WrapSerializationFunction)
 
 
 @overload
@@ -112,7 +112,7 @@ def field_serializer(
     __field: str,
     *fields: str,
     return_type: Any = ...,
-    when_used: Literal["always", "unless-none", "json", "json-unless-none"] = ...,
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
     ...
@@ -122,9 +122,9 @@ def field_serializer(
 def field_serializer(
     __field: str,
     *fields: str,
-    mode: Literal["plain"],
+    mode: Literal['plain'],
     return_type: Any = ...,
-    when_used: Literal["always", "unless-none", "json", "json-unless-none"] = ...,
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
     ...
@@ -134,9 +134,9 @@ def field_serializer(
 def field_serializer(
     __field: str,
     *fields: str,
-    mode: Literal["wrap"],
+    mode: Literal['wrap'],
     return_type: Any = ...,
-    when_used: Literal["always", "unless-none", "json", "json-unless-none"] = ...,
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]:
     ...
@@ -144,9 +144,9 @@ def field_serializer(
 
 def field_serializer(
     *fields: str,
-    mode: Literal["plain", "wrap"] = "plain",
+    mode: Literal['plain', 'wrap'] = 'plain',
     return_type: Any = PydanticUndefined,
-    when_used: Literal["always", "unless-none", "json", "json-unless-none"] = "always",
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
     """Decorator that enables custom field serialization.
@@ -190,7 +190,7 @@ def field_serializer(
     return dec
 
 
-FuncType = TypeVar("FuncType", bound=Callable[..., Any])
+FuncType = TypeVar('FuncType', bound=Callable[..., Any])
 
 
 @overload
@@ -201,8 +201,8 @@ def model_serializer(__f: FuncType) -> FuncType:
 @overload
 def model_serializer(
     *,
-    mode: Literal["plain", "wrap"] = ...,
-    when_used: Literal["always", "unless-none", "json", "json-unless-none"] = "always",
+    mode: Literal['plain', 'wrap'] = ...,
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     return_type: Any = ...,
 ) -> Callable[[FuncType], FuncType]:
     ...
@@ -211,8 +211,8 @@ def model_serializer(
 def model_serializer(
     __f: Callable[..., Any] | None = None,
     *,
-    mode: Literal["plain", "wrap"] = "plain",
-    when_used: Literal["always", "unless-none", "json", "json-unless-none"] = "always",
+    mode: Literal['plain', 'wrap'] = 'plain',
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     return_type: Any = PydanticUndefined,
 ) -> Callable[[Any], Any]:
     """Decorator that enables custom model serialization.
@@ -243,7 +243,7 @@ def model_serializer(
         return dec(__f)  # type: ignore
 
 
-AnyType = TypeVar("AnyType")
+AnyType = TypeVar('AnyType')
 
 
 if TYPE_CHECKING:
@@ -265,10 +265,10 @@ else:
         ) -> core_schema.CoreSchema:
             schema = handler(source_type)
             schema_to_update = schema
-            while schema_to_update["type"] == "definitions":
+            while schema_to_update['type'] == 'definitions':
                 schema_to_update = schema_to_update.copy()
-                schema_to_update = schema_to_update["schema"]
-            schema_to_update["serialization"] = core_schema.wrap_serializer_function_ser_schema(
+                schema_to_update = schema_to_update['schema']
+            schema_to_update['serialization'] = core_schema.wrap_serializer_function_ser_schema(
                 lambda x, h: h(x), schema=core_schema.any_schema()
             )
             return schema

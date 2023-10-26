@@ -13,7 +13,7 @@ if not TYPE_CHECKING:
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
-__all__ = "BaseConfig", "Extra"
+__all__ = 'BaseConfig', 'Extra'
 
 
 class _ConfigMetaclass(type):
@@ -26,7 +26,7 @@ class _ConfigMetaclass(type):
             raise AttributeError(f"type object '{self.__name__}' has no attribute {exc}") from exc
 
 
-@deprecated("BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead.", category=PydanticDeprecatedSince20)
+@deprecated('BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead.', category=PydanticDeprecatedSince20)
 class BaseConfig(metaclass=_ConfigMetaclass):
     """This class is only retained for backwards compatibility.
 
@@ -53,7 +53,7 @@ class BaseConfig(metaclass=_ConfigMetaclass):
 class _ExtraMeta(type):
     def __getattribute__(self, __name: str) -> Any:
         # The @deprecated decorator accesses other attributes, so we only emit a warning for the expected ones
-        if __name in {"allow", "ignore", "forbid"}:
+        if __name in {'allow', 'ignore', 'forbid'}:
             warnings.warn(
                 "`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)",
                 DeprecationWarning,
@@ -66,6 +66,6 @@ class _ExtraMeta(type):
     "Extra is deprecated. Use literal values instead (e.g. `extra='allow'`)", category=PydanticDeprecatedSince20
 )
 class Extra(metaclass=_ExtraMeta):
-    allow: Literal["allow"] = "allow"
-    ignore: Literal["ignore"] = "ignore"
-    forbid: Literal["forbid"] = "forbid"
+    allow: Literal['allow'] = 'allow'
+    ignore: Literal['ignore'] = 'ignore'
+    forbid: Literal['forbid'] = 'forbid'

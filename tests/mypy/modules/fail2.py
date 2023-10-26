@@ -9,12 +9,12 @@ from pydantic import BaseModel
 
 class Model(BaseModel):
     age: int
-    first_name = "John"
+    first_name = 'John'
     last_name: Optional[str] = None
     signup_ts: Optional[datetime] = None
     list_of_ints: List[int]
 
 
-m = Model(age=42, list_of_ints=[1, "2", b"3"])
+m = Model(age=42, list_of_ints=[1, '2', b'3'])
 
 print(m.foobar)

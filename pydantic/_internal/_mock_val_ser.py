@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ..main import BaseModel
 
 
-ValSer = TypeVar("ValSer", SchemaValidator, SchemaSerializer)
+ValSer = TypeVar('ValSer', SchemaValidator, SchemaSerializer)
 
 
 class MockValSer(Generic[ValSer]):
@@ -20,18 +20,18 @@ class MockValSer(Generic[ValSer]):
     rebuild the thing it's mocking when one of its methods is accessed and raises an error if that fails.
     """
 
-    __slots__ = "_error_message", "_code", "_val_or_ser", "_attempt_rebuild"
+    __slots__ = '_error_message', '_code', '_val_or_ser', '_attempt_rebuild'
 
     def __init__(
         self,
         error_message: str,
         *,
         code: PydanticErrorCodes,
-        val_or_ser: Literal["validator", "serializer"],
+        val_or_ser: Literal['validator', 'serializer'],
         attempt_rebuild: Callable[[], ValSer | None] | None = None,
     ) -> None:
         self._error_message = error_message
-        self._val_or_ser = SchemaValidator if val_or_ser == "validator" else SchemaSerializer
+        self._val_or_ser = SchemaValidator if val_or_ser == 'validator' else SchemaSerializer
         self._code: PydanticErrorCodes = code
         self._attempt_rebuild = attempt_rebuild
 
@@ -56,7 +56,7 @@ class MockValSer(Generic[ValSer]):
         return None
 
 
-def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = "all referenced types") -> None:
+def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = 'all referenced types') -> None:
     """Set `__pydantic_validator__` and `__pydantic_serializer__` to `MockValSer`s on a model.
 
     Args:
@@ -65,8 +65,8 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = "
         undefined_name: Name of the undefined thing, used in error messages
     """
     undefined_type_error_message = (
-        f"`{cls_name}` is not fully defined; you should define {undefined_name},"
-        f" then call `{cls_name}.model_rebuild()`."
+        f'`{cls_name}` is not fully defined; you should define {undefined_name},'
+        f' then call `{cls_name}.model_rebuild()`.'
     )
 
     def attempt_rebuild_validator() -> SchemaValidator | None:
@@ -77,8 +77,8 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = "
 
     cls.__pydantic_validator__ = MockValSer(  # type: ignore[assignment]
         undefined_type_error_message,
-        code="class-not-fully-defined",
-        val_or_ser="validator",
+        code='class-not-fully-defined',
+        val_or_ser='validator',
         attempt_rebuild=attempt_rebuild_validator,
     )
 
@@ -90,14 +90,14 @@ def set_model_mocks(cls: type[BaseModel], cls_name: str, undefined_name: str = "
 
     cls.__pydantic_serializer__ = MockValSer(  # type: ignore[assignment]
         undefined_type_error_message,
-        code="class-not-fully-defined",
-        val_or_ser="serializer",
+        code='class-not-fully-defined',
+        val_or_ser='serializer',
         attempt_rebuild=attempt_rebuild_serializer,
     )
 
 
 def set_dataclass_mocks(
-    cls: type[PydanticDataclass], cls_name: str, undefined_name: str = "all referenced types"
+    cls: type[PydanticDataclass], cls_name: str, undefined_name: str = 'all referenced types'
 ) -> None:
     """Set `__pydantic_validator__` and `__pydantic_serializer__` to `MockValSer`s on a dataclass.
 
@@ -109,8 +109,8 @@ def set_dataclass_mocks(
     from ..dataclasses import rebuild_dataclass
 
     undefined_type_error_message = (
-        f"`{cls_name}` is not fully defined; you should define {undefined_name},"
-        f" then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`."
+        f'`{cls_name}` is not fully defined; you should define {undefined_name},'
+        f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`.'
     )
 
     def attempt_rebuild_validator() -> SchemaValidator | None:
@@ -121,8 +121,8 @@ def set_dataclass_mocks(
 
     cls.__pydantic_validator__ = MockValSer(  # type: ignore[assignment]
         undefined_type_error_message,
-        code="class-not-fully-defined",
-        val_or_ser="validator",
+        code='class-not-fully-defined',
+        val_or_ser='validator',
         attempt_rebuild=attempt_rebuild_validator,
     )
 
@@ -134,7 +134,7 @@ def set_dataclass_mocks(
 
     cls.__pydantic_serializer__ = MockValSer(  # type: ignore[assignment]
         undefined_type_error_message,
-        code="class-not-fully-defined",
-        val_or_ser="validator",
+        code='class-not-fully-defined',
+        val_or_ser='validator',
         attempt_rebuild=attempt_rebuild_serializer,
     )

@@ -11,9 +11,9 @@ if TYPE_CHECKING:
     from . import BaseValidateHandlerProtocol, PydanticPluginProtocol
 
 
-P = ParamSpec("P")
-R = TypeVar("R")
-Event = Literal["on_validate_python", "on_validate_json", "on_validate_strings"]
+P = ParamSpec('P')
+R = TypeVar('R')
+Event = Literal['on_validate_python', 'on_validate_json', 'on_validate_strings']
 events: list[Event] = list(Event.__args__)  # type: ignore
 
 
@@ -37,7 +37,7 @@ def create_schema_validator(
 class PluggableSchemaValidator:
     """Pluggable schema validator."""
 
-    __slots__ = "_schema_validator", "validate_json", "validate_python", "validate_strings"
+    __slots__ = '_schema_validator', 'validate_json', 'validate_python', 'validate_strings'
 
     def __init__(
         self,
@@ -72,10 +72,10 @@ def build_wrapper(func: Callable[P, R], event_handlers: list[BaseValidateHandler
     if not event_handlers:
         return func
     else:
-        on_enters = tuple(h.on_enter for h in event_handlers if filter_handlers(h, "on_enter"))
-        on_successes = tuple(h.on_success for h in event_handlers if filter_handlers(h, "on_success"))
-        on_errors = tuple(h.on_error for h in event_handlers if filter_handlers(h, "on_error"))
-        on_exceptions = tuple(h.on_exception for h in event_handlers if filter_handlers(h, "on_exception"))
+        on_enters = tuple(h.on_enter for h in event_handlers if filter_handlers(h, 'on_enter'))
+        on_successes = tuple(h.on_success for h in event_handlers if filter_handlers(h, 'on_success'))
+        on_errors = tuple(h.on_error for h in event_handlers if filter_handlers(h, 'on_error'))
+        on_exceptions = tuple(h.on_exception for h in event_handlers if filter_handlers(h, 'on_exception'))
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -107,7 +107,7 @@ def filter_handlers(handler_cls: BaseValidateHandlerProtocol, method_name: str) 
     handler = getattr(handler_cls, method_name, None)
     if handler is None:
         return False
-    elif handler.__module__ == "pydantic.plugin":
+    elif handler.__module__ == 'pydantic.plugin':
         # this is the original handler, from the protocol due to runtime inheritance
         # we don't want to call it
         return False

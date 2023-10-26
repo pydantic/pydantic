@@ -10,15 +10,15 @@ from pydantic_core import CoreConfig, CoreSchema, ValidationError
 from typing_extensions import Protocol, TypeAlias
 
 __all__ = (
-    "PydanticPluginProtocol",
-    "BaseValidateHandlerProtocol",
-    "ValidatePythonHandlerProtocol",
-    "ValidateJsonHandlerProtocol",
-    "ValidateStringsHandlerProtocol",
-    "NewSchemaReturns",
+    'PydanticPluginProtocol',
+    'BaseValidateHandlerProtocol',
+    'ValidatePythonHandlerProtocol',
+    'ValidateJsonHandlerProtocol',
+    'ValidateStringsHandlerProtocol',
+    'NewSchemaReturns',
 )
 
-NewSchemaReturns: TypeAlias = "tuple[ValidatePythonHandlerProtocol | None, ValidateJsonHandlerProtocol | None, ValidateStringsHandlerProtocol | None]"
+NewSchemaReturns: TypeAlias = 'tuple[ValidatePythonHandlerProtocol | None, ValidateJsonHandlerProtocol | None, ValidateStringsHandlerProtocol | None]'
 
 
 class PydanticPluginProtocol(Protocol):
@@ -47,7 +47,7 @@ class PydanticPluginProtocol(Protocol):
             A tuple of optional event handlers for each of the three validation methods -
                 `validate_python`, `validate_json`, `validate_strings`.
         """
-        raise NotImplementedError("Pydantic plugins should implement `new_schema_validator`.")
+        raise NotImplementedError('Pydantic plugins should implement `new_schema_validator`.')
 
 
 class BaseValidateHandlerProtocol(Protocol):
@@ -133,7 +133,7 @@ class ValidateJsonHandlerProtocol(BaseValidateHandlerProtocol, Protocol):
         pass
 
 
-StringInput: TypeAlias = "dict[str, StringInput]"
+StringInput: TypeAlias = 'dict[str, StringInput]'
 
 
 class ValidateStringsHandlerProtocol(BaseValidateHandlerProtocol, Protocol):

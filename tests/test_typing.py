@@ -42,9 +42,9 @@ def test_is_namedtuple():
         name: str
         id: int = 3
 
-    assert is_namedtuple(namedtuple("Point", "x y")) is True
+    assert is_namedtuple(namedtuple('Point', 'x y')) is True
     assert is_namedtuple(Employee) is True
-    assert is_namedtuple(NamedTuple("Employee", [("name", str), ("id", int)])) is True
+    assert is_namedtuple(NamedTuple('Employee', [('name', str), ('id', int)])) is True
 
     class Other(tuple):
         name: str
@@ -65,12 +65,12 @@ def test_is_none_type():
     assert is_none_type(Callable) is False
 
 
-@pytest.mark.parametrize("union_gen", [lambda: typing.Union[int, str], lambda: int | str])
+@pytest.mark.parametrize('union_gen', [lambda: typing.Union[int, str], lambda: int | str])
 def test_is_union(union_gen):
     try:
         union = union_gen()
     except TypeError:
-        pytest.skip("not supported in this python version")
+        pytest.skip('not supported in this python version')
     else:
         origin = get_origin(union)
         assert origin_is_union(origin)
@@ -80,22 +80,22 @@ def test_is_literal_with_typing_extension_literal():
     from typing_extensions import Literal
 
     assert is_literal_type(Literal) is False
-    assert is_literal_type(Literal["foo"]) is True
+    assert is_literal_type(Literal['foo']) is True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="`typing.Literal` is available for python 3.8 and above.")
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='`typing.Literal` is available for python 3.8 and above.')
 def test_is_literal_with_typing_literal():
     from typing import Literal
 
     assert is_literal_type(Literal) is False
-    assert is_literal_type(Literal["foo"]) is True
+    assert is_literal_type(Literal['foo']) is True
 
 
 @pytest.mark.parametrize(
-    "ann_type,extepcted",
+    'ann_type,extepcted',
     (
         (None, False),
-        (ForwardRef("ClassVar[int]"), True),
+        (ForwardRef('ClassVar[int]'), True),
         (ClassVar[int], True),
     ),
 )
@@ -112,7 +112,7 @@ def test_parent_frame_namespace(mocker):
     class MockedFrame:
         f_back = None
 
-    mocker.patch("sys._getframe", return_value=MockedFrame())
+    mocker.patch('sys._getframe', return_value=MockedFrame())
     assert parent_frame_namespace() is None
 
 
@@ -120,4 +120,4 @@ def test_get_function_type_hints_none_type():
     def f(x: int, y: None) -> int:
         return x
 
-    assert get_function_type_hints(f) == {"return": int, "x": int, "y": NoneType}
+    assert get_function_type_hints(f) == {'return': int, 'x': int, 'y': NoneType}

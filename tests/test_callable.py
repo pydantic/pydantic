@@ -12,7 +12,7 @@ if sys.version_info >= (3, 9):
     collection_callable_types += [CollectionsCallable, CollectionsCallable[[int], int]]
 
 
-@pytest.mark.parametrize("annotation", collection_callable_types)
+@pytest.mark.parametrize('annotation', collection_callable_types)
 def test_callable(annotation):
     class Model(BaseModel):
         callback: annotation
@@ -21,7 +21,7 @@ def test_callable(annotation):
     assert callable(m.callback)
 
 
-@pytest.mark.parametrize("annotation", collection_callable_types)
+@pytest.mark.parametrize('annotation', collection_callable_types)
 def test_non_callable(annotation):
     class Model(BaseModel):
         callback: annotation

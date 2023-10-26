@@ -59,7 +59,7 @@ else:
 
 
 LITERAL_TYPES: set[Any] = {Literal}
-if hasattr(typing, "Literal"):
+if hasattr(typing, 'Literal'):
     LITERAL_TYPES.add(typing.Literal)  # type: ignore
 
 NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
@@ -109,10 +109,10 @@ def is_namedtuple(type_: type[Any]) -> bool:
     """
     from ._utils import lenient_issubclass
 
-    return lenient_issubclass(type_, tuple) and hasattr(type_, "_fields")
+    return lenient_issubclass(type_, tuple) and hasattr(type_, '_fields')
 
 
-test_new_type = typing.NewType("test_new_type", str)
+test_new_type = typing.NewType('test_new_type', str)
 
 
 def is_new_type(type_: type[Any]) -> bool:
@@ -120,14 +120,14 @@ def is_new_type(type_: type[Any]) -> bool:
 
     Can't use isinstance because it fails <3.10.
     """
-    return isinstance(type_, test_new_type.__class__) and hasattr(type_, "__supertype__")  # type: ignore[arg-type]
+    return isinstance(type_, test_new_type.__class__) and hasattr(type_, '__supertype__')  # type: ignore[arg-type]
 
 
 def _check_classvar(v: type[Any] | None) -> bool:
     if v is None:
         return False
 
-    return v.__class__ == typing.ClassVar.__class__ and getattr(v, "_name", None) == "ClassVar"
+    return v.__class__ == typing.ClassVar.__class__ and getattr(v, '_name', None) == 'ClassVar'
 
 
 def is_classvar(ann_type: type[Any]) -> bool:
@@ -136,7 +136,7 @@ def is_classvar(ann_type: type[Any]) -> bool:
 
     # this is an ugly workaround for class vars that contain forward references and are therefore themselves
     # forward references, see #3679
-    if ann_type.__class__ == typing.ForwardRef and ann_type.__forward_arg__.startswith("ClassVar["):  # type: ignore
+    if ann_type.__class__ == typing.ForwardRef and ann_type.__forward_arg__.startswith('ClassVar['):  # type: ignore
         return True
 
     return False
@@ -147,7 +147,7 @@ def _check_finalvar(v: type[Any] | None) -> bool:
     if v is None:
         return False
 
-    return v.__class__ == Final.__class__ and (sys.version_info < (3, 8) or getattr(v, "_name", None) == "Final")
+    return v.__class__ == Final.__class__ and (sys.version_info < (3, 8) or getattr(v, '_name', None) == 'Final')
 
 
 def is_finalvar(ann_type: Any) -> bool:
@@ -175,7 +175,7 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
 
 
 def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
-    module_name = getattr(obj, "__module__", None)
+    module_name = getattr(obj, '__module__', None)
     if module_name:
         try:
             module_globalns = sys.modules[module_name].__dict__
@@ -205,7 +205,7 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
     """
     hints = {}
     for base in reversed(obj.__mro__):
-        ann = base.__dict__.get("__annotations__")
+        ann = base.__dict__.get('__annotations__')
         localns = dict(vars(base))
         if ann is not None and ann is not GetSetDescriptorType:
             for name, value in ann.items():
@@ -335,17 +335,17 @@ else:
         - If two dict arguments are passed, they specify globals and
           locals, respectively.
         """
-        if getattr(obj, "__no_type_check__", None):
+        if getattr(obj, '__no_type_check__', None):
             return {}
         # Classes require a special treatment.
         if isinstance(obj, type):
             hints = {}
             for base in reversed(obj.__mro__):
                 if globalns is None:
-                    base_globals = getattr(sys.modules.get(base.__module__, None), "__dict__", {})
+                    base_globals = getattr(sys.modules.get(base.__module__, None), '__dict__', {})
                 else:
                     base_globals = globalns
-                ann = base.__dict__.get("__annotations__", {})
+                ann = base.__dict__.get('__annotations__', {})
                 if isinstance(ann, types.GetSetDescriptorType):
                     ann = {}
                 base_locals = dict(vars(base)) if localns is None else localns
@@ -375,20 +375,20 @@ else:
             else:
                 nsobj = obj
                 # Find globalns for the unwrapped object.
-                while hasattr(nsobj, "__wrapped__"):
+                while hasattr(nsobj, '__wrapped__'):
                     nsobj = nsobj.__wrapped__
-                globalns = getattr(nsobj, "__globals__", {})
+                globalns = getattr(nsobj, '__globals__', {})
             if localns is None:
                 localns = globalns
         elif localns is None:
             localns = globalns
-        hints = getattr(obj, "__annotations__", None)
+        hints = getattr(obj, '__annotations__', None)
         if hints is None:
             # Return empty annotations for something that _could_ have them.
             if isinstance(obj, typing._allowed_types):  # type: ignore
                 return {}
             else:
-                raise TypeError(f"{obj!r} is not a module, class, method, " "or function.")
+                raise TypeError(f'{obj!r} is not a module, class, method, ' 'or function.')
         defaults = typing._get_defaults(obj)  # type: ignore
         hints = dict(hints)
         for name, value in hints.items():

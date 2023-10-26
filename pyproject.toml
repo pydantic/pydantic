@@ -90,7 +90,7 @@ docs = [
     "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
 ]
 linting = [
-    "ruff",
+    "ruff==0.1.2",
     "mypy~=1.1.1",
 ]
 testing = [
@@ -187,6 +187,9 @@ extend-exclude = ['pydantic/v1', 'tests/mypy/outputs']
 "tests/**/*.py" = ['T', 'E721', 'F811']
 "tests/benchmarks/test_fastapi_startup_generics.py" = ['UP006', 'UP007']
 "tests/benchmarks/test_fastapi_startup_simple.py" = ['UP006', 'UP007']
+
+[tool.ruff.format]
+quote-style = 'single'
 
 [tool.ruff.pydocstyle]
 convention = "google"

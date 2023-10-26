@@ -54,19 +54,19 @@ def test_str_bytes():
     class Model(BaseModel):
         v: Union[str, bytes]
 
-    m = Model(v="s")
-    assert m.v == "s"
-    assert repr(m.model_fields["v"]) == "FieldInfo(annotation=Union[str, bytes], required=True)"
+    m = Model(v='s')
+    assert m.v == 's'
+    assert repr(m.model_fields['v']) == 'FieldInfo(annotation=Union[str, bytes], required=True)'
 
-    m = Model(v=b"b")
-    assert m.v == b"b"
+    m = Model(v=b'b')
+    assert m.v == b'b'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=None)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {"type": "string_type", "loc": ("v", "str"), "msg": "Input should be a valid string", "input": None},
-        {"type": "bytes_type", "loc": ("v", "bytes"), "msg": "Input should be a valid bytes", "input": None},
+        {'type': 'string_type', 'loc': ('v', 'str'), 'msg': 'Input should be a valid string', 'input': None},
+        {'type': 'bytes_type', 'loc': ('v', 'bytes'), 'msg': 'Input should be a valid bytes', 'input': None},
     ]
 
 
@@ -74,11 +74,11 @@ def test_str_bytes_none():
     class Model(BaseModel):
         v: Union[None, str, bytes] = ...
 
-    m = Model(v="s")
-    assert m.v == "s"
+    m = Model(v='s')
+    assert m.v == 's'
 
-    m = Model(v=b"b")
-    assert m.v == b"b"
+    m = Model(v=b'b')
+    assert m.v == b'b'
 
     m = Model(v=None)
     assert m.v is None
@@ -91,11 +91,11 @@ def test_union_int_str():
     m = Model(v=123)
     assert m.v == 123
 
-    m = Model(v="123")
-    assert m.v == "123"
+    m = Model(v='123')
+    assert m.v == '123'
 
-    m = Model(v=b"foobar")
-    assert m.v == "foobar"
+    m = Model(v=b'foobar')
+    assert m.v == 'foobar'
 
     m = Model(v=12.0)
     assert m.v == 12
@@ -104,12 +104,12 @@ def test_union_int_str():
         Model(v=None)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {"type": "int_type", "loc": ("v", "int"), "msg": "Input should be a valid integer", "input": None},
+        {'type': 'int_type', 'loc': ('v', 'int'), 'msg': 'Input should be a valid integer', 'input': None},
         {
-            "type": "string_type",
-            "loc": ("v", "str"),
-            "msg": "Input should be a valid string",
-            "input": None,
+            'type': 'string_type',
+            'loc': ('v', 'str'),
+            'msg': 'Input should be a valid string',
+            'input': None,
         },
     ]
 
@@ -121,11 +121,11 @@ def test_union_int_any():
     m = Model(v=123)
     assert m.v == 123
 
-    m = Model(v="123")
-    assert m.v == "123"
+    m = Model(v='123')
+    assert m.v == '123'
 
-    m = Model(v="foobar")
-    assert m.v == "foobar"
+    m = Model(v='foobar')
+    assert m.v == 'foobar'
 
     m = Model(v=None)
     assert m.v is None
@@ -135,24 +135,24 @@ def test_typed_list():
     class Model(BaseModel):
         v: List[int] = ...
 
-    m = Model(v=[1, 2, "3"])
+    m = Model(v=[1, 2, '3'])
     assert m.v == [1, 2, 3]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=[1, "x", "y"])
+        Model(v=[1, 'x', 'y'])
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "int_parsing",
-            "loc": ("v", 1),
-            "msg": "Input should be a valid integer, unable to parse string as an integer",
-            "input": "x",
+            'type': 'int_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         },
         {
-            "type": "int_parsing",
-            "loc": ("v", 2),
-            "msg": "Input should be a valid integer, unable to parse string as an integer",
-            "input": "y",
+            'type': 'int_parsing',
+            'loc': ('v', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
         },
     ]
 
@@ -160,7 +160,7 @@ def test_typed_list():
         Model(v=1)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {"type": "list_type", "loc": ("v",), "msg": "Input should be a valid list", "input": 1}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': 1}
     ]
 
 
@@ -168,18 +168,18 @@ def test_typed_set():
     class Model(BaseModel):
         v: Set[int] = ...
 
-    assert Model(v={1, 2, "3"}).v == {1, 2, 3}
-    assert Model(v=[1, 2, "3"]).v == {1, 2, 3}
+    assert Model(v={1, 2, '3'}).v == {1, 2, 3}
+    assert Model(v=[1, 2, '3']).v == {1, 2, 3}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=[1, "x"])
+        Model(v=[1, 'x'])
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "int_parsing",
-            "loc": ("v", 1),
-            "msg": "Input should be a valid integer, unable to parse string as an integer",
-            "input": "x",
+            'type': 'int_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         }
     ]
 
@@ -188,7 +188,7 @@ def test_dict_dict():
     class Model(BaseModel):
         v: Dict[str, int] = ...
 
-    assert Model(v={"foo": 1}).model_dump() == {"v": {"foo": 1}}
+    assert Model(v={'foo': 1}).model_dump() == {'v': {'foo': 1}}
 
 
 def test_none_list():
@@ -196,17 +196,17 @@ def test_none_list():
         v: List[None] = [None]
 
     assert Model.model_json_schema() == {
-        "title": "Model",
-        "type": "object",
-        "properties": {"v": {"title": "V", "default": [None], "type": "array", "items": {"type": "null"}}},
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'v': {'title': 'V', 'default': [None], 'type': 'array', 'items': {'type': 'null'}}},
     }
 
 
 @pytest.mark.parametrize(
-    "value,result",
+    'value,result',
     [
-        ({"a": 2, "b": 4}, {"a": 2, "b": 4}),
-        ({b"a": "2", "b": 4}, {"a": 2, "b": 4}),
+        ({'a': 2, 'b': 4}, {'a': 2, 'b': 4}),
+        ({b'a': '2', 'b': 4}, {'a': 2, 'b': 4}),
         # ([('a', 2), ('b', 4)], {'a': 2, 'b': 4}),
     ],
 )
@@ -218,23 +218,23 @@ def test_typed_dict(value, result):
 
 
 @pytest.mark.parametrize(
-    "value,errors",
+    'value,errors',
     [
-        (1, [{"type": "dict_type", "loc": ("v",), "msg": "Input should be a valid dictionary", "input": 1}]),
+        (1, [{'type': 'dict_type', 'loc': ('v',), 'msg': 'Input should be a valid dictionary', 'input': 1}]),
         (
-            {"a": "b"},
+            {'a': 'b'},
             [
                 {
-                    "type": "int_parsing",
-                    "loc": ("v", "a"),
-                    "msg": "Input should be a valid integer, unable to parse string as an integer",
-                    "input": "b",
+                    'type': 'int_parsing',
+                    'loc': ('v', 'a'),
+                    'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                    'input': 'b',
                 }
             ],
         ),
         (
             [1, 2, 3],
-            [{"type": "dict_type", "loc": ("v",), "msg": "Input should be a valid dictionary", "input": [1, 2, 3]}],
+            [{'type': 'dict_type', 'loc': ('v',), 'msg': 'Input should be a valid dictionary', 'input': [1, 2, 3]}],
         ),
     ],
 )
@@ -251,17 +251,17 @@ def test_dict_key_error():
     class Model(BaseModel):
         v: Dict[int, int] = ...
 
-    assert Model(v={1: 2, "3": "4"}).v == {1: 2, 3: 4}
+    assert Model(v={1: 2, '3': '4'}).v == {1: 2, 3: 4}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v={"foo": 2, "3": "4"})
+        Model(v={'foo': 2, '3': '4'})
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "int_parsing",
-            "loc": ("v", "foo", "[key]"),
-            "msg": "Input should be a valid integer, unable to parse string as an integer",
-            "input": "foo",
+            'type': 'int_parsing',
+            'loc': ('v', 'foo', '[key]'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'foo',
         }
     ]
 
@@ -270,7 +270,7 @@ def test_tuple():
     class Model(BaseModel):
         v: Tuple[int, float, bool]
 
-    m = Model(v=["1.0", "2.2", "true"])
+    m = Model(v=['1.0', '2.2', 'true'])
     assert m.v == (1, 2.2, True)
 
 
@@ -284,25 +284,25 @@ def test_tuple_more():
     m = Model(
         empty_tuple=[],
         simple_tuple=[1, 2, 3, 4],
-        tuple_of_different_types=[4, 3.1, "str", 1],
-        tuple_of_single_tuples=(("1",), (2,)),
+        tuple_of_different_types=[4, 3.1, 'str', 1],
+        tuple_of_single_tuples=(('1',), (2,)),
     )
     assert m.model_dump() == {
-        "empty_tuple": (),
-        "simple_tuple": (1, 2, 3, 4),
-        "tuple_of_different_types": (4, 3.1, "str", True),
-        "tuple_of_single_tuples": ((1,), (2,)),
+        'empty_tuple': (),
+        'simple_tuple': (1, 2, 3, 4),
+        'tuple_of_different_types': (4, 3.1, 'str', True),
+        'tuple_of_single_tuples': ((1,), (2,)),
     }
 
 
 @pytest.mark.parametrize(
-    "dict_cls,frozenset_cls,list_cls,set_cls,tuple_cls,type_cls",
+    'dict_cls,frozenset_cls,list_cls,set_cls,tuple_cls,type_cls',
     [
         (Dict, FrozenSet, List, Set, Tuple, Type),
         (dict, frozenset, list, set, tuple, type),
     ],
 )
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="PEP585 generics only supported for python 3.9 and above")
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above')
 def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_cls, type_cls):
     class Type1:
         pass
@@ -328,16 +328,16 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
 
     default_model_kwargs = dict(
         a={},
-        a1={"a": "1"},
+        a1={'a': '1'},
         b=[],
-        b1=("1",),
+        b1=('1',),
         c=[],
-        c1=("1",),
+        c1=('1',),
         d=[],
-        d1=["1"],
+        d1=['1'],
         e=[],
-        e1=["1"],
-        e2=["1", "2"],
+        e1=['1'],
+        e2=['1', '2'],
         e3=[],
         f=Type1,
         f1=Type1,
@@ -345,7 +345,7 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
 
     m = Model(**default_model_kwargs)
     assert m.a == {}
-    assert m.a1 == {"a": 1}
+    assert m.a1 == {'a': 1}
     assert m.b == frozenset()
     assert m.b1 == frozenset({1})
     assert m.c == []
@@ -360,30 +360,30 @@ def test_pep585_generic_types(dict_cls, frozenset_cls, list_cls, set_cls, tuple_
     assert m.f1 == Type1
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(**(default_model_kwargs | {"e3": (1,)}))
+        Model(**(default_model_kwargs | {'e3': (1,)}))
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "too_long",
-            "loc": ("e3",),
-            "msg": "Tuple should have at most 0 items after validation, not 1",
-            "input": (1,),
-            "ctx": {"field_type": "Tuple", "max_length": 0, "actual_length": 1},
+            'type': 'too_long',
+            'loc': ('e3',),
+            'msg': 'Tuple should have at most 0 items after validation, not 1',
+            'input': (1,),
+            'ctx': {'field_type': 'Tuple', 'max_length': 0, 'actual_length': 1},
         }
     ]
 
-    Model(**(default_model_kwargs | {"f": Type2}))
+    Model(**(default_model_kwargs | {'f': Type2}))
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(**(default_model_kwargs | {"f1": Type2}))
+        Model(**(default_model_kwargs | {'f1': Type2}))
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "is_subclass_of",
-            "loc": ("f1",),
-            "msg": "Input should be a subclass of test_pep585_generic_types.<locals>.Type1",
-            "input": HasRepr(IsStr(regex=r".+\.Type2'>")),
-            "ctx": {"class": "test_pep585_generic_types.<locals>.Type1"},
+            'type': 'is_subclass_of',
+            'loc': ('f1',),
+            'msg': 'Input should be a subclass of test_pep585_generic_types.<locals>.Type1',
+            'input': HasRepr(IsStr(regex=r".+\.Type2'>")),
+            'ctx': {'class': 'test_pep585_generic_types.<locals>.Type1'},
         }
     ]
 
@@ -397,13 +397,13 @@ def test_tuple_length_error():
         Model(v=[1, 2], w=[1])
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {"type": "missing", "loc": ("v", 2), "msg": "Field required", "input": [1, 2]},
+        {'type': 'missing', 'loc': ('v', 2), 'msg': 'Field required', 'input': [1, 2]},
         {
-            "type": "too_long",
-            "loc": ("w",),
-            "msg": "Tuple should have at most 0 items after validation, not 1",
-            "input": [1],
-            "ctx": {"field_type": "Tuple", "max_length": 0, "actual_length": 1},
+            'type': 'too_long',
+            'loc': ('w',),
+            'msg': 'Tuple should have at most 0 items after validation, not 1',
+            'input': [1],
+            'ctx': {'field_type': 'Tuple', 'max_length': 0, 'actual_length': 1},
         },
     ]
 
@@ -413,9 +413,9 @@ def test_tuple_invalid():
         v: Tuple[int, float, bool]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v="xxx")
+        Model(v='xxx')
     assert exc_info.value.errors(include_url=False) == [
-        {"type": "tuple_type", "loc": ("v",), "msg": "Input should be a valid tuple", "input": "xxx"}
+        {'type': 'tuple_type', 'loc': ('v',), 'msg': 'Input should be a valid tuple', 'input': 'xxx'}
     ]
 
 
@@ -424,26 +424,26 @@ def test_tuple_value_error():
         v: Tuple[int, float, Decimal]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=["x", "y", "x"])
+        Model(v=['x', 'y', 'x'])
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "int_parsing",
-            "loc": ("v", 0),
-            "msg": "Input should be a valid integer, unable to parse string as an integer",
-            "input": "x",
+            'type': 'int_parsing',
+            'loc': ('v', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         },
         {
-            "type": "float_parsing",
-            "loc": ("v", 1),
-            "msg": "Input should be a valid number, unable to parse string as a number",
-            "input": "y",
+            'type': 'float_parsing',
+            'loc': ('v', 1),
+            'msg': 'Input should be a valid number, unable to parse string as a number',
+            'input': 'y',
         },
         {
-            "type": "decimal_parsing",
-            "loc": ("v", 2),
-            "msg": "Input should be a valid decimal",
-            "input": "x",
+            'type': 'decimal_parsing',
+            'loc': ('v', 2),
+            'msg': 'Input should be a valid decimal',
+            'input': 'x',
         },
     ]
 
@@ -459,22 +459,22 @@ def test_recursive_list():
     m = Model(v=[])
     assert m.v == []
 
-    m = Model(v=[{"name": "testing", "count": 4}])
+    m = Model(v=[{'name': 'testing', 'count': 4}])
     assert repr(m) == "Model(v=[SubModel(name='testing', count=4)])"
-    assert m.v[0].name == "testing"
+    assert m.v[0].name == 'testing'
     assert m.v[0].count == 4
-    assert m.model_dump() == {"v": [{"count": 4, "name": "testing"}]}
+    assert m.model_dump() == {'v': [{'count': 4, 'name': 'testing'}]}
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v=["x"])
+        Model(v=['x'])
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "model_type",
-            "loc": ("v", 0),
-            "msg": "Input should be a valid dictionary or instance of SubModel",
-            "input": "x",
-            "ctx": {"class_name": "SubModel"},
+            'type': 'model_type',
+            'loc': ('v', 0),
+            'msg': 'Input should be a valid dictionary or instance of SubModel',
+            'input': 'x',
+            'ctx': {'class_name': 'SubModel'},
         }
     ]
 
@@ -490,7 +490,7 @@ def test_recursive_list_error():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[{}])
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {}, "loc": ("v", 0, "name"), "msg": "Field required", "type": "missing"}
+        {'input': {}, 'loc': ('v', 0, 'name'), 'msg': 'Field required', 'type': 'missing'}
     ]
 
 
@@ -498,14 +498,14 @@ def test_list_unions():
     class Model(BaseModel):
         v: List[Union[int, str]] = ...
 
-    assert Model(v=[123, "456", "foobar"]).v == [123, "456", "foobar"]
+    assert Model(v=[123, '456', 'foobar']).v == [123, '456', 'foobar']
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[1, 2, None])
 
     assert exc_info.value.errors(include_url=False) == [
-        {"input": None, "loc": ("v", 2, "int"), "msg": "Input should be a valid integer", "type": "int_type"},
-        {"input": None, "loc": ("v", 2, "str"), "msg": "Input should be a valid string", "type": "string_type"},
+        {'input': None, 'loc': ('v', 2, 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
+        {'input': None, 'loc': ('v', 2, 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
     ]
 
 
@@ -513,33 +513,33 @@ def test_recursive_lists():
     class Model(BaseModel):
         v: List[List[Union[int, float]]] = ...
 
-    assert Model(v=[[1, 2], [3, "4", "4.1"]]).v == [[1, 2], [3, 4, 4.1]]
-    assert Model.model_fields["v"].annotation == List[List[Union[int, float]]]
-    assert Model.model_fields["v"].is_required()
+    assert Model(v=[[1, 2], [3, '4', '4.1']]).v == [[1, 2], [3, 4, 4.1]]
+    assert Model.model_fields['v'].annotation == List[List[Union[int, float]]]
+    assert Model.model_fields['v'].is_required()
 
 
 class StrEnum(str, Enum):
-    a = "a10"
-    b = "b10"
+    a = 'a10'
+    b = 'b10'
 
 
 def test_str_enum():
     class Model(BaseModel):
         v: StrEnum = ...
 
-    assert Model(v="a10").v is StrEnum.a
+    assert Model(v='a10').v is StrEnum.a
 
     with pytest.raises(ValidationError):
-        Model(v="different")
+        Model(v='different')
 
 
 def test_any_dict():
     class Model(BaseModel):
         v: Dict[int, Any] = ...
 
-    assert Model(v={1: "foobar"}).model_dump() == {"v": {1: "foobar"}}
-    assert Model(v={123: 456}).model_dump() == {"v": {123: 456}}
-    assert Model(v={2: [1, 2, 3]}).model_dump() == {"v": {2: [1, 2, 3]}}
+    assert Model(v={1: 'foobar'}).model_dump() == {'v': {1: 'foobar'}}
+    assert Model(v={123: 456}).model_dump() == {'v': {123: 456}}
+    assert Model(v={2: [1, 2, 3]}).model_dump() == {'v': {2: [1, 2, 3]}}
 
 
 def test_success_values_include():
@@ -549,10 +549,10 @@ def test_success_values_include():
         c: int = 3
 
     m = Model()
-    assert m.model_dump() == {"a": 1, "b": 2, "c": 3}
-    assert m.model_dump(include={"a"}) == {"a": 1}
-    assert m.model_dump(exclude={"a"}) == {"b": 2, "c": 3}
-    assert m.model_dump(include={"a", "b"}, exclude={"a"}) == {"b": 2}
+    assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3}
+    assert m.model_dump(include={'a'}) == {'a': 1}
+    assert m.model_dump(exclude={'a'}) == {'b': 2, 'c': 3}
+    assert m.model_dump(include={'a', 'b'}, exclude={'a'}) == {'b': 2}
 
 
 def test_include_exclude_unset():
@@ -565,18 +565,18 @@ def test_include_exclude_unset():
         f: int = 6
 
     m = Model(a=1, b=2, e=5, f=7)
-    assert m.model_dump() == {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 7}
-    assert m.model_fields_set == {"a", "b", "e", "f"}
-    assert m.model_dump(exclude_unset=True) == {"a": 1, "b": 2, "e": 5, "f": 7}
+    assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
+    assert m.model_fields_set == {'a', 'b', 'e', 'f'}
+    assert m.model_dump(exclude_unset=True) == {'a': 1, 'b': 2, 'e': 5, 'f': 7}
 
-    assert m.model_dump(include={"a"}, exclude_unset=True) == {"a": 1}
-    assert m.model_dump(include={"c"}, exclude_unset=True) == {}
+    assert m.model_dump(include={'a'}, exclude_unset=True) == {'a': 1}
+    assert m.model_dump(include={'c'}, exclude_unset=True) == {}
 
-    assert m.model_dump(exclude={"a"}, exclude_unset=True) == {"b": 2, "e": 5, "f": 7}
-    assert m.model_dump(exclude={"c"}, exclude_unset=True) == {"a": 1, "b": 2, "e": 5, "f": 7}
+    assert m.model_dump(exclude={'a'}, exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
+    assert m.model_dump(exclude={'c'}, exclude_unset=True) == {'a': 1, 'b': 2, 'e': 5, 'f': 7}
 
-    assert m.model_dump(include={"a", "b", "c"}, exclude={"b"}, exclude_unset=True) == {"a": 1}
-    assert m.model_dump(include={"a", "b", "c"}, exclude={"a", "c"}, exclude_unset=True) == {"b": 2}
+    assert m.model_dump(include={'a', 'b', 'c'}, exclude={'b'}, exclude_unset=True) == {'a': 1}
+    assert m.model_dump(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_unset=True) == {'b': 2}
 
 
 def test_include_exclude_defaults():
@@ -589,30 +589,30 @@ def test_include_exclude_defaults():
         f: int = 6
 
     m = Model(a=1, b=2, e=5, f=7)
-    assert m.model_dump() == {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 7}
-    assert m.model_fields_set == {"a", "b", "e", "f"}
-    assert m.model_dump(exclude_defaults=True) == {"a": 1, "b": 2, "f": 7}
+    assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
+    assert m.model_fields_set == {'a', 'b', 'e', 'f'}
+    assert m.model_dump(exclude_defaults=True) == {'a': 1, 'b': 2, 'f': 7}
 
-    assert m.model_dump(include={"a"}, exclude_defaults=True) == {"a": 1}
-    assert m.model_dump(include={"c"}, exclude_defaults=True) == {}
+    assert m.model_dump(include={'a'}, exclude_defaults=True) == {'a': 1}
+    assert m.model_dump(include={'c'}, exclude_defaults=True) == {}
 
-    assert m.model_dump(exclude={"a"}, exclude_defaults=True) == {"b": 2, "f": 7}
-    assert m.model_dump(exclude={"c"}, exclude_defaults=True) == {"a": 1, "b": 2, "f": 7}
+    assert m.model_dump(exclude={'a'}, exclude_defaults=True) == {'b': 2, 'f': 7}
+    assert m.model_dump(exclude={'c'}, exclude_defaults=True) == {'a': 1, 'b': 2, 'f': 7}
 
-    assert m.model_dump(include={"a", "b", "c"}, exclude={"b"}, exclude_defaults=True) == {"a": 1}
-    assert m.model_dump(include={"a", "b", "c"}, exclude={"a", "c"}, exclude_defaults=True) == {"b": 2}
+    assert m.model_dump(include={'a', 'b', 'c'}, exclude={'b'}, exclude_defaults=True) == {'a': 1}
+    assert m.model_dump(include={'a', 'b', 'c'}, exclude={'a', 'c'}, exclude_defaults=True) == {'b': 2}
 
-    assert m.model_dump(include={"a": 1}.keys()) == {"a": 1}
-    assert m.model_dump(exclude={"a": 1}.keys()) == {"b": 2, "c": 3, "d": 4, "e": 5, "f": 7}
+    assert m.model_dump(include={'a': 1}.keys()) == {'a': 1}
+    assert m.model_dump(exclude={'a': 1}.keys()) == {'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
 
-    assert m.model_dump(include={"a": 1}.keys(), exclude_unset=True) == {"a": 1}
-    assert m.model_dump(exclude={"a": 1}.keys(), exclude_unset=True) == {"b": 2, "e": 5, "f": 7}
+    assert m.model_dump(include={'a': 1}.keys(), exclude_unset=True) == {'a': 1}
+    assert m.model_dump(exclude={'a': 1}.keys(), exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
 
-    assert m.model_dump(include=["a"]) == {"a": 1}
-    assert m.model_dump(exclude=["a"]) == {"b": 2, "c": 3, "d": 4, "e": 5, "f": 7}
+    assert m.model_dump(include=['a']) == {'a': 1}
+    assert m.model_dump(exclude=['a']) == {'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
 
-    assert m.model_dump(include=["a"], exclude_unset=True) == {"a": 1}
-    assert m.model_dump(exclude=["a"], exclude_unset=True) == {"b": 2, "e": 5, "f": 7}
+    assert m.model_dump(include=['a'], exclude_unset=True) == {'a': 1}
+    assert m.model_dump(exclude=['a'], exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
 
 
 def test_advanced_exclude():
@@ -628,41 +628,41 @@ def test_advanced_exclude():
         e: str
         f: SubModel
 
-    m = Model(e="e", f=SubModel(c="foo", d=[SubSubModel(a="a", b="b"), SubSubModel(a="c", b="e")]))
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
 
-    assert m.model_dump(exclude={"f": {"c": ..., "d": {-1: {"a"}}}}) == {
-        "e": "e",
-        "f": {"d": [{"a": "a", "b": "b"}, {"b": "e"}]},
+    assert m.model_dump(exclude={'f': {'c': ..., 'd': {-1: {'a'}}}}) == {
+        'e': 'e',
+        'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]},
     }
-    assert m.model_dump(exclude={"e": ..., "f": {"d"}}) == {"f": {"c": "foo"}}
+    assert m.model_dump(exclude={'e': ..., 'f': {'d'}}) == {'f': {'c': 'foo'}}
 
 
 def test_advanced_exclude_by_alias():
     class SubSubModel(BaseModel):
         a: str
-        aliased_b: str = Field(..., alias="b_alias")
+        aliased_b: str = Field(..., alias='b_alias')
 
     class SubModel(BaseModel):
-        aliased_c: str = Field(..., alias="c_alias")
-        aliased_d: List[SubSubModel] = Field(..., alias="d_alias")
+        aliased_c: str = Field(..., alias='c_alias')
+        aliased_d: List[SubSubModel] = Field(..., alias='d_alias')
 
     class Model(BaseModel):
-        aliased_e: str = Field(..., alias="e_alias")
-        aliased_f: SubModel = Field(..., alias="f_alias")
+        aliased_e: str = Field(..., alias='e_alias')
+        aliased_f: SubModel = Field(..., alias='f_alias')
 
     m = Model(
-        e_alias="e",
-        f_alias=SubModel(c_alias="foo", d_alias=[SubSubModel(a="a", b_alias="b"), SubSubModel(a="c", b_alias="e")]),
+        e_alias='e',
+        f_alias=SubModel(c_alias='foo', d_alias=[SubSubModel(a='a', b_alias='b'), SubSubModel(a='c', b_alias='e')]),
     )
 
-    excludes = {"aliased_f": {"aliased_c": ..., "aliased_d": {-1: {"a"}}}}
+    excludes = {'aliased_f': {'aliased_c': ..., 'aliased_d': {-1: {'a'}}}}
     assert m.model_dump(exclude=excludes, by_alias=True) == {
-        "e_alias": "e",
-        "f_alias": {"d_alias": [{"a": "a", "b_alias": "b"}, {"b_alias": "e"}]},
+        'e_alias': 'e',
+        'f_alias': {'d_alias': [{'a': 'a', 'b_alias': 'b'}, {'b_alias': 'e'}]},
     }
 
-    excludes = {"aliased_e": ..., "aliased_f": {"aliased_d"}}
-    assert m.model_dump(exclude=excludes, by_alias=True) == {"f_alias": {"c_alias": "foo"}}
+    excludes = {'aliased_e': ..., 'aliased_f': {'aliased_d'}}
+    assert m.model_dump(exclude=excludes, by_alias=True) == {'f_alias': {'c_alias': 'foo'}}
 
 
 def test_advanced_value_include():
@@ -678,11 +678,11 @@ def test_advanced_value_include():
         e: str
         f: SubModel
 
-    m = Model(e="e", f=SubModel(c="foo", d=[SubSubModel(a="a", b="b"), SubSubModel(a="c", b="e")]))
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
 
-    assert m.model_dump(include={"f"}) == {"f": {"c": "foo", "d": [{"a": "a", "b": "b"}, {"a": "c", "b": "e"}]}}
-    assert m.model_dump(include={"e"}) == {"e": "e"}
-    assert m.model_dump(include={"f": {"d": {0: ..., -1: {"b"}}}}) == {"f": {"d": [{"a": "a", "b": "b"}, {"b": "e"}]}}
+    assert m.model_dump(include={'f'}) == {'f': {'c': 'foo', 'd': [{'a': 'a', 'b': 'b'}, {'a': 'c', 'b': 'e'}]}}
+    assert m.model_dump(include={'e'}) == {'e': 'e'}
+    assert m.model_dump(include={'f': {'d': {0: ..., -1: {'b'}}}}) == {'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}}
 
 
 def test_advanced_value_exclude_include():
@@ -698,88 +698,88 @@ def test_advanced_value_exclude_include():
         e: str
         f: SubModel
 
-    m = Model(e="e", f=SubModel(c="foo", d=[SubSubModel(a="a", b="b"), SubSubModel(a="c", b="e")]))
+    m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
 
-    assert m.model_dump(exclude={"f": {"c": ..., "d": {-1: {"a"}}}}, include={"f"}) == {
-        "f": {"d": [{"a": "a", "b": "b"}, {"b": "e"}]}
+    assert m.model_dump(exclude={'f': {'c': ..., 'd': {-1: {'a'}}}}, include={'f'}) == {
+        'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}
     }
-    assert m.model_dump(exclude={"e": ..., "f": {"d"}}, include={"e", "f"}) == {"f": {"c": "foo"}}
+    assert m.model_dump(exclude={'e': ..., 'f': {'d'}}, include={'e', 'f'}) == {'f': {'c': 'foo'}}
 
-    assert m.model_dump(exclude={"f": {"d": {-1: {"a"}}}}, include={"f": {"d"}}) == {
-        "f": {"d": [{"a": "a", "b": "b"}, {"b": "e"}]}
+    assert m.model_dump(exclude={'f': {'d': {-1: {'a'}}}}, include={'f': {'d'}}) == {
+        'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}
     }
 
 
 @pytest.mark.parametrize(
-    "exclude,expected",
+    'exclude,expected',
     [
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i"}}}}},
-            {"subs": [{"k": 1, "subsubs": [{"j": 1}, {"j": 2}]}, {"k": 2, "subsubs": [{"j": 3}]}]},
-            id="Normal nested __all__",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{'j': 1}, {'j': 2}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            id='Normal nested __all__',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i"}}}, 0: {"subsubs": {"__all__": {"j"}}}}},
-            {"subs": [{"k": 1, "subsubs": [{}, {}]}, {"k": 2, "subsubs": [{"j": 3}]}]},
-            id="Merge sub dicts 1",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{}, {}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            id='Merge sub dicts 1',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": ...}, 0: {"subsubs": {"__all__": {"j"}}}}},
-            {"subs": [{"k": 1, "subsubs": [{"i": 1}, {"i": 2}]}, {"k": 2}]},
+            {'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]},
             # {'subs': [{'k': 1                                 }, {'k': 2}]}
-            id="Merge sub sets 2",
+            id='Merge sub sets 2',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"j"}}}, 0: {"subsubs": ...}}},
-            {"subs": [{"k": 1}, {"k": 2, "subsubs": [{"i": 3}]}]},
-            id="Merge sub sets 3",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}},
+            {'subs': [{'k': 1}, {'k': 2, 'subsubs': [{'i': 3}]}]},
+            id='Merge sub sets 3',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {0}}, 0: {"subsubs": {1}}}},
-            {"subs": [{"k": 1, "subsubs": []}, {"k": 2, "subsubs": []}]},
-            id="Merge sub sets 1",
+            {'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}},
+            {'subs': [{'k': 1, 'subsubs': []}, {'k': 2, 'subsubs': []}]},
+            id='Merge sub sets 1',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {0: {"i"}}}, 0: {"subsubs": {1}}}},
-            {"subs": [{"k": 1, "subsubs": [{"j": 1}]}, {"k": 2, "subsubs": [{"j": 3}]}]},
-            id="Merge sub dict-set",
+            {'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}},
+            {'subs': [{'k': 1, 'subsubs': [{'j': 1}]}, {'k': 2, 'subsubs': [{'j': 3}]}]},
+            id='Merge sub dict-set',
         ),
-        pytest.param({"subs": {"__all__": {"subsubs"}, 0: {"k"}}}, {"subs": [{}, {"k": 2}]}, id="Different keys 1"),
+        pytest.param({'subs': {'__all__': {'subsubs'}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}, id='Different keys 1'),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": ...}, 0: {"k"}}}, {"subs": [{}, {"k": 2}]}, id="Different keys 2"
-        ),
-        pytest.param(
-            {"subs": {"__all__": {"subsubs"}, 0: {"k": ...}}}, {"subs": [{}, {"k": 2}]}, id="Different keys 3"
+            {'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}}, {'subs': [{}, {'k': 2}]}, id='Different keys 2'
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i"}, 0: {"j"}}}}},
-            {"subs": [{"k": 1, "subsubs": [{}, {"j": 2}]}, {"k": 2, "subsubs": [{}]}]},
-            id="Nested different keys 1",
+            {'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}}, {'subs': [{}, {'k': 2}]}, id='Different keys 3'
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i": ...}, 0: {"j"}}}}},
-            {"subs": [{"k": 1, "subsubs": [{}, {"j": 2}]}, {"k": 2, "subsubs": [{}]}]},
-            id="Nested different keys 2",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+            id='Nested different keys 1',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i"}, 0: {"j": ...}}}}},
-            {"subs": [{"k": 1, "subsubs": [{}, {"j": 2}]}, {"k": 2, "subsubs": [{}]}]},
-            id="Nested different keys 3",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+            id='Nested different keys 2',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs"}, 0: {"subsubs": {"__all__": {"j"}}}}},
-            {"subs": [{"k": 1, "subsubs": [{"i": 1}, {"i": 2}]}, {"k": 2}]},
-            id="Ignore __all__ for index with defined exclude 1",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{}, {'j': 2}]}, {'k': 2, 'subsubs': [{}]}]},
+            id='Nested different keys 3',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"j"}}}, 0: ...}},
-            {"subs": [{"k": 2, "subsubs": [{"i": 3}]}]},
-            id="Ignore __all__ for index with defined exclude 2",
+            {'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1}, {'i': 2}]}, {'k': 2}]},
+            id='Ignore __all__ for index with defined exclude 1',
         ),
         pytest.param(
-            {"subs": {"__all__": ..., 0: {"subsubs"}}},
-            {"subs": [{"k": 1}]},
-            id="Ignore __all__ for index with defined exclude 3",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}},
+            {'subs': [{'k': 2, 'subsubs': [{'i': 3}]}]},
+            id='Ignore __all__ for index with defined exclude 2',
+        ),
+        pytest.param(
+            {'subs': {'__all__': ..., 0: {'subsubs'}}},
+            {'subs': [{'k': 1}]},
+            id='Ignore __all__ for index with defined exclude 3',
         ),
     ],
 )
@@ -801,82 +801,82 @@ def test_advanced_exclude_nested_lists(exclude, expected):
 
 
 @pytest.mark.parametrize(
-    "include,expected",
+    'include,expected',
     [
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i"}}}}},
-            {"subs": [{"subsubs": [{"i": 1}, {"i": 2}]}, {"subsubs": [{"i": 3}]}]},
-            id="Normal nested __all__",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}}},
+            {'subs': [{'subsubs': [{'i': 1}, {'i': 2}]}, {'subsubs': [{'i': 3}]}]},
+            id='Normal nested __all__',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i"}}}, 0: {"subsubs": {"__all__": {"j"}}}}},
-            {"subs": [{"subsubs": [{"i": 1, "j": 1}, {"i": 2, "j": 2}]}, {"subsubs": [{"i": 3}]}]},
-            id="Merge sub dicts 1",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}}}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]},
+            id='Merge sub dicts 1',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": ...}, 0: {"subsubs": {"__all__": {"j"}}}}},
-            {"subs": [{"subsubs": [{"j": 1}, {"j": 2}]}, {"subsubs": [{"i": 3, "j": 3}]}]},
-            id="Merge sub dicts 2",
+            {'subs': {'__all__': {'subsubs': ...}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Merge sub dicts 2',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"j"}}}, 0: {"subsubs": ...}}},
-            {"subs": [{"subsubs": [{"i": 1, "j": 1}, {"i": 2, "j": 2}]}, {"subsubs": [{"j": 3}]}]},
-            id="Merge sub dicts 3",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: {'subsubs': ...}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]},
+            id='Merge sub dicts 3',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {0}}, 0: {"subsubs": {1}}}},
-            {"subs": [{"subsubs": [{"i": 1, "j": 1}, {"i": 2, "j": 2}]}, {"subsubs": [{"i": 3, "j": 3}]}]},
-            id="Merge sub sets",
+            {'subs': {'__all__': {'subsubs': {0}}, 0: {'subsubs': {1}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Merge sub sets',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {0: {"i"}}}, 0: {"subsubs": {1}}}},
-            {"subs": [{"subsubs": [{"i": 1}, {"i": 2, "j": 2}]}, {"subsubs": [{"i": 3}]}]},
-            id="Merge sub dict-set",
+            {'subs': {'__all__': {'subsubs': {0: {'i'}}}, 0: {'subsubs': {1}}}},
+            {'subs': [{'subsubs': [{'i': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3}]}]},
+            id='Merge sub dict-set',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs"}, 0: {"k"}}},
-            {"subs": [{"k": 1, "subsubs": [{"i": 1, "j": 1}, {"i": 2, "j": 2}]}, {"subsubs": [{"i": 3, "j": 3}]}]},
-            id="Nested different keys 1",
+            {'subs': {'__all__': {'subsubs'}, 0: {'k'}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 1',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": ...}, 0: {"k"}}},
-            {"subs": [{"k": 1, "subsubs": [{"i": 1, "j": 1}, {"i": 2, "j": 2}]}, {"subsubs": [{"i": 3, "j": 3}]}]},
-            id="Nested different keys 2",
+            {'subs': {'__all__': {'subsubs': ...}, 0: {'k'}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 2',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs"}, 0: {"k": ...}}},
-            {"subs": [{"k": 1, "subsubs": [{"i": 1, "j": 1}, {"i": 2, "j": 2}]}, {"subsubs": [{"i": 3, "j": 3}]}]},
-            id="Nested different keys 3",
+            {'subs': {'__all__': {'subsubs'}, 0: {'k': ...}}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 3',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i"}, 0: {"j"}}}}},
-            {"subs": [{"subsubs": [{"i": 1, "j": 1}, {"i": 2}]}, {"subsubs": [{"i": 3, "j": 3}]}]},
-            id="Nested different keys 1",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j'}}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 1',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i": ...}, 0: {"j"}}}}},
-            {"subs": [{"subsubs": [{"i": 1, "j": 1}, {"i": 2}]}, {"subsubs": [{"i": 3, "j": 3}]}]},
-            id="Nested different keys 2",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i': ...}, 0: {'j'}}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 2',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"i"}, 0: {"j": ...}}}}},
-            {"subs": [{"subsubs": [{"i": 1, "j": 1}, {"i": 2}]}, {"subsubs": [{"i": 3, "j": 3}]}]},
-            id="Nested different keys 3",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'i'}, 0: {'j': ...}}}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Nested different keys 3',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs"}, 0: {"subsubs": {"__all__": {"j"}}}}},
-            {"subs": [{"subsubs": [{"j": 1}, {"j": 2}]}, {"subsubs": [{"i": 3, "j": 3}]}]},
-            id="Ignore __all__ for index with defined include 1",
+            {'subs': {'__all__': {'subsubs'}, 0: {'subsubs': {'__all__': {'j'}}}}},
+            {'subs': [{'subsubs': [{'j': 1}, {'j': 2}]}, {'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Ignore __all__ for index with defined include 1',
         ),
         pytest.param(
-            {"subs": {"__all__": {"subsubs": {"__all__": {"j"}}}, 0: ...}},
-            {"subs": [{"k": 1, "subsubs": [{"i": 1, "j": 1}, {"i": 2, "j": 2}]}, {"subsubs": [{"j": 3}]}]},
-            id="Ignore __all__ for index with defined include 2",
+            {'subs': {'__all__': {'subsubs': {'__all__': {'j'}}}, 0: ...}},
+            {'subs': [{'k': 1, 'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'subsubs': [{'j': 3}]}]},
+            id='Ignore __all__ for index with defined include 2',
         ),
         pytest.param(
-            {"subs": {"__all__": ..., 0: {"subsubs"}}},
-            {"subs": [{"subsubs": [{"i": 1, "j": 1}, {"i": 2, "j": 2}]}, {"k": 2, "subsubs": [{"i": 3, "j": 3}]}]},
-            id="Ignore __all__ for index with defined include 3",
+            {'subs': {'__all__': ..., 0: {'subsubs'}}},
+            {'subs': [{'subsubs': [{'i': 1, 'j': 1}, {'i': 2, 'j': 2}]}, {'k': 2, 'subsubs': [{'i': 3, 'j': 3}]}]},
+            id='Ignore __all__ for index with defined include 3',
         ),
     ],
 )
@@ -899,38 +899,38 @@ def test_advanced_include_nested_lists(include, expected):
 
 def test_field_set_ignore_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra="ignore")
+        model_config = ConfigDict(extra='ignore')
         a: int
         b: int
         c: int = 3
 
     m = Model(a=1, b=2)
-    assert m.model_dump() == {"a": 1, "b": 2, "c": 3}
-    assert m.model_fields_set == {"a", "b"}
-    assert m.model_dump(exclude_unset=True) == {"a": 1, "b": 2}
+    assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3}
+    assert m.model_fields_set == {'a', 'b'}
+    assert m.model_dump(exclude_unset=True) == {'a': 1, 'b': 2}
 
     m2 = Model(a=1, b=2, d=4)
-    assert m2.model_dump() == {"a": 1, "b": 2, "c": 3}
-    assert m2.model_fields_set == {"a", "b"}
-    assert m2.model_dump(exclude_unset=True) == {"a": 1, "b": 2}
+    assert m2.model_dump() == {'a': 1, 'b': 2, 'c': 3}
+    assert m2.model_fields_set == {'a', 'b'}
+    assert m2.model_dump(exclude_unset=True) == {'a': 1, 'b': 2}
 
 
 def test_field_set_allow_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra="allow")
+        model_config = ConfigDict(extra='allow')
         a: int
         b: int
         c: int = 3
 
     m = Model(a=1, b=2)
-    assert m.model_dump() == {"a": 1, "b": 2, "c": 3}
-    assert m.model_fields_set == {"a", "b"}
-    assert m.model_dump(exclude_unset=True) == {"a": 1, "b": 2}
+    assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3}
+    assert m.model_fields_set == {'a', 'b'}
+    assert m.model_dump(exclude_unset=True) == {'a': 1, 'b': 2}
 
     m2 = Model(a=1, b=2, d=4)
-    assert m2.model_dump() == {"a": 1, "b": 2, "c": 3, "d": 4}
-    assert m2.model_fields_set == {"a", "b", "d"}
-    assert m2.model_dump(exclude_unset=True) == {"a": 1, "b": 2, "d": 4}
+    assert m2.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
+    assert m2.model_fields_set == {'a', 'b', 'd'}
+    assert m2.model_dump(exclude_unset=True) == {'a': 1, 'b': 2, 'd': 4}
 
 
 def test_field_set_field_name():
@@ -939,9 +939,9 @@ def test_field_set_field_name():
         field_set: int
         b: int = 3
 
-    assert Model(a=1, field_set=2).model_dump() == {"a": 1, "field_set": 2, "b": 3}
-    assert Model(a=1, field_set=2).model_dump(exclude_unset=True) == {"a": 1, "field_set": 2}
-    assert Model.model_construct(a=1, field_set=3).model_dump() == {"a": 1, "field_set": 3, "b": 3}
+    assert Model(a=1, field_set=2).model_dump() == {'a': 1, 'field_set': 2, 'b': 3}
+    assert Model(a=1, field_set=2).model_dump(exclude_unset=True) == {'a': 1, 'field_set': 2}
+    assert Model.model_construct(a=1, field_set=3).model_dump() == {'a': 1, 'field_set': 3, 'b': 3}
 
 
 def test_values_order():
@@ -951,7 +951,7 @@ def test_values_order():
         c: int = 3
 
     m = Model(c=30, b=20, a=10)
-    assert list(m) == [("a", 10), ("b", 20), ("c", 30)]
+    assert list(m) == [('a', 10), ('b', 20), ('c', 30)]
 
 
 def test_inheritance():
@@ -962,7 +962,7 @@ def test_inheritance():
         TypeError,
         match=(
             "Field 'a' defined on a base class was overridden by a non-annotated attribute. "
-            "All field definitions, including overrides, require a type annotation."
+            'All field definitions, including overrides, require a type annotation.'
         ),
     ):
 
@@ -974,13 +974,13 @@ def test_inheritance():
         x: float = 12.3
         a: float = 123.0
 
-    assert Bar2().model_dump() == {"x": 12.3, "a": 123.0}
+    assert Bar2().model_dump() == {'x': 12.3, 'a': 123.0}
 
     class Bar3(Foo):
         x: float = 12.3
         a: float = Field(default=123.0)
 
-    assert Bar3().model_dump() == {"x": 12.3, "a": 123.0}
+    assert Bar3().model_dump() == {'x': 12.3, 'a': 123.0}
 
 
 def test_inheritance_subclass_default():
@@ -989,7 +989,7 @@ def test_inheritance_subclass_default():
 
     # Confirm hint supports a subclass default
     class Simple(BaseModel):
-        x: str = MyStr("test")
+        x: str = MyStr('test')
 
         model_config = dict(arbitrary_types_allowed=True)
 
@@ -999,13 +999,13 @@ def test_inheritance_subclass_default():
         y: str
 
     class Sub(Base):
-        x: str = MyStr("test")
-        y: MyStr = MyStr("test")  # force subtype
+        x: str = MyStr('test')
+        y: MyStr = MyStr('test')  # force subtype
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    assert Sub.model_fields["x"].annotation == str
-    assert Sub.model_fields["y"].annotation == MyStr
+    assert Sub.model_fields['x'].annotation == str
+    assert Sub.model_fields['y'].annotation == MyStr
 
 
 def test_invalid_type():
@@ -1014,7 +1014,7 @@ def test_invalid_type():
         class Model(BaseModel):
             x: 43 = 123
 
-    assert "Unable to generate pydantic-core schema for 43" in exc_info.value.args[0]
+    assert 'Unable to generate pydantic-core schema for 43' in exc_info.value.args[0]
 
 
 class CustomStr(str):
@@ -1023,13 +1023,13 @@ class CustomStr(str):
 
 
 @pytest.mark.parametrize(
-    "value,expected",
+    'value,expected',
     [
-        ("a string", "a string"),
-        (b"some bytes", "some bytes"),
-        (bytearray("foobar", encoding="utf8"), "foobar"),
-        (StrEnum.a, "a10"),
-        (CustomStr("whatever"), "whatever"),
+        ('a string', 'a string'),
+        (b'some bytes', 'some bytes'),
+        (bytearray('foobar', encoding='utf8'), 'foobar'),
+        (StrEnum.a, 'a10'),
+        (CustomStr('whatever'), 'whatever'),
     ],
 )
 def test_valid_string_types(value, expected):
@@ -1040,15 +1040,15 @@ def test_valid_string_types(value, expected):
 
 
 @pytest.mark.parametrize(
-    "value,errors",
+    'value,errors',
     [
         (
-            {"foo": "bar"},
-            [{"input": {"foo": "bar"}, "loc": ("v",), "msg": "Input should be a valid string", "type": "string_type"}],
+            {'foo': 'bar'},
+            [{'input': {'foo': 'bar'}, 'loc': ('v',), 'msg': 'Input should be a valid string', 'type': 'string_type'}],
         ),
         (
             [1, 2, 3],
-            [{"input": [1, 2, 3], "loc": ("v",), "msg": "Input should be a valid string", "type": "string_type"}],
+            [{'input': [1, 2, 3], 'loc': ('v',), 'msg': 'Input should be a valid string', 'type': 'string_type'}],
         ),
     ],
 )
@@ -1069,8 +1069,8 @@ def test_inheritance_config():
         model_config = ConfigDict(str_to_lower=True)
         b: str
 
-    m1 = Parent(a="A")
-    m2 = Child(a="A", b="B")
+    m1 = Parent(a='A')
+    m2 = Child(a='A', b='B')
     assert repr(m1) == "Parent(a='A')"
     assert repr(m2) == "Child(a='a', b='b')"
 
@@ -1087,11 +1087,11 @@ def test_partial_inheritance_config():
         Child(a=-1, b=0)
     assert exc_info.value.errors(include_url=False) == [
         {
-            "ctx": {"ge": 0},
-            "input": -1,
-            "loc": ("a",),
-            "msg": "Input should be greater than or equal to 0",
-            "type": "greater_than_equal",
+            'ctx': {'ge': 0},
+            'input': -1,
+            'loc': ('a',),
+            'msg': 'Input should be greater than or equal to 0',
+            'type': 'greater_than_equal',
         }
     ]
 
@@ -1099,11 +1099,11 @@ def test_partial_inheritance_config():
         Child(a=0, b=-1)
     assert exc_info.value.errors(include_url=False) == [
         {
-            "ctx": {"ge": 0},
-            "input": -1,
-            "loc": ("b",),
-            "msg": "Input should be greater than or equal to 0",
-            "type": "greater_than_equal",
+            'ctx': {'ge': 0},
+            'input': -1,
+            'loc': ('b',),
+            'msg': 'Input should be greater than or equal to 0',
+            'type': 'greater_than_equal',
         }
     ]
 
@@ -1115,35 +1115,35 @@ def test_annotation_inheritance():
     class B(A):
         integer: int = 2
 
-    assert B.model_fields["integer"].annotation == int
+    assert B.model_fields['integer'].annotation == int
 
     class C(A):
-        integer: str = "G"
+        integer: str = 'G'
 
-    assert C.__annotations__["integer"] == str
-    assert C.model_fields["integer"].annotation == str
+    assert C.__annotations__['integer'] == str
+    assert C.model_fields['integer'].annotation == str
 
     with pytest.raises(
         TypeError,
         match=(
             "Field 'integer' defined on a base class was overridden by a non-annotated attribute. "
-            "All field definitions, including overrides, require a type annotation."
+            'All field definitions, including overrides, require a type annotation.'
         ),
     ):
 
         class D(A):
-            integer = "G"
+            integer = 'G'
 
 
 def test_string_none():
     class Model(BaseModel):
-        model_config = ConfigDict(extra="ignore")
+        model_config = ConfigDict(extra='ignore')
         a: constr(min_length=20, max_length=1000) = ...
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=None)
     assert exc_info.value.errors(include_url=False) == [
-        {"input": None, "loc": ("a",), "msg": "Input should be a valid string", "type": "string_type"}
+        {'input': None, 'loc': ('a',), 'msg': 'Input should be a valid string', 'type': 'string_type'}
     ]
 
 
@@ -1183,13 +1183,13 @@ def test_optional_required():
     class Model(BaseModel):
         bar: Optional[int]
 
-    assert Model(bar=123).model_dump() == {"bar": 123}
-    assert Model(bar=None).model_dump() == {"bar": None}
+    assert Model(bar=123).model_dump() == {'bar': 123}
+    assert Model(bar=None).model_dump() == {'bar': None}
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {}, "loc": ("bar",), "msg": "Field required", "type": "missing"}
+        {'input': {}, 'loc': ('bar',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
 
@@ -1197,8 +1197,8 @@ def test_unable_to_infer():
     with pytest.raises(
         errors.PydanticUserError,
         match=re.escape(
-            "A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; "
-            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it as a "
+            'A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; '
+            'if `x` is not meant to be a field, you may be able to resolve this error by annotating it as a '
             "`ClassVar` or updating `model_config['ignored_types']`"
         ),
     ):
@@ -1212,27 +1212,27 @@ def test_multiple_errors():
         a: Union[None, int, float, Decimal]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a="foobar")
+        Model(a='foobar')
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "int_parsing",
-            "loc": ("a", "int"),
-            "msg": "Input should be a valid integer, unable to parse string as an integer",
-            "input": "foobar",
+            'type': 'int_parsing',
+            'loc': ('a', 'int'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'foobar',
         },
         {
-            "type": "float_parsing",
-            "loc": ("a", "float"),
-            "msg": "Input should be a valid number, unable to parse string as a number",
-            "input": "foobar",
+            'type': 'float_parsing',
+            'loc': ('a', 'float'),
+            'msg': 'Input should be a valid number, unable to parse string as a number',
+            'input': 'foobar',
         },
         {
-            "type": "decimal_parsing",
-            "loc": ("a", "decimal"),
-            "msg": "Input should be a valid decimal",
-            "input": "foobar",
+            'type': 'decimal_parsing',
+            'loc': ('a', 'decimal'),
+            'msg': 'Input should be a valid decimal',
+            'input': 'foobar',
         },
     ]
 
@@ -1249,17 +1249,17 @@ def test_validate_default():
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {}, "loc": ("a",), "msg": "Field required", "type": "missing"},
-        {"input": {}, "loc": ("b",), "msg": "Field required", "type": "missing"},
+        {'input': {}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
     ]
 
 
 def test_force_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra="ignore")
+        model_config = ConfigDict(extra='ignore')
         foo: int
 
-    assert Model.model_config["extra"] == "ignore"
+    assert Model.model_config['extra'] == 'ignore'
 
 
 def test_submodel_different_type():
@@ -1272,27 +1272,27 @@ def test_submodel_different_type():
     class Spam(BaseModel):
         c: Foo
 
-    assert Spam(c={"a": "123"}).model_dump() == {"c": {"a": 123}}
+    assert Spam(c={'a': '123'}).model_dump() == {'c': {'a': 123}}
     with pytest.raises(ValidationError):
-        Spam(c={"b": "123"})
+        Spam(c={'b': '123'})
 
-    assert Spam(c=Foo(a="123")).model_dump() == {"c": {"a": 123}}
+    assert Spam(c=Foo(a='123')).model_dump() == {'c': {'a': 123}}
     with pytest.raises(ValidationError):
-        Spam(c=Bar(b="123"))
+        Spam(c=Bar(b='123'))
 
 
 def test_self():
     class Model(BaseModel):
         self: str
 
-    m = Model.model_validate(dict(self="some value"))
-    assert m.model_dump() == {"self": "some value"}
-    assert m.self == "some value"
+    m = Model.model_validate(dict(self='some value'))
+    assert m.model_dump() == {'self': 'some value'}
+    assert m.self == 'some value'
     assert m.model_json_schema() == {
-        "title": "Model",
-        "type": "object",
-        "properties": {"self": {"title": "Self", "type": "string"}},
-        "required": ["self"],
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'self': {'title': 'Self', 'type': 'string'}},
+        'required': ['self'],
     }
 
 
@@ -1303,8 +1303,8 @@ def test_self_recursive():
     class Model(BaseModel):
         sm: SubModel
 
-    m = Model.model_validate({"sm": {"self": "123"}})
-    assert m.model_dump() == {"sm": {"self": 123}}
+    m = Model.model_validate({'sm': {'self': '123'}})
+    assert m.model_dump() == {'sm': {'self': 123}}
 
 
 def test_custom_init():
@@ -1317,11 +1317,11 @@ def test_custom_init():
             super().__init__(x=x + int(y))
 
     assert Model(x=1, y=1).x == 2
-    assert Model.model_validate({"x": 1, "y": 1}).x == 2
+    assert Model.model_validate({'x': 1, 'y': 1}).x == 2
     assert Model.model_validate_json('{"x": 1, "y": 2}').x == 3
 
     # For documentation purposes: type hints on __init__ are not currently used for validation:
-    assert Model.model_validate({"x": 1, "y": "abc"}).x == 4
+    assert Model.model_validate({'x': 1, 'y': 'abc'}).x == 4
 
 
 def test_nested_custom_init():
@@ -1337,9 +1337,9 @@ def test_nested_custom_init():
         self: str
         nest: NestedModel
 
-    m = TopModel.model_validate(dict(self="Top Model", nest=dict(self="Nested Model", modified_number=0)))
-    assert m.self == "Top Model"
-    assert m.nest.self == "Nested Model"
+    m = TopModel.model_validate(dict(self='Top Model', nest=dict(self='Nested Model', modified_number=0)))
+    assert m.self == 'Top Model'
+    assert m.nest.self == 'Nested Model'
     assert m.nest.modified_number == 1
 
 
@@ -1356,9 +1356,9 @@ def test_init_inspection():
             super().__init__(**data)
 
     Foobar(x=1)
-    Foobar.model_validate({"x": 2})
+    Foobar.model_validate({'x': 2})
     Foobar.model_validate_json('{"x": 3}')
-    assert calls == [{"x": 1}, {"x": 2}, {"x": 3}]
+    assert calls == [{'x': 1}, {'x': 2}, {'x': 3}]
 
 
 def test_type_on_annotation():
@@ -1378,37 +1378,37 @@ def test_type_on_annotation():
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    assert Model.model_fields.keys() == set("abcdefghi")
+    assert Model.model_fields.keys() == set('abcdefghi')
 
 
 def test_assign_type():
     class Parent:
         def echo(self):
-            return "parent"
+            return 'parent'
 
     class Child(Parent):
         def echo(self):
-            return "child"
+            return 'child'
 
     class Different:
         def echo(self):
-            return "different"
+            return 'different'
 
     class Model(BaseModel):
         v: Type[Parent] = Parent
 
-    assert Model(v=Parent).v().echo() == "parent"
-    assert Model().v().echo() == "parent"
-    assert Model(v=Child).v().echo() == "child"
+    assert Model(v=Parent).v().echo() == 'parent'
+    assert Model().v().echo() == 'parent'
+    assert Model(v=Child).v().echo() == 'child'
     with pytest.raises(ValidationError) as exc_info:
         Model(v=Different)
     assert exc_info.value.errors(include_url=False) == [
         {
-            "ctx": {"class": "test_assign_type.<locals>.Parent"},
-            "input": HasRepr("<class 'tests.test_edge_cases.test_assign_type.<locals>.Different'>"),
-            "loc": ("v",),
-            "msg": "Input should be a subclass of test_assign_type.<locals>.Parent",
-            "type": "is_subclass_of",
+            'ctx': {'class': 'test_assign_type.<locals>.Parent'},
+            'input': HasRepr("<class 'tests.test_edge_cases.test_assign_type.<locals>.Different'>"),
+            'loc': ('v',),
+            'msg': 'Input should be a subclass of test_assign_type.<locals>.Parent',
+            'type': 'is_subclass_of',
         }
     ]
 
@@ -1417,23 +1417,23 @@ def test_optional_subfields():
     class Model(BaseModel):
         a: Optional[int]
 
-    assert Model.model_fields["a"].annotation == Optional[int]
+    assert Model.model_fields['a'].annotation == Optional[int]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a="foobar")
+        Model(a='foobar')
     assert exc_info.value.errors(include_url=False) == [
         {
-            "input": "foobar",
-            "loc": ("a",),
-            "msg": "Input should be a valid integer, unable to parse string as an " "integer",
-            "type": "int_parsing",
+            'input': 'foobar',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {}, "loc": ("a",), "msg": "Field required", "type": "missing"}
+        {'input': {}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
     assert Model(a=None).a is None
@@ -1444,28 +1444,28 @@ def test_validated_optional_subfields():
     class Model(BaseModel):
         a: Optional[int]
 
-        @field_validator("a")
+        @field_validator('a')
         @classmethod
         def check_a(cls, v):
             return v
 
-    assert Model.model_fields["a"].annotation == Optional[int]
+    assert Model.model_fields['a'].annotation == Optional[int]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a="foobar")
+        Model(a='foobar')
     assert exc_info.value.errors(include_url=False) == [
         {
-            "input": "foobar",
-            "loc": ("a",),
-            "msg": "Input should be a valid integer, unable to parse string as an " "integer",
-            "type": "int_parsing",
+            'input': 'foobar',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
         }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {}, "loc": ("a",), "msg": "Field required", "type": "missing"}
+        {'input': {}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
     assert Model(a=None).a is None
@@ -1480,11 +1480,11 @@ def test_optional_field_constraints():
         MyModel(my_int=2)
     assert exc_info.value.errors(include_url=False) == [
         {
-            "ctx": {"ge": 3},
-            "input": 2,
-            "loc": ("my_int",),
-            "msg": "Input should be greater than or equal to 3",
-            "type": "greater_than_equal",
+            'ctx': {'ge': 3},
+            'input': 2,
+            'loc': ('my_int',),
+            'msg': 'Input should be greater than or equal to 3',
+            'type': 'greater_than_equal',
         }
     ]
 
@@ -1493,12 +1493,12 @@ def test_field_str_shape():
     class Model(BaseModel):
         a: List[int]
 
-    assert repr(Model.model_fields["a"]) == "FieldInfo(annotation=List[int], required=True)"
-    assert str(Model.model_fields["a"]) == "annotation=List[int] required=True"
+    assert repr(Model.model_fields['a']) == 'FieldInfo(annotation=List[int], required=True)'
+    assert str(Model.model_fields['a']) == 'annotation=List[int] required=True'
 
 
-T1 = TypeVar("T1")
-T2 = TypeVar("T2")
+T1 = TypeVar('T1')
+T2 = TypeVar('T2')
 
 
 class DisplayGen(Generic[T1, T2]):
@@ -1508,30 +1508,30 @@ class DisplayGen(Generic[T1, T2]):
 
 
 @pytest.mark.parametrize(
-    "type_,expected",
+    'type_,expected',
     [
-        (int, "int"),
-        (Optional[int], "Union[int, NoneType]"),
-        (Union[None, int, str], "Union[NoneType, int, str]"),
-        (Union[int, str, bytes], "Union[int, str, bytes]"),
-        (List[int], "List[int]"),
-        (Tuple[int, str, bytes], "Tuple[int, str, bytes]"),
-        (Union[List[int], Set[bytes]], "Union[List[int], Set[bytes]]"),
-        (List[Tuple[int, int]], "List[Tuple[int, int]]"),
-        (Dict[int, str], "Dict[int, str]"),
-        (FrozenSet[int], "FrozenSet[int]"),
-        (Tuple[int, ...], "Tuple[int, ...]"),
-        (Optional[List[int]], "Union[List[int], NoneType]"),
-        (dict, "dict"),
+        (int, 'int'),
+        (Optional[int], 'Union[int, NoneType]'),
+        (Union[None, int, str], 'Union[NoneType, int, str]'),
+        (Union[int, str, bytes], 'Union[int, str, bytes]'),
+        (List[int], 'List[int]'),
+        (Tuple[int, str, bytes], 'Tuple[int, str, bytes]'),
+        (Union[List[int], Set[bytes]], 'Union[List[int], Set[bytes]]'),
+        (List[Tuple[int, int]], 'List[Tuple[int, int]]'),
+        (Dict[int, str], 'Dict[int, str]'),
+        (FrozenSet[int], 'FrozenSet[int]'),
+        (Tuple[int, ...], 'Tuple[int, ...]'),
+        (Optional[List[int]], 'Union[List[int], NoneType]'),
+        (dict, 'dict'),
         pytest.param(
             DisplayGen[bool, str],
-            "DisplayGen[bool, str]",
-            marks=pytest.mark.skipif(sys.version_info[:2] <= (3, 9), reason="difference in __name__ between versions"),
+            'DisplayGen[bool, str]',
+            marks=pytest.mark.skipif(sys.version_info[:2] <= (3, 9), reason='difference in __name__ between versions'),
         ),
         pytest.param(
             DisplayGen[bool, str],
-            "tests.test_edge_cases.DisplayGen[bool, str]",
-            marks=pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason="difference in __name__ between versions"),
+            'tests.test_edge_cases.DisplayGen[bool, str]',
+            marks=pytest.mark.skipif(sys.version_info[:2] > (3, 9), reason='difference in __name__ between versions'),
         ),
     ],
 )
@@ -1541,7 +1541,7 @@ def test_field_type_display(type_, expected):
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    assert re.search(rf"\(annotation={re.escape(expected)},", str(Model.model_fields))
+    assert re.search(rf'\(annotation={re.escape(expected)},', str(Model.model_fields))
 
 
 def test_any_none():
@@ -1549,78 +1549,78 @@ def test_any_none():
         foo: Any
 
     m = MyModel(foo=None)
-    assert dict(m) == {"foo": None}
+    assert dict(m) == {'foo': None}
 
 
 def test_type_var_any():
-    Foobar = TypeVar("Foobar")
+    Foobar = TypeVar('Foobar')
 
     class MyModel(BaseModel):
         foo: Foobar
 
     assert MyModel.model_json_schema() == {
-        "properties": {"foo": {"title": "Foo"}},
-        "required": ["foo"],
-        "title": "MyModel",
-        "type": "object",
+        'properties': {'foo': {'title': 'Foo'}},
+        'required': ['foo'],
+        'title': 'MyModel',
+        'type': 'object',
     }
     assert MyModel(foo=None).foo is None
-    assert MyModel(foo="x").foo == "x"
+    assert MyModel(foo='x').foo == 'x'
     assert MyModel(foo=123).foo == 123
 
 
 def test_type_var_constraint():
-    Foobar = TypeVar("Foobar", int, str)
+    Foobar = TypeVar('Foobar', int, str)
 
     class MyModel(BaseModel):
         foo: Foobar
 
     assert MyModel.model_json_schema() == {
-        "title": "MyModel",
-        "type": "object",
-        "properties": {"foo": {"title": "Foo", "anyOf": [{"type": "integer"}, {"type": "string"}]}},
-        "required": ["foo"],
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {'foo': {'title': 'Foo', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['foo'],
     }
     with pytest.raises(ValidationError) as exc_info:
         MyModel(foo=None)
     assert exc_info.value.errors(include_url=False) == [
-        {"input": None, "loc": ("foo", "int"), "msg": "Input should be a valid integer", "type": "int_type"},
-        {"input": None, "loc": ("foo", "str"), "msg": "Input should be a valid string", "type": "string_type"},
+        {'input': None, 'loc': ('foo', 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
+        {'input': None, 'loc': ('foo', 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
     ]
 
     with pytest.raises(ValidationError):
         MyModel(foo=[1, 2, 3])
     assert exc_info.value.errors(include_url=False) == [
-        {"input": None, "loc": ("foo", "int"), "msg": "Input should be a valid integer", "type": "int_type"},
-        {"input": None, "loc": ("foo", "str"), "msg": "Input should be a valid string", "type": "string_type"},
+        {'input': None, 'loc': ('foo', 'int'), 'msg': 'Input should be a valid integer', 'type': 'int_type'},
+        {'input': None, 'loc': ('foo', 'str'), 'msg': 'Input should be a valid string', 'type': 'string_type'},
     ]
 
-    assert MyModel(foo="x").foo == "x"
+    assert MyModel(foo='x').foo == 'x'
     assert MyModel(foo=123).foo == 123
 
 
 def test_type_var_bound():
-    Foobar = TypeVar("Foobar", bound=int)
+    Foobar = TypeVar('Foobar', bound=int)
 
     class MyModel(BaseModel):
         foo: Foobar
 
     assert MyModel.model_json_schema() == {
-        "title": "MyModel",
-        "type": "object",
-        "properties": {"foo": {"title": "Foo", "type": "integer"}},
-        "required": ["foo"],
+        'title': 'MyModel',
+        'type': 'object',
+        'properties': {'foo': {'title': 'Foo', 'type': 'integer'}},
+        'required': ['foo'],
     }
     with pytest.raises(ValidationError) as exc_info:
         MyModel(foo=None)
     assert exc_info.value.errors(include_url=False) == [
-        {"input": None, "loc": ("foo",), "msg": "Input should be a valid integer", "type": "int_type"}
+        {'input': None, 'loc': ('foo',), 'msg': 'Input should be a valid integer', 'type': 'int_type'}
     ]
 
     with pytest.raises(ValidationError):
-        MyModel(foo="x")
+        MyModel(foo='x')
     assert exc_info.value.errors(include_url=False) == [
-        {"input": None, "loc": ("foo",), "msg": "Input should be a valid integer", "type": "int_type"}
+        {'input': None, 'loc': ('foo',), 'msg': 'Input should be a valid integer', 'type': 'int_type'}
     ]
     assert MyModel(foo=123).foo == 123
 
@@ -1629,8 +1629,8 @@ def test_dict_bare():
     class MyModel(BaseModel):
         foo: Dict
 
-    m = MyModel(foo={"x": "a", "y": None})
-    assert m.foo == {"x": "a", "y": None}
+    m = MyModel(foo={'x': 'a', 'y': None})
+    assert m.foo == {'x': 'a', 'y': None}
 
 
 def test_list_bare():
@@ -1645,15 +1645,15 @@ def test_dict_any():
     class MyModel(BaseModel):
         foo: Dict[str, Any]
 
-    m = MyModel(foo={"x": "a", "y": None})
-    assert m.foo == {"x": "a", "y": None}
+    m = MyModel(foo={'x': 'a', 'y': None})
+    assert m.foo == {'x': 'a', 'y': None}
 
 
 def test_modify_fields():
     class Foo(BaseModel):
         foo: List[List[int]]
 
-        @field_validator("foo")
+        @field_validator('foo')
         @classmethod
         def check_something(cls, value):
             return value
@@ -1661,8 +1661,8 @@ def test_modify_fields():
     class Bar(Foo):
         pass
 
-    assert repr(Foo.model_fields["foo"]) == "FieldInfo(annotation=List[List[int]], required=True)"
-    assert repr(Bar.model_fields["foo"]) == "FieldInfo(annotation=List[List[int]], required=True)"
+    assert repr(Foo.model_fields['foo']) == 'FieldInfo(annotation=List[List[int]], required=True)'
+    assert repr(Bar.model_fields['foo']) == 'FieldInfo(annotation=List[List[int]], required=True)'
     assert Foo(foo=[[0, 1]]).foo == [[0, 1]]
     assert Bar(foo=[[0, 1]]).foo == [[0, 1]]
 
@@ -1673,10 +1673,10 @@ def test_exclude_none():
         b: int = 2
 
     m = MyModel(a=5)
-    assert m.model_dump(exclude_none=True) == {"a": 5, "b": 2}
+    assert m.model_dump(exclude_none=True) == {'a': 5, 'b': 2}
 
     m = MyModel(b=3)
-    assert m.model_dump(exclude_none=True) == {"b": 3}
+    assert m.model_dump(exclude_none=True) == {'b': 3}
     assert m.model_dump_json(exclude_none=True) == '{"b":3}'
 
 
@@ -1691,32 +1691,32 @@ def test_exclude_none_recursive():
         e: ModelA
         f: Optional[str] = None
 
-    m = ModelB(c=5, e={"a": 0})
-    assert m.model_dump() == {"c": 5, "d": 2, "e": {"a": 0, "b": 1}, "f": None}
-    assert m.model_dump(exclude_none=True) == {"c": 5, "d": 2, "e": {"a": 0, "b": 1}}
-    assert dict(m) == {"c": 5, "d": 2, "e": ModelA(a=0), "f": None}
+    m = ModelB(c=5, e={'a': 0})
+    assert m.model_dump() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
+    assert m.model_dump(exclude_none=True) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': ModelA(a=0), 'f': None}
 
-    m = ModelB(c=5, e={"b": 20}, f="test")
-    assert m.model_dump() == {"c": 5, "d": 2, "e": {"a": None, "b": 20}, "f": "test"}
-    assert m.model_dump(exclude_none=True) == {"c": 5, "d": 2, "e": {"b": 20}, "f": "test"}
-    assert dict(m) == {"c": 5, "d": 2, "e": ModelA(b=20), "f": "test"}
+    m = ModelB(c=5, e={'b': 20}, f='test')
+    assert m.model_dump() == {'c': 5, 'd': 2, 'e': {'a': None, 'b': 20}, 'f': 'test'}
+    assert m.model_dump(exclude_none=True) == {'c': 5, 'd': 2, 'e': {'b': 20}, 'f': 'test'}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': ModelA(b=20), 'f': 'test'}
 
 
 def test_exclude_none_with_extra():
     class MyModel(BaseModel):
-        model_config = ConfigDict(extra="allow")
-        a: str = "default"
+        model_config = ConfigDict(extra='allow')
+        a: str = 'default'
         b: Optional[str] = None
 
-    m = MyModel(a="a", c="c")
+    m = MyModel(a='a', c='c')
 
-    assert m.model_dump(exclude_none=True) == {"a": "a", "c": "c"}
-    assert m.model_dump() == {"a": "a", "b": None, "c": "c"}
+    assert m.model_dump(exclude_none=True) == {'a': 'a', 'c': 'c'}
+    assert m.model_dump() == {'a': 'a', 'b': None, 'c': 'c'}
 
-    m = MyModel(a="a", b="b", c=None)
+    m = MyModel(a='a', b='b', c=None)
 
-    assert m.model_dump(exclude_none=True) == {"a": "a", "b": "b"}
-    assert m.model_dump() == {"a": "a", "b": "b", "c": None}
+    assert m.model_dump(exclude_none=True) == {'a': 'a', 'b': 'b'}
+    assert m.model_dump() == {'a': 'a', 'b': 'b', 'c': None}
 
 
 def test_str_method_inheritance():
@@ -1732,8 +1732,8 @@ def test_str_method_inheritance():
     class Bar(Foo):
         z: bool = False
 
-    assert str(Foo()) == "7"
-    assert str(Bar()) == "7"
+    assert str(Foo()) == '7'
+    assert str(Bar()) == '7'
 
 
 def test_repr_method_inheritance():
@@ -1749,8 +1749,8 @@ def test_repr_method_inheritance():
     class Bar(Foo):
         z: bool = False
 
-    assert repr(Foo()) == "7"
-    assert repr(Bar()) == "7"
+    assert repr(Foo()) == '7'
+    assert repr(Bar()) == '7'
 
 
 def test_optional_validator():
@@ -1759,21 +1759,21 @@ def test_optional_validator():
     class Model(BaseModel):
         something: Optional[str]
 
-        @field_validator("something")
+        @field_validator('something')
         @classmethod
         def check_something(cls, v):
             val_calls.append(v)
             return v
 
     with pytest.raises(ValidationError) as exc_info:
-        assert Model().model_dump() == {"something": None}
+        assert Model().model_dump() == {'something': None}
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {}, "loc": ("something",), "msg": "Field required", "type": "missing"}
+        {'input': {}, 'loc': ('something',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
-    assert Model(something=None).model_dump() == {"something": None}
-    assert Model(something="hello").model_dump() == {"something": "hello"}
-    assert val_calls == [None, "hello"]
+    assert Model(something=None).model_dump() == {'something': None}
+    assert Model(something='hello').model_dump() == {'something': 'hello'}
+    assert val_calls == [None, 'hello']
 
 
 def test_required_optional():
@@ -1784,31 +1784,31 @@ def test_required_optional():
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {}, "loc": ("nullable1",), "msg": "Field required", "type": "missing"},
-        {"input": {}, "loc": ("nullable2",), "msg": "Field required", "type": "missing"},
+        {'input': {}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable1=1)
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {"nullable1": 1}, "loc": ("nullable2",), "msg": "Field required", "type": "missing"}
+        {'input': {'nullable1': 1}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable2=2)
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {"nullable2": 2}, "loc": ("nullable1",), "msg": "Field required", "type": "missing"}
+        {'input': {'nullable2': 2}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'}
     ]
-    assert Model(nullable1=None, nullable2=None).model_dump() == {"nullable1": None, "nullable2": None}
-    assert Model(nullable1=1, nullable2=2).model_dump() == {"nullable1": 1, "nullable2": 2}
+    assert Model(nullable1=None, nullable2=None).model_dump() == {'nullable1': None, 'nullable2': None}
+    assert Model(nullable1=1, nullable2=2).model_dump() == {'nullable1': 1, 'nullable2': 2}
     with pytest.raises(ValidationError) as exc_info:
-        Model(nullable1="some text")
+        Model(nullable1='some text')
     assert exc_info.value.errors(include_url=False) == [
         {
-            "input": "some text",
-            "loc": ("nullable1",),
-            "msg": "Input should be a valid integer, unable to parse string as an " "integer",
-            "type": "int_parsing",
+            'input': 'some text',
+            'loc': ('nullable1',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
         },
-        {"input": {"nullable1": "some text"}, "loc": ("nullable2",), "msg": "Field required", "type": "missing"},
+        {'input': {'nullable1': 'some text'}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
     ]
 
 
@@ -1824,67 +1824,67 @@ def test_required_any():
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {}, "loc": ("optional1",), "msg": "Field required", "type": "missing"},
-        {"input": {}, "loc": ("nullable1",), "msg": "Field required", "type": "missing"},
-        {"input": {}, "loc": ("nullable2",), "msg": "Field required", "type": "missing"},
-        {"input": {}, "loc": ("nullable3",), "msg": "Field required", "type": "missing"},
+        {'input': {}, 'loc': ('optional1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('nullable3',), 'msg': 'Field required', 'type': 'missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
-        Model(nullable1="a")
+        Model(nullable1='a')
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {"nullable1": "a"}, "loc": ("optional1",), "msg": "Field required", "type": "missing"},
-        {"input": {"nullable1": "a"}, "loc": ("nullable2",), "msg": "Field required", "type": "missing"},
-        {"input": {"nullable1": "a"}, "loc": ("nullable3",), "msg": "Field required", "type": "missing"},
+        {'input': {'nullable1': 'a'}, 'loc': ('optional1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'nullable1': 'a'}, 'loc': ('nullable2',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'nullable1': 'a'}, 'loc': ('nullable3',), 'msg': 'Field required', 'type': 'missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(nullable2=False)
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {"nullable2": False}, "loc": ("optional1",), "msg": "Field required", "type": "missing"},
-        {"input": {"nullable2": False}, "loc": ("nullable1",), "msg": "Field required", "type": "missing"},
-        {"input": {"nullable2": False}, "loc": ("nullable3",), "msg": "Field required", "type": "missing"},
+        {'input': {'nullable2': False}, 'loc': ('optional1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'nullable2': False}, 'loc': ('nullable1',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'nullable2': False}, 'loc': ('nullable3',), 'msg': 'Field required', 'type': 'missing'},
     ]
     with pytest.raises(ValidationError) as exc_info:
         assert Model(nullable1=None, nullable2=None).model_dump() == {
-            "optional1": None,
-            "optional2": None,
-            "nullable1": None,
-            "nullable2": None,
+            'optional1': None,
+            'optional2': None,
+            'nullable1': None,
+            'nullable2': None,
         }
     assert exc_info.value.errors(include_url=False) == [
         {
-            "input": {"nullable1": None, "nullable2": None},
-            "loc": ("optional1",),
-            "msg": "Field required",
-            "type": "missing",
+            'input': {'nullable1': None, 'nullable2': None},
+            'loc': ('optional1',),
+            'msg': 'Field required',
+            'type': 'missing',
         },
         {
-            "input": {"nullable1": None, "nullable2": None},
-            "loc": ("nullable3",),
-            "msg": "Field required",
-            "type": "missing",
+            'input': {'nullable1': None, 'nullable2': None},
+            'loc': ('nullable3',),
+            'msg': 'Field required',
+            'type': 'missing',
         },
     ]
-    assert Model(optional1=None, nullable1=1, nullable2="two", nullable3=None).model_dump() == {
-        "optional1": None,
-        "optional2": None,
-        "optional3": None,
-        "nullable1": 1,
-        "nullable2": "two",
-        "nullable3": None,
+    assert Model(optional1=None, nullable1=1, nullable2='two', nullable3=None).model_dump() == {
+        'optional1': None,
+        'optional2': None,
+        'optional3': None,
+        'nullable1': 1,
+        'nullable2': 'two',
+        'nullable3': None,
     }
-    assert Model(optional1="op1", optional2=False, nullable1=1, nullable2="two", nullable3="three").model_dump() == {
-        "optional1": "op1",
-        "optional2": False,
-        "optional3": None,
-        "nullable1": 1,
-        "nullable2": "two",
-        "nullable3": "three",
+    assert Model(optional1='op1', optional2=False, nullable1=1, nullable2='two', nullable3='three').model_dump() == {
+        'optional1': 'op1',
+        'optional2': False,
+        'optional3': None,
+        'nullable1': 1,
+        'nullable2': 'two',
+        'nullable3': 'three',
     }
 
 
 def test_custom_generic_validators():
-    T1 = TypeVar("T1")
-    T2 = TypeVar("T2")
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
 
     class MyGen(Generic[T1, T2]):
         def __init__(self, t1: T1, t2: T2):
@@ -1903,9 +1903,9 @@ def test_custom_generic_validators():
             t2_f = TypeAdapter(args[1]).validate_python
 
             def convert_to_init_error(e: ErrorDetails, loc: str) -> InitErrorDetails:
-                init_e = {"type": e["type"], "loc": e["loc"] + (loc,), "input": e["input"]}
-                if "ctx" in e:
-                    init_e["ctx"] = e["ctx"]
+                init_e = {'type': e['type'], 'loc': e['loc'] + (loc,), 'input': e['input']}
+                if 'ctx' in e:
+                    init_e['ctx'] = e['ctx']
                 return init_e
 
             def validate(v, _info):
@@ -1915,13 +1915,13 @@ def test_custom_generic_validators():
                     v.t1 = t1_f(v.t1)
                 except ValidationError as exc:
                     raise ValidationError.from_exception_data(
-                        exc.title, [convert_to_init_error(e, "t1") for e in exc.errors()]
+                        exc.title, [convert_to_init_error(e, 't1') for e in exc.errors()]
                     ) from exc
                 try:
                     v.t2 = t2_f(v.t2)
                 except ValidationError as exc:
                     raise ValidationError.from_exception_data(
-                        exc.title, [convert_to_init_error(e, "t2") for e in exc.errors()]
+                        exc.title, [convert_to_init_error(e, 't2') for e in exc.errors()]
                     ) from exc
                 return v
 
@@ -1935,46 +1935,46 @@ def test_custom_generic_validators():
         model_config = dict(arbitrary_types_allowed=True)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a="foo", gen="invalid", gen2="invalid")
+        Model(a='foo', gen='invalid', gen2='invalid')
     assert exc_info.value.errors(include_url=False) == [
         {
-            "ctx": {"class": "test_custom_generic_validators.<locals>.MyGen"},
-            "input": "invalid",
-            "loc": ("gen",),
-            "msg": "Input should be an instance of test_custom_generic_validators.<locals>.MyGen",
-            "type": "is_instance_of",
+            'ctx': {'class': 'test_custom_generic_validators.<locals>.MyGen'},
+            'input': 'invalid',
+            'loc': ('gen',),
+            'msg': 'Input should be an instance of test_custom_generic_validators.<locals>.MyGen',
+            'type': 'is_instance_of',
         },
         {
-            "ctx": {"class": "test_custom_generic_validators.<locals>.MyGen"},
-            "input": "invalid",
-            "loc": ("gen2",),
-            "msg": "Input should be an instance of test_custom_generic_validators.<locals>.MyGen",
-            "type": "is_instance_of",
+            'ctx': {'class': 'test_custom_generic_validators.<locals>.MyGen'},
+            'input': 'invalid',
+            'loc': ('gen2',),
+            'msg': 'Input should be an instance of test_custom_generic_validators.<locals>.MyGen',
+            'type': 'is_instance_of',
         },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a="foo", gen=MyGen(t1="bar", t2="baz"), gen2=MyGen(t1="bar", t2="baz"))
+        Model(a='foo', gen=MyGen(t1='bar', t2='baz'), gen2=MyGen(t1='bar', t2='baz'))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "input": "baz",
-            "loc": ("gen", "t2"),
-            "msg": "Input should be a valid boolean, unable to interpret input",
-            "type": "bool_parsing",
+            'input': 'baz',
+            'loc': ('gen', 't2'),
+            'msg': 'Input should be a valid boolean, unable to interpret input',
+            'type': 'bool_parsing',
         }
     ]
 
-    m = Model(a="foo", gen=MyGen(t1="bar", t2=True), gen2=MyGen(t1=1, t2=2))
-    assert m.a == "foo"
-    assert m.gen.t1 == "bar"
+    m = Model(a='foo', gen=MyGen(t1='bar', t2=True), gen2=MyGen(t1=1, t2=2))
+    assert m.a == 'foo'
+    assert m.gen.t1 == 'bar'
     assert m.gen.t2 is True
     assert m.gen2.t1 == 1
     assert m.gen2.t2 == 2
 
 
 def test_custom_generic_arbitrary_allowed():
-    T1 = TypeVar("T1")
-    T2 = TypeVar("T2")
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
 
     class MyGen(Generic[T1, T2]):
         def __init__(self, t1: T1, t2: T2):
@@ -1988,32 +1988,32 @@ def test_custom_generic_arbitrary_allowed():
         model_config = dict(arbitrary_types_allowed=True)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(a="foo", gen="invalid")
+        Model(a='foo', gen='invalid')
     assert exc_info.value.errors(include_url=False) == [
         {
-            "ctx": {"class": "test_custom_generic_arbitrary_allowed.<locals>.MyGen"},
-            "input": "invalid",
-            "loc": ("gen",),
-            "msg": "Input should be an instance of " "test_custom_generic_arbitrary_allowed.<locals>.MyGen",
-            "type": "is_instance_of",
+            'ctx': {'class': 'test_custom_generic_arbitrary_allowed.<locals>.MyGen'},
+            'input': 'invalid',
+            'loc': ('gen',),
+            'msg': 'Input should be an instance of ' 'test_custom_generic_arbitrary_allowed.<locals>.MyGen',
+            'type': 'is_instance_of',
         }
     ]
 
     # No validation, no exception
-    m = Model(a="foo", gen=MyGen(t1="bar", t2="baz"))
-    assert m.a == "foo"
-    assert m.gen.t1 == "bar"
-    assert m.gen.t2 == "baz"
+    m = Model(a='foo', gen=MyGen(t1='bar', t2='baz'))
+    assert m.a == 'foo'
+    assert m.gen.t1 == 'bar'
+    assert m.gen.t2 == 'baz'
 
-    m = Model(a="foo", gen=MyGen(t1="bar", t2=True))
-    assert m.a == "foo"
-    assert m.gen.t1 == "bar"
+    m = Model(a='foo', gen=MyGen(t1='bar', t2=True))
+    assert m.a == 'foo'
+    assert m.gen.t1 == 'bar'
     assert m.gen.t2 is True
 
 
 def test_custom_generic_disallowed():
-    T1 = TypeVar("T1")
-    T2 = TypeVar("T2")
+    T1 = TypeVar('T1')
+    T2 = TypeVar('T2')
 
     class MyGen(Generic[T1, T2]):
         def __init__(self, t1: T1, t2: T2):
@@ -2021,8 +2021,8 @@ def test_custom_generic_disallowed():
             self.t2 = t2
 
     match = (
-        r"Unable to generate pydantic-core schema for (.*)MyGen\[str, bool\](.*). "
-        r"Set `arbitrary_types_allowed=True` in the model_config to ignore this error"
+        r'Unable to generate pydantic-core schema for (.*)MyGen\[str, bool\](.*). '
+        r'Set `arbitrary_types_allowed=True` in the model_config to ignore this error'
     )
     with pytest.raises(TypeError, match=match):
 
@@ -2039,16 +2039,16 @@ def test_hashable_required():
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[])
     assert exc_info.value.errors(include_url=False) == [
-        {"input": [], "loc": ("v",), "msg": "Input should be hashable", "type": "is_hashable"}
+        {'input': [], 'loc': ('v',), 'msg': 'Input should be hashable', 'type': 'is_hashable'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model()
     assert exc_info.value.errors(include_url=False) == [
-        {"input": {}, "loc": ("v",), "msg": "Field required", "type": "missing"}
+        {'input': {}, 'loc': ('v',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
 
-@pytest.mark.parametrize("default", [1, None])
+@pytest.mark.parametrize('default', [1, None])
 def test_hashable_optional(default):
     class Model(BaseModel):
         v: Hashable = default
@@ -2068,7 +2068,7 @@ def test_hashable_serialization():
     assert Model(v=(1,)).model_dump_json() == '{"v":[1]}'
     m = Model(v=HashableButNotSerializable())
     with pytest.raises(
-        PydanticSerializationError, match="Unable to serialize unknown type:.*HashableButNotSerializable"
+        PydanticSerializationError, match='Unable to serialize unknown type:.*HashableButNotSerializable'
     ):
         m.model_dump_json()
 
@@ -2111,7 +2111,7 @@ def test_default_factory_called_once():
         MyBadModel()
     assert v == 2  # `factory` has been called to run validation
     assert exc_info.value.errors(include_url=False) == [
-        {"input": 2, "loc": ("id",), "msg": "Input should be a valid list", "type": "list_type"}
+        {'input': 2, 'loc': ('id',), 'msg': 'Input should be a valid list', 'type': 'list_type'}
     ]
 
 
@@ -2119,22 +2119,22 @@ def test_default_factory_validator_child():
     class Parent(BaseModel):
         foo: List[str] = Field(default_factory=list)
 
-        @field_validator("foo", mode="before")
+        @field_validator('foo', mode='before')
         @classmethod
         def mutate_foo(cls, v):
-            return [f"{x}-1" for x in v]
+            return [f'{x}-1' for x in v]
 
-    assert Parent(foo=["a", "b"]).foo == ["a-1", "b-1"]
+    assert Parent(foo=['a', 'b']).foo == ['a-1', 'b-1']
 
     class Child(Parent):
         pass
 
-    assert Child(foo=["a", "b"]).foo == ["a-1", "b-1"]
+    assert Child(foo=['a', 'b']).foo == ['a-1', 'b-1']
 
 
 def test_resolve_annotations_module_missing(tmp_path):
     # see https://github.com/pydantic/pydantic/issues/2363
-    file_path = tmp_path / "module_to_load.py"
+    file_path = tmp_path / 'module_to_load.py'
     # language=Python
     file_path.write_text(
         """
@@ -2145,21 +2145,21 @@ class User(BaseModel):
 """
     )
 
-    spec = importlib.util.spec_from_file_location("my_test_module", file_path)
+    spec = importlib.util.spec_from_file_location('my_test_module', file_path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    assert module.User(id=12).model_dump() == {"id": 12, "name": "Jane Doe"}
+    assert module.User(id=12).model_dump() == {'id': 12, 'name': 'Jane Doe'}
 
 
 def test_iter_coverage():
     class MyModel(BaseModel):
         x: int = 1
-        y: str = "a"
+        y: str = 'a'
 
     with pytest.warns(
-        PydanticDeprecatedSince20, match="The private method `_iter` will be removed and should no longer be used."
+        PydanticDeprecatedSince20, match='The private method `_iter` will be removed and should no longer be used.'
     ):
-        assert list(MyModel()._iter(by_alias=True)) == [("x", 1), ("y", "a")]
+        assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
 
 def test_frozen_config_and_field():
@@ -2167,40 +2167,40 @@ def test_frozen_config_and_field():
         model_config = ConfigDict(frozen=False, validate_assignment=True)
         a: str = Field(...)
 
-    assert Foo.model_fields["a"].metadata == []
+    assert Foo.model_fields['a'].metadata == []
 
-    f = Foo(a="x")
-    f.a = "y"
-    assert f.model_dump() == {"a": "y"}
+    f = Foo(a='x')
+    f.a = 'y'
+    assert f.model_dump() == {'a': 'y'}
 
     class Bar(BaseModel):
         model_config = ConfigDict(validate_assignment=True)
         a: str = Field(..., frozen=True)
         c: Annotated[str, Field(frozen=True)]
 
-    assert Bar.model_fields["a"].frozen
+    assert Bar.model_fields['a'].frozen
 
-    b = Bar(a="x", c="z")
+    b = Bar(a='x', c='z')
     with pytest.raises(ValidationError) as exc_info:
-        b.a = "y"
+        b.a = 'y'
     assert exc_info.value.errors(include_url=False) == [
-        {"input": "y", "loc": ("a",), "msg": "Field is frozen", "type": "frozen_field"}
+        {'input': 'y', 'loc': ('a',), 'msg': 'Field is frozen', 'type': 'frozen_field'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        b.c = "y"
+        b.c = 'y'
     assert exc_info.value.errors(include_url=False) == [
-        {"input": "y", "loc": ("c",), "msg": "Field is frozen", "type": "frozen_field"}
+        {'input': 'y', 'loc': ('c',), 'msg': 'Field is frozen', 'type': 'frozen_field'}
     ]
 
-    assert b.model_dump() == {"a": "x", "c": "z"}
+    assert b.model_dump() == {'a': 'x', 'c': 'z'}
 
 
 def test_arbitrary_types_allowed_custom_eq():
     class Foo:
         def __eq__(self, other):
             if other.__class__ is not Foo:
-                raise TypeError(f"Cannot interpret {other.__class__.__name__!r} as a valid type")
+                raise TypeError(f'Cannot interpret {other.__class__.__name__!r} as a valid type')
             return True
 
     class Model(BaseModel):
@@ -2219,7 +2219,7 @@ def test_bytes_subclass():
             self = bytes.__new__(cls, data)
             return self
 
-    m = MyModel(my_bytes=BytesSubclass(b"foobar"))
+    m = MyModel(my_bytes=BytesSubclass(b'foobar'))
     assert m.my_bytes.__class__ == BytesSubclass
 
 
@@ -2262,25 +2262,25 @@ def test_long_int():
     class Model(BaseModel):
         x: int
 
-    assert Model(x="1" * 4_300).x == int("1" * 4_300)
+    assert Model(x='1' * 4_300).x == int('1' * 4_300)
 
-    too_long = "1" * 4_301
+    too_long = '1' * 4_301
     with pytest.raises(ValidationError) as exc_info:
         Model(x=too_long)
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "int_parsing_size",
-            "loc": ("x",),
-            "msg": "Unable to parse input string as an integer, exceeded maximum size",
-            "input": too_long,
+            'type': 'int_parsing_size',
+            'loc': ('x',),
+            'msg': 'Unable to parse input string as an integer, exceeded maximum size',
+            'input': too_long,
         }
     ]
 
     # this used to hang indefinitely
     with pytest.raises(ValidationError):
-        Model(x="1" * (10**7))
+        Model(x='1' * (10**7))
 
 
 def test_parent_field_with_default():
@@ -2297,9 +2297,9 @@ def test_parent_field_with_default():
     assert c.c == 3
 
 
-@pytest.mark.skipif(sys.version_info < (3, 12), reason="error message different on older versions")
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='error message different on older versions')
 @pytest.mark.parametrize(
-    "bases",
+    'bases',
     [
         (BaseModel, ABC),
         (ABC, BaseModel),
@@ -2310,13 +2310,13 @@ def test_abstractmethod_missing_for_all_decorators(bases):
     class AbstractSquare(*bases):
         side: float
 
-        @field_validator("side")
+        @field_validator('side')
         @classmethod
         @abstractmethod
         def my_field_validator(cls, v):
             raise NotImplementedError
 
-        @model_validator(mode="wrap")
+        @model_validator(mode='wrap')
         @classmethod
         @abstractmethod
         def my_model_validator(cls, values, handler, info):
@@ -2332,18 +2332,18 @@ def test_abstractmethod_missing_for_all_decorators(bases):
 
         with pytest.warns(PydanticDeprecatedSince20):
 
-            @validator("side")
+            @validator('side')
             @classmethod
             @abstractmethod
             def my_validator(cls, value, **kwargs):
                 raise NotImplementedError
 
-        @model_serializer(mode="wrap")
+        @model_serializer(mode='wrap')
         @abstractmethod
         def my_model_serializer(self, handler, info):
             raise NotImplementedError
 
-        @field_serializer("side")
+        @field_serializer('side')
         @abstractmethod
         def my_serializer(self, v, _info):
             raise NotImplementedError
@@ -2373,27 +2373,27 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         Square(side=1.0)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="cannot use list.__class_getitem__ before 3.9")
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='cannot use list.__class_getitem__ before 3.9')
 def test_generic_wrapped_forwardref():
     class Operation(BaseModel):
-        callbacks: list["PathItem"]
+        callbacks: list['PathItem']
 
     class PathItem(BaseModel):
         pass
 
     Operation.model_rebuild()
 
-    Operation.model_validate({"callbacks": [PathItem()]})
+    Operation.model_validate({'callbacks': [PathItem()]})
     with pytest.raises(ValidationError) as exc_info:
-        Operation.model_validate({"callbacks": [1]})
+        Operation.model_validate({'callbacks': [1]})
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "model_type",
-            "loc": ("callbacks", 0),
-            "msg": "Input should be a valid dictionary or instance of PathItem",
-            "input": 1,
-            "ctx": {"class_name": "PathItem"},
+            'type': 'model_type',
+            'loc': ('callbacks', 0),
+            'msg': 'Input should be a valid dictionary or instance of PathItem',
+            'input': 1,
+            'ctx': {'class_name': 'PathItem'},
         }
     ]
 
@@ -2411,11 +2411,11 @@ def test_plain_basemodel_field():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "model_type",
-            "loc": ("x",),
-            "msg": "Input should be a valid dictionary or instance of BaseModel",
-            "input": 1,
-            "ctx": {"class_name": "BaseModel"},
+            'type': 'model_type',
+            'loc': ('x',),
+            'msg': 'Input should be a valid dictionary or instance of BaseModel',
+            'input': 1,
+            'ctx': {'class_name': 'BaseModel'},
         }
     ]
 
@@ -2432,21 +2432,21 @@ def test_invalid_forward_ref_model():
     else:
         error = TypeError
         kwargs = {
-            "match": r"Forward references must evaluate to types\."
-            r" Got FieldInfo\(annotation=NoneType, required=False\)\."
+            'match': r'Forward references must evaluate to types\.'
+            r' Got FieldInfo\(annotation=NoneType, required=False\)\.'
         }
     with pytest.raises(error, **kwargs):
 
         class M(BaseModel):
-            B: ForwardRef("B") = Field(default=None)
+            B: ForwardRef('B') = Field(default=None)
 
     # The solution:
     class A(BaseModel):
         B: ForwardRef('__types["B"]') = Field()  # F821
 
-    assert A.model_fields["B"].annotation == ForwardRef('__types["B"]')  # F821
+    assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # F821
     A.model_rebuild(raise_errors=False)
-    assert A.model_fields["B"].annotation == ForwardRef('__types["B"]')  # F821
+    assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # F821
 
     class B(BaseModel):
         pass
@@ -2455,8 +2455,8 @@ def test_invalid_forward_ref_model():
         pass
 
     assert not A.__pydantic_complete__
-    types = {"B": B}
-    A.model_rebuild(_types_namespace={"__types": types})
+    types = {'B': B}
+    A.model_rebuild(_types_namespace={'__types': types})
     assert A.__pydantic_complete__
 
     assert A(B=B()).B == B()
@@ -2465,45 +2465,45 @@ def test_invalid_forward_ref_model():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "model_type",
-            "loc": ("B",),
-            "msg": "Input should be a valid dictionary or instance of B",
-            "input": C(),
-            "ctx": {"class_name": "B"},
+            'type': 'model_type',
+            'loc': ('B',),
+            'msg': 'Input should be a valid dictionary or instance of B',
+            'input': C(),
+            'ctx': {'class_name': 'B'},
         }
     ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="cannot parametrize types before 3.9")
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='cannot parametrize types before 3.9')
 @pytest.mark.parametrize(
-    ("sequence_type", "input_data", "expected_error_type", "expected_error_msg", "expected_error_ctx"),
+    ('sequence_type', 'input_data', 'expected_error_type', 'expected_error_msg', 'expected_error_ctx'),
     [
-        pytest.param(List[str], "1bc", "list_type", "Input should be a valid list", None, id="list[str]"),
+        pytest.param(List[str], '1bc', 'list_type', 'Input should be a valid list', None, id='list[str]'),
         pytest.param(
             Sequence[str],
-            "1bc",
-            "sequence_str",
+            '1bc',
+            'sequence_str',
             "'str' instances are not allowed as a Sequence value",
-            {"type_name": "str"},
-            id="Sequence[str]",
+            {'type_name': 'str'},
+            id='Sequence[str]',
         ),
         pytest.param(
             Sequence[bytes],
-            b"1bc",
-            "sequence_str",
+            b'1bc',
+            'sequence_str',
             "'bytes' instances are not allowed as a Sequence value",
-            {"type_name": "bytes"},
-            id="Sequence[bytes]",
+            {'type_name': 'bytes'},
+            id='Sequence[bytes]',
         ),
     ],
 )
 def test_sequences_str(sequence_type, input_data, expected_error_type, expected_error_msg, expected_error_ctx):
     input_sequence = [input_data[:1], input_data[1:]]
     expected_error = {
-        "type": expected_error_type,
-        "input": input_data,
-        "loc": ("str_sequence",),
-        "msg": expected_error_msg,
+        'type': expected_error_type,
+        'input': input_data,
+        'loc': ('str_sequence',),
+        'msg': expected_error_msg,
     }
     if expected_error_ctx is not None:
         expected_error.update(ctx=expected_error_ctx)
@@ -2533,14 +2533,14 @@ def test_multiple_enums():
 
 
 @pytest.mark.parametrize(
-    ("literal_type", "other_type", "data", "json_value", "data_reversed", "json_value_reversed"),
+    ('literal_type', 'other_type', 'data', 'json_value', 'data_reversed', 'json_value_reversed'),
     [
-        (Literal[False], str, False, "false", False, "false"),
-        (Literal[True], str, True, "true", True, "true"),
-        (Literal[False], str, "abc", '"abc"', "abc", '"abc"'),
-        (Literal[False], int, False, "false", 0, "0"),
-        (Literal[True], int, True, "true", 1, "1"),
-        (Literal[False], int, 42, "42", 42, "42"),
+        (Literal[False], str, False, 'false', False, 'false'),
+        (Literal[True], str, True, 'true', True, 'true'),
+        (Literal[False], str, 'abc', '"abc"', 'abc', '"abc"'),
+        (Literal[False], int, False, 'false', 0, '0'),
+        (Literal[True], int, True, 'true', 1, '1'),
+        (Literal[False], int, 42, '42', 42, '42'),
     ],
 )
 def test_union_literal_with_other_type(literal_type, other_type, data, json_value, data_reversed, json_value_reversed):
@@ -2549,7 +2549,7 @@ def test_union_literal_with_other_type(literal_type, other_type, data, json_valu
         value_types_reversed: Union[other_type, literal_type]
 
     m = Model(value=data, value_types_reversed=data)
-    assert m.model_dump() == {"value": data, "value_types_reversed": data_reversed}
+    assert m.model_dump() == {'value': data, 'value_types_reversed': data_reversed}
     assert m.model_dump_json() == f'{{"value":{json_value},"value_types_reversed":{json_value_reversed}}}'
 
 
@@ -2559,7 +2559,7 @@ def test_type_union():
         b: Type[Union[Any, str]]
 
     m = Model(a=bytes, b=int)
-    assert m.model_dump() == {"a": bytes, "b": int}
+    assert m.model_dump() == {'a': bytes, 'b': int}
     assert m.a == bytes
 
 
@@ -2570,14 +2570,14 @@ def test_model_repr_before_validation():
         x: int
 
         def __init__(self, **kwargs):
-            log.append(f"before={self!r}")
+            log.append(f'before={self!r}')
             super().__init__(**kwargs)
-            log.append(f"after={self!r}")
+            log.append(f'after={self!r}')
 
-    m = MyModel(x="10")
+    m = MyModel(x='10')
     assert m.x == 10
     # insert_assert(log)
-    assert log == ["before=MyModel()", "after=MyModel(x=10)"]
+    assert log == ['before=MyModel()', 'after=MyModel(x=10)']
 
 
 def test_custom_exception_handler():
@@ -2609,7 +2609,7 @@ def test_custom_exception_handler():
             return False
 
     with CustomErrorCatcher():
-        data = {"age": "John Doe"}
+        data = {'age': 'John Doe'}
         MyModel(**data)
 
     assert len(traceback_exceptions) == 1
@@ -2634,16 +2634,16 @@ def test_recursive_walk_fails_on_double_diamond_composition():
         c: C
 
     # This is just to check that above model contraption doesn't fail
-    assert E(c=C(b=B(a_1=A(), a_2=A()))).model_dump() == {"c": {"b": {"a_1": {}, "a_2": {}}}}
+    assert E(c=C(b=B(a_1=A(), a_2=A()))).model_dump() == {'c': {'b': {'a_1': {}, 'a_2': {}}}}
 
 
 def test_recursive_root_models_in_discriminated_union():
     class Model1(BaseModel):
-        kind: Literal["1"] = "1"
-        two: Optional["Model2"]
+        kind: Literal['1'] = '1'
+        two: Optional['Model2']
 
     class Model2(BaseModel):
-        kind: Literal["2"] = "2"
+        kind: Literal['2'] = '2'
         one: Optional[Model1]
 
     class Root1(RootModel[Model1]):
@@ -2659,48 +2659,48 @@ def test_recursive_root_models_in_discriminated_union():
             return self.root.kind
 
     class Outer(BaseModel):
-        a: Annotated[Union[Root1, Root2], Field(discriminator="kind")]
-        b: Annotated[Union[Root1, Root2], Field(discriminator="kind")]
+        a: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
+        b: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
 
-    validated = Outer.model_validate({"a": {"kind": "1", "two": None}, "b": {"kind": "2", "one": None}})
+    validated = Outer.model_validate({'a': {'kind': '1', 'two': None}, 'b': {'kind': '2', 'one': None}})
     assert validated == Outer(a=Root1(root=Model1(two=None)), b=Root2(root=Model2(one=None)))
 
     assert Outer.model_json_schema() == {
-        "$defs": {
-            "Model1": {
-                "properties": {
-                    "kind": {"const": "1", "default": "1", "title": "Kind"},
-                    "two": {"anyOf": [{"$ref": "#/$defs/Model2"}, {"type": "null"}]},
+        '$defs': {
+            'Model1': {
+                'properties': {
+                    'kind': {'const': '1', 'default': '1', 'title': 'Kind'},
+                    'two': {'anyOf': [{'$ref': '#/$defs/Model2'}, {'type': 'null'}]},
                 },
-                "required": ["two"],
-                "title": "Model1",
-                "type": "object",
+                'required': ['two'],
+                'title': 'Model1',
+                'type': 'object',
             },
-            "Model2": {
-                "properties": {
-                    "kind": {"const": "2", "default": "2", "title": "Kind"},
-                    "one": {"anyOf": [{"$ref": "#/$defs/Model1"}, {"type": "null"}]},
+            'Model2': {
+                'properties': {
+                    'kind': {'const': '2', 'default': '2', 'title': 'Kind'},
+                    'one': {'anyOf': [{'$ref': '#/$defs/Model1'}, {'type': 'null'}]},
                 },
-                "required": ["one"],
-                "title": "Model2",
-                "type": "object",
+                'required': ['one'],
+                'title': 'Model2',
+                'type': 'object',
             },
-            "Root1": {"allOf": [{"$ref": "#/$defs/Model1"}], "title": "Root1"},
-            "Root2": {"allOf": [{"$ref": "#/$defs/Model2"}], "title": "Root2"},
+            'Root1': {'allOf': [{'$ref': '#/$defs/Model1'}], 'title': 'Root1'},
+            'Root2': {'allOf': [{'$ref': '#/$defs/Model2'}], 'title': 'Root2'},
         },
-        "properties": {
-            "a": {
-                "discriminator": {"mapping": {"1": "#/$defs/Root1", "2": "#/$defs/Root2"}, "propertyName": "kind"},
-                "oneOf": [{"$ref": "#/$defs/Root1"}, {"$ref": "#/$defs/Root2"}],
-                "title": "A",
+        'properties': {
+            'a': {
+                'discriminator': {'mapping': {'1': '#/$defs/Root1', '2': '#/$defs/Root2'}, 'propertyName': 'kind'},
+                'oneOf': [{'$ref': '#/$defs/Root1'}, {'$ref': '#/$defs/Root2'}],
+                'title': 'A',
             },
-            "b": {
-                "discriminator": {"mapping": {"1": "#/$defs/Root1", "2": "#/$defs/Root2"}, "propertyName": "kind"},
-                "oneOf": [{"$ref": "#/$defs/Root1"}, {"$ref": "#/$defs/Root2"}],
-                "title": "B",
+            'b': {
+                'discriminator': {'mapping': {'1': '#/$defs/Root1', '2': '#/$defs/Root2'}, 'propertyName': 'kind'},
+                'oneOf': [{'$ref': '#/$defs/Root1'}, {'$ref': '#/$defs/Root2'}],
+                'title': 'B',
             },
         },
-        "required": ["a", "b"],
-        "title": "Outer",
-        "type": "object",
+        'required': ['a', 'b'],
+        'title': 'Outer',
+        'type': 'object',
     }

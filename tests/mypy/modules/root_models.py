@@ -14,9 +14,9 @@ class Pets3(RootModel):
     root: List[str]
 
 
-pets1 = Pets1(["dog", "cat"])
-pets2 = Pets2(["dog", "cat"])
-pets3 = Pets3(["dog", "cat"])
+pets1 = Pets1(['dog', 'cat'])
+pets2 = Pets2(['dog', 'cat'])
+pets3 = Pets3(['dog', 'cat'])
 
 
 class Pets4(RootModel[List[str]]):

@@ -12,17 +12,17 @@ def test_inspect_validator_error_wrap():
         pass
 
     with pytest.raises(PydanticUserError) as e:
-        inspect_validator(validator1, mode="wrap")
+        inspect_validator(validator1, mode='wrap')
 
-    assert e.value.code == "validator-signature"
+    assert e.value.code == 'validator-signature'
 
     with pytest.raises(PydanticUserError) as e:
-        inspect_validator(validator4, mode="wrap")
+        inspect_validator(validator4, mode='wrap')
 
-    assert e.value.code == "validator-signature"
+    assert e.value.code == 'validator-signature'
 
 
-@pytest.mark.parametrize("mode", ["before", "after", "plain"])
+@pytest.mark.parametrize('mode', ['before', 'after', 'plain'])
 def test_inspect_validator_error(mode):
     def validator():
         pass
@@ -33,15 +33,15 @@ def test_inspect_validator_error(mode):
     with pytest.raises(PydanticUserError) as e:
         inspect_validator(validator, mode=mode)
 
-    assert e.value.code == "validator-signature"
+    assert e.value.code == 'validator-signature'
 
     with pytest.raises(PydanticUserError) as e:
         inspect_validator(validator3, mode=mode)
 
-    assert e.value.code == "validator-signature"
+    assert e.value.code == 'validator-signature'
 
 
-@pytest.mark.parametrize("mode", ["plain", "wrap"])
+@pytest.mark.parametrize('mode', ['plain', 'wrap'])
 def test_inspect_annotated_serializer(mode):
     # TODO: add more erroneous cases
     def serializer():
@@ -50,4 +50,4 @@ def test_inspect_annotated_serializer(mode):
     with pytest.raises(PydanticUserError) as e:
         inspect_annotated_serializer(serializer, mode=mode)
 
-    assert e.value.code == "field-serializer-signature"
+    assert e.value.code == 'field-serializer-signature'

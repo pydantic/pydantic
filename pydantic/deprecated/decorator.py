@@ -16,38 +16,38 @@ if not TYPE_CHECKING:
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
 
-__all__ = ("validate_arguments",)
+__all__ = ('validate_arguments',)
 
 if TYPE_CHECKING:
     AnyCallable = Callable[..., Any]
 
-    AnyCallableT = TypeVar("AnyCallableT", bound=AnyCallable)
+    AnyCallableT = TypeVar('AnyCallableT', bound=AnyCallable)
     ConfigType = Union[None, Type[Any], Dict[str, Any]]
 
 
 @overload
 @deprecated(
-    "The `validate_arguments` method is deprecated; use `validate_call` instead.", category=PydanticDeprecatedSince20
+    'The `validate_arguments` method is deprecated; use `validate_call` instead.', category=PydanticDeprecatedSince20
 )
-def validate_arguments(func: None = None, *, config: "ConfigType" = None) -> Callable[["AnyCallableT"], "AnyCallableT"]:
+def validate_arguments(func: None = None, *, config: 'ConfigType' = None) -> Callable[['AnyCallableT'], 'AnyCallableT']:
     ...
 
 
 @overload
 @deprecated(
-    "The `validate_arguments` method is deprecated; use `validate_call` instead.", category=PydanticDeprecatedSince20
+    'The `validate_arguments` method is deprecated; use `validate_call` instead.', category=PydanticDeprecatedSince20
 )
-def validate_arguments(func: "AnyCallableT") -> "AnyCallableT":
+def validate_arguments(func: 'AnyCallableT') -> 'AnyCallableT':
     ...
 
 
-def validate_arguments(func: Optional["AnyCallableT"] = None, *, config: "ConfigType" = None) -> Any:
+def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'ConfigType' = None) -> Any:
     """Decorator to validate the arguments passed to a function."""
     warnings.warn(
-        "The `validate_arguments` method is deprecated; use `validate_call` instead.", DeprecationWarning, stacklevel=2
+        'The `validate_arguments` method is deprecated; use `validate_call` instead.', DeprecationWarning, stacklevel=2
     )
 
-    def validate(_func: "AnyCallable") -> "AnyCallable":
+    def validate(_func: 'AnyCallable') -> 'AnyCallable':
         vd = ValidatedFunction(_func, config)
 
         @wraps(_func)
@@ -66,14 +66,14 @@ def validate_arguments(func: Optional["AnyCallableT"] = None, *, config: "Config
         return validate
 
 
-ALT_V_ARGS = "v__args"
-ALT_V_KWARGS = "v__kwargs"
-V_POSITIONAL_ONLY_NAME = "v__positional_only"
-V_DUPLICATE_KWARGS = "v__duplicate_kwargs"
+ALT_V_ARGS = 'v__args'
+ALT_V_KWARGS = 'v__kwargs'
+V_POSITIONAL_ONLY_NAME = 'v__positional_only'
+V_DUPLICATE_KWARGS = 'v__duplicate_kwargs'
 
 
 class ValidatedFunction:
-    def __init__(self, function: "AnyCallable", config: "ConfigType"):
+    def __init__(self, function: 'AnyCallable', config: 'ConfigType'):
         from inspect import Parameter, signature
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
@@ -88,8 +88,8 @@ class ValidatedFunction:
         self.raw_function = function
         self.arg_mapping: Dict[int, str] = {}
         self.positional_only_args: set[str] = set()
-        self.v_args_name = "args"
-        self.v_kwargs_name = "kwargs"
+        self.v_args_name = 'args'
+        self.v_kwargs_name = 'kwargs'
 
         type_hints = _typing_extra.get_type_hints(function, include_extras=True)
         takes_args = False
@@ -221,7 +221,7 @@ class ValidatedFunction:
         else:
             return self.raw_function(**d, **var_kwargs)
 
-    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: "ConfigType") -> None:
+    def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
 
         config_wrapper = _config.ConfigWrapper(config)
@@ -229,11 +229,11 @@ class ValidatedFunction:
         if config_wrapper.alias_generator:
             raise PydanticUserError(
                 'Setting the "alias_generator" property on custom Config for '
-                "@validate_arguments is not yet supported, please remove.",
+                '@validate_arguments is not yet supported, please remove.',
                 code=None,
             )
         if config_wrapper.extra is None:
-            config_wrapper.config_dict["extra"] = "forbid"
+            config_wrapper.config_dict['extra'] = 'forbid'
 
         class DecoratorBaseModel(BaseModel):
             @field_validator(self.v_args_name, check_fields=False)
@@ -242,7 +242,7 @@ class ValidatedFunction:
                 if takes_args or v is None:
                     return v
 
-                raise TypeError(f"{pos_args} positional arguments expected but {pos_args + len(v)} given")
+                raise TypeError(f'{pos_args} positional arguments expected but {pos_args + len(v)} given')
 
             @field_validator(self.v_kwargs_name, check_fields=False)
             @classmethod
@@ -250,9 +250,9 @@ class ValidatedFunction:
                 if takes_kwargs or v is None:
                     return v
 
-                plural = "" if len(v) == 1 else "s"
-                keys = ", ".join(map(repr, v.keys()))
-                raise TypeError(f"unexpected keyword argument{plural}: {keys}")
+                plural = '' if len(v) == 1 else 's'
+                keys = ', '.join(map(repr, v.keys()))
+                raise TypeError(f'unexpected keyword argument{plural}: {keys}')
 
             @field_validator(V_POSITIONAL_ONLY_NAME, check_fields=False)
             @classmethod
@@ -260,9 +260,9 @@ class ValidatedFunction:
                 if v is None:
                     return
 
-                plural = "" if len(v) == 1 else "s"
-                keys = ", ".join(map(repr, v))
-                raise TypeError(f"positional-only argument{plural} passed as keyword argument{plural}: {keys}")
+                plural = '' if len(v) == 1 else 's'
+                keys = ', '.join(map(repr, v))
+                raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
 
             @field_validator(V_DUPLICATE_KWARGS, check_fields=False)
             @classmethod
@@ -270,9 +270,9 @@ class ValidatedFunction:
                 if v is None:
                     return
 
-                plural = "" if len(v) == 1 else "s"
-                keys = ", ".join(map(repr, v))
-                raise TypeError(f"multiple values for argument{plural}: {keys}")
+                plural = '' if len(v) == 1 else 's'
+                keys = ', '.join(map(repr, v))
+                raise TypeError(f'multiple values for argument{plural}: {keys}')
 
             model_config = config_wrapper.config_dict
 

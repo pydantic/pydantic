@@ -10,10 +10,10 @@ from ._migration import getattr_migration
 if TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema as _GenerateSchema
 
-__all__ = ("ConfigDict",)
+__all__ = ('ConfigDict',)
 
 
-JsonValue: TypeAlias = Union[int, float, str, bool, None, List["JsonValue"], "JsonDict"]
+JsonValue: TypeAlias = Union[int, float, str, bool, None, List['JsonValue'], 'JsonDict']
 JsonDict: TypeAlias = Dict[str, JsonValue]
 
 JsonEncoder = Callable[[Any], Any]
@@ -23,7 +23,7 @@ JsonSchemaExtraCallable: TypeAlias = Union[
     Callable[[JsonDict, Type[Any]], None],
 ]
 
-ExtraValues = Literal["allow", "ignore", "forbid"]
+ExtraValues = Literal['allow', 'ignore', 'forbid']
 
 
 class ConfigDict(TypedDict, total=False):
@@ -395,7 +395,7 @@ class ConfigDict(TypedDict, total=False):
     strict and lax modes.
     """
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
-    revalidate_instances: Literal["always", "never", "subclass-instances"]
+    revalidate_instances: Literal['always', 'never', 'subclass-instances']
     """
     When and how to revalidate models and dataclasses during validation. Accepts the string
     values of `'never'`, `'always'` and `'subclass-instances'`. Defaults to `'never'`.
@@ -522,7 +522,7 @@ class ConfigDict(TypedDict, total=False):
     3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
     """
 
-    ser_json_timedelta: Literal["iso8601", "float"]
+    ser_json_timedelta: Literal['iso8601', 'float']
     """
     The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
     `'float'`. Defaults to `'iso8601'`.
@@ -531,7 +531,7 @@ class ConfigDict(TypedDict, total=False):
     - `'float'` will serialize timedeltas to the total number of seconds.
     """
 
-    ser_json_bytes: Literal["utf8", "base64"]
+    ser_json_bytes: Literal['utf8', 'base64']
     """
     The encoding of JSON serialized bytes. Accepts the string values of `'utf8'` and `'base64'`.
     Defaults to `'utf8'`.
@@ -731,7 +731,7 @@ class ConfigDict(TypedDict, total=False):
     ```
     """
 
-    json_schema_mode_override: Literal["validation", "serialization", None]
+    json_schema_mode_override: Literal['validation', 'serialization', None]
     """
     If not `None`, the specified mode will be used to generate the JSON schema regardless of what `mode` was passed to
     the function call. Defaults to `None`.
@@ -824,7 +824,7 @@ class ConfigDict(TypedDict, total=False):
     ```
     """
 
-    regex_engine: Literal["rust-regex", "python-re"]
+    regex_engine: Literal['rust-regex', 'python-re']
     """
     The regex engine to used for pattern validation
     Defaults to `'rust-regex'`.
