@@ -25,7 +25,7 @@ rebuild-lockfiles: .pdm
 
 .PHONY: format  ## Auto-format python source files
 format: .pdm
-	pdm run ruff --fix $(sources)
+	pdm run ruff format $(sources)
 
 .PHONY: lint  ## Lint python source files
 lint: .pdm
