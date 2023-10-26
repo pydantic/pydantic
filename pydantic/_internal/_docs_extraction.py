@@ -4,7 +4,6 @@ from __future__ import annotations
 import ast
 import inspect
 import itertools
-import re
 import textwrap
 from typing import Any
 
@@ -34,7 +33,18 @@ class DocstringVisitor(ast.NodeVisitor):
             self.target = None
 
 
-def _extract_source_from_frame(cls_name: str) -> list[str] | None:
+def _dedent_source_lines(source: list[str]) -> str:
+    # Required for nested class definitions, e.g. in a function block
+    dedent_source = textwrap.dedent(''.join(source))
+    if not dedent_source.startswith('class'):
+        # We are in the case where there's a dedented (usually multiline) string
+        # at a lower indentation level than the class itself. We wrap our class
+        # in a function as a workaround.
+        dedent_source = f'def dedent_workaround():\n{dedent_source}'
+    return dedent_source
+
+
+def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
     frame = inspect.currentframe()
 
     while frame:
@@ -46,44 +56,61 @@ def _extract_source_from_frame(cls_name: str) -> list[str] | None:
             # we don't want to error here.
             pass
         else:
-            if isinstance(lnum, int) and len(lines) >= lnum:
+            if inspect.getmodule(frame) is inspect.getmodule(cls) and isinstance(lnum, int):
                 block_lines = inspect.getblock(lines[lnum - 1 :])
-                # Drop potential decorators and empty lines between them and the class def
-                filtered_lines = list(
-                    itertools.dropwhile(lambda line: line.strip().startswith('@') or line.strip() == '', block_lines)
-                )
-                if re.match(fr'class\s+{cls_name}', filtered_lines[0].strip()):
-                    return filtered_lines
+                dedent_source = _dedent_source_lines(block_lines)
+                try:
+                    block_tree = ast.parse(dedent_source)
+                except Exception:
+                    pass
+                else:
+                    # Because lnum can point to potential decorators before the class definition,
+                    # we use ast to parse the block source:
+                    selected_nodes = list(itertools.islice(ast.walk(block_tree), 4))
+                    cls_is_second_node = cls_is_third_node = False
+                    if len(selected_nodes) >= 2:
+                        # If the second element (the first one being `ast.Module`) is `ast.ClassDef` matching our class:
+                        cls_is_second_node = (
+                            isinstance(selected_nodes[1], ast.ClassDef) and selected_nodes[1].name == cls.__name__
+                        )
+                    if len(selected_nodes) >= 4:
+                        # Or if `_dedent_source_lines` wrapped the class around the workaround function
+                        # second node is `FunctionNode`, third node is `ast.arguments`, fourth node is our class:
+                        cls_is_third_node = (
+                            isinstance(selected_nodes[1], ast.FunctionDef)
+                            and selected_nodes[1].name == 'dedent_workaround'
+                            and isinstance(selected_nodes[3], ast.ClassDef)
+                            and selected_nodes[3].name == cls.__name__
+                        )
+                    if cls_is_second_node or cls_is_third_node:
+                        return block_lines
         frame = frame.f_back
 
 
-def extract_docstrings_from_cls(cls: type[Any]) -> dict[str, str]:
+def extract_docstrings_from_cls(cls: type[Any], use_inspect: bool = False) -> dict[str, str]:
     """Map model attributes and their corresponding docstring.
 
     Args:
         cls: The class of the Pydantic model to inspect.
+        use_inspect: Whether to skip usage of frames to find the object and use
+            the `inspect` module instead.
 
     Returns:
         A mapping containing attribute names and their corresponding docstring.
     """
-    # We first try to fetch the source lines by walking back the frames:
-    source = _extract_source_from_frame(cls.__name__)
-
-    if not source:
-        # Fallback to how inspect fetch the source lines, might not work as expected
-        # if two classes have the same name in the same source file.
+    if use_inspect:
+        # Might not work as expected if two classes have the same name in the same source file.
         try:
             source, _ = inspect.getsourcelines(cls)
         except OSError:
             return {}
+    else:
+        source = _extract_source_from_frame(cls)
 
-    # Required for nested class definitions, e.g. in a function block
-    dedent_source = textwrap.dedent(''.join(source))
-    if not dedent_source.startswith('class'):
-        # We are in the case where there's a dedented (usually multiline) string
-        # at a lower indentation level than the class itself. We wrap our class
-        # in a function as a workaround.
-        dedent_source = f'def _():\n{dedent_source}'
+    if not source:
+        return {}
+
+    dedent_source = _dedent_source_lines(source)
 
     visitor = DocstringVisitor()
     visitor.visit(ast.parse(dedent_source))

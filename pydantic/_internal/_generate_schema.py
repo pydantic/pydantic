@@ -1136,7 +1136,7 @@ class GenerateSchema:
                 decorators = DecoratorInfos.build(typed_dict_cls)
 
                 if self._config_wrapper.use_attribute_docstrings:
-                    field_docstrings = extract_docstrings_from_cls(typed_dict_cls)
+                    field_docstrings = extract_docstrings_from_cls(typed_dict_cls, use_inspect=True)
                 else:
                     field_docstrings = None
 
