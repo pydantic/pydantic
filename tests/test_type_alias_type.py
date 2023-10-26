@@ -190,7 +190,6 @@ def test_type_alias_annotated_defs() -> None:
     }
 
 
-@pytest.mark.xfail(sys.version_info >= (3, 12), reason="TypeAliasType doesn't have __qualname__ yet")
 def test_recursive_generic_type_alias() -> None:
     t = TypeAdapter(RecursiveGenericAlias[int])
 

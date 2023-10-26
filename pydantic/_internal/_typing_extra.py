@@ -435,8 +435,12 @@ def origin_is_type_alias_type(origin: Any) -> TypeGuard[TypeAliasType]:
     return isinstance(origin, TypeAliasType)
 
 
-def is_generic_alias(type_: type[Any]) -> bool:
-    if sys.version_info >= (3, 10):
+if sys.version_info >= (3, 10):
+
+    def is_generic_alias(type_: type[Any]) -> bool:
         return isinstance(type_, (types.GenericAlias, typing._GenericAlias))  # type: ignore[attr-defined]
-    else:
+
+else:
+
+    def is_generic_alias(type_: type[Any]) -> bool:
         return isinstance(type_, typing._GenericAlias)  # type: ignore

@@ -1056,8 +1056,7 @@ class GenerateSchema:
             if maybe_schema is not None:
                 return maybe_schema
 
-            origin = get_origin(obj)
-            origin = origin or obj
+            origin = get_origin(obj) or obj
 
             namespace = (self._types_namespace or {}).copy()
             new_namespace = {**_typing_extra.get_cls_types_namespace(origin), **namespace}
