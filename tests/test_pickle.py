@@ -19,7 +19,7 @@ class IntWrapper:
     def get(self) -> int:
         return self._v
 
-    def __eq__(self, other: 'IntWrapper') -> bool:
+    def __eq__(self, other: "IntWrapper") -> bool:
         return self.get() == other.get()
 
 
@@ -39,25 +39,25 @@ def test_pickle_pydantic_weakref():
     d = {
         # Hold a hard reference to the underlying object for ref1 that will also
         # be pickled.
-        'hard_ref': obj1,
+        "hard_ref": obj1,
         # ref1's underlying object has a hard reference in the pickled object so it
         # should maintain the reference after deserialization.
-        'has_hard_ref': ref1,
+        "has_hard_ref": ref1,
         # ref2's underlying object has no hard reference in the pickled object so it
         # should be `None` after deserialization.
-        'has_no_hard_ref': ref2,
+        "has_no_hard_ref": ref2,
         # ref3's underlying object had already gone out of scope before pickling so it
         # should be `None` after deserialization.
-        'ref_out_of_scope': ref3,
+        "ref_out_of_scope": ref3,
     }
 
     loaded = pickle.loads(pickle.dumps(d))
     gc.collect()  # PyPy does not use reference counting and always relies on GC.
 
-    assert loaded['hard_ref'] == IntWrapper(1)
-    assert loaded['has_hard_ref']() is loaded['hard_ref']
-    assert loaded['has_no_hard_ref']() is None
-    assert loaded['ref_out_of_scope']() is None
+    assert loaded["hard_ref"] == IntWrapper(1)
+    assert loaded["has_hard_ref"]() is loaded["hard_ref"]
+    assert loaded["has_no_hard_ref"]() is None
+    assert loaded["ref_out_of_scope"]() is None
 
 
 class ImportableModel(BaseModel):
@@ -76,7 +76,7 @@ def model_factory() -> Type:
 
 
 @pytest.mark.parametrize(
-    'model_type,use_cloudpickle',
+    "model_type,use_cloudpickle",
     [
         # Importable model can be pickled with either pickle or cloudpickle.
         (ImportableModel, False),
@@ -91,8 +91,8 @@ def test_pickle_model(model_type: Type, use_cloudpickle: bool):
     else:
         model_type = pickle.loads(pickle.dumps(model_type))
 
-    m = model_type(foo='hi', val=1)
-    assert m.foo == 'hi'
+    m = model_type(foo="hi", val=1)
+    assert m.foo == "hi"
     assert m.bar is None
     assert m.val == 1.0
 
@@ -101,12 +101,12 @@ def test_pickle_model(model_type: Type, use_cloudpickle: bool):
     else:
         m = pickle.loads(pickle.dumps(m))
 
-    assert m.foo == 'hi'
+    assert m.foo == "hi"
     assert m.bar is None
     assert m.val == 1.0
 
     with pytest.raises(ValidationError):
-        model_type(foo='hi', val=-1.1)
+        model_type(foo="hi", val=-1.1)
 
 
 class ImportableNestedModel(BaseModel):
@@ -121,7 +121,7 @@ def nested_model_factory() -> Type:
 
 
 @pytest.mark.parametrize(
-    'model_type,use_cloudpickle',
+    "model_type,use_cloudpickle",
     [
         # Importable model can be pickled with either pickle or cloudpickle.
         (ImportableNestedModel, False),
@@ -136,8 +136,8 @@ def test_pickle_nested_model(model_type: Type, use_cloudpickle: bool):
     else:
         model_type = pickle.loads(pickle.dumps(model_type))
 
-    m = model_type(inner=ImportableModel(foo='hi', val=1))
-    assert m.inner.foo == 'hi'
+    m = model_type(inner=ImportableModel(foo="hi", val=1))
+    assert m.inner.foo == "hi"
     assert m.inner.bar is None
     assert m.inner.val == 1.0
 
@@ -146,7 +146,7 @@ def test_pickle_nested_model(model_type: Type, use_cloudpickle: bool):
     else:
         m = pickle.loads(pickle.dumps(m))
 
-    assert m.inner.foo == 'hi'
+    assert m.inner.foo == "hi"
     assert m.inner.bar is None
     assert m.inner.val == 1.0
 
@@ -193,7 +193,7 @@ def child_dataclass_factory() -> Type:
 
 
 @pytest.mark.parametrize(
-    'dataclass_type,use_cloudpickle',
+    "dataclass_type,use_cloudpickle",
     [
         # Importable Pydantic dataclass can be pickled with either pickle or cloudpickle.
         (ImportableDataclass, False),
@@ -215,7 +215,7 @@ def test_pickle_dataclass(dataclass_type: Type, use_cloudpickle: bool):
     else:
         dataclass_type = pickle.loads(pickle.dumps(dataclass_type))
 
-    d = dataclass_type('1', '2.5')
+    d = dataclass_type("1", "2.5")
     assert d.a == 1
     assert d.b == 2.5
 
@@ -252,7 +252,7 @@ def nested_dataclass_model_factory() -> Type:
 
 
 @pytest.mark.parametrize(
-    'model_type,use_cloudpickle',
+    "model_type,use_cloudpickle",
     [
         # Importable model can be pickled with either pickle or cloudpickle.
         (ImportableNestedDataclassModel, False),
@@ -281,18 +281,18 @@ def test_pickle_dataclass_nested_in_model(model_type: Type, use_cloudpickle: boo
 
 
 class ImportableModelWithConfig(BaseModel):
-    model_config = ConfigDict(title='MyTitle')
+    model_config = ConfigDict(title="MyTitle")
 
 
 def model_with_config_factory() -> Type:
     class NonImportableModelWithConfig(BaseModel):
-        model_config = ConfigDict(title='MyTitle')
+        model_config = ConfigDict(title="MyTitle")
 
     return NonImportableModelWithConfig
 
 
 @pytest.mark.parametrize(
-    'model_type,use_cloudpickle',
+    "model_type,use_cloudpickle",
     [
         (ImportableModelWithConfig, False),
         (ImportableModelWithConfig, True),
@@ -305,4 +305,4 @@ def test_pickle_model_with_config(model_type: Type, use_cloudpickle: bool):
     else:
         model_type = pickle.loads(pickle.dumps(model_type))
 
-    assert model_type.model_config['title'] == 'MyTitle'
+    assert model_type.model_config["title"] == "MyTitle"

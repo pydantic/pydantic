@@ -106,9 +106,9 @@ def complete_dataclass(
     Raises:
         PydanticUndefinedAnnotation: If `raise_error` is `True` and there is an undefined annotations.
     """
-    if hasattr(cls, '__post_init_post_parse__'):
+    if hasattr(cls, "__post_init_post_parse__"):
         warnings.warn(
-            'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
+            "Support for `__post_init_post_parse__` has been dropped, the method will not be called", DeprecationWarning
         )
 
     if types_namespace is None:
@@ -130,13 +130,13 @@ def complete_dataclass(
         s = __dataclass_self__
         s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
 
-    __init__.__qualname__ = f'{cls.__qualname__}.__init__'
+    __init__.__qualname__ = f"{cls.__qualname__}.__init__"
     sig = generate_dataclass_signature(cls)
     cls.__init__ = __init__  # type: ignore
     cls.__signature__ = sig  # type: ignore
     cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
-    get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
+    get_core_schema = getattr(cls, "__get_pydantic_core_schema__", None)
     try:
         if get_core_schema:
             schema = get_core_schema(
@@ -144,7 +144,7 @@ def complete_dataclass(
                 CallbackGetCoreSchemaHandler(
                     partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
                     gen_schema,
-                    ref_mode='unpack',
+                    ref_mode="unpack",
                 ),
             )
         else:
@@ -152,7 +152,7 @@ def complete_dataclass(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_dataclass_mocks(cls, cls.__name__, f'`{e.name}`')
+        set_dataclass_mocks(cls, cls.__name__, f"`{e.name}`")
         return False
 
     core_config = config_wrapper.core_config(cls)
@@ -160,12 +160,12 @@ def complete_dataclass(
     try:
         schema = gen_schema.clean_schema(schema)
     except gen_schema.CollectedInvalid:
-        set_dataclass_mocks(cls, cls.__name__, 'all referenced types')
+        set_dataclass_mocks(cls, cls.__name__, "all referenced types")
         return False
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
-    cls = typing.cast('type[PydanticDataclass]', cls)
+    cls = typing.cast("type[PydanticDataclass]", cls)
     # debug(schema)
 
     cls.__pydantic_core_schema__ = schema
@@ -208,7 +208,7 @@ def generate_dataclass_signature(cls: type[StandardDataclass]) -> Signature:
             # Replace the annotation if appropriate
             # inspect does "clever" things to show annotations as strings because we have
             # `from __future__ import annotations` in main, we don't want that
-            if annotation == 'Any':
+            if annotation == "Any":
                 annotation = Any
 
             # Replace the field name with the alias if present
@@ -267,6 +267,6 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     """
     return (
         dataclasses.is_dataclass(_cls)
-        and not hasattr(_cls, '__pydantic_validator__')
-        and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
+        and not hasattr(_cls, "__pydantic_validator__")
+        and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, "__annotations__", {})))
     )

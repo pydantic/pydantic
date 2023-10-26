@@ -18,8 +18,8 @@ from typing_extensions import TypeAlias, TypeGuard
 from . import _repr, _typing_extra
 
 if typing.TYPE_CHECKING:
-    MappingIntStrAny: TypeAlias = 'typing.Mapping[int, Any] | typing.Mapping[str, Any]'
-    AbstractSetIntStr: TypeAlias = 'typing.AbstractSet[int] | typing.AbstractSet[str]'
+    MappingIntStrAny: TypeAlias = "typing.Mapping[int, Any] | typing.Mapping[str, Any]"
+    AbstractSetIntStr: TypeAlias = "typing.AbstractSet[int] | typing.AbstractSet[str]"
     from ..main import BaseModel
 
 
@@ -96,7 +96,7 @@ def is_valid_identifier(identifier: str) -> bool:
     return identifier.isidentifier() and not keyword.iskeyword(identifier)
 
 
-KeyType = TypeVar('KeyType')
+KeyType = TypeVar("KeyType")
 
 
 def deep_update(mapping: dict[KeyType, Any], *updating_mappings: dict[KeyType, Any]) -> dict[KeyType, Any]:
@@ -114,7 +114,7 @@ def update_not_none(mapping: dict[Any, Any], **update: Any) -> None:
     mapping.update({k: v for k, v in update.items() if v is not None})
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def unique_list(
@@ -142,7 +142,7 @@ def unique_list(
 class ValueItems(_repr.Representation):
     """Class for more convenient calculation of excluded or included fields on values."""
 
-    __slots__ = ('_items', '_type')
+    __slots__ = ("_items", "_type")
 
     def __init__(self, value: Any, items: AbstractSetIntStr | MappingIntStrAny) -> None:
         items = self._coerce_items(items)
@@ -187,12 +187,12 @@ class ValueItems(_repr.Representation):
         for i, v in items.items():
             if not (isinstance(v, typing.Mapping) or isinstance(v, typing.AbstractSet) or self.is_true(v)):
                 raise TypeError(f'Unexpected type of exclude value for index "{i}" {v.__class__}')
-            if i == '__all__':
+            if i == "__all__":
                 all_items = self._coerce_value(v)
                 continue
             if not isinstance(i, int):
                 raise TypeError(
-                    'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
+                    "Excluding fields from a sequence of sub-models or dicts must be performed index-wise: "
                     'expected integer keys or keyword "__all__"'
                 )
             normalized_i = v_length + i if i < 0 else i
@@ -255,8 +255,8 @@ class ValueItems(_repr.Representation):
         elif isinstance(items, typing.AbstractSet):
             items = dict.fromkeys(items, ...)  # type: ignore
         else:
-            class_name = getattr(items, '__class__', '???')
-            raise TypeError(f'Unexpected type of exclude value {class_name}')
+            class_name = getattr(items, "__class__", "???")
+            raise TypeError(f"Unexpected type of exclude value {class_name}")
         return items  # type: ignore
 
     @classmethod
@@ -283,7 +283,7 @@ else:
     class ClassAttribute:
         """Hide class attribute from its instances."""
 
-        __slots__ = 'name', 'value'
+        __slots__ = "name", "value"
 
         def __init__(self, name: str, value: Any) -> None:
             self.name = name
@@ -292,10 +292,10 @@ else:
         def __get__(self, instance: Any, owner: type[Any]) -> None:
             if instance is None:
                 return self.value
-            raise AttributeError(f'{self.name!r} attribute of {owner.__name__!r} is class-only')
+            raise AttributeError(f"{self.name!r} attribute of {owner.__name__!r} is class-only")
 
 
-Obj = TypeVar('Obj')
+Obj = TypeVar("Obj")
 
 
 def smart_deepcopy(obj: Obj) -> Obj:

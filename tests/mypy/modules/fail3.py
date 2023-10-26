@@ -5,7 +5,7 @@ from typing import Generic, List, TypeVar
 
 from pydantic import BaseModel
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class Model(BaseModel):
@@ -18,4 +18,4 @@ class WrapperModel(BaseModel, Generic[T]):
 
 model_instance = Model(list_of_ints=[1])
 wrapper_instance = WrapperModel[Model](payload=model_instance)
-wrapper_instance.payload.list_of_ints.append('1')
+wrapper_instance.payload.list_of_ints.append("1")

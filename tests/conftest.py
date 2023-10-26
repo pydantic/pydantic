@@ -14,38 +14,38 @@ from _pytest.assertion.rewrite import AssertionRewritingHook
 
 
 def pytest_addoption(parser: pytest.Parser):
-    parser.addoption('--test-mypy', action='store_true', help='run mypy tests')
-    parser.addoption('--update-mypy', action='store_true', help='update mypy tests')
+    parser.addoption("--test-mypy", action="store_true", help="run mypy tests")
+    parser.addoption("--update-mypy", action="store_true", help="update mypy tests")
 
 
 def _extract_source_code_from_function(function):
     if function.__code__.co_argcount:
-        raise RuntimeError(f'function {function.__qualname__} cannot have any arguments')
+        raise RuntimeError(f"function {function.__qualname__} cannot have any arguments")
 
-    code_lines = ''
+    code_lines = ""
     body_started = False
-    for line in textwrap.dedent(inspect.getsource(function)).split('\n'):
-        if line.startswith('def '):
+    for line in textwrap.dedent(inspect.getsource(function)).split("\n"):
+        if line.startswith("def "):
             body_started = True
             continue
         elif body_started:
-            code_lines += f'{line}\n'
+            code_lines += f"{line}\n"
 
     return textwrap.dedent(code_lines)
 
 
 def _create_module_file(code, tmp_path, name):
-    name = f'{name}_{secrets.token_hex(5)}'
-    path = tmp_path / f'{name}.py'
+    name = f"{name}_{secrets.token_hex(5)}"
+    path = tmp_path / f"{name}.py"
     path.write_text(code)
     return name, str(path)
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def disable_error_urls():
     # Don't add URLs during docs tests when printing
     # Otherwise we'll get version numbers in the URLs that will update frequently
-    os.environ['PYDANTIC_ERRORS_OMIT_URL'] = 'true'
+    os.environ["PYDANTIC_ERRORS_OMIT_URL"] = "true"
 
 
 @pytest.fixture
@@ -87,9 +87,9 @@ class Err:
 
     def __repr__(self):
         if self.errors:
-            return f'Err({self.message!r}, errors={self.errors!r})'
+            return f"Err({self.message!r}, errors={self.errors!r})"
         else:
-            return f'Err({self.message!r})'
+            return f"Err({self.message!r})"
 
     def message_escaped(self):
         return re.escape(self.message)

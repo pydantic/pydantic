@@ -4,14 +4,14 @@ from pydantic import BaseModel, root_validator, validate_call
 
 
 @validate_call
-def foo(a: int, *, c: str = 'x') -> str:
+def foo(a: int, *, c: str = "x") -> str:
     return c * a
 
 
 # ok
-x: str = foo(1, c='hello')
+x: str = foo(1, c="hello")
 # fails
-foo('x')
+foo("x")
 foo(1, c=1)
 foo(1, 2)
 foo(1, d=2)
@@ -21,7 +21,7 @@ callable(foo.raw_function)
 
 @validate_call
 def bar() -> str:
-    return 'x'
+    return "x"
 
 
 # return type should be a string

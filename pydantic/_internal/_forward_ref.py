@@ -8,7 +8,7 @@ from typing import Union
 class PydanticRecursiveRef:
     type_ref: str
 
-    __name__ = 'PydanticRecursiveRef'
+    __name__ = "PydanticRecursiveRef"
     __hash__ = object.__hash__
 
     def __call__(self) -> None:

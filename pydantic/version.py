@@ -1,9 +1,9 @@
 """The `version` module holds the version information for Pydantic."""
 from typing import Tuple
 
-__all__ = 'VERSION', 'version_info'
+__all__ = "VERSION", "version_info"
 
-VERSION = '2.4.2'
+VERSION = "2.4.2"
 """The version of Pydantic."""
 
 
@@ -12,7 +12,7 @@ def version_short() -> str:
 
     It returns '2.1' if Pydantic version is '2.1.1'.
     """
-    return '.'.join(VERSION.split('.')[:2])
+    return ".".join(VERSION.split(".")[:2])
 
 
 def version_info() -> str:
@@ -30,31 +30,31 @@ def version_info() -> str:
 
     # get data about packages that are closely related to pydantic, use pydantic or often conflict with pydantic
     package_names = {
-        'email-validator',
-        'fastapi',
-        'mypy',
-        'pydantic-extra-types',
-        'pydantic-settings',
-        'pyright',
-        'typing_extensions',
+        "email-validator",
+        "fastapi",
+        "mypy",
+        "pydantic-extra-types",
+        "pydantic-settings",
+        "pyright",
+        "typing_extensions",
     }
     related_packages = []
 
     for dist in importlib_metadata.distributions():
-        name = dist.metadata['Name']
+        name = dist.metadata["Name"]
         if name in package_names:
-            related_packages.append(f'{name}-{dist.version}')
+            related_packages.append(f"{name}-{dist.version}")
 
     info = {
-        'pydantic version': VERSION,
-        'pydantic-core version': pdc.__version__,
-        'pydantic-core build': getattr(pdc, 'build_info', None) or pdc.build_profile,
-        'install path': Path(__file__).resolve().parent,
-        'python version': sys.version,
-        'platform': platform.platform(),
-        'related packages': ' '.join(related_packages),
+        "pydantic version": VERSION,
+        "pydantic-core version": pdc.__version__,
+        "pydantic-core build": getattr(pdc, "build_info", None) or pdc.build_profile,
+        "install path": Path(__file__).resolve().parent,
+        "python version": sys.version,
+        "platform": platform.platform(),
+        "related packages": " ".join(related_packages),
     }
-    return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
+    return "\n".join("{:>30} {}".format(k + ":", str(v).replace("\n", " ")) for k, v in info.items())
 
 
 def parse_mypy_version(version: str) -> Tuple[int, ...]:
@@ -72,4 +72,4 @@ def parse_mypy_version(version: str) -> Tuple[int, ...]:
     Returns:
         A tuple of ints. e.g. (0, 930).
     """
-    return tuple(map(int, version.partition('+')[0].split('.')))
+    return tuple(map(int, version.partition("+")[0].split(".")))

@@ -19,9 +19,9 @@ if typing.TYPE_CHECKING:
 
     AnyClassMethod = classmethod[Any, Any, Any]
     TupleGenerator = typing.Generator[Tuple[str, Any], None, None]
-    Model = typing.TypeVar('Model', bound='BaseModel')
+    Model = typing.TypeVar("Model", bound="BaseModel")
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-    IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
+    IncEx: typing_extensions.TypeAlias = "set[int] | set[str] | dict[int, Any] | dict[str, Any] | None"
 
 _object_setattr = _model_construction.object_setattr
 
@@ -112,10 +112,10 @@ def _copy_and_set_values(
 
     cls = self.__class__
     m = cls.__new__(cls)
-    _object_setattr(m, '__dict__', values)
-    _object_setattr(m, '__pydantic_extra__', extra)
-    _object_setattr(m, '__pydantic_fields_set__', fields_set)
-    _object_setattr(m, '__pydantic_private__', private)
+    _object_setattr(m, "__dict__", values)
+    _object_setattr(m, "__pydantic_extra__", extra)
+    _object_setattr(m, "__pydantic_fields_set__", fields_set)
+    _object_setattr(m, "__pydantic_private__", private)
 
     return m
 
@@ -188,7 +188,7 @@ def _get_value(
 
         return v.__class__(*seq_args) if _typing_extra.is_namedtuple(v.__class__) else v.__class__(seq_args)
 
-    elif isinstance(v, Enum) and getattr(cls.model_config, 'use_enum_values', False):
+    elif isinstance(v, Enum) and getattr(cls.model_config, "use_enum_values", False):
         return v.value
 
     else:

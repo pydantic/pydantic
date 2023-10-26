@@ -40,27 +40,27 @@ class CoreMetadataHandler:
     way throughout pydantic.
     """
 
-    __slots__ = ('_schema',)
+    __slots__ = ("_schema",)
 
     def __init__(self, schema: CoreSchemaOrField):
         self._schema = schema
 
-        metadata = schema.get('metadata')
+        metadata = schema.get("metadata")
         if metadata is None:
-            schema['metadata'] = CoreMetadata()
+            schema["metadata"] = CoreMetadata()
         elif not isinstance(metadata, dict):
-            raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
+            raise TypeError(f"CoreSchema metadata should be a dict; got {metadata!r}.")
 
     @property
     def metadata(self) -> CoreMetadata:
         """Retrieves the metadata dict from the schema, initializing it to a dict if it is None
         and raises an error if it is not a dict.
         """
-        metadata = self._schema.get('metadata')
+        metadata = self._schema.get("metadata")
         if metadata is None:
-            self._schema['metadata'] = metadata = CoreMetadata()
+            self._schema["metadata"] = metadata = CoreMetadata()
         if not isinstance(metadata, dict):
-            raise TypeError(f'CoreSchema metadata should be a dict; got {metadata!r}.')
+            raise TypeError(f"CoreSchema metadata should be a dict; got {metadata!r}.")
         return metadata
 
 
@@ -76,7 +76,7 @@ def build_metadata_dict(
     with the CoreMetadataHandler class.
     """
     if initial_metadata is not None and not isinstance(initial_metadata, dict):
-        raise TypeError(f'CoreSchema metadata should be a dict; got {initial_metadata!r}.')
+        raise TypeError(f"CoreSchema metadata should be a dict; got {initial_metadata!r}.")
 
     metadata = CoreMetadata(
         pydantic_js_functions=js_functions or [],

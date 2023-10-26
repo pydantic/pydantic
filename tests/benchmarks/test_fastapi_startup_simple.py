@@ -26,7 +26,7 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
             street: str
             city: str
             state: Annotated[str, AfterValidator(lambda x: x.upper())]
-            postal_code: Annotated[str, StringConstraints(min_length=5, max_length=5, pattern=r'[A-Z0-9]+')]
+            postal_code: Annotated[str, StringConstraints(min_length=5, max_length=5, pattern=r"[A-Z0-9]+")]
 
         class Product(BaseModel):
             id: int
@@ -35,7 +35,7 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
             description: Optional[str] = None
 
         class BlogPost(BaseModel):
-            title: Annotated[str, StringConstraints(pattern=r'[A-Za-z0-9]+')]
+            title: Annotated[str, StringConstraints(pattern=r"[A-Za-z0-9]+")]
             content: str
             author: User
             published: bool = False
@@ -89,21 +89,21 @@ def test_fastapi_startup_perf(benchmark: Callable[[Callable[[], Any]], None]):
     benchmark(run)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # run with `pdm run tests/benchmarks/test_fastapi_startup_simple.py`
     import cProfile
     import sys
     import time
 
-    print(f'Python version: {sys.version}')
-    if sys.argv[-1] == 'cProfile':
+    print(f"Python version: {sys.version}")
+    if sys.argv[-1] == "cProfile":
         cProfile.run(
-            'test_fastapi_startup_perf(lambda f: f())',
-            sort='tottime',
-            filename=Path(__file__).name.strip('.py') + '.cprof',
+            "test_fastapi_startup_perf(lambda f: f())",
+            sort="tottime",
+            filename=Path(__file__).name.strip(".py") + ".cprof",
         )
     else:
         start = time.perf_counter()
         test_fastapi_startup_perf(lambda f: f())
         end = time.perf_counter()
-        print(f'Time taken: {end - start:.6f}s')
+        print(f"Time taken: {end - start:.6f}s")

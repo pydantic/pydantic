@@ -40,7 +40,7 @@ def get_type_hints_infer_globalns(
     Returns:
         The object type hints.
     """
-    module_name = getattr(obj, '__module__', None)
+    module_name = getattr(obj, "__module__", None)
     globalns: dict[str, Any] | None = None
     if module_name:
         try:
@@ -100,12 +100,12 @@ def collect_model_fields(  # noqa: C901
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
-    annotations = cls.__dict__.get('__annotations__', {})
+    annotations = cls.__dict__.get("__annotations__", {})
     fields: dict[str, FieldInfo] = {}
 
     class_vars: set[str] = set()
     for ann_name, ann_type in type_hints.items():
-        if ann_name == 'model_config':
+        if ann_name == "model_config":
             # We never want to treat `model_config` as a field
             # Note: we may need to change this logic if/when we introduce a `BareModel` class with no
             # protected namespaces (where `model_config` might be allowed as a field name)
@@ -127,7 +127,7 @@ def collect_model_fields(  # noqa: C901
                     )
                     warnings.warn(
                         f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}".'
-                        '\n\nYou may be able to resolve this warning by setting'
+                        "\n\nYou may be able to resolve this warning by setting"
                         f" `model_config['protected_namespaces'] = {valid_namespaces}`.",
                         UserWarning,
                     )
@@ -139,14 +139,14 @@ def collect_model_fields(  # noqa: C901
             continue
         if not is_valid_field_name(ann_name):
             continue
-        if cls.__pydantic_root_model__ and ann_name != 'root':
+        if cls.__pydantic_root_model__ and ann_name != "root":
             raise NameError(
                 f"Unexpected field with name {ann_name!r}; only 'root' is allowed as a field of a `RootModel`"
             )
 
         # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
         # "... shadows an attribute" errors
-        generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
+        generic_origin = getattr(cls, "__pydantic_generic_metadata__", {}).get("origin")
         for base in bases:
             dataclass_fields = {
                 field.name for field in (dataclasses.fields(base) if dataclasses.is_dataclass(base) else ())
@@ -177,7 +177,7 @@ def collect_model_fields(  # noqa: C901
                 # defined in a base class and we can take it from there
                 model_fields_lookup: dict[str, FieldInfo] = {}
                 for x in cls.__bases__[::-1]:
-                    model_fields_lookup.update(getattr(x, 'model_fields', {}))
+                    model_fields_lookup.update(getattr(x, "model_fields", {}))
                 if ann_name in model_fields_lookup:
                     # The field was present on one of the (possibly multiple) base classes
                     # copy the field to make sure typevar substitutions don't cause issues with the base classes
@@ -199,7 +199,7 @@ def collect_model_fields(  # noqa: C901
 
         # Use cls.__dict__['__pydantic_decorators__'] instead of cls.__pydantic_decorators__
         # to make sure the decorators have already been built for this exact class
-        decorators: DecoratorInfos = cls.__dict__['__pydantic_decorators__']
+        decorators: DecoratorInfos = cls.__dict__["__pydantic_decorators__"]
         if ann_name in decorators.computed_fields:
             raise ValueError("you can't override a field with a computed field")
         fields[ann_name] = field_info
@@ -278,8 +278,8 @@ def collect_dataclass_fields(
 
 
 def is_valid_field_name(name: str) -> bool:
-    return not name.startswith('_')
+    return not name.startswith("_")
 
 
 def is_valid_privateattr_name(name: str) -> bool:
-    return name.startswith('_') and not name.startswith('__')
+    return name.startswith("_") and not name.startswith("__")

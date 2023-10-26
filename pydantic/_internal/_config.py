@@ -29,13 +29,13 @@ if not TYPE_CHECKING:
 if TYPE_CHECKING:
     from .._internal._schema_generation_shared import GenerateSchema
 
-DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
+DEPRECATION_MESSAGE = "Support for class-based `config` is deprecated, use ConfigDict instead."
 
 
 class ConfigWrapper:
     """Internal wrapper for Config which exposes ConfigDict items as attributes."""
 
-    __slots__ = ('config_dict',)
+    __slots__ = ("config_dict",)
 
     config_dict: ConfigDict
 
@@ -66,9 +66,9 @@ class ConfigWrapper:
     # new in V2
     strict: bool
     # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
-    revalidate_instances: Literal['always', 'never', 'subclass-instances']
-    ser_json_timedelta: Literal['iso8601', 'float']
-    ser_json_bytes: Literal['utf8', 'base64']
+    revalidate_instances: Literal["always", "never", "subclass-instances"]
+    ser_json_timedelta: Literal["iso8601", "float"]
+    ser_json_bytes: Literal["utf8", "base64"]
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
@@ -78,9 +78,9 @@ class ConfigWrapper:
     plugin_settings: dict[str, object] | None
     schema_generator: type[GenerateSchema] | None
     json_schema_serialization_defaults_required: bool
-    json_schema_mode_override: Literal['validation', 'serialization', None]
+    json_schema_mode_override: Literal["validation", "serialization", None]
     coerce_numbers_to_str: bool
-    regex_engine: Literal['rust-regex', 'python-re']
+    regex_engine: Literal["rust-regex", "python-re"]
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -107,15 +107,15 @@ class ConfigWrapper:
         """
         config_new = ConfigDict()
         for base in bases:
-            config = getattr(base, 'model_config', None)
+            config = getattr(base, "model_config", None)
             if config:
                 config_new.update(config.copy())
 
-        config_class_from_namespace = namespace.get('Config')
-        config_dict_from_namespace = namespace.get('model_config')
+        config_class_from_namespace = namespace.get("Config")
+        config_dict_from_namespace = namespace.get("model_config")
 
         if config_class_from_namespace and config_dict_from_namespace:
-            raise PydanticUserError('"Config" and "model_config" cannot be used together', code='config-both')
+            raise PydanticUserError('"Config" and "model_config" cannot be used together', code="config-both")
 
         config_from_namespace = config_dict_from_namespace or prepare_config(config_class_from_namespace)
 
@@ -138,7 +138,7 @@ class ConfigWrapper:
                 try:
                     return config_defaults[name]
                 except KeyError:
-                    raise AttributeError(f'Config has no attribute {name!r}') from None
+                    raise AttributeError(f"Config has no attribute {name!r}") from None
 
     def core_config(self, obj: Any) -> core_schema.CoreConfig:
         """Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
@@ -159,32 +159,32 @@ class ConfigWrapper:
 
         core_config = core_schema.CoreConfig(
             **dict_not_none(
-                title=self.config_dict.get('title') or (obj and obj.__name__),
-                extra_fields_behavior=self.config_dict.get('extra'),
-                allow_inf_nan=self.config_dict.get('allow_inf_nan'),
-                populate_by_name=self.config_dict.get('populate_by_name'),
-                str_strip_whitespace=self.config_dict.get('str_strip_whitespace'),
-                str_to_lower=self.config_dict.get('str_to_lower'),
-                str_to_upper=self.config_dict.get('str_to_upper'),
-                strict=self.config_dict.get('strict'),
-                ser_json_timedelta=self.config_dict.get('ser_json_timedelta'),
-                ser_json_bytes=self.config_dict.get('ser_json_bytes'),
-                from_attributes=self.config_dict.get('from_attributes'),
-                loc_by_alias=self.config_dict.get('loc_by_alias'),
-                revalidate_instances=self.config_dict.get('revalidate_instances'),
-                validate_default=self.config_dict.get('validate_default'),
-                str_max_length=self.config_dict.get('str_max_length'),
-                str_min_length=self.config_dict.get('str_min_length'),
-                hide_input_in_errors=self.config_dict.get('hide_input_in_errors'),
-                coerce_numbers_to_str=self.config_dict.get('coerce_numbers_to_str'),
-                regex_engine=self.config_dict.get('regex_engine'),
+                title=self.config_dict.get("title") or (obj and obj.__name__),
+                extra_fields_behavior=self.config_dict.get("extra"),
+                allow_inf_nan=self.config_dict.get("allow_inf_nan"),
+                populate_by_name=self.config_dict.get("populate_by_name"),
+                str_strip_whitespace=self.config_dict.get("str_strip_whitespace"),
+                str_to_lower=self.config_dict.get("str_to_lower"),
+                str_to_upper=self.config_dict.get("str_to_upper"),
+                strict=self.config_dict.get("strict"),
+                ser_json_timedelta=self.config_dict.get("ser_json_timedelta"),
+                ser_json_bytes=self.config_dict.get("ser_json_bytes"),
+                from_attributes=self.config_dict.get("from_attributes"),
+                loc_by_alias=self.config_dict.get("loc_by_alias"),
+                revalidate_instances=self.config_dict.get("revalidate_instances"),
+                validate_default=self.config_dict.get("validate_default"),
+                str_max_length=self.config_dict.get("str_max_length"),
+                str_min_length=self.config_dict.get("str_min_length"),
+                hide_input_in_errors=self.config_dict.get("hide_input_in_errors"),
+                coerce_numbers_to_str=self.config_dict.get("coerce_numbers_to_str"),
+                regex_engine=self.config_dict.get("regex_engine"),
             )
         )
         return core_config
 
     def __repr__(self):
-        c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
-        return f'ConfigWrapper({c})'
+        c = ", ".join(f"{k}={v!r}" for k, v in self.config_dict.items())
+        return f"ConfigWrapper({c})"
 
 
 class ConfigWrapperStack:
@@ -236,12 +236,12 @@ config_defaults = ConfigDict(
     allow_inf_nan=True,
     json_schema_extra=None,
     strict=False,
-    revalidate_instances='never',
-    ser_json_timedelta='iso8601',
-    ser_json_bytes='utf8',
+    revalidate_instances="never",
+    ser_json_timedelta="iso8601",
+    ser_json_bytes="utf8",
     validate_default=False,
     validate_return=False,
-    protected_namespaces=('model_',),
+    protected_namespaces=("model_",),
     hide_input_in_errors=False,
     json_encoders=None,
     defer_build=False,
@@ -250,7 +250,7 @@ config_defaults = ConfigDict(
     json_schema_serialization_defaults_required=False,
     json_schema_mode_override=None,
     coerce_numbers_to_str=False,
-    regex_engine='rust-regex',
+    regex_engine="rust-regex",
 )
 
 
@@ -268,7 +268,7 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
 
     if not isinstance(config, dict):
         warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
-        config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
+        config = {k: getattr(config, k) for k in dir(config) if not k.startswith("__")}
 
     config_dict = cast(ConfigDict, config)
     check_deprecated(config_dict)
@@ -279,28 +279,28 @@ config_keys = set(ConfigDict.__annotations__.keys())
 
 
 V2_REMOVED_KEYS = {
-    'allow_mutation',
-    'error_msg_templates',
-    'fields',
-    'getter_dict',
-    'smart_union',
-    'underscore_attrs_are_private',
-    'json_loads',
-    'json_dumps',
-    'copy_on_model_validation',
-    'post_init_call',
+    "allow_mutation",
+    "error_msg_templates",
+    "fields",
+    "getter_dict",
+    "smart_union",
+    "underscore_attrs_are_private",
+    "json_loads",
+    "json_dumps",
+    "copy_on_model_validation",
+    "post_init_call",
 }
 V2_RENAMED_KEYS = {
-    'allow_population_by_field_name': 'populate_by_name',
-    'anystr_lower': 'str_to_lower',
-    'anystr_strip_whitespace': 'str_strip_whitespace',
-    'anystr_upper': 'str_to_upper',
-    'keep_untouched': 'ignored_types',
-    'max_anystr_length': 'str_max_length',
-    'min_anystr_length': 'str_min_length',
-    'orm_mode': 'from_attributes',
-    'schema_extra': 'json_schema_extra',
-    'validate_all': 'validate_default',
+    "allow_population_by_field_name": "populate_by_name",
+    "anystr_lower": "str_to_lower",
+    "anystr_strip_whitespace": "str_strip_whitespace",
+    "anystr_upper": "str_to_upper",
+    "keep_untouched": "ignored_types",
+    "max_anystr_length": "str_max_length",
+    "min_anystr_length": "str_min_length",
+    "orm_mode": "from_attributes",
+    "schema_extra": "json_schema_extra",
+    "validate_all": "validate_default",
 }
 
 
@@ -314,7 +314,7 @@ def check_deprecated(config_dict: ConfigDict) -> None:
     deprecated_renamed_keys = V2_RENAMED_KEYS.keys() & config_dict.keys()
     if deprecated_removed_keys or deprecated_renamed_keys:
         renamings = {k: V2_RENAMED_KEYS[k] for k in sorted(deprecated_renamed_keys)}
-        renamed_bullets = [f'* {k!r} has been renamed to {v!r}' for k, v in renamings.items()]
-        removed_bullets = [f'* {k!r} has been removed' for k in sorted(deprecated_removed_keys)]
-        message = '\n'.join(['Valid config keys have changed in V2:'] + renamed_bullets + removed_bullets)
+        renamed_bullets = [f"* {k!r} has been renamed to {v!r}" for k, v in renamings.items()]
+        removed_bullets = [f"* {k!r} has been removed" for k in sorted(deprecated_removed_keys)]
+        message = "\n".join(["Valid config keys have changed in V2:"] + renamed_bullets + removed_bullets)
         warnings.warn(message, UserWarning)

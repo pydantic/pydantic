@@ -38,7 +38,7 @@ else:
 import pytest
 
 
-@pytest.fixture(scope='session', name='BaseConfigModelWithStrictConfig')
+@pytest.fixture(scope="session", name="BaseConfigModelWithStrictConfig")
 def model_with_strict_config():
     class ModelWithStrictConfig(BaseModel):
         a: int
@@ -59,22 +59,22 @@ def _equals(a: Union[str, Iterable[str]], b: Union[str, Iterable[str]]) -> bool:
     Compare strings with spaces removed
     """
     if isinstance(a, str) and isinstance(b, str):
-        return a.replace(' ', '') == b.replace(' ', '')
+        return a.replace(" ", "") == b.replace(" ", "")
     elif isinstance(a, Iterable) and isinstance(b, Iterable):
         return all(_equals(a_, b_) for a_, b_ in zip(a, b))
     else:
-        raise TypeError(f'arguments must be both strings or both lists, not {type(a)}, {type(b)}')
+        raise TypeError(f"arguments must be both strings or both lists, not {type(a)}, {type(b)}")
 
 
 def test_config_dict_missing_keys():
-    assert ConfigDict().get('missing_property') is None
+    assert ConfigDict().get("missing_property") is None
 
     with pytest.raises(KeyError, match="'missing_property'"):
-        ConfigDict()['missing_property']
+        ConfigDict()["missing_property"]
 
 
 class TestsBaseConfig:
-    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
+    @pytest.mark.filterwarnings("ignore:.* is deprecated.*:DeprecationWarning")
     def test_base_config_equality_defaults_of_config_dict_class(self):
         for key, value in config_defaults.items():
             assert getattr(BaseConfig, key) == value
@@ -83,15 +83,15 @@ class TestsBaseConfig:
         with pytest.raises(PydanticUserError):
 
             class MyModel(BaseModel):
-                model_config = ConfigDict(title='MyTitle')
+                model_config = ConfigDict(title="MyTitle")
 
                 class Config:
-                    title = 'MyTitleConfig'
+                    title = "MyTitleConfig"
 
-    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
+    @pytest.mark.filterwarnings("ignore:.* is deprecated.*:DeprecationWarning")
     def test_base_config_properly_converted_to_dict(self):
         class MyConfig(BaseConfig):
-            title = 'MyTitle'
+            title = "MyTitle"
             frozen = True
 
         class MyBaseModel(BaseModel):
@@ -101,17 +101,17 @@ class TestsBaseConfig:
         class MyModel(MyBaseModel):
             ...
 
-        MyModel.model_config['title'] = 'MyTitle'
-        MyModel.model_config['frozen'] = True
-        assert 'str_to_lower' not in MyModel.model_config
+        MyModel.model_config["title"] = "MyTitle"
+        MyModel.model_config["frozen"] = True
+        assert "str_to_lower" not in MyModel.model_config
 
     def test_base_config_custom_init_signature(self):
         class MyModel(BaseModel):
             id: int
-            name: str = 'John Doe'
-            f__: str = Field(..., alias='foo')
+            name: str = "John Doe"
+            f__: str = Field(..., alias="foo")
 
-            model_config = ConfigDict(extra='allow')
+            model_config = ConfigDict(extra="allow")
 
             def __init__(self, id: int = 1, bar=2, *, baz: Any, **data):
                 super().__init__(id=id, **data)
@@ -121,7 +121,7 @@ class TestsBaseConfig:
         sig = signature(MyModel)
         assert _equals(
             map(str, sig.parameters.values()),
-            ('id: int = 1', 'bar=2', 'baz: Any', "name: str = 'John Doe'", 'foo: str', '**data'),
+            ("id: int = 1", "bar=2", "baz: Any", "name: str = 'John Doe'", "foo: str", "**data"),
         )
         assert _equals(str(sig), "(id: int = 1, bar=2, *, baz: Any, name: str = 'John Doe', foo: str, **data) -> None")
 
@@ -134,42 +134,42 @@ class TestsBaseConfig:
             def __init__(self, a: float, b: int):
                 super().__init__(a=a, b=b, c=1)
 
-            model_config = ConfigDict(extra='allow')
+            model_config = ConfigDict(extra="allow")
 
-        assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
+        assert _equals(str(signature(Model)), "(a: float, b: int) -> None")
 
     def test_base_config_use_field_name(self):
         class Foo(BaseModel):
-            foo: str = Field(..., alias='this is invalid')
+            foo: str = Field(..., alias="this is invalid")
 
             model_config = ConfigDict(populate_by_name=True)
 
-        assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
+        assert _equals(str(signature(Foo)), "(*, foo: str) -> None")
 
     def test_base_config_does_not_use_reserved_word(self):
         class Foo(BaseModel):
-            from_: str = Field(..., alias='from')
+            from_: str = Field(..., alias="from")
 
             model_config = ConfigDict(populate_by_name=True)
 
-        assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
+        assert _equals(str(signature(Foo)), "(*, from_: str) -> None")
 
     def test_base_config_extra_allow_no_conflict(self):
         class Model(BaseModel):
             spam: str
 
-            model_config = ConfigDict(extra='allow')
+            model_config = ConfigDict(extra="allow")
 
-        assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
+        assert _equals(str(signature(Model)), "(*, spam: str, **extra_data: Any) -> None")
 
     def test_base_config_extra_allow_conflict_twice(self):
         class Model(BaseModel):
             extra_data: str
             extra_data_: str
 
-            model_config = ConfigDict(extra='allow')
+            model_config = ConfigDict(extra="allow")
 
-        assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
+        assert _equals(str(signature(Model)), "(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None")
 
     def test_base_config_extra_allow_conflict_custom_signature(self):
         class Model(BaseModel):
@@ -178,27 +178,27 @@ class TestsBaseConfig:
             def __init__(self, extra_data: int = 1, **foobar: Any):
                 super().__init__(extra_data=extra_data, **foobar)
 
-            model_config = ConfigDict(extra='allow')
+            model_config = ConfigDict(extra="allow")
 
-        assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
+        assert _equals(str(signature(Model)), "(extra_data: int = 1, **foobar: Any) -> None")
 
     def test_base_config_private_attribute_intersection_with_extra_field(self):
         class Model(BaseModel):
-            _foo = PrivateAttr('private_attribute')
+            _foo = PrivateAttr("private_attribute")
 
-            model_config = ConfigDict(extra='allow')
+            model_config = ConfigDict(extra="allow")
 
-        assert set(Model.__private_attributes__) == {'_foo'}
-        m = Model(_foo='field')
-        assert m._foo == 'private_attribute'
+        assert set(Model.__private_attributes__) == {"_foo"}
+        m = Model(_foo="field")
+        assert m._foo == "private_attribute"
         assert m.__dict__ == {}
-        assert m.__pydantic_extra__ == {'_foo': 'field'}
-        assert m.model_dump() == {'_foo': 'field'}
-        m._foo = 'still_private'
-        assert m._foo == 'still_private'
+        assert m.__pydantic_extra__ == {"_foo": "field"}
+        assert m.model_dump() == {"_foo": "field"}
+        m._foo = "still_private"
+        assert m._foo == "still_private"
         assert m.__dict__ == {}
-        assert m.__pydantic_extra__ == {'_foo': 'field'}
-        assert m.model_dump() == {'_foo': 'field'}
+        assert m.__pydantic_extra__ == {"_foo": "field"}
+        assert m.model_dump() == {"_foo": "field"}
 
     def test_base_config_parse_model_with_strict_config_disabled(
         self, BaseConfigModelWithStrictConfig: Type[BaseModel]
@@ -207,13 +207,13 @@ class TestsBaseConfig:
             model_config = ConfigDict(strict=False)
 
         values = [
-            Model(a='1', b=2, c=3, d=4),
-            Model(a=1, b=2, c='3', d=4),
-            Model(a=1, b=2, c=3, d='4'),
-            Model(a=1, b='2', c=3, d=4),
+            Model(a="1", b=2, c=3, d=4),
+            Model(a=1, b=2, c="3", d=4),
+            Model(a=1, b=2, c=3, d="4"),
+            Model(a=1, b="2", c=3, d=4),
             Model(a=1, b=2, c=3, d=4),
         ]
-        assert all(v.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4} for v in values)
+        assert all(v.model_dump() == {"a": 1, "b": 2, "c": 3, "d": 4} for v in values)
 
     def test_finite_float_config(self):
         class Model(BaseModel):
@@ -223,23 +223,23 @@ class TestsBaseConfig:
 
         assert Model(a=42).a == 42
         with pytest.raises(ValidationError) as exc_info:
-            Model(a=float('nan'))
+            Model(a=float("nan"))
         # insert_assert(exc_info.value.errors(include_url=False))
         assert exc_info.value.errors(include_url=False) == [
             {
-                'type': 'finite_number',
-                'loc': ('a',),
-                'msg': 'Input should be a finite number',
-                'input': HasRepr('nan'),
+                "type": "finite_number",
+                "loc": ("a",),
+                "msg": "Input should be a finite number",
+                "input": HasRepr("nan"),
             }
         ]
 
     @pytest.mark.parametrize(
-        'enabled,str_check,result_str_check',
+        "enabled,str_check,result_str_check",
         [
-            (True, '  123  ', '123'),
-            (True, '  123\t\n', '123'),
-            (False, '  123  ', '  123  '),
+            (True, "  123  ", "123"),
+            (True, "  123\t\n", "123"),
+            (False, "  123  ", "  123  "),
         ],
     )
     def test_str_strip_whitespace(self, enabled, str_check, result_str_check):
@@ -252,8 +252,8 @@ class TestsBaseConfig:
         assert m.str_check == result_str_check
 
     @pytest.mark.parametrize(
-        'enabled,str_check,result_str_check',
-        [(True, 'ABCDefG', 'ABCDEFG'), (False, 'ABCDefG', 'ABCDefG')],
+        "enabled,str_check,result_str_check",
+        [(True, "ABCDefG", "ABCDEFG"), (False, "ABCDefG", "ABCDefG")],
     )
     def test_str_to_upper(self, enabled, str_check, result_str_check):
         class Model(BaseModel):
@@ -266,8 +266,8 @@ class TestsBaseConfig:
         assert m.str_check == result_str_check
 
     @pytest.mark.parametrize(
-        'enabled,str_check,result_str_check',
-        [(True, 'ABCDefG', 'abcdefg'), (False, 'ABCDefG', 'ABCDefG')],
+        "enabled,str_check,result_str_check",
+        [(True, "ABCDefG", "abcdefg"), (False, "ABCDefG", "ABCDefG")],
     )
     def test_str_to_lower(self, enabled, str_check, result_str_check):
         class Model(BaseModel):
@@ -291,7 +291,7 @@ class TestsBaseConfig:
 
             model_config = ConfigDict(arbitrary_types_allowed=True)
 
-        data = {'x': Tup(c=CustomClass())}
+        data = {"x": Tup(c=CustomClass())}
         model = Model.model_validate(data)
         assert isinstance(model.x.c, CustomClass)
         with pytest.raises(PydanticSchemaGenerationError):
@@ -300,16 +300,16 @@ class TestsBaseConfig:
                 x: Tup
 
     @pytest.mark.parametrize(
-        'use_construct, populate_by_name_config, arg_name, expectation',
+        "use_construct, populate_by_name_config, arg_name, expectation",
         [
-            [False, True, 'bar', does_not_raise()],
-            [False, True, 'bar_', does_not_raise()],
-            [False, False, 'bar', does_not_raise()],
-            [False, False, 'bar_', pytest.raises(ValueError)],
-            [True, True, 'bar', does_not_raise()],
-            [True, True, 'bar_', does_not_raise()],
-            [True, False, 'bar', does_not_raise()],
-            [True, False, 'bar_', does_not_raise()],
+            [False, True, "bar", does_not_raise()],
+            [False, True, "bar_", does_not_raise()],
+            [False, False, "bar", does_not_raise()],
+            [False, False, "bar_", pytest.raises(ValueError)],
+            [True, True, "bar", does_not_raise()],
+            [True, True, "bar_", does_not_raise()],
+            [True, False, "bar", does_not_raise()],
+            [True, False, "bar_", does_not_raise()],
         ],
     )
     def test_populate_by_name_config(
@@ -322,7 +322,7 @@ class TestsBaseConfig:
         expected_value: int = 7
 
         class Foo(BaseModel):
-            bar_: int = Field(..., alias='bar')
+            bar_: int = Field(..., alias="bar")
 
             model_config = dict(populate_by_name=populate_by_name_config)
 
@@ -345,7 +345,7 @@ class TestsBaseConfig:
 
     def test_config_class_is_deprecated(self):
         with pytest.warns(
-            PydanticDeprecatedSince20, match='Support for class-based `config` is deprecated, use ConfigDict instead.'
+            PydanticDeprecatedSince20, match="Support for class-based `config` is deprecated, use ConfigDict instead."
         ):
 
             class Config(BaseConfig):
@@ -354,19 +354,19 @@ class TestsBaseConfig:
     def test_config_class_attributes_are_deprecated(self):
         with pytest.warns(
             PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
+            match="Support for class-based `config` is deprecated, use ConfigDict instead.",
         ):
             assert BaseConfig.validate_assignment is False
 
         with pytest.warns(
             PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
+            match="Support for class-based `config` is deprecated, use ConfigDict instead.",
         ):
             assert BaseConfig().validate_assignment is False
 
         with pytest.warns(
             PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
+            match="Support for class-based `config` is deprecated, use ConfigDict instead.",
         ):
 
             class Config(BaseConfig):
@@ -374,17 +374,17 @@ class TestsBaseConfig:
 
         with pytest.warns(
             PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
+            match="Support for class-based `config` is deprecated, use ConfigDict instead.",
         ):
             assert Config.validate_assignment is False
 
         with pytest.warns(
             PydanticDeprecatedSince20,
-            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
+            match="Support for class-based `config` is deprecated, use ConfigDict instead.",
         ):
             assert Config().validate_assignment is False
 
-    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
+    @pytest.mark.filterwarnings("ignore:.* is deprecated.*:DeprecationWarning")
     def test_config_class_missing_attributes(self):
         with pytest.raises(AttributeError, match="type object 'BaseConfig' has no attribute 'missing_attribute'"):
             BaseConfig.missing_attribute
@@ -404,22 +404,22 @@ class TestsBaseConfig:
 
 def test_config_key_deprecation():
     config_dict = {
-        'allow_mutation': None,
-        'error_msg_templates': None,
-        'fields': None,
-        'getter_dict': None,
-        'schema_extra': None,
-        'smart_union': None,
-        'underscore_attrs_are_private': None,
-        'allow_population_by_field_name': None,
-        'anystr_lower': None,
-        'anystr_strip_whitespace': None,
-        'anystr_upper': None,
-        'keep_untouched': None,
-        'max_anystr_length': None,
-        'min_anystr_length': None,
-        'orm_mode': None,
-        'validate_all': None,
+        "allow_mutation": None,
+        "error_msg_templates": None,
+        "fields": None,
+        "getter_dict": None,
+        "schema_extra": None,
+        "smart_union": None,
+        "underscore_attrs_are_private": None,
+        "allow_population_by_field_name": None,
+        "anystr_lower": None,
+        "anystr_strip_whitespace": None,
+        "anystr_upper": None,
+        "keep_untouched": None,
+        "max_anystr_length": None,
+        "min_anystr_length": None,
+        "orm_mode": None,
+        "validate_all": None,
     }
 
     warning_message = """
@@ -448,7 +448,7 @@ Valid config keys have changed in V2:
             model_config = config_dict
 
     with pytest.warns(UserWarning, match=re.escape(warning_message)):
-        create_model('MyCreatedModel', __config__=config_dict)
+        create_model("MyCreatedModel", __config__=config_dict)
 
     with pytest.warns(UserWarning, match=re.escape(warning_message)):
 
@@ -468,7 +468,7 @@ def test_invalid_extra():
         "Input should be 'allow', 'forbid' or 'ignore'"
         " [type=literal_error, input_value='invalid-value', input_type=str]"
     )
-    config_dict = {'extra': 'invalid-value'}
+    config_dict = {"extra": "invalid-value"}
 
     with pytest.raises(SchemaError, match=extra_error):
 
@@ -476,7 +476,7 @@ def test_invalid_extra():
             model_config = config_dict
 
     with pytest.raises(SchemaError, match=extra_error):
-        create_model('MyCreatedModel', __config__=config_dict)
+        create_model("MyCreatedModel", __config__=config_dict)
 
     with pytest.raises(SchemaError, match=extra_error):
 
@@ -486,14 +486,14 @@ def test_invalid_extra():
 
 
 def test_invalid_config_keys():
-    @validate_call(config={'alias_generator': lambda x: x})
+    @validate_call(config={"alias_generator": lambda x: x})
     def my_function():
         pass
 
 
 def test_multiple_inheritance_config():
     class Parent(BaseModel):
-        model_config = ConfigDict(frozen=True, extra='forbid')
+        model_config = ConfigDict(frozen=True, extra="forbid")
 
     class Mixin(BaseModel):
         model_config = ConfigDict(use_enum_values=True)
@@ -501,50 +501,50 @@ def test_multiple_inheritance_config():
     class Child(Mixin, Parent):
         model_config = ConfigDict(populate_by_name=True)
 
-    assert BaseModel.model_config.get('frozen') is None
-    assert BaseModel.model_config.get('populate_by_name') is None
-    assert BaseModel.model_config.get('extra') is None
-    assert BaseModel.model_config.get('use_enum_values') is None
+    assert BaseModel.model_config.get("frozen") is None
+    assert BaseModel.model_config.get("populate_by_name") is None
+    assert BaseModel.model_config.get("extra") is None
+    assert BaseModel.model_config.get("use_enum_values") is None
 
-    assert Parent.model_config.get('frozen') is True
-    assert Parent.model_config.get('populate_by_name') is None
-    assert Parent.model_config.get('extra') == 'forbid'
-    assert Parent.model_config.get('use_enum_values') is None
+    assert Parent.model_config.get("frozen") is True
+    assert Parent.model_config.get("populate_by_name") is None
+    assert Parent.model_config.get("extra") == "forbid"
+    assert Parent.model_config.get("use_enum_values") is None
 
-    assert Mixin.model_config.get('frozen') is None
-    assert Mixin.model_config.get('populate_by_name') is None
-    assert Mixin.model_config.get('extra') is None
-    assert Mixin.model_config.get('use_enum_values') is True
+    assert Mixin.model_config.get("frozen") is None
+    assert Mixin.model_config.get("populate_by_name") is None
+    assert Mixin.model_config.get("extra") is None
+    assert Mixin.model_config.get("use_enum_values") is True
 
-    assert Child.model_config.get('frozen') is True
-    assert Child.model_config.get('populate_by_name') is True
-    assert Child.model_config.get('extra') == 'forbid'
-    assert Child.model_config.get('use_enum_values') is True
+    assert Child.model_config.get("frozen") is True
+    assert Child.model_config.get("populate_by_name") is True
+    assert Child.model_config.get("extra") == "forbid"
+    assert Child.model_config.get("use_enum_values") is True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="different on older versions")
 def test_config_wrapper_match():
-    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema, 'JsonValue': JsonValue}
+    localns = {"_GenerateSchema": GenerateSchema, "GenerateSchema": GenerateSchema, "JsonValue": JsonValue}
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
     config_dict_annotations.sort()
     # remove config
     config_wrapper_annotations = [
-        (k, str(v)) for k, v in get_type_hints(ConfigWrapper, localns=localns).items() if k != 'config_dict'
+        (k, str(v)) for k, v in get_type_hints(ConfigWrapper, localns=localns).items() if k != "config_dict"
     ]
     config_wrapper_annotations.sort()
 
     assert (
         config_dict_annotations == config_wrapper_annotations
-    ), 'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'
+    ), "ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)"
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="different on older versions")
 def test_config_defaults_match():
-    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    localns = {"_GenerateSchema": GenerateSchema, "GenerateSchema": GenerateSchema}
     config_dict_keys = sorted(list(get_type_hints(ConfigDict, localns=localns).keys()))
     config_defaults_keys = sorted(list(config_defaults.keys()))
 
-    assert config_dict_keys == config_defaults_keys, 'ConfigDict and config_defaults must have the same keys'
+    assert config_dict_keys == config_defaults_keys, "ConfigDict and config_defaults must have the same keys"
 
 
 def test_config_is_not_inherited_in_model_fields():
@@ -562,17 +562,17 @@ def test_config_is_not_inherited_in_model_fields():
         x: List[str]  # should be converted to lower
         inner: Inner  # should not have fields converted to lower
 
-    m = Outer.model_validate(dict(x=['Abc'], inner=dict(a='Def')))
+    m = Outer.model_validate(dict(x=["Abc"], inner=dict(a="Def")))
 
-    assert m.model_dump() == {'x': ['abc'], 'inner': {'a': 'Def'}}
+    assert m.model_dump() == {"x": ["abc"], "inner": {"a": "Def"}}
 
 
 @pytest.mark.parametrize(
-    'config,input_str',
+    "config,input_str",
     (
-        ({}, 'type=string_type, input_value=123, input_type=int'),
-        ({'hide_input_in_errors': False}, 'type=string_type, input_value=123, input_type=int'),
-        ({'hide_input_in_errors': True}, 'type=string_type'),
+        ({}, "type=string_type, input_value=123, input_type=int"),
+        ({"hide_input_in_errors": False}, "type=string_type, input_value=123, input_type=int"),
+        ({"hide_input_in_errors": True}, "type=string_type"),
     ),
 )
 def test_hide_input_in_errors(config, input_str):
@@ -581,12 +581,12 @@ def test_hide_input_in_errors(config, input_str):
 
         model_config = ConfigDict(**config)
 
-    with pytest.raises(ValidationError, match=re.escape(f'Input should be a valid string [{input_str}]')):
+    with pytest.raises(ValidationError, match=re.escape(f"Input should be a valid string [{input_str}]")):
         Model(x=123)
 
 
-parametrize_inf_nan_capable_type = pytest.mark.parametrize('inf_nan_capable_type', [float, Decimal])
-parametrize_inf_nan_capable_value = pytest.mark.parametrize('inf_nan_value', ['Inf', 'NaN'])
+parametrize_inf_nan_capable_type = pytest.mark.parametrize("inf_nan_capable_type", [float, Decimal])
+parametrize_inf_nan_capable_value = pytest.mark.parametrize("inf_nan_value", ["Inf", "NaN"])
 
 
 @parametrize_inf_nan_capable_value
@@ -611,18 +611,18 @@ def test_config_inf_nan_disabled(inf_nan_capable_type, inf_nan_value):
 
     assert e.value.errors(include_url=False)[0] == IsPartialDict(
         {
-            'loc': ('value',),
-            'msg': 'Input should be a finite number',
-            'type': 'finite_number',
+            "loc": ("value",),
+            "msg": "Input should be a finite number",
+            "type": "finite_number",
         }
     )
 
 
 @pytest.mark.parametrize(
-    'config,expected',
+    "config,expected",
     (
-        (ConfigDict(), 'ConfigWrapper()'),
-        (ConfigDict(title='test'), "ConfigWrapper(title='test')"),
+        (ConfigDict(), "ConfigWrapper()"),
+        (ConfigDict(title="test"), "ConfigWrapper(title='test')"),
     ),
 )
 def test_config_wrapper_repr(config, expected):
@@ -630,21 +630,21 @@ def test_config_wrapper_repr(config, expected):
 
 
 def test_config_wrapper_get_item():
-    config_wrapper = ConfigWrapper(config=ConfigDict(title='test'))
+    config_wrapper = ConfigWrapper(config=ConfigDict(title="test"))
 
-    assert config_wrapper.title == 'test'
+    assert config_wrapper.title == "test"
     with pytest.raises(AttributeError, match="Config has no attribute 'test'"):
         config_wrapper.test
 
 
 def test_config_inheritance_with_annotations():
     class Parent(BaseModel):
-        model_config: ConfigDict = {'extra': 'allow'}
+        model_config: ConfigDict = {"extra": "allow"}
 
     class Child(Parent):
-        model_config: ConfigDict = {'str_to_lower': True}
+        model_config: ConfigDict = {"str_to_lower": True}
 
-    assert Child.model_config == {'extra': 'allow', 'str_to_lower': True}
+    assert Child.model_config == {"extra": "allow", "str_to_lower": True}
 
 
 def test_json_encoders_model() -> None:
@@ -655,22 +655,22 @@ def test_json_encoders_model() -> None:
             value: Decimal
             x: int
 
-    assert json.loads(Model(value=Decimal('1.1'), x=1).model_dump_json()) == {'value': '2.2', 'x': '3'}
+    assert json.loads(Model(value=Decimal("1.1"), x=1).model_dump_json()) == {"value": "2.2", "x": "3"}
 
 
-@pytest.mark.filterwarnings('ignore::pydantic.warnings.PydanticDeprecationWarning')
+@pytest.mark.filterwarnings("ignore::pydantic.warnings.PydanticDeprecationWarning")
 def test_json_encoders_type_adapter() -> None:
     config = ConfigDict(json_encoders={Decimal: lambda x: str(x * 2), int: lambda x: str(x * 3)})
 
     ta = TypeAdapter(int, config=config)
-    assert json.loads(ta.dump_json(1)) == '3'
+    assert json.loads(ta.dump_json(1)) == "3"
 
     ta = TypeAdapter(Decimal, config=config)
-    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
+    assert json.loads(ta.dump_json(Decimal("1.1"))) == "2.2"
 
     ta = TypeAdapter(Union[Decimal, int], config=config)
-    assert json.loads(ta.dump_json(Decimal('1.1'))) == '2.2'
-    assert json.loads(ta.dump_json(1)) == '2'
+    assert json.loads(ta.dump_json(Decimal("1.1"))) == "2.2"
+    assert json.loads(ta.dump_json(1)) == "2"
 
 
 def test_config_model_defer_build():
@@ -696,9 +696,9 @@ def test_config_type_adapter_defer_build():
     assert isinstance(ta.validator, MockValSer)
     assert isinstance(ta.serializer, MockValSer)
 
-    m = ta.validate_python({'x': 1})
+    m = ta.validate_python({"x": 1})
     assert m.x == 1
-    m2 = ta.validate_python({'x': 2})
+    m2 = ta.validate_python({"x": 2})
     assert m2.x == 2
 
     # in the future, can reassign said validators to the TypeAdapter
@@ -716,8 +716,8 @@ def test_config_model_defer_build_nested():
     assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
     assert isinstance(MyNestedModel.__pydantic_serializer__, MockValSer)
 
-    m = MyModel(y={'x': 1})
-    assert m.model_dump() == {'y': {'x': 1}}
+    m = MyModel(y={"x": 1})
+    assert m.model_dump() == {"y": {"x": 1}}
 
     assert isinstance(MyNestedModel.__pydantic_validator__, MockValSer)
     assert isinstance(MyNestedModel.__pydantic_serializer__, MockValSer)
@@ -730,8 +730,8 @@ def test_config_model_defer_build_ser_first():
     class M2(BaseModel, defer_build=True):
         b: M1
 
-    m = M2.model_validate({'b': {'a': 'foo'}})
-    assert m.b.model_dump() == {'a': 'foo'}
+    m = M2.model_validate({"b": {"a": "foo"}})
+    assert m.b.model_dump() == {"a": "foo"}
 
 
 def test_defer_build_json_schema():
@@ -739,10 +739,10 @@ def test_defer_build_json_schema():
         a: int
 
     assert M.model_json_schema() == {
-        'title': 'M',
-        'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'integer'}},
-        'required': ['a'],
+        "title": "M",
+        "type": "object",
+        "properties": {"a": {"title": "A", "type": "integer"}},
+        "required": ["a"],
     }
 
 
@@ -759,12 +759,12 @@ def test_partial_creation_with_defer_build():
                 assert field.annotation is not None
                 override_fields[name] = (Optional[field.annotation], FieldInfo.merge_field_infos(field, default=None))
 
-        return create_model(f'Partial{model.__name__}', __base__=model, **override_fields)
+        return create_model(f"Partial{model.__name__}", __base__=model, **override_fields)
 
-    partial = create_partial(M, {'a'})
+    partial = create_partial(M, {"a"})
 
     # Comment this away and the last assertion works
-    assert M.model_json_schema()['required'] == ['a', 'b']
+    assert M.model_json_schema()["required"] == ["a", "b"]
 
     # AssertionError: assert ['a', 'b'] == ['b']
-    assert partial.model_json_schema()['required'] == ['b']
+    assert partial.model_json_schema()["required"] == ["b"]

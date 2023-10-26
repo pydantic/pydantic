@@ -10,10 +10,10 @@ import typing_extensions
 from . import _typing_extra
 
 if typing.TYPE_CHECKING:
-    ReprArgs: typing_extensions.TypeAlias = 'typing.Iterable[tuple[str | None, Any]]'
+    ReprArgs: typing_extensions.TypeAlias = "typing.Iterable[tuple[str | None, Any]]"
     RichReprResult: (
         typing_extensions.TypeAlias
-    ) = 'typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]'
+    ) = "typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]"
 
 
 class PlainRepr(str):
@@ -42,7 +42,7 @@ class Representation:
         * or, just values, e.g.: `[(None, 'foo'), (None, ['b', 'a', 'r'])]`
         """
         attrs_names = self.__slots__
-        if not attrs_names and hasattr(self, '__dict__'):
+        if not attrs_names and hasattr(self, "__dict__"):
             attrs_names = self.__dict__.keys()
         attrs = ((s, getattr(self, s)) for s in attrs_names)
         return [(a, v) for a, v in attrs if v is not None]
@@ -52,20 +52,20 @@ class Representation:
         return self.__class__.__name__
 
     def __repr_str__(self, join_str: str) -> str:
-        return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
+        return join_str.join(repr(v) if a is None else f"{a}={v!r}" for a, v in self.__repr_args__())
 
     def __pretty__(self, fmt: typing.Callable[[Any], Any], **kwargs: Any) -> typing.Generator[Any, None, None]:
         """Used by devtools (https://python-devtools.helpmanual.io/) to pretty print objects."""
-        yield self.__repr_name__() + '('
+        yield self.__repr_name__() + "("
         yield 1
         for name, value in self.__repr_args__():
             if name is not None:
-                yield name + '='
+                yield name + "="
             yield fmt(value)
-            yield ','
+            yield ","
             yield 0
         yield -1
-        yield ')'
+        yield ")"
 
     def __rich_repr__(self) -> RichReprResult:
         """Used by Rich (https://rich.readthedocs.io/en/stable/pretty.html) to pretty print objects."""
@@ -76,7 +76,7 @@ class Representation:
                 yield name, field_repr
 
     def __str__(self) -> str:
-        return self.__repr_str__(' ')
+        return self.__repr_str__(" ")
 
     def __repr__(self) -> str:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
@@ -90,7 +90,7 @@ def display_as_type(obj: Any) -> str:
     if isinstance(obj, types.FunctionType):
         return obj.__name__
     elif obj is ...:
-        return '...'
+        return "..."
     elif isinstance(obj, Representation):
         return repr(obj)
 
@@ -98,15 +98,15 @@ def display_as_type(obj: Any) -> str:
         obj = obj.__class__
 
     if _typing_extra.origin_is_union(typing_extensions.get_origin(obj)):
-        args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
-        return f'Union[{args}]'
+        args = ", ".join(map(display_as_type, typing_extensions.get_args(obj)))
+        return f"Union[{args}]"
     elif isinstance(obj, _typing_extra.WithArgsTypes):
         if typing_extensions.get_origin(obj) == typing_extensions.Literal:
-            args = ', '.join(map(repr, typing_extensions.get_args(obj)))
+            args = ", ".join(map(repr, typing_extensions.get_args(obj)))
         else:
-            args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
-        return f'{obj.__qualname__}[{args}]'
+            args = ", ".join(map(display_as_type, typing_extensions.get_args(obj)))
+        return f"{obj.__qualname__}[{args}]"
     elif isinstance(obj, type):
         return obj.__qualname__
     else:
-        return repr(obj).replace('typing.', '').replace('typing_extensions.', '')
+        return repr(obj).replace("typing.", "").replace("typing_extensions.", "")

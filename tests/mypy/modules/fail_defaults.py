@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 class Model(BaseModel):
     # Required
     undefined_default_no_args: int = Field()
-    undefined_default: int = Field(description='my desc')
+    undefined_default: int = Field(description="my desc")
     positional_ellipsis_default: int = Field(...)
     named_ellipsis_default: int = Field(default=...)
 

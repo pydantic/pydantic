@@ -97,7 +97,7 @@ from .json_schema import (
 )
 from .plugin._schema_validator import create_schema_validator
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 if TYPE_CHECKING:
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
@@ -160,13 +160,13 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
 
 def _getattr_no_parents(obj: Any, attribute: str) -> Any:
     """Returns the attribute value without attempting to look up attributes from parent types."""
-    if hasattr(obj, '__dict__'):
+    if hasattr(obj, "__dict__"):
         try:
             return obj.__dict__[attribute]
         except KeyError:
             pass
 
-    slots = getattr(obj, '__slots__', None)
+    slots = getattr(obj, "__slots__", None)
     if slots is not None and attribute in slots:
         return getattr(obj, attribute)
     else:
@@ -246,29 +246,29 @@ class TypeAdapter(Generic[T]):
 
         if type_has_config and config is not None:
             raise PydanticUserError(
-                'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
-                ' These types can have their own config and setting the config via the `config`'
-                ' parameter to TypeAdapter will not override it, thus the `config` you passed to'
-                ' TypeAdapter becomes meaningless, which is probably not what you want.',
-                code='type-adapter-config-unused',
+                "Cannot use `config` when the type is a BaseModel, dataclass or TypedDict."
+                " These types can have their own config and setting the config via the `config`"
+                " parameter to TypeAdapter will not override it, thus the `config` you passed to"
+                " TypeAdapter becomes meaningless, which is probably not what you want.",
+                code="type-adapter-config-unused",
             )
 
         core_schema: CoreSchema
         try:
-            core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
+            core_schema = _getattr_no_parents(type, "__pydantic_core_schema__")
         except AttributeError:
             core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
 
         core_config = config_wrapper.core_config(None)
         validator: SchemaValidator
         try:
-            validator = _getattr_no_parents(type, '__pydantic_validator__')
+            validator = _getattr_no_parents(type, "__pydantic_validator__")
         except AttributeError:
             validator = create_schema_validator(core_schema, core_config, config_wrapper.plugin_settings)
 
         serializer: SchemaSerializer
         try:
-            serializer = _getattr_no_parents(type, '__pydantic_serializer__')
+            serializer = _getattr_no_parents(type, "__pydantic_serializer__")
         except AttributeError:
             serializer = SchemaSerializer(core_schema, core_config)
 
@@ -345,7 +345,7 @@ class TypeAdapter(Generic[T]):
         self,
         __instance: T,
         *,
-        mode: Literal['json', 'python'] = 'python',
+        mode: Literal["json", "python"] = "python",
         include: IncEx | None = None,
         exclude: IncEx | None = None,
         by_alias: bool = False,
@@ -435,7 +435,7 @@ class TypeAdapter(Generic[T]):
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-        mode: JsonSchemaMode = 'validation',
+        mode: JsonSchemaMode = "validation",
     ) -> dict[str, Any]:
         """Generate a JSON schema for the adapted type.
 
@@ -491,10 +491,10 @@ class TypeAdapter(Generic[T]):
 
         json_schema: dict[str, Any] = {}
         if definitions:
-            json_schema['$defs'] = definitions
+            json_schema["$defs"] = definitions
         if title:
-            json_schema['title'] = title
+            json_schema["title"] = title
         if description:
-            json_schema['description'] = description
+            json_schema["description"] = description
 
         return json_schemas_map, json_schema
