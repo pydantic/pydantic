@@ -2863,5 +2863,9 @@ def test_generic_with_not_required_in_typed_dict() -> None:
     class FooGeneric(TypedDict, Generic[T]):
         type: NotRequired[T]
 
-    assert TypeAdapter(FooStr)
-    assert TypeAdapter(FooGeneric[str])
+    ta_foo_str = TypeAdapter(FooStr)
+    assert ta_foo_str.validate_python({'type': 'tomato'}) == {'type': 'tomato'}
+    assert ta_foo_str.validate_python({}) == {}
+    ta_foo_generic = TypeAdapter(FooGeneric[str])
+    assert ta_foo_generic.validate_python({'type': 'tomato'}) == {'type': 'tomato'}
+    assert ta_foo_generic.validate_python({}) == {}
