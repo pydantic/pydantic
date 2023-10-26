@@ -46,14 +46,14 @@ class ValidateCallWrapper:
         self.__signature__ = inspect.signature(function)
         if isinstance(function, partial):
             func = function.func
-            source_type = func
+            schema_type = func
             self.__name__ = f'partial({func.__name__})'
             self.__qualname__ = f'partial({func.__qualname__})'
             self.__annotations__ = func.__annotations__
             self.__module__ = func.__module__
             self.__doc__ = func.__doc__
         else:
-            source_type = function
+            schema_type = function
             self.__name__ = function.__name__
             self.__qualname__ = function.__qualname__
             self.__annotations__ = function.__annotations__
@@ -69,7 +69,7 @@ class ValidateCallWrapper:
 
         self.__pydantic_validator__ = create_schema_validator(
             schema,
-            source_type,
+            schema_type,
             self.__module__,
             self.__qualname__,
             'validate_call',
@@ -88,7 +88,7 @@ class ValidateCallWrapper:
             self.__return_pydantic_core_schema__ = schema
             validator = create_schema_validator(
                 schema,
-                source_type,
+                schema_type,
                 self.__module__,
                 self.__qualname__,
                 'validate_call',

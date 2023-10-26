@@ -219,14 +219,16 @@ class TypeAdapter(Generic[T]):
         ) -> None:
             ...
 
-    def __init__(self, type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None) -> None:
+    def __init__(
+        self, type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2, module: str | None = None
+    ) -> None:
         """Initializes the TypeAdapter object.
 
         Args:
             type: The type associated with the `TypeAdapter`.
             config: Configuration for the `TypeAdapter`, should be a dictionary conforming to [`ConfigDict`][pydantic.config.ConfigDict].
             _parent_depth: depth at which to search the parent namespace to construct the local namespace.
-
+            module: The module that passes to plugin if provided.
 
         !!! note
             You cannot use the `config` argument when instantiating a `TypeAdapter` if the type you're using has its own
@@ -272,7 +274,7 @@ class TypeAdapter(Generic[T]):
             if module is None:
                 f = sys._getframe(1)
                 module = f.f_globals['__name__']
-            validator = create_schema_validator(core_schema, type, module, str(type), 'type_adapter', core_config, config_wrapper.plugin_settings)  # type: ignore
+            validator = create_schema_validator(core_schema, type, module, str(type), 'TypeAdapter', core_config, config_wrapper.plugin_settings)  # type: ignore
 
         serializer: SchemaSerializer
         try:
