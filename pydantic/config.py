@@ -823,7 +823,7 @@ class ConfigDict(TypedDict, total=False):
     #> "42.13"
     ```
     """
-    
+
     regex_engine: Literal['rust-regex', 'python-re']
     """
     The regex engine to used for pattern validation
@@ -856,7 +856,7 @@ class ConfigDict(TypedDict, total=False):
         '''
     ```
     """
-    
+
     validation_error_cause: bool
     """
     If `True`, python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to `False`.
@@ -866,7 +866,7 @@ class ConfigDict(TypedDict, total=False):
 
     Note:
         The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.
-    """    
+    """
 
 
 __getattr__ = getattr_migration(__name__)

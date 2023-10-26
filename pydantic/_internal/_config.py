@@ -254,6 +254,7 @@ config_defaults = ConfigDict(
     coerce_numbers_to_str=False,
     regex_engine='rust-regex',
     validation_error_cause=False,
+)
 
 
 def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> ConfigDict:
