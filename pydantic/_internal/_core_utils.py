@@ -8,15 +8,15 @@ from typing import (
     Hashable,
     TypeVar,
     Union,
-    _GenericAlias,  # type: ignore
     cast,
 )
 
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core import validate_core_schema as _validate_core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args
+from typing_extensions import TypeAliasType, TypeGuard, get_args, get_origin
 
 from . import _repr
+from ._typing_extra import is_generic_alias
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
@@ -86,8 +86,9 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     This `args_override` argument was added for the purpose of creating valid recursive references
     when creating generic models without needing to create a concrete class.
     """
-    origin = type_
-    args = get_args(type_) if isinstance(type_, _GenericAlias) else (args_override or ())
+    origin = get_origin(type_) or type_
+
+    args = get_args(type_) if is_generic_alias(type_) else (args_override or ())
     generic_metadata = getattr(type_, '__pydantic_generic_metadata__', None)
     if generic_metadata:
         origin = generic_metadata['origin'] or origin
