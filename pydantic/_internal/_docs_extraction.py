@@ -58,21 +58,16 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
         else:
             if inspect.getmodule(frame) is inspect.getmodule(cls) and isinstance(lnum, int):
                 block_lines = inspect.getblock(lines[lnum - 1 :])
-                dedent_source = _dedent_source_lines(block_lines)
+                dedent_source = _dedent_source_lines(block_lines)  # type: ignore
+                # Because lnum can point to potential decorators before the class definition,
+                # we use ast to parse the block source:
                 try:
                     block_tree = ast.parse(dedent_source)
                 except Exception:
                     pass
                 else:
-                    # Because lnum can point to potential decorators before the class definition,
-                    # we use ast to parse the block source:
                     selected_nodes = list(itertools.islice(ast.walk(block_tree), 4))
                     cls_is_second_node = cls_is_third_node = False
-                    if len(selected_nodes) >= 2:
-                        # If the second element (the first one being `ast.Module`) is `ast.ClassDef` matching our class:
-                        cls_is_second_node = (
-                            isinstance(selected_nodes[1], ast.ClassDef) and selected_nodes[1].name == cls.__name__
-                        )
                     if len(selected_nodes) >= 4:
                         # Or if `_dedent_source_lines` wrapped the class around the workaround function
                         # second node is `FunctionNode`, third node is `ast.arguments`, fourth node is our class:
@@ -81,6 +76,11 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
                             and selected_nodes[1].name == 'dedent_workaround'
                             and isinstance(selected_nodes[3], ast.ClassDef)
                             and selected_nodes[3].name == cls.__name__
+                        )
+                    if not cls_is_third_node and len(selected_nodes) >= 2:
+                        # If the second element (the first one being `ast.Module`) is `ast.ClassDef` matching our class:
+                        cls_is_second_node = (
+                            isinstance(selected_nodes[1], ast.ClassDef) and selected_nodes[1].name == cls.__name__
                         )
                     if cls_is_second_node or cls_is_third_node:
                         return block_lines  # type: ignore
