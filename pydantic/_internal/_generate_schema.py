@@ -1272,6 +1272,11 @@ class GenerateSchema:
             custom_error_message='Input should be a type',
         )
 
+    def _union_is_subclass_schema(self, union_type: Any) -> core_schema.CoreSchema:
+        """Generate schema for `Type[Union[X, ...]]`."""
+        args = self._get_args_resolving_forward_refs(union_type, required=True)
+        return core_schema.union_schema([self.generate_schema(typing.Type[args]) for args in args])
+
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """Generate schema for a Type, e.g. `Type[int]`."""
         type_param = self._get_first_arg_or_any(type_)
@@ -1279,6 +1284,8 @@ class GenerateSchema:
             return self._type_schema()
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:
+                if _typing_extra.origin_is_union(get_origin(type_param.__bound__)):
+                    return self._union_is_subclass_schema(type_param.__bound__)
                 return core_schema.is_subclass_schema(type_param.__bound__)
             elif type_param.__constraints__:
                 return core_schema.union_schema(
@@ -1287,8 +1294,7 @@ class GenerateSchema:
             else:
                 return self._type_schema()
         elif _typing_extra.origin_is_union(get_origin(type_param)):
-            args = self._get_args_resolving_forward_refs(type_param, required=True)
-            return core_schema.union_schema([self.generate_schema(typing.Type[args]) for args in args])
+            return self._union_is_subclass_schema(type_param)
         else:
             return core_schema.is_subclass_schema(type_param)
 
@@ -1512,6 +1518,9 @@ class GenerateSchema:
             )
 
         return_type = replace_types(return_type, self._typevars_map)
+        # Create a new ComputedFieldInfo so that different type parametrizations of the same
+        # generic model's computed field can have different return types.
+        d.info = dataclasses.replace(d.info, return_type=return_type)
         return_type_schema = self.generate_schema(return_type)
         # Apply serializers to computed field if there exist
         return_type_schema = self._apply_field_serializers(

@@ -105,7 +105,10 @@ def display_as_type(obj: Any) -> str:
             args = ', '.join(map(repr, typing_extensions.get_args(obj)))
         else:
             args = ', '.join(map(display_as_type, typing_extensions.get_args(obj)))
-        return f'{obj.__qualname__}[{args}]'
+        try:
+            return f'{obj.__qualname__}[{args}]'
+        except AttributeError:
+            return str(obj)  # handles TypeAliasType in 3.12
     elif isinstance(obj, type):
         return obj.__qualname__
     else:
