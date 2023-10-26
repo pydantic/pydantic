@@ -38,60 +38,60 @@ from .json_schema import JsonSchemaValue
 from .warnings import PydanticDeprecatedSince20
 
 __all__ = (
-    "Strict",
-    "StrictStr",
-    "conbytes",
-    "conlist",
-    "conset",
-    "confrozenset",
-    "constr",
-    "ImportString",
-    "conint",
-    "PositiveInt",
-    "NegativeInt",
-    "NonNegativeInt",
-    "NonPositiveInt",
-    "confloat",
-    "PositiveFloat",
-    "NegativeFloat",
-    "NonNegativeFloat",
-    "NonPositiveFloat",
-    "FiniteFloat",
-    "condecimal",
-    "UUID1",
-    "UUID3",
-    "UUID4",
-    "UUID5",
-    "FilePath",
-    "DirectoryPath",
-    "NewPath",
-    "Json",
-    "SecretStr",
-    "SecretBytes",
-    "StrictBool",
-    "StrictBytes",
-    "StrictInt",
-    "StrictFloat",
-    "PaymentCardNumber",
-    "ByteSize",
-    "PastDate",
-    "FutureDate",
-    "PastDatetime",
-    "FutureDatetime",
-    "condate",
-    "AwareDatetime",
-    "NaiveDatetime",
-    "AllowInfNan",
-    "EncoderProtocol",
-    "EncodedBytes",
-    "EncodedStr",
-    "Base64Encoder",
-    "Base64Bytes",
-    "Base64Str",
-    "Base64UrlBytes",
-    "Base64UrlStr",
-    "GetPydanticSchema",
-    "StringConstraints",
+    'Strict',
+    'StrictStr',
+    'conbytes',
+    'conlist',
+    'conset',
+    'confrozenset',
+    'constr',
+    'ImportString',
+    'conint',
+    'PositiveInt',
+    'NegativeInt',
+    'NonNegativeInt',
+    'NonPositiveInt',
+    'confloat',
+    'PositiveFloat',
+    'NegativeFloat',
+    'NonNegativeFloat',
+    'NonPositiveFloat',
+    'FiniteFloat',
+    'condecimal',
+    'UUID1',
+    'UUID3',
+    'UUID4',
+    'UUID5',
+    'FilePath',
+    'DirectoryPath',
+    'NewPath',
+    'Json',
+    'SecretStr',
+    'SecretBytes',
+    'StrictBool',
+    'StrictBytes',
+    'StrictInt',
+    'StrictFloat',
+    'PaymentCardNumber',
+    'ByteSize',
+    'PastDate',
+    'FutureDate',
+    'PastDatetime',
+    'FutureDatetime',
+    'condate',
+    'AwareDatetime',
+    'NaiveDatetime',
+    'AllowInfNan',
+    'EncoderProtocol',
+    'EncodedBytes',
+    'EncodedStr',
+    'Base64Encoder',
+    'Base64Bytes',
+    'Base64Str',
+    'Base64UrlBytes',
+    'Base64UrlStr',
+    'GetPydanticSchema',
+    'StringConstraints',
 )
 
 
@@ -779,7 +779,7 @@ StrictStr = Annotated[str, Strict()]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ COLLECTION TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-HashableItemType = TypeVar("HashableItemType", bound=Hashable)
+HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 
 
 def conset(
@@ -814,7 +814,7 @@ def confrozenset(
     return Annotated[FrozenSet[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
-AnyItemType = TypeVar("AnyItemType")
+AnyItemType = TypeVar('AnyItemType')
 
 
 def conlist(
@@ -838,17 +838,17 @@ def conlist(
     if unique_items is not None:
         raise PydanticUserError(
             (
-                "`unique_items` is removed, use `Set` instead"
-                "(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)"
+                '`unique_items` is removed, use `Set` instead'
+                '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
             ),
-            code="removed-kwargs",
+            code='removed-kwargs',
         )
     return Annotated[List[item_type], annotated_types.Len(min_length or 0, max_length)]
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ IMPORT STRING TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-AnyType = TypeVar("AnyType")
+AnyType = TypeVar('AnyType')
 if TYPE_CHECKING:
     ImportString = Annotated[AnyType, ...]
 else:
@@ -932,7 +932,7 @@ else:
         def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
-            serializer = core_schema.plain_serializer_function_ser_schema(cls._serialize, when_used="json")
+            serializer = core_schema.plain_serializer_function_ser_schema(cls._serialize, when_used='json')
             if cls is source:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
                 return core_schema.no_info_plain_validator_function(
@@ -947,13 +947,13 @@ else:
         def _serialize(v: Any) -> str:
             if isinstance(v, ModuleType):
                 return v.__name__
-            elif hasattr(v, "__module__") and hasattr(v, "__name__"):
-                return f"{v.__module__}.{v.__name__}"
+            elif hasattr(v, '__module__') and hasattr(v, '__name__'):
+                return f'{v.__module__}.{v.__name__}'
             else:
                 return v
 
         def __repr__(self) -> str:
-            return "ImportString"
+            return 'ImportString'
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DECIMAL TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1066,8 +1066,8 @@ class UuidVersion:
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
-        field_schema.pop("anyOf", None)  # remove the bytes/str union
-        field_schema.update(type="string", format=f"uuid{self.uuid_version}")
+        field_schema.pop('anyOf', None)  # remove the bytes/str union
+        field_schema.update(type='string', format=f'uuid{self.uuid_version}')
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -1077,8 +1077,8 @@ class UuidVersion:
         else:
             # update existing schema with self.uuid_version
             schema = handler(source)
-            _check_annotated_type(schema["type"], "uuid", self.__class__.__name__)
-            schema["version"] = self.uuid_version  # type: ignore
+            _check_annotated_type(schema['type'], 'uuid', self.__class__.__name__)
+            schema['version'] = self.uuid_version  # type: ignore
             return schema
 
     def __hash__(self) -> int:
@@ -1148,21 +1148,21 @@ Model(uuid5=uuid.uuid5(uuid.NAMESPACE_DNS, 'pydantic.org'))
 
 @_dataclasses.dataclass
 class PathType:
-    path_type: Literal["file", "dir", "new"]
+    path_type: Literal['file', 'dir', 'new']
 
     def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
-        format_conversion = {"file": "file-path", "dir": "directory-path"}
-        field_schema.update(format=format_conversion.get(self.path_type, "path"), type="string")
+        format_conversion = {'file': 'file-path', 'dir': 'directory-path'}
+        field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         function_lookup = {
-            "file": cast(core_schema.WithInfoValidatorFunction, self.validate_file),
-            "dir": cast(core_schema.WithInfoValidatorFunction, self.validate_directory),
-            "new": cast(core_schema.WithInfoValidatorFunction, self.validate_new),
+            'file': cast(core_schema.WithInfoValidatorFunction, self.validate_file),
+            'dir': cast(core_schema.WithInfoValidatorFunction, self.validate_directory),
+            'new': cast(core_schema.WithInfoValidatorFunction, self.validate_new),
         }
 
         return core_schema.with_info_after_validator_function(
@@ -1175,21 +1175,21 @@ class PathType:
         if path.is_file():
             return path
         else:
-            raise PydanticCustomError("path_not_file", "Path does not point to a file")
+            raise PydanticCustomError('path_not_file', 'Path does not point to a file')
 
     @staticmethod
     def validate_directory(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.is_dir():
             return path
         else:
-            raise PydanticCustomError("path_not_directory", "Path does not point to a directory")
+            raise PydanticCustomError('path_not_directory', 'Path does not point to a directory')
 
     @staticmethod
     def validate_new(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.exists():
-            raise PydanticCustomError("path_exists", "Path already exists")
+            raise PydanticCustomError('path_exists', 'Path already exists')
         elif not path.parent.exists():
-            raise PydanticCustomError("parent_does_not_exist", "Parent directory does not exist")
+            raise PydanticCustomError('parent_does_not_exist', 'Parent directory does not exist')
         else:
             return path
 
@@ -1197,7 +1197,7 @@ class PathType:
         return hash(type(self.path_type))
 
 
-FilePath = Annotated[Path, PathType("file")]
+FilePath = Annotated[Path, PathType('file')]
 """A path that must point to a file.
 
 ```py
@@ -1239,7 +1239,7 @@ except ValidationError as e:
     '''
 ```
 """
-DirectoryPath = Annotated[Path, PathType("dir")]
+DirectoryPath = Annotated[Path, PathType('dir')]
 """A path that must point to a directory.
 
 ```py
@@ -1281,7 +1281,7 @@ except ValidationError as e:
     '''
 ```
 """
-NewPath = Annotated[Path, PathType("new")]
+NewPath = Annotated[Path, PathType('new')]
 """A path for a new file or directory that must not already exist."""
 
 
@@ -1384,7 +1384,7 @@ else:
                 return core_schema.json_schema(handler(source))
 
         def __repr__(self) -> str:
-            return "Json"
+            return 'Json'
 
         def __hash__(self) -> int:
             return hash(type(self))
@@ -1395,7 +1395,7 @@ else:
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ SECRET TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SecretType = TypeVar("SecretType", str, bytes)
+SecretType = TypeVar('SecretType', str, bytes)
 
 
 class _SecretField(Generic[SecretType]):
@@ -1423,7 +1423,7 @@ class _SecretField(Generic[SecretType]):
         return str(self._display())
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self._display()!r})"
+        return f'{self.__class__.__name__}({self._display()!r})'
 
     def _display(self) -> SecretType:
         raise NotImplementedError
@@ -1437,12 +1437,12 @@ class _SecretField(Generic[SecretType]):
             assert issubclass(source, SecretBytes)
             field_type = bytes
             inner_schema = core_schema.bytes_schema()
-        error_kind = "string_type" if field_type is str else "bytes_type"
+        error_kind = 'string_type' if field_type is str else 'bytes_type'
 
         def serialize(
             value: _SecretField[SecretType], info: core_schema.SerializationInfo
         ) -> str | _SecretField[SecretType]:
-            if info.mode == "json":
+            if info.mode == 'json':
                 # we want the output to always be string without the `b'` prefix for bytes,
                 # hence we just use `secret_display`
                 return _secret_display(value.get_secret_value())
@@ -1453,9 +1453,9 @@ class _SecretField(Generic[SecretType]):
             json_schema = handler(inner_schema)
             _utils.update_not_none(
                 json_schema,
-                type="string",
+                type='string',
                 writeOnly=True,
-                format="password",
+                format='password',
             )
             return json_schema
 
@@ -1477,17 +1477,17 @@ class _SecretField(Generic[SecretType]):
                 serialize,
                 info_arg=True,
                 return_schema=core_schema.str_schema(),
-                when_used="json",
+                when_used='json',
             ),
         )
-        s.setdefault("metadata", {}).setdefault("pydantic_js_functions", []).append(get_json_schema)
+        s.setdefault('metadata', {}).setdefault('pydantic_js_functions', []).append(get_json_schema)
         return s
 
 
 def _secret_display(value: str | bytes) -> str:
     if isinstance(value, bytes):
         value = value.decode()
-    return "**********" if value else ""
+    return '**********' if value else ''
 
 
 class SecretStr(_SecretField[str]):
@@ -1542,18 +1542,18 @@ class SecretBytes(_SecretField[bytes]):
 
 
 class PaymentCardBrand(str, Enum):
-    amex = "American Express"
-    mastercard = "Mastercard"
-    visa = "Visa"
-    other = "other"
+    amex = 'American Express'
+    mastercard = 'Mastercard'
+    visa = 'Visa'
+    other = 'other'
 
     def __str__(self) -> str:
         return self.value
 
 
 @deprecated(
-    "The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. "
-    "See https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.",
+    'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. '
+    'See https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/#pydantic_extra_types.payment.PaymentCardNumber.',
     category=PydanticDeprecatedSince20,
 )
 class PaymentCardNumber(str):
@@ -1603,7 +1603,7 @@ class PaymentCardNumber(str):
     def validate_digits(cls, card_number: str) -> None:
         """Validate that the card number is all digits."""
         if not card_number.isdigit():
-            raise PydanticCustomError("payment_card_number_digits", "Card number is not all digits")
+            raise PydanticCustomError('payment_card_number_digits', 'Card number is not all digits')
 
     @classmethod
     def validate_luhn_check_digit(cls, card_number: str) -> str:
@@ -1620,7 +1620,7 @@ class PaymentCardNumber(str):
             sum_ += digit
         valid = sum_ % 10 == 0
         if not valid:
-            raise PydanticCustomError("payment_card_number_luhn", "Card number is not luhn valid")
+            raise PydanticCustomError('payment_card_number_luhn', 'Card number is not luhn valid')
         return card_number
 
     @staticmethod
@@ -1628,11 +1628,11 @@ class PaymentCardNumber(str):
         """Validate length based on BIN for major brands:
         https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN).
         """
-        if card_number[0] == "4":
+        if card_number[0] == '4':
             brand = PaymentCardBrand.visa
         elif 51 <= int(card_number[:2]) <= 55:
             brand = PaymentCardBrand.mastercard
-        elif card_number[:2] in {"34", "37"}:
+        elif card_number[:2] in {'34', '37'}:
             brand = PaymentCardBrand.amex
         else:
             brand = PaymentCardBrand.other
@@ -1642,7 +1642,7 @@ class PaymentCardNumber(str):
             required_length = 16
             valid = len(card_number) == required_length
         elif brand == PaymentCardBrand.visa:
-            required_length = "13, 16 or 19"
+            required_length = '13, 16 or 19'
             valid = len(card_number) in {13, 16, 19}
         elif brand == PaymentCardBrand.amex:
             required_length = 15
@@ -1652,9 +1652,9 @@ class PaymentCardNumber(str):
 
         if not valid:
             raise PydanticCustomError(
-                "payment_card_number_brand",
-                "Length for a {brand} card must be {required_length}",
-                {"brand": brand, "required_length": required_length},
+                'payment_card_number_brand',
+                'Length for a {brand} card must be {required_length}',
+                {'brand': brand, 'required_length': required_length},
             )
         return brand
 
@@ -1662,22 +1662,22 @@ class PaymentCardNumber(str):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTE SIZE TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 BYTE_SIZES = {
-    "b": 1,
-    "kb": 10**3,
-    "mb": 10**6,
-    "gb": 10**9,
-    "tb": 10**12,
-    "pb": 10**15,
-    "eb": 10**18,
-    "kib": 2**10,
-    "mib": 2**20,
-    "gib": 2**30,
-    "tib": 2**40,
-    "pib": 2**50,
-    "eib": 2**60,
+    'b': 1,
+    'kb': 10**3,
+    'mb': 10**6,
+    'gb': 10**9,
+    'tb': 10**12,
+    'pb': 10**15,
+    'eb': 10**18,
+    'kib': 2**10,
+    'mib': 2**20,
+    'gib': 2**30,
+    'tib': 2**40,
+    'pib': 2**50,
+    'eib': 2**60,
 }
-BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if "i" not in k})
-byte_string_re = re.compile(r"^\s*(\d*\.?\d+)\s*(\w+)?", re.IGNORECASE)
+BYTE_SIZES.update({k.lower()[0]: v for k, v in BYTE_SIZES.items() if 'i' not in k})
+byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 
 class ByteSize(int):
@@ -1728,16 +1728,16 @@ class ByteSize(int):
 
         str_match = byte_string_re.match(str(__input_value))
         if str_match is None:
-            raise PydanticCustomError("byte_size", "could not parse value and unit from byte string")
+            raise PydanticCustomError('byte_size', 'could not parse value and unit from byte string')
 
         scalar, unit = str_match.groups()
         if unit is None:
-            unit = "b"
+            unit = 'b'
 
         try:
             unit_mult = BYTE_SIZES[unit.lower()]
         except KeyError:
-            raise PydanticCustomError("byte_size_unit", "could not interpret byte unit: {unit}", {"unit": unit})
+            raise PydanticCustomError('byte_size_unit', 'could not interpret byte unit: {unit}', {'unit': unit})
 
         return cls(int(float(scalar) * unit_mult))
 
@@ -1753,23 +1753,23 @@ class ByteSize(int):
         """
         if decimal:
             divisor = 1000
-            units = "B", "KB", "MB", "GB", "TB", "PB"
-            final_unit = "EB"
+            units = 'B', 'KB', 'MB', 'GB', 'TB', 'PB'
+            final_unit = 'EB'
         else:
             divisor = 1024
-            units = "B", "KiB", "MiB", "GiB", "TiB", "PiB"
-            final_unit = "EiB"
+            units = 'B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'
+            final_unit = 'EiB'
 
         num = float(self)
         for unit in units:
             if abs(num) < divisor:
-                if unit == "B":
-                    return f"{num:0.0f}{unit}"
+                if unit == 'B':
+                    return f'{num:0.0f}{unit}'
                 else:
-                    return f"{num:0.1f}{unit}"
+                    return f'{num:0.1f}{unit}'
             num /= divisor
 
-        return f"{num:0.1f}{final_unit}"
+        return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
         """Converts a byte size to another unit.
@@ -1784,7 +1784,7 @@ class ByteSize(int):
         try:
             unit_div = BYTE_SIZES[unit.lower()]
         except KeyError:
-            raise PydanticCustomError("byte_size_unit", "Could not interpret byte unit: {unit}", {"unit": unit})
+            raise PydanticCustomError('byte_size_unit', 'Could not interpret byte unit: {unit}', {'unit': unit})
 
         return self / unit_div
 
@@ -1794,7 +1794,7 @@ class ByteSize(int):
 
 def _check_annotated_type(annotated_type: str, expected_type: str, annotation: str) -> None:
     if annotated_type != expected_type:
-        raise PydanticUserError(f"'{annotation}' cannot annotate '{annotated_type}'.", code="invalid_annotated_type")
+        raise PydanticUserError(f"'{annotation}' cannot annotate '{annotated_type}'.", code='invalid_annotated_type')
 
 
 if TYPE_CHECKING:
@@ -1811,15 +1811,15 @@ else:
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
-                return core_schema.date_schema(now_op="past")
+                return core_schema.date_schema(now_op='past')
             else:
                 schema = handler(source)
-                _check_annotated_type(schema["type"], "date", cls.__name__)
-                schema["now_op"] = "past"
+                _check_annotated_type(schema['type'], 'date', cls.__name__)
+                schema['now_op'] = 'past'
                 return schema
 
         def __repr__(self) -> str:
-            return "PastDate"
+            return 'PastDate'
 
     class FutureDate:
         """A date in the future."""
@@ -1830,15 +1830,15 @@ else:
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
-                return core_schema.date_schema(now_op="future")
+                return core_schema.date_schema(now_op='future')
             else:
                 schema = handler(source)
-                _check_annotated_type(schema["type"], "date", cls.__name__)
-                schema["now_op"] = "future"
+                _check_annotated_type(schema['type'], 'date', cls.__name__)
+                schema['now_op'] = 'future'
                 return schema
 
         def __repr__(self) -> str:
-            return "FutureDate"
+            return 'FutureDate'
 
 
 def condate(
@@ -1887,15 +1887,15 @@ else:
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
-                return core_schema.datetime_schema(tz_constraint="aware")
+                return core_schema.datetime_schema(tz_constraint='aware')
             else:
                 schema = handler(source)
-                _check_annotated_type(schema["type"], "datetime", cls.__name__)
-                schema["tz_constraint"] = "aware"
+                _check_annotated_type(schema['type'], 'datetime', cls.__name__)
+                schema['tz_constraint'] = 'aware'
                 return schema
 
         def __repr__(self) -> str:
-            return "AwareDatetime"
+            return 'AwareDatetime'
 
     class NaiveDatetime:
         """A datetime that doesn't require timezone info."""
@@ -1906,15 +1906,15 @@ else:
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
-                return core_schema.datetime_schema(tz_constraint="naive")
+                return core_schema.datetime_schema(tz_constraint='naive')
             else:
                 schema = handler(source)
-                _check_annotated_type(schema["type"], "datetime", cls.__name__)
-                schema["tz_constraint"] = "naive"
+                _check_annotated_type(schema['type'], 'datetime', cls.__name__)
+                schema['tz_constraint'] = 'naive'
                 return schema
 
         def __repr__(self) -> str:
-            return "NaiveDatetime"
+            return 'NaiveDatetime'
 
     class PastDatetime:
         """A datetime that must be in the past."""
@@ -1925,15 +1925,15 @@ else:
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
-                return core_schema.datetime_schema(now_op="past")
+                return core_schema.datetime_schema(now_op='past')
             else:
                 schema = handler(source)
-                _check_annotated_type(schema["type"], "datetime", cls.__name__)
-                schema["now_op"] = "past"
+                _check_annotated_type(schema['type'], 'datetime', cls.__name__)
+                schema['now_op'] = 'past'
                 return schema
 
         def __repr__(self) -> str:
-            return "PastDatetime"
+            return 'PastDatetime'
 
     class FutureDatetime:
         """A datetime that must be in the future."""
@@ -1944,15 +1944,15 @@ else:
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
-                return core_schema.datetime_schema(now_op="future")
+                return core_schema.datetime_schema(now_op='future')
             else:
                 schema = handler(source)
-                _check_annotated_type(schema["type"], "datetime", cls.__name__)
-                schema["now_op"] = "future"
+                _check_annotated_type(schema['type'], 'datetime', cls.__name__)
+                schema['now_op'] = 'future'
                 return schema
 
         def __repr__(self) -> str:
-            return "FutureDatetime"
+            return 'FutureDatetime'
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Encoded TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2011,7 +2011,7 @@ class Base64Encoder(EncoderProtocol):
         try:
             return base64.decodebytes(data)
         except ValueError as e:
-            raise PydanticCustomError("base64_decode", "Base64 decoding error: '{error}'", {"error": str(e)})
+            raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
     @classmethod
     def encode(cls, value: bytes) -> bytes:
@@ -2026,13 +2026,13 @@ class Base64Encoder(EncoderProtocol):
         return base64.encodebytes(value)
 
     @classmethod
-    def get_json_format(cls) -> Literal["base64"]:
+    def get_json_format(cls) -> Literal['base64']:
         """Get the JSON format for the encoded data.
 
         Returns:
             The JSON format for the encoded data.
         """
-        return "base64"
+        return 'base64'
 
 
 class Base64UrlEncoder(EncoderProtocol):
@@ -2051,7 +2051,7 @@ class Base64UrlEncoder(EncoderProtocol):
         try:
             return base64.urlsafe_b64decode(data)
         except ValueError as e:
-            raise PydanticCustomError("base64_decode", "Base64 decoding error: '{error}'", {"error": str(e)})
+            raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
 
     @classmethod
     def encode(cls, value: bytes) -> bytes:
@@ -2066,13 +2066,13 @@ class Base64UrlEncoder(EncoderProtocol):
         return base64.urlsafe_b64encode(value)
 
     @classmethod
-    def get_json_format(cls) -> Literal["base64url"]:
+    def get_json_format(cls) -> Literal['base64url']:
         """Get the JSON format for the encoded data.
 
         Returns:
             The JSON format for the encoded data.
         """
-        return "base64url"
+        return 'base64url'
 
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
@@ -2136,7 +2136,7 @@ class EncodedBytes:
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
-        field_schema.update(type="string", format=self.encoder.get_json_format())
+        field_schema.update(type='string', format=self.encoder.get_json_format())
         return field_schema
 
     def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -2420,9 +2420,9 @@ class GetPydanticSchema:
 
         def __getattr__(self, item: str) -> Any:
             """Use this rather than defining `__get_pydantic_core_schema__` etc. to reduce the number of nested calls."""
-            if item == "__get_pydantic_core_schema__" and self.get_pydantic_core_schema:
+            if item == '__get_pydantic_core_schema__' and self.get_pydantic_core_schema:
                 return self.get_pydantic_core_schema
-            elif item == "__get_pydantic_json_schema__" and self.get_pydantic_json_schema:
+            elif item == '__get_pydantic_json_schema__' and self.get_pydantic_json_schema:
                 return self.get_pydantic_json_schema
             else:
                 return object.__getattribute__(self, item)

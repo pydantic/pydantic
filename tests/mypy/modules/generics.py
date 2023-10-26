@@ -2,7 +2,7 @@ from typing import Any, Dict, Generic, Optional, TypeVar
 
 from pydantic import BaseModel
 
-Tbody = TypeVar("Tbody")
+Tbody = TypeVar('Tbody')
 
 
 class Response(BaseModel, Generic[Tbody]):
@@ -27,10 +27,10 @@ class JsonResponse(Response[JsonBody]):
 class HtmlResponse(Response[HtmlBody]):
     def custom_method(self) -> None:
         doctype = self.body.doctype
-        print(f"self: {doctype}")
+        print(f'self: {doctype}')
 
 
-example = {"url": "foo.com", "body": {"raw": "..<html>..", "doctype": "html"}}
+example = {'url': 'foo.com', 'body': {'raw': '..<html>..', 'doctype': 'html'}}
 
 resp = HtmlResponse.model_validate(example)
 resp.custom_method()
@@ -38,7 +38,7 @@ resp.custom_method()
 doctype = resp.body.doctype
 
 
-T = TypeVar("T", int, str)
+T = TypeVar('T', int, str)
 
 
 class HistoryField(BaseModel, Generic[T]):

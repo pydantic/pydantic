@@ -31,8 +31,8 @@ GenericTypesCacheKey = Tuple[Any, Any, Tuple[Any, ...]]
 #   while also retaining a limited number of types even without references. This is generally enough to build
 #   specific recursive generic models without losing required items out of the cache.
 
-KT = TypeVar("KT")
-VT = TypeVar("VT")
+KT = TypeVar('KT')
+VT = TypeVar('VT')
 _LIMITED_DICT_SIZE = 100
 if TYPE_CHECKING:
 
@@ -68,7 +68,7 @@ else:
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
 # once they are no longer referenced by the caller.
 if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
-    GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, "type[BaseModel]"]
+    GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, 'type[BaseModel]']
 else:
     GenericTypesCache = WeakValueDictionary
 
@@ -135,7 +135,7 @@ def create_generic_submodel(
     Returns:
         The created submodel.
     """
-    namespace: dict[str, Any] = {"__module__": origin.__module__}
+    namespace: dict[str, Any] = {'__module__': origin.__module__}
     bases = (origin,)
     meta, ns, kwds = prepare_class(model_name, bases)
     namespace.update(ns)
@@ -144,9 +144,9 @@ def create_generic_submodel(
         bases,
         namespace,
         __pydantic_generic_metadata__={
-            "origin": origin,
-            "args": args,
-            "parameters": params,
+            'origin': origin,
+            'args': args,
+            'parameters': params,
         },
         __pydantic_reset_parent_namespace__=False,
         **kwds,
@@ -159,7 +159,7 @@ def create_generic_submodel(
         reference_module_globals = sys.modules[created_model.__module__].__dict__
         while object_by_reference is not created_model:
             object_by_reference = reference_module_globals.setdefault(reference_name, created_model)
-            reference_name += "_"
+            reference_name += '_'
 
     return created_model
 
@@ -179,11 +179,11 @@ def _get_caller_frame_info(depth: int = 2) -> tuple[str | None, bool]:
     try:
         previous_caller_frame = sys._getframe(depth)
     except ValueError as e:
-        raise RuntimeError("This function must be used inside another function") from e
+        raise RuntimeError('This function must be used inside another function') from e
     except AttributeError:  # sys module does not have _getframe function, so there's nothing we can do about it
         return None, False
     frame_globals = previous_caller_frame.f_globals
-    return frame_globals.get("__name__"), previous_caller_frame.f_locals is frame_globals
+    return frame_globals.get('__name__'), previous_caller_frame.f_locals is frame_globals
 
 
 DictValues: type[Any] = {}.values().__class__
@@ -198,7 +198,7 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
     if isinstance(v, TypeVar):
         yield v
     elif is_model_class(v):
-        yield from v.__pydantic_generic_metadata__["parameters"]
+        yield from v.__pydantic_generic_metadata__['parameters']
     elif isinstance(v, (DictValues, list)):
         for var in v:
             yield from iter_contained_typevars(var)
@@ -209,16 +209,16 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
 
 
 def get_args(v: Any) -> Any:
-    pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, "__pydantic_generic_metadata__", None)
+    pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, '__pydantic_generic_metadata__', None)
     if pydantic_generic_metadata:
-        return pydantic_generic_metadata.get("args")
+        return pydantic_generic_metadata.get('args')
     return typing_extensions.get_args(v)
 
 
 def get_origin(v: Any) -> Any:
-    pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, "__pydantic_generic_metadata__", None)
+    pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, '__pydantic_generic_metadata__', None)
     if pydantic_generic_metadata:
-        return pydantic_generic_metadata.get("origin")
+        return pydantic_generic_metadata.get('origin')
     return typing_extensions.get_origin(v)
 
 
@@ -229,7 +229,7 @@ def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
     origin = get_origin(cls)
     if origin is None:
         return None
-    if not hasattr(origin, "__parameters__"):
+    if not hasattr(origin, '__parameters__'):
         return None
 
     # In this case, we know that cls is a _GenericAlias, and origin is the generic type
@@ -249,8 +249,8 @@ def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVarType, Any] | Non
     # TODO: This could be unified with `get_standard_typevars_map` if we stored the generic metadata
     #   in the __origin__, __args__, and __parameters__ attributes of the model.
     generic_metadata = cls.__pydantic_generic_metadata__
-    origin = generic_metadata["origin"]
-    args = generic_metadata["args"]
+    origin = generic_metadata['origin']
+    args = generic_metadata['args']
     return dict(zip(iter_contained_typevars(origin), args))
 
 
@@ -300,7 +300,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
             origin_type is not None
             and isinstance(type_, typing_base)
             and not isinstance(origin_type, typing_base)
-            and getattr(type_, "_name", None) is not None
+            and getattr(type_, '_name', None) is not None
         ):
             # In python < 3.9 generic aliases don't exist so any of these like `list`,
             # `type` or `collections.abc.Callable` need to be translated.
@@ -317,7 +317,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     # semantics as "typing" classes or generic aliases
 
     if not origin_type and is_model_class(type_):
-        parameters = type_.__pydantic_generic_metadata__["parameters"]
+        parameters = type_.__pydantic_generic_metadata__['parameters']
         if not parameters:
             return type_
         resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
@@ -377,13 +377,13 @@ def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) ->
         TypeError: If the passed parameters count is not equal to generic model parameters count.
     """
     actual = len(parameters)
-    expected = len(cls.__pydantic_generic_metadata__["parameters"])
+    expected = len(cls.__pydantic_generic_metadata__['parameters'])
     if actual != expected:
-        description = "many" if actual > expected else "few"
-        raise TypeError(f"Too {description} parameters for {cls}; actual {actual}, expected {expected}")
+        description = 'many' if actual > expected else 'few'
+        raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
 
 
-_generic_recursion_cache: ContextVar[set[str] | None] = ContextVar("_generic_recursion_cache", default=None)
+_generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
 
 
 @contextmanager

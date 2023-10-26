@@ -13,13 +13,13 @@ class MyModel(BaseModel):
     y: List[int]
 
 
-m1 = MyModel(x="hello", y=[1, 2, 3])
+m1 = MyModel(x='hello', y=[1, 2, 3])
 
-m2 = MyModel(x="hello")  # pyright: ignore
+m2 = MyModel(x='hello')  # pyright: ignore
 
 
 class Knight(BaseModel):
-    title: str = Field(default="Sir Lancelot")  # this is okay
+    title: str = Field(default='Sir Lancelot')  # this is okay
     age: int = Field(23)  # this works fine at runtime but will case an error for pyright
 
 
@@ -41,7 +41,7 @@ class Square(BaseModel):
 
 sq = Square(side=10)
 y = 12.4 + sq.area
-z = "x" + sq.area  # type: ignore
+z = 'x' + sq.area  # type: ignore
 
 
 class Square2(BaseModel):
@@ -55,4 +55,4 @@ class Square2(BaseModel):
 
 sq = Square(side=10)
 y = 12.4 + sq.area
-z = "x" + sq.area  # type: ignore
+z = 'x' + sq.area  # type: ignore

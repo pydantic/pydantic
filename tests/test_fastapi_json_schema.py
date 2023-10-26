@@ -48,13 +48,13 @@ class FastAPIGenerateJsonSchema(GenerateJsonSchema):
     def handle_invalid_for_json_schema(self, schema: CoreSchemaOrField, error_info: str) -> JsonSchemaValue:
         # NOTE: I think it may be a good idea to rework this method to either not use CoreMetadataHandler,
         #    and/or to make CoreMetadataHandler a public API.
-        if CoreMetadataHandler(schema).metadata.get("pydantic_js_modify_function") is not None:
+        if CoreMetadataHandler(schema).metadata.get('pydantic_js_modify_function') is not None:
             # Since there is a json schema modify function, assume that this type is meant to be handled,
             # and the modify function will set all properties as appropriate
             return {}
         else:
-            error = PydanticInvalidForJsonSchema(f"Cannot generate a JsonSchema for {error_info}")
-            return {_ErrorKey("error"): error}
+            error = PydanticInvalidForJsonSchema(f'Cannot generate a JsonSchema for {error_info}')
+            return {_ErrorKey('error'): error}
 
 
 @dataclass
@@ -108,22 +108,22 @@ def test_collect_errors() -> None:
 
     schema = Model.model_json_schema(schema_generator=FastAPIGenerateJsonSchema)
     assert schema == {
-        "title": "Model",
-        "type": "object",
-        "properties": {
-            "f1": {"type": "integer", "default": 1, "title": "F1"},
-            "f2": {
-                "error": HasRepr(IsStr(regex=r"PydanticInvalidForJsonSchema\(.*\)")),
-                "title": "F2",
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'f1': {'type': 'integer', 'default': 1, 'title': 'F1'},
+            'f2': {
+                'error': HasRepr(IsStr(regex=r'PydanticInvalidForJsonSchema\(.*\)')),
+                'title': 'F2',
             },
         },
-        "required": ["f2"],
+        'required': ['f2'],
     }
 
     collected_errors = collect_errors(schema)
     assert collected_errors == [
         ErrorDetails(
-            path=["properties", "f2"],
+            path=['properties', 'f2'],
             error=IsInstance(PydanticInvalidForJsonSchema),
         )
     ]

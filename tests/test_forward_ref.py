@@ -20,8 +20,8 @@ class Model(BaseModel):
     a: int
 """
     )
-    m = module.Model(a="123")
-    assert m.model_dump() == {"a": 123}
+    m = module.Model(a='123')
+    assert m.model_dump() == {'a': 123}
 
 
 def test_postponed_annotations_auto_model_rebuild(create_module):
@@ -35,7 +35,7 @@ class Model(BaseModel):
     a: Model
 """
     )
-    assert module.Model.model_fields["a"].annotation.__name__ == "Model"
+    assert module.Model.model_fields['a'].annotation.__name__ == 'Model'
 
 
 def test_forward_ref_auto_update_no_model(create_module):
@@ -48,29 +48,29 @@ def test_forward_ref_auto_update_no_model(create_module):
         from pydantic import BaseModel, PydanticUserError
 
         class Foo(BaseModel):
-            a: Optional["Bar"] = None
+            a: Optional['Bar'] = None
 
-        with pytest.raises(PydanticUserError, match="`Foo` is not fully defined; you should define `Bar`,"):
-            Foo(a={"b": {"a": {}}})
+        with pytest.raises(PydanticUserError, match='`Foo` is not fully defined; you should define `Bar`,'):
+            Foo(a={'b': {'a': {}}})
 
         class Bar(BaseModel):
-            b: "Foo"
+            b: 'Foo'
 
     assert module.Bar.__pydantic_complete__ is True
-    assert repr(module.Bar.model_fields["b"]) == "FieldInfo(annotation=Foo, required=True)"
+    assert repr(module.Bar.model_fields['b']) == 'FieldInfo(annotation=Foo, required=True)'
 
     # Bar should be complete and ready to use
-    b = module.Bar(b={"a": {"b": {}}})
-    assert b.model_dump() == {"b": {"a": {"b": {"a": None}}}}
+    b = module.Bar(b={'a': {'b': {}}})
+    assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
     # model_fields is complete on Foo
-    assert repr(module.Foo.model_fields["a"]) == ("FieldInfo(annotation=Union[Bar, NoneType], required=False)")
+    assert repr(module.Foo.model_fields['a']) == ('FieldInfo(annotation=Union[Bar, NoneType], required=False)')
 
     assert module.Foo.__pydantic_complete__ is False
     # Foo gets auto-rebuilt during the first attempt at validation
-    f = module.Foo(a={"b": {"a": {"b": {"a": None}}}})
+    f = module.Foo(a={'b': {'a': {'b': {'a': None}}}})
     assert module.Foo.__pydantic_complete__ is True
-    assert f.model_dump() == {"a": {"b": {"a": {"b": {"a": None}}}}}
+    assert f.model_dump() == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
 def test_forward_ref_one_of_fields_not_defined(create_module):
@@ -79,12 +79,12 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
         from pydantic import BaseModel
 
         class Foo(BaseModel):
-            foo: "Foo"
-            bar: "Bar"
+            foo: 'Foo'
+            bar: 'Bar'
 
     assert {k: repr(v) for k, v in module.Foo.model_fields.items()} == {
-        "foo": "FieldInfo(annotation=Foo, required=True)",
-        "bar": "FieldInfo(annotation=ForwardRef('Bar'), required=True)",
+        'foo': 'FieldInfo(annotation=Foo, required=True)',
+        'bar': "FieldInfo(annotation=ForwardRef('Bar'), required=True)",
     }
 
 
@@ -98,13 +98,13 @@ def test_basic_forward_ref(create_module):
         class Foo(BaseModel):
             a: int
 
-        FooRef = ForwardRef("Foo")
+        FooRef = ForwardRef('Foo')
 
         class Bar(BaseModel):
             b: Optional[FooRef] = None
 
-    assert module.Bar().model_dump() == {"b": None}
-    assert module.Bar(b={"a": "123"}).model_dump() == {"b": {"a": 123}}
+    assert module.Bar().model_dump() == {'b': None}
+    assert module.Bar(b={'a': '123'}).model_dump() == {'b': {'a': 123}}
 
 
 def test_self_forward_ref_module(create_module):
@@ -114,14 +114,14 @@ def test_self_forward_ref_module(create_module):
 
         from pydantic import BaseModel
 
-        FooRef = ForwardRef("Foo")
+        FooRef = ForwardRef('Foo')
 
         class Foo(BaseModel):
             a: int = 123
             b: Optional[FooRef] = None
 
-    assert module.Foo().model_dump() == {"a": 123, "b": None}
-    assert module.Foo(b={"a": "321"}).model_dump() == {"a": 123, "b": {"a": 321, "b": None}}
+    assert module.Foo().model_dump() == {'a': 123, 'b': None}
+    assert module.Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
 def test_self_forward_ref_collection(create_module):
@@ -133,37 +133,37 @@ def test_self_forward_ref_collection(create_module):
 
         class Foo(BaseModel):
             a: int = 123
-            b: "Foo" = None
-            c: "List[Foo]" = []
-            d: "Dict[str, Foo]" = {}
+            b: 'Foo' = None
+            c: 'List[Foo]' = []
+            d: 'Dict[str, Foo]' = {}
 
-    assert module.Foo().model_dump() == {"a": 123, "b": None, "c": [], "d": {}}
-    assert module.Foo(b={"a": "321"}, c=[{"a": 234}], d={"bar": {"a": 345}}).model_dump() == {
-        "a": 123,
-        "b": {"a": 321, "b": None, "c": [], "d": {}},
-        "c": [{"a": 234, "b": None, "c": [], "d": {}}],
-        "d": {"bar": {"a": 345, "b": None, "c": [], "d": {}}},
+    assert module.Foo().model_dump() == {'a': 123, 'b': None, 'c': [], 'd': {}}
+    assert module.Foo(b={'a': '321'}, c=[{'a': 234}], d={'bar': {'a': 345}}).model_dump() == {
+        'a': 123,
+        'b': {'a': 321, 'b': None, 'c': [], 'd': {}},
+        'c': [{'a': 234, 'b': None, 'c': [], 'd': {}}],
+        'd': {'bar': {'a': 345, 'b': None, 'c': [], 'd': {}}},
     }
 
     with pytest.raises(ValidationError) as exc_info:
-        module.Foo(b={"a": "321"}, c=[{"b": 234}], d={"bar": {"a": 345}})
+        module.Foo(b={'a': '321'}, c=[{'b': 234}], d={'bar': {'a': 345}})
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            "type": "model_type",
-            "loc": ("c", 0, "b"),
-            "msg": "Input should be a valid dictionary or instance of Foo",
-            "input": 234,
-            "ctx": {"class_name": "Foo"},
+            'type': 'model_type',
+            'loc': ('c', 0, 'b'),
+            'msg': 'Input should be a valid dictionary or instance of Foo',
+            'input': 234,
+            'ctx': {'class_name': 'Foo'},
         }
     ]
 
-    assert repr(module.Foo.model_fields["a"]) == "FieldInfo(annotation=int, required=False, default=123)"
-    assert repr(module.Foo.model_fields["b"]) == "FieldInfo(annotation=Foo, required=False)"
+    assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
+    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=Foo, required=False)'
     if sys.version_info < (3, 10):
         return
-    assert repr(module.Foo.model_fields["c"]) == ("FieldInfo(annotation=List[Foo], required=False, " "default=[])")
-    assert repr(module.Foo.model_fields["d"]) == ("FieldInfo(annotation=Dict[str, Foo], required=False, default={})")
+    assert repr(module.Foo.model_fields['c']) == ('FieldInfo(annotation=List[Foo], required=False, ' 'default=[])')
+    assert repr(module.Foo.model_fields['d']) == ('FieldInfo(annotation=Dict[str, Foo], required=False, default={})')
 
 
 def test_self_forward_ref_local(create_module):
@@ -174,7 +174,7 @@ def test_self_forward_ref_local(create_module):
         from pydantic import BaseModel
 
         def main():
-            Foo = ForwardRef("Foo")
+            Foo = ForwardRef('Foo')
 
             class Foo(BaseModel):
                 a: int = 123
@@ -183,8 +183,8 @@ def test_self_forward_ref_local(create_module):
             return Foo
 
     Foo = module.main()
-    assert Foo().model_dump() == {"a": 123, "b": None}
-    assert Foo(b={"a": "321"}).model_dump() == {"a": 123, "b": {"a": 321, "b": None}}
+    assert Foo().model_dump() == {'a': 123, 'b': None}
+    assert Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
 def test_forward_ref_dataclass(create_module):
@@ -197,10 +197,10 @@ def test_forward_ref_dataclass(create_module):
         @dataclass
         class MyDataclass:
             a: int
-            b: Optional["MyDataclass"] = None
+            b: Optional['MyDataclass'] = None
 
-    dc = module.MyDataclass(a=1, b={"a": 2, "b": {"a": 3}})
-    assert dataclasses.asdict(dc) == {"a": 1, "b": {"a": 2, "b": {"a": 3, "b": None}}}
+    dc = module.MyDataclass(a=1, b={'a': 2, 'b': {'a': 3}})
+    assert dataclasses.asdict(dc) == {'a': 1, 'b': {'a': 2, 'b': {'a': 3, 'b': None}}}
 
 
 def test_forward_ref_sub_types(create_module):
@@ -213,7 +213,7 @@ def test_forward_ref_sub_types(create_module):
         class Leaf(BaseModel):
             a: str
 
-        TreeType = Union[ForwardRef("Node"), Leaf]
+        TreeType = Union[ForwardRef('Node'), Leaf]
 
         class Node(BaseModel):
             value: int
@@ -222,7 +222,7 @@ def test_forward_ref_sub_types(create_module):
 
     Node = module.Node
     Leaf = module.Leaf
-    data = {"value": 3, "left": {"a": "foo"}, "right": {"value": 5, "left": {"a": "bar"}, "right": {"a": "buzz"}}}
+    data = {'value': 3, 'left': {'a': 'foo'}, 'right': {'value': 5, 'left': {'a': 'bar'}, 'right': {'a': 'buzz'}}}
 
     node = Node(**data)
     assert isinstance(node.left, Leaf)
@@ -239,7 +239,7 @@ def test_forward_ref_nested_sub_types(create_module):
         class Leaf(BaseModel):
             a: str
 
-        TreeType = Union[Union[Tuple[ForwardRef("Node"), str], int], Leaf]
+        TreeType = Union[Union[Tuple[ForwardRef('Node'), str], int], Leaf]
 
         class Node(BaseModel):
             value: int
@@ -249,9 +249,9 @@ def test_forward_ref_nested_sub_types(create_module):
     Node = module.Node
     Leaf = module.Leaf
     data = {
-        "value": 3,
-        "left": {"a": "foo"},
-        "right": [{"value": 5, "left": {"a": "bar"}, "right": {"a": "buzz"}}, "test"],
+        'value': 3,
+        'left': {'a': 'foo'},
+        'right': [{'value': 5, 'left': {'a': 'bar'}, 'right': {'a': 'buzz'}}, 'test'],
     }
 
     node = Node(**data)
@@ -268,25 +268,25 @@ def test_self_reference_json_schema(create_module):
 
         class Account(BaseModel):
             name: str
-            subaccounts: List["Account"] = []
+            subaccounts: List['Account'] = []
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        "allOf": [{"$ref": "#/$defs/Account"}],
-        "$defs": {
-            "Account": {
-                "title": "Account",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "subaccounts": {
-                        "title": "Subaccounts",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/$defs/Account"},
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
+            'Account': {
+                'title': 'Account',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'subaccounts': {
+                        'title': 'Subaccounts',
+                        'default': [],
+                        'type': 'array',
+                        'items': {'$ref': '#/$defs/Account'},
                     },
                 },
-                "required": ["name"],
+                'required': ['name'],
             }
         },
     }
@@ -307,21 +307,21 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        "allOf": [{"$ref": "#/$defs/Account"}],
-        "$defs": {
-            "Account": {
-                "title": "Account",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "subaccounts": {
-                        "title": "Subaccounts",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/$defs/Account"},
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
+            'Account': {
+                'title': 'Account',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'subaccounts': {
+                        'title': 'Subaccounts',
+                        'default': [],
+                        'type': 'array',
+                        'items': {'$ref': '#/$defs/Account'},
                     },
                 },
-                "required": ["name"],
+                'required': ['name'],
             }
         },
     }
@@ -335,37 +335,37 @@ def test_circular_reference_json_schema(create_module):
         from pydantic import BaseModel
 
         class Owner(BaseModel):
-            account: "Account"
+            account: 'Account'
 
         class Account(BaseModel):
             name: str
-            owner: "Owner"
-            subaccounts: List["Account"] = []
+            owner: 'Owner'
+            subaccounts: List['Account'] = []
 
     Account = module.Account
     assert Account.model_json_schema() == {
-        "allOf": [{"$ref": "#/$defs/Account"}],
-        "$defs": {
-            "Account": {
-                "title": "Account",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "owner": {"$ref": "#/$defs/Owner"},
-                    "subaccounts": {
-                        "title": "Subaccounts",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/$defs/Account"},
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
+            'Account': {
+                'title': 'Account',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'owner': {'$ref': '#/$defs/Owner'},
+                    'subaccounts': {
+                        'title': 'Subaccounts',
+                        'default': [],
+                        'type': 'array',
+                        'items': {'$ref': '#/$defs/Account'},
                     },
                 },
-                "required": ["name", "owner"],
+                'required': ['name', 'owner'],
             },
-            "Owner": {
-                "title": "Owner",
-                "type": "object",
-                "properties": {"account": {"$ref": "#/$defs/Account"}},
-                "required": ["account"],
+            'Owner': {
+                'title': 'Owner',
+                'type': 'object',
+                'properties': {'account': {'$ref': '#/$defs/Account'}},
+                'required': ['account'],
             },
         },
     }
@@ -391,28 +391,28 @@ class Account(BaseModel):
     )
     Account = module.Account
     assert Account.model_json_schema() == {
-        "allOf": [{"$ref": "#/$defs/Account"}],
-        "$defs": {
-            "Account": {
-                "title": "Account",
-                "type": "object",
-                "properties": {
-                    "name": {"title": "Name", "type": "string"},
-                    "owner": {"$ref": "#/$defs/Owner"},
-                    "subaccounts": {
-                        "title": "Subaccounts",
-                        "default": [],
-                        "type": "array",
-                        "items": {"$ref": "#/$defs/Account"},
+        'allOf': [{'$ref': '#/$defs/Account'}],
+        '$defs': {
+            'Account': {
+                'title': 'Account',
+                'type': 'object',
+                'properties': {
+                    'name': {'title': 'Name', 'type': 'string'},
+                    'owner': {'$ref': '#/$defs/Owner'},
+                    'subaccounts': {
+                        'title': 'Subaccounts',
+                        'default': [],
+                        'type': 'array',
+                        'items': {'$ref': '#/$defs/Account'},
                     },
                 },
-                "required": ["name", "owner"],
+                'required': ['name', 'owner'],
             },
-            "Owner": {
-                "title": "Owner",
-                "type": "object",
-                "properties": {"account": {"$ref": "#/$defs/Account"}},
-                "required": ["account"],
+            'Owner': {
+                'title': 'Owner',
+                'type': 'object',
+                'properties': {'account': {'$ref': '#/$defs/Account'}},
+                'required': ['account'],
             },
         },
     }
@@ -427,9 +427,9 @@ def test_forward_ref_with_field(create_module):
 
         from pydantic import BaseModel, Field
 
-        Foo = ForwardRef("Foo")
+        Foo = ForwardRef('Foo')
 
-        with pytest.raises(TypeError, match=r"The following constraints cannot be applied.*\'gt\'"):
+        with pytest.raises(TypeError, match=r'The following constraints cannot be applied.*\'gt\''):
 
             class Foo(BaseModel):
                 c: List[Foo] = Field(..., gt=0)
@@ -465,7 +465,7 @@ class Filter(BaseModel):
     """
     )
     Filter = module.Filter
-    assert isinstance(Filter(p={"sort": "some_field:asc", "fields": []}), Filter)
+    assert isinstance(Filter(p={'sort': 'some_field:asc', 'fields': []}), Filter)
 
 
 def test_forward_ref_with_create_model(create_module):
@@ -473,11 +473,11 @@ def test_forward_ref_with_create_model(create_module):
     def module():
         import pydantic
 
-        Sub = pydantic.create_model("Sub", foo=(str, "bar"), __module__=__name__)
+        Sub = pydantic.create_model('Sub', foo=(str, 'bar'), __module__=__name__)
         assert Sub  # get rid of "local variable 'Sub' is assigned to but never used"
-        Main = pydantic.create_model("Main", sub=("Sub", ...), __module__=__name__)
+        Main = pydantic.create_model('Main', sub=('Sub', ...), __module__=__name__)
         instance = Main(sub={})
-        assert instance.sub.model_dump() == {"foo": "bar"}
+        assert instance.sub.model_dump() == {'foo': 'bar'}
 
 
 def test_resolve_forward_ref_dataclass(create_module):
@@ -506,10 +506,10 @@ class What(BaseModel):
 
 def test_nested_forward_ref():
     class NestedTuple(BaseModel):
-        x: Tuple[int, Optional["NestedTuple"]]
+        x: Tuple[int, Optional['NestedTuple']]
 
-    obj = NestedTuple.model_validate({"x": ("1", {"x": ("2", {"x": ("3", None)})})})
-    assert obj.model_dump() == {"x": (1, {"x": (2, {"x": (3, None)})})}
+    obj = NestedTuple.model_validate({'x': ('1', {'x': ('2', {'x': ('3', None)})})})
+    assert obj.model_dump() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
 def test_discriminated_union_forward_ref(create_module):
@@ -522,13 +522,13 @@ def test_discriminated_union_forward_ref(create_module):
         from pydantic import BaseModel, Field
 
         class Pet(BaseModel):
-            pet: Union["Cat", "Dog"] = Field(discriminator="type")
+            pet: Union['Cat', 'Dog'] = Field(discriminator='type')
 
         class Cat(BaseModel):
-            type: Literal["cat"]
+            type: Literal['cat']
 
         class Dog(BaseModel):
-            type: Literal["dog"]
+            type: Literal['dog']
 
     assert module.Pet.__pydantic_complete__ is False
 
@@ -536,34 +536,34 @@ def test_discriminated_union_forward_ref(create_module):
         ValidationError,
         match="Input tag 'pika' found using 'type' does not match any of the expected tags: 'cat', 'dog'",
     ):
-        module.Pet.model_validate({"pet": {"type": "pika"}})
+        module.Pet.model_validate({'pet': {'type': 'pika'}})
 
     # Ensure the rebuild has happened automatically despite validation failure
     assert module.Pet.__pydantic_complete__ is True
 
     assert module.Pet.model_json_schema() == {
-        "title": "Pet",
-        "required": ["pet"],
-        "type": "object",
-        "properties": {
-            "pet": {
-                "title": "Pet",
-                "discriminator": {"mapping": {"cat": "#/$defs/Cat", "dog": "#/$defs/Dog"}, "propertyName": "type"},
-                "oneOf": [{"$ref": "#/$defs/Cat"}, {"$ref": "#/$defs/Dog"}],
+        'title': 'Pet',
+        'required': ['pet'],
+        'type': 'object',
+        'properties': {
+            'pet': {
+                'title': 'Pet',
+                'discriminator': {'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}, 'propertyName': 'type'},
+                'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
             }
         },
-        "$defs": {
-            "Cat": {
-                "title": "Cat",
-                "type": "object",
-                "properties": {"type": {"const": "cat", "title": "Type"}},
-                "required": ["type"],
+        '$defs': {
+            'Cat': {
+                'title': 'Cat',
+                'type': 'object',
+                'properties': {'type': {'const': 'cat', 'title': 'Type'}},
+                'required': ['type'],
             },
-            "Dog": {
-                "title": "Dog",
-                "type": "object",
-                "properties": {"type": {"const": "dog", "title": "Type"}},
-                "required": ["type"],
+            'Dog': {
+                'title': 'Dog',
+                'type': 'object',
+                'properties': {'type': {'const': 'dog', 'title': 'Type'}},
+                'required': ['type'],
             },
         },
     }
@@ -582,7 +582,7 @@ class Model(BaseModel):
 """
     )
 
-    assert module.Model.__class_vars__ == {"a"}
+    assert module.Model.__class_vars__ == {'a'}
 
 
 def test_json_encoder_str(create_module):
@@ -614,13 +614,13 @@ class Model(BaseModel):
 """
     )
 
-    m = module.Model(foo_user={"x": "user1"}, user={"y": "user2"})
+    m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
     # TODO: How can we replicate this custom-encoder functionality without affecting the serialization of `User`?
     assert m.model_dump_json() == '{"foo_user":{"x":"user1"},"user":"User(user2)"}'
 
 
 skip_pep585 = pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="PEP585 generics only supported for python 3.9 and above"
+    sys.version_info < (3, 9), reason='PEP585 generics only supported for python 3.9 and above'
 )
 
 
@@ -640,7 +640,7 @@ class SelfReferencing(BaseModel):
     SelfReferencing = module.SelfReferencing
     if sys.version_info >= (3, 10):
         assert (
-            repr(SelfReferencing.model_fields["names"]) == "FieldInfo(annotation=list[SelfReferencing], required=True)"
+            repr(SelfReferencing.model_fields['names']) == 'FieldInfo(annotation=list[SelfReferencing], required=True)'
         )
 
     # test that object creation works
@@ -656,7 +656,7 @@ def test_pep585_recursive_generics(create_module):
 
         from pydantic import BaseModel
 
-        HeroRef = ForwardRef("Hero")
+        HeroRef = ForwardRef('Hero')
 
         class Team(BaseModel):
             name: str
@@ -668,15 +668,15 @@ def test_pep585_recursive_generics(create_module):
 
         Team.model_rebuild()
 
-    assert repr(module.Team.model_fields["heroes"]) == "FieldInfo(annotation=list[Hero], required=True)"
-    assert repr(module.Hero.model_fields["teams"]) == "FieldInfo(annotation=list[Team], required=True)"
+    assert repr(module.Team.model_fields['heroes']) == 'FieldInfo(annotation=list[Hero], required=True)'
+    assert repr(module.Hero.model_fields['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
 
-    h = module.Hero(name="Ivan", teams=[module.Team(name="TheBest", heroes=[])])
+    h = module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
     # insert_assert(h.model_dump())
-    assert h.model_dump() == {"name": "Ivan", "teams": [{"name": "TheBest", "heroes": []}]}
+    assert h.model_dump() == {'name': 'Ivan', 'teams': [{'name': 'TheBest', 'heroes': []}]}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 9), reason="needs 3.9 or newer")
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='needs 3.9 or newer')
 def test_class_var_forward_ref(create_module):
     # see #3679
     create_module(
@@ -705,13 +705,13 @@ class Foobar(BaseModel):
     y: Optional[Foobar] = None
 """
     )
-    f = module.Foobar(x=1, y={"x": 2})
-    assert f.model_dump() == {"x": 1, "y": {"x": 2, "y": None}}
-    assert f.model_fields_set == {"x", "y"}
-    assert f.y.model_fields_set == {"x"}
+    f = module.Foobar(x=1, y={'x': 2})
+    assert f.model_dump() == {'x': 1, 'y': {'x': 2, 'y': None}}
+    assert f.model_fields_set == {'x', 'y'}
+    assert f.y.model_fields_set == {'x'}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="needs 3.10 or newer")
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='needs 3.10 or newer')
 def test_recursive_models_union(create_module):
     module = create_module(
         # language=Python
@@ -731,9 +731,9 @@ class Bar(BaseModel, Generic[T]):
     foo: Foo
 """
     )
-    assert module.Foo.model_fields["bar"].annotation == typing.Optional[module.Bar[str]]
-    assert module.Foo.model_fields["bar2"].annotation == typing.Union[int, module.Bar[float]]
-    assert module.Bar.model_fields["foo"].annotation == module.Foo
+    assert module.Foo.model_fields['bar'].annotation == typing.Optional[module.Bar[str]]
+    assert module.Foo.model_fields['bar2'].annotation == typing.Union[int, module.Bar[float]]
+    assert module.Bar.model_fields['foo'].annotation == module.Foo
 
 
 def test_force_rebuild():
@@ -750,14 +750,14 @@ def test_rebuild_subclass_of_built_model():
         x: int
 
     class FutureReferencingModel(Model):
-        y: "FutureModel"
+        y: 'FutureModel'
 
     class FutureModel(BaseModel):
         pass
 
     FutureReferencingModel.model_rebuild()
 
-    assert FutureReferencingModel(x=1, y=FutureModel()).model_dump() == {"x": 1, "y": {}}
+    assert FutureReferencingModel(x=1, y=FutureModel()).model_dump() == {'x': 1, 'y': {}}
 
 
 def test_nested_annotation(create_module):
@@ -780,7 +780,7 @@ def nested():
 
     bar_model = module.nested()
     assert bar_model.__pydantic_complete__ is True
-    assert bar_model(b={"a": 1}).model_dump() == {"b": {"a": 1}}
+    assert bar_model(b={'a': 1}).model_dump() == {'b': {'a': 1}}
 
 
 def test_nested_more_annotation(create_module):
@@ -794,7 +794,7 @@ def test_nested_more_annotation(create_module):
 
             def more_nested():
                 class Bar(BaseModel):
-                    b: "Foo"
+                    b: 'Foo'
 
                 return Bar
 
@@ -819,14 +819,14 @@ def test_nested_annotation_priority(create_module):
             Foobar = Annotated[int, Gt(10)]
 
             class Bar(BaseModel):
-                b: "Foobar"
+                b: 'Foobar'
 
             return Bar
 
     bar_model = module.nested()
-    assert bar_model.model_fields["b"].metadata[0].gt == 10
-    assert bar_model(b=11).model_dump() == {"b": 11}
-    with pytest.raises(ValidationError, match=r"Input should be greater than 10 \[type=greater_than,"):
+    assert bar_model.model_fields['b'].metadata[0].gt == 10
+    assert bar_model(b=11).model_dump() == {'b': 11}
+    with pytest.raises(ValidationError, match=r'Input should be greater than 10 \[type=greater_than,'):
         bar_model(b=1)
 
 
@@ -837,7 +837,7 @@ def test_nested_model_rebuild(create_module):
 
         def nested():
             class Bar(BaseModel):
-                b: "Foo"
+                b: 'Foo'
 
             class Foo(BaseModel):
                 a: int
@@ -848,7 +848,7 @@ def test_nested_model_rebuild(create_module):
 
     bar_model = module.nested()
     assert bar_model.__pydantic_complete__ is True
-    assert bar_model(b={"a": 1}).model_dump() == {"b": {"a": 1}}
+    assert bar_model(b={'a': 1}).model_dump() == {'b': {'a': 1}}
 
 
 def pytest_raises_user_error_for_undefined_type(defining_class_name, missing_type_name):
@@ -861,8 +861,8 @@ def pytest_raises_user_error_for_undefined_type(defining_class_name, missing_typ
     return pytest.raises(
         PydanticUserError,
         match=re.escape(
-            f"`{defining_class_name}` is not fully defined; you should define `{missing_type_name}`, then call"
-            f" `{defining_class_name}.model_rebuild()`."
+            f'`{defining_class_name}` is not fully defined; you should define `{missing_type_name}`, then call'
+            f' `{defining_class_name}.model_rebuild()`.'
         ),
     )
 
@@ -880,7 +880,7 @@ def pytest_raises_user_error_for_undefined_type(defining_class_name, missing_typ
 
 
 def test_undefined_types_warning_1a_raised_by_default_2a_future_annotations(create_module):
-    with pytest_raises_user_error_for_undefined_type(defining_class_name="Foobar", missing_type_name="UndefinedType"):
+    with pytest_raises_user_error_for_undefined_type(defining_class_name='Foobar', missing_type_name='UndefinedType'):
         create_module(
             # language=Python
             """
@@ -897,7 +897,7 @@ Foobar(a=1)
 
 
 def test_undefined_types_warning_1a_raised_by_default_2b_forward_ref(create_module):
-    with pytest_raises_user_error_for_undefined_type(defining_class_name="Foobar", missing_type_name="UndefinedType"):
+    with pytest_raises_user_error_for_undefined_type(defining_class_name='Foobar', missing_type_name='UndefinedType'):
 
         @create_module
         def module():
@@ -905,7 +905,7 @@ def test_undefined_types_warning_1a_raised_by_default_2b_forward_ref(create_modu
 
             from pydantic import BaseModel
 
-            UndefinedType = ForwardRef("UndefinedType")
+            UndefinedType = ForwardRef('UndefinedType')
 
             class Foobar(BaseModel):
                 a: UndefinedType
@@ -938,7 +938,7 @@ def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_
 
         from pydantic import BaseModel
 
-        UndefinedType = ForwardRef("UndefinedType")
+        UndefinedType = ForwardRef('UndefinedType')
 
         # Because we don't instantiate the type, no error for an undefined type is raised
         class Foobar(BaseModel):
@@ -950,7 +950,7 @@ def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_
 
 
 def test_undefined_types_warning_raised_by_usage(create_module):
-    with pytest_raises_user_error_for_undefined_type("Foobar", "UndefinedType"):
+    with pytest_raises_user_error_for_undefined_type('Foobar', 'UndefinedType'):
 
         @create_module
         def module():
@@ -958,7 +958,7 @@ def test_undefined_types_warning_raised_by_usage(create_module):
 
             from pydantic import BaseModel
 
-            UndefinedType = ForwardRef("UndefinedType")
+            UndefinedType = ForwardRef('UndefinedType')
 
             class Foobar(BaseModel):
                 a: UndefinedType
@@ -987,11 +987,11 @@ def test_rebuild_recursive_schema():
         items: List["types['Expression']"]
 
     types_namespace = {
-        "types": {
-            "Expression": Expression_,
-            "Expressions": Expressions_,
-            "allOfExpression": allOfExpression_,
-            "allOfExpressions": allOfExpressions_,
+        'types': {
+            'Expression': Expression_,
+            'Expressions': Expressions_,
+            'allOfExpression': allOfExpression_,
+            'allOfExpressions': allOfExpressions_,
         }
     }
 
@@ -1010,7 +1010,7 @@ def test_forward_ref_in_generic(create_module: Any) -> None:
         from pydantic import BaseModel
 
         class Foo(BaseModel):
-            x: tp.Dict["tp.Type[Bar]", tp.Type["Bar"]]
+            x: tp.Dict['tp.Type[Bar]', tp.Type['Bar']]
 
         class Bar(BaseModel):
             pass
@@ -1031,7 +1031,7 @@ def test_forward_ref_in_generic_separate_modules(create_module: Any) -> None:
         from pydantic import BaseModel
 
         class Foo(BaseModel):
-            x: tp.Dict["tp.Type[Bar]", tp.Type["Bar"]]
+            x: tp.Dict['tp.Type[Bar]', tp.Type['Bar']]
 
     @create_module
     def module_2():
@@ -1042,5 +1042,5 @@ def test_forward_ref_in_generic_separate_modules(create_module: Any) -> None:
 
     Foo = module_1.Foo
     Bar = module_2.Bar
-    Foo.model_rebuild(_types_namespace={"tp": typing, "Bar": Bar})
+    Foo.model_rebuild(_types_namespace={'tp': typing, 'Bar': Bar})
     assert Foo(x={Bar: Bar}).x[Bar] is Bar

@@ -20,9 +20,9 @@ class Model(BaseModel):
             ...
 
 
-model = Model(x=1, y="y", z="z")
+model = Model(x=1, y='y', z='z')
 model = Model(x=1)
-model.y = "a"
+model.y = 'a'
 Model.from_orm({})
 
 
@@ -34,21 +34,21 @@ class KwargsModel(BaseModel, alias_generator=None, frozen=True, extra=Extra.forb
         pass
 
 
-kwargs_model = KwargsModel(x=1, y="y", z="z")
+kwargs_model = KwargsModel(x=1, y='y', z='z')
 kwargs_model = KwargsModel(x=1)
-kwargs_model.y = "a"
+kwargs_model.y = 'a'
 KwargsModel.from_orm({})
 
 
 class ForbidExtraModel(BaseModel):
     class Config:
-        extra = "forbid"
+        extra = 'forbid'
 
 
 ForbidExtraModel(x=1)
 
 
-class KwargsForbidExtraModel(BaseModel, extra="forbid"):
+class KwargsForbidExtraModel(BaseModel, extra='forbid'):
     pass
 
 
@@ -119,12 +119,12 @@ UndefinedAnnotationModel()
 
 
 Model.model_construct(x=1)
-Model.model_construct(_fields_set={"x"}, x=1, y="2")
-Model.model_construct(x="1", y="2")
+Model.model_construct(_fields_set={'x'}, x=1, y='2')
+Model.model_construct(x='1', y='2')
 
 # Strict mode fails
-inheriting = InheritingModel(x="1", y="1")
-Model(x="1", y="2")
+inheriting = InheritingModel(x='1', y='1')
+Model(x='1', y='2')
 
 
 class Blah(BaseModel):
@@ -132,7 +132,7 @@ class Blah(BaseModel):
 
 
 # (comment to keep line numbers unchanged)
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 class Response(BaseModel, Generic[T]):
@@ -145,13 +145,13 @@ response = Response[Model](data=1, error=None)
 
 
 class AliasModel(BaseModel):
-    x: str = Field(..., alias="y")
+    x: str = Field(..., alias='y')
     z: int
 
 
 AliasModel(y=1, z=2)
 
-x_alias = "y"
+x_alias = 'y'
 
 
 class DynamicAliasModel(BaseModel):
@@ -159,7 +159,7 @@ class DynamicAliasModel(BaseModel):
     z: int
 
 
-DynamicAliasModel(y="y", z="1")
+DynamicAliasModel(y='y', z='1')
 
 
 class DynamicAliasModel2(BaseModel):
@@ -170,8 +170,8 @@ class DynamicAliasModel2(BaseModel):
         populate_by_name = True
 
 
-DynamicAliasModel2(y="y", z=1)
-DynamicAliasModel2(x="y", z=1)
+DynamicAliasModel2(y='y', z=1)
+DynamicAliasModel2(x='y', z=1)
 
 
 class KwargsDynamicAliasModel(BaseModel, populate_by_name=True):
@@ -179,15 +179,15 @@ class KwargsDynamicAliasModel(BaseModel, populate_by_name=True):
     z: int
 
 
-KwargsDynamicAliasModel(y="y", z=1)
-KwargsDynamicAliasModel(x="y", z=1)
+KwargsDynamicAliasModel(y='y', z=1)
+KwargsDynamicAliasModel(x='y', z=1)
 
 
 class AliasGeneratorModel(BaseModel):
     x: int
 
     class Config:
-        alias_generator = lambda x: x + "_"  # noqa E731
+        alias_generator = lambda x: x + '_'  # noqa E731
 
 
 AliasGeneratorModel(x=1)
@@ -196,10 +196,10 @@ AliasGeneratorModel(z=1)
 
 
 class AliasGeneratorModel2(BaseModel):
-    x: int = Field(..., alias="y")
+    x: int = Field(..., alias='y')
 
     class Config:  # type: ignore[pydantic-alias]
-        alias_generator = lambda x: x + "_"  # noqa E731
+        alias_generator = lambda x: x + '_'  # noqa E731
 
 
 class UntypedFieldModel(BaseModel):
@@ -212,7 +212,7 @@ AliasGeneratorModel2(x=1)
 AliasGeneratorModel2(y=1, z=1)
 
 
-class KwargsAliasGeneratorModel(BaseModel, alias_generator=lambda x: x + "_"):
+class KwargsAliasGeneratorModel(BaseModel, alias_generator=lambda x: x + '_'):
     x: int
 
 
@@ -221,8 +221,8 @@ KwargsAliasGeneratorModel(x_=1)
 KwargsAliasGeneratorModel(z=1)
 
 
-class KwargsAliasGeneratorModel2(BaseModel, alias_generator=lambda x: x + "_"):
-    x: int = Field(..., alias="y")
+class KwargsAliasGeneratorModel2(BaseModel, alias_generator=lambda x: x + '_'):
+    x: int = Field(..., alias='y')
 
 
 KwargsAliasGeneratorModel2(x=1)
@@ -244,7 +244,7 @@ class AddProject:
     description: Optional[str]
 
 
-p = AddProject(name="x", slug="y", description="z")
+p = AddProject(name='x', slug='y', description='z')
 
 
 # Same as Model, but with frozen = True
@@ -258,8 +258,8 @@ class FrozenModel(BaseModel):
         extra = Extra.forbid
 
 
-frozenmodel = FrozenModel(x=1, y="b")
-frozenmodel.y = "a"
+frozenmodel = FrozenModel(x=1, y='b')
+frozenmodel.y = 'a'
 
 
 class InheritingModel2(FrozenModel):
@@ -267,12 +267,12 @@ class InheritingModel2(FrozenModel):
         frozen = False
 
 
-inheriting2 = InheritingModel2(x=1, y="c")
-inheriting2.y = "d"
+inheriting2 = InheritingModel2(x=1, y='c')
+inheriting2.y = 'd'
 
 
 def _default_factory() -> str:
-    return "x"
+    return 'x'
 
 
 test: List[str] = []
@@ -296,7 +296,7 @@ class FieldDefaultTestingModel(BaseModel):
 class ModelWithAnnotatedValidator(BaseModel):
     name: str
 
-    @field_validator("name")
+    @field_validator('name')
     def noop_validator_with_annotations(self, name: str) -> str:
         # This is a mistake: the first argument to a validator is the class itself,
         # like a classmethod.

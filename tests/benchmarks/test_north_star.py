@@ -16,13 +16,13 @@ import pytest
 from typing_extensions import Annotated, Literal
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def pydantic_type_adapter():
     from pydantic import BaseModel, Field, TypeAdapter
     from pydantic.networks import AnyHttpUrl
 
     class Blog(BaseModel):
-        type: Literal["blog"]
+        type: Literal['blog']
         title: str
         post_count: int
         readers: int
@@ -30,26 +30,26 @@ def pydantic_type_adapter():
         url: AnyHttpUrl
 
     class SocialProfileBase(BaseModel):
-        type: Literal["profile"]
-        network: Literal["facebook", "twitter", "linkedin"]
+        type: Literal['profile']
+        network: Literal['facebook', 'twitter', 'linkedin']
         username: str
         join_date: date
 
     class FacebookProfile(SocialProfileBase):
-        network: Literal["facebook"]
+        network: Literal['facebook']
         friends: int
 
     class TwitterProfile(SocialProfileBase):
-        network: Literal["twitter"]
+        network: Literal['twitter']
         followers: int
 
     class LinkedinProfile(SocialProfileBase):
-        network: Literal["linkedin"]
+        network: Literal['linkedin']
         connections: Annotated[int, Field(le=500)]
 
-    SocialProfile = Annotated[Union[FacebookProfile, TwitterProfile, LinkedinProfile], Field(discriminator="network")]
+    SocialProfile = Annotated[Union[FacebookProfile, TwitterProfile, LinkedinProfile], Field(discriminator='network')]
 
-    Website = Annotated[Union[Blog, SocialProfile], Field(discriminator="type")]
+    Website = Annotated[Union[Blog, SocialProfile], Field(discriminator='type')]
 
     class Person(BaseModel):
         id: UUID
@@ -63,11 +63,11 @@ def pydantic_type_adapter():
     return TypeAdapter(List[Person])
 
 
-_NORTH_STAR_DATA_PATH = Path(__file__).parent / "north_star_data.json"
-_EXPECTED_NORTH_STAR_DATA_MD5 = "0ff34599a0861026cf25b6cdbb4bbe81"
+_NORTH_STAR_DATA_PATH = Path(__file__).parent / 'north_star_data.json'
+_EXPECTED_NORTH_STAR_DATA_MD5 = '0ff34599a0861026cf25b6cdbb4bbe81'
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def north_star_data_bytes():
     return _north_star_data_bytes()
 
@@ -91,7 +91,7 @@ def _north_star_data_bytes() -> bytes:
     if data_md5 != _EXPECTED_NORTH_STAR_DATA_MD5:
         if needs_generating:
             raise ValueError(
-                f"Expected hash {_EXPECTED_NORTH_STAR_DATA_MD5} for north star data, but generated {data_md5}"
+                f'Expected hash {_EXPECTED_NORTH_STAR_DATA_MD5} for north star data, but generated {data_md5}'
             )
         else:
             # MD5 hash mismatch, maybe shape of the data has changed. Delete

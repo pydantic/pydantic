@@ -54,19 +54,19 @@ class Flags(BaseModel):
     strict_bool: StrictBool = False
 
     def __str__(self) -> str:
-        return f"flag={self.strict_bool}"
+        return f'flag={self.strict_bool}'
 
 
 class Model(BaseModel):
     age: int
-    first_name: str = "John"
+    first_name: str = 'John'
     last_name: Optional[str] = None
     signup_ts: Optional[datetime] = None
     list_of_ints: List[int]
 
-    @field_validator("age")
+    @field_validator('age')
     def check_age(cls, value: int) -> int:
-        assert value < 100, "too old"
+        assert value < 100, 'too old'
         return value
 
     @root_validator(skip_on_failure=True)
@@ -91,7 +91,7 @@ m = Model(age=21, list_of_ints=[1, 2, 3])
 assert m.age == 21, m.age
 m.age = 42
 assert m.age == 42, m.age
-assert m.first_name == "John", m.first_name
+assert m.first_name == 'John', m.first_name
 assert m.last_name is None, m.last_name
 assert m.list_of_ints == [1, 2, 3], m.list_of_ints
 
@@ -99,31 +99,31 @@ dog_age = dog_years(m.age)
 assert dog_age == 294, dog_age
 
 
-Model(age=2, first_name="Woof", last_name="Woof", signup_ts=datetime(2017, 6, 7), list_of_ints=[1, 2, 3])
+Model(age=2, first_name='Woof', last_name='Woof', signup_ts=datetime(2017, 6, 7), list_of_ints=[1, 2, 3])
 m = Model.model_validate(
     {
-        "age": 2,
-        "first_name": b"Woof",
-        "last_name": b"Woof",
-        "signup_ts": "2017-06-07 00:00",
-        "list_of_ints": [1, "2", b"3"],
+        'age': 2,
+        'first_name': b'Woof',
+        'last_name': b'Woof',
+        'signup_ts': '2017-06-07 00:00',
+        'list_of_ints': [1, '2', b'3'],
     }
 )
 
-assert m.first_name == "Woof", m.first_name
-assert m.last_name == "Woof", m.last_name
+assert m.first_name == 'Woof', m.first_name
+assert m.last_name == 'Woof', m.last_name
 assert m.signup_ts == datetime(2017, 6, 7), m.signup_ts
 assert day_of_week(m.signup_ts) == 3
 
 
-data = {"age": 10, "first_name": "Alena", "last_name": "Sousova", "list_of_ints": [410]}
+data = {'age': 10, 'first_name': 'Alena', 'last_name': 'Sousova', 'list_of_ints': [410]}
 m_from_obj = Model.model_validate(data)
 
 assert isinstance(m_from_obj, Model)
 assert m_from_obj.age == 10
-assert m_from_obj.first_name == data["first_name"]
-assert m_from_obj.last_name == data["last_name"]
-assert m_from_obj.list_of_ints == data["list_of_ints"]
+assert m_from_obj.first_name == data['first_name']
+assert m_from_obj.last_name == data['last_name']
+assert m_from_obj.list_of_ints == data['list_of_ints']
 
 m_copy = m_from_obj.model_copy()
 
@@ -134,7 +134,7 @@ assert m_copy.last_name == m_from_obj.last_name
 assert m_copy.list_of_ints == m_from_obj.list_of_ints
 
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 class WrapperModel(BaseModel, Generic[T]):
@@ -145,9 +145,9 @@ int_instance = WrapperModel[int](payload=1)
 int_instance.payload += 1
 assert int_instance.payload == 2
 
-str_instance = WrapperModel[str](payload="a")
-str_instance.payload += "a"
-assert str_instance.payload == "aa"
+str_instance = WrapperModel[str](payload='a')
+str_instance.payload += 'a'
+assert str_instance.payload == 'aa'
 
 model_instance = WrapperModel[Model](payload=m)
 model_instance.payload.list_of_ints.append(4)
@@ -156,26 +156,26 @@ assert model_instance.payload.list_of_ints == [1, 2, 3, 4]
 
 class WithField(BaseModel):
     age: int
-    first_name: str = Field("John", max_length=42)
+    first_name: str = Field('John', max_length=42)
 
 
 # simple decorator
 @validate_call
-def foo(a: int, *, c: str = "x") -> str:
+def foo(a: int, *, c: str = 'x') -> str:
     return c * a
 
 
-foo(1, c="thing")
+foo(1, c='thing')
 foo(1)
 
 
 # nested decorator should not produce an error
-@validate_call(config={"arbitrary_types_allowed": True})
-def bar(a: int, *, c: str = "x") -> str:
+@validate_call(config={'arbitrary_types_allowed': True})
+def bar(a: int, *, c: str = 'x') -> str:
     return c * a
 
 
-bar(1, c="thing")
+bar(1, c='thing')
 bar(1)
 
 
@@ -183,7 +183,7 @@ class Foo(BaseModel):
     a: int
 
 
-FooRef = ForwardRef("Foo")
+FooRef = ForwardRef('Foo')
 
 
 class MyConf(BaseModel):
@@ -191,7 +191,7 @@ class MyConf(BaseModel):
     callable_pyobject: ImportString[Type[date]] = Field(default=date)
 
 
-conf = MyConf(str_pyobject="datetime.date")
+conf = MyConf(str_pyobject='datetime.date')
 var1: date = conf.str_pyobject(2020, 12, 20)
 var2: date = conf.callable_pyobject(2111, 1, 1)
 
@@ -218,20 +218,20 @@ class PydanticTypes(BaseModel):
     my_non_negative_float: NonNegativeFloat = 1.1
     my_strict_float: StrictFloat = 1.1
     # Bytes
-    my_strict_bytes: StrictBytes = b"pika"
+    my_strict_bytes: StrictBytes = b'pika'
     # String
-    my_strict_str: StrictStr = "pika"
+    my_strict_str: StrictStr = 'pika'
     # ImportString
-    import_string_str: ImportString[Any] = "datetime.date"  # type: ignore[misc]
+    import_string_str: ImportString[Any] = 'datetime.date'  # type: ignore[misc]
     import_string_callable: ImportString[Any] = date
     # UUID
-    my_uuid1: UUID1 = UUID("a8098c1a-f86e-11da-bd1a-00112444be1e")
-    my_uuid1_str: UUID1 = "a8098c1a-f86e-11da-bd1a-00112444be1e"
+    my_uuid1: UUID1 = UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
+    my_uuid1_str: UUID1 = 'a8098c1a-f86e-11da-bd1a-00112444be1e'
     # Path
     my_file_path: FilePath = Path(__file__)
     my_file_path_str: FilePath = __file__
-    my_dir_path: DirectoryPath = Path(".")
-    my_dir_path_str: DirectoryPath = "."
+    my_dir_path: DirectoryPath = Path('.')
+    my_dir_path_str: DirectoryPath = '.'
     # Json
     my_json: Json[Dict[str, str]] = '{"hello": "world"}'
     my_json_list: Json[List[str]] = '["hello", "world"]'
@@ -253,18 +253,18 @@ validated.my_file_path.absolute()
 validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
 validated.my_dir_path_str.absolute()
-validated.my_json["hello"].capitalize()
+validated.my_json['hello'].capitalize()
 validated.my_json_list[0].capitalize()
 
 
 class UrlModel(BaseModel):
-    x: Annotated[AnyUrl, UrlConstraints(allowed_schemes=["http"])] = Field(default=None)
-    y: Annotated[AnyUrl, UrlConstraints(allowed_schemes=["http"])] = Field(default=None)
-    z: Annotated[AnyUrl, UrlConstraints(allowed_schemes=["s3", "s3n", "s3a"])] = Field(default=None)
+    x: Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http'])] = Field(default=None)
+    y: Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http'])] = Field(default=None)
+    z: Annotated[AnyUrl, UrlConstraints(allowed_schemes=['s3', 's3n', 's3a'])] = Field(default=None)
 
 
-url_model = UrlModel(x="http://example.com")
-assert url_model.x.host == "example.com"
+url_model = UrlModel(x='http://example.com')
+assert url_model.x.host == 'example.com'
 
 
 class SomeDict(TypedDict):
@@ -273,12 +273,12 @@ class SomeDict(TypedDict):
 
 
 obj: SomeDict = {
-    "val": 12,
-    "name": "John",
+    'val': 12,
+    'name': 'John',
 }
 
 
-config = ConfigDict(title="Record", extra="ignore", str_max_length=1234)
+config = ConfigDict(title='Record', extra='ignore', str_max_length=1234)
 
 
 class CustomPath(PurePath):
@@ -286,10 +286,10 @@ class CustomPath(PurePath):
         self.path = os.path.join(*args)
 
     def __fspath__(self) -> str:
-        return f"a/custom/{self.path}"
+        return f'a/custom/{self.path}'
 
 
-DynamicModel = create_model("DynamicModel")
+DynamicModel = create_model('DynamicModel')
 
 examples = Examples({})
 

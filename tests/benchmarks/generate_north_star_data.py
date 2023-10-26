@@ -7,7 +7,7 @@ f = Faker()
 Faker.seed(0)
 
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 ## Helper functions
 
@@ -51,7 +51,7 @@ def lax_time() -> Union[int, float, str]:
 
 
 def date_string() -> str:
-    return f.date(end_datetime=_END_DATETIME).format("%Y-%m-%d")
+    return f.date(end_datetime=_END_DATETIME).format('%Y-%m-%d')
 
 
 def datetime_timestamp() -> int:
@@ -77,34 +77,34 @@ def lax_datetime() -> Union[int, float, str]:
 
 def blog() -> dict:
     return {
-        "type": "blog",
-        "title": f.text(max_nb_chars=40),
-        "post_count": lax_int(),
-        "readers": lax_int(),
-        "avg_post_rating": lax_float(min_value=0, max_value=5),
-        "url": f.url(),
+        'type': 'blog',
+        'title': f.text(max_nb_chars=40),
+        'post_count': lax_int(),
+        'readers': lax_int(),
+        'avg_post_rating': lax_float(min_value=0, max_value=5),
+        'url': f.url(),
     }
 
 
 def social_profile() -> dict:
     return {
-        "type": "profile",
-        "username": f.user_name(),
-        "join_date": date_string(),
+        'type': 'profile',
+        'username': f.user_name(),
+        'join_date': date_string(),
         **one_of(facebook_profile, twitter_profile, linkedin_profile),
     }
 
 
 def facebook_profile() -> dict:
-    return {"network": "facebook", "friends": lax_int()}
+    return {'network': 'facebook', 'friends': lax_int()}
 
 
 def twitter_profile() -> dict:
-    return {"network": "twitter", "followers": lax_int()}
+    return {'network': 'twitter', 'followers': lax_int()}
 
 
 def linkedin_profile() -> dict:
-    return {"network": "linkedin", "connections": min(f.random_int(), 500)}
+    return {'network': 'linkedin', 'connections': min(f.random_int(), 500)}
 
 
 def website() -> dict:
@@ -113,13 +113,13 @@ def website() -> dict:
 
 def person() -> dict:
     return {
-        "id": f.uuid4(),
-        "name": f.name(),
-        "height": str(f.pydecimal(min_value=1, max_value=2, right_digits=2)),
-        "entry_created_date": date_string(),
-        "entry_created_time": lax_time(),
-        "entry_updated_at": lax_datetime(),
-        "websites": list_of(website, max_length=5),
+        'id': f.uuid4(),
+        'name': f.name(),
+        'height': str(f.pydecimal(min_value=1, max_value=2, right_digits=2)),
+        'entry_created_date': date_string(),
+        'entry_created_time': lax_time(),
+        'entry_updated_at': lax_datetime(),
+        'websites': list_of(website, max_length=5),
     }
 
 

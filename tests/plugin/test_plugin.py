@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-pytestmark = pytest.mark.skipif(not os.getenv("TEST_PLUGIN"), reason="Test only with `TEST_PLUGIN` env var set.")
+pytestmark = pytest.mark.skipif(not os.getenv('TEST_PLUGIN'), reason='Test only with `TEST_PLUGIN` env var set.')
 
 
 def test_plugin_usage():
@@ -12,9 +12,9 @@ def test_plugin_usage():
         x: int
         y: str
 
-    m = MyModel(x="10", y="hello")
+    m = MyModel(x='10', y='hello')
     assert m.x == 10
-    assert m.y == "hello"
+    assert m.y == 'hello'
 
     from example_plugin import log
 

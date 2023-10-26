@@ -26,8 +26,8 @@ MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 PYDANTIC_ROOT = Path(__file__).parent.parent.parent
 
 pytestmark = pytest.mark.skipif(
-    "--test-mypy" not in sys.argv
-    and os.environ.get("PYCHARM_HOSTED") != "1",  # never skip when running via the PyCharm runner
+    '--test-mypy' not in sys.argv
+    and os.environ.get('PYCHARM_HOSTED') != '1',  # never skip when running via the PyCharm runner
     reason='Test only with "--test-mypy" flag',
 )
 
@@ -61,53 +61,53 @@ class MypyCasesBuilder:
 cases = (
     # No plugin
     MypyCasesBuilder(
-        ["mypy-default.ini", "pyproject-default.toml"],
-        ["fail1.py", "fail2.py", "fail3.py", "fail4.py", "pydantic_settings.py"],
+        ['mypy-default.ini', 'pyproject-default.toml'],
+        ['fail1.py', 'fail2.py', 'fail3.py', 'fail4.py', 'pydantic_settings.py'],
     ).build()
     + MypyCasesBuilder(
-        ["mypy-default.ini", "pyproject-default.toml"],
-        "success.py",
-        pytest.mark.skipif(MYPY_VERSION_TUPLE > (1, 0, 1), reason="Need to handle some more things for mypy >=1.1.1"),
+        ['mypy-default.ini', 'pyproject-default.toml'],
+        'success.py',
+        pytest.mark.skipif(MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'),
     ).build()
     + MypyCasesBuilder(
-        "mypy-default.ini", ["plugin_success.py", "plugin_success_baseConfig.py", "metaclass_args.py"]
+        'mypy-default.ini', ['plugin_success.py', 'plugin_success_baseConfig.py', 'metaclass_args.py']
     ).build()
     # Default plugin config
     + MypyCasesBuilder(
-        ["mypy-plugin.ini", "pyproject-plugin.toml"],
+        ['mypy-plugin.ini', 'pyproject-plugin.toml'],
         [
-            "plugin_success.py",
-            "plugin_fail.py",
-            "plugin_success_baseConfig.py",
-            "plugin_fail_baseConfig.py",
-            "pydantic_settings.py",
+            'plugin_success.py',
+            'plugin_fail.py',
+            'plugin_success_baseConfig.py',
+            'plugin_fail_baseConfig.py',
+            'pydantic_settings.py',
         ],
     ).build()
     # Strict plugin config
     + MypyCasesBuilder(
-        ["mypy-plugin-strict.ini", "pyproject-plugin-strict.toml"],
+        ['mypy-plugin-strict.ini', 'pyproject-plugin-strict.toml'],
         [
-            "plugin_success.py",
-            "plugin_fail.py",
-            "fail_defaults.py",
-            "plugin_success_baseConfig.py",
-            "plugin_fail_baseConfig.py",
+            'plugin_success.py',
+            'plugin_fail.py',
+            'fail_defaults.py',
+            'plugin_success_baseConfig.py',
+            'plugin_fail_baseConfig.py',
         ],
     ).build()
     # One-off cases
     + [
-        ("mypy-plugin.ini", "custom_constructor.py"),
-        ("mypy-plugin.ini", "generics.py"),
-        ("mypy-plugin.ini", "root_models.py"),
-        ("mypy-plugin-strict.ini", "plugin_default_factory.py"),
-        ("mypy-plugin-strict-no-any.ini", "dataclass_no_any.py"),
-        ("mypy-plugin-very-strict.ini", "metaclass_args.py"),
+        ('mypy-plugin.ini', 'custom_constructor.py'),
+        ('mypy-plugin.ini', 'generics.py'),
+        ('mypy-plugin.ini', 'root_models.py'),
+        ('mypy-plugin-strict.ini', 'plugin_default_factory.py'),
+        ('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py'),
+        ('mypy-plugin-very-strict.ini', 'metaclass_args.py'),
         pytest.param(
-            "pyproject-default.toml",
-            "computed_fields.py",
+            'pyproject-default.toml',
+            'computed_fields.py',
             marks=pytest.mark.skipif(
                 sys.version_info < (3, 8),
-                reason="cached_property is only available in Python 3.8+, errors are different with mypy 0.971",
+                reason='cached_property is only available in Python 3.8+, errors are different with mypy 0.971',
             ),
         ),
     ]
@@ -127,14 +127,14 @@ class MypyTestConfig:
 
 
 def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
-    outputs_dir = PYDANTIC_ROOT / "tests/mypy/outputs"
+    outputs_dir = PYDANTIC_ROOT / 'tests/mypy/outputs'
     outputs_dir.mkdir(exist_ok=True)
     existing_versions = [
-        x.name for x in outputs_dir.iterdir() if x.is_dir() and re.match(r"[0-9]+(?:\.[0-9]+)*", x.name)
+        x.name for x in outputs_dir.iterdir() if x.is_dir() and re.match(r'[0-9]+(?:\.[0-9]+)*', x.name)
     ]
 
     def _convert_to_output_path(v: str) -> Path:
-        return outputs_dir / v / config_path.name.replace(".", "_") / module_path.name
+        return outputs_dir / v / config_path.name.replace('.', '_') / module_path.name
 
     existing = None
 
@@ -155,87 +155,87 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
     return MypyTestConfig(existing, current)
 
 
-@pytest.mark.parametrize("config_filename,python_filename", cases)
+@pytest.mark.parametrize('config_filename,python_filename', cases)
 def test_mypy_results(config_filename: str, python_filename: str, request: pytest.FixtureRequest) -> None:
-    input_path = PYDANTIC_ROOT / "tests/mypy/modules" / python_filename
-    config_path = PYDANTIC_ROOT / "tests/mypy/configs" / config_filename
+    input_path = PYDANTIC_ROOT / 'tests/mypy/modules' / python_filename
+    config_path = PYDANTIC_ROOT / 'tests/mypy/configs' / config_filename
     test_config = get_test_config(input_path, config_path)
 
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
-    cache_dir = f".mypy_cache/test-{os.path.splitext(config_filename)[0]}"
+    cache_dir = f'.mypy_cache/test-{os.path.splitext(config_filename)[0]}'
     command = [
         str(input_path),
-        "--config-file",
+        '--config-file',
         str(config_path),
-        "--cache-dir",
+        '--cache-dir',
         cache_dir,
-        "--show-error-codes",
-        "--show-traceback",
+        '--show-error-codes',
+        '--show-traceback',
     ]
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     mypy_out, mypy_err, mypy_returncode = mypy_api.run(command)
 
     # Need to strip filenames due to differences in formatting by OS
-    mypy_out = "\n".join([".py:".join(line.split(".py:")[1:]) for line in mypy_out.split("\n") if line]).strip()
-    mypy_out = re.sub(r"\n\s*\n", r"\n", mypy_out)
+    mypy_out = '\n'.join(['.py:'.join(line.split('.py:')[1:]) for line in mypy_out.split('\n') if line]).strip()
+    mypy_out = re.sub(r'\n\s*\n', r'\n', mypy_out)
     if mypy_out:
-        print("{0}\n{1:^100}\n{0}\n{2}\n{0}".format("=" * 100, f"mypy {mypy_version} output", mypy_out))
-    assert mypy_err == ""
+        print('{0}\n{1:^100}\n{0}\n{2}\n{0}'.format('=' * 100, f'mypy {mypy_version} output', mypy_out))
+    assert mypy_err == ''
 
     input_code = input_path.read_text()
 
     existing_output_code: Optional[str] = None
     if test_config.existing is not None:
         existing_output_code = test_config.existing.output_path.read_text()
-        print(f"Comparing output with {test_config.existing.output_path}")
+        print(f'Comparing output with {test_config.existing.output_path}')
 
     merged_output = merge_python_and_mypy_output(input_code, mypy_out)
 
     if merged_output == existing_output_code:
         # Test passed, no changes needed
         pass
-    elif request.config.getoption("update_mypy"):
+    elif request.config.getoption('update_mypy'):
         test_config.current.output_path.parent.mkdir(parents=True, exist_ok=True)
         test_config.current.output_path.write_text(merged_output)
     else:
-        assert existing_output_code is not None, "No output file found, run `make test-mypy-update` to create it"
+        assert existing_output_code is not None, 'No output file found, run `make test-mypy-update` to create it'
         assert merged_output == existing_output_code
         expected_returncode = get_expected_return_code(existing_output_code)
         assert mypy_returncode == expected_returncode
 
 
 def test_bad_toml_config() -> None:
-    full_config_filename = "tests/mypy/configs/pyproject-plugin-bad-param.toml"
-    full_filename = "tests/mypy/modules/success.py"
+    full_config_filename = 'tests/mypy/configs/pyproject-plugin-bad-param.toml'
+    full_filename = 'tests/mypy/modules/success.py'
 
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
-    cache_dir = ".mypy_cache/test-pyproject-plugin-bad-param"
-    command = [full_filename, "--config-file", full_config_filename, "--cache-dir", cache_dir, "--show-error-codes"]
+    cache_dir = '.mypy_cache/test-pyproject-plugin-bad-param'
+    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
     if MYPY_VERSION_TUPLE >= (0, 990):
-        command.append("--disable-recursive-aliases")
+        command.append('--disable-recursive-aliases')
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     with pytest.raises(ValueError) as e:
         mypy_api.run(command)
 
-    assert str(e.value) == "Configuration value must be a boolean for key: init_forbid_extra"
+    assert str(e.value) == 'Configuration value must be a boolean for key: init_forbid_extra'
 
 
 def get_expected_return_code(source_code: str) -> int:
-    if re.findall(r"^\s*# MYPY:", source_code, flags=re.MULTILINE):
+    if re.findall(r'^\s*# MYPY:', source_code, flags=re.MULTILINE):
         return 1
     return 0
 
 
-@pytest.mark.parametrize("module", ["dataclass_no_any", "plugin_success", "plugin_success_baseConfig"])
-@pytest.mark.filterwarnings("ignore:.*is deprecated.*:DeprecationWarning")
-@pytest.mark.filterwarnings("ignore:.*are deprecated.*:DeprecationWarning")
+@pytest.mark.parametrize('module', ['dataclass_no_any', 'plugin_success', 'plugin_success_baseConfig'])
+@pytest.mark.filterwarnings('ignore:.*is deprecated.*:DeprecationWarning')
+@pytest.mark.filterwarnings('ignore:.*are deprecated.*:DeprecationWarning')
 def test_success_cases_run(module: str) -> None:
     """
     Ensure the "success" files can actually be executed
     """
-    importlib.import_module(f"tests.mypy.modules.{module}")
+    importlib.import_module(f'tests.mypy.modules.{module}')
 
 
 def test_explicit_reexports():
@@ -245,24 +245,24 @@ def test_explicit_reexports():
     from pydantic.networks import __all__ as networks
     from pydantic.types import __all__ as types
 
-    for name, export_all in [("main", main), ("network", networks), ("tools", tools), ("types", types)]:
+    for name, export_all in [('main', main), ('network', networks), ('tools', tools), ('types', types)]:
         for export in export_all:
-            assert export in root_all, f"{export} is in {name}.__all__ but missing from re-export in __init__.py"
+            assert export in root_all, f'{export} is in {name}.__all__ but missing from re-export in __init__.py'
 
 
 def test_explicit_reexports_exist():
     import pydantic
 
     for name in pydantic.__all__:
-        assert hasattr(pydantic, name), f"{name} is in pydantic.__all__ but missing from pydantic"
+        assert hasattr(pydantic, name), f'{name} is in pydantic.__all__ but missing from pydantic'
 
 
 @pytest.mark.parametrize(
-    "v_str,v_tuple",
+    'v_str,v_tuple',
     [
-        ("0", (0,)),
-        ("0.930", (0, 930)),
-        ("0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty", (0, 940)),
+        ('0', (0,)),
+        ('0.930', (0, 930)),
+        ('0.940+dev.04cac4b5d911c4f9529e6ce86a27b44f28846f5d.dirty', (0, 940)),
     ],
 )
 def test_parse_mypy_version(v_str, v_tuple):
@@ -276,12 +276,12 @@ def merge_python_and_mypy_output(source_code: str, mypy_output: str) -> str:
         if not line:
             continue
         try:
-            line_number, message = line.split(":", maxsplit=1)
-            merged_lines.insert(int(line_number), (f"# MYPY: {message.strip()}", True))
+            line_number, message = line.split(':', maxsplit=1)
+            merged_lines.insert(int(line_number), (f'# MYPY: {message.strip()}', True))
         except ValueError:
             # This could happen due to lack of a ':' in `line`, or the pre-':' contents not being a number
             # Either way, put all such lines at the top of the file
-            merged_lines.insert(0, (f"# MYPY: {line.strip()}", True))
+            merged_lines.insert(0, (f'# MYPY: {line.strip()}', True))
 
-    merged_lines = [line for line, is_mypy in merged_lines if is_mypy or not line.strip().startswith("# MYPY: ")]
-    return "\n".join(merged_lines) + "\n"
+    merged_lines = [line for line, is_mypy in merged_lines if is_mypy or not line.strip().startswith('# MYPY: ')]
+    return '\n'.join(merged_lines) + '\n'

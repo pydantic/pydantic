@@ -16,7 +16,7 @@ class Square(BaseModel):
 
 sq = Square(side=10)
 y = 12.4 + sq.area
-z = "x" + sq.area
+z = 'x' + sq.area
 
 try:
     from functools import cached_property
@@ -34,4 +34,4 @@ else:
 
     sq = Square(side=10)
     y = 12.4 + sq.area
-    z = "x" + sq.area
+    z = 'x' + sq.area

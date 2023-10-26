@@ -17,32 +17,32 @@ from .json_schema import JsonSchemaValue
 if TYPE_CHECKING:
     import email_validator
 
-    NetworkType: TypeAlias = "str | bytes | int | tuple[str | bytes | int, str | int]"
+    NetworkType: TypeAlias = 'str | bytes | int | tuple[str | bytes | int, str | int]'
 
 else:
     email_validator = None
 
 
 __all__ = [
-    "AnyUrl",
-    "AnyHttpUrl",
-    "FileUrl",
-    "HttpUrl",
-    "UrlConstraints",
-    "EmailStr",
-    "NameEmail",
-    "IPvAnyAddress",
-    "IPvAnyInterface",
-    "IPvAnyNetwork",
-    "PostgresDsn",
-    "CockroachDsn",
-    "AmqpDsn",
-    "RedisDsn",
-    "MongoDsn",
-    "KafkaDsn",
-    "validate_email",
-    "MySQLDsn",
-    "MariaDBDsn",
+    'AnyUrl',
+    'AnyHttpUrl',
+    'FileUrl',
+    'HttpUrl',
+    'UrlConstraints',
+    'EmailStr',
+    'NameEmail',
+    'IPvAnyAddress',
+    'IPvAnyInterface',
+    'IPvAnyNetwork',
+    'PostgresDsn',
+    'CockroachDsn',
+    'AmqpDsn',
+    'RedisDsn',
+    'MongoDsn',
+    'KafkaDsn',
+    'validate_email',
+    'MySQLDsn',
+    'MariaDBDsn',
 ]
 
 
@@ -98,13 +98,13 @@ the types export the following properties:
 - `query`: optional URL query (for example, `GET` arguments or "search string", such as `query=here`).
 - `fragment`: optional fragment (`fragment=is;this=bit`).
 """
-AnyHttpUrl = Annotated[Url, UrlConstraints(allowed_schemes=["http", "https"])]
+AnyHttpUrl = Annotated[Url, UrlConstraints(allowed_schemes=['http', 'https'])]
 """A type that will accept any http or https URL.
 
 * TLD not required
 * Host required
 """
-HttpUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=["http", "https"])]
+HttpUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'])]
 """A type that will accept any http or https URL.
 
 * TLD required
@@ -179,7 +179,7 @@ print(m3.url)
     Also, Chrome, Firefox, and Safari all currently accept `http://exam_ple.com` as a URL, so we're in good
     (or at least big) company.
 """
-FileUrl = Annotated[Url, UrlConstraints(allowed_schemes=["file"])]
+FileUrl = Annotated[Url, UrlConstraints(allowed_schemes=['file'])]
 """A type that will accept any file URL.
 
 * Host not required
@@ -189,15 +189,15 @@ PostgresDsn = Annotated[
     UrlConstraints(
         host_required=True,
         allowed_schemes=[
-            "postgres",
-            "postgresql",
-            "postgresql+asyncpg",
-            "postgresql+pg8000",
-            "postgresql+psycopg",
-            "postgresql+psycopg2",
-            "postgresql+psycopg2cffi",
-            "postgresql+py-postgresql",
-            "postgresql+pygresql",
+            'postgres',
+            'postgresql',
+            'postgresql+asyncpg',
+            'postgresql+pg8000',
+            'postgresql+psycopg',
+            'postgresql+psycopg2',
+            'postgresql+psycopg2cffi',
+            'postgresql+py-postgresql',
+            'postgresql+pygresql',
         ],
     ),
 ]
@@ -265,9 +265,9 @@ CockroachDsn = Annotated[
     UrlConstraints(
         host_required=True,
         allowed_schemes=[
-            "cockroachdb",
-            "cockroachdb+psycopg2",
-            "cockroachdb+asyncpg",
+            'cockroachdb',
+            'cockroachdb+psycopg2',
+            'cockroachdb+asyncpg',
         ],
     ),
 ]
@@ -277,7 +277,7 @@ CockroachDsn = Annotated[
 * TLD not required
 * Host required
 """
-AmqpDsn = Annotated[Url, UrlConstraints(allowed_schemes=["amqp", "amqps"])]
+AmqpDsn = Annotated[Url, UrlConstraints(allowed_schemes=['amqp', 'amqps'])]
 """A type that will accept any AMQP DSN.
 
 * User info required
@@ -286,7 +286,7 @@ AmqpDsn = Annotated[Url, UrlConstraints(allowed_schemes=["amqp", "amqps"])]
 """
 RedisDsn = Annotated[
     Url,
-    UrlConstraints(allowed_schemes=["redis", "rediss"], default_host="localhost", default_port=6379, default_path="/0"),
+    UrlConstraints(allowed_schemes=['redis', 'rediss'], default_host='localhost', default_port=6379, default_path='/0'),
 ]
 """A type that will accept any Redis DSN.
 
@@ -294,7 +294,7 @@ RedisDsn = Annotated[
 * TLD not required
 * Host required (e.g., `rediss://:pass@localhost`)
 """
-MongoDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=["mongodb", "mongodb+srv"], default_port=27017)]
+MongoDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)]
 """A type that will accept any MongoDB DSN.
 
 * User info not required
@@ -302,7 +302,7 @@ MongoDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=["mongodb", "m
 * Port not required
 * User info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`).
 """
-KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=["kafka"], default_host="localhost", default_port=9092)]
+KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)]
 """A type that will accept any Kafka DSN.
 
 * User info required
@@ -313,14 +313,14 @@ MySQLDsn = Annotated[
     Url,
     UrlConstraints(
         allowed_schemes=[
-            "mysql",
-            "mysql+mysqlconnector",
-            "mysql+aiomysql",
-            "mysql+asyncmy",
-            "mysql+mysqldb",
-            "mysql+pymysql",
-            "mysql+cymysql",
-            "mysql+pyodbc",
+            'mysql',
+            'mysql+mysqlconnector',
+            'mysql+aiomysql',
+            'mysql+asyncmy',
+            'mysql+mysqldb',
+            'mysql+pymysql',
+            'mysql+cymysql',
+            'mysql+pyodbc',
         ],
         default_port=3306,
     ),
@@ -334,7 +334,7 @@ MySQLDsn = Annotated[
 MariaDBDsn = Annotated[
     Url,
     UrlConstraints(
-        allowed_schemes=["mariadb", "mariadb+mariadbconnector", "mariadb+pymysql"],
+        allowed_schemes=['mariadb', 'mariadb+mariadbconnector', 'mariadb+pymysql'],
         default_port=3306,
     ),
 ]
@@ -351,7 +351,7 @@ def import_email_validator() -> None:
     try:
         import email_validator
     except ImportError as e:
-        raise ImportError("email-validator is not installed, run `pip install pydantic[email]`") from e
+        raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
 
 
 if TYPE_CHECKING:
@@ -395,7 +395,7 @@ else:
             cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
         ) -> JsonSchemaValue:
             field_schema = handler(core_schema)
-            field_schema.update(type="string", format="email")
+            field_schema.update(type='string', format='email')
             return field_schema
 
         @classmethod
@@ -439,7 +439,7 @@ class NameEmail(_repr.Representation):
     ```
     """  # noqa: D212
 
-    __slots__ = "name", "email"
+    __slots__ = 'name', 'email'
 
     def __init__(self, name: str, email: str):
         self.name = name
@@ -453,7 +453,7 @@ class NameEmail(_repr.Representation):
         cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
-        field_schema.update(type="string", format="name-email")
+        field_schema.update(type='string', format='name-email')
         return field_schema
 
     @classmethod
@@ -467,8 +467,8 @@ class NameEmail(_repr.Representation):
             cls._validate,
             core_schema.union_schema(
                 [core_schema.is_instance_schema(cls), core_schema.str_schema()],
-                custom_error_type="name_email_type",
-                custom_error_message="Input is not a valid NameEmail",
+                custom_error_type='name_email_type',
+                custom_error_message='Input is not a valid NameEmail',
             ),
             serialization=core_schema.to_string_ser_schema(),
         )
@@ -482,7 +482,7 @@ class NameEmail(_repr.Representation):
             return cls(name, email)
 
     def __str__(self) -> str:
-        return f"{self.name} <{self.email}>"
+        return f'{self.name} <{self.email}>'
 
 
 class IPvAnyAddress:
@@ -527,14 +527,14 @@ class IPvAnyAddress:
         try:
             return IPv6Address(value)
         except ValueError:
-            raise PydanticCustomError("ip_any_address", "value is not a valid IPv4 or IPv6 address")
+            raise PydanticCustomError('ip_any_address', 'value is not a valid IPv4 or IPv6 address')
 
     @classmethod
     def __get_pydantic_json_schema__(
         cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = {}
-        field_schema.update(type="string", format="ipvanyaddress")
+        field_schema.update(type='string', format='ipvanyaddress')
         return field_schema
 
     @classmethod
@@ -567,14 +567,14 @@ class IPvAnyInterface:
         try:
             return IPv6Interface(value)
         except ValueError:
-            raise PydanticCustomError("ip_any_interface", "value is not a valid IPv4 or IPv6 interface")
+            raise PydanticCustomError('ip_any_interface', 'value is not a valid IPv4 or IPv6 interface')
 
     @classmethod
     def __get_pydantic_json_schema__(
         cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = {}
-        field_schema.update(type="string", format="ipvanyinterface")
+        field_schema.update(type='string', format='ipvanyinterface')
         return field_schema
 
     @classmethod
@@ -609,14 +609,14 @@ class IPvAnyNetwork:
         try:
             return IPv6Network(value)
         except ValueError:
-            raise PydanticCustomError("ip_any_network", "value is not a valid IPv4 or IPv6 network")
+            raise PydanticCustomError('ip_any_network', 'value is not a valid IPv4 or IPv6 network')
 
     @classmethod
     def __get_pydantic_json_schema__(
         cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = {}
-        field_schema.update(type="string", format="ipvanynetwork")
+        field_schema.update(type='string', format='ipvanynetwork')
         return field_schema
 
     @classmethod
@@ -635,11 +635,11 @@ class IPvAnyNetwork:
 
 
 def _build_pretty_email_regex() -> re.Pattern[str]:
-    name_chars = r"[\w!#$%&\'*+\-/=?^_`{|}~]"
-    unquoted_name_group = rf"((?:{name_chars}+\s+)*{name_chars}+)"
+    name_chars = r'[\w!#$%&\'*+\-/=?^_`{|}~]'
+    unquoted_name_group = fr'((?:{name_chars}+\s+)*{name_chars}+)'
     quoted_name_group = r'"((?:[^"]|\")+)"'
-    email_group = r"<\s*(.+)\s*>"
-    return re.compile(rf"\s*(?:{unquoted_name_group}|{quoted_name_group})?\s*{email_group}\s*")
+    email_group = r'<\s*(.+)\s*>'
+    return re.compile(rf'\s*(?:{unquoted_name_group}|{quoted_name_group})?\s*{email_group}\s*')
 
 
 pretty_email_regex = _build_pretty_email_regex()
@@ -665,9 +665,9 @@ def validate_email(value: str) -> tuple[str, str]:
 
     if len(value) > MAX_EMAIL_LENGTH:
         raise PydanticCustomError(
-            "value_error",
-            "value is not a valid email address: {reason}",
-            {"reason": f"Length must not exceed {MAX_EMAIL_LENGTH} characters"},
+            'value_error',
+            'value is not a valid email address: {reason}',
+            {'reason': f'Length must not exceed {MAX_EMAIL_LENGTH} characters'},
         )
 
     m = pretty_email_regex.fullmatch(value)
@@ -682,7 +682,7 @@ def validate_email(value: str) -> tuple[str, str]:
         parts = email_validator.validate_email(email, check_deliverability=False)
     except email_validator.EmailNotValidError as e:
         raise PydanticCustomError(
-            "value_error", "value is not a valid email address: {reason}", {"reason": str(e.args[0])}
+            'value_error', 'value is not a valid email address: {reason}', {'reason': str(e.args[0])}
         ) from e
 
     email = parts.normalized
