@@ -21,7 +21,10 @@ use super::datetime::{
     float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime,
     EitherTime,
 };
-use super::shared::{decimal_as_int, float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int};
+use super::shared::{
+    decimal_as_int, float_as_int, get_enum_meta_object, int_as_bool, map_json_err, str_as_bool, str_as_float,
+    str_as_int,
+};
 use super::{
     py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments,
     GenericIterable, GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
@@ -256,6 +259,8 @@ impl<'a> Input<'a> for PyAny {
                 || self.is_instance(decimal_type.as_ref(py)).unwrap_or_default()
         } {
             Ok(self.str()?.into())
+        } else if let Some(enum_val) = maybe_as_enum(self) {
+            Ok(enum_val.str()?.into())
         } else {
             Err(ValError::new(ErrorTypeDefaults::StringType, self))
         }
@@ -340,6 +345,8 @@ impl<'a> Input<'a> for PyAny {
             decimal_as_int(self.py(), self, decimal)
         } else if let Ok(float) = self.extract::<f64>() {
             float_as_int(self, float)
+        } else if let Some(enum_val) = maybe_as_enum(self) {
+            Ok(EitherInt::Py(enum_val))
         } else {
             Err(ValError::new(ErrorTypeDefaults::IntType, self))
         }
@@ -756,6 +763,18 @@ fn maybe_as_string(v: &PyAny, unicode_error: ErrorType) -> ValResult<Option<Cow<
         }
     } else {
         Ok(None)
+    }
+}
+
+/// Utility for extracting an enum value, if possible.
+fn maybe_as_enum(v: &PyAny) -> Option<&PyAny> {
+    let py = v.py();
+    let enum_meta_object = get_enum_meta_object(py);
+    let meta_type = v.get_type().get_type();
+    if meta_type.is(&enum_meta_object) {
+        v.getattr(intern!(py, "value")).ok()
+    } else {
+        None
     }
 }
 

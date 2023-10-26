@@ -459,3 +459,16 @@ def test_float_subclass() -> None:
     v_lax = v.validate_python(FloatSubclass(1))
     assert v_lax == 1
     assert type(v_lax) == int
+
+
+def test_int_subclass_plain_enum() -> None:
+    v = SchemaValidator({'type': 'int'})
+
+    from enum import Enum
+
+    class PlainEnum(Enum):
+        ONE = 1
+
+    v_lax = v.validate_python(PlainEnum.ONE)
+    assert v_lax == 1
+    assert type(v_lax) == int

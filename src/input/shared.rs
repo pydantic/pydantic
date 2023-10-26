@@ -1,10 +1,24 @@
 use num_bigint::BigInt;
-use pyo3::{intern, PyAny, Python};
+use pyo3::sync::GILOnceCell;
+use pyo3::{intern, Py, PyAny, Python, ToPyObject};
 
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 
 use super::parse_json::{JsonArray, JsonInput};
 use super::{EitherFloat, EitherInt, Input};
+
+static ENUM_META_OBJECT: GILOnceCell<Py<PyAny>> = GILOnceCell::new();
+
+pub fn get_enum_meta_object(py: Python) -> Py<PyAny> {
+    ENUM_META_OBJECT
+        .get_or_init(py, || {
+            py.import(intern!(py, "enum"))
+                .and_then(|enum_module| enum_module.getattr(intern!(py, "EnumMeta")))
+                .unwrap()
+                .to_object(py)
+        })
+        .clone()
+}
 
 pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: serde_json::Error) -> ValError<'a> {
     ValError::new(

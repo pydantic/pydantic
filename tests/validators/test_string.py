@@ -249,6 +249,21 @@ def test_lax_subclass(FruitEnum, kwargs):
     assert repr(p) == "'pear'"
 
 
+@pytest.mark.parametrize('kwargs', [{}, {'to_lower': True}], ids=repr)
+def test_lax_subclass_plain_enum(kwargs):
+    v = SchemaValidator(core_schema.str_schema(**kwargs))
+
+    from enum import Enum
+
+    class PlainEnum(Enum):
+        ONE = 'one'
+
+    p = v.validate_python(PlainEnum.ONE)
+    assert p == 'one'
+    assert type(p) is str
+    assert repr(p) == "'one'"
+
+
 def test_subclass_preserved() -> None:
     class StrSubclass(str):
         pass
