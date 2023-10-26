@@ -36,7 +36,7 @@ class DocstringVisitor(ast.NodeVisitor):
 def _dedent_source_lines(source: list[str]) -> str:
     # Required for nested class definitions, e.g. in a function block
     dedent_source = textwrap.dedent(''.join(source))
-    if not dedent_source.startswith('class'):
+    if dedent_source.startswith((' ', '\t')):
         # We are in the case where there's a dedented (usually multiline) string
         # at a lower indentation level than the class itself. We wrap our class
         # in a function as a workaround.
@@ -83,7 +83,7 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
                             and selected_nodes[3].name == cls.__name__
                         )
                     if cls_is_second_node or cls_is_third_node:
-                        return block_lines
+                        return block_lines  # type: ignore
         frame = frame.f_back
 
 
