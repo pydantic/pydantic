@@ -35,8 +35,10 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import (
     Annotated,
     Literal,
+    NotRequired,
     OrderedDict,
     ParamSpec,
+    TypedDict,
     TypeVarTuple,
     Unpack,
     get_args,
@@ -53,6 +55,7 @@ from pydantic import (
     PositiveInt,
     PydanticSchemaGenerationError,
     PydanticUserError,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     computed_field,
@@ -2849,3 +2852,20 @@ def test_mix_default_and_constraints() -> None:
 
         class _(BaseModel, Generic[T]):
             x: T
+
+
+def test_generic_with_not_required_in_typed_dict() -> None:
+    T = TypingExtensionsTypeVar('T')
+
+    class FooStr(TypedDict):
+        type: NotRequired[str]
+
+    class FooGeneric(TypedDict, Generic[T]):
+        type: NotRequired[T]
+
+    ta_foo_str = TypeAdapter(FooStr)
+    assert ta_foo_str.validate_python({'type': 'tomato'}) == {'type': 'tomato'}
+    assert ta_foo_str.validate_python({}) == {}
+    ta_foo_generic = TypeAdapter(FooGeneric[str])
+    assert ta_foo_generic.validate_python({'type': 'tomato'}) == {'type': 'tomato'}
+    assert ta_foo_generic.validate_python({}) == {}
