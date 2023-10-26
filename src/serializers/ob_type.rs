@@ -259,8 +259,9 @@ impl ObTypeLookup {
     fn is_enum(&self, op_value: Option<&PyAny>, py_type: &PyType) -> bool {
         // only test on the type itself, not base types
         if op_value.is_some() {
+            let enum_meta_type = self.enum_object.as_ref(py_type.py()).get_type();
             let meta_type = py_type.get_type();
-            meta_type.is(&self.enum_object)
+            meta_type.is(enum_meta_type)
         } else {
             false
         }
