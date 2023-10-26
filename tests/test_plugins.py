@@ -284,7 +284,7 @@ def test_all_handlers():
         assert Model.model_validate_json('{"a": 2}', context={'c': 2}).model_dump() == {'a': 2}
         # insert_assert(log)
         assert log == [
-            'json enter input={"a": 2} kwargs={\'strict\': None, \'context\': {\'c\': 2}}',
+            "json enter input={\"a\": 2} kwargs={'strict': None, 'context': {'c': 2}}",
             'json success result=a=2',
         ]
         log.clear()

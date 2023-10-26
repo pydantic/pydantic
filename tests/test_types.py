@@ -4852,7 +4852,7 @@ def test_union_uuid_str_left_to_right():
 
     # in smart mode JSON and python are currently validated differently in this
     # case, because in Python this is a str but in JSON a str is also a UUID
-    assert TypeAdapter(IdOrSlug).validate_json('\"f4fe10b4-e0c8-4232-ba26-4acd491c2414\"') == UUID(
+    assert TypeAdapter(IdOrSlug).validate_json('"f4fe10b4-e0c8-4232-ba26-4acd491c2414"') == UUID(
         'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
     )
     assert (
@@ -4863,7 +4863,7 @@ def test_union_uuid_str_left_to_right():
     IdOrSlugLTR = Annotated[Union[UUID, str], Field(union_mode='left_to_right')]
 
     # in left to right mode both JSON and python are validated as UUID
-    assert TypeAdapter(IdOrSlugLTR).validate_json('\"f4fe10b4-e0c8-4232-ba26-4acd491c2414\"') == UUID(
+    assert TypeAdapter(IdOrSlugLTR).validate_json('"f4fe10b4-e0c8-4232-ba26-4acd491c2414"') == UUID(
         'f4fe10b4-e0c8-4232-ba26-4acd491c2414'
     )
     assert TypeAdapter(IdOrSlugLTR).validate_python('f4fe10b4-e0c8-4232-ba26-4acd491c2414') == UUID(

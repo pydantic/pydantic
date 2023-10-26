@@ -1110,7 +1110,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     @typing_extensions.deprecated(
-        "The `from_orm` method is deprecated; set "
+        'The `from_orm` method is deprecated; set '
         "`model_config['from_attributes']=True` and use `model_validate` instead.",
         category=PydanticDeprecatedSince20,
     )

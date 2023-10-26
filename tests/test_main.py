@@ -1511,8 +1511,8 @@ def test_untyped_fields_warning():
     with pytest.raises(
         PydanticUserError,
         match=re.escape(
-            "A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; "
-            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it "
+            'A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; '
+            'if `x` is not meant to be a field, you may be able to resolve this error by annotating it '
             "as a `ClassVar` or updating `model_config['ignored_types']`."
         ),
     ):

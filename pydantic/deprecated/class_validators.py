@@ -114,13 +114,13 @@ def validator(
     fields = tuple((__field, *fields))
     if isinstance(fields[0], FunctionType):
         raise PydanticUserError(
-            "`@validator` should be used with fields and keyword arguments, not bare. "
+            '`@validator` should be used with fields and keyword arguments, not bare. '
             "E.g. usage should be `@validator('<field_name>', ...)`",
             code='validator-no-fields',
         )
     elif not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
-            "`@validator` fields should be passed as separate string args. "
+            '`@validator` fields should be passed as separate string args. '
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
             code='validator-invalid-fields',
         )
@@ -162,7 +162,10 @@ def root_validator(
     # which means you need to specify `skip_on_failure=True`
     skip_on_failure: Literal[True],
     allow_reuse: bool = ...,
-) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
+) -> Callable[
+    [_V1RootValidatorFunctionType],
+    _V1RootValidatorFunctionType,
+]:
     ...
 
 
@@ -173,7 +176,10 @@ def root_validator(
     # `skip_on_failure`, in fact it is not allowed as an argument!
     pre: Literal[True],
     allow_reuse: bool = ...,
-) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
+) -> Callable[
+    [_V1RootValidatorFunctionType],
+    _V1RootValidatorFunctionType,
+]:
     ...
 
 
@@ -185,7 +191,10 @@ def root_validator(
     pre: Literal[False],
     skip_on_failure: Literal[True],
     allow_reuse: bool = ...,
-) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
+) -> Callable[
+    [_V1RootValidatorFunctionType],
+    _V1RootValidatorFunctionType,
+]:
     ...
 
 

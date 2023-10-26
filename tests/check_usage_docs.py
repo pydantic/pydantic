@@ -10,7 +10,7 @@ PYDANTIC_DIR = ROOT_DIR / 'pydantic'
 version_file = PYDANTIC_DIR / 'version.py'
 
 
-version = re.search(br"VERSION = '(.*)'", version_file.read_bytes()).group(1)
+version = re.search(rb"VERSION = '(.*)'", version_file.read_bytes()).group(1)
 version_major_minor = b'.'.join(version.split(b'.')[:2])
 expected_base = b'https://docs.pydantic.dev/' + version_major_minor + b'/'
 
@@ -30,7 +30,7 @@ for path_str in paths:
         else:
             return m.group(0)
 
-    b = re.sub(br'(""" *usage.docs: *)(https://.+?/.+?/)', sub, b, flags=re.I)
+    b = re.sub(rb'(""" *usage.docs: *)(https://.+?/.+?/)', sub, b, flags=re.I)
     if changed:
         error_count += changed
         path.write_bytes(b)
