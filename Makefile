@@ -26,9 +26,11 @@ rebuild-lockfiles: .pdm
 .PHONY: format  ## Auto-format python source files
 format: .pdm
 	pdm run ruff format $(sources)
+	pdm run ruff --fix $(sources)
 
 .PHONY: lint  ## Lint python source files
 lint: .pdm
+	pdm run ruff format --check $(sources)
 	pdm run ruff $(sources)
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
