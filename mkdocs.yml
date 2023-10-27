@@ -77,7 +77,7 @@ nav:
     - RootModel: api/root_model.md
     - Pydantic Dataclasses: api/dataclasses.md
     - TypeAdapter: api/type_adapter.md
-    - Validation Decorator: api/validate_call.md
+    - Validate Call: api/validate_call.md
     - Fields: api/fields.md
     - Configuration: api/config.md
     - JSON Schema: api/json_schema.md
