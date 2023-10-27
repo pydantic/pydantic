@@ -1,5 +1,5 @@
 """The `version` module holds the version information for Pydantic."""
-from typing import Tuple
+from __future__ import annotations as _annotations
 
 __all__ = 'VERSION', 'version_info'
 
@@ -57,7 +57,7 @@ def version_info() -> str:
     return '\n'.join('{:>30} {}'.format(k + ':', str(v).replace('\n', ' ')) for k, v in info.items())
 
 
-def parse_mypy_version(version: str) -> Tuple[int, ...]:
+def parse_mypy_version(version: str) -> tuple[int, ...]:
     """Parse mypy string version to tuple of ints.
 
     This function is included here rather than the mypy plugin file because the mypy plugin file cannot be imported

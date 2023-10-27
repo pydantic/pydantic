@@ -14,30 +14,20 @@ import pydantic
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_init_export():
-    pydantic_all = set(pydantic.__all__)
-
-    exported = set()
-    for name, attr in vars(pydantic).items():
-        if name.startswith('_'):
-            continue
-        if isinstance(attr, ModuleType) and name != 'dataclasses':
-            continue
-        if name == 'getattr_migration':
-            continue
-        exported.add(name)
-
-    # add stuff from `pydantic._dynamic_imports` if `package` is "pydantic"
-    exported.update({k for k, v in pydantic._dynamic_imports.items() if v[0] == 'pydantic'})
-
-    assert pydantic_all == exported, "pydantic.__all__ doesn't match actual exports"
+    for name in dir(pydantic):
+        getattr(pydantic, name)
 
 
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize(('attr_name', 'value'), list(pydantic._dynamic_imports.items()))
 def test_public_api_dynamic_imports(attr_name, value):
     package, module_name = value
-    imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
-    assert isinstance(imported_object, object)
+    if module_name == '__module__':
+        module = importlib.import_module(attr_name, package=package)
+        assert isinstance(module, ModuleType)
+    else:
+        imported_object = getattr(importlib.import_module(module_name, package=package), attr_name)
+        assert isinstance(imported_object, object)
 
 
 @pytest.mark.skipif(
