@@ -63,7 +63,7 @@ def test_public_internal():
 
 
 # language=Python
-IMPORTED_MODULES_CODE = """
+IMPORTED_PYDANTIC_CODE = """
 import sys
 import pydantic
 
@@ -74,12 +74,37 @@ print(json.dumps(modules))
 """
 
 
-def test_imported_modules(tmp_path: Path):
+def test_import_pydantic(tmp_path: Path):
     py_file = tmp_path / 'test.py'
-    py_file.write_text(IMPORTED_MODULES_CODE)
+    py_file.write_text(IMPORTED_PYDANTIC_CODE)
 
     output = subprocess.check_output([sys.executable, str(py_file)], cwd=tmp_path)
     imported_modules = json.loads(output)
     # debug(imported_modules)
     assert 'pydantic' in imported_modules
     assert 'pydantic.deprecated' not in imported_modules
+
+
+# language=Python
+IMPORTED_BASEMODEL_CODE = """
+import sys
+from pydantic import BaseModel
+
+modules = list(sys.modules.keys())
+
+import json
+print(json.dumps(modules))
+"""
+
+
+def test_import_base_model(tmp_path: Path):
+    py_file = tmp_path / 'test.py'
+    py_file.write_text(IMPORTED_BASEMODEL_CODE)
+
+    output = subprocess.check_output([sys.executable, str(py_file)], cwd=tmp_path)
+    imported_modules = json.loads(output)
+    # debug(sorted(imported_modules))
+    assert 'pydantic' in imported_modules
+    assert 'pydantic.fields' not in imported_modules
+    assert 'pydantic.types' not in imported_modules
+    assert 'annotated_types' not in imported_modules
