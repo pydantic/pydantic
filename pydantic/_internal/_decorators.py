@@ -12,12 +12,12 @@ from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Literal, TypeAlias, is_typeddict
 
 from ..errors import PydanticUserError
-from ..fields import ComputedFieldInfo
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_true
 from ._typing_extra import get_function_type_hints
 
 if TYPE_CHECKING:
+    from ..fields import ComputedFieldInfo
     from ..functional_validators import FieldValidatorModes
 
 try:
@@ -140,7 +140,7 @@ class ModelValidatorDecoratorInfo:
     mode: Literal['wrap', 'before', 'after']
 
 
-DecoratorInfo = Union[
+DecoratorInfo: TypeAlias = """Union[
     ValidatorDecoratorInfo,
     FieldValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
@@ -148,7 +148,7 @@ DecoratorInfo = Union[
     ModelSerializerDecoratorInfo,
     ModelValidatorDecoratorInfo,
     ComputedFieldInfo,
-]
+]"""
 
 ReturnType = TypeVar('ReturnType')
 DecoratedType: TypeAlias = (
@@ -488,6 +488,8 @@ class DecoratorInfos:
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 else:
+                    from ..fields import ComputedFieldInfo
+
                     isinstance(var_value, ComputedFieldInfo)
                     res.computed_fields[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=None, info=info

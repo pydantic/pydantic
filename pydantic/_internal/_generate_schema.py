@@ -39,16 +39,12 @@ from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDic
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
-from ..fields import AliasChoices, AliasPath, FieldInfo
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
 from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
-from ._core_metadata import (
-    CoreMetadataHandler,
-    build_metadata_dict,
-)
+from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
     NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
@@ -61,7 +57,6 @@ from ._core_utils import (
     validate_core_schema,
 )
 from ._decorators import (
-    ComputedFieldInfo,
     Decorator,
     DecoratorInfos,
     FieldSerializerDecoratorInfo,
@@ -85,6 +80,7 @@ from ._typing_extra import is_finalvar
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
+    from ..fields import ComputedFieldInfo, FieldInfo
     from ..main import BaseModel
     from ..validators import FieldValidatorModes
     from ._dataclasses import StandardDataclass
@@ -916,6 +912,8 @@ class GenerateSchema:
         self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
     ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
+        from ..fields import AliasChoices, AliasPath, FieldInfo
+
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
             types_namespace = self._types_namespace
             if self._typevars_map:
@@ -1096,6 +1094,8 @@ class GenerateSchema:
         Hence to avoid creating validators that do not do what users expect we only
         support typing.TypedDict on Python >= 3.12 or typing_extension.TypedDict on all versions
         """
+        from ..fields import FieldInfo
+
         with self.defs.get_schema_or_ref(typed_dict_cls) as (typed_dict_ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1211,6 +1211,8 @@ class GenerateSchema:
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
         """Prepare a ArgumentsParameter to represent a field in a namedtuple or function signature."""
+        from ..fields import FieldInfo
+
         if default is Parameter.empty:
             field = FieldInfo.from_annotation(annotation)
         else:
@@ -1560,6 +1562,8 @@ class GenerateSchema:
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
+        from ..fields import FieldInfo
+
         source_type, *annotations = self._get_args_resolving_forward_refs(
             annotated_type,
             required=True,
@@ -1639,6 +1643,8 @@ class GenerateSchema:
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
+        from ..fields import FieldInfo
+
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation(schema, field_metadata)
@@ -1681,6 +1687,8 @@ class GenerateSchema:
     def _apply_single_annotation_json_schema(
         self, schema: core_schema.CoreSchema, metadata: Any
     ) -> core_schema.CoreSchema:
+        from ..fields import FieldInfo
+
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation_json_schema(schema, field_metadata)

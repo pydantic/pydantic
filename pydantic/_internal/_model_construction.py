@@ -13,16 +13,10 @@ from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
-from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._decorators import (
-    ComputedFieldInfo,
-    DecoratorInfos,
-    PydanticDescriptorProxy,
-    get_attribute_from_bases,
-)
+from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
 from ._generate_schema import GenerateSchema
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
@@ -35,22 +29,15 @@ from ._validate_call import ValidateCallWrapper
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
+    from ..fields import Field as PydanticModelField
+    from ..fields import FieldInfo, ModelPrivateAttr
     from ..main import BaseModel
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
+    PydanticModelField = object()
 
-
-IGNORED_TYPES: tuple[Any, ...] = (
-    FunctionType,
-    property,
-    classmethod,
-    staticmethod,
-    PydanticDescriptorProxy,
-    ComputedFieldInfo,
-    ValidateCallWrapper,
-)
 object_setattr = object.__setattr__
 
 
@@ -67,7 +54,7 @@ class _ModelNamespaceDict(dict):
         return super().__setitem__(k, v)
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
+@dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField,))
 class ModelMetaclass(ABCMeta):
     def __new__(
         mcs,
@@ -304,7 +291,9 @@ def inspect_namespace(  # noqa C901
             - If a field does not have a type annotation.
             - If a field on base class was overridden by a non-annotated attribute.
     """
-    all_ignored_types = ignored_types + IGNORED_TYPES
+    from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
+
+    all_ignored_types = ignored_types + default_ignored_types()
 
     private_attributes: dict[str, ModelPrivateAttr] = {}
     raw_annotations = namespace.get('__annotations__', {})
@@ -654,3 +643,17 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
         else:
             result[k] = v
     return result
+
+
+def default_ignored_types() -> tuple[type[Any], ...]:
+    from ..fields import ComputedFieldInfo
+
+    return (
+        FunctionType,
+        property,
+        classmethod,
+        staticmethod,
+        PydanticDescriptorProxy,
+        ComputedFieldInfo,
+        ValidateCallWrapper,
+    )

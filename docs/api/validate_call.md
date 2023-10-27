@@ -1,1 +1,1 @@
-::: pydantic.validate_call
+::: pydantic.validate_call_decorator
