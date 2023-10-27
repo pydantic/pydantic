@@ -192,7 +192,7 @@ def test_model_generic():
         """A parameterized docs"""
 
     assert MyParameterizedModel.model_fields['a'].description == 'A parameterized docs'
-    assert MyModel[int].model_fields['a'].description == 'A parameterized docs'
+    assert MyModel[int].model_fields['a'].description == 'A docs'
 
 
 def test_dataclass_no_docs_extraction():
