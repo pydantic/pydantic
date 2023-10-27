@@ -367,5 +367,5 @@ def __getattr__(attr_name: str) -> object:
         return getattr(module, attr_name)
 
 
-def __dir__() -> list[str]:
+def __dir__() -> 'list[str]':
     return list(__all__)
