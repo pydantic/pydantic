@@ -19,6 +19,7 @@ from pydantic import (
     PydanticSchemaGenerationError,
     ValidationError,
     create_model,
+    field_validator,
     validate_call,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
@@ -536,6 +537,34 @@ def test_config_wrapper_match():
     assert (
         config_dict_annotations == config_wrapper_annotations
     ), 'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason='requires backport pre 3.11, fully tested in pydantic core')
+def test_config_validation_error_cause():
+    class Foo(BaseModel):
+        foo: int
+
+        @field_validator('foo')
+        def check_foo(cls, v):
+            assert v > 5, 'Must be greater than 5'
+
+    # Should be disabled by default:
+    with pytest.raises(ValidationError) as exc_info:
+        Foo(foo=4)
+    assert exc_info.value.__cause__ is None
+
+    Foo.model_config = ConfigDict(validation_error_cause=True)
+    Foo.model_rebuild(force=True)
+    with pytest.raises(ValidationError) as exc_info:
+        Foo(foo=4)
+    # Confirm python error attached as a cause, and error location specified in a note:
+    assert exc_info.value.__cause__ is not None
+    assert isinstance(exc_info.value.__cause__, ExceptionGroup)
+    assert len(exc_info.value.__cause__.exceptions) == 1
+    src_exc = exc_info.value.__cause__.exceptions[0]
+    assert repr(src_exc) == "AssertionError('Must be greater than 5\\nassert 4 > 5')"
+    assert len(src_exc.__notes__) == 1
+    assert src_exc.__notes__[0] == '\nPydantic: cause of loc: foo'
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
