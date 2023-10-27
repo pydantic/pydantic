@@ -71,7 +71,7 @@ def pydantic_general_metadata(**metadata: Any) -> BaseMetadata:
     return _general_metadata_cls()(metadata)  # type: ignore
 
 
-@lru_cache
+@lru_cache(maxsize=None)
 def _general_metadata_cls() -> type[BaseMetadata]:
     """Do it this way to avoid importing `annotated_types` at import time."""
     from annotated_types import BaseMetadata
