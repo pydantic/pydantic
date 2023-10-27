@@ -1874,6 +1874,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.validation_error_cause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validation_error_cause
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3603,6 +3614,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.validation_error_cause" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validation_error_cause
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -5313,6 +5335,42 @@ Defaults to <code>'rust-regex'</code>.</p>
 <span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
   </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.config.ConfigDict.validation_error_cause" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">validation_error_cause</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.validation_error_cause" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">validation_error_cause</span><span class="p">:</span> <span class="nb">bool</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>If <code>True</code>, python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to <code>False</code>.</p>
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>Python 3.10 and older don't support exception groups natively. &lt;=3.10, backport must be installed: <code>pip install exceptiongroup</code>.</p>
+</details>
+<details class="note" open>
+  <summary>Note</summary>
+  <p>The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.</p>
+</details>  </div>
 
 </div>
 
