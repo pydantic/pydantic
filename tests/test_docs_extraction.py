@@ -1,9 +1,12 @@
 import textwrap
+from typing import Generic, TypeVar
 
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, create_model
 from pydantic.dataclasses import dataclass as pydantic_dataclass
+
+T = TypeVar('T')
 
 
 def dec_noop(obj):
@@ -153,6 +156,42 @@ def test_model_docs_inheritance():
     assert FirstModel.model_fields['a'].description == 'A docs'
     assert MyModel.model_fields['a'].description == 'A overridden docs'
     assert MyModel.model_fields['b'].description == 'B docs'
+
+
+def test_model_different_name():
+    # As we extract docstrings from cls in `ModelMetaclass.__new__`,
+    # we are not affected by `__name__` being altered in any way.
+
+    class MyModel(BaseModel):
+        a: int
+        """A docs"""
+
+        model_config = ConfigDict(
+            use_attribute_docstrings=True,
+        )
+
+    MyModel.__name__ = 'OtherModel'
+    print(MyModel.__name__)
+
+    assert MyModel.model_fields['a'].description == 'A docs'
+
+
+def test_model_generic():
+    class MyModel(BaseModel, Generic[T]):
+        a: T
+        """A docs"""
+
+        model_config = ConfigDict(
+            use_attribute_docstrings=True,
+        )
+
+    assert MyModel.model_fields['a'].description == 'A docs'
+
+    class MyParameterizedModel(MyModel[int]):
+        a: int
+        """A parameterized docs"""
+
+    assert MyParameterizedModel.model_fields['a'].description == 'A parameterized docs'
 
 
 def test_dataclass_no_docs_extraction():

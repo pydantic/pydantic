@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import ast
 import inspect
-import itertools
 import textwrap
 from typing import Any
 
@@ -48,42 +47,31 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
     frame = inspect.currentframe()
 
     while frame:
-        lnum = frame.f_lineno
-        try:
-            lines, _ = inspect.findsource(frame)
-        except OSError:
-            # Source can't be parsed (maybe because running in an interactive terminal),
-            # we don't want to error here.
-            pass
-        else:
-            if inspect.getmodule(frame) is inspect.getmodule(cls) and isinstance(lnum, int):
+        if inspect.getmodule(frame) is inspect.getmodule(cls):
+            lnum = frame.f_lineno
+            try:
+                lines, _ = inspect.findsource(frame)
+            except OSError:
+                # Source can't be parsed (maybe because running in an interactive terminal),
+                # we don't want to error here.
+                pass
+            else:
                 block_lines = inspect.getblock(lines[lnum - 1 :])
                 dedent_source = _dedent_source_lines(block_lines)  # type: ignore
                 # Because lnum can point to potential decorators before the class definition,
-                # we use ast to parse the block source:
+                # we use `ast` to parse the block source:
                 try:
                     block_tree = ast.parse(dedent_source)
-                except Exception:
+                except SyntaxError:
                     pass
                 else:
-                    selected_nodes = list(itertools.islice(ast.walk(block_tree), 4))
-                    cls_is_second_node = cls_is_third_node = False
-                    if len(selected_nodes) >= 4:
-                        # If `_dedent_source_lines` wrapped the class around the workaround function
-                        # second node is `FunctionNode`, third node is `ast.arguments`, fourth node is our class:
-                        cls_is_third_node = (
-                            isinstance(selected_nodes[1], ast.FunctionDef)
-                            and selected_nodes[1].name == 'dedent_workaround'
-                            and isinstance(selected_nodes[3], ast.ClassDef)
-                            and selected_nodes[3].name == cls.__name__
-                        )
-                    if not cls_is_third_node and len(selected_nodes) >= 2:
-                        # ...or the second element (the first one being `ast.Module`) is `ast.ClassDef` matching our class:
-                        cls_is_second_node = (
-                            isinstance(selected_nodes[1], ast.ClassDef) and selected_nodes[1].name == cls.__name__
-                        )
-                    if cls_is_second_node or cls_is_third_node:
+                    stmt = block_tree.body[0]
+                    if isinstance(stmt, ast.FunctionDef) and stmt.name == 'dedent_workaround':
+                        # `_dedent_source_lines` wrapped the class around the workaround function
+                        stmt = stmt.body[0]
+                    if isinstance(stmt, ast.ClassDef) and stmt.name == cls.__name__:
                         return block_lines  # type: ignore
+
         frame = frame.f_back
 
 
