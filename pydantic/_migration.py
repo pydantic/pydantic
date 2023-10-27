@@ -1,8 +1,6 @@
 import sys
-import warnings
 from typing import Any, Callable, Dict
 
-from ._internal._validators import import_string
 from .version import version_short
 
 MOVED_IN_V2 = {
@@ -274,6 +272,10 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         """
         if name == '__path__':
             raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
+        import warnings
+
+        from ._internal._validators import import_string
 
         import_path = f'{module}:{name}'
         if import_path in MOVED_IN_V2.keys():

@@ -27,7 +27,6 @@ from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
-from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 from .warnings import PydanticDeprecatedSince20
 
@@ -40,6 +39,7 @@ if typing.TYPE_CHECKING:
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
     from .deprecated.parse import Protocol as DeprecatedParseProtocol
+    from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from .fields import Field as _Field
 
     AnyClassMethod = classmethod[Any, Any, Any]

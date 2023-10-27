@@ -49,7 +49,7 @@ def import_string(value: Any) -> Any:
         try:
             return _import_string_logic(value)
         except ImportError as e:
-            raise PydanticCustomError('import_error', 'Invalid python path: {error}', {'error': str(e)})
+            raise PydanticCustomError('import_error', 'Invalid python path: {error}', {'error': str(e)}) from e
     else:
         # otherwise we just return the value and let the next validator do the rest of the work
         return value

@@ -488,7 +488,7 @@ class FieldInfo(_repr.Representation):
                 else:
                     metadata.append(marker(value))
         if general_metadata:
-            metadata.append(_fields.PydanticGeneralMetadata(**general_metadata))
+            metadata.append(_fields.pydantic_general_metadata(**general_metadata))
         return metadata
 
     def get_default(self, *, call_default_factory: bool = False) -> Any:

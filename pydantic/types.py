@@ -688,7 +688,7 @@ class StringConstraints(annotated_types.GroupedMetadata):
             or self.to_lower is not None
             or self.to_upper is not None
         ):
-            yield _fields.PydanticGeneralMetadata(
+            yield _fields.pydantic_general_metadata(
                 strip_whitespace=self.strip_whitespace,
                 to_upper=self.to_upper,
                 to_lower=self.to_lower,
@@ -1048,7 +1048,7 @@ def condecimal(
         Strict(strict) if strict is not None else None,
         annotated_types.Interval(gt=gt, ge=ge, lt=lt, le=le),
         annotated_types.MultipleOf(multiple_of) if multiple_of is not None else None,
-        _fields.PydanticGeneralMetadata(max_digits=max_digits, decimal_places=decimal_places),
+        _fields.pydantic_general_metadata(max_digits=max_digits, decimal_places=decimal_places),
         AllowInfNan(allow_inf_nan) if allow_inf_nan is not None else None,
     ]
 

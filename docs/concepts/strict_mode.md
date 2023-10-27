@@ -490,7 +490,7 @@ except ValidationError as exc:
 
 ### `@validate_call`
 
-Strict mode is also usable with the [`@validate_call`](../api/validate_call.md#pydantic.validate_call.validate_call)
+Strict mode is also usable with the [`@validate_call`](../api/validate_call.md#pydantic.validate_call_decorator.validate_call)
 decorator by passing the `config` keyword argument:
 
 ```python
