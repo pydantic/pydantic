@@ -2507,6 +2507,19 @@ def test_signature():
     )
 
 
+def test_inherited_dataclass_signature():
+    @pydantic.dataclasses.dataclass
+    class A:
+        a: int
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        b: int
+
+    assert str(inspect.signature(A)) == '(a: int) -> None'
+    assert str(inspect.signature(B)) == '(a: int, b: int) -> None'
+
+
 def test_dataclasses_with_slots_and_default():
     @pydantic.dataclasses.dataclass(slots=True)
     class A:
