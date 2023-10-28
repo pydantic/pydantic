@@ -210,7 +210,9 @@ def test_dataclass_no_docs_extraction():
 
 
 def test_dataclass_docs_extraction():
-    @pydantic_dataclass(config=ConfigDict(use_attribute_docstrings=True))
+    @pydantic_dataclass(
+        config=ConfigDict(use_attribute_docstrings=True),
+    )
     @dec_noop
     class MyModel:
         a: int

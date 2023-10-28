@@ -899,7 +899,7 @@ class ConfigDict(TypedDict, total=False):
     This requires the source code of the class to be available at runtime.
 
     !!! warning "Usage with `TypedDict`"
-        Due to current limitations, attribute docsrings detection may not work as expected when using `TypedDict`
+        Due to current limitations, attribute docstrings detection may not work as expected when using `TypedDict`
         (in particular when multiple `TypedDict` classes have the same name in the same source file). The behavior
         can be different depending on the Python version used.
     '''

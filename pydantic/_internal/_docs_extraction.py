@@ -52,14 +52,12 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
             try:
                 lines, _ = inspect.findsource(frame)
             except OSError:
-                # Source can't be parsed (maybe because running in an interactive terminal),
+                # Source can't be retrieved (maybe because running in an interactive terminal),
                 # we don't want to error here.
                 pass
             else:
                 block_lines = inspect.getblock(lines[lnum - 1 :])
                 dedent_source = _dedent_source_lines(block_lines)  # type: ignore
-                # Because lnum can point to potential decorators before the class definition,
-                # we use `ast` to parse the block source:
                 try:
                     block_tree = ast.parse(dedent_source)
                 except SyntaxError:
