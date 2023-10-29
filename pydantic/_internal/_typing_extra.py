@@ -269,7 +269,7 @@ class UnionTransformer(ast.NodeTransformer):
         return node
 
 
-def eval_type_backport(value: Any, globalns: dict[str, Any] | None, localns: dict[str, Any] | None):
+def eval_type_backport(value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None):
     try:
         return typing._eval_type(value, globalns, localns)  # type: ignore
     except TypeError:

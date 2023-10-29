@@ -474,12 +474,12 @@ def test_root_model_dump_with_base_model(order):
     if order == 'BR':
 
         class Model(RootModel):
-            root: List[Union[BModel, RModel]]
+            root: 'List[BModel | RModel]'
 
     elif order == 'RB':
 
         class Model(RootModel):
-            root: List[Union[RModel, BModel]]
+            root: 'List[RModel | BModel]'
 
     m = Model([1, 2, {'value': 'abc'}])
 
@@ -508,7 +508,7 @@ def test_mixed_discriminated_union(data):
         str_value: str
 
     class Model(RootModel):
-        root: Union[SModel, RModel] = Field(discriminator='kind')
+        root: 'SModel | RModel' = Field(discriminator='kind')
 
     assert Model(data).model_dump() == data
     assert Model(**data).model_dump() == data

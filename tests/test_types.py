@@ -4798,7 +4798,7 @@ def test_none_literal():
 
 def test_default_union_types():
     class DefaultModel(BaseModel):
-        v: Union[int, bool, str]
+        v: 'int | bool | str'
 
     # do it this way since `1 == True`
     assert repr(DefaultModel(v=True).v) == 'True'
@@ -4879,7 +4879,7 @@ def test_default_union_class():
         x: str
 
     class Model(BaseModel):
-        y: Union[A, B]
+        y: 'A | B'
 
     assert isinstance(Model(y=A(x='a')).y, A)
     assert isinstance(Model(y=B(x='b')).y, B)
@@ -4891,7 +4891,7 @@ def test_union_subclass(max_length: Union[int, None]):
         ...
 
     class Model(BaseModel):
-        x: Union[int, Annotated[str, Field(max_length=max_length)]]
+        x: 'int | Annotated[str, Field(max_length=max_length)]'
 
     v = Model(x=MyStr('1')).x
     assert type(v) is str
@@ -4900,7 +4900,7 @@ def test_union_subclass(max_length: Union[int, None]):
 
 def test_union_compound_types():
     class Model(BaseModel):
-        values: Union[Dict[str, str], List[str], Dict[str, List[str]]]
+        values: 'Dict[str, str] | List[str] | Dict[str, List[str]]'
 
     assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
     assert Model(values=['L1']).model_dump() == {'values': ['L1']}
@@ -4934,7 +4934,7 @@ def test_union_compound_types():
 
 def test_smart_union_compounded_types_edge_case():
     class Model(BaseModel):
-        x: Union[List[str], List[int]]
+        x: 'List[str] | List[int]'
 
     assert Model(x=[1, 2]).x == [1, 2]
     assert Model(x=['1', '2']).x == ['1', '2']
@@ -4949,7 +4949,7 @@ def test_union_typeddict():
         bar: str
 
     class M(BaseModel):
-        d: Union[Dict2, Dict1]
+        d: 'Dict2 | Dict1'
 
     assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 

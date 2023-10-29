@@ -594,7 +594,7 @@ def test_complex_nesting():
     T = TypeVar('T')
 
     class MyModel(BaseModel, Generic[T]):
-        item: List[Dict[Union[int, T], str]]
+        item: 'List[Dict[int | T, str]]'
 
     item = [{1: 'a', 'a': 'a'}]
     model = MyModel[str](item=item)
@@ -1868,7 +1868,7 @@ def test_generic_recursive_models_complicated(create_module):
             m: 'M2[V1]'
 
         class M2(BaseModel, Generic[V3]):
-            m: Union[M1[V3, int], V3]
+            m: 'M1[V3, int] | V3'
 
         M1.model_rebuild()
 
