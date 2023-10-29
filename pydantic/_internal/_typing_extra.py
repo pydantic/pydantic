@@ -1,14 +1,16 @@
 """Logic for interacting with type annotations, mostly extensions, shims and hacks to wrap python's typing module."""
 from __future__ import annotations as _annotations
 
+import ast
 import dataclasses
 import sys
 import types
 import typing
+import uuid
 from collections.abc import Callable
 from functools import partial
 from types import GetSetDescriptorType
-from typing import TYPE_CHECKING, Any, ForwardRef
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypeGuard, get_args, get_origin
 
@@ -221,10 +223,62 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         value = _make_forward_ref(value, is_argument=False, is_class=True)
 
     try:
-        return typing._eval_type(value, globalns, localns)  # type: ignore
+        return eval_type_backport(value, globalns, localns)  # type: ignore
     except NameError:
         # the point of this function is to be tolerant to this case
         return value
+
+
+def node_to_ref(node: ast.AST):
+    if not isinstance(node, ast.Expression):
+        node = ast.copy_location(ast.Expression(node), node)
+    ref = typing.ForwardRef(ast.dump(node))
+    ref.__forward_code__ = compile(node, '<node>', 'eval')
+    return ref
+
+
+class UnionTransformer(ast.NodeTransformer):
+    def __init__(self, globalns, localns):
+        self.typing_name = f'typing_{uuid.uuid4().hex}'
+        self.globalns = globalns
+        self.localns = {**(localns or {}), self.typing_name: typing}
+
+    def eval_type(self, node):
+        return typing._eval_type(node_to_ref(node), self.globalns, self.localns)  # type: ignore
+
+    def visit_BinOp(self, node):
+        if isinstance(node.op, ast.BitOr):
+            left = self.visit(node.left)
+            right = self.visit(node.right)
+            left_val = self.eval_type(left)
+            right_val = self.eval_type(right)
+            try:
+                left_val | right_val  # type: ignore
+            except TypeError:
+                replacement = ast.Subscript(
+                    value=ast.Attribute(
+                        value=ast.Name(id=self.typing_name, ctx=ast.Load()),
+                        attr='Union',
+                        ctx=ast.Load(),
+                    ),
+                    slice=ast.Index(value=ast.Tuple(elts=[left, right], ctx=ast.Load())),
+                    ctx=ast.Load(),
+                )
+                return ast.fix_missing_locations(replacement)
+
+        return node
+
+
+def eval_type_backport(value: Any, globalns: dict[str, Any] | None, localns: dict[str, Any] | None):
+    try:
+        return typing._eval_type(value, globalns, localns)  # type: ignore
+    except TypeError:
+        if not isinstance(value, typing.ForwardRef):
+            raise
+        tree = ast.parse(value.__forward_arg__, mode='eval')
+        transformer = UnionTransformer(globalns, localns)
+        tree = transformer.visit(tree)
+        return transformer.eval_type(tree)
 
 
 def get_function_type_hints(
@@ -248,7 +302,7 @@ def get_function_type_hints(
         elif isinstance(value, str):
             value = _make_forward_ref(value)
 
-        type_hints[name] = typing._eval_type(value, globalns, types_namespace)  # type: ignore
+        type_hints[name] = eval_type_backport(value, globalns, types_namespace)  # type: ignore
 
     return type_hints
 
@@ -363,7 +417,7 @@ else:
                     if isinstance(value, str):
                         value = _make_forward_ref(value, is_argument=False, is_class=True)
 
-                    value = typing._eval_type(value, base_globals, base_locals)  # type: ignore
+                    value = eval_type_backport(value, base_globals, base_locals)  # type: ignore
                     hints[name] = value
             return (
                 hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}  # type: ignore
@@ -403,26 +457,11 @@ else:
                     is_argument=not isinstance(obj, types.ModuleType),
                     is_class=False,
                 )
-            value = typing._eval_type(value, globalns, localns)  # type: ignore
+            value = eval_type_backport(value, globalns, localns)  # type: ignore
             if name in defaults and defaults[name] is None:
                 value = typing.Optional[value]
             hints[name] = value
         return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}  # type: ignore
-
-
-if sys.version_info < (3, 9):
-
-    def evaluate_fwd_ref(
-        ref: ForwardRef, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
-    ) -> Any:
-        return ref._evaluate(globalns=globalns, localns=localns)
-
-else:
-
-    def evaluate_fwd_ref(
-        ref: ForwardRef, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
-    ) -> Any:
-        return ref._evaluate(globalns=globalns, localns=localns, recursive_guard=frozenset())
 
 
 def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
