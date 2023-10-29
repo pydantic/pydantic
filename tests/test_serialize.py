@@ -1158,9 +1158,5 @@ def test_subclass_support_unions_with_forward_ref() -> None:
     foo = Foo(items=[Baz(bar_id=42, baz_id=99)])
     assert foo.model_dump() == {'items': [{'bar_id': 42}]}
 
-    foo_recursive = Foo(
-        items=[
-            Foo(items=[Baz(bar_id=42, baz_id=99)])
-        ]
-    )
+    foo_recursive = Foo(items=[Foo(items=[Baz(bar_id=42, baz_id=99)])])
     assert foo_recursive.model_dump() == {'items': [{'items': [{'bar_id': 42}]}]}
