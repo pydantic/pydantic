@@ -14,7 +14,7 @@ from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
-from ..warnings import PydanticDeprecatedSince20
+from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
 from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
@@ -114,6 +114,16 @@ class ModelMetaclass(ABCMeta):
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
             from ..main import BaseModel
+
+            mro = cls.__mro__
+            if Generic in mro and mro.index(Generic) < mro.index(BaseModel):
+                warnings.warn(
+                    GenericBeforeBaseModelWarning(
+                        'Classes should inherit from `BaseModel` before generic classes (e.g. `typing.Generic[T]`) '
+                        'for pydantic generics to work properly.'
+                    ),
+                    stacklevel=2,
+                )
 
             cls.__pydantic_custom_init__ = not getattr(cls.__init__, '__pydantic_base_init__', False)
             cls.__pydantic_post_init__ = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'

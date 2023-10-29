@@ -247,7 +247,7 @@ def test_get_pydantic_core_schema_source_type() -> None:
 
     T = TypeVar('T')
 
-    class GenericModel(Generic[T], BaseModel):
+    class GenericModel(BaseModel, Generic[T]):
         y: T
 
     class _(BaseModel):

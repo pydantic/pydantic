@@ -72,6 +72,7 @@ from pydantic._internal._generics import (
     recursively_defined_type_refs,
     replace_types,
 )
+from pydantic.warnings import GenericBeforeBaseModelWarning
 
 
 @pytest.fixture()
@@ -2053,9 +2054,14 @@ def test_generic_subclass_with_extra_type_with_hint_message():
     E = TypeVar('E', bound=BaseModel)
     D = TypeVar('D')
 
-    class BaseGenericClass(Generic[E, D], BaseModel):
-        uid: str
-        name: str
+    with pytest.warns(
+        GenericBeforeBaseModelWarning,
+        match='Classes should inherit from `BaseModel` before generic classes',
+    ):
+
+        class BaseGenericClass(Generic[E, D], BaseModel):
+            uid: str
+            name: str
 
     with pytest.raises(
         TypeError,
@@ -2065,9 +2071,13 @@ def test_generic_subclass_with_extra_type_with_hint_message():
             ' `class ChildGenericClass(BaseGenericClass, typing.Generic[~E, ~D]): ...`'
         ),
     ):
+        with pytest.warns(
+            GenericBeforeBaseModelWarning,
+            match='Classes should inherit from `BaseModel` before generic classes',
+        ):
 
-        class ChildGenericClass(BaseGenericClass[E, Dict[str, Any]]):
-            ...
+            class ChildGenericClass(BaseGenericClass[E, Dict[str, Any]]):
+                ...
 
 
 def test_multi_inheritance_generic_binding():
@@ -2645,9 +2655,14 @@ def test_no_generic_base():
 def test_reverse_order_generic_hashability():
     T = TypeVar('T')
 
-    class Model(Generic[T], BaseModel):
-        x: T
-        model_config = dict(frozen=True)
+    with pytest.warns(
+        GenericBeforeBaseModelWarning,
+        match='Classes should inherit from `BaseModel` before generic classes',
+    ):
+
+        class Model(Generic[T], BaseModel):
+            x: T
+            model_config = dict(frozen=True)
 
     m1 = Model[int](x=1)
     m2 = Model[int](x=1)
