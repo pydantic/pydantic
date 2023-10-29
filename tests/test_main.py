@@ -1,7 +1,6 @@
 import json
 import platform
 import re
-import sys
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
@@ -1841,22 +1840,21 @@ def test_class_kwargs_custom_config():
             a: int
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='need 3.10 version')
 def test_new_union_origin():
     """On 3.10+, origin of `int | str` is `types.UnionType`, not `typing.Union`"""
 
     class Model(BaseModel):
-        x: int | str
+        x: 'int | str'
 
     assert Model(x=3).x == 3
     assert Model(x='3').x == '3'
     assert Model(x='pika').x == 'pika'
-    # assert Model.model_json_schema() == {
-    #     'title': 'Model',
-    #     'type': 'object',
-    #     'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
-    #     'required': ['x'],
-    # }
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'x': {'title': 'X', 'anyOf': [{'type': 'integer'}, {'type': 'string'}]}},
+        'required': ['x'],
+    }
 
 
 @pytest.mark.parametrize(

@@ -711,7 +711,6 @@ class Foobar(BaseModel):
     assert f.y.model_fields_set == {'x'}
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='needs 3.10 or newer')
 def test_recursive_models_union(create_module):
     module = create_module(
         # language=Python
