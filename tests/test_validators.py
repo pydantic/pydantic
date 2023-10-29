@@ -7,7 +7,7 @@ from datetime import date, datetime
 from enum import Enum
 from functools import partial, partialmethod
 from itertools import product
-from typing import Any, Callable, Deque, Dict, FrozenSet, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Callable, Deque, Dict, FrozenSet, List, NamedTuple, Optional, Tuple
 from unittest.mock import MagicMock
 
 import pytest
@@ -1670,7 +1670,7 @@ def test_nested_literal_validator():
 
 def test_union_literal_with_constraints():
     class Model(BaseModel, validate_assignment=True):
-        x: Union[Literal[42], Literal['pika']] = Field(frozen=True)
+        x: "Literal[42] | Literal['pika']" = Field(frozen=True)
 
     m = Model(x=42)
     with pytest.raises(ValidationError) as exc_info:

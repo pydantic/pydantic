@@ -66,7 +66,7 @@ def test_discriminated_union_invalid_type():
     ):
 
         class Model(BaseModel):
-            x: Union[str, int] = Field(..., discriminator='qwe')
+            x: 'str | int' = Field(..., discriminator='qwe')
 
 
 def test_discriminated_union_defined_discriminator():
@@ -80,7 +80,7 @@ def test_discriminated_union_defined_discriminator():
     with pytest.raises(PydanticUserError, match="Model 'Cat' needs a discriminator field for key 'pet_type'"):
 
         class Model(BaseModel):
-            pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+            pet: 'Cat | Dog' = Field(..., discriminator='pet_type')
             number: int
 
 
@@ -96,7 +96,7 @@ def test_discriminated_union_literal_discriminator():
     with pytest.raises(PydanticUserError, match="Model 'Cat' needs field 'pet_type' to be of type `Literal`"):
 
         class Model(BaseModel):
-            pet: Union[Cat, Dog] = Field(..., discriminator='pet_type')
+            pet: 'Cat | Dog' = Field(..., discriminator='pet_type')
             number: int
 
 
@@ -331,7 +331,7 @@ def test_discriminated_union_basemodel_instance_value():
         foo: Literal['b']
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(..., discriminator='foo')
+        sub: 'A | B' = Field(..., discriminator='foo')
 
     t = Top(sub=A(foo='a'))
     assert isinstance(t, Top)
@@ -346,7 +346,7 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
         literal: Literal['b'] = Field(alias='lit')
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(..., discriminator='literal')
+        sub: 'A | B' = Field(..., discriminator='literal')
 
     with pytest.raises(ValidationError) as exc_info:
         Top(sub=A(literal='a'))
@@ -367,7 +367,7 @@ def test_discriminated_union_int():
         m: Literal[2]
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(..., discriminator='m')
+        sub: 'A | B' = Field(..., discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': 2}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
@@ -416,7 +416,7 @@ def test_discriminated_union_enum(base_class, choices):
         m: Literal[EnumValue.b]
 
     class Top(BaseModel):
-        sub: Union[A, B] = Field(..., discriminator='m')
+        sub: 'A | B' = Field(..., discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b}}).sub, B)
     if isinstance(EnumValue.b, (int, str)):
@@ -449,7 +449,7 @@ def test_alias_different():
     with pytest.raises(TypeError, match=re.escape("Aliases for discriminator 'pet_type' must be the same (got T, U)")):
 
         class Model(BaseModel):
-            pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+            pet: 'Cat | Dog' = Field(discriminator='pet_type')
 
 
 def test_alias_same():
@@ -462,7 +462,7 @@ def test_alias_same():
         d: str
 
     class Model(BaseModel):
-        pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+        pet: 'Cat | Dog' = Field(discriminator='pet_type')
 
     assert Model(**{'pet': {'typeOfPet': 'dog', 'd': 'milou'}}).pet.pet_type == 'dog'
 
@@ -483,7 +483,7 @@ def test_nested():
         name: str
 
     class Model(BaseModel):
-        pet: Union[CommonPet, Lizard] = Field(..., discriminator='pet_type')
+        pet: 'CommonPet | Lizard' = Field(..., discriminator='pet_type')
         n: int
 
     assert isinstance(Model(**{'pet': {'pet_type': 'dog', 'name': 'Milou'}, 'n': 5}).pet, Dog)
@@ -501,7 +501,7 @@ def test_generic():
         error_message: str
 
     class Container(BaseModel, Generic[T]):
-        result: Union[Success[T], Failure] = Field(discriminator='type')
+        result: 'Success[T] | Failure' = Field(discriminator='type')
 
     with pytest.raises(ValidationError, match="Unable to extract tag using discriminator 'type'"):
         Container[str].model_validate({'result': {}})
@@ -545,7 +545,7 @@ def test_optional_union():
         name: str
 
     class Pet(BaseModel):
-        pet: Optional[Union[Cat, Dog]] = Field(discriminator='pet_type')
+        pet: 'Cat | Dog | None' = Field(discriminator='pet_type')
 
     assert Pet(pet={'pet_type': 'cat', 'name': 'Milo'}).model_dump() == {'pet': {'name': 'Milo', 'pet_type': 'cat'}}
     assert Pet(pet={'pet_type': 'dog', 'name': 'Otis'}).model_dump() == {'pet': {'name': 'Otis', 'pet_type': 'dog'}}
@@ -592,7 +592,7 @@ def test_optional_union_with_defaults():
         name: str
 
     class Pet(BaseModel):
-        pet: Optional[Union[Cat, Dog]] = Field(default=None, discriminator='pet_type')
+        pet: 'Cat | Dog | None' = Field(default=None, discriminator='pet_type')
 
     assert Pet(pet={'pet_type': 'cat', 'name': 'Milo'}).model_dump() == {'pet': {'name': 'Milo', 'pet_type': 'cat'}}
     assert Pet(pet={'pet_type': 'dog', 'name': 'Otis'}).model_dump() == {'pet': {'name': 'Otis', 'pet_type': 'dog'}}
@@ -634,7 +634,7 @@ def test_aliases_matching_is_not_sufficient() -> None:
     with pytest.raises(PydanticUserError, match="Model 'Case1' needs a discriminator field for key 'kind'"):
 
         class TaggedParent(BaseModel):
-            tagged: Union[Case1, Case2] = Field(discriminator='kind')
+            tagged: 'Case1 | Case2' = Field(discriminator='kind')
 
 
 def test_nested_optional_unions() -> None:
@@ -651,7 +651,7 @@ def test_nested_optional_unions() -> None:
     MaybeDogLizard = Annotated[Union[Dog, Lizard, None], Field(discriminator='pet_type')]
 
     class Pet(BaseModel):
-        pet: Union[MaybeCatDog, MaybeDogLizard] = Field(discriminator='pet_type')
+        pet: 'MaybeCatDog | MaybeDogLizard' = Field(discriminator='pet_type')
 
     Pet.model_validate({'pet': {'pet_type': 'dog'}})
     Pet.model_validate({'pet': {'pet_type': 'cat'}})
@@ -740,7 +740,7 @@ def test_unions_of_optionals() -> None:
     MaybeDogLizard = Annotated[Optional[Union[Dog, Lizard]], 'some other annotation']
 
     class Model(BaseModel):
-        maybe_pet: Union[MaybeCat, MaybeDogLizard] = Field(discriminator='pet_type')
+        maybe_pet: 'MaybeCat | MaybeDogLizard' = Field(discriminator='pet_type')
 
     assert Model(**{'maybe_pet': None}).maybe_pet is None
     assert Model(**{'maybe_pet': {'typeOfPet': 'dog', 'd': 'milou'}}).maybe_pet.pet_type == 'dog'

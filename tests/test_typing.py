@@ -9,6 +9,7 @@ from typing_extensions import Literal, get_origin
 from pydantic import Field  # noqa: F401
 from pydantic._internal._typing_extra import (
     NoneType,
+    eval_type_backport,
     get_function_type_hints,
     is_classvar,
     is_literal_type,
@@ -65,7 +66,9 @@ def test_is_none_type():
     assert is_none_type(Callable) is False
 
 
-@pytest.mark.parametrize('union_gen', [lambda: typing.Union[int, str], lambda: int | str])
+@pytest.mark.parametrize(
+    'union_gen', [lambda: typing.Union[int, str], lambda: int | str, eval_type_backport('int | str')]
+)
 def test_is_union(union_gen):
     try:
         union = union_gen()

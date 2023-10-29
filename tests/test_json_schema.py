@@ -1278,7 +1278,7 @@ def test_callable_type(type_, default_value, base_json_schema, properties):
 )
 def test_callable_type_with_fallback(default_value, properties):
     class Model(BaseModel):
-        callback: Union[int, Callable[[int], int]] = default_value
+        callback: 'int | Callable[[int], int]' = default_value
 
     class MyGenerator(GenerateJsonSchema):
         ignored_warning_kinds = ()
@@ -1331,7 +1331,7 @@ def test_non_serializable_default(type_, default_value, properties):
 )
 def test_callable_fallback_with_non_serializable_default(warning_match):
     class Model(BaseModel):
-        callback: Union[int, Callable[[int], int]] = lambda x: x  # noqa E731
+        callback: 'int | Callable[[int], int]' = lambda x: x  # noqa E731
 
     class MyGenerator(GenerateJsonSchema):
         ignored_warning_kinds = ()
