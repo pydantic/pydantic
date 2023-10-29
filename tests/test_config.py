@@ -4,7 +4,7 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from decimal import Decimal
 from inspect import signature
-from typing import Any, ContextManager, Iterable, NamedTuple, Optional, Type, Union, get_type_hints
+from typing import Any, ContextManager, Iterable, NamedTuple, Optional, Type, Union
 
 from dirty_equals import HasRepr, IsPartialDict
 from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
@@ -24,6 +24,7 @@ from pydantic import (
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic._internal._mock_val_ser import MockValSer
+from pydantic._internal._typing_extra import get_type_hints
 from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
@@ -523,7 +524,7 @@ def test_multiple_inheritance_config():
     assert Child.model_config.get('use_enum_values') is True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='different on older versions')
 def test_config_wrapper_match():
     localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema, 'JsonValue': JsonValue}
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
@@ -567,7 +568,7 @@ def test_config_validation_error_cause():
     assert src_exc.__notes__[0] == '\nPydantic: cause of loc: foo'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='different on older versions')
 def test_config_defaults_match():
     localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
     config_dict_keys = sorted(list(get_type_hints(ConfigDict, localns=localns).keys()))
