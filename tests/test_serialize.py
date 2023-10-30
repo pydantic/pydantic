@@ -6,7 +6,7 @@ import re
 import sys
 from enum import Enum
 from functools import partial, partialmethod
-from typing import Any, Callable, ClassVar, Dict, Optional, Pattern
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Pattern, Union
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
@@ -1115,3 +1115,49 @@ def test_enum_as_dict_key() -> None:
         bar: MyEnum
 
     assert MyModel(foo={MyEnum.A: 'hello'}, bar=MyEnum.B).model_dump_json() == '{"foo":{"a":"hello"},"bar":"b"}'
+
+
+@pytest.mark.xfail(reason='Needs new release of pydantic-core')
+def test_subclass_support_unions() -> None:
+    class Pet(BaseModel):
+        name: str
+
+    class Dog(Pet):
+        breed: str
+
+    class Kid(BaseModel):
+        age: str
+
+    class Home(BaseModel):
+        little_guys: Union[List[Pet], List[Kid]]
+
+    class Shelter(BaseModel):
+        pets: List[Pet]
+
+    h1 = Home(little_guys=[Pet(name='spot'), Pet(name='buddy')])
+    assert h1.model_dump() == {'little_guys': [{'name': 'spot'}, {'name': 'buddy'}]}
+
+    h2 = Home(little_guys=[Dog(name='fluffy', breed='lab'), Dog(name='patches', breed='boxer')])
+    assert h2.model_dump() == {'little_guys': [{'name': 'fluffy'}, {'name': 'patches'}]}
+
+    # confirming same serialization + validation behavior as for a single list (not a union)
+    s = Shelter(pets=[Dog(name='fluffy', breed='lab'), Dog(name='patches', breed='boxer')])
+    assert s.model_dump() == {'pets': [{'name': 'fluffy'}, {'name': 'patches'}]}
+
+
+@pytest.mark.xfail(reason='Needs new release of pydantic-core')
+def test_subclass_support_unions_with_forward_ref() -> None:
+    class Bar(BaseModel):
+        bar_id: int
+
+    class Baz(Bar):
+        baz_id: int
+
+    class Foo(BaseModel):
+        items: Union[List['Foo'], List[Bar]]
+
+    foo = Foo(items=[Baz(bar_id=1, baz_id=2), Baz(bar_id=3, baz_id=4)])
+    assert foo.model_dump() == {'items': [{'bar_id': 1}, {'bar_id': 3}]}
+
+    foo_recursive = Foo(items=[Foo(items=[Baz(bar_id=42, baz_id=99)])])
+    assert foo_recursive.model_dump() == {'items': [{'items': [{'bar_id': 42}]}]}
