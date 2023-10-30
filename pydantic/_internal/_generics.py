@@ -15,7 +15,7 @@ import typing_extensions
 from ._core_utils import get_type_ref
 from ._forward_ref import PydanticRecursiveRef
 from ._typing_extra import TypeVarType, typing_base
-from ._utils import all_identical, is_basemodel
+from ._utils import all_identical, is_model_class
 
 if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias  # type: ignore[attr-defined]
@@ -36,7 +36,7 @@ VT = TypeVar('VT')
 _LIMITED_DICT_SIZE = 100
 if TYPE_CHECKING:
 
-    class LimitedDict(dict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
+    class LimitedDict(dict, MutableMapping[KT, VT]):
         def __init__(self, size_limit: int = _LIMITED_DICT_SIZE):
             ...
 
@@ -197,7 +197,7 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
     """
     if isinstance(v, TypeVar):
         yield v
-    elif is_basemodel(v):
+    elif is_model_class(v):
         yield from v.__pydantic_generic_metadata__['parameters']
     elif isinstance(v, (DictValues, list)):
         for var in v:
@@ -235,7 +235,7 @@ def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
     # In this case, we know that cls is a _GenericAlias, and origin is the generic type
     # So it is safe to access cls.__args__ and origin.__parameters__
     args: tuple[Any, ...] = cls.__args__  # type: ignore
-    parameters: tuple[TypeVarType, ...] = origin.__parameters__  # type: ignore
+    parameters: tuple[TypeVarType, ...] = origin.__parameters__
     return dict(zip(parameters, args))
 
 
@@ -309,21 +309,22 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
         assert origin_type is not None
         # PEP-604 syntax (Ex.: list | str) is represented with a types.UnionType object that does not have __getitem__.
         # We also cannot use isinstance() since we have to compare types.
-        if sys.version_info >= (3, 10) and origin_type is types.UnionType:  # noqa: E721
+        if sys.version_info >= (3, 10) and origin_type is types.UnionType:
             return _UnionGenericAlias(origin_type, resolved_type_args)
-        return origin_type[resolved_type_args]
+        # NotRequired[T] and Required[T] don't support tuple type resolved_type_args, hence the condition below
+        return origin_type[resolved_type_args[0] if len(resolved_type_args) == 1 else resolved_type_args]
 
     # We handle pydantic generic models separately as they don't have the same
     # semantics as "typing" classes or generic aliases
 
-    if not origin_type and is_basemodel(type_):
+    if not origin_type and is_model_class(type_):
         parameters = type_.__pydantic_generic_metadata__['parameters']
         if not parameters:
             return type_
         resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
         if all_identical(parameters, resolved_type_args):
             return type_
-        return type_[resolved_type_args]  # type: ignore[index]
+        return type_[resolved_type_args]
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
@@ -359,7 +360,7 @@ def has_instance_in_type(type_: Any, isinstance_target: Any) -> bool:
 
     # Handle special case for typehints that can have lists as arguments.
     # `typing.Callable[[int, str], int]` is an example for this.
-    if isinstance(type_, (List, list)):
+    if isinstance(type_, (List, list)) and not isinstance(type_, typing_extensions.ParamSpec):
         if any(has_instance_in_type(element, isinstance_target) for element in type_):
             return True
 

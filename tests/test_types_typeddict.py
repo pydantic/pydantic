@@ -21,6 +21,7 @@ from pydantic import (
     PydanticUserError,
     ValidationError,
 )
+from pydantic._internal._decorators import get_attribute_from_bases
 from pydantic.functional_serializers import field_serializer, model_serializer
 from pydantic.functional_validators import field_validator, model_validator
 from pydantic.type_adapter import TypeAdapter
@@ -48,7 +49,7 @@ def fixture_typed_dict(TypedDictAll):
         foo: str
 
     if sys.version_info < (3, 12) and TypedDictAll.__module__ == 'typing':
-        pytest.skip('typing.TypedDict does not track required keys correctly on Python < 3.11')
+        pytest.skip('typing.TypedDict does not support all pydantic features in Python < 3.12')
 
     if hasattr(TestTypedDict, '__required_keys__'):
         return TypedDictAll
@@ -710,18 +711,18 @@ def test_recursive_generic_typeddict_in_function_3():
     ]
 
 
-@pytest.mark.xfail(reason='Needs https://github.com/pydantic/pydantic/pull/5944')
 def test_typeddict_alias_generator(TypedDict):
     def alias_generator(name: str) -> str:
         return 'alias_' + name
 
     class MyDict(TypedDict):
+        __pydantic_config__ = ConfigDict(alias_generator=alias_generator, extra='forbid')
         foo: str
 
     class Model(BaseModel):
         d: MyDict
 
-    ta = TypeAdapter(MyDict, config=ConfigDict(alias_generator=alias_generator))
+    ta = TypeAdapter(MyDict)
     model = ta.validate_python({'alias_foo': 'bar'})
 
     assert model['foo'] == 'bar'
@@ -866,6 +867,18 @@ def test_model_config() -> None:
     assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
 
 
+def test_model_config_inherited() -> None:
+    class Base(TypedDict):
+        __pydantic_config__ = ConfigDict(str_to_lower=True)  # type: ignore
+
+    class Model(Base):
+        x: str
+
+    ta = TypeAdapter(Model)
+
+    assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
+
+
 def test_schema_generator() -> None:
     class LaxStrGenerator(GenerateSchema):
         def str_schema(self) -> CoreSchema:
@@ -878,3 +891,31 @@ def test_schema_generator() -> None:
     ta = TypeAdapter(Model)
 
     assert ta.validate_python(dict(x=1))['x'] == '1'
+
+
+def test_grandparent_config():
+    class MyTypedDict(TypedDict):
+        __pydantic_config__ = ConfigDict(str_to_lower=True)
+        x: str
+
+    class MyMiddleTypedDict(MyTypedDict):
+        y: str
+
+    class MySubTypedDict(MyMiddleTypedDict):
+        z: str
+
+    validated_data = TypeAdapter(MySubTypedDict).validate_python({'x': 'ABC', 'y': 'DEF', 'z': 'GHI'})
+    assert validated_data == {'x': 'abc', 'y': 'def', 'z': 'ghi'}
+
+
+def test_typeddict_mro():
+    class A(TypedDict):
+        x = 1
+
+    class B(A):
+        x = 2
+
+    class C(B):
+        pass
+
+    assert get_attribute_from_bases(C, 'x') == 2

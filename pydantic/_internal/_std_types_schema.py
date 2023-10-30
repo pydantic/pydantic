@@ -21,7 +21,6 @@ from pydantic_core import (
     CoreSchema,
     MultiHostUrl,
     PydanticCustomError,
-    PydanticKnownError,
     PydanticOmit,
     Url,
     core_schema,
@@ -30,6 +29,7 @@ from typing_extensions import get_args, get_origin
 
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import FieldInfo
+from pydantic.types import Strict
 
 from ..config import ConfigDict
 from ..json_schema import JsonSchemaValue, update_json_schema
@@ -59,31 +59,6 @@ class SchemaTransformer:
 def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchema:
     cases: list[Any] = list(enum_type.__members__.values())
 
-    if not cases:
-        # Use an isinstance check for enums with no cases.
-        # This won't work with serialization or JSON schema, but that's okay -- the most important
-        # use case for this is creating typevar bounds for generics that should be restricted to enums.
-        # This is more consistent than it might seem at first, since you can only subclass enum.Enum
-        # (or subclasses of enum.Enum) if all parent classes have no cases.
-        return core_schema.is_instance_schema(enum_type)
-
-    use_enum_values = config.get('use_enum_values', False)
-
-    if len(cases) == 1:
-        expected = repr(cases[0].value)
-    else:
-        expected = ','.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
-
-    def to_enum(__input_value: Any) -> Enum:
-        try:
-            enum_field = enum_type(__input_value)  # type: ignore
-            if use_enum_values:
-                return enum_field.value
-            return enum_field
-        except ValueError:
-            # The type: ignore on the next line is to ignore the requirement of LiteralString
-            raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})  # type: ignore
-
     enum_ref = get_type_ref(enum_type)
     description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
     if description == 'An enumeration.':  # This is the default value provided by enum.EnumMeta.__new__; don't use it
@@ -96,6 +71,32 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         original_schema = handler.resolve_ref_schema(json_schema)
         update_json_schema(original_schema, updates)
         return json_schema
+
+    if not cases:
+        # Use an isinstance check for enums with no cases.
+        # The most important use case for this is creating TypeVar bounds for generics that should
+        # be restricted to enums. This is more consistent than it might seem at first, since you can only
+        # subclass enum.Enum (or subclasses of enum.Enum) if all parent classes have no cases.
+        # We use the get_json_schema function when an Enum subclass has been declared with no cases
+        # so that we can still generate a valid json schema.
+        return core_schema.is_instance_schema(enum_type, metadata={'pydantic_js_functions': [get_json_schema]})
+
+    use_enum_values = config.get('use_enum_values', False)
+
+    if len(cases) == 1:
+        expected = repr(cases[0].value)
+    else:
+        expected = ', '.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
+
+    def to_enum(__input_value: Any) -> Enum:
+        try:
+            enum_field = enum_type(__input_value)
+            if use_enum_values:
+                return enum_field.value
+            return enum_field
+        except ValueError:
+            # The type: ignore on the next line is to ignore the requirement of LiteralString
+            raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})  # type: ignore
 
     strict_python_schema = core_schema.is_instance_schema(enum_type)
     if use_enum_values:
@@ -137,191 +138,6 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
 
 
 @dataclasses.dataclass(**slots_true)
-class DecimalValidator:
-    gt: decimal.Decimal | None = None
-    ge: decimal.Decimal | None = None
-    lt: decimal.Decimal | None = None
-    le: decimal.Decimal | None = None
-    max_digits: int | None = None
-    decimal_places: int | None = None
-    multiple_of: decimal.Decimal | None = None
-    allow_inf_nan: bool = False
-    check_digits: bool = False
-    strict: bool = False
-
-    def __post_init__(self) -> None:
-        self.check_digits = self.max_digits is not None or self.decimal_places is not None
-        self.gt = decimal.Decimal(self.gt) if self.gt is not None else None
-        self.ge = decimal.Decimal(self.ge) if self.ge is not None else None
-        self.lt = decimal.Decimal(self.lt) if self.lt is not None else None
-        self.le = decimal.Decimal(self.le) if self.le is not None else None
-        self.multiple_of = decimal.Decimal(self.multiple_of) if self.multiple_of is not None else None
-        if self.check_digits and self.allow_inf_nan:
-            raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
-
-    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        string_schema = handler(core_schema.str_schema())
-
-        if handler.mode == 'validation':
-            float_schema = handler(
-                core_schema.float_schema(
-                    allow_inf_nan=self.allow_inf_nan,
-                    multiple_of=None if self.multiple_of is None else float(self.multiple_of),
-                    le=None if self.le is None else float(self.le),
-                    ge=None if self.ge is None else float(self.ge),
-                    lt=None if self.lt is None else float(self.lt),
-                    gt=None if self.gt is None else float(self.gt),
-                )
-            )
-            return {'anyOf': [float_schema, string_schema]}
-        else:
-            return string_schema
-
-    def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
-        Decimal = decimal.Decimal
-
-        def to_decimal(v: str) -> decimal.Decimal:
-            try:
-                return Decimal(v)
-            except decimal.DecimalException as e:
-                raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal') from e
-
-        primitive_schema = core_schema.union_schema(
-            [
-                # if it's an int keep it like that and pass it straight to Decimal
-                # but if it's not make it a string
-                # we don't use JSON -> float because parsing to any float will cause
-                # loss of precision
-                core_schema.int_schema(strict=True),
-                core_schema.str_schema(strict=True, strip_whitespace=True),
-                core_schema.no_info_plain_validator_function(str),
-            ],
-        )
-        json_schema = core_schema.no_info_after_validator_function(to_decimal, primitive_schema)
-        schema = core_schema.json_or_python_schema(
-            json_schema=json_schema,
-            python_schema=core_schema.lax_or_strict_schema(
-                lax_schema=core_schema.union_schema([core_schema.is_instance_schema(decimal.Decimal), json_schema]),
-                strict_schema=core_schema.is_instance_schema(decimal.Decimal),
-            ),
-            serialization=core_schema.to_string_ser_schema(when_used='json'),
-        )
-
-        if not self.allow_inf_nan or self.check_digits:
-            schema = core_schema.no_info_after_validator_function(
-                self.check_digits_validator,
-                schema,
-            )
-
-        if self.multiple_of is not None:
-            schema = core_schema.no_info_after_validator_function(
-                partial(_validators.multiple_of_validator, multiple_of=self.multiple_of),
-                schema,
-            )
-
-        if self.gt is not None:
-            schema = core_schema.no_info_after_validator_function(
-                partial(_validators.greater_than_validator, gt=self.gt),
-                schema,
-            )
-
-        if self.ge is not None:
-            schema = core_schema.no_info_after_validator_function(
-                partial(_validators.greater_than_or_equal_validator, ge=self.ge),
-                schema,
-            )
-
-        if self.lt is not None:
-            schema = core_schema.no_info_after_validator_function(
-                partial(_validators.less_than_validator, lt=self.lt),
-                schema,
-            )
-
-        if self.le is not None:
-            schema = core_schema.no_info_after_validator_function(
-                partial(_validators.less_than_or_equal_validator, le=self.le),
-                schema,
-            )
-
-        return schema
-
-    def check_digits_validator(self, value: decimal.Decimal) -> decimal.Decimal:
-        if not value.is_finite():
-            # Either check_digits is true or allow_inf_nan is False,
-            # either way we cannot allow nan / infinity
-            raise PydanticKnownError('finite_number')
-
-        if self.check_digits:
-            try:
-                normalized_value = value.normalize()
-            except decimal.InvalidOperation:
-                normalized_value = value
-            _1, digit_tuple, exponent = normalized_value.as_tuple()
-
-            # Already checked for finite value above
-            assert isinstance(exponent, int)
-
-            if exponent >= 0:
-                # A positive exponent adds that many trailing zeros.
-                digits = len(digit_tuple) + exponent
-                decimals = 0
-            else:
-                # If the absolute value of the negative exponent is larger than the
-                # number of digits, then it's the same as the number of digits,
-                # because it'll consume all the digits in digit_tuple and then
-                # add abs(exponent) - len(digit_tuple) leading zeros after the
-                # decimal point.
-                if abs(exponent) > len(digit_tuple):
-                    digits = decimals = abs(exponent)
-                else:
-                    digits = len(digit_tuple)
-                    decimals = abs(exponent)
-
-            if self.max_digits is not None and digits > self.max_digits:
-                raise PydanticCustomError(
-                    'decimal_max_digits',
-                    'ensure that there are no more than {max_digits} digits in total',
-                    {'max_digits': self.max_digits},
-                )
-
-            if self.decimal_places is not None and decimals > self.decimal_places:
-                raise PydanticCustomError(
-                    'decimal_max_places',
-                    'ensure that there are no more than {decimal_places} decimal places',
-                    {'decimal_places': self.decimal_places},
-                )
-
-            if self.max_digits is not None and self.decimal_places is not None:
-                whole_digits = digits - decimals
-                expected = self.max_digits - self.decimal_places
-                if whole_digits > expected:
-                    raise PydanticCustomError(
-                        'decimal_whole_digits',
-                        'ensure that there are no more than {whole_digits} digits before the decimal point',
-                        {'whole_digits': expected},
-                    )
-        return value
-
-
-def decimal_prepare_pydantic_annotations(
-    source: Any, annotations: Iterable[Any], config: ConfigDict
-) -> tuple[Any, list[Any]] | None:
-    if source is not decimal.Decimal:
-        return None
-
-    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
-
-    config_allow_inf_nan = config.get('allow_inf_nan')
-    if config_allow_inf_nan is not None:
-        metadata.setdefault('allow_inf_nan', config_allow_inf_nan)
-
-    _known_annotated_metadata.check_metadata(
-        metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, decimal.Decimal
-    )
-    return source, [DecimalValidator(**metadata), *remaining_annotations]
-
-
-@dataclasses.dataclass(**slots_true)
 class InnerSchemaValidator:
     """Use a fixed CoreSchema, avoiding interference from outward annotations."""
 
@@ -340,6 +156,24 @@ class InnerSchemaValidator:
 
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         return self.core_schema
+
+
+def decimal_prepare_pydantic_annotations(
+    source: Any, annotations: Iterable[Any], config: ConfigDict
+) -> tuple[Any, list[Any]] | None:
+    if source is not decimal.Decimal:
+        return None
+
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+
+    config_allow_inf_nan = config.get('allow_inf_nan')
+    if config_allow_inf_nan is not None:
+        metadata.setdefault('allow_inf_nan', config_allow_inf_nan)
+
+    _known_annotated_metadata.check_metadata(
+        metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, decimal.Decimal
+    )
+    return source, [InnerSchemaValidator(core_schema.decimal_schema(**metadata)), *remaining_annotations]
 
 
 def datetime_prepare_pydantic_annotations(
@@ -398,7 +232,7 @@ def path_schema_prepare_pydantic_annotations(
 
     def path_validator(input_value: str) -> os.PathLike[Any]:
         try:
-            return construct_path(input_value)  # type: ignore
+            return construct_path(input_value)
         except TypeError as e:
             raise PydanticCustomError('path_type', 'Input is not a valid path') from e
 
@@ -408,6 +242,11 @@ def path_schema_prepare_pydantic_annotations(
         json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_str_schema),
         python_schema=core_schema.is_instance_schema(source_type),
     )
+
+    strict: bool | None = None
+    for annotation in annotations:
+        if isinstance(annotation, Strict):
+            strict = annotation.strict
 
     schema = core_schema.lax_or_strict_schema(
         lax_schema=core_schema.union_schema(
@@ -421,6 +260,7 @@ def path_schema_prepare_pydantic_annotations(
         ),
         strict_schema=instance_schema,
         serialization=core_schema.to_string_ser_schema(),
+        strict=strict,
     )
 
     return (
@@ -612,6 +452,7 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
             list: list,
             typing.Sequence: list,
             typing.Set: set,
+            set: set,
             typing.MutableSet: set,
             collections.abc.MutableSet: set,
             collections.abc.Set: frozenset,

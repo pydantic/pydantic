@@ -4,7 +4,7 @@ from typing import ClassVar, Generic, TypeVar
 import pytest
 from pydantic_core import PydanticUndefined
 
-from pydantic import BaseModel, ConfigDict, PrivateAttr
+from pydantic import BaseModel, ConfigDict, PrivateAttr, computed_field
 
 
 def test_private_attribute():
@@ -22,6 +22,29 @@ def test_private_attribute():
 
     m._foo = None
     assert m._foo is None
+
+    assert m.model_dump() == {}
+    assert m.__dict__ == {}
+
+
+def test_private_attribute_double_leading_underscore():
+    default = {'a': {}}
+
+    class Model(BaseModel):
+        __foo = PrivateAttr(default)
+
+    assert set(Model.__private_attributes__) == {'_Model__foo'}
+
+    m = Model()
+
+    with pytest.raises(AttributeError, match='__foo'):
+        m.__foo
+    assert m._Model__foo == default
+    assert m._Model__foo is not default
+    assert m._Model__foo['a'] is not default['a']
+
+    m._Model__foo = None
+    assert m._Model__foo is None
 
     assert m.model_dump() == {}
     assert m.__dict__ == {}
@@ -266,7 +289,7 @@ def test_private_attribute_multiple_inheritance():
 def test_private_attributes_not_dunder() -> None:
     with pytest.raises(
         NameError,
-        match="Private attributes must not use dunder names;" " use a single underscore prefix instead of '__foo__'.",
+        match='Private attributes must not use dunder names;' " use a single underscore prefix instead of '__foo__'.",
     ):
 
         class MyModel(BaseModel):
@@ -370,3 +393,59 @@ class BaseConfig(BaseModel):
     )
 
     assert module.BaseConfig._FIELD_UPDATE_STRATEGY == {}
+
+
+@pytest.mark.skipif(not hasattr(functools, 'cached_property'), reason='cached_property is not available')
+def test_private_properties_not_included_in_iter_cached_property() -> None:
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @functools.cached_property
+        def _foo(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    assert '_foo' not in list(k for k, _ in m)
+
+
+def test_private_properties_not_included_in_iter_property() -> None:
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @property
+        def _foo(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    assert '_foo' not in list(k for k, _ in m)
+
+
+def test_private_properties_not_included_in_repr_by_default_property() -> None:
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @property
+        def _private_property(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    m_repr = repr(m)
+    assert '_private_property' not in m_repr
+
+
+@pytest.mark.skipif(not hasattr(functools, 'cached_property'), reason='cached_property is not available')
+def test_private_properties_not_included_in_repr_by_default_cached_property() -> None:
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @functools.cached_property
+        def _private_cached_property(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    m_repr = repr(m)
+    assert '_private_cached_property' not in m_repr

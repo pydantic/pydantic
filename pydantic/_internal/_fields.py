@@ -5,9 +5,9 @@ import dataclasses
 import sys
 import warnings
 from copy import copy
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
-from annotated_types import BaseMetadata
 from pydantic_core import PydanticUndefined
 
 from . import _typing_extra
@@ -16,9 +16,12 @@ from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
 if TYPE_CHECKING:
+    from annotated_types import BaseMetadata
+
     from ..fields import FieldInfo
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
+    from ._decorators import DecoratorInfos
 
 
 def get_type_hints_infer_globalns(
@@ -32,7 +35,7 @@ def get_type_hints_infer_globalns(
     global namespace from `obj.__module__` if it is not `None`.
 
     Args:
-        obj: The object to get it's type hints.
+        obj: The object to get its type hints.
         localns: The local namespaces.
         include_extras: Whether to recursively include annotation metadata.
 
@@ -56,11 +59,30 @@ class PydanticMetadata(Representation):
     __slots__ = ()
 
 
-class PydanticGeneralMetadata(PydanticMetadata, BaseMetadata):
-    """Pydantic general metada like `max_digits`."""
+def pydantic_general_metadata(**metadata: Any) -> BaseMetadata:
+    """Create a new `_PydanticGeneralMetadata` class with the given metadata.
 
-    def __init__(self, **metadata: Any):
-        self.__dict__ = metadata
+    Args:
+        **metadata: The metadata to add.
+
+    Returns:
+        The new `_PydanticGeneralMetadata` class.
+    """
+    return _general_metadata_cls()(metadata)  # type: ignore
+
+
+@lru_cache(maxsize=None)
+def _general_metadata_cls() -> type[BaseMetadata]:
+    """Do it this way to avoid importing `annotated_types` at import time."""
+    from annotated_types import BaseMetadata
+
+    class _PydanticGeneralMetadata(PydanticMetadata, BaseMetadata):
+        """Pydantic general metadata like `max_digits`."""
+
+        def __init__(self, metadata: Any):
+            self.__dict__ = metadata
+
+    return _PydanticGeneralMetadata  # type: ignore
 
 
 def collect_model_fields(  # noqa: C901
@@ -147,13 +169,21 @@ def collect_model_fields(  # noqa: C901
         # "... shadows an attribute" errors
         generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
         for base in bases:
+            dataclass_fields = {
+                field.name for field in (dataclasses.fields(base) if dataclasses.is_dataclass(base) else ())
+            }
             if hasattr(base, ann_name):
                 if base is generic_origin:
                     # Don't error when "shadowing" of attributes in parametrized generics
                     continue
-                raise NameError(
-                    f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
-                    f'you might want to use a different field name with "alias=\'{ann_name}\'".'
+
+                if ann_name in dataclass_fields:
+                    # Don't error when inheriting stdlib dataclasses whose fields are "shadowed" by defaults being set
+                    # on the class instance.
+                    continue
+                warnings.warn(
+                    f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; ',
+                    UserWarning,
                 )
 
         try:
@@ -188,6 +218,11 @@ def collect_model_fields(  # noqa: C901
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
 
+        # Use cls.__dict__['__pydantic_decorators__'] instead of cls.__pydantic_decorators__
+        # to make sure the decorators have already been built for this exact class
+        decorators: DecoratorInfos = cls.__dict__['__pydantic_decorators__']
+        if ann_name in decorators.computed_fields:
+            raise ValueError("you can't override a field with a computed field")
         fields[ann_name] = field_info
 
     if typevars_map:
@@ -234,7 +269,11 @@ def collect_dataclass_fields(
         if is_classvar(ann_type):
             continue
 
-        if not dataclass_field.init and dataclass_field.default_factory == dataclasses.MISSING:
+        if (
+            not dataclass_field.init
+            and dataclass_field.default == dataclasses.MISSING
+            and dataclass_field.default_factory == dataclasses.MISSING
+        ):
             # TODO: We should probably do something with this so that validate_assignment behaves properly
             #   Issue: https://github.com/pydantic/pydantic/issues/5470
             continue

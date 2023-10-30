@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from pydantic_core import core_schema
 from typing_extensions import Literal
 
-from ._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
+from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 
 if TYPE_CHECKING:
     from ..json_schema import GenerateJsonSchema, JsonSchemaValue
@@ -94,6 +94,10 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
 
     def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:
         return self._generate_schema.generate_schema(__source_type)
+
+    @property
+    def field_name(self) -> str | None:
+        return self._generate_schema.field_name_stack.get()
 
     def resolve_ref_schema(self, maybe_ref_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
         """Resolves reference in the core schema.

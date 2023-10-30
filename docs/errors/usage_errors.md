@@ -38,14 +38,19 @@ class Foo(BaseModel):
     a: Optional['Bar'] = None
 
 
+try:
+    # this doesn't work, see raised error
+    foo = Foo(a={'b': {'a': None}})
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'class-not-fully-defined'
+
+
 class Bar(BaseModel):
     b: 'Foo'
 
 
-try:
-    foo = Foo(a={'b': {'a': None}})
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'class-not-fully-defined'
+# this works, though
+foo = Foo(a={'b': {'a': None}})
 ```
 
 For BaseModel subclasses, it can be fixed by defining the type and then calling `.model_rebuild()`:
@@ -900,10 +905,10 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid_annotated_type'
 ```
 
-## `config` is unused with TypeAdapter {#type-adapter-config-unused}
+## `config` is unused with `TypeAdapter` {#type-adapter-config-unused}
 
 You will get this error if you try to pass `config` to `TypeAdapter` when the type is a type that
-has it's own config that cannot be overridden (currently this is only `BaseModel`, `TypedDict` and `dataclass`):
+has its own config that cannot be overridden (currently this is only `BaseModel`, `TypedDict` and `dataclass`):
 
 ```py
 from typing_extensions import TypedDict
@@ -938,5 +943,24 @@ class MyTypedDict(TypedDict):
 
 TypeAdapter(MyTypedDict)  # ok
 ```
+
+## Cannot specify `model_config['extra']` with `RootModel` {#root-model-extra}
+
+Because `RootModel` is not capable of storing or even accepting extra fields during initialization, we raise an error
+if you try to specify a value for the config setting `'extra'` when creating a subclass of `RootModel`:
+
+```py
+from pydantic import PydanticUserError, RootModel
+
+try:
+
+    class MyRootModel(RootModel):
+        model_config = {'extra': 'allow'}
+        root: int
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'root-model-extra'
+```
+
 
 {% endraw %}

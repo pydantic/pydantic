@@ -7,16 +7,23 @@ import sys
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
+
+try:
+    from functools import cached_property  # type: ignore
+except ImportError:
+    # python 3.7
+    cached_property = None
 from typing import Any, ClassVar
 from warnings import warn
 
 import annotated_types
 import typing_extensions
 from pydantic_core import PydanticUndefined
-from typing_extensions import Unpack
+from typing_extensions import Literal, Unpack
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
+from .config import JsonDict
 from .errors import PydanticUserError
 from .warnings import PydanticDeprecatedSince20
 
@@ -56,8 +63,9 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     allow_inf_nan: bool | None
     max_digits: int | None
     decimal_places: int | None
+    union_mode: Literal['smart', 'left_to_right'] | None
     discriminator: str | None
-    json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None
+    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
     repr: bool
@@ -92,7 +100,7 @@ class FieldInfo(_repr.Representation):
         title: The title of the field.
         description: The description of the field.
         examples: List of examples of the field.
-        exclude: Whether to exclude the field from the model schema.
+        exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Dictionary of extra JSON schema properties.
         frozen: Whether the field is frozen.
@@ -115,7 +123,7 @@ class FieldInfo(_repr.Representation):
     examples: list[Any] | None
     exclude: bool | None
     discriminator: str | None
-    json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None
+    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     frozen: bool | None
     validate_default: bool | None
     repr: bool
@@ -161,6 +169,7 @@ class FieldInfo(_repr.Representation):
         'allow_inf_nan': None,
         'max_digits': None,
         'decimal_places': None,
+        'union_mode': None,
     }
 
     def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
@@ -285,7 +294,13 @@ class FieldInfo(_repr.Representation):
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
                 new_field_info.frozen = final or field_info.frozen
-                new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                metadata: list[Any] = []
+                for a in extra_args:
+                    if not isinstance(a, FieldInfo):
+                        metadata.append(a)
+                    else:
+                        metadata.extend(a.metadata)
+                new_field_info.metadata = metadata
                 return new_field_info
 
         return cls(annotation=annotation, frozen=final or None)
@@ -356,7 +371,13 @@ class FieldInfo(_repr.Representation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
                 field_infos = [a for a in extra_args if isinstance(a, FieldInfo)]
                 field_info = cls.merge_field_infos(*field_infos, annotation=first_arg, default=default)
-                field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
+                metadata: list[Any] = []
+                for a in extra_args:
+                    if not isinstance(a, FieldInfo):
+                        metadata.append(a)
+                    else:
+                        metadata.extend(a.metadata)
+                field_info.metadata = metadata
                 return field_info
 
             return cls(annotation=annotation, default=default, frozen=final or None)
@@ -419,11 +440,7 @@ class FieldInfo(_repr.Representation):
 
         # use the `Field` function so in correct kwargs raise the correct `TypeError`
         dc_field_metadata = {k: v for k, v in dc_field.metadata.items() if k in _FIELD_ARG_NAMES}
-        field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)
-
-        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type)
-        field.metadata += annotation_metadata
-        return field
+        return Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field_metadata)
 
     @classmethod
     def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
@@ -471,7 +488,7 @@ class FieldInfo(_repr.Representation):
                 else:
                     metadata.append(marker(value))
         if general_metadata:
-            metadata.append(_fields.PydanticGeneralMetadata(**general_metadata))
+            metadata.append(_fields.pydantic_general_metadata(**general_metadata))
         return metadata
 
     def get_default(self, *, call_default_factory: bool = False) -> Any:
@@ -564,7 +581,7 @@ class FieldInfo(_repr.Representation):
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasPath:
-    """usage docs: https://docs.pydantic.dev/2.0/usage/fields#aliaspath-and-aliaschoices
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/fields#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -588,7 +605,7 @@ class AliasPath:
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasChoices:
-    """usage docs: https://docs.pydantic.dev/2.0/usage/fields#aliaspath-and-aliaschoices
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/fields#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -666,7 +683,7 @@ def Field(  # noqa: C901
     examples: list[Any] | None = _Unset,
     exclude: bool | None = _Unset,
     discriminator: str | None = _Unset,
-    json_schema_extra: dict[str, Any] | typing.Callable[[dict[str, Any]], None] | None = _Unset,
+    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = _Unset,
     frozen: bool | None = _Unset,
     validate_default: bool | None = _Unset,
     repr: bool = _Unset,
@@ -684,14 +701,18 @@ def Field(  # noqa: C901
     decimal_places: int | None = _Unset,
     min_length: int | None = _Unset,
     max_length: int | None = _Unset,
+    union_mode: Literal['smart', 'left_to_right'] = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/fields
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/fields
 
     Create a field for objects that can be configured.
 
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (`int`, `float`, `Decimal`) and some apply only to `str`.
+
+    Note:
+        - Any `_Unset` objects will be replaced by the corresponding value defined in the `_DefaultValues` dictionary. If a key for the `_Unset` object is not found in the `_DefaultValues` dictionary, it will default to `None`
 
     Args:
         default: Default value if the field is not set.
@@ -705,16 +726,16 @@ def Field(  # noqa: C901
         title: Human-readable title.
         description: Human-readable description.
         examples: Example values for this field.
-        exclude: Whether to exclude the field from the model schema.
+        exclude: Whether to exclude the field from the model serialization.
         discriminator: Field name for discriminating the type in a tagged union.
         json_schema_extra: Any additional JSON schema data for the schema property.
         frozen: Whether the field is frozen.
-        validate_default: Run validation that isn't only checking existence of defaults. `True` by default.
+        validate_default: Run validation that isn't only checking existence of defaults. This can be set to `True` or `False`. If not set, it defaults to `None`.
         repr: A boolean indicating whether to include the field in the `__repr__` output.
         init_var: Whether the field should be included in the constructor of the dataclass.
         kw_only: Whether the field should be a keyword-only argument in the constructor of the dataclass.
         strict: If `True`, strict validation is applied to the field.
-            See [Strict Mode](../usage/strict_mode.md) for details.
+            See [Strict Mode](../concepts/strict_mode.md) for details.
         gt: Greater than. If set, value must be greater than this. Only applicable to numbers.
         ge: Greater than or equal. If set, value must be greater than or equal to this. Only applicable to numbers.
         lt: Less than. If set, value must be less than this. Only applicable to numbers.
@@ -726,6 +747,8 @@ def Field(  # noqa: C901
         allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to numbers.
         max_digits: Maximum number of allow digits for strings.
         decimal_places: Maximum number of decimal places allowed for numbers.
+        union_mode: The strategy to apply when validating a union. Can be `smart` (the default), or `left_to_right`.
+            See [Union Mode](standard_library_types.md#union-mode) for details.
         extra: Include extra fields used by the JSON schema.
 
             !!! warning Deprecated
@@ -774,7 +797,9 @@ def Field(  # noqa: C901
 
     if extra:
         warn(
-            'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
+            'Using extra keyword arguments on `Field` is deprecated and will be removed.'
+            ' Use `json_schema_extra` instead.'
+            f' (Extra keys: {", ".join(k.__repr__() for k in extra.keys())})',
             DeprecationWarning,
         )
         if not json_schema_extra or json_schema_extra is _Unset:
@@ -827,6 +852,7 @@ def Field(  # noqa: C901
         allow_inf_nan=allow_inf_nan,
         max_digits=max_digits,
         decimal_places=decimal_places,
+        union_mode=union_mode,
     )
 
 
@@ -972,6 +998,18 @@ def computed_field(__func: PropertyT) -> PropertyT:
     ...
 
 
+def _wrapped_property_is_private(property_: cached_property | property) -> bool:  # type: ignore
+    """Returns true if provided property is private, False otherwise."""
+    wrapped_name: str = ''
+
+    if isinstance(property_, property):
+        wrapped_name = getattr(property_.fget, '__name__', '')
+    elif isinstance(property_, cached_property):  # type: ignore
+        wrapped_name = getattr(property_.func, '__name__', '')  # type: ignore
+
+    return wrapped_name.startswith('_') and not wrapped_name.startswith('__')
+
+
 def computed_field(
     __f: PropertyT | None = None,
     *,
@@ -979,15 +1017,124 @@ def computed_field(
     alias_priority: int | None = None,
     title: str | None = None,
     description: str | None = None,
-    repr: bool = True,
+    repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/computed_fields/
+    """Decorator to include `property` and `cached_property` when serializing models or dataclasses.
 
-    Decorator to include `property` and `cached_property` when serializing models.
+    This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.
+
+    ```py
+    from pydantic import BaseModel, computed_field
+
+    class Rectangle(BaseModel):
+        width: int
+        length: int
+
+        @computed_field
+        @property
+        def area(self) -> int:
+            return self.width * self.length
+
+    print(Rectangle(width=3, length=2).model_dump())
+    #> {'width': 3, 'length': 2, 'area': 6}
+    ```
 
     If applied to functions not yet decorated with `@property` or `@cached_property`, the function is
-    automatically wrapped with `property`.
+    automatically wrapped with `property`. Although this is more concise, you will lose IntelliSense in your IDE,
+    and confuse static type checkers, thus explicit use of `@property` is recommended.
+
+    !!! warning "Mypy Warning"
+        Even with the `@property` or `@cached_property` applied to your function before `@computed_field`,
+        mypy may throw a `Decorated property not supported` error.
+        See [mypy issue #1362](https://github.com/python/mypy/issues/1362), for more information.
+        To avoid this error message, add `# type: ignore[misc]` to the `@computed_field` line.
+
+        [pyright](https://github.com/microsoft/pyright) supports `@computed_field` without error.
+
+    ```py
+    import random
+
+    from pydantic import BaseModel, computed_field
+
+    class Square(BaseModel):
+        width: float
+
+        @computed_field
+        def area(self) -> float:  # converted to a `property` by `computed_field`
+            return round(self.width**2, 2)
+
+        @area.setter
+        def area(self, new_area: float) -> None:
+            self.width = new_area**0.5
+
+        @computed_field(alias='the magic number', repr=False)
+        def random_number(self) -> int:
+            return random.randint(0, 1_000)
+
+    square = Square(width=1.3)
+
+    # `random_number` does not appear in representation
+    print(repr(square))
+    #> Square(width=1.3, area=1.69)
+
+    print(square.random_number)
+    #> 3
+
+    square.area = 4
+
+    print(square.model_dump_json(by_alias=True))
+    #> {"width":2.0,"area":4.0,"the magic number":3}
+    ```
+
+    !!! warning "Overriding with `computed_field`"
+        You can't override a field from a parent class with a `computed_field` in the child class.
+        `mypy` complains about this behavior if allowed, and `dataclasses` doesn't allow this pattern either.
+        See the example below:
+
+    ```py
+    from pydantic import BaseModel, computed_field
+
+    class Parent(BaseModel):
+        a: str
+
+    try:
+
+        class Child(Parent):
+            @computed_field
+            @property
+            def a(self) -> str:
+                return 'new a'
+
+    except ValueError as e:
+        print(repr(e))
+        #> ValueError("you can't override a field with a computed field")
+    ```
+
+    Private properties decorated with `@computed_field` have `repr=False` by default.
+
+    ```py
+    from functools import cached_property
+
+    from pydantic import BaseModel, computed_field
+
+    class Model(BaseModel):
+        foo: int
+
+        @computed_field
+        @cached_property
+        def _private_cached_property(self) -> int:
+            return -self.foo
+
+        @computed_field
+        @property
+        def _private_property(self) -> int:
+            return -self.foo
+
+    m = Model(foo=1)
+    print(repr(m))
+    #> M(foo=1)
+    ```
 
     Args:
         __f: the function to wrap.
@@ -996,7 +1143,8 @@ def computed_field(
         title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697
         description: Description to used when including this computed field in JSON Schema, defaults to the functions
             docstring, currently unused waiting for #4697
-        repr: whether to include this computed field in model repr
+        repr: whether to include this computed field in model repr.
+            Default is `False` for private properties and `True` for public properties.
         return_type: optional return for serialization logic to expect when serializing to JSON, if included
             this must be correct, otherwise a `TypeError` is raised.
             If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
@@ -1015,7 +1163,13 @@ def computed_field(
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
         alias_priority = (alias_priority or 2) if alias is not None else None
-        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, repr)
+
+        if repr is None:
+            repr_: bool = False if _wrapped_property_is_private(property_=f) else True
+        else:
+            repr_ = repr
+
+        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, repr_)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:

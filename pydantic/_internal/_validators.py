@@ -5,6 +5,7 @@ Import of this module is deferred since it contains imports of many standard lib
 
 from __future__ import annotations as _annotations
 
+import math
 import re
 import typing
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -48,7 +49,7 @@ def import_string(value: Any) -> Any:
         try:
             return _import_string_logic(value)
         except ImportError as e:
-            raise PydanticCustomError('import_error', 'Invalid python path: {error}', {'error': str(e)})
+            raise PydanticCustomError('import_error', 'Invalid python path: {error}', {'error': str(e)}) from e
     else:
         # otherwise we just return the value and let the next validator do the rest of the work
         return value
@@ -107,7 +108,7 @@ def _import_string_logic(dotted_path: str) -> Any:
 
 def pattern_either_validator(__input_value: Any) -> typing.Pattern[Any]:
     if isinstance(__input_value, typing.Pattern):
-        return __input_value  # type: ignore
+        return __input_value
     elif isinstance(__input_value, (str, bytes)):
         # todo strict mode
         return compile_pattern(__input_value)  # type: ignore
@@ -225,25 +226,25 @@ def ip_v6_interface_validator(__input_value: Any) -> IPv6Interface:
 
 def greater_than_validator(x: Any, gt: Any) -> Any:
     if not (x > gt):
-        raise PydanticKnownError('greater_than', {'gt': str(gt)})
+        raise PydanticKnownError('greater_than', {'gt': gt})
     return x
 
 
 def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
     if not (x >= ge):
-        raise PydanticKnownError('greater_than_equal', {'ge': str(ge)})
+        raise PydanticKnownError('greater_than_equal', {'ge': ge})
     return x
 
 
 def less_than_validator(x: Any, lt: Any) -> Any:
     if not (x < lt):
-        raise PydanticKnownError('less_than', {'lt': str(lt)})
+        raise PydanticKnownError('less_than', {'lt': lt})
     return x
 
 
 def less_than_or_equal_validator(x: Any, le: Any) -> Any:
     if not (x <= le):
-        raise PydanticKnownError('less_than_equal', {'le': str(le)})
+        raise PydanticKnownError('less_than_equal', {'le': le})
     return x
 
 
@@ -268,4 +269,10 @@ def max_length_validator(x: Any, max_length: Any) -> Any:
             'too_long',
             {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
         )
+    return x
+
+
+def forbid_inf_nan_check(x: Any) -> Any:
+    if not math.isfinite(x):
+        raise PydanticKnownError('finite_number')
     return x

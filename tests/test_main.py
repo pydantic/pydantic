@@ -5,7 +5,9 @@ import sys
 from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import date, datetime
 from enum import Enum
+from functools import partial
 from typing import (
     Any,
     Callable,
@@ -28,6 +30,7 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
@@ -38,12 +41,13 @@ from pydantic import (
     PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
+    StringConstraints,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     constr,
     field_validator,
 )
-from pydantic.type_adapter import TypeAdapter
 
 
 def test_success():
@@ -339,6 +343,25 @@ def test_extra_allowed():
     assert model.c == 1
 
 
+def test_reassign_instance_method_with_extra_allow():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        name: str
+
+        def not_extra_func(self) -> str:
+            return f'hello {self.name}'
+
+    def not_extra_func_replacement(self_sub: Model) -> str:
+        return f'hi {self_sub.name}'
+
+    m = Model(name='james')
+    assert m.not_extra_func() == 'hello james'
+
+    m.not_extra_func = partial(not_extra_func_replacement, m)
+    assert m.not_extra_func() == 'hi james'
+    assert 'not_extra_func' in m.__dict__
+
+
 def test_extra_ignored():
     class Model(BaseModel):
         model_config = ConfigDict(extra='ignore')
@@ -492,13 +515,43 @@ def test_frozen_model():
         a: int = 10
 
     m = FrozenModel()
-
     assert m.a == 10
+
     with pytest.raises(ValidationError) as exc_info:
         m.a = 11
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': 11}
     ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        del m.a
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': None}
+    ]
+
+    assert m.a == 10
+
+
+def test_frozen_field():
+    class FrozenModel(BaseModel):
+        a: int = Field(10, frozen=True)
+
+    m = FrozenModel()
+    assert m.a == 10
+
+    with pytest.raises(ValidationError) as exc_info:
+        m.a = 11
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_field', 'loc': ('a',), 'msg': 'Field is frozen', 'input': 11}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        del m.a
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_field', 'loc': ('a',), 'msg': 'Field is frozen', 'input': None}
+    ]
+
+    assert m.a == 10
 
 
 def test_not_frozen_are_not_hashable():
@@ -1458,8 +1511,8 @@ def test_untyped_fields_warning():
     with pytest.raises(
         PydanticUserError,
         match=re.escape(
-            "A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; "
-            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it "
+            'A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; '
+            'if `x` is not meant to be a field, you may be able to resolve this error by annotating it '
             "as a `ClassVar` or updating `model_config['ignored_types']`."
         ),
     ):
@@ -1658,7 +1711,7 @@ def test_base_config_type_hinting():
     get_type_hints(type(M.model_config))
 
 
-def test_frozen_field():
+def test_frozen_field_with_validate_assignment():
     """assigning a frozen=True field should raise a TypeError"""
 
     class Entry(BaseModel):
@@ -1962,6 +2015,80 @@ def test_post_init_not_called_without_override():
 
     finally:
         BaseModel.model_post_init = original_base_model_post_init
+
+
+def test_model_post_init_subclass_private_attrs():
+    """https://github.com/pydantic/pydantic/issues/7293"""
+    calls = []
+
+    class A(BaseModel):
+        a: int = 1
+
+        def model_post_init(self, __context: Any) -> None:
+            calls.append(f'{self.__class__.__name__}.model_post_init')
+
+    class B(A):
+        pass
+
+    class C(B):
+        _private: bool = True
+
+    C()
+
+    assert calls == ['C.model_post_init']
+
+
+def test_model_post_init_subclass_setting_private_attrs():
+    """https://github.com/pydantic/pydantic/issues/7091"""
+
+    class Model(BaseModel):
+        _priv1: int = PrivateAttr(91)
+        _priv2: int = PrivateAttr(92)
+
+        def model_post_init(self, __context) -> None:
+            self._priv1 = 100
+
+    class SubModel(Model):
+        _priv3: int = PrivateAttr(93)
+        _priv4: int = PrivateAttr(94)
+        _priv5: int = PrivateAttr()
+        _priv6: int = PrivateAttr()
+
+        def model_post_init(self, __context) -> None:
+            self._priv3 = 200
+            self._priv5 = 300
+            super().model_post_init(__context)
+
+    m = SubModel()
+
+    assert m._priv1 == 100
+    assert m._priv2 == 92
+    assert m._priv3 == 200
+    assert m._priv4 == 94
+    assert m._priv5 == 300
+    with pytest.raises(AttributeError):
+        assert m._priv6 == 94
+
+
+def test_model_post_init_correct_mro():
+    """https://github.com/pydantic/pydantic/issues/7293"""
+    calls = []
+
+    class A(BaseModel):
+        a: int = 1
+
+    class B(BaseModel):
+        b: int = 1
+
+        def model_post_init(self, __context: Any) -> None:
+            calls.append(f'{self.__class__.__name__}.model_post_init')
+
+    class C(A, B):
+        _private: bool = True
+
+    C()
+
+    assert calls == ['C.model_post_init']
 
 
 def test_deeper_recursive_model():
@@ -2383,8 +2510,12 @@ def test_model_get_core_schema() -> None:
     class Model(BaseModel):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            assert handler(int) == {'type': 'int'}
-            assert handler.generate_schema(int) == {'type': 'int'}
+            schema = handler(int)
+            schema.pop('metadata', None)  # we don't care about this in tests
+            assert schema == {'type': 'int'}
+            schema = handler.generate_schema(int)
+            schema.pop('metadata', None)  # we don't care about this in tests
+            assert schema == {'type': 'int'}
             return handler(source_type)
 
     Model()
@@ -2480,6 +2611,53 @@ def test_validate_python_from_attributes() -> None:
 
     res = ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=True)
     assert res == ModelFromAttributesFalse(x=1)
+
+
+@pytest.mark.parametrize(
+    'field_type,input_value,expected,raises_match,strict',
+    [
+        (bool, 'true', True, None, False),
+        (bool, 'true', True, None, True),
+        (bool, 'false', False, None, False),
+        (bool, 'e', ValidationError, 'type=bool_parsing', False),
+        (int, '1', 1, None, False),
+        (int, '1', 1, None, True),
+        (int, 'xxx', ValidationError, 'type=int_parsing', True),
+        (float, '1.1', 1.1, None, False),
+        (float, '1.10', 1.1, None, False),
+        (float, '1.1', 1.1, None, True),
+        (float, '1.10', 1.1, None, True),
+        (date, '2017-01-01', date(2017, 1, 1), None, False),
+        (date, '2017-01-01', date(2017, 1, 1), None, True),
+        (date, '2017-01-01T12:13:14.567', ValidationError, 'type=date_from_datetime_inexact', False),
+        (date, '2017-01-01T12:13:14.567', ValidationError, 'type=date_parsing', True),
+        (date, '2017-01-01T00:00:00', date(2017, 1, 1), None, False),
+        (date, '2017-01-01T00:00:00', ValidationError, 'type=date_parsing', True),
+        (datetime, '2017-01-01T12:13:14.567', datetime(2017, 1, 1, 12, 13, 14, 567_000), None, False),
+        (datetime, '2017-01-01T12:13:14.567', datetime(2017, 1, 1, 12, 13, 14, 567_000), None, True),
+    ],
+    ids=repr,
+)
+def test_model_validate_strings(field_type, input_value, expected, raises_match, strict):
+    class Model(BaseModel):
+        x: field_type
+
+    if raises_match is not None:
+        with pytest.raises(expected, match=raises_match):
+            Model.model_validate_strings({'x': input_value}, strict=strict)
+    else:
+        assert Model.model_validate_strings({'x': input_value}, strict=strict).x == expected
+
+
+@pytest.mark.parametrize('strict', [True, False])
+def test_model_validate_strings_dict(strict):
+    class Model(BaseModel):
+        x: Dict[int, date]
+
+    assert Model.model_validate_strings({'x': {'1': '2017-01-01', '2': '2017-01-02'}}, strict=strict).x == {
+        1: date(2017, 1, 1),
+        2: date(2017, 1, 2),
+    }
 
 
 def test_model_signature_annotated() -> None:
@@ -2807,3 +2985,103 @@ def test_schema_generator_customize_type() -> None:
         model_config = ConfigDict(schema_generator=LaxStrGenerator)
 
     assert Model(x=1).x == '1'
+
+
+def test_schema_generator_customize_type_constraints() -> None:
+    class LaxStrGenerator(GenerateSchema):
+        def str_schema(self) -> CoreSchema:
+            return core_schema.no_info_plain_validator_function(str)
+
+    class Model(BaseModel):
+        x: Annotated[str, Field(pattern='^\\d+$')]
+        y: Annotated[float, Field(gt=0)]
+        z: Annotated[List[int], Field(min_length=1)]
+        model_config = ConfigDict(schema_generator=LaxStrGenerator)
+
+    # insert_assert(Model(x='123', y=1, z=[-1]).model_dump())
+    assert Model(x='123', y=1, z=[-1]).model_dump() == {'x': '123', 'y': 1.0, 'z': [-1]}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='abc', y=-1, z=[])
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'string_pattern_mismatch',
+            'loc': ('x',),
+            'msg': "String should match pattern '^\\d+$'",
+            'input': 'abc',
+            'ctx': {'pattern': '^\\d+$'},
+        },
+        {
+            'type': 'greater_than',
+            'loc': ('y',),
+            'msg': 'Input should be greater than 0',
+            'input': -1,
+            'ctx': {'gt': 0.0},
+        },
+        {
+            'type': 'too_short',
+            'loc': ('z',),
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
+        },
+    ]
+
+
+def test_schema_generator_customize_type_constraints_order() -> None:
+    class Model(BaseModel):
+        # whitespace will be stripped first, then max length will be checked, should pass on ' 1 '
+        x: Annotated[str, AfterValidator(lambda x: x.strip()), StringConstraints(max_length=1)]
+        # max length will be checked first, then whitespace will be stripped, should fail on ' 1 '
+        y: Annotated[str, StringConstraints(max_length=1), AfterValidator(lambda x: x.strip())]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=' 1 ', y=' 1 ')
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'string_too_long',
+            'loc': ('y',),
+            'msg': 'String should have at most 1 characters',
+            'input': ' 1 ',
+            'ctx': {'max_length': 1},
+        }
+    ]
+
+
+def test_shadow_attribute() -> None:
+    """https://github.com/pydantic/pydantic/issues/7108"""
+
+    class Model(BaseModel):
+        foo: str
+
+        @classmethod
+        def __pydantic_init_subclass__(cls, **kwargs: Any):
+            super().__pydantic_init_subclass__(**kwargs)
+            for key in cls.model_fields.keys():
+                setattr(cls, key, getattr(cls, key, '') + ' edited!')
+
+    class One(Model):
+        foo: str = 'abc'
+
+    with pytest.warns(UserWarning, match=r'"foo" shadows an attribute in parent ".*One"'):
+
+        class Two(One):
+            foo: str
+
+    with pytest.warns(UserWarning, match=r'"foo" shadows an attribute in parent ".*One"'):
+
+        class Three(One):
+            foo: str = 'xyz'
+
+    # unlike dataclasses BaseModel does not preserve the value of defaults
+    # so when we access the attribute in `Model.__pydantic_init_subclass__` there is no default
+    # and hence we append `edited!` to an empty string
+    # we've talked about changing this but this is the current behavior as of this test
+    assert getattr(Model, 'foo', None) is None
+    assert getattr(One, 'foo', None) == ' edited!'
+    assert getattr(Two, 'foo', None) == ' edited! edited!'
+    assert getattr(Three, 'foo', None) == ' edited! edited!'

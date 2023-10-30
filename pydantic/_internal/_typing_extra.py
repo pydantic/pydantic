@@ -46,7 +46,7 @@ if sys.version_info < (3, 10):
 else:
 
     def origin_is_union(tp: type[Any] | None) -> bool:
-        return tp is typing.Union or tp is types.UnionType  # noqa: E721
+        return tp is typing.Union or tp is types.UnionType
 
     WithArgsTypes = typing._GenericAlias, types.GenericAlias, types.UnionType  # type: ignore[attr-defined]
 
@@ -60,7 +60,7 @@ else:
 
 LITERAL_TYPES: set[Any] = {Literal}
 if hasattr(typing, 'Literal'):
-    LITERAL_TYPES.add(typing.Literal)  # type: ignore[attr-defined]
+    LITERAL_TYPES.add(typing.Literal)  # type: ignore
 
 NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
 
@@ -253,7 +253,7 @@ def get_function_type_hints(
     return type_hints
 
 
-if sys.version_info < (3, 9, 8):
+if sys.version_info < (3, 9, 8) or (3, 10) <= sys.version_info < (3, 10, 1):
 
     def _make_forward_ref(
         arg: Any,
@@ -262,11 +262,13 @@ if sys.version_info < (3, 9, 8):
         is_class: bool = False,
     ) -> typing.ForwardRef:
         """Wrapper for ForwardRef that accounts for the `is_class` argument missing in older versions.
-        The `module` argument is omitted as it breaks <3.9.8 and isn't used in the calls below.
+        The `module` argument is omitted as it breaks <3.9.8, =3.10.0 and isn't used in the calls below.
 
         See https://github.com/python/cpython/pull/28560 for some background.
         The backport happened on 3.9.8, see:
-        https://github.com/pydantic/pydantic/discussions/6244#discussioncomment-6275458.
+        https://github.com/pydantic/pydantic/discussions/6244#discussioncomment-6275458,
+        and on 3.10.1 for the 3.10 branch, see:
+        https://github.com/pydantic/pydantic/issues/6912
 
         Implemented as EAFP with memory.
         """
@@ -386,7 +388,7 @@ else:
             if isinstance(obj, typing._allowed_types):  # type: ignore
                 return {}
             else:
-                raise TypeError('{!r} is not a module, class, method, ' 'or function.'.format(obj))
+                raise TypeError(f'{obj!r} is not a module, class, method, ' 'or function.')
         defaults = typing._get_defaults(obj)  # type: ignore
         hints = dict(hints)
         for name, value in hints.items():
@@ -431,3 +433,14 @@ def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
 
 def origin_is_type_alias_type(origin: Any) -> TypeGuard[TypeAliasType]:
     return isinstance(origin, TypeAliasType)
+
+
+if sys.version_info >= (3, 10):
+
+    def is_generic_alias(type_: type[Any]) -> bool:
+        return isinstance(type_, (types.GenericAlias, typing._GenericAlias))  # type: ignore[attr-defined]
+
+else:
+
+    def is_generic_alias(type_: type[Any]) -> bool:
+        return isinstance(type_, typing._GenericAlias)  # type: ignore

@@ -15,7 +15,7 @@ repos:
   - id: codespell
     additional_dependencies:
       - tomli
-
+    exclude: '^pdm\.lock$'
 - repo: local
   hooks:
   - id: lint
@@ -24,10 +24,16 @@ repos:
     types: [python]
     language: system
     pass_filenames: false
+  - id: usage_docs
+    name: Usage docs links
+    entry: pdm run ./tests/check_usage_docs.py
+    files: '^pydantic/'
+    types: [python]
+    language: system
   - id: typecheck
     name: Typecheck
     entry: pdm run pyright pydantic
     types: [python]
     language: node
     pass_filenames: false
-    additional_dependencies: ["pyright@1.1.310"]
+    additional_dependencies: ["pyright@1.1.322"]

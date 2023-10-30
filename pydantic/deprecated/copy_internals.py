@@ -81,7 +81,7 @@ def _iter(
             dict_key = field_key
 
         if to_dict or value_include or value_exclude:
-            v = _get_value(  # type: ignore[no-untyped-call]
+            v = _get_value(
                 type(self),
                 v,
                 to_dict=to_dict,

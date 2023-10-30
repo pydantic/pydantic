@@ -3,14 +3,14 @@ from __future__ import annotations as _annotations
 import inspect
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 import pydantic_core
 
 from ..config import ConfigDict
-from . import _discriminated_union, _generate_schema, _typing_extra
+from ..plugin._schema_validator import create_schema_validator
+from . import _generate_schema, _typing_extra
 from ._config import ConfigWrapper
-from ._core_utils import flatten_schema_defs, inline_schema_defs
 
 
 @dataclass
@@ -61,11 +61,10 @@ class ValidateCallWrapper:
         namespace = _typing_extra.add_module_globals(function, None)
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
-        self.__pydantic_core_schema__ = schema = gen_schema.collect_definitions(gen_schema.generate_schema(function))
+        schema = gen_schema.clean_schema(gen_schema.generate_schema(function))
+        self.__pydantic_core_schema__ = schema
         core_config = config_wrapper.core_config(self)
-        schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
-        simplified_schema = inline_schema_defs(schema)
-        self.__pydantic_validator__ = pydantic_core.SchemaValidator(simplified_schema, core_config)
+        self.__pydantic_validator__ = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
 
         if self._validate_return:
             return_type = (
@@ -74,13 +73,17 @@ class ValidateCallWrapper:
                 else Any
             )
             gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
-            self.__return_pydantic_core_schema__ = schema = gen_schema.collect_definitions(
-                gen_schema.generate_schema(return_type)
-            )
-            core_config = config_wrapper.core_config(self)
-            schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
-            simplified_schema = inline_schema_defs(schema)
-            self.__return_pydantic_validator__ = pydantic_core.SchemaValidator(simplified_schema, core_config)
+            schema = gen_schema.clean_schema(gen_schema.generate_schema(return_type))
+            self.__return_pydantic_core_schema__ = schema
+            validator = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
+            if inspect.iscoroutinefunction(self.raw_function):
+
+                async def return_val_wrapper(aw: Awaitable[Any]) -> None:
+                    return validator.validate_python(await aw)
+
+                self.__return_pydantic_validator__ = return_val_wrapper
+            else:
+                self.__return_pydantic_validator__ = validator.validate_python
         else:
             self.__return_pydantic_core_schema__ = None
             self.__return_pydantic_validator__ = None
@@ -90,7 +93,7 @@ class ValidateCallWrapper:
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         res = self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
         if self.__return_pydantic_validator__:
-            return self.__return_pydantic_validator__.validate_python(res)
+            return self.__return_pydantic_validator__(res)
         return res
 
     def __get__(self, obj: Any, objtype: type[Any] | None = None) -> ValidateCallWrapper:
@@ -105,6 +108,11 @@ class ValidateCallWrapper:
 
         bound_function = self.raw_function.__get__(obj, objtype)
         result = self.__class__(bound_function, self._config, self._validate_return)
+
+        # skip binding to instance when obj or objtype has __slots__ attribute
+        if hasattr(obj, '__slots__') or hasattr(objtype, '__slots__'):
+            return result
+
         if self._name is not None:
             if obj is not None:
                 object.__setattr__(obj, self._name, result)
@@ -117,3 +125,6 @@ class ValidateCallWrapper:
 
     def __repr__(self) -> str:
         return f'ValidateCallWrapper({self.raw_function})'
+
+    def __eq__(self, other):
+        return self.raw_function == other.raw_function

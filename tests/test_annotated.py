@@ -2,12 +2,13 @@ import sys
 from typing import Any, Generic, Iterator, List, Set, TypeVar
 
 import pytest
-from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt
+from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Predicate
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter
+from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
 from pydantic.errors import PydanticSchemaGenerationError
+from pydantic.functional_validators import AfterValidator
 
 NO_VALUE = object()
 
@@ -169,10 +170,7 @@ def test_annotated_alias() -> None:
         'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)])',
         'c': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
         'd': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
-        'e': (
-            'FieldInfo(annotation=List[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLe'
-            "n(max_length=3)])]], required=True, description='foo')"
-        ),
+        'e': "FieldInfo(annotation=List[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLen(max_length=3)])]], required=True, description='foo')",
     }
     assert MyModel(b='def', e=['xyz']).model_dump() == dict(a='abc', b='def', c=2, d=2, e=['xyz'])
 
@@ -249,7 +247,7 @@ def test_get_pydantic_core_schema_source_type() -> None:
 
     T = TypeVar('T')
 
-    class GenericModel(Generic[T], BaseModel):
+    class GenericModel(BaseModel, Generic[T]):
         y: T
 
     class _(BaseModel):
@@ -266,11 +264,29 @@ def test_merge_field_infos_type_adapter() -> None:
         ]
     )
 
-    # insert_assert(ta.core_schema)
-    assert ta.core_schema == {'type': 'default', 'schema': {'type': 'int', 'gt': 1, 'lt': 100}, 'default': 3}
+    default = ta.get_default_value()
+    assert default is not None
+    assert default.value == 3
+
+    # insert_assert(ta.validate_python(2))
+    assert ta.validate_python(2) == 2
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(1)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'greater_than', 'loc': (), 'msg': 'Input should be greater than 1', 'input': 1, 'ctx': {'gt': 1}}
+    ]
 
     # insert_assert(ta.json_schema())
-    assert ta.json_schema() == {'default': 3, 'exclusiveMaximum': 100, 'exclusiveMinimum': 1, 'type': 'integer'}
+    assert ta.json_schema() == {
+        'default': 3,
+        'description': 'abc',
+        'exclusiveMaximum': 100,
+        'exclusiveMinimum': 1,
+        'type': 'integer',
+    }
 
 
 def test_merge_field_infos_model() -> None:
@@ -287,3 +303,100 @@ def test_merge_field_infos_model() -> None:
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_model_dump_doesnt_dump_annotated_dunder():
+    class Model(BaseModel):
+        one: int
+
+    AnnotatedModel = Annotated[Model, ...]
+
+    # In Pydantic v1, `AnnotatedModel.dict()` would have returned
+    # `{'one': 1, '__orig_class__': typing.Annotated[...]}`
+    assert AnnotatedModel(one=1).model_dump() == {'one': 1}
+
+
+def test_merge_field_infos_ordering() -> None:
+    TheType = Annotated[int, AfterValidator(lambda x: x), Field(le=2), AfterValidator(lambda x: x * 2), Field(lt=4)]
+
+    class Model(BaseModel):
+        x: TheType
+
+    assert Model(x=1).x == 2
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=2)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'less_than', 'loc': ('x',), 'msg': 'Input should be less than 4', 'input': 2, 'ctx': {'lt': 4}}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=3)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'less_than_equal',
+            'loc': ('x',),
+            'msg': 'Input should be less than or equal to 2',
+            'input': 3,
+            'ctx': {'le': 2},
+        }
+    ]
+
+
+def test_validate_float_inf_nan_python() -> None:
+    ta = TypeAdapter(Annotated[float, AfterValidator(lambda _: float('nan')), Field(allow_inf_nan=False)])
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(1.0)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    # TODO: input should be float('nan'), this seems like a subtle bug in pydantic-core
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': 1.0}
+    ]
+
+
+def test_predicate_error_python() -> None:
+    ta = TypeAdapter(Annotated[int, Predicate(lambda x: x > 0)])
+
+    with pytest.raises(ValidationError) as exc_info:
+        ta.validate_python(-1)
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'predicate_failed',
+            'loc': (),
+            'msg': 'Predicate test_predicate_error_python.<locals>.<lambda> failed',
+            'input': -1,
+        }
+    ]
+
+
+def test_annotated_field_info_not_lost_from_forwardref():
+    from pydantic import BaseModel
+
+    class ForwardRefAnnotatedFieldModel(BaseModel):
+        foo: 'Annotated[Integer, Field(alias="bar", default=1)]' = 2
+        foo2: 'Annotated[Integer, Field(alias="bar2", default=1)]' = Field(default=2, alias='baz')
+
+    Integer = int
+
+    ForwardRefAnnotatedFieldModel.model_rebuild()
+
+    assert ForwardRefAnnotatedFieldModel(bar=3).foo == 3
+    assert ForwardRefAnnotatedFieldModel(baz=3).foo2 == 3
+
+    with pytest.raises(ValidationError) as exc_info:
+        ForwardRefAnnotatedFieldModel(bar='bar')
+    assert exc_info.value.errors() == [
+        {
+            'input': 'bar',
+            'loc': ('bar',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        }
+    ]

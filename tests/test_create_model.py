@@ -254,13 +254,20 @@ def test_create_model_field_and_model_title():
 
 
 def test_create_model_field_description():
-    m = create_model('M', a=(str, Field(description='descr')))
+    m = create_model('M', a=(str, Field(description='descr')), __doc__='Some doc')
     assert m.model_json_schema() == {
         'properties': {'a': {'description': 'descr', 'title': 'A', 'type': 'string'}},
         'required': ['a'],
         'title': 'M',
         'type': 'object',
+        'description': 'Some doc',
     }
+
+
+def test_create_model_with_doc():
+    model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __doc__='The Foo model')
+    assert model.__name__ == 'FooModel'
+    assert model.__doc__ == 'The Foo model'
 
 
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])

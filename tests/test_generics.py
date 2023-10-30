@@ -32,7 +32,20 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated, Literal, OrderedDict, TypeVarTuple, Unpack, get_args
+from typing_extensions import (
+    Annotated,
+    Literal,
+    NotRequired,
+    OrderedDict,
+    ParamSpec,
+    TypedDict,
+    TypeVarTuple,
+    Unpack,
+    get_args,
+)
+from typing_extensions import (
+    TypeVar as TypingExtensionsTypeVar,
+)
 
 from pydantic import (
     BaseModel,
@@ -42,6 +55,7 @@ from pydantic import (
     PositiveInt,
     PydanticSchemaGenerationError,
     PydanticUserError,
+    TypeAdapter,
     ValidationError,
     ValidationInfo,
     computed_field,
@@ -58,6 +72,7 @@ from pydantic._internal._generics import (
     recursively_defined_type_refs,
     replace_types,
 )
+from pydantic.warnings import GenericBeforeBaseModelWarning
 
 
 @pytest.fixture()
@@ -257,7 +272,7 @@ def test_must_inherit_from_generic():
 
     assert str(exc_info.value) == (
         "<class 'tests.test_generics.test_must_inherit_from_generic.<locals>.Result'> cannot be "
-        "parametrized because it does not inherit from typing.Generic"
+        'parametrized because it does not inherit from typing.Generic'
     )
 
 
@@ -406,6 +421,7 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
+@pytest.mark.skipif(sys.version_info[:2] == (3, 9), reason='The test randomly fails on Python 3.9')
 def test_circular_generic_refs_get_cleaned_up():
     initial_cache_size = len(_GENERIC_TYPES_CACHE)
 
@@ -763,6 +779,7 @@ def test_partial_specification_with_inner_typevar():
     assert nested_resolved.b == [456]
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='repr different on older versions')
 def test_partial_specification_name():
     AT = TypeVar('AT')
     BT = TypeVar('BT')
@@ -772,7 +789,7 @@ def test_partial_specification_name():
         b: BT
 
     partial_model = Model[int, BT]
-    assert partial_model.__name__ == 'Model[int, ~BT]'
+    assert partial_model.__name__ == 'Model[int, TypeVar]'
     concrete_model = partial_model[str]
     assert concrete_model.__name__ == 'Model[int, str]'
 
@@ -1495,6 +1512,22 @@ def test_generic_with_referenced_generic_type_bound():
     ReferenceModel[MyInt]
 
 
+def test_generic_with_referenced_generic_union_type_bound():
+    T = TypeVar('T', bound=Union[str, int])
+
+    class ModelWithType(BaseModel, Generic[T]):
+        some_type: Type[T]
+
+    class MyInt(int):
+        ...
+
+    class MyStr(str):
+        ...
+
+    ModelWithType[MyInt]
+    ModelWithType[MyStr]
+
+
 def test_generic_with_referenced_generic_type_constraints():
     T = TypeVar('T', int, str)
 
@@ -1782,7 +1815,7 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
     M1 = module.M1
 
     # assert M1.__pydantic_core_schema__ == {}
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) == []
+    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
 
 
 def test_generic_recursive_models_complicated(create_module):
@@ -1842,7 +1875,7 @@ def test_generic_recursive_models_complicated(create_module):
 
     M1 = module.M1
 
-    assert collect_invalid_schemas(M1.__pydantic_core_schema__) == []
+    assert collect_invalid_schemas(M1.__pydantic_core_schema__) is False
 
 
 def test_generic_recursive_models_in_container(create_module):
@@ -1861,11 +1894,6 @@ def test_generic_recursive_models_in_container(create_module):
     MyGenericModel = module.MyGenericModel
     instance = MyGenericModel[int](foobar=[{'foobar': [], 'spam': 1}], spam=1)
     assert type(instance.foobar[0]) == MyGenericModel[int]
-
-
-def test_schema_is_valid():
-    assert not collect_invalid_schemas(core_schema.none_schema())
-    assert collect_invalid_schemas(core_schema.nullable_schema(core_schema.int_schema(metadata={'invalid': True})))
 
 
 def test_generic_enum():
@@ -2020,6 +2048,36 @@ def test_generic_subclass_with_extra_type_requires_all_params():
 
         class B(A[T], Generic[S]):
             ...
+
+
+def test_generic_subclass_with_extra_type_with_hint_message():
+    E = TypeVar('E', bound=BaseModel)
+    D = TypeVar('D')
+
+    with pytest.warns(
+        GenericBeforeBaseModelWarning,
+        match='Classes should inherit from `BaseModel` before generic classes',
+    ):
+
+        class BaseGenericClass(Generic[E, D], BaseModel):
+            uid: str
+            name: str
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            'All parameters must be present on typing.Generic; you should inherit from typing.Generic[~E, ~D].'
+            ' Note: `typing.Generic` must go last:'
+            ' `class ChildGenericClass(BaseGenericClass, typing.Generic[~E, ~D]): ...`'
+        ),
+    ):
+        with pytest.warns(
+            GenericBeforeBaseModelWarning,
+            match='Classes should inherit from `BaseModel` before generic classes',
+        ):
+
+            class ChildGenericClass(BaseGenericClass[E, Dict[str, Any]]):
+                ...
 
 
 def test_multi_inheritance_generic_binding():
@@ -2534,3 +2592,295 @@ def test_generic_none():
 
     assert Container[type(None)](value=None).value is None
     assert Container[None](value=None).value is None
+
+
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not allow ParamSpec in generics')
+def test_paramspec_is_usable():
+    # This used to cause a recursion error due to `P in P is True`
+    # This test doesn't actually test that ParamSpec works properly for validation or anything.
+
+    P = ParamSpec('P')
+
+    class MyGenericParamSpecClass(Generic[P]):
+        def __init__(self, func: Callable[P, None], *args: P.args, **kwargs: P.kwargs) -> None:
+            super().__init__()
+
+    class ParamSpecGenericModel(BaseModel, Generic[P]):
+        my_generic: MyGenericParamSpecClass[P]
+
+        model_config = dict(arbitrary_types_allowed=True)
+
+
+def test_parametrize_with_basemodel():
+    T = TypeVar('T')
+
+    class SimpleGenericModel(BaseModel, Generic[T]):
+        pass
+
+    class Concrete(SimpleGenericModel[BaseModel]):
+        pass
+
+
+def test_no_generic_base():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+
+    class B(A[T]):
+        b: T
+
+    class C(B[int]):
+        pass
+
+    assert C(a='1', b='2').model_dump() == {'a': 1, 'b': 2}
+    with pytest.raises(ValidationError) as exc_info:
+        C(a='a', b='b')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'a',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        },
+        {
+            'input': 'b',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        },
+    ]
+
+
+def test_reverse_order_generic_hashability():
+    T = TypeVar('T')
+
+    with pytest.warns(
+        GenericBeforeBaseModelWarning,
+        match='Classes should inherit from `BaseModel` before generic classes',
+    ):
+
+        class Model(Generic[T], BaseModel):
+            x: T
+            model_config = dict(frozen=True)
+
+    m1 = Model[int](x=1)
+    m2 = Model[int](x=1)
+    assert len({m1, m2}) == 1
+
+
+def test_serialize_unsubstituted_typevars_bound() -> None:
+    class ErrorDetails(BaseModel):
+        foo: str
+
+    # This version of `TypeVar` does not support `default` on Python <3.12
+    ErrorDataT = TypeVar('ErrorDataT', bound=ErrorDetails)
+
+    class Error(BaseModel, Generic[ErrorDataT]):
+        message: str
+        details: ErrorDataT
+
+    class MyErrorDetails(ErrorDetails):
+        bar: str
+
+    sample_error = Error(
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+    sample_error = Error[ErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+        },
+    }
+
+    sample_error = Error[MyErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+
+def test_serialize_unsubstituted_typevars_bound_default_supported() -> None:
+    class ErrorDetails(BaseModel):
+        foo: str
+
+    # This version of `TypeVar` always support `default`
+    ErrorDataT = TypingExtensionsTypeVar('ErrorDataT', bound=ErrorDetails)
+
+    class Error(BaseModel, Generic[ErrorDataT]):
+        message: str
+        details: ErrorDataT
+
+    class MyErrorDetails(ErrorDetails):
+        bar: str
+
+    sample_error = Error(
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+    sample_error = Error[ErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+        },
+    }
+
+    sample_error = Error[MyErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+
+@pytest.mark.parametrize(
+    'type_var',
+    [
+        TypingExtensionsTypeVar('ErrorDataT', default=BaseModel),
+        TypeVar('ErrorDataT', BaseModel, str),
+    ],
+    ids=['default', 'constraint'],
+)
+def test_serialize_unsubstituted_typevars_variants(
+    type_var: Type[BaseModel],
+) -> None:
+    class ErrorDetails(BaseModel):
+        foo: str
+
+    class Error(BaseModel, Generic[type_var]):  # type: ignore
+        message: str
+        details: type_var
+
+    class MyErrorDetails(ErrorDetails):
+        bar: str
+
+    sample_error = Error(
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {},
+    }
+
+    sample_error = Error[ErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+        },
+    }
+
+    sample_error = Error[MyErrorDetails](
+        message='We just had an error',
+        details=MyErrorDetails(foo='var', bar='baz'),
+    )
+    assert sample_error.details.model_dump() == {
+        'foo': 'var',
+        'bar': 'baz',
+    }
+    assert sample_error.model_dump() == {
+        'message': 'We just had an error',
+        'details': {
+            'foo': 'var',
+            'bar': 'baz',
+        },
+    }
+
+
+def test_mix_default_and_constraints() -> None:
+    T = TypingExtensionsTypeVar('T', str, int, default=str)
+
+    msg = 'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
+    with pytest.raises(NotImplementedError, match=msg):
+
+        class _(BaseModel, Generic[T]):
+            x: T
+
+
+def test_generic_with_not_required_in_typed_dict() -> None:
+    T = TypingExtensionsTypeVar('T')
+
+    class FooStr(TypedDict):
+        type: NotRequired[str]
+
+    class FooGeneric(TypedDict, Generic[T]):
+        type: NotRequired[T]
+
+    ta_foo_str = TypeAdapter(FooStr)
+    assert ta_foo_str.validate_python({'type': 'tomato'}) == {'type': 'tomato'}
+    assert ta_foo_str.validate_python({}) == {}
+    ta_foo_generic = TypeAdapter(FooGeneric[str])
+    assert ta_foo_generic.validate_python({'type': 'tomato'}) == {'type': 'tomato'}
+    assert ta_foo_generic.validate_python({}) == {}

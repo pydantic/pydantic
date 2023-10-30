@@ -6,20 +6,15 @@ import dataclasses
 import sys
 from functools import partialmethod
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, cast, overload
 
 from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Annotated, Literal, TypeAlias
 
 from . import GetCoreSchemaHandler as _GetCoreSchemaHandler
-from ._internal import (
-    _annotated_handlers,
-    _core_metadata,
-    _decorators,
-    _generics,
-    _internal_dataclass,
-)
+from ._internal import _core_metadata, _decorators, _generics, _internal_dataclass
+from .annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
 
 if sys.version_info < (3, 11):
@@ -32,7 +27,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    '''usage docs: https://docs.pydantic.dev/2.0/usage/validators/#annotated-validators
+    '''Usage docs: https://docs.pydantic.dev/2.2/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -74,20 +69,22 @@ class AfterValidator:
         ```
     '''
 
-    func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
+    func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'after')
         if info_arg:
-            return core_schema.general_after_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.WithInfoValidatorFunction, self.func)
+            return core_schema.with_info_after_validator_function(func, schema=schema, field_name=handler.field_name)
         else:
-            return core_schema.no_info_after_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.NoInfoValidatorFunction, self.func)
+            return core_schema.no_info_after_validator_function(func, schema=schema)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """usage docs: https://docs.pydantic.dev/2.0/usage/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -116,20 +113,22 @@ class BeforeValidator:
         ```
     """
 
-    func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
+    func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
-            return core_schema.general_before_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.WithInfoValidatorFunction, self.func)
+            return core_schema.with_info_before_validator_function(func, schema=schema, field_name=handler.field_name)
         else:
-            return core_schema.no_info_before_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.NoInfoValidatorFunction, self.func)
+            return core_schema.no_info_before_validator_function(func, schema=schema)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """usage docs: https://docs.pydantic.dev/2.0/usage/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -152,19 +151,21 @@ class PlainValidator:
         ```
     """
 
-    func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
+    func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
-            return core_schema.general_plain_validator_function(self.func)  # type: ignore
+            func = cast(core_schema.WithInfoValidatorFunction, self.func)
+            return core_schema.with_info_plain_validator_function(func, field_name=handler.field_name)
         else:
-            return core_schema.no_info_plain_validator_function(self.func)  # type: ignore
+            func = cast(core_schema.NoInfoValidatorFunction, self.func)
+            return core_schema.no_info_plain_validator_function(func)
 
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """usage docs: https://docs.pydantic.dev/2.0/usage/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -200,19 +201,17 @@ class WrapValidator:
     ```
     """
 
-    func: (
-        core_schema.NoInfoWrapValidatorFunction
-        | core_schema.GeneralWrapValidatorFunction
-        | core_schema.FieldWrapValidatorFunction
-    )
+    func: core_schema.NoInfoWrapValidatorFunction | core_schema.WithInfoWrapValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
-            return core_schema.general_wrap_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.WithInfoWrapValidatorFunction, self.func)
+            return core_schema.with_info_wrap_validator_function(func, schema=schema, field_name=handler.field_name)
         else:
-            return core_schema.no_info_wrap_validator_function(self.func, schema=schema)  # type: ignore
+            func = cast(core_schema.NoInfoWrapValidatorFunction, self.func)
+            return core_schema.no_info_wrap_validator_function(func, schema=schema)
 
 
 if TYPE_CHECKING:
@@ -222,7 +221,7 @@ if TYPE_CHECKING:
             ...
 
     class _V2ValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.FieldValidationInfo) -> Any:
+        def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.ValidationInfo) -> Any:
             ...
 
     class _V2WrapValidatorClsMethod(Protocol):
@@ -237,15 +236,14 @@ if TYPE_CHECKING:
 
     _V2Validator = Union[
         _V2ValidatorClsMethod,
-        _core_schema.FieldValidatorFunction,
+        _core_schema.WithInfoValidatorFunction,
         _OnlyValueValidatorClsMethod,
         _core_schema.NoInfoValidatorFunction,
     ]
 
     _V2WrapValidator = Union[
         _V2WrapValidatorClsMethod,
-        _core_schema.GeneralWrapValidatorFunction,
-        _core_schema.FieldWrapValidatorFunction,
+        _core_schema.WithInfoWrapValidatorFunction,
     ]
 
     _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
@@ -287,7 +285,7 @@ def field_validator(
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/validators/#field-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#field-validators
 
     Decorate methods on the class indicating that they should be used to validate fields.
 
@@ -314,7 +312,7 @@ def field_validator(
             code='validator-no-fields',
         )
     fields = __field, *fields
-    if not all(isinstance(field, str) for field in fields):  # type: ignore
+    if not all(isinstance(field, str) for field in fields):
         raise PydanticUserError(
             '`@field_validator` fields should be passed as separate string args. '
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
@@ -351,7 +349,7 @@ class ModelWrapValidatorHandler(_core_schema.ValidatorFunctionWrapHandler, Proto
         ...
 
 
-class ModelWrapValidatorWithoutInfo(Protocol):
+class ModelWrapValidatorWithoutInfo(Protocol[_ModelType]):
     """A @model_validator decorated function signature.
     This is used when `mode='wrap'` and the function does not have info argument.
     """
@@ -368,7 +366,7 @@ class ModelWrapValidatorWithoutInfo(Protocol):
         ...
 
 
-class ModelWrapValidator(Protocol):
+class ModelWrapValidator(Protocol[_ModelType]):
     """A @model_validator decorated function signature. This is used when `mode='wrap'`."""
 
     def __call__(  # noqa: D102
@@ -423,7 +421,7 @@ have info argument.
 ModelAfterValidator = Callable[[_ModelType, _core_schema.ValidationInfo], _ModelType]
 """A `@model_validator` decorated function signature. This is used when `mode='after'`."""
 
-_AnyModelWrapValidator = Union[ModelWrapValidator, ModelWrapValidatorWithoutInfo]
+_AnyModelWrapValidator = Union[ModelWrapValidator[_ModelType], ModelWrapValidatorWithoutInfo[_ModelType]]
 _AnyModeBeforeValidator = Union[ModelBeforeValidator, ModelBeforeValidatorWithoutInfo]
 _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValidatorWithoutInfo[_ModelType]]
 
@@ -432,7 +430,9 @@ _AnyModelAfterValidator = Union[ModelAfterValidator[_ModelType], ModelAfterValid
 def model_validator(
     *,
     mode: Literal['wrap'],
-) -> Callable[[_AnyModelWrapValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
+) -> Callable[
+    [_AnyModelWrapValidator[_ModelType]], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]
+]:
     ...
 
 
@@ -525,9 +525,7 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             from pydantic import PydanticSchemaGenerationError
 
             # use the generic _origin_ as the second argument to isinstance when appropriate
@@ -570,11 +568,14 @@ else:
             return Annotated[item, SkipValidation()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             original_schema = handler(source)
             metadata = _core_metadata.build_metadata_dict(js_annotation_functions=[lambda _c, h: h(original_schema)])
-            return core_schema.any_schema(metadata=metadata, serialization=original_schema)
+            return core_schema.any_schema(
+                metadata=metadata,
+                serialization=core_schema.wrap_serializer_function_ser_schema(
+                    function=lambda v, h: h(v), schema=original_schema
+                ),
+            )
 
         __hash__ = object.__hash__

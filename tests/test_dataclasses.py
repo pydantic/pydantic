@@ -6,7 +6,7 @@ import sys
 import traceback
 from collections.abc import Hashable
 from dataclasses import InitVar
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
 
@@ -18,21 +18,23 @@ from typing_extensions import Annotated, Literal
 import pydantic
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     ConfigDict,
-    FieldValidationInfo,
     GenerateSchema,
     PydanticDeprecatedSince20,
     PydanticUndefinedAnnotation,
     PydanticUserError,
+    RootModel,
     TypeAdapter,
     ValidationError,
+    ValidationInfo,
     computed_field,
     field_serializer,
     field_validator,
     model_validator,
 )
-from pydantic._internal._mock_validator import MockValidator
-from pydantic.dataclasses import rebuild_dataclass
+from pydantic._internal._mock_val_ser import MockValSer
+from pydantic.dataclasses import is_pydantic_dataclass, rebuild_dataclass
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
 
@@ -1529,8 +1531,8 @@ def test_cyclic_reference_dataclass(create_module):
     D2 = module.D2
 
     # Confirm D1 and D2 require rebuilding
-    assert isinstance(D1.__pydantic_validator__, MockValidator)
-    assert isinstance(D2.__pydantic_validator__, MockValidator)
+    assert isinstance(D1.__pydantic_validator__, MockValSer)
+    assert isinstance(D2.__pydantic_validator__, MockValSer)
 
     # Note: the rebuilds of D1 and D2 happen automatically, and works since it grabs the locals here as the namespace,
     # which contains D1 and D2
@@ -1596,7 +1598,7 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
     rebuild_dataclass(D1, _types_namespace={'D2': module.D2, 'D1': D1})
 
     # Confirm D2 still requires a rebuild (it will happen automatically)
-    assert isinstance(module.D2.__pydantic_validator__, MockValidator)
+    assert isinstance(module.D2.__pydantic_validator__, MockValSer)
 
     instance = D1(d2=module.D2(d1=D1(d2=module.D2(d1=D1()))))
 
@@ -1641,6 +1643,21 @@ def test_kw_only():
         A(1, '')
 
     assert A(b='hi').b == 'hi'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
+def test_kw_only_subclass():
+    @pydantic.dataclasses.dataclass
+    class A:
+        x: int
+        y: int = pydantic.Field(default=0, kw_only=True)
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        z: int
+
+    assert B(1, 2) == B(x=1, y=0, z=2)
+    assert B(1, y=2, z=3) == B(x=1, y=2, z=3)
 
 
 def dataclass_decorators(include_identity: bool = False, exclude_combined: bool = False):
@@ -1858,7 +1875,7 @@ def test_validator_info_field_name_data_before():
 
         @field_validator('b', mode='before')
         @classmethod
-        def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
+        def check_a(cls, v: Any, info: ValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
             assert info.data == {'a': 'your foobar is good'}
@@ -2055,6 +2072,41 @@ def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_v
         with pytest.raises(ValidationError) as exc_info:
             validator.validate_python({'x': input_value})
         assert exc_info.value.errors(include_url=False) == output_value
+
+
+def test_multiple_parametrized_generic_dataclasses():
+    T = TypeVar('T')
+
+    @pydantic.dataclasses.dataclass
+    class GenericDataclass(Generic[T]):
+        x: T
+
+    validator1 = pydantic.TypeAdapter(GenericDataclass[int])
+    validator2 = pydantic.TypeAdapter(GenericDataclass[str])
+
+    # verify that generic parameters are showing up in the type ref for generic dataclasses
+    # this can probably be removed if the schema changes in some way that makes this part of the test fail
+    assert '[int:' in validator1.core_schema['ref']
+    assert '[str:' in validator2.core_schema['ref']
+
+    assert validator1.validate_python({'x': 1}).x == 1
+    assert validator2.validate_python({'x': 'hello world'}).x == 'hello world'
+
+    with pytest.raises(ValidationError) as exc_info:
+        validator2.validate_python({'x': 1})
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': 1, 'loc': ('x',), 'msg': 'Input should be a valid string', 'type': 'string_type'}
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        validator1.validate_python({'x': 'hello world'})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'hello world',
+            'loc': ('x',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
 
 
 @pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(include_identity=True))
@@ -2408,7 +2460,21 @@ def test_dataclass_field_default_factory_with_init():
     class Model:
         x: int = dataclasses.field(default_factory=lambda: 3, init=False)
 
-    assert Model().x == 3
+    m = Model()
+    assert 'x' in Model.__pydantic_fields__
+    assert m.x == 3
+    assert RootModel[Model](m).model_dump() == {'x': 3}
+
+
+def test_dataclass_field_default_with_init():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int = dataclasses.field(default=3, init=False)
+
+    m = Model()
+    assert 'x' in Model.__pydantic_fields__
+    assert m.x == 3
+    assert RootModel[Model](m).model_dump() == {'x': 3}
 
 
 def test_metadata():
@@ -2441,6 +2507,19 @@ def test_signature():
     )
 
 
+def test_inherited_dataclass_signature():
+    @pydantic.dataclasses.dataclass
+    class A:
+        a: int
+
+    @pydantic.dataclasses.dataclass
+    class B(A):
+        b: int
+
+    assert str(inspect.signature(A)) == '(a: int) -> None'
+    assert str(inspect.signature(B)) == '(a: int, b: int) -> None'
+
+
 def test_dataclasses_with_slots_and_default():
     @pydantic.dataclasses.dataclass(slots=True)
     class A:
@@ -2466,3 +2545,105 @@ def test_schema_generator() -> None:
         __pydantic_config__ = ConfigDict(schema_generator=LaxStrGenerator)
 
     assert Model(x=1).x == '1'
+
+
+@pytest.mark.parametrize('decorator1', **dataclass_decorators())
+def test_annotated_before_validator_called_once(decorator1):
+    count = 0
+
+    def convert(value: int) -> str:
+        nonlocal count
+        count += 1
+        return str(value)
+
+    IntToStr = Annotated[str, BeforeValidator(convert)]
+
+    @decorator1
+    class A:
+        a: IntToStr
+
+    assert count == 0
+    TypeAdapter(A).validate_python({'a': 123})
+    assert count == 1
+
+
+def test_is_pydantic_dataclass():
+    @pydantic.dataclasses.dataclass
+    class PydanticDataclass:
+        a: int
+
+    @dataclasses.dataclass
+    class StdLibDataclass:
+        b: int
+
+    assert is_pydantic_dataclass(PydanticDataclass) is True
+    assert is_pydantic_dataclass(StdLibDataclass) is False
+
+
+def test_can_inherit_stdlib_dataclasses_with_defaults():
+    @dataclasses.dataclass
+    class Base:
+        a: None = None
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model().a is None
+
+
+def test_can_inherit_stdlib_dataclasses_default_factories_and_use_them():
+    """This test documents that default factories are not supported"""
+
+    @dataclasses.dataclass
+    class Base:
+        a: str = dataclasses.field(default_factory=lambda: 'TEST')
+
+    class Model(BaseModel, Base):
+        pass
+
+    with pytest.raises(ValidationError):
+        assert Model().a == 'TEST'
+
+
+def test_can_inherit_stdlib_dataclasses_default_factories_and_provide_a_value():
+    @dataclasses.dataclass
+    class Base:
+        a: str = dataclasses.field(default_factory=lambda: 'TEST')
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model(a='NOT_THE_SAME').a == 'NOT_THE_SAME'
+
+
+def test_can_inherit_stdlib_dataclasses_with_dataclass_fields():
+    @dataclasses.dataclass
+    class Base:
+        a: int = dataclasses.field(default=5)
+
+    class Model(BaseModel, Base):
+        pass
+
+    assert Model().a == 5
+
+
+def test_alias_with_dashes():
+    """Test for fix issue #7226."""
+
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        some_var: str = Field(alias='some-var')
+
+    obj = Foo(**{'some-var': 'some_value'})
+    assert obj.some_var == 'some_value'
+
+
+def test_validate_strings():
+    @pydantic.dataclasses.dataclass
+    class Nested:
+        d: date
+
+    class Model(BaseModel):
+        n: Nested
+
+    assert Model.model_validate_strings({'n': {'d': '2017-01-01'}}).n.d == date(2017, 1, 1)

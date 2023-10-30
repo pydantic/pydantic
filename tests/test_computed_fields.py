@@ -1,7 +1,7 @@
 import random
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, Callable, ClassVar, List, Tuple
+from typing import Any, Callable, ClassVar, Generic, List, Tuple, TypeVar
 
 import pytest
 from pydantic_core import ValidationError, core_schema
@@ -15,6 +15,7 @@ from pydantic import (
     TypeAdapter,
     computed_field,
     dataclasses,
+    field_serializer,
     field_validator,
 )
 from pydantic.alias_generators import to_camel
@@ -119,14 +120,23 @@ def test_computed_fields_set():
         def area(self) -> float:
             return self.side**2
 
+        @computed_field
+        @property
+        def area_string(self) -> str:
+            return f'{self.area} square units'
+
+        @field_serializer('area_string')
+        def serialize_area_string(self, area_string):
+            return area_string.upper()
+
         @area.setter
         def area(self, new_area: int):
             self.side = new_area**0.5
 
     s = Square(side=10)
-    assert s.model_dump() == {'side': 10.0, 'area': 100.0}
+    assert s.model_dump() == {'side': 10.0, 'area': 100.0, 'area_string': '100.0 SQUARE UNITS'}
     s.area = 64
-    assert s.model_dump() == {'side': 8.0, 'area': 64.0}
+    assert s.model_dump() == {'side': 8.0, 'area': 64.0, 'area_string': '64.0 SQUARE UNITS'}
 
 
 def test_computed_fields_del():
@@ -392,7 +402,7 @@ def test_private_computed_field():
     class MyModel(BaseModel):
         x: int
 
-        @computed_field
+        @computed_field(repr=True)
         def _double(self) -> int:
             return self.x * 2
 
@@ -496,6 +506,7 @@ def test_abstractmethod():
     assert m.model_dump() == {'side': 4.0, 'area': 5.0}
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='error message is different on older versions')
 @pytest.mark.parametrize(
     'bases',
     [
@@ -517,7 +528,9 @@ def test_abstractmethod_missing(bases: Tuple[Any, ...]):
     class Square(AbstractSquare):
         pass
 
-    with pytest.raises(TypeError, match="Can't instantiate abstract class Square with abstract methods? area"):
+    with pytest.raises(
+        TypeError, match="Can't instantiate abstract class Square without an implementation for abstract method 'area'"
+    ):
         Square(side=4.0)
 
 
@@ -707,3 +720,44 @@ def test_multiple_references_to_schema(model_factory: Callable[[], Any]) -> None
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_generic_computed_field():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        x: T
+
+        @computed_field
+        @property
+        def double_x(self) -> T:
+            return self.x * 2
+
+    assert A[int](x=1).model_dump() == {'x': 1, 'double_x': 2}
+    assert A[str](x='abc').model_dump() == {'x': 'abc', 'double_x': 'abcabc'}
+
+    assert A(x='xxxxxx').model_computed_fields['double_x'].return_type == T
+    assert A[int](x=123).model_computed_fields['double_x'].return_type == int
+    assert A[str](x='x').model_computed_fields['double_x'].return_type == str
+
+    class B(BaseModel, Generic[T]):
+        @computed_field
+        @property
+        def double_x(self) -> T:
+            return 'abc'  # this may not match the annotated return type, and will warn if not
+
+    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+        B[int]().model_dump()
+
+
+def test_computed_field_override_raises():
+    class Model(BaseModel):
+        name: str = 'foo'
+
+    with pytest.raises(ValueError, match="you can't override a field with a computed field"):
+
+        class SubModel(Model):
+            @computed_field
+            @property
+            def name(self) -> str:
+                return 'bar'

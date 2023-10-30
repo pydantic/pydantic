@@ -7,7 +7,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Any, Generator, Optional, Pattern, Union
+from typing import Any, Generator, List, Optional, Pattern, Union
 from uuid import UUID
 
 import pytest
@@ -449,7 +449,7 @@ def test_custom_iso_timedelta_annotated():
 
 def test_json_encoders_on_model() -> None:
     """Make sure that applying json_encoders to a BaseModel
-    does not edit it's schema in place.
+    does not edit its schema in place.
     """
 
     class Model(BaseModel):
@@ -482,3 +482,21 @@ def test_json_encoders_not_used_for_python_dumps() -> None:
     m = Model(x=1)
     assert m.model_dump() == {'x': 1}
     assert m.model_dump_json() == '{"x":"encoded!"}'
+
+
+def test_json_encoders_types() -> None:
+    class MyEnum(Enum):
+        A = 'a'
+        B = 'b'
+
+    class A(BaseModel):
+        a: MyEnum
+        b: List[int]
+        c: Decimal
+        model_config = ConfigDict(
+            json_encoders={Enum: lambda val: val.name, List[int]: lambda val: 'list!', Decimal: lambda val: 'decimal!'}
+        )
+
+    m = A(a=MyEnum.A, b=[1, 2, 3], c=Decimal('0'))
+    assert m.model_dump_json() == '{"a":"A","b":"list!","c":"decimal!"}'
+    assert m.model_dump() == {'a': MyEnum.A, 'b': [1, 2, 3], 'c': Decimal('0')}

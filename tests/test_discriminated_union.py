@@ -361,7 +361,7 @@ def test_discriminated_union_int():
             'ctx': {'discriminator': "'m'", 'expected_tags': '1, 2', 'tag': '3'},
             'input': {'m': 3},
             'loc': ('sub',),
-            'msg': "Input tag '3' found using 'm' does not match any of the expected " "tags: 1, 2",
+            'msg': "Input tag '3' found using 'm' does not match any of the expected " 'tags: 1, 2',
             'type': 'union_tag_invalid',
         }
     ]
@@ -877,7 +877,7 @@ def test_missing_discriminator_field() -> None:
 def test_wrap_function_schema() -> None:
     cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['cat']))}
     dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['dog']))}
-    cat = core_schema.general_wrap_validator_function(lambda x, y, z: None, core_schema.typed_dict_schema(cat_fields))
+    cat = core_schema.with_info_wrap_validator_function(lambda x, y, z: None, core_schema.typed_dict_schema(cat_fields))
     dog = core_schema.typed_dict_schema(dog_fields)
     schema = core_schema.union_schema([cat, dog])
 
@@ -885,7 +885,7 @@ def test_wrap_function_schema() -> None:
         'choices': {
             'cat': {
                 'function': {
-                    'type': 'general',
+                    'type': 'with-info',
                     'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                 },
                 'schema': {
@@ -911,11 +911,11 @@ def test_wrap_function_schema() -> None:
 def test_plain_function_schema_is_invalid() -> None:
     with pytest.raises(
         TypeError,
-        match="'function-plain' is not a valid discriminated union variant; " "should be a `BaseModel` or `dataclass`",
+        match="'function-plain' is not a valid discriminated union variant; " 'should be a `BaseModel` or `dataclass`',
     ):
         apply_discriminator(
             core_schema.union_schema(
-                [core_schema.general_plain_validator_function(lambda x, y: None), core_schema.int_schema()]
+                [core_schema.with_info_plain_validator_function(lambda x, y: None), core_schema.int_schema()]
             ),
             'kind',
         )
@@ -931,7 +931,7 @@ def test_invalid_str_choice_discriminator_values() -> None:
             # NOTE: Wrapping the union with a validator results in failure to more thoroughly decompose the tagged
             # union. I think this would be difficult to avoid in the general case, and I would suggest that we not
             # attempt to do more than this until presented with scenarios where it is helpful/necessary.
-            core_schema.general_wrap_validator_function(lambda x, y, z: x, dog),
+            core_schema.with_info_wrap_validator_function(lambda x, y, z: x, dog),
         ]
     )
 
@@ -955,54 +955,60 @@ def test_lax_or_strict_definitions() -> None:
     discriminated_schema = apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
     # insert_assert(discriminated_schema)
     assert discriminated_schema == {
-        'type': 'tagged-union',
-        'choices': {
-            'cat': {
-                'type': 'typed-dict',
-                'fields': {'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}},
-            },
-            'DOG': {
-                'type': 'lax-or-strict',
-                'lax_schema': {
+        'type': 'definitions',
+        'schema': {
+            'type': 'tagged-union',
+            'choices': {
+                'cat': {
                     'type': 'typed-dict',
                     'fields': {
-                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['cat']}}
                     },
                 },
-                'strict_schema': {
-                    'type': 'definitions',
-                    'schema': {
+                'DOG': {
+                    'type': 'lax-or-strict',
+                    'lax_schema': {
                         'type': 'typed-dict',
                         'fields': {
-                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
                         },
                     },
-                    'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
-                },
-            },
-            'dog': {
-                'type': 'lax-or-strict',
-                'lax_schema': {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
+                    'strict_schema': {
+                        'type': 'definitions',
+                        'schema': {
+                            'type': 'typed-dict',
+                            'fields': {
+                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            },
+                        },
+                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
                     },
                 },
-                'strict_schema': {
-                    'type': 'definitions',
-                    'schema': {
+                'dog': {
+                    'type': 'lax-or-strict',
+                    'lax_schema': {
                         'type': 'typed-dict',
                         'fields': {
-                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['DOG']}}
                         },
                     },
-                    'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
+                    'strict_schema': {
+                        'type': 'definitions',
+                        'schema': {
+                            'type': 'typed-dict',
+                            'fields': {
+                                'kind': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': ['dog']}}
+                            },
+                        },
+                        'definitions': [{'type': 'int', 'ref': 'my-int-definition'}],
+                    },
                 },
             },
+            'discriminator': 'kind',
+            'strict': False,
+            'from_attributes': True,
         },
-        'discriminator': 'kind',
-        'strict': False,
-        'from_attributes': True,
+        'definitions': [{'type': 'str', 'ref': 'my-str-definition'}],
     }
 
 
@@ -1017,7 +1023,7 @@ def test_wrapped_nullable_union() -> None:
             # NOTE: Wrapping the union with a validator results in failure to more thoroughly decompose the tagged
             # union. I think this would be difficult to avoid in the general case, and I would suggest that we not
             # attempt to do more than this until presented with scenarios where it is helpful/necessary.
-            core_schema.general_wrap_validator_function(
+            core_schema.with_info_wrap_validator_function(
                 lambda x, y, z: x, core_schema.nullable_schema(core_schema.union_schema([cat, dog]))
             ),
         ]
@@ -1055,7 +1061,7 @@ def test_wrapped_nullable_union() -> None:
                 'cat': {
                     'type': 'function-wrap',
                     'function': {
-                        'type': 'general',
+                        'type': 'with-info',
                         'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                     },
                     'schema': {
@@ -1088,7 +1094,7 @@ def test_wrapped_nullable_union() -> None:
                 'dog': {
                     'type': 'function-wrap',
                     'function': {
-                        'type': 'general',
+                        'type': 'with-info',
                         'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                     },
                     'schema': {
@@ -1296,8 +1302,8 @@ def test_sequence_discriminated_union():
         '$defs': {
             'Cat': {
                 'properties': {
-                    'meows': {'title': 'Meows', 'type': 'integer'},
                     'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'meows': {'title': 'Meows', 'type': 'integer'},
                 },
                 'required': ['pet_type', 'meows'],
                 'title': 'Cat',
@@ -1305,8 +1311,8 @@ def test_sequence_discriminated_union():
             },
             'Dog': {
                 'properties': {
-                    'barks': {'title': 'Barks', 'type': 'number'},
                     'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'barks': {'title': 'Barks', 'type': 'number'},
                 },
                 'required': ['pet_type', 'barks'],
                 'title': 'Dog',
@@ -1323,12 +1329,23 @@ def test_sequence_discriminated_union():
             },
         },
         'properties': {
-            'n': {'title': 'N', 'type': 'integer'},
             'pet': {
-                'items': {'anyOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}]},
+                'items': {
+                    'discriminator': {
+                        'mapping': {
+                            'cat': '#/$defs/Cat',
+                            'dog': '#/$defs/Dog',
+                            'lizard': '#/$defs/Lizard',
+                            'reptile': '#/$defs/Lizard',
+                        },
+                        'propertyName': 'pet_type',
+                    },
+                    'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}, {'$ref': '#/$defs/Lizard'}],
+                },
                 'title': 'Pet',
                 'type': 'array',
             },
+            'n': {'title': 'N', 'type': 'integer'},
         },
         'required': ['pet', 'n'],
         'title': 'Model',
