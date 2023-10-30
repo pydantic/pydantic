@@ -1134,14 +1134,15 @@ def test_subclass_support_unions() -> None:
     class Shelter(BaseModel):
         pets: List[Pet]
 
-    h1 = Home(little_guys=[Pet(name='spot')])
-    assert h1.model_dump() == {'little_guys': [{'name': 'spot'}]}
+    h1 = Home(little_guys=[Pet(name='spot'), Pet(name='buddy')])
+    assert h1.model_dump() == {'little_guys': [{'name': 'spot'}, {'name': 'buddy'}]}
 
-    h2 = Home(little_guys=[Dog(name='fluffy', breed='lab')])
-    assert h2.model_dump() == {'little_guys': [{'name': 'fluffy'}]}
+    h2 = Home(little_guys=[Dog(name='fluffy', breed='lab'), Dog(name='patches', breed='boxer')])
+    assert h2.model_dump() == {'little_guys': [{'name': 'fluffy'}, {'name': 'patches'}]}
 
-    s = Shelter(pets=[Dog(name='fluffy', breed='lab')])
-    assert s.model_dump() == {'pets': [{'name': 'fluffy'}]}
+    # confirming same serialization + validation behavior as for a single list (not a union)
+    s = Shelter(pets=[Dog(name='fluffy', breed='lab'), Dog(name='patches', breed='boxer')])
+    assert s.model_dump() == {'pets': [{'name': 'fluffy'}, {'name': 'patches'}]}
 
 
 @pytest.mark.xfail(reason='Needs new release of pydantic-core')
@@ -1155,8 +1156,8 @@ def test_subclass_support_unions_with_forward_ref() -> None:
     class Foo(BaseModel):
         items: Union[List['Foo'], List[Bar]]
 
-    foo = Foo(items=[Baz(bar_id=42, baz_id=99)])
-    assert foo.model_dump() == {'items': [{'bar_id': 42}]}
+    foo = Foo(items=[Baz(bar_id=1, baz_id=2), Baz(bar_id=3, baz_id=4)])
+    assert foo.model_dump() == {'items': [{'bar_id': 1}, {'bar_id': 3}]}
 
     foo_recursive = Foo(items=[Foo(items=[Baz(bar_id=42, baz_id=99)])])
     assert foo_recursive.model_dump() == {'items': [{'items': [{'bar_id': 42}]}]}
