@@ -50,13 +50,14 @@ def disable_error_urls():
 
 @pytest.fixture
 def create_module(tmp_path, request):
-    def run(source_code_or_function, rewrite_assertions=True):
+    def run(source_code_or_function, rewrite_assertions=True, module_name_prefix=None):
         """
         Create module object, execute it and return
         Can be used as a decorator of the function from the source code of which the module will be constructed
 
         :param source_code_or_function string or function with body as a source code for created module
         :param rewrite_assertions: whether to rewrite assertions in module or not
+        :param module_name_prefix: string prefix to use in the name of the module, does not affect the name of the file.
 
         """
         if isinstance(source_code_or_function, FunctionType):
@@ -65,6 +66,8 @@ def create_module(tmp_path, request):
             source_code = source_code_or_function
 
         module_name, filename = _create_module_file(source_code, tmp_path, request.node.name)
+        if module_name_prefix:
+            module_name = module_name_prefix + module_name
 
         if rewrite_assertions:
             loader = AssertionRewritingHook(config=request.config)
