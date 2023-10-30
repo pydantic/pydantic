@@ -821,3 +821,34 @@ print(MyModel.model_json_schema(schema_generator=MyGenerateJsonSchema))
 }
 """
 ```
+
+Below is an approach you can use to exclude any fields from the schema that don't have valid json schemas:
+
+```py
+from typing import Callable
+
+from pydantic import BaseModel
+from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
+from pydantic_core import core_schema, PydanticOmit
+
+
+class MyGenerateJsonSchema(GenerateJsonSchema):
+    def handle_invalid_for_json_schema(self, schema: core_schema.CoreSchema, error_info: str) -> JsonSchemaValue:
+        raise PydanticOmit
+
+
+def example_callable():
+    return 1
+
+
+class Example(BaseModel):
+    name: str = 'example'
+    function: Callable = example_callable
+
+
+instance_example = Example()
+
+validation_schema = instance_example.model_json_schema(schema_generator=MyGenerateJsonSchema, mode='validation')
+print(validation_schema)
+#> {'properties': {'name': {'default': 'example', 'title': 'Name', 'type': 'string'}}, 'title': 'Example', 'type': 'object'}
+```
