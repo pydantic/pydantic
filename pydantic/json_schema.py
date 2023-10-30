@@ -1846,7 +1846,7 @@ class GenerateJsonSchema:
         core_ref, mode = core_mode_ref
         components = re.split(r'([\][,])', core_ref)
         # Remove IDs from each component
-        components = [x.split(':')[0] for x in components]
+        components = [x.rsplit(':', 1)[0] for x in components]
         core_ref_no_id = ''.join(components)
         # Remove everything before the last period from each "component"
         components = [re.sub(r'(?:[^.[\]]+\.)+((?:[^.[\]]+))', r'\1', x) for x in components]

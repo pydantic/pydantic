@@ -5752,3 +5752,29 @@ def test_recursive_non_generic_model() -> None:
         },
         'allOf': [{'$ref': '#/$defs/Bar'}],
     }
+
+
+def test_module_with_colon_in_name(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import BaseModel
+
+class Foo(BaseModel):
+    x: int
+        """,
+        module_name_prefix='C:\\',
+    )
+
+    foo_model = module.Foo
+    _, v_schema = models_json_schema([(foo_model, 'validation')])
+    assert v_schema == {
+        '$defs': {
+            'Foo': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Foo',
+                'type': 'object',
+            }
+        }
+    }
