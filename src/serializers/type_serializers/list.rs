@@ -116,4 +116,8 @@ impl TypeSerializer for ListSerializer {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn retry_with_lax_check(&self) -> bool {
+        self.item_serializer.retry_with_lax_check()
+    }
 }
