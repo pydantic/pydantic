@@ -75,9 +75,10 @@ impl TypeSerializer for UnionSerializer {
         exclude: Option<&PyAny>,
         extra: &Extra,
     ) -> PyResult<PyObject> {
-        // try the serializers in with error_on fallback=true
+        // try the serializers in left to right order with error_on fallback=true
         let mut new_extra = extra.clone();
         new_extra.check = SerCheck::Strict;
+
         for comb_serializer in &self.choices {
             match comb_serializer.to_python(value, include, exclude, &new_extra) {
                 Ok(v) => return Ok(v),
