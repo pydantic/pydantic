@@ -3064,7 +3064,7 @@ ANY_THING = object()
                 {
                     'type': 'decimal_max_places',
                     'loc': ('foo',),
-                    'msg': 'Decimal input should have no more than 1 decimal places',
+                    'msg': 'Decimal input should have no more than 1 decimal place',
                     'input': Decimal('0.99'),
                     'ctx': {
                         'decimal_places': 1,
