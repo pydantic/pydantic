@@ -4079,71 +4079,8 @@ It does not mean that the field has a default value of <code>None</code>. <em>(T
 This crate is not just a "Rust version of regular expressions", it's a completely different approach to regular expressions.
 In particular, it promises linear time searching of strings in exchange for dropping a couple of features (namely look arounds and backreferences).
 We believe this is a tradeoff worth making, in particular because Pydantic is used to validate untrusted input where ensuring things don't accidentally run in exponential time depending on the untrusted input is important.
-On the flipside, for anyone not using these features complex regex validation should be orders of magnitude faster because it's done in Rust and in linear time.
-If you need those regex features you can create a custom validator that does the regex validation in Python:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">re</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-
-<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">PydanticCustomError</span><span class="p">,</span> <span class="n">core_schema</span>
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
-    <span class="n">GetJsonSchemaHandler</span><span class="p">,</span>
-    <span class="n">TypeAdapter</span><span class="p">,</span>
-    <span class="n">ValidationError</span><span class="p">,</span>
-<span class="p">)</span>
-<span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">JsonSchemaValue</span>
-
-
-<span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">Regex</span><span class="p">:</span>
-    <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
-        <span class="n">regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pattern</span><span class="p">)</span>
-
-        <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
-                    <span class="s1">&#39;string_pattern_mismatch&#39;</span><span class="p">,</span>
-                    <span class="s2">&quot;String should match pattern &#39;</span><span class="si">{pattern}</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
-                    <span class="p">{</span><span class="s1">&#39;pattern&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pattern</span><span class="p">},</span>
-                <span class="p">)</span>
-            <span class="k">return</span> <span class="n">v</span>
-
-        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_after_validator_function</span><span class="p">(</span>
-            <span class="n">match</span><span class="p">,</span>
-            <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">),</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">__get_pydantic_json_schema__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
-        <span class="n">json_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">core_schema</span><span class="p">)</span>
-        <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;pattern&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pattern</span>
-        <span class="k">return</span> <span class="n">json_schema</span>
-
-
-<span class="n">ta</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Regex</span><span class="p">(</span><span class="s1">&#39;^(?!_)(?!.*__)[a-z_]{1,64}(?&lt;!_)$&#39;</span><span class="p">)])</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
-<span class="c1">#&gt; {&#39;pattern&#39;: &#39;^(?!_)(?!.*__)[a-z_]{1,64}(?&lt;!_)$&#39;, &#39;type&#39;: &#39;string&#39;}</span>
-
-<span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;hello_world&#39;</span><span class="p">)</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">ta</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;_invalid_&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for function-after[match(), str]</span>
-<span class="sd">      String should match pattern &#39;^(?!_)(?!.*__)[a-z_]{1,64}(?&lt;!_)$&#39; [type=string_pattern_mismatch, input_value=&#39;_invalid_&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
+On the flipside, for anyone not using these features complex regex validation should be orders of magnitude faster because it's done in Rust and in linear time.</p>
+<p>If you still want to use Python's regex library, you can use the <a href="../api/config/#pydantic.config.ConfigDict.regex_engine"><code>regex_engine</code></a> config setting.</p>
 <h3 id="introduction-of-typeadapter">Introduction of <code>TypeAdapter</code><a class="headerlink" href="#introduction-of-typeadapter" title="Permanent link">&para;</a></h3>
 <p>Pydantic V1 had weak support for validating or serializing non-<code>BaseModel</code> types.</p>
 <p>To work with them, you had to either create a "root" model or use the utility functions in <code>pydantic.tools</code>
