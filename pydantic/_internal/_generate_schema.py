@@ -940,9 +940,10 @@ class GenerateSchema:
             return schema
 
         with self.field_name_stack.push(name):
-            if field_info.discriminator is not None:
+            if (field_info.discriminator is not None) and isinstance(field_info.discriminator, str):
                 schema = self._apply_annotations(source_type, annotations, transform_inner_schema=set_discriminator)
             else:
+                # no transform_inner_schema needed for CallableDiscriminator type discriminators
                 schema = self._apply_annotations(
                     source_type,
                     annotations,
