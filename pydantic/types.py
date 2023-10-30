@@ -2452,9 +2452,7 @@ class CallableDiscriminator:
     custom_error_message: str | None = None
     custom_error_context: dict[str, int | str | float] | None = None
 
-    def __get_pydantic_core_schema__(
-        self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
-    ) -> CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         origin = _typing_extra.get_origin(source_type)
         if not origin or not _typing_extra.origin_is_union(origin):
             raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
@@ -2486,7 +2484,7 @@ class CallableDiscriminator:
             raise TypeError(error_message)
 
     def _convert_union_schema(
-        self, original_schema: core_schema.UnionSchema, handler: _annotated_handlers.GetCoreSchemaHandler
+        self, original_schema: core_schema.UnionSchema, handler: GetCoreSchemaHandler
     ) -> core_schema.TaggedUnionSchema:
         choices = {k: handler.generate_schema(v) for k, v in self.choices.items()}
 
@@ -2506,7 +2504,7 @@ class CallableDiscriminator:
         custom_error_type = original_schema.get('custom_error_type') if custom_error_type is None else custom_error_type
         return core_schema.tagged_union_schema(
             choices,
-            self.discriminator,  # type: ignore  # can be dropped once type hint is Callable[[Any], Hashable]
+            self.discriminator,
             custom_error_type=custom_error_type,
             custom_error_message=custom_error_message,
             custom_error_context=custom_error_context,
