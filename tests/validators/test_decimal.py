@@ -437,3 +437,31 @@ def test_non_finite_constrained_decimal_values(input_value, allow_inf_nan, expec
 def test_validate_scientific_notation_from_json(input_value, expected):
     v = SchemaValidator({'type': 'decimal'})
     assert v.validate_json(input_value) == expected
+
+
+def test_validate_max_digits_and_decimal_places() -> None:
+    v = SchemaValidator({'type': 'decimal', 'max_digits': 5, 'decimal_places': 2})
+
+    # valid inputs
+    assert v.validate_json('1.23') == Decimal('1.23')
+    assert v.validate_json('123.45') == Decimal('123.45')
+    assert v.validate_json('-123.45') == Decimal('-123.45')
+
+    # invalid inputs
+    with pytest.raises(ValidationError):
+        v.validate_json('1234.56')  # too many digits
+    with pytest.raises(ValidationError):
+        v.validate_json('123.456')  # too many decimal places
+    with pytest.raises(ValidationError):
+        v.validate_json('123456')  # too many digits
+    with pytest.raises(ValidationError):
+        v.validate_json('abc')  # not a valid decimal
+
+
+def test_validate_max_digits_and_decimal_places_edge_case() -> None:
+    v = SchemaValidator({'type': 'decimal', 'max_digits': 34, 'decimal_places': 18})
+
+    # valid inputs
+    assert v.validate_python(Decimal('9999999999999999.999999999999999999')) == Decimal(
+        '9999999999999999.999999999999999999'
+    )
