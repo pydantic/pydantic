@@ -26,6 +26,9 @@ class SchemaTypePath(NamedTuple):
     name: str
 
 
+SchemaKind: TypeAlias = Literal['BaseModel', 'TypeAdapter', 'dataclass', 'create_model', 'validate_call']
+
+
 class PydanticPluginProtocol(Protocol):
     """Protocol defining the interface for Pydantic plugins."""
 
@@ -34,7 +37,7 @@ class PydanticPluginProtocol(Protocol):
         schema: CoreSchema,
         schema_type: Any,
         schema_type_path: SchemaTypePath,
-        schema_kind: Literal['BaseModel', 'TypeAdapter', 'dataclass', 'create_model', 'validate_call'],
+        schema_kind: SchemaKind,
         config: CoreConfig | None,
         plugin_settings: dict[str, object],
     ) -> tuple[
@@ -48,8 +51,8 @@ class PydanticPluginProtocol(Protocol):
 
         Args:
             schema: The schema to validate against.
-            schema_type: The schema to validate against.
-            schema_type_path: The path of schema to validate against.
+            schema_type: The original type which the schema was created from, e.g. the model class.
+            schema_type_path: Path defining where `schema_type` was defined, or where `TypeAdapter` was called.
             schema_kind: The kind of schema to validate against.
             config: The config to use for validation.
             plugin_settings: Any plugin settings.

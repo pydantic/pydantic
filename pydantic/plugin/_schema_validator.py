@@ -7,10 +7,8 @@ from typing import TYPE_CHECKING, Any, Callable, Iterable, TypeVar
 from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationError
 from typing_extensions import Literal, ParamSpec
 
-from pydantic.plugin import SchemaTypePath
-
 if TYPE_CHECKING:
-    from . import BaseValidateHandlerProtocol, PydanticPluginProtocol
+    from . import BaseValidateHandlerProtocol, PydanticPluginProtocol, SchemaKind, SchemaTypePath
 
 
 P = ParamSpec('P')
@@ -24,7 +22,7 @@ def create_schema_validator(
     schema_type: Any,
     schema_type_module: str,
     schema_type_name: str,
-    schema_kind: Literal['BaseModel', 'TypeAdapter', 'dataclass', 'create_model', 'validate_call'],
+    schema_kind: SchemaKind,
     config: CoreConfig | None = None,
     plugin_settings: dict[str, Any] | None = None,
 ) -> SchemaValidator:
@@ -33,6 +31,7 @@ def create_schema_validator(
     Returns:
         If plugins are installed then return `PluggableSchemaValidator`, otherwise return `SchemaValidator`.
     """
+    from . import SchemaTypePath
     from ._loader import get_plugins
 
     plugins = get_plugins()
@@ -60,7 +59,7 @@ class PluggableSchemaValidator:
         schema: CoreSchema,
         schema_type: Any,
         schema_type_path: SchemaTypePath,
-        schema_kind: Literal['BaseModel', 'TypeAdapter', 'dataclass', 'create_model', 'validate_call'],
+        schema_kind: SchemaKind,
         config: CoreConfig | None,
         plugins: Iterable[PydanticPluginProtocol],
         plugin_settings: dict[str, Any],
