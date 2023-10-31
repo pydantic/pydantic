@@ -8,7 +8,7 @@ from pydantic_core import CoreConfig, CoreSchema, SchemaValidator, ValidationErr
 from typing_extensions import Literal, ParamSpec
 
 if TYPE_CHECKING:
-    from . import BaseValidateHandlerProtocol, PydanticPluginProtocol
+    from . import BaseValidateHandlerProtocol, PydanticPluginProtocol, SchemaKind, SchemaTypePath
 
 
 P = ParamSpec('P')
@@ -18,18 +18,33 @@ events: list[Event] = list(Event.__args__)  # type: ignore
 
 
 def create_schema_validator(
-    schema: CoreSchema, config: CoreConfig | None = None, plugin_settings: dict[str, Any] | None = None
+    schema: CoreSchema,
+    schema_type: Any,
+    schema_type_module: str,
+    schema_type_name: str,
+    schema_kind: SchemaKind,
+    config: CoreConfig | None = None,
+    plugin_settings: dict[str, Any] | None = None,
 ) -> SchemaValidator:
     """Create a `SchemaValidator` or `PluggableSchemaValidator` if plugins are installed.
 
     Returns:
         If plugins are installed then return `PluggableSchemaValidator`, otherwise return `SchemaValidator`.
     """
+    from . import SchemaTypePath
     from ._loader import get_plugins
 
     plugins = get_plugins()
     if plugins:
-        return PluggableSchemaValidator(schema, config, plugins, plugin_settings or {})  # type: ignore
+        return PluggableSchemaValidator(
+            schema,
+            schema_type,
+            SchemaTypePath(schema_type_module, schema_type_name),
+            schema_kind,
+            config,
+            plugins,
+            plugin_settings or {},
+        )  # type: ignore
     else:
         return SchemaValidator(schema, config)
 
@@ -42,6 +57,9 @@ class PluggableSchemaValidator:
     def __init__(
         self,
         schema: CoreSchema,
+        schema_type: Any,
+        schema_type_path: SchemaTypePath,
+        schema_kind: SchemaKind,
         config: CoreConfig | None,
         plugins: Iterable[PydanticPluginProtocol],
         plugin_settings: dict[str, Any],
@@ -52,7 +70,9 @@ class PluggableSchemaValidator:
         json_event_handlers: list[BaseValidateHandlerProtocol] = []
         strings_event_handlers: list[BaseValidateHandlerProtocol] = []
         for plugin in plugins:
-            p, j, s = plugin.new_schema_validator(schema, config, plugin_settings)
+            p, j, s = plugin.new_schema_validator(
+                schema, schema_type, schema_type_path, schema_kind, config, plugin_settings
+            )
             if p is not None:
                 python_event_handlers.append(p)
             if j is not None:

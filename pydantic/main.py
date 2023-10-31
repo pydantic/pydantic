@@ -1,6 +1,7 @@
 """Logic for creating models."""
 from __future__ import annotations as _annotations
 
+import sys
 import types
 import typing
 import warnings
@@ -1345,13 +1346,13 @@ def create_model(
     ...
 
 
-def create_model(
+def create_model(  # noqa: C901
     __model_name: str,
     *,
     __config__: ConfigDict | None = None,
     __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
-    __module__: str = __name__,
+    __module__: str | None = None,
     __validators__: dict[str, AnyClassMethod] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
@@ -1365,9 +1366,9 @@ def create_model(
         __config__: The configuration of the new model.
         __doc__: The docstring of the new model.
         __base__: The base class for the new model.
-        __module__: The name of the module that the model belongs to.
-        __validators__: A dictionary of methods that validate
-            fields.
+        __module__: The name of the module that the model belongs to,
+            if `None` the value is taken from `sys._getframe(1)`
+        __validators__: A dictionary of methods that validate fields.
         __cls_kwargs__: A dictionary of keyword arguments for class creation.
         __slots__: Deprecated. Should not be passed to `create_model`.
         **field_definitions: Attributes of the new model. They should be passed in the format:
@@ -1418,6 +1419,10 @@ def create_model(
             annotations[f_name] = f_annotation
         fields[f_name] = f_value
 
+    if __module__ is None:
+        f = sys._getframe(1)
+        __module__ = f.f_globals['__name__']
+
     namespace: dict[str, Any] = {'__annotations__': annotations, '__module__': __module__}
     if __doc__:
         namespace.update({'__doc__': __doc__})
@@ -1431,7 +1436,15 @@ def create_model(
     if resolved_bases is not __base__:
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
-    return meta(__model_name, resolved_bases, namespace, __pydantic_reset_parent_namespace__=False, **kwds)
+
+    return meta(
+        __model_name,
+        resolved_bases,
+        namespace,
+        __pydantic_reset_parent_namespace__=False,
+        _create_model_module=__module__,
+        **kwds,
+    )
 
 
 __getattr__ = getattr_migration(__name__)
