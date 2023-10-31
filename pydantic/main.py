@@ -42,7 +42,6 @@ if typing.TYPE_CHECKING:
     from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
     from .fields import Field as _Field
 
-    AnyClassMethod = classmethod[Any, Any, Any]
     TupleGenerator = typing.Generator[typing.Tuple[str, Any], None, None]
     Model = typing.TypeVar('Model', bound='BaseModel')
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
@@ -1323,7 +1322,7 @@ def create_model(
     __doc__: str | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] | None = None,
+    __validators__: dict[str, classmethod] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[BaseModel]:
@@ -1338,7 +1337,7 @@ def create_model(
     __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] | None = None,
+    __validators__: dict[str, classmethod] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
@@ -1352,7 +1351,7 @@ def create_model(
     __doc__: str | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] | None = None,
+    __validators__: dict[str, classmethod] | None = None,
     __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
