@@ -58,11 +58,11 @@ Let's see an example of a plugin that _wraps_ the `validate_python` method of th
 from typing import Any, Dict, Optional, Union
 
 from pydantic_core import CoreConfig, CoreSchema, ValidationError
-from typing_extensions import Literal
 
 from pydantic.plugin import (
     NewSchemaReturns,
     PydanticPluginProtocol,
+    SchemaKind,
     SchemaTypePath,
     ValidatePythonHandlerProtocol,
 )
@@ -93,13 +93,7 @@ class Plugin(PydanticPluginProtocol):
         schema: CoreSchema,
         schema_type: Any,
         schema_type_path: SchemaTypePath,
-        schema_kind: Literal[
-            'BaseModel',
-            'TypeAdapter',
-            'dataclass',
-            'create_model',
-            'validate_call',
-        ],
+        schema_kind: SchemaKind,
         config: Union[CoreConfig, None],
         plugin_settings: Dict[str, object],
     ) -> NewSchemaReturns:

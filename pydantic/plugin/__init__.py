@@ -16,12 +16,16 @@ __all__ = (
     'ValidateJsonHandlerProtocol',
     'ValidateStringsHandlerProtocol',
     'NewSchemaReturns',
+    'SchemaTypePath',
+    'SchemaKind',
 )
 
 NewSchemaReturns: TypeAlias = 'tuple[ValidatePythonHandlerProtocol | None, ValidateJsonHandlerProtocol | None, ValidateStringsHandlerProtocol | None]'
 
 
 class SchemaTypePath(NamedTuple):
+    """Path defining where `schema_type` was defined, or where `TypeAdapter` was called."""
+
     module: str
     name: str
 
