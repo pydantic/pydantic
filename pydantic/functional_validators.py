@@ -458,7 +458,7 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/latest/concepts/validators/#model-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#model-validators
 
     Decorate model methods for validation purposes.
     
