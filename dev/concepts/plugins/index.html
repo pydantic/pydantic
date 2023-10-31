@@ -2857,6 +2857,8 @@ into their own dedicates keys in a plugin specific key in the <code>plugin_setti
 <span class="kn">from</span> <span class="nn">pydantic.plugin</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">NewSchemaReturns</span><span class="p">,</span>
     <span class="n">PydanticPluginProtocol</span><span class="p">,</span>
+    <span class="n">SchemaKind</span><span class="p">,</span>
+    <span class="n">SchemaTypePath</span><span class="p">,</span>
     <span class="n">ValidatePythonHandlerProtocol</span><span class="p">,</span>
 <span class="p">)</span>
 
@@ -2884,6 +2886,9 @@ into their own dedicates keys in a plugin specific key in the <code>plugin_setti
     <span class="k">def</span> <span class="nf">new_schema_validator</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span>
+        <span class="n">schema_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">schema_type_path</span><span class="p">:</span> <span class="n">SchemaTypePath</span><span class="p">,</span>
+        <span class="n">schema_kind</span><span class="p">:</span> <span class="n">SchemaKind</span><span class="p">,</span>
         <span class="n">config</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">CoreConfig</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
         <span class="n">plugin_settings</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NewSchemaReturns</span><span class="p">:</span>

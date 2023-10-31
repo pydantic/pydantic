@@ -4362,7 +4362,7 @@ extending a base model with extra fields.</p>
     <span class="n">__base__</span><span class="o">=</span><span class="n">FooModel</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">BarModel</span><span class="p">)</span>
-<span class="c1">#&gt; &lt;class &#39;pydantic.main.BarModel&#39;&gt;</span>
+<span class="c1">#&gt; &lt;class &#39;__main__.BarModel&#39;&gt;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">BarModel</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 <span class="c1">#&gt; dict_keys([&#39;foo&#39;, &#39;bar&#39;, &#39;apple&#39;, &#39;banana&#39;])</span>
 </code></pre></div>
