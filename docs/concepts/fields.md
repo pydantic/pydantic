@@ -597,7 +597,10 @@ print(user)
 ## Discriminator
 
 The parameter `discriminator` can be used to control the field that will be used to discriminate between different
-models in a union.
+models in a union. It takes either the name of a field or a `CallableDiscriminator` instance. The `CallableDiscriminator`
+approach can be useful when the discriminator fields aren't the same for all of the models in the `Union`.
+
+The following example shows how to use `discriminator` with a field name:
 
 ```py requires="3.8"
 from typing import Literal, Union
@@ -624,6 +627,45 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 ```
 
 1. See more about [Helper Functions] in the [Models] page.
+
+The following example shows how to use `discriminator` with a `CallableDiscriminator` instance:
+
+```py requires="3.8"
+from typing import Literal, Union
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, CallableDiscriminator, Field, Tag
+
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']
+    age: int
+
+
+class Dog(BaseModel):
+    pet_kind: Literal['dog']
+    age: int
+
+
+def pet_discriminator(v):
+    if isinstance(v, dict):
+        return v.get('pet_type', v.get('pet_kind'))
+    return getattr(v, 'pet_type', getattr(v, 'pet_kind', None))
+
+
+class Model(BaseModel):
+    pet: Union[Annotated[Cat, Tag('cat')], Annotated[Dog, Tag('dog')]] = Field(
+        discriminator=CallableDiscriminator(pet_discriminator)
+    )
+
+
+print(repr(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}})))
+#> Model(pet=Cat(pet_type='cat', age=12))
+
+print(repr(Model.model_validate({'pet': {'pet_kind': 'dog', 'age': 12}})))
+#> Model(pet=Dog(pet_kind='dog', age=12))
+```
 
 See the [Discriminated Unions] for more details.
 

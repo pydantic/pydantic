@@ -30,7 +30,13 @@ from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, deprecated
 
-from ._internal import _fields, _internal_dataclass, _utils, _validators
+from ._internal import (
+    _fields,
+    _internal_dataclass,
+    _typing_extra,
+    _utils,
+    _validators,
+)
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
@@ -92,6 +98,8 @@ __all__ = (
     'Base64UrlStr',
     'GetPydanticSchema',
     'StringConstraints',
+    'Tag',
+    'CallableDiscriminator',
 )
 
 
@@ -2429,3 +2437,92 @@ class GetPydanticSchema:
                 return object.__getattribute__(self, item)
 
     __hash__ = object.__hash__
+
+
+_TAGGED_UNION_TAG_KEY = 'pydantic-tagged-union-tag'
+
+
+@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+class Tag:
+    """Provides a way to specify the expected tag to use for a case with a callable discriminated union.
+
+    TODO: Need to add more thorough docs..
+    """
+
+    tag: str
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        schema = handler(source_type)
+        metadata = schema.setdefault('metadata', {})
+        assert isinstance(metadata, dict)
+        metadata[_TAGGED_UNION_TAG_KEY] = self.tag
+        return schema
+
+
+@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+class CallableDiscriminator:
+    """Provides a way to use a custom callable as the way to extract the value of a union discriminator.
+
+    This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
+    but without needing to have a single shared field across all the union choices. This also makes it
+    possible to handle unions of models and primitive types with discriminated-union-style validation errors.
+    """
+
+    discriminator: Callable[[Any], Hashable]
+    custom_error_type: str | None = None
+    custom_error_message: str | None = None
+    custom_error_context: dict[str, int | str | float] | None = None
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        origin = _typing_extra.get_origin(source_type)
+        if not origin or not _typing_extra.origin_is_union(origin):
+            raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
+
+        original_schema = handler.generate_schema(source_type)
+        return self._convert_schema(original_schema)
+
+    def _convert_schema(self, original_schema: core_schema.CoreSchema) -> core_schema.TaggedUnionSchema:
+        if original_schema['type'] != 'union':
+            # This likely indicates that the schema was a single-item union that was simplified.
+            # In this case, we do the same thing we do in
+            # `pydantic._internal._discriminated_union._ApplyInferredDiscriminator._apply_to_root`, namely,
+            # package the generated schema back into a single-item union.
+            original_schema = core_schema.union_schema([original_schema])
+
+        tagged_union_choices = {}
+        for i, choice in enumerate(original_schema['choices']):
+            tag = f'case-{i}'
+            if isinstance(choice, tuple):
+                choice, tag = choice
+            metadata = choice.get('metadata')
+            if metadata is not None:
+                metadata_tag = metadata.get(_TAGGED_UNION_TAG_KEY)
+                if metadata_tag is not None:
+                    tag = metadata_tag
+            tagged_union_choices[tag] = choice
+
+        # Have to do these verbose checks to ensure falsy values ('' and {}) don't get ignored
+        custom_error_type = self.custom_error_type
+        if custom_error_type is None:
+            custom_error_type = original_schema.get('custom_error_type')
+
+        custom_error_message = self.custom_error_message
+        if custom_error_message is None:
+            custom_error_message = original_schema.get('custom_error_message')
+
+        custom_error_context = self.custom_error_context
+        if custom_error_context is None:
+            custom_error_context = original_schema.get('custom_error_context')
+
+        custom_error_type = original_schema.get('custom_error_type') if custom_error_type is None else custom_error_type
+        return core_schema.tagged_union_schema(
+            tagged_union_choices,
+            self.discriminator,
+            custom_error_type=custom_error_type,
+            custom_error_message=custom_error_message,
+            custom_error_context=custom_error_context,
+            strict=original_schema.get('strict'),
+            ref=original_schema.get('ref'),
+            metadata=original_schema.get('metadata'),
+            serialization=original_schema.get('serialization'),
+        )

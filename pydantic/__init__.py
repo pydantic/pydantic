@@ -181,6 +181,8 @@ __all__ = (
     'Base64UrlBytes',
     'Base64UrlStr',
     'GetPydanticSchema',
+    'Tag',
+    'CallableDiscriminator',
     # type_adapter
     'TypeAdapter',
     # version
@@ -320,6 +322,8 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'Base64UrlBytes': (__package__, '.types'),
     'Base64UrlStr': (__package__, '.types'),
     'GetPydanticSchema': (__package__, '.types'),
+    'Tag': (__package__, '.types'),
+    'CallableDiscriminator': (__package__, '.types'),
     # type_adapter
     'TypeAdapter': (__package__, '.type_adapter'),
     # warnings
