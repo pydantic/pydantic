@@ -4157,7 +4157,11 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 
   <div class="doc doc-contents ">
   
-      <p>Decorate model methods for validation purposes.</p>
+      <div class="admonition abstract">
+<p class="admonition-title">Usage Documentation</p>
+<p><a href="../../concepts/validators/#model-validators">Model validators</a></p>
+</div>
+<p>Decorate model methods for validation purposes.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4232,11 +4236,15 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="normal">474</span>
 <span class="normal">475</span>
 <span class="normal">476</span>
-<span class="normal">477</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate model methods for validation purposes.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#model-validators</span>
+
+<span class="sd">    Decorate model methods for validation purposes.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        mode: A required string literal that specifies the validation mode.</span>

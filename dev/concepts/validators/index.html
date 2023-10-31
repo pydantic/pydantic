@@ -3419,6 +3419,10 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
 Validation is done in the order fields are defined, so you have to be careful when using <code>ValidationInfo.data</code> to not access a field that has not yet been validated/populated — in the code above, for example, you would not be able to access <code>info.data['id']</code> from within <code>name_must_contain_space</code>.
 However, in most cases where you want to perform validation using multiple field values, it is better to use <code>@model_validator</code> which is discussed in the section below.</p>
 <h2 id="model-validators">Model validators<a class="headerlink" href="#model-validators" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/functional_validators/#pydantic.functional_validators.model_validator"><code>pydantic.functional_validators.model_validator</code></a><br></p>
+</details>
 <p>Validation can also be performed on the entire model's data using <code>@model_validator</code>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 
