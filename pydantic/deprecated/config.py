@@ -18,7 +18,6 @@ __all__ = 'BaseConfig', 'Extra'
 
 class _ConfigMetaclass(type):
     def __getattr__(self, item: str) -> Any:
-
         try:
             obj = _config.config_defaults[item]
             warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
