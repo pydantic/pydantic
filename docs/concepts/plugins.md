@@ -91,7 +91,7 @@ class Plugin(PydanticPluginProtocol):
     def new_schema_validator(
         self,
         schema: CoreSchema,
-        schema_type: str,
+        schema_type: Any,
         schema_type_path: SchemaTypePath,
         schema_kind: Literal[
             'BaseModel',

@@ -1434,14 +1434,14 @@ def create_model(
     namespace.update(ns)
 
     f = sys._getframe(1)
-    cls_module = f.f_globals['__name__']
+    _cls_module = f.f_globals['__name__']
 
     return meta(
         __model_name,
         resolved_bases,
         namespace,
         __pydantic_reset_parent_namespace__=False,
-        cls_module=cls_module,
+        _cls_module=_cls_module,
         **kwds,
     )
 
