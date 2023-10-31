@@ -78,7 +78,7 @@ from __future__ import annotations as _annotations
 
 import sys
 from dataclasses import is_dataclass
-from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, cast, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Literal, is_typeddict
@@ -273,8 +273,10 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             if module is None:
                 f = sys._getframe(1)
-                module = f.f_globals['__name__']
-            validator = create_schema_validator(core_schema, type, module, str(type), 'TypeAdapter', core_config, config_wrapper.plugin_settings)  # type: ignore
+                module = cast(str, f.f_globals['__name__'])
+            validator = create_schema_validator(
+                core_schema, type, module, str(type), 'TypeAdapter', core_config, config_wrapper.plugin_settings
+            )  # type: ignore
 
         serializer: SchemaSerializer
         try:

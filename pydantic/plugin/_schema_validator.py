@@ -37,7 +37,15 @@ def create_schema_validator(
 
     plugins = get_plugins()
     if plugins:
-        return PluggableSchemaValidator(schema, schema_type, SchemaTypePath(schema_type_module, schema_type_name), schema_kind, config, plugins, plugin_settings or {})  # type: ignore
+        return PluggableSchemaValidator(
+            schema,
+            schema_type,
+            SchemaTypePath(schema_type_module, schema_type_name),
+            schema_kind,
+            config,
+            plugins,
+            plugin_settings or {},
+        )  # type: ignore
     else:
         return SchemaValidator(schema, config)
 
