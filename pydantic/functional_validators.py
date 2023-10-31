@@ -461,7 +461,6 @@ def model_validator(
     """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#model-validators
 
     Decorate model methods for validation purposes.
-    
     Args:
         mode: A required string literal that specifies the validation mode.
             It can be one of the following: 'wrap', 'before', or 'after'.
