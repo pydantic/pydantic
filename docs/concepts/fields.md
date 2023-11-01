@@ -667,7 +667,8 @@ print(repr(Model.model_validate({'pet': {'pet_kind': 'dog', 'age': 12}})))
 #> Model(pet=Dog(pet_kind='dog', age=12))
 ```
 
-See the [Discriminated Unions] for more details.
+You can also take advantage of `Annotated` to define your discriminated unions.
+See the [Discriminated Unions] docs for more details.
 
 ## Strict Mode
 

@@ -2444,7 +2444,66 @@ class GetPydanticSchema:
 class Tag:
     """Provides a way to specify the expected tag to use for a case with a callable discriminated union.
 
-    TODO: Need to add more thorough docs..
+    When using a `CallableDiscriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
+    should be used to identify that case. For example, in the below example, the `Tag` is used to specify that
+    if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it
+    returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
+
+    The primary role of the `Tag` here is to map the return value from the `CallableDiscriminator` function to
+    the appropriate member of the `Union` in question.
+
+    ```
+    from typing import Any, Literal, Union
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, CallableDiscriminator, Tag
+
+
+    class Pie(BaseModel):
+        time_to_cook: int
+        num_ingredients: int
+
+
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
+
+
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+
+    def get_discriminator_value(v: Any) -> str:
+        if isinstance(v, dict):
+            return v.get('fruit', v.get('filling'))
+        return getattr(v, 'fruit', getattr(v, 'filling', None))
+
+
+    class ThanksgivingDinner(BaseModel):
+        dessert: Annotated[
+            Union[
+                Annotated[ApplePie, Tag("apple")],
+                Annotated[PumpkinPie, Tag("pumpkin")],
+            ],
+            CallableDiscriminator(get_discriminator_value),
+        ]
+
+
+    apple_variation = ThanksgivingDinner.model_validate(
+        {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
+    )
+    print(repr(apple_variation))
+    # > ThanksgivingDinner(dessert=ApplePie(fruit='apple', time_to_cook=60, num_ingredients=8))
+
+    pumpkin_variation = ThanksgivingDinner.model_validate(
+        {'dessert': {'filling': 'pumpkin', 'time_to_cook': 40, 'num_ingredients': 6}}
+    )
+    print(repr(pumpkin_variation))
+    # > ThanksgivingDinner(dessert=PumpkinPie(filling='pumpkin', time_to_cook=40, num_ingredients=6))
+    ```
+
+    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    docs for more details on how to use `Tag`s.
     """
 
     tag: str
@@ -2464,6 +2523,63 @@ class CallableDiscriminator:
     This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
     but without needing to have a single shared field across all the union choices. This also makes it
     possible to handle unions of models and primitive types with discriminated-union-style validation errors.
+    Finally, this allows you to use a custom callable as the way to identify which member of a union a value
+    belongs to, while still seeing all the performance benefits of a discriminated union.
+
+    Consider this example, which is much more performant with the use of `CallableDiscriminator` and thus a `TaggedUnion`
+    than it would be as a normal `Union`.
+    ```
+    from typing import Any, Literal, Union
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, CallableDiscriminator, Tag
+
+
+    class Pie(BaseModel):
+        time_to_cook: int
+        num_ingredients: int
+
+
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
+
+
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+
+    def get_discriminator_value(v: Any) -> str:
+        if isinstance(v, dict):
+            return v.get('fruit', v.get('filling'))
+        return getattr(v, 'fruit', getattr(v, 'filling', None))
+
+
+    class ThanksgivingDinner(BaseModel):
+        dessert: Annotated[
+            Union[
+                Annotated[ApplePie, Tag("apple")],
+                Annotated[PumpkinPie, Tag("pumpkin")],
+            ],
+            CallableDiscriminator(get_discriminator_value),
+        ]
+
+
+    apple_variation = ThanksgivingDinner.model_validate(
+        {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
+    )
+    print(repr(apple_variation))
+    # > ThanksgivingDinner(dessert=ApplePie(fruit='apple', time_to_cook=60, num_ingredients=8))
+
+    pumpkin_variation = ThanksgivingDinner.model_validate(
+        {'dessert': {'filling': 'pumpkin', 'time_to_cook': 40, 'num_ingredients': 6}}
+    )
+    print(repr(pumpkin_variation))
+    # > ThanksgivingDinner(dessert=PumpkinPie(filling='pumpkin', time_to_cook=40, num_ingredients=6))
+    ```
+
+    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    docs for more details on how to use `CallableDiscriminator`s.
     """
 
     discriminator: Callable[[Any], Hashable]
