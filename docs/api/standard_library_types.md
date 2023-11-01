@@ -1041,12 +1041,17 @@ assert m.model_dump() == data
     There are a few ways to set a discriminator for a field, all varying slightly in syntax.
 
     For `str` discriminators:
-        * `some_field: Union[...] = Field(discriminator='my_discriminator'`
-        * `some_field: Annotated[Union[...], Field(discriminator='my_discriminator')]`
+    ```
+    some_field: Union[...] = Field(discriminator='my_discriminator'
+    some_field: Annotated[Union[...], Field(discriminator='my_discriminator')]
+    ```
+
     For `CallableDiscriminator` discriminators:
-        * `some_field: Union[...] = Field(discriminator=CallableDiscriminator(...))`
-        * `some_field: Annotated[Union[...], CallableDiscriminator(...)]`
-        * `some_field: Annotated[Union[...], Field(discriminator=CallableDiscriminator(...))]`
+    ```
+    some_field: Union[...] = Field(discriminator=CallableDiscriminator(...))
+    some_field: Annotated[Union[...], CallableDiscriminator(...)]
+    some_field: Annotated[Union[...], Field(discriminator=CallableDiscriminator(...))]
+    ```
 
 !!! warning
     Discriminated unions cannot be used with only a single variant, such as `Union[Cat]`.

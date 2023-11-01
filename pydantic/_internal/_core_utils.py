@@ -48,7 +48,7 @@ NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY = 'pydantic.internal.needs_apply_di
 schema building because one of it's members refers to a definition that was not yet defined when the union
 was first encountered.
 """
-TAGGED_UNION_TAG_KEY = 'pydantic-tagged-union-tag'
+TAGGED_UNION_TAG_KEY = 'pydantic.internal.tagged_union_tag'
 """
 Used in a `Tag` schema to specify the tag used for a discriminated union.
 """
