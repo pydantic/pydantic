@@ -256,7 +256,13 @@ if TYPE_CHECKING:
 else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
-    class SerializeAsAny:  # noqa: D101
+    class SerializeAsAny:
+        """Force serialization to ignore whatever is defined in the schema and instead ask the object
+        itself how it should be serialized.
+        In particular, this means that when model subclasses are serialized, fields present in the subclass
+        but not in the original schema will be included.
+        """
+
         def __class_getitem__(cls, item: Any) -> Any:
             return Annotated[item, SerializeAsAny()]
 
