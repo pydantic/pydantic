@@ -2504,9 +2504,9 @@ class Tag:
     !!! note
         You must specify a `Tag` for every case in a `Union` that is associated with a `CallableDiscriminator`.
         Failing to do so will result in a `PydanticUserError` with code
-        [`callable-discriminator-no-tag`](../docs/errors/usage_errors.md#callable-discriminator-no-tag).
+        [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
 
-    See the [Discriminated Unions](../docs/api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
     docs for more details on how to use `Tag`s.
     """
 
@@ -2582,7 +2582,7 @@ class CallableDiscriminator:
     # > ThanksgivingDinner(dessert=PumpkinPie(filling='pumpkin', time_to_cook=40, num_ingredients=6))
     ```
 
-    See the [Discriminated Unions](../docs/api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
     docs for more details on how to use `CallableDiscriminator`s.
     """
 
