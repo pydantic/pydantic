@@ -392,6 +392,9 @@ However, in most cases where you want to perform validation using multiple field
 
 ## Model validators
 
+??? api "API Documentation"
+    [`pydantic.functional_validators.model_validator`][pydantic.functional_validators.model_validator]<br>
+
 Validation can also be performed on the entire model's data using `@model_validator`.
 
 ```py

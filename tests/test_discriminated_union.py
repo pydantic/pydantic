@@ -1545,3 +1545,41 @@ def test_callable_discriminated_union_recursive():
     m = DiscriminatedModel.model_validate(data)
     assert m == DiscriminatedModel(x=DiscriminatedModel(x=DiscriminatedModel(x='a')))
     assert m.model_dump() == data
+
+
+def test_callable_discriminated_union_with_missing_tag() -> None:
+    def model_x_discriminator(v):
+        if isinstance(v, str):
+            return 'str'
+        if isinstance(v, (dict, BaseModel)):
+            return 'model'
+
+    try:
+
+        class DiscriminatedModel(BaseModel):
+            x: Annotated[
+                Union[str, 'DiscriminatedModel'],
+                CallableDiscriminator(model_x_discriminator),
+            ]
+    except PydanticUserError as exc_info:
+        assert exc_info.code == 'callable-discriminator-no-tag'
+
+    try:
+
+        class DiscriminatedModel(BaseModel):
+            x: Annotated[
+                Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
+                CallableDiscriminator(model_x_discriminator),
+            ]
+    except PydanticUserError as exc_info:
+        assert exc_info.code == 'callable-discriminator-no-tag'
+
+    try:
+
+        class DiscriminatedModel(BaseModel):
+            x: Annotated[
+                Union[str, Annotated['DiscriminatedModel', Tag('model')]],
+                CallableDiscriminator(model_x_discriminator),
+            ]
+    except PydanticUserError as exc_info:
+        assert exc_info.code == 'callable-discriminator-no-tag'
