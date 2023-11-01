@@ -2414,6 +2414,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#callable-discriminator-no-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Callable discriminator case with no tag
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#typed-dict-version" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3213,6 +3224,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#callable-discriminator-no-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Callable discriminator case with no tag
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#typed-dict-version" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3846,6 +3868,58 @@ so you can't use a validator that might change its value.</p>
 
 
 <span class="k">assert</span> <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;kitten&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">pet</span><span class="o">.</span><span class="n">pet_type</span> <span class="o">==</span> <span class="s1">&#39;cat&#39;</span>
+</code></pre></div>
+<h2 id="callable-discriminator-no-tag">Callable discriminator case with no tag<a class="headerlink" href="#callable-discriminator-no-tag" title="Permanent link">&para;</a></h2>
+<p>This error is raised when a <code>Union</code> that uses a <code>CallableDiscriminator</code> doesn't have <code>Tag</code> annotations for all cases.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">Tag</span>
+
+
+<span class="k">def</span> <span class="nf">model_x_discriminator</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;str&#39;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="s1">&#39;model&#39;</span>
+
+
+<span class="c1"># tag missing for both union choices</span>
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+            <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">],</span>
+            <span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
+        <span class="p">]</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;callable-discriminator-no-tag&#39;</span>
+
+<span class="c1"># tag missing for `&#39;DiscriminatedModel&#39;` union choice</span>
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+            <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)],</span> <span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">],</span>
+            <span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
+        <span class="p">]</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;callable-discriminator-no-tag&#39;</span>
+
+<span class="c1"># tag missing for `str` union choice</span>
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+            <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)]],</span>
+            <span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
+        <span class="p">]</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;callable-discriminator-no-tag&#39;</span>
 </code></pre></div>
 <h2 id="typed-dict-version"><code>TypedDict</code> version<a class="headerlink" href="#typed-dict-version" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use <code>typing.TypedDict</code>
