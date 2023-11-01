@@ -1057,7 +1057,7 @@ BarModel = create_model(
     __base__=FooModel,
 )
 print(BarModel)
-#> <class 'pydantic.main.BarModel'>
+#> <class '__main__.BarModel'>
 print(BarModel.model_fields.keys())
 #> dict_keys(['foo', 'bar', 'apple', 'banana'])
 ```

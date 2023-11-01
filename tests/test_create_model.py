@@ -31,7 +31,7 @@ def test_create_model():
     assert not model.__pydantic_decorators__.field_validators
     assert not model.__pydantic_decorators__.field_serializers
 
-    assert model.__module__ == 'pydantic.main'
+    assert model.__module__ == 'tests.test_create_model'
 
 
 def test_create_model_usage():

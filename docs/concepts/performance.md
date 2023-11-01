@@ -132,6 +132,8 @@ class Html(BaseModel):
     )
 ```
 
+See [Discriminated Unions] for more details.
+
 ## Use `Literal` not `Enum`
 
 Instead of using `Enum`, use `Literal` to define the structure of the data.
@@ -207,3 +209,5 @@ Instead of using nested models, use `TypedDict` to define the structure of the d
 ## Avoid wrap validators if you really care about performance
 
 <!-- TODO: I need help on this one. -->
+
+[Discriminated Unions]: ../api/standard_library_types.md#discriminated-unions-aka-tagged-unions

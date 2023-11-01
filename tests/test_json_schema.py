@@ -5419,24 +5419,25 @@ def test_multiple_models_with_same_qualname():
         outer_a2=(model_a2, ...),
     )
 
+    # insert_assert(model_c.model_json_schema())
     assert model_c.model_json_schema() == {
         '$defs': {
-            'pydantic__main__A__1': {
-                'properties': {'inner_a1': {'title': 'Inner ' 'A1', 'type': 'string'}},
+            'tests__test_json_schema__A__1': {
+                'properties': {'inner_a1': {'title': 'Inner A1', 'type': 'string'}},
                 'required': ['inner_a1'],
                 'title': 'A',
                 'type': 'object',
             },
-            'pydantic__main__A__2': {
-                'properties': {'inner_a2': {'title': 'Inner ' 'A2', 'type': 'string'}},
+            'tests__test_json_schema__A__2': {
+                'properties': {'inner_a2': {'title': 'Inner A2', 'type': 'string'}},
                 'required': ['inner_a2'],
                 'title': 'A',
                 'type': 'object',
             },
         },
         'properties': {
-            'outer_a1': {'$ref': '#/$defs/pydantic__main__A__1'},
-            'outer_a2': {'$ref': '#/$defs/pydantic__main__A__2'},
+            'outer_a1': {'$ref': '#/$defs/tests__test_json_schema__A__1'},
+            'outer_a2': {'$ref': '#/$defs/tests__test_json_schema__A__2'},
         },
         'required': ['outer_a1', 'outer_a2'],
         'title': 'B',

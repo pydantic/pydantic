@@ -63,6 +63,7 @@ class ModelMetaclass(ABCMeta):
         namespace: dict[str, Any],
         __pydantic_generic_metadata__: PydanticGenericMetadata | None = None,
         __pydantic_reset_parent_namespace__: bool = True,
+        _create_model_module: str | None = None,
         **kwargs: Any,
     ) -> type:
         """Metaclass for creating Pydantic models.
@@ -73,6 +74,7 @@ class ModelMetaclass(ABCMeta):
             namespace: The attribute dictionary of the class to be created.
             __pydantic_generic_metadata__: Metadata for generic models.
             __pydantic_reset_parent_namespace__: Reset parent namespace.
+            _create_model_module: The module of the class to be created, if created by `create_model`.
             **kwargs: Catch-all for any other keyword arguments.
 
         Returns:
@@ -182,6 +184,7 @@ class ModelMetaclass(ABCMeta):
                 config_wrapper,
                 raise_errors=False,
                 types_namespace=types_namespace,
+                create_model_module=_create_model_module,
             )
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
@@ -438,6 +441,7 @@ def complete_model_class(
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
+    create_model_module: str | None = None,
 ) -> bool:
     """Finish building a model class.
 
@@ -450,6 +454,7 @@ def complete_model_class(
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors.
         types_namespace: Optional extra namespace to look for types in.
+        create_model_module: The module of the class to be created, if created by `create_model`.
 
     Returns:
         `True` if the model is successfully completed, else `False`.
@@ -493,7 +498,16 @@ def complete_model_class(
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-    cls.__pydantic_validator__ = create_schema_validator(schema, core_config, config_wrapper.plugin_settings)
+
+    cls.__pydantic_validator__ = create_schema_validator(
+        schema,
+        cls,
+        create_model_module or cls.__module__,
+        cls.__qualname__,
+        'create_model' if create_model_module else 'BaseModel',
+        core_config,
+        config_wrapper.plugin_settings,
+    )
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True
 

@@ -62,6 +62,8 @@ from pydantic_core import CoreConfig, CoreSchema, ValidationError
 from pydantic.plugin import (
     NewSchemaReturns,
     PydanticPluginProtocol,
+    SchemaKind,
+    SchemaTypePath,
     ValidatePythonHandlerProtocol,
 )
 
@@ -89,6 +91,9 @@ class Plugin(PydanticPluginProtocol):
     def new_schema_validator(
         self,
         schema: CoreSchema,
+        schema_type: Any,
+        schema_type_path: SchemaTypePath,
+        schema_kind: SchemaKind,
         config: Union[CoreConfig, None],
         plugin_settings: Dict[str, object],
     ) -> NewSchemaReturns:

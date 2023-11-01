@@ -365,6 +365,62 @@ class Model(BaseModel):
 assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
 ```
 
+## Callable discriminator case with no tag {#callable-discriminator-no-tag}
+
+This error is raised when a `Union` that uses a `CallableDiscriminator` doesn't have `Tag` annotations for all cases.
+
+```py
+from typing import Union
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, CallableDiscriminator, PydanticUserError, Tag
+
+
+def model_x_discriminator(v):
+    if isinstance(v, str):
+        return 'str'
+    if isinstance(v, (dict, BaseModel)):
+        return 'model'
+
+
+# tag missing for both union choices
+try:
+
+    class DiscriminatedModel(BaseModel):
+        x: Annotated[
+            Union[str, 'DiscriminatedModel'],
+            CallableDiscriminator(model_x_discriminator),
+        ]
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'callable-discriminator-no-tag'
+
+# tag missing for `'DiscriminatedModel'` union choice
+try:
+
+    class DiscriminatedModel(BaseModel):
+        x: Annotated[
+            Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
+            CallableDiscriminator(model_x_discriminator),
+        ]
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'callable-discriminator-no-tag'
+
+# tag missing for `str` union choice
+try:
+
+    class DiscriminatedModel(BaseModel):
+        x: Annotated[
+            Union[str, Annotated['DiscriminatedModel', Tag('model')]],
+            CallableDiscriminator(model_x_discriminator),
+        ]
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'callable-discriminator-no-tag'
+```
+
 
 ## `TypedDict` version {#typed-dict-version}
 
