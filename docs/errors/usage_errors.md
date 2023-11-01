@@ -365,7 +365,7 @@ class Model(BaseModel):
 assert Model(pet={'pet_type': 'kitten'}).pet.pet_type == 'cat'
 ```
 
-## Callable discriminator no tag {#callable-discriminator-no-tag}
+## Callable discriminator case with no tag {#callable-discriminator-no-tag}
 
 This error is raised when a `Union` that uses a `CallableDiscriminator` doesn't have `Tag` annotations for all cases.
 
