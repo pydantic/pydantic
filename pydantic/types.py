@@ -30,7 +30,14 @@ from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, deprecated
 
-from ._internal import _fields, _internal_dataclass, _utils, _validators
+from ._internal import (
+    _core_utils,
+    _fields,
+    _internal_dataclass,
+    _typing_extra,
+    _utils,
+    _validators,
+)
 from ._migration import getattr_migration
 from .annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .errors import PydanticUserError
@@ -92,6 +99,8 @@ __all__ = (
     'Base64UrlStr',
     'GetPydanticSchema',
     'StringConstraints',
+    'Tag',
+    'CallableDiscriminator',
 )
 
 
@@ -2429,3 +2438,224 @@ class GetPydanticSchema:
                 return object.__getattribute__(self, item)
 
     __hash__ = object.__hash__
+
+
+@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+class Tag:
+    """Provides a way to specify the expected tag to use for a case with a callable discriminated union.
+
+    When using a `CallableDiscriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
+    should be used to identify that case. For example, in the below example, the `Tag` is used to specify that
+    if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it
+    returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
+
+    The primary role of the `Tag` here is to map the return value from the `CallableDiscriminator` function to
+    the appropriate member of the `Union` in question.
+
+    ```py requires="3.8"
+    from typing import Any, Literal, Union
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, CallableDiscriminator, Tag
+
+    class Pie(BaseModel):
+        time_to_cook: int
+        num_ingredients: int
+
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
+
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+    def get_discriminator_value(v: Any) -> str:
+        if isinstance(v, dict):
+            return v.get('fruit', v.get('filling'))
+        return getattr(v, 'fruit', getattr(v, 'filling', None))
+
+    class ThanksgivingDinner(BaseModel):
+        dessert: Annotated[
+            Union[
+                Annotated[ApplePie, Tag('apple')],
+                Annotated[PumpkinPie, Tag('pumpkin')],
+            ],
+            CallableDiscriminator(get_discriminator_value),
+        ]
+
+    apple_variation = ThanksgivingDinner.model_validate(
+        {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
+    )
+    print(repr(apple_variation))
+    '''
+    ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
+    '''
+
+    pumpkin_variation = ThanksgivingDinner.model_validate(
+        {
+            'dessert': {
+                'filling': 'pumpkin',
+                'time_to_cook': 40,
+                'num_ingredients': 6,
+            }
+        }
+    )
+    print(repr(pumpkin_variation))
+    '''
+    ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
+    '''
+    ```
+
+    !!! note
+        You must specify a `Tag` for every case in a `Union` that is associated with a `CallableDiscriminator`.
+        Failing to do so will result in a `PydanticUserError` with code
+        [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
+
+    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    docs for more details on how to use `Tag`s.
+    """
+
+    tag: str
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        schema = handler(source_type)
+        metadata = schema.setdefault('metadata', {})
+        assert isinstance(metadata, dict)
+        metadata[_core_utils.TAGGED_UNION_TAG_KEY] = self.tag
+        return schema
+
+
+@_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
+class CallableDiscriminator:
+    """Provides a way to use a custom callable as the way to extract the value of a union discriminator.
+
+    This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
+    but without needing to have a single shared field across all the union choices. This also makes it
+    possible to handle unions of models and primitive types with discriminated-union-style validation errors.
+    Finally, this allows you to use a custom callable as the way to identify which member of a union a value
+    belongs to, while still seeing all the performance benefits of a discriminated union.
+
+    Consider this example, which is much more performant with the use of `CallableDiscriminator` and thus a `TaggedUnion`
+    than it would be as a normal `Union`.
+
+    ```py requires="3.8"
+    from typing import Any, Literal, Union
+
+    from typing_extensions import Annotated
+
+    from pydantic import BaseModel, CallableDiscriminator, Tag
+
+    class Pie(BaseModel):
+        time_to_cook: int
+        num_ingredients: int
+
+    class ApplePie(Pie):
+        fruit: Literal['apple'] = 'apple'
+
+    class PumpkinPie(Pie):
+        filling: Literal['pumpkin'] = 'pumpkin'
+
+    def get_discriminator_value(v: Any) -> str:
+        if isinstance(v, dict):
+            return v.get('fruit', v.get('filling'))
+        return getattr(v, 'fruit', getattr(v, 'filling', None))
+
+    class ThanksgivingDinner(BaseModel):
+        dessert: Annotated[
+            Union[
+                Annotated[ApplePie, Tag('apple')],
+                Annotated[PumpkinPie, Tag('pumpkin')],
+            ],
+            CallableDiscriminator(get_discriminator_value),
+        ]
+
+    apple_variation = ThanksgivingDinner.model_validate(
+        {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
+    )
+    print(repr(apple_variation))
+    '''
+    ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
+    '''
+
+    pumpkin_variation = ThanksgivingDinner.model_validate(
+        {
+            'dessert': {
+                'filling': 'pumpkin',
+                'time_to_cook': 40,
+                'num_ingredients': 6,
+            }
+        }
+    )
+    print(repr(pumpkin_variation))
+    '''
+    ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
+    '''
+    ```
+
+    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    docs for more details on how to use `CallableDiscriminator`s.
+    """
+
+    discriminator: Callable[[Any], Hashable]
+    custom_error_type: str | None = None
+    custom_error_message: str | None = None
+    custom_error_context: dict[str, int | str | float] | None = None
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        origin = _typing_extra.get_origin(source_type)
+        if not origin or not _typing_extra.origin_is_union(origin):
+            raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
+
+        original_schema = handler.generate_schema(source_type)
+        return self._convert_schema(original_schema)
+
+    def _convert_schema(self, original_schema: core_schema.CoreSchema) -> core_schema.TaggedUnionSchema:
+        if original_schema['type'] != 'union':
+            # This likely indicates that the schema was a single-item union that was simplified.
+            # In this case, we do the same thing we do in
+            # `pydantic._internal._discriminated_union._ApplyInferredDiscriminator._apply_to_root`, namely,
+            # package the generated schema back into a single-item union.
+            original_schema = core_schema.union_schema([original_schema])
+
+        tagged_union_choices = {}
+        for i, choice in enumerate(original_schema['choices']):
+            tag = None
+            if isinstance(choice, tuple):
+                choice, tag = choice
+            metadata = choice.get('metadata')
+            if metadata is not None:
+                metadata_tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
+                if metadata_tag is not None:
+                    tag = metadata_tag
+            if tag is None:
+                raise PydanticUserError(
+                    f'`Tag` not provided for choice {choice} used with `CallableDiscriminator`',
+                    code='callable-discriminator-no-tag',
+                )
+            tagged_union_choices[tag] = choice
+
+        # Have to do these verbose checks to ensure falsy values ('' and {}) don't get ignored
+        custom_error_type = self.custom_error_type
+        if custom_error_type is None:
+            custom_error_type = original_schema.get('custom_error_type')
+
+        custom_error_message = self.custom_error_message
+        if custom_error_message is None:
+            custom_error_message = original_schema.get('custom_error_message')
+
+        custom_error_context = self.custom_error_context
+        if custom_error_context is None:
+            custom_error_context = original_schema.get('custom_error_context')
+
+        custom_error_type = original_schema.get('custom_error_type') if custom_error_type is None else custom_error_type
+        return core_schema.tagged_union_schema(
+            tagged_union_choices,
+            self.discriminator,
+            custom_error_type=custom_error_type,
+            custom_error_message=custom_error_message,
+            custom_error_context=custom_error_context,
+            strict=original_schema.get('strict'),
+            ref=original_schema.get('ref'),
+            metadata=original_schema.get('metadata'),
+            serialization=original_schema.get('serialization'),
+        )
