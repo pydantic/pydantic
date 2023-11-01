@@ -2459,47 +2459,51 @@ class Tag:
 
     from pydantic import BaseModel, CallableDiscriminator, Tag
 
-
     class Pie(BaseModel):
         time_to_cook: int
         num_ingredients: int
 
-
     class ApplePie(Pie):
         fruit: Literal['apple'] = 'apple'
 
-
     class PumpkinPie(Pie):
         filling: Literal['pumpkin'] = 'pumpkin'
-
 
     def get_discriminator_value(v: Any) -> str:
         if isinstance(v, dict):
             return v.get('fruit', v.get('filling'))
         return getattr(v, 'fruit', getattr(v, 'filling', None))
 
-
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
             Union[
-                Annotated[ApplePie, Tag("apple")],
-                Annotated[PumpkinPie, Tag("pumpkin")],
+                Annotated[ApplePie, Tag('apple')],
+                Annotated[PumpkinPie, Tag('pumpkin')],
             ],
             CallableDiscriminator(get_discriminator_value),
         ]
-
 
     apple_variation = ThanksgivingDinner.model_validate(
         {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
     )
     print(repr(apple_variation))
-    # > ThanksgivingDinner(dessert=ApplePie(fruit='apple', time_to_cook=60, num_ingredients=8))
+    '''
+    ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
+    '''
 
     pumpkin_variation = ThanksgivingDinner.model_validate(
-        {'dessert': {'filling': 'pumpkin', 'time_to_cook': 40, 'num_ingredients': 6}}
+        {
+            'dessert': {
+                'filling': 'pumpkin',
+                'time_to_cook': 40,
+                'num_ingredients': 6,
+            }
+        }
     )
     print(repr(pumpkin_variation))
-    # > ThanksgivingDinner(dessert=PumpkinPie(filling='pumpkin', time_to_cook=40, num_ingredients=6))
+    '''
+    ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
+    '''
     ```
 
     !!! note
@@ -2541,47 +2545,51 @@ class CallableDiscriminator:
 
     from pydantic import BaseModel, CallableDiscriminator, Tag
 
-
     class Pie(BaseModel):
         time_to_cook: int
         num_ingredients: int
 
-
     class ApplePie(Pie):
         fruit: Literal['apple'] = 'apple'
 
-
     class PumpkinPie(Pie):
         filling: Literal['pumpkin'] = 'pumpkin'
-
 
     def get_discriminator_value(v: Any) -> str:
         if isinstance(v, dict):
             return v.get('fruit', v.get('filling'))
         return getattr(v, 'fruit', getattr(v, 'filling', None))
 
-
     class ThanksgivingDinner(BaseModel):
         dessert: Annotated[
             Union[
-                Annotated[ApplePie, Tag("apple")],
-                Annotated[PumpkinPie, Tag("pumpkin")],
+                Annotated[ApplePie, Tag('apple')],
+                Annotated[PumpkinPie, Tag('pumpkin')],
             ],
             CallableDiscriminator(get_discriminator_value),
         ]
-
 
     apple_variation = ThanksgivingDinner.model_validate(
         {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
     )
     print(repr(apple_variation))
-    # > ThanksgivingDinner(dessert=ApplePie(fruit='apple', time_to_cook=60, num_ingredients=8))
+    '''
+    ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
+    '''
 
     pumpkin_variation = ThanksgivingDinner.model_validate(
-        {'dessert': {'filling': 'pumpkin', 'time_to_cook': 40, 'num_ingredients': 6}}
+        {
+            'dessert': {
+                'filling': 'pumpkin',
+                'time_to_cook': 40,
+                'num_ingredients': 6,
+            }
+        }
     )
     print(repr(pumpkin_variation))
-    # > ThanksgivingDinner(dessert=PumpkinPie(filling='pumpkin', time_to_cook=40, num_ingredients=6))
+    '''
+    ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
+    '''
     ```
 
     See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)

@@ -882,10 +882,12 @@ Setting a discriminated union has many benefits:
 - the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#discriminator-object)
 
 #### Discriminated Unions with `str` discriminators
-In the case of a `Union` with multiple models, you sometimes know exactly which field of each
-model needs to be checked and validated and want to enforce this.
-To do that you can set the same field - let's call it `my_discriminator` - in each of the models
-with a discriminated value, which is one (or many) `Literal` value(s).
+Frequently, in the case of a `Union` with multiple models,
+there is a common field to all members of the union that can be used to distinguish
+which union case the data should be validated against; this is referred to as the "discriminator" in
+[OpenAPI](https://swagger.io/docs/specification/data-models/inheritance-and-polymorphism/).
+To validate models based on that information you can set the same field - let's call it `my_discriminator` -
+in each of the models with a discriminated value, which is one (or many) `Literal` value(s).
 For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
 
 
