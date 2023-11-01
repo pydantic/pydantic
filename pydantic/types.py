@@ -31,6 +31,7 @@ from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 from typing_extensions import Annotated, Literal, Protocol, deprecated
 
 from ._internal import (
+    _core_utils,
     _fields,
     _internal_dataclass,
     _typing_extra,
@@ -2439,9 +2440,6 @@ class GetPydanticSchema:
     __hash__ = object.__hash__
 
 
-_TAGGED_UNION_TAG_KEY = 'pydantic-tagged-union-tag'
-
-
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Tag:
     """Provides a way to specify the expected tag to use for a case with a callable discriminated union.
@@ -2455,7 +2453,7 @@ class Tag:
         schema = handler(source_type)
         metadata = schema.setdefault('metadata', {})
         assert isinstance(metadata, dict)
-        metadata[_TAGGED_UNION_TAG_KEY] = self.tag
+        metadata[_core_utils.TAGGED_UNION_TAG_KEY] = self.tag
         return schema
 
 
@@ -2496,7 +2494,7 @@ class CallableDiscriminator:
                 choice, tag = choice
             metadata = choice.get('metadata')
             if metadata is not None:
-                metadata_tag = metadata.get(_TAGGED_UNION_TAG_KEY)
+                metadata_tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
                 if metadata_tag is not None:
                     tag = metadata_tag
             tagged_union_choices[tag] = choice
