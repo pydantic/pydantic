@@ -9,11 +9,14 @@ from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
 from pydantic_core import PydanticUndefined
+from typing_extensions import get_args, get_origin
 
 from . import _typing_extra
 from ._config import ConfigWrapper
+from ._decorators import mro
+from ._generics import get_standard_typevars_map, replace_types
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
+from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar, typed_dict_types
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
@@ -51,6 +54,60 @@ def get_type_hints_infer_globalns(
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
             pass
     return get_type_hints(obj, globalns=globalns, localns=localns, include_extras=include_extras)
+
+
+def get_typed_dict_type_hints(
+    typed_dict_cls: Any,
+    types_namespace: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Collect the type hints of a TypedDict.
+
+    This takes into account any TypeVar transformations when using generic
+    TypedDict.
+
+    Args:
+        typed_dict_cls: a TypedDict subclass
+        types_namespace: Optional extra namespace to look for types in.
+
+    Returns:
+        the final type hints.
+    """
+    hints: dict[str, Any] = {}
+    typevars_map: dict[type, dict[Any, Any]] = {}
+    required_keys: frozenset[str] = typed_dict_cls.__required_keys__
+    previous_base_cls: type | None = None
+
+    for base_cls in reversed(mro(typed_dict_cls)):
+        base = base_cls
+        if base in typed_dict_types:
+            continue
+
+        # needed if base_cls is a generic alias
+        if get_args(base_cls):
+            base: Any = get_origin(base_cls)
+
+        new_type_hints = get_cls_type_hints_lenient(base, types_namespace)
+
+        typevars_map[base] = get_standard_typevars_map(base_cls) or {}
+
+        for field_name, annotation in new_type_hints.items():
+            if field_name in hints:
+                if previous_base_cls is not None:
+                    hints[field_name] = replace_types(hints[field_name], typevars_map[previous_base_cls])
+                continue
+
+            origin = get_origin(annotation)
+            # if it's not required then wrap it in NotRequired
+            # so it's easy to parse later
+            if field_name not in required_keys:
+                if origin is not _typing_extra.NotRequired:
+                    annotation = _typing_extra.NotRequired[annotation]  # type: ignore
+
+            hints[field_name] = annotation
+
+        previous_base_cls = base
+
+    return hints
 
 
 class PydanticMetadata(Representation):

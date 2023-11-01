@@ -10,7 +10,7 @@ from functools import partial
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, Final, ForwardRef
 
-from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, TypeGuard, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -35,6 +35,9 @@ if sys.version_info < (3, 11):
 else:
     from typing import NotRequired, Required  # noqa: F401
 
+typed_dict_types: set[Any] = {TypedDict}
+if sys.version_info >= (3, 12):
+    typed_dict_types |= {typing.TypedDict}
 
 if sys.version_info < (3, 10):
 

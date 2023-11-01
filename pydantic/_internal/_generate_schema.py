@@ -73,7 +73,7 @@ from ._decorators import (
     inspect_model_serializer,
     inspect_validator,
 )
-from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns
+from ._fields import collect_dataclass_fields, get_type_hints_infer_globalns, get_typed_dict_type_hints
 from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, has_instance_in_type, recursively_defined_type_refs, replace_types
 from ._schema_generation_shared import (
@@ -1138,7 +1138,7 @@ class GenerateSchema:
 
         It is not possible to track required/optional keys in TypedDict without __required_keys__
         since TypedDict.__new__ erases the base classes (it replaces them with just `dict`)
-        and thus we can track usage of total=True/False
+        and thus we can't track usage of total=True/False
         __required_keys__ was added in Python 3.9
         (https://github.com/miss-islington/cpython/blob/1e9939657dd1f8eb9f596f77c1084d2d351172fc/Doc/library/typing.rst?plain=1#L1546-L1548)
         however it is buggy
@@ -1175,26 +1175,19 @@ class GenerateSchema:
 
                 self = self._current_generate_schema
 
-                required_keys: frozenset[str] = typed_dict_cls.__required_keys__
-
                 fields: dict[str, core_schema.TypedDictField] = {}
 
                 decorators = DecoratorInfos.build(typed_dict_cls)
 
-                for field_name, annotation in get_type_hints_infer_globalns(
-                    typed_dict_cls, localns=self._types_namespace, include_extras=True
+                for field_name, annotation in get_typed_dict_type_hints(
+                    typed_dict_cls,
+                    types_namespace=self._types_namespace,
                 ).items():
                     annotation = replace_types(annotation, typevars_map)
-                    required = field_name in required_keys
+                    ann_origin = get_origin(annotation)
+                    required = ann_origin is not _typing_extra.NotRequired
 
-                    if get_origin(annotation) == _typing_extra.Required:
-                        required = True
-                        annotation = self._get_args_resolving_forward_refs(
-                            annotation,
-                            required=True,
-                        )[0]
-                    elif get_origin(annotation) == _typing_extra.NotRequired:
-                        required = False
+                    if ann_origin in [_typing_extra.NotRequired, _typing_extra.Required]:
                         annotation = self._get_args_resolving_forward_refs(
                             annotation,
                             required=True,

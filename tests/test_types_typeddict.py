@@ -711,6 +711,63 @@ def test_recursive_generic_typeddict_in_function_3():
     ]
 
 
+def test_nested_generic_typeddict():
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    class BaseGenericTypedDict(TypedDict, Generic[U]):
+        type: U
+
+    class NestedGenericTypedDict(BaseGenericTypedDict[T]):
+        value: T
+
+    TypeAdapter(NestedGenericTypedDict[str]).validate_python(
+        {
+            'type': 'string',
+            'value': 'string',
+        }
+    )
+
+
+def test_partial_generic_typeddict():
+    T = TypeVar('T')
+    U = TypeVar('U')
+
+    class BaseGenericTypedDict(TypedDict, Generic[T, U]):
+        type: T
+        info: U
+
+    class PartialGenericTypedDict(BaseGenericTypedDict[str, T]):
+        value: T
+
+    ts = TypeAdapter(PartialGenericTypedDict[bool])
+
+    ts.validate_python(
+        {
+            'type': 'type override is respected',
+            'info': False,
+            'value': False,
+        }
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        ts.validate_python({'type': False, 'value': False, 'info': 'type override of default not respected'})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': False,
+            'loc': ('type',),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': 'type override of default not respected',
+            'loc': ('info',),
+            'msg': 'Input should be a valid boolean, unable to interpret input',
+            'type': 'bool_parsing',
+        },
+    ]
+
+
 def test_typeddict_alias_generator(TypedDict):
     def alias_generator(name: str) -> str:
         return 'alias_' + name
