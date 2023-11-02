@@ -2709,7 +2709,11 @@ JsonValue = TypeAliasType(
             Annotated[bool, Tag('bool')],
             Annotated[None, Tag('NoneType')],
         ],
-        CallableDiscriminator(_get_type_name),
+        CallableDiscriminator(
+            _get_type_name,
+            custom_error_type='invalid-json-value',
+            custom_error_message='input was not a valid JSON value',
+        ),
         _AllowAnyJson,
     ],
 )

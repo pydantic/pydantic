@@ -6040,17 +6040,9 @@ def test_json_value():
         adapter.validate_python(invalid_json_data)
     assert exc_info.value.errors() == [
         {
-            'ctx': {
-                'discriminator': '_get_type_name()',
-                'expected_tags': "'list', 'dict', 'str', 'int', 'float', 'bool', " "'NoneType'",
-                'tag': 'ellipsis',
-            },
             'input': Ellipsis,
             'loc': ('dict', 'a', 'dict', 'b'),
-            'msg': "Input tag 'ellipsis' found using _get_type_name() does not match any "
-            "of the expected tags: 'list', 'dict', 'str', 'int', 'float', 'bool', "
-            "'NoneType'",
-            'type': 'union_tag_invalid',
-            'url': 'https://errors.pydantic.dev/2.4/v/union_tag_invalid',
+            'msg': 'input was not a valid JSON value',
+            'type': 'invalid-json-value',
         }
     ]
