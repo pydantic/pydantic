@@ -30,7 +30,7 @@ from uuid import UUID
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
-from typing_extensions import Annotated, Literal, Protocol, TypeAliasType, deprecated
+from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
 from ._internal import (
     _core_utils,
@@ -2697,23 +2697,36 @@ class _AllowAnyJson:
         return core_schema.json_or_python_schema(json_schema=core_schema.any_schema(), python_schema=python_schema)
 
 
-JsonValue = TypeAliasType(
-    'JsonValue',
-    Annotated[
-        Union[
-            Annotated[List['JsonValue'], Tag('list')],
-            Annotated[Dict[str, 'JsonValue'], Tag('dict')],
-            Annotated[str, Tag('str')],
-            Annotated[int, Tag('int')],
-            Annotated[float, Tag('float')],
-            Annotated[bool, Tag('bool')],
-            Annotated[None, Tag('NoneType')],
+if TYPE_CHECKING:
+    # This seems to only be necessary for mypy
+    JsonValue: TypeAlias = Union[
+        List['JsonValue'],
+        Dict[str, 'JsonValue'],
+        str,
+        int,
+        float,
+        bool,
+        None,
+    ]
+
+else:
+    JsonValue = TypeAliasType(
+        'JsonValue',
+        Annotated[
+            Union[
+                Annotated[List['JsonValue'], Tag('list')],
+                Annotated[Dict[str, 'JsonValue'], Tag('dict')],
+                Annotated[str, Tag('str')],
+                Annotated[int, Tag('int')],
+                Annotated[float, Tag('float')],
+                Annotated[bool, Tag('bool')],
+                Annotated[None, Tag('NoneType')],
+            ],
+            CallableDiscriminator(
+                _get_type_name,
+                custom_error_type='invalid-json-value',
+                custom_error_message='input was not a valid JSON value',
+            ),
+            _AllowAnyJson,
         ],
-        CallableDiscriminator(
-            _get_type_name,
-            custom_error_type='invalid-json-value',
-            custom_error_message='input was not a valid JSON value',
-        ),
-        _AllowAnyJson,
-    ],
-)
+    )
