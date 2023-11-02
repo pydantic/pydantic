@@ -6031,15 +6031,41 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
 
 
 def test_union_tags_in_errors():
-    DoubledList = Annotated[list[int], AfterValidator(lambda x: x * 2), Tag('DoubledList')]
-    StringsMap = Annotated[dict[str, str], Tag('StringsMap')]
+    DoubledList = Annotated[list[int], AfterValidator(lambda x: x * 2)]
+    StringsMap = dict[str, str]
 
     adapter = TypeAdapter(Union[DoubledList, StringsMap])
 
     with pytest.raises(ValidationError) as exc_info:
         adapter.validate_python(['a'])
 
-    assert '2 validation errors for union[DoubledList,StringsMap]' in str(exc_info)
+    assert '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]' in str(exc_info)  # yuck
+    # the loc's are bad here:
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('function-after[<lambda>(), list[int]]', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('dict[str,str]',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+        },
+    ]
+
+    tag_adapter = TypeAdapter(
+        Union[Annotated[DoubledList, Tag('DoubledList')], Annotated[StringsMap, Tag('StringsMap')]]
+    )
+    with pytest.raises(ValidationError) as exc_info:
+        tag_adapter.validate_python(['a'])
+
+    assert '2 validation errors for union[DoubledList,StringsMap]' in str(exc_info)  # nice
+    # the loc's are good here:
     assert exc_info.value.errors() == [
         {
             'input': 'a',
