@@ -14,6 +14,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Dict,
     FrozenSet,
     Generic,
     Hashable,
@@ -21,6 +22,7 @@ from typing import (
     List,
     Set,
     TypeVar,
+    Union,
     cast,
 )
 from uuid import UUID
@@ -28,7 +30,7 @@ from uuid import UUID
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
-from typing_extensions import Annotated, Literal, Protocol, deprecated
+from typing_extensions import Annotated, Literal, Protocol, TypeAliasType, deprecated
 
 from ._internal import (
     _core_utils,
@@ -101,6 +103,7 @@ __all__ = (
     'StringConstraints',
     'Tag',
     'CallableDiscriminator',
+    'JsonValue',
 )
 
 
@@ -2659,3 +2662,54 @@ class CallableDiscriminator:
             metadata=original_schema.get('metadata'),
             serialization=original_schema.get('serialization'),
         )
+
+
+_JSON_TYPES = {int, float, str, bool, list, dict, type(None)}
+
+
+def _get_type_name(x: Any) -> str:
+    type_ = type(x)
+    if type_ in _JSON_TYPES:
+        return type_.__name__
+
+    # Handle proper subclasses; note we don't need to handle None here
+    if isinstance(x, bool):
+        return 'bool'
+    if isinstance(x, int):
+        return 'int'
+    if isinstance(x, float):
+        return 'float'
+    if isinstance(x, str):
+        return 'str'
+    if isinstance(x, list):
+        return 'list'
+    if isinstance(x, dict):
+        return 'dict'
+
+    # Fail by returning the type's actual name
+    return getattr(type_, '__name__', '<no type name>')
+
+
+class _AllowAnyJson:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        python_schema = handler(source_type)
+        return core_schema.json_or_python_schema(json_schema=core_schema.any_schema(), python_schema=python_schema)
+
+
+JsonValue = TypeAliasType(
+    'JsonValue',
+    Annotated[
+        Union[
+            Annotated[List['JsonValue'], Tag('list')],
+            Annotated[Dict[str, 'JsonValue'], Tag('dict')],
+            Annotated[str, Tag('str')],
+            Annotated[int, Tag('int')],
+            Annotated[float, Tag('float')],
+            Annotated[bool, Tag('bool')],
+            Annotated[None, Tag('NoneType')],
+        ],
+        CallableDiscriminator(_get_type_name),
+        _AllowAnyJson,
+    ],
+)

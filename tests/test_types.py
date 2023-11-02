@@ -65,6 +65,7 @@ from pydantic import (
     GetCoreSchemaHandler,
     InstanceOf,
     Json,
+    JsonValue,
     NaiveDatetime,
     NameEmail,
     NegativeFloat,
@@ -6025,3 +6026,31 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
         value: str
 
     assert Model.model_validate_json(f'{{"value": {number}}}').model_dump() == {'value': expected_str}
+
+
+def test_json_value():
+    adapter = TypeAdapter(JsonValue)
+    valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
+    invalid_json_data = {'a': {'b': ...}}  # would pass validation as a dict[str, Any]
+
+    assert adapter.validate_python(valid_json_data) == valid_json_data
+    assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python(invalid_json_data)
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {
+                'discriminator': '_get_type_name()',
+                'expected_tags': "'list', 'dict', 'str', 'int', 'float', 'bool', " "'NoneType'",
+                'tag': 'ellipsis',
+            },
+            'input': Ellipsis,
+            'loc': ('dict', 'a', 'dict', 'b'),
+            'msg': "Input tag 'ellipsis' found using _get_type_name() does not match any "
+            "of the expected tags: 'list', 'dict', 'str', 'int', 'float', 'bool', "
+            "'NoneType'",
+            'type': 'union_tag_invalid',
+            'url': 'https://errors.pydantic.dev/2.4/v/union_tag_invalid',
+        }
+    ]
