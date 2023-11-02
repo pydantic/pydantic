@@ -183,6 +183,7 @@ __all__ = (
     'GetPydanticSchema',
     'Tag',
     'CallableDiscriminator',
+    'JsonValue',
     # type_adapter
     'TypeAdapter',
     # version
