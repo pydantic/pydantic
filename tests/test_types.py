@@ -15,6 +15,7 @@ from enum import Enum, IntEnum
 from numbers import Number
 from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     Callable,
     Counter,
@@ -47,6 +48,7 @@ from pydantic import (
     UUID3,
     UUID4,
     UUID5,
+    AfterValidator,
     AwareDatetime,
     Base64Bytes,
     Base64Str,
@@ -88,6 +90,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    Tag,
     TypeAdapter,
     ValidationError,
     conbytes,
@@ -6025,3 +6028,31 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
         value: str
 
     assert Model.model_validate_json(f'{{"value": {number}}}').model_dump() == {'value': expected_str}
+
+
+def test_union_tags_in_errors():
+    DoubledList = Annotated[list[int], AfterValidator(lambda x: x * 2), Tag('DoubledList')]
+    StringsMap = Annotated[dict[str, str], Tag('StringsMap')]
+
+    adapter = TypeAdapter(Union[DoubledList, StringsMap])
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python(['a'])
+
+    assert '2 validation errors for union[DoubledList,StringsMap]' in str(exc_info)
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('DoubledList', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('StringsMap',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+        },
+    ]
