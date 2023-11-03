@@ -3057,20 +3057,21 @@ ANY_THING = object()
             ],
         ),
         (dict(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
-        (
+        pytest.param(
             dict(max_digits=2, decimal_places=1),
             Decimal('0.99'),
             [
                 {
                     'type': 'decimal_max_places',
                     'loc': ('foo',),
-                    'msg': 'Decimal input should have no more than 1 decimal places',
+                    'msg': 'Decimal input should have no more than 1 decimal place',
                     'input': Decimal('0.99'),
                     'ctx': {
                         'decimal_places': 1,
                     },
                 }
             ],
+            marks=pytest.mark.xfail(reason='Needs new release of pydantic-core'),
         ),
         (
             dict(max_digits=3, decimal_places=1),
