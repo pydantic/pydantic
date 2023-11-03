@@ -119,6 +119,10 @@ memray = [
     "pytest-memray; platform_system != 'Windows'",
 ]
 
+codspeed = [
+    "pytest-codspeed~=2.2.0",
+]
+
 [tool.pdm.resolution.overrides]
 # requires Python > 3.8, we only test with 3.8 in CI but because of it won't lock properly
 pytest-memray = "1.5.0"
