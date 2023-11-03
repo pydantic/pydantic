@@ -765,7 +765,7 @@ See [Network Types](../api/networks.md) for other custom IP address types.
 For UUID, Pydantic tries to use the type itself for validation by passing the value to `UUID(v)`.
 There's a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`.
 
-In case you want to constrained the UUID version, you can check the following types:
+In case you want to constrain the UUID version, you can check the following types:
 
 * [`UUID1`][pydantic.types.UUID1]: requires UUID version 1.
 * [`UUID3`][pydantic.types.UUID3]: requires UUID version 3.
