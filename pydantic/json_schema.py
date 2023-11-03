@@ -25,7 +25,6 @@ from typing import (
     Dict,
     Hashable,
     Iterable,
-    List,
     NewType,
     Sequence,
     Tuple,
@@ -37,7 +36,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreSchema, PydanticOmit, core_schema, to_jsonable_python
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Annotated, Literal, assert_never
+from typing_extensions import Annotated, Literal, TypeAlias, assert_never
 
 from ._internal import (
     _config,
@@ -50,7 +49,7 @@ from ._internal import (
     _typing_extra,
 )
 from .annotated_handlers import GetJsonSchemaHandler
-from .config import JsonDict, JsonSchemaExtraCallable
+from .config import JsonDict, JsonSchemaExtraCallable, JsonValue
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
@@ -1085,7 +1084,7 @@ class GenerateJsonSchema:
         return json_schema
 
     def _extract_discriminator(
-        self, schema: core_schema.TaggedUnionSchema, one_of_choices: list[_JsonDict]
+        self, schema: core_schema.TaggedUnionSchema, one_of_choices: list[JsonDict]
     ) -> str | None:
         """Extract a compatible OpenAPI discriminator from the schema and one_of choices that end up in the final
         schema."""
@@ -2204,16 +2203,16 @@ def models_json_schema(
 # ##### End JSON Schema Generation Functions #####
 
 
-_Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
-_JsonDict = Dict[str, _Json]
-_HashableJson = Union[Tuple[Tuple[str, Any], ...], Tuple[Any, ...], str, int, float, bool, None]
+_HashableJsonValue: TypeAlias = Union[
+    int, float, str, bool, None, Tuple['_HashableJsonValue', ...], Tuple[Tuple[str, '_HashableJsonValue'], ...]
+]
 
 
-def _deduplicate_schemas(schemas: Iterable[_JsonDict]) -> list[_JsonDict]:
+def _deduplicate_schemas(schemas: Iterable[JsonDict]) -> list[JsonDict]:
     return list({_make_json_hashable(schema): schema for schema in schemas}.values())
 
 
-def _make_json_hashable(value: _Json) -> _HashableJson:
+def _make_json_hashable(value: JsonValue) -> _HashableJsonValue:
     if isinstance(value, dict):
         return tuple(sorted((k, _make_json_hashable(v)) for k, v in value.items()))
     elif isinstance(value, list):
