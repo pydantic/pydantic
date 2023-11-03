@@ -445,8 +445,8 @@ macro_rules! to_string_render {
     };
 }
 
-fn plural_s(value: usize) -> &'static str {
-    if value == 1 {
+fn plural_s<T: From<u8> + PartialEq>(value: T) -> &'static str {
+    if value == 1.into() {
         ""
     } else {
         "s"
@@ -494,8 +494,8 @@ impl ErrorType {
             Self::StringType {..} => "Input should be a valid string",
             Self::StringSubType {..} => "Input should be a string, not an instance of a subclass of str",
             Self::StringUnicode {..} => "Input should be a valid string, unable to parse raw data as a unicode string",
-            Self::StringTooShort {..} => "String should have at least {min_length} characters",
-            Self::StringTooLong {..} => "String should have at most {max_length} characters",
+            Self::StringTooShort {..} => "String should have at least {min_length} character{expected_plural}",
+            Self::StringTooLong {..} => "String should have at most {max_length} character{expected_plural}",
             Self::StringPatternMismatch {..} => "String should match pattern '{pattern}'",
             Self::Enum {..} => "Input should be {expected}",
             Self::DictType {..} => "Input should be a valid dictionary",
@@ -512,8 +512,8 @@ impl ErrorType {
             Self::FloatType {..} => "Input should be a valid number",
             Self::FloatParsing {..} => "Input should be a valid number, unable to parse string as a number",
             Self::BytesType {..} => "Input should be a valid bytes",
-            Self::BytesTooShort {..} => "Data should have at least {min_length} bytes",
-            Self::BytesTooLong {..} => "Data should have at most {max_length} bytes",
+            Self::BytesTooShort {..} => "Data should have at least {min_length} byte{expected_plural}",
+            Self::BytesTooLong {..} => "Data should have at most {max_length} byte{expected_plural}",
             Self::ValueError {..} => "Value error, {error}",
             Self::AssertionError {..} => "Assertion failed, {error}",
             Self::CustomError {..} => "",  // custom errors are handled separately
@@ -552,16 +552,16 @@ impl ErrorType {
             Self::UrlType {..} => "URL input should be a string or URL",
             Self::UrlParsing {..} => "Input should be a valid URL, {error}",
             Self::UrlSyntaxViolation {..} => "Input violated strict URL syntax rules, {error}",
-            Self::UrlTooLong {..} => "URL should have at most {max_length} characters",
+            Self::UrlTooLong {..} => "URL should have at most {max_length} character{expected_plural}",
             Self::UrlScheme {..} => "URL scheme should be {expected_schemes}",
             Self::UuidType {..} => "UUID input should be a string, bytes or UUID object",
             Self::UuidParsing {..} => "Input should be a valid UUID, {error}",
             Self::UuidVersion {..} => "UUID version {expected_version} expected",
             Self::DecimalType {..} => "Decimal input should be an integer, float, string or Decimal object",
             Self::DecimalParsing {..} => "Input should be a valid decimal",
-            Self::DecimalMaxDigits {..} => "Decimal input should have no more than {max_digits} digits in total",
-            Self::DecimalMaxPlaces {..} => "Decimal input should have no more than {decimal_places} decimal places",
-            Self::DecimalWholeDigits {..} => "Decimal input should have no more than {whole_digits} digits before the decimal point",
+            Self::DecimalMaxDigits {..} => "Decimal input should have no more than {max_digits} digit{expected_plural} in total",
+            Self::DecimalMaxPlaces {..} => "Decimal input should have no more than {decimal_places} decimal place{expected_plural}",
+            Self::DecimalWholeDigits {..} => "Decimal input should have no more than {whole_digits} digit{expected_plural} before the decimal point",
         }
     }
 
@@ -643,13 +643,25 @@ impl ErrorType {
                 to_string_render!(tmpl, field_type, max_length, actual_length, expected_plural,)
             }
             Self::IterationError { error, .. } => render!(tmpl, error),
-            Self::StringTooShort { min_length, .. } => to_string_render!(tmpl, min_length),
-            Self::StringTooLong { max_length, .. } => to_string_render!(tmpl, max_length),
+            Self::StringTooShort { min_length, .. } => {
+                let expected_plural = plural_s(*min_length);
+                to_string_render!(tmpl, min_length, expected_plural)
+            }
+            Self::StringTooLong { max_length, .. } => {
+                let expected_plural = plural_s(*max_length);
+                to_string_render!(tmpl, max_length, expected_plural)
+            }
             Self::StringPatternMismatch { pattern, .. } => render!(tmpl, pattern),
             Self::Enum { expected, .. } => to_string_render!(tmpl, expected),
             Self::MappingType { error, .. } => render!(tmpl, error),
-            Self::BytesTooShort { min_length, .. } => to_string_render!(tmpl, min_length),
-            Self::BytesTooLong { max_length, .. } => to_string_render!(tmpl, max_length),
+            Self::BytesTooShort { min_length, .. } => {
+                let expected_plural = plural_s(*min_length);
+                to_string_render!(tmpl, min_length, expected_plural)
+            }
+            Self::BytesTooLong { max_length, .. } => {
+                let expected_plural = plural_s(*max_length);
+                to_string_render!(tmpl, max_length, expected_plural)
+            }
             Self::ValueError { error, .. } => {
                 let error = &error
                     .as_ref()
@@ -688,13 +700,25 @@ impl ErrorType {
             Self::UnionTagNotFound { discriminator, .. } => render!(tmpl, discriminator),
             Self::UrlParsing { error, .. } => render!(tmpl, error),
             Self::UrlSyntaxViolation { error, .. } => render!(tmpl, error),
-            Self::UrlTooLong { max_length, .. } => to_string_render!(tmpl, max_length),
+            Self::UrlTooLong { max_length, .. } => {
+                let expected_plural = plural_s(*max_length);
+                to_string_render!(tmpl, max_length, expected_plural)
+            }
             Self::UrlScheme { expected_schemes, .. } => render!(tmpl, expected_schemes),
             Self::UuidParsing { error, .. } => render!(tmpl, error),
             Self::UuidVersion { expected_version, .. } => to_string_render!(tmpl, expected_version),
-            Self::DecimalMaxDigits { max_digits, .. } => to_string_render!(tmpl, max_digits),
-            Self::DecimalMaxPlaces { decimal_places, .. } => to_string_render!(tmpl, decimal_places),
-            Self::DecimalWholeDigits { whole_digits, .. } => to_string_render!(tmpl, whole_digits),
+            Self::DecimalMaxDigits { max_digits, .. } => {
+                let expected_plural = plural_s(*max_digits);
+                to_string_render!(tmpl, max_digits, expected_plural)
+            }
+            Self::DecimalMaxPlaces { decimal_places, .. } => {
+                let expected_plural = plural_s(*decimal_places);
+                to_string_render!(tmpl, decimal_places, expected_plural)
+            }
+            Self::DecimalWholeDigits { whole_digits, .. } => {
+                let expected_plural = plural_s(*whole_digits);
+                to_string_render!(tmpl, whole_digits, expected_plural)
+            }
             _ => Ok(tmpl.to_string()),
         }
     }
