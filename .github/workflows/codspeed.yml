@@ -1,0 +1,75 @@
+name: codspeed
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  # `workflow_dispatch` allows CodSpeed to trigger backtest
+  # performance analysis in order to generate initial data.
+  workflow_dispatch:
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - uses: actions/cache@v3
+        id: cache-py
+        name: cache python
+        with:
+          path: ${{ env.pythonLocation }}
+          key: >
+            py-v2
+            ${{ env.pythonLocation }}
+            ${{ hashFiles('tests/requirements.txt') }}
+            ${{ hashFiles('pyproject.toml') }}
+
+      - run: pip install -r tests/requirements.txt
+        if: steps.cache-py.outputs.cache-hit != 'true'
+
+      - run: pip uninstall pytest-speed -y
+        if: steps.cache-py.outputs.cache-hit != 'true'
+
+      - run: pip install pytest-benchmark==4.0.0
+        if: steps.cache-py.outputs.cache-hit != 'true'
+
+      - name: install rust stable
+        id: rust-toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools
+
+      - name: cache rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Compile pydantic-core for profiling
+        run: |
+          pip install -e . --config-settings=build-args='--verbose' -v
+        env:
+          CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
+          RUSTFLAGS: "-Cprofile-generate=${{ github.workspace }}/profdata"
+
+      - name: Gather pgo data
+        run: pytest tests/benchmarks
+
+      - name: Prepare merged pgo data
+        run: rustup run stable bash -c '$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-profdata merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata'
+
+      - name: Compile pydantic for benchmarking
+        run: |
+          pip install -e . --config-settings=build-args='--verbose' -v
+        env:
+          CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
+          RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"
+
+      - name: Run CodSpeed benchmarks
+        uses: CodSpeedHQ/action@v1
+        with:
+          run: pytest tests/benchmarks/ --codspeed
