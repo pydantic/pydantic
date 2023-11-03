@@ -4763,7 +4763,7 @@ type is performed.</p>
 <h2 id="uuid">UUID<a class="headerlink" href="#uuid" title="Permanent link">&para;</a></h2>
 <p>For UUID, Pydantic tries to use the type itself for validation by passing the value to <code>UUID(v)</code>.
 There's a fallback to <code>UUID(bytes=v)</code> for <code>bytes</code> and <code>bytearray</code>.</p>
-<p>In case you want to constrained the UUID version, you can check the following types:</p>
+<p>In case you want to constrain the UUID version, you can check the following types:</p>
 <ul>
 <li><a class="autorefs autorefs-internal" href="../types/#pydantic.types.UUID1"><code>UUID1</code></a>: requires UUID version 1.</li>
 <li><a class="autorefs autorefs-internal" href="../types/#pydantic.types.UUID3"><code>UUID3</code></a>: requires UUID version 3.</li>
