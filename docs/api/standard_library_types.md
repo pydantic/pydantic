@@ -765,7 +765,7 @@ See [Network Types](../api/networks.md) for other custom IP address types.
 For UUID, Pydantic tries to use the type itself for validation by passing the value to `UUID(v)`.
 There's a fallback to `UUID(bytes=v)` for `bytes` and `bytearray`.
 
-In case you want to constrained the UUID version, you can check the following types:
+In case you want to constrain the UUID version, you can check the following types:
 
 * [`UUID1`][pydantic.types.UUID1]: requires UUID version 1.
 * [`UUID3`][pydantic.types.UUID3]: requires UUID version 3.
@@ -871,17 +871,25 @@ print(type(User(id='123', age='45').id))
 
 ### Discriminated Unions (a.k.a. Tagged Unions)
 
-When `Union` is used with multiple submodels, you sometimes know exactly which submodel needs to
-be checked and validated and want to enforce this.
-To do that you can set the same field - let's call it `my_discriminator` - in each of the submodels
-with a discriminated value, which is one (or many) `Literal` value(s).
-For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
+We can use discriminated unions to more efficiently validate `Union` types.
+Discriminated unions can be used to validate `Union` types with multiple models, or combinations of
+models and primitive types.
 
 Setting a discriminated union has many benefits:
 
 - validation is faster since it is only attempted against one model
 - only one explicit error is raised in case of failure
 - the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#discriminator-object)
+
+#### Discriminated Unions with `str` discriminators
+Frequently, in the case of a `Union` with multiple models,
+there is a common field to all members of the union that can be used to distinguish
+which union case the data should be validated against; this is referred to as the "discriminator" in
+[OpenAPI](https://swagger.io/docs/specification/data-models/inheritance-and-polymorphism/).
+To validate models based on that information you can set the same field - let's call it `my_discriminator` -
+in each of the models with a discriminated value, which is one (or many) `Literal` value(s).
+For your `Union`, you can set the discriminator in its value: `Field(discriminator='my_discriminator')`.
+
 
 ```py requires="3.8"
 from typing import Literal, Union
@@ -922,9 +930,130 @@ except ValidationError as e:
     """
 ```
 
+#### Discriminated Unions with `CallableDiscriminator` discriminators
+In the case of a `Union` with multiple models, sometimes there isn't a single uniform field
+across all models that you can use as a discriminator. This is the perfect use case for the `CallableDiscriminator` approach.
+
+```py requires="3.8"
+from typing import Any, Literal, Union
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, CallableDiscriminator, Tag
+
+
+class Pie(BaseModel):
+    time_to_cook: int
+    num_ingredients: int
+
+
+class ApplePie(Pie):
+    fruit: Literal['apple'] = 'apple'
+
+
+class PumpkinPie(Pie):
+    filling: Literal['pumpkin'] = 'pumpkin'
+
+
+def get_discriminator_value(v: Any) -> str:
+    if isinstance(v, dict):
+        return v.get('fruit', v.get('filling'))
+    return getattr(v, 'fruit', getattr(v, 'filling', None))
+
+
+class ThanksgivingDinner(BaseModel):
+    dessert: Annotated[
+        Union[
+            Annotated[ApplePie, Tag('apple')],
+            Annotated[PumpkinPie, Tag('pumpkin')],
+        ],
+        CallableDiscriminator(get_discriminator_value),
+    ]
+
+
+apple_variation = ThanksgivingDinner.model_validate(
+    {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
+)
+print(repr(apple_variation))
+"""
+ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
+"""
+
+pumpkin_variation = ThanksgivingDinner.model_validate(
+    {
+        'dessert': {
+            'filling': 'pumpkin',
+            'time_to_cook': 40,
+            'num_ingredients': 6,
+        }
+    }
+)
+print(repr(pumpkin_variation))
+"""
+ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
+"""
+```
+
+`CallableDiscriminators` can also be used to validate `Union` types with combinations of models and primitive types.
+
+For example:
+
+```py requires="3.8"
+from typing import Any, Union
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, CallableDiscriminator, Tag
+
+
+def model_x_discriminator(v: Any) -> str:
+    if isinstance(v, str):
+        return 'str'
+    if isinstance(v, (dict, BaseModel)):
+        return 'model'
+
+
+class DiscriminatedModel(BaseModel):
+    x: Annotated[
+        Union[
+            Annotated[str, Tag('str')],
+            Annotated['DiscriminatedModel', Tag('model')],
+        ],
+        CallableDiscriminator(
+            model_x_discriminator,
+            custom_error_type='invalid_union_member',
+            custom_error_message='Invalid union member',
+            custom_error_context={'discriminator': 'str_or_model'},
+        ),
+    ]
+
+
+data = {'x': {'x': {'x': 'a'}}}
+m = DiscriminatedModel.model_validate(data)
+assert m == (
+    DiscriminatedModel(x=DiscriminatedModel(x=DiscriminatedModel(x='a')))
+)
+assert m.model_dump() == data
+```
+
 !!! note
     Using the [`typing.Annotated` fields syntax](../concepts/json_schema.md#typingannotated-fields) can be handy to regroup
-    the `Union` and `discriminator` information. See below for an example!
+    the `Union` and `discriminator` information. See the next example for more details.
+
+    There are a few ways to set a discriminator for a field, all varying slightly in syntax.
+
+    For `str` discriminators:
+    ```
+    some_field: Union[...] = Field(discriminator='my_discriminator'
+    some_field: Annotated[Union[...], Field(discriminator='my_discriminator')]
+    ```
+
+    For `CallableDiscriminator` discriminators:
+    ```
+    some_field: Union[...] = Field(discriminator=CallableDiscriminator(...))
+    some_field: Annotated[Union[...], CallableDiscriminator(...)]
+    some_field: Annotated[Union[...], Field(discriminator=CallableDiscriminator(...))]
+    ```
 
 !!! warning
     Discriminated unions cannot be used with only a single variant, such as `Union[Cat]`.
