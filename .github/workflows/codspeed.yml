@@ -24,7 +24,7 @@ jobs:
       - name: install deps
         run: |
           pdm venv create --with-pip --force $PYTHON
-          pdm install -G testing -G testing-extra -G email -G codspeed
+          pdm install -G testing -G testing-extra -G email
 
       - name: Run CodSpeed benchmarks
         uses: CodSpeedHQ/action@v1
