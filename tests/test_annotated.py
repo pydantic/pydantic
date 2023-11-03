@@ -6,7 +6,13 @@ from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt, Predicate
 from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
+from pydantic import (
+    BaseModel,
+    Field,
+    GetCoreSchemaHandler,
+    TypeAdapter,
+    ValidationError,
+)
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
 
@@ -144,7 +150,12 @@ def test_config_field_info():
         a: Annotated[int, Field(description='descr', json_schema_extra={'foobar': 'hello'})]
 
     assert Foo.model_json_schema(by_alias=True)['properties'] == {
-        'a': {'title': 'A', 'description': 'descr', 'foobar': 'hello', 'type': 'integer'},
+        'a': {
+            'title': 'A',
+            'description': 'descr',
+            'foobar': 'hello',
+            'type': 'integer',
+        },
     }
 
 
@@ -260,7 +271,13 @@ def test_get_pydantic_core_schema_source_type() -> None:
 def test_merge_field_infos_type_adapter() -> None:
     ta = TypeAdapter(
         Annotated[
-            int, Field(gt=0), Field(lt=100), Field(gt=1), Field(description='abc'), Field(3), Field(description=None)
+            int,
+            Field(gt=0),
+            Field(lt=100),
+            Field(gt=1),
+            Field(description='abc'),
+            Field(3),
+            Field(description=None),
         ]
     )
 
@@ -276,7 +293,13 @@ def test_merge_field_infos_type_adapter() -> None:
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'greater_than', 'loc': (), 'msg': 'Input should be greater than 1', 'input': 1, 'ctx': {'gt': 1}}
+        {
+            'type': 'greater_than',
+            'loc': (),
+            'msg': 'Input should be greater than 1',
+            'input': 1,
+            'ctx': {'gt': 1},
+        }
     ]
 
     # insert_assert(ta.json_schema())
@@ -292,13 +315,25 @@ def test_merge_field_infos_type_adapter() -> None:
 def test_merge_field_infos_model() -> None:
     class Model(BaseModel):
         x: Annotated[
-            int, Field(gt=0), Field(lt=100), Field(gt=1), Field(description='abc'), Field(3), Field(description=None)
+            int,
+            Field(gt=0),
+            Field(lt=100),
+            Field(gt=1),
+            Field(description='abc'),
+            Field(3),
+            Field(description=None),
         ] = Field(5)
 
     # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
         'properties': {
-            'x': {'default': 5, 'exclusiveMaximum': 100, 'exclusiveMinimum': 1, 'title': 'X', 'type': 'integer'}
+            'x': {
+                'default': 5,
+                'exclusiveMaximum': 100,
+                'exclusiveMinimum': 1,
+                'title': 'X',
+                'type': 'integer',
+            }
         },
         'title': 'Model',
         'type': 'object',
@@ -317,7 +352,13 @@ def test_model_dump_doesnt_dump_annotated_dunder():
 
 
 def test_merge_field_infos_ordering() -> None:
-    TheType = Annotated[int, AfterValidator(lambda x: x), Field(le=2), AfterValidator(lambda x: x * 2), Field(lt=4)]
+    TheType = Annotated[
+        int,
+        AfterValidator(lambda x: x),
+        Field(le=2),
+        AfterValidator(lambda x: x * 2),
+        Field(lt=4),
+    ]
 
     class Model(BaseModel):
         x: TheType
@@ -328,7 +369,13 @@ def test_merge_field_infos_ordering() -> None:
         Model(x=2)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'less_than', 'loc': ('x',), 'msg': 'Input should be less than 4', 'input': 2, 'ctx': {'lt': 4}}
+        {
+            'type': 'less_than',
+            'loc': ('x',),
+            'msg': 'Input should be less than 4',
+            'input': 2,
+            'ctx': {'lt': 4},
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -354,7 +401,12 @@ def test_validate_float_inf_nan_python() -> None:
     # insert_assert(exc_info.value.errors(include_url=False))
     # TODO: input should be float('nan'), this seems like a subtle bug in pydantic-core
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': 1.0}
+        {
+            'type': 'finite_number',
+            'loc': (),
+            'msg': 'Input should be a finite number',
+            'input': 1.0,
+        }
     ]
 
 
@@ -400,3 +452,11 @@ def test_annotated_field_info_not_lost_from_forwardref():
             'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
         }
     ]
+
+
+def test_annotated_private_field_with_default():
+    class AnnotatedPrivateFieldModel(BaseModel):
+        _foo: Annotated[int, Field(default=1)]
+
+    model = AnnotatedPrivateFieldModel()
+    assert model._foo == 1

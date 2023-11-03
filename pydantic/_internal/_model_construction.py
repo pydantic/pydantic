@@ -16,8 +16,16 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..plugin._schema_validator import create_schema_validator
 from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
-from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
+from ._decorators import (
+    DecoratorInfos,
+    PydanticDescriptorProxy,
+    get_attribute_from_bases,
+)
+from ._fields import (
+    collect_model_fields,
+    is_valid_field_name,
+    is_valid_privateattr_name,
+)
 from ._generate_schema import GenerateSchema, generate_pydantic_signature
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_val_ser import MockValSer, set_model_mocks
@@ -84,7 +92,11 @@ class ModelMetaclass(ABCMeta):
         # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine whether the `__new__`
         # call we're in the middle of is for the `BaseModel` class.
         if bases:
-            base_field_names, class_vars, base_private_attributes = mcs._collect_bases_data(bases)
+            (
+                base_field_names,
+                class_vars,
+                base_private_attributes,
+            ) = mcs._collect_bases_data(bases)
 
             config_wrapper = ConfigWrapper.for_model(bases, namespace, kwargs)
             namespace['model_config'] = config_wrapper.config_dict
@@ -108,7 +120,10 @@ class ModelMetaclass(ABCMeta):
                     namespace['model_post_init'] = init_private_attributes
 
             namespace['__class_vars__'] = class_vars
-            namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
+            namespace['__private_attributes__'] = {
+                **base_private_attributes,
+                **private_attributes,
+            }
 
             if config_wrapper.frozen:
                 set_default_hash_func(namespace, bases)
@@ -163,7 +178,9 @@ class ModelMetaclass(ABCMeta):
                     'parameters': parameters,
                 }
 
-            cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
+            cls.__pydantic_complete__ = (
+                False  # Ensure this specific class gets completed
+            )
 
             # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
             # for attributes not in `new_namespace` (e.g. private attributes)
@@ -241,10 +258,14 @@ class ModelMetaclass(ABCMeta):
 
     @property
     @deprecated(
-        'The `__fields__` attribute is deprecated, use `model_fields` instead.', category=PydanticDeprecatedSince20
+        'The `__fields__` attribute is deprecated, use `model_fields` instead.',
+        category=PydanticDeprecatedSince20,
     )
     def __fields__(self) -> dict[str, FieldInfo]:
-        warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
+        warnings.warn(
+            'The `__fields__` attribute is deprecated, use `model_fields` instead.',
+            DeprecationWarning,
+        )
         return self.model_fields  # type: ignore
 
 
@@ -365,7 +386,8 @@ def inspect_namespace(  # noqa C901
                 )
             elif isinstance(value, FieldInfo):
                 raise PydanticUserError(
-                    f'Field {var_name!r} requires a type annotation', code='model-field-missing-annotation'
+                    f'Field {var_name!r} requires a type annotation',
+                    code='model-field-missing-annotation',
                 )
             else:
                 raise PydanticUserError(
@@ -374,7 +396,6 @@ def inspect_namespace(  # noqa C901
                     f"error by annotating it as a `ClassVar` or updating `model_config['ignored_types']`.",
                     code='model-field-missing-annotation',
                 )
-
     for ann_name, ann_type in raw_annotations.items():
         if (
             is_valid_privateattr_name(ann_name)
@@ -384,6 +405,9 @@ def inspect_namespace(  # noqa C901
             and ann_type not in all_ignored_types
             and getattr(ann_type, '__module__', None) != 'functools'
         ):
+            if ann_type.__metadata__[0] and isinstance(ann_type.__metadata__[0], ModelPrivateAttr):
+                private_attributes[ann_name] = ann_type.__metadata__[0]
+                continue
             private_attributes[ann_name] = PrivateAttr()
 
     return private_attributes
@@ -405,7 +429,10 @@ def set_default_hash_func(namespace: dict[str, Any], bases: tuple[type[Any], ...
 
 
 def set_model_fields(
-    cls: type[BaseModel], bases: tuple[type[Any], ...], config_wrapper: ConfigWrapper, types_namespace: dict[str, Any]
+    cls: type[BaseModel],
+    bases: tuple[type[Any], ...],
+    config_wrapper: ConfigWrapper,
+    types_namespace: dict[str, Any],
 ) -> None:
     """Collect and set `cls.model_fields` and `cls.__class_vars__`.
 
@@ -513,13 +540,16 @@ def complete_model_class(
 
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute(
-        '__signature__', generate_model_signature(cls.__init__, cls.model_fields, config_wrapper)
+        '__signature__',
+        generate_model_signature(cls.__init__, cls.model_fields, config_wrapper),
     )
     return True
 
 
 def generate_model_signature(
-    init: Callable[..., None], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper
+    init: Callable[..., None],
+    fields: dict[str, FieldInfo],
+    config_wrapper: ConfigWrapper,
 ) -> Signature:
     """Generate signature for model based on its fields.
 
