@@ -405,7 +405,7 @@ def inspect_namespace(  # noqa C901
             and ann_type not in all_ignored_types
             and getattr(ann_type, '__module__', None) != 'functools'
         ):
-            if ann_type.__metadata__[0] and isinstance(ann_type.__metadata__[0], ModelPrivateAttr):
+            if isinstance(ann_type, typing._AnnotatedAlias) and isinstance(ann_type.__metadata__[0], ModelPrivateAttr):
                 private_attributes[ann_name] = ann_type.__metadata__[0]
                 continue
             private_attributes[ann_name] = PrivateAttr()
