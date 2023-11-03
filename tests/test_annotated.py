@@ -8,6 +8,7 @@ from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
 from pydantic.errors import PydanticSchemaGenerationError
+from pydantic.fields import PrivateAttr
 from pydantic.functional_validators import AfterValidator
 
 NO_VALUE = object()
@@ -400,3 +401,11 @@ def test_annotated_field_info_not_lost_from_forwardref():
             'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
         }
     ]
+
+
+def test_annotated_private_field_with_default():
+    class AnnotatedPrivateFieldModel(BaseModel):
+        _foo: Annotated[int, PrivateAttr(default=1)]
+
+    model = AnnotatedPrivateFieldModel()
+    assert model._foo == 1
