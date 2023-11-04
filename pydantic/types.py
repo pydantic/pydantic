@@ -1495,8 +1495,6 @@ class _SecretField(Generic[SecretType]):
 
 
 def _secret_display(value: str | bytes) -> str:
-    if isinstance(value, bytes):
-        value = value.decode()
     return '**********' if value else ''
 
 

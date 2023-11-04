@@ -4174,7 +4174,9 @@ def test_secretbytes():
         empty_password: SecretBytes
 
     # Initialize the model.
-    f = Foobar(password=b'wearebytes', empty_password=b'')
+    # Use bytes that can't be decoded with UTF8 (https://github.com/pydantic/pydantic/issues/7971)
+    password = b'\x89PNG\r\n\x1a\n'
+    f = Foobar(password=password, empty_password=b'')
 
     # Assert correct types.
     assert f.password.__class__.__name__ == 'SecretBytes'
@@ -4187,7 +4189,7 @@ def test_secretbytes():
     assert repr(f.empty_password) == "SecretBytes(b'')"
 
     # Assert retrieval of secret value is correct
-    assert f.password.get_secret_value() == b'wearebytes'
+    assert f.password.get_secret_value() == password
     assert f.empty_password.get_secret_value() == b''
 
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
