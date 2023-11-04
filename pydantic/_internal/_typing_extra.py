@@ -233,7 +233,9 @@ def is_unsupported_types_for_union_error(e: TypeError) -> bool:
     return str(e).startswith('unsupported operand type(s) for |: ')
 
 
-class UnionTransformer(ast.NodeTransformer):
+class _UnionTransformer(ast.NodeTransformer):
+    """Transforms `X | Y` into `Union[X, Y]` if `X | Y` is not supported."""
+
     def __init__(self, globalns: dict[str, Any] | None, localns: dict[str, Any] | None):
         # This logic for handling Nones is copied from typing.ForwardRef._evaluate
         if globalns is None and localns is None:
@@ -260,23 +262,23 @@ class UnionTransformer(ast.NodeTransformer):
 
     def visit_BinOp(self, node) -> ast.BinOp | ast.Subscript:
         if isinstance(node.op, ast.BitOr):
-            left = self.visit(node.left)
-            right = self.visit(node.right)
-            left_val = self.eval_type(left)
-            right_val = self.eval_type(right)
+            left_node = self.visit(node.left)
+            right_node = self.visit(node.right)
+            left_val = self.eval_type(left_node)
+            right_val = self.eval_type(right_node)
             try:
                 _ = left_val | right_val
             except TypeError as e:
                 if not is_unsupported_types_for_union_error(e):
                     raise
-                # Replace `left | right` with `Union[left, right]`
+                # Replace `left | right` with `typing.Union[left, right]`
                 replacement = ast.Subscript(
                     value=ast.Attribute(
                         value=ast.Name(id=self.typing_name, ctx=ast.Load()),
                         attr='Union',
                         ctx=ast.Load(),
                     ),
-                    slice=ast.Index(value=ast.Tuple(elts=[left, right], ctx=ast.Load())),
+                    slice=ast.Index(value=ast.Tuple(elts=[left_node, right_node], ctx=ast.Load())),
                     ctx=ast.Load(),
                 )
                 return ast.fix_missing_locations(replacement)
@@ -287,6 +289,10 @@ class UnionTransformer(ast.NodeTransformer):
 def eval_type_backport(
     value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
 ) -> Any:
+    """Like `typing._eval_type`, but lets older Python versions use newer typing features.
+    Currently this just means that `X | Y` is converted to `Union[X, Y]` if `X | Y` is not supported.
+    This would also be the place to add support for `list[int]` instead of `List[int]` etc.
+    """
     try:
         return typing._eval_type(  # type: ignore
             value, globalns, localns
@@ -295,7 +301,7 @@ def eval_type_backport(
         if not (isinstance(value, typing.ForwardRef) and is_unsupported_types_for_union_error(e)):
             raise
         tree = ast.parse(value.__forward_arg__, mode='eval')
-        transformer = UnionTransformer(globalns, localns)
+        transformer = _UnionTransformer(globalns, localns)
         tree = transformer.visit(tree)
         return transformer.eval_type(tree)
 
