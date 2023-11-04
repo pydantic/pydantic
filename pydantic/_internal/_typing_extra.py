@@ -321,7 +321,7 @@ def get_function_type_hints(
         elif isinstance(value, str):
             value = _make_forward_ref(value)
 
-        type_hints[name] = eval_type_backport(value, globalns, types_namespace)  # type: ignore
+        type_hints[name] = eval_type_backport(value, globalns, types_namespace)
 
     return type_hints
 
@@ -436,7 +436,7 @@ else:
                     if isinstance(value, str):
                         value = _make_forward_ref(value, is_argument=False, is_class=True)
 
-                    value = eval_type_backport(value, base_globals, base_locals)  # type: ignore
+                    value = eval_type_backport(value, base_globals, base_locals)
                     hints[name] = value
             return (
                 hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}  # type: ignore
@@ -476,7 +476,7 @@ else:
                     is_argument=not isinstance(obj, types.ModuleType),
                     is_class=False,
                 )
-            value = eval_type_backport(value, globalns, localns)  # type: ignore
+            value = eval_type_backport(value, globalns, localns)
             if name in defaults and defaults[name] is None:
                 value = typing.Optional[value]
             hints[name] = value
