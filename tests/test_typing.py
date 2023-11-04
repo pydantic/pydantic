@@ -67,16 +67,16 @@ def test_is_none_type():
 
 
 @pytest.mark.parametrize(
-    'union_gen', [lambda: typing.Union[int, str], lambda: int | str, eval_type_backport('int | str')]
+    'union',
+    [
+        typing.Union[int, str],
+        eval_type_backport(typing.ForwardRef('int | str')),
+        *([int | str] if sys.version_info >= (3, 10) else []),
+    ],
 )
-def test_is_union(union_gen):
-    try:
-        union = union_gen()
-    except TypeError:
-        pytest.skip('not supported in this python version')
-    else:
-        origin = get_origin(union)
-        assert origin_is_union(origin)
+def test_is_union(union):
+    origin = get_origin(union)
+    assert origin_is_union(origin)
 
 
 def test_is_literal_with_typing_extension_literal():
