@@ -229,7 +229,7 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         return value
 
 
-def node_to_ref(node: ast.AST):
+def node_to_ref(node: ast.AST) -> typing.ForwardRef:
     if not isinstance(node, ast.Expression):
         node = ast.copy_location(ast.Expression(node), node)
     ref = typing.ForwardRef(ast.dump(node))
@@ -253,12 +253,12 @@ class UnionTransformer(ast.NodeTransformer):
         self.globalns = globalns
         self.localns = {**localns, self.typing_name: typing}
 
-    def eval_type(self, node):
+    def eval_type(self, node: ast.AST) -> Any:
         return typing._eval_type(  # type: ignore
             node_to_ref(node), self.globalns, self.localns
         )
 
-    def visit_BinOp(self, node):
+    def visit_BinOp(self, node) -> ast.BinOp | ast.Subscript:
         if isinstance(node.op, ast.BitOr):
             left = self.visit(node.left)
             right = self.visit(node.right)
@@ -267,6 +267,7 @@ class UnionTransformer(ast.NodeTransformer):
             try:
                 left_val | right_val  # type: ignore
             except TypeError:
+                # Replace `left | right` with `Union[left, right]`
                 replacement = ast.Subscript(
                     value=ast.Attribute(
                         value=ast.Name(id=self.typing_name, ctx=ast.Load()),
@@ -281,9 +282,13 @@ class UnionTransformer(ast.NodeTransformer):
         return node
 
 
-def eval_type_backport(value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None):
+def eval_type_backport(
+    value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
+) -> Any:
     try:
-        return typing._eval_type(value, globalns, localns)  # type: ignore
+        return typing._eval_type(  # type: ignore
+            value, globalns, localns
+        )
     except TypeError:
         if not isinstance(value, typing.ForwardRef):
             raise
