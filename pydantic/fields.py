@@ -963,6 +963,7 @@ class ComputedFieldInfo:
         title: Title of the computed field as in OpenAPI document, should be a short summary.
         description: Description of the computed field as in OpenAPI document.
         examples: Example values of the computed field as in OpenAPI document.
+        json_schema_extra: Dictionary of extra JSON schema properties.
         repr: A boolean indicating whether or not to include the field in the __repr__ output.
     """
 
@@ -974,6 +975,7 @@ class ComputedFieldInfo:
     title: str | None
     description: str | None
     examples: list[Any] | None
+    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
     repr: bool
 
 
@@ -990,6 +992,7 @@ def computed_field(
     title: str | None = None,
     description: str | None = None,
     examples: list[Any] | None = None,
+    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool = True,
     return_type: Any = PydanticUndefined,
 ) -> typing.Callable[[PropertyT], PropertyT]:
@@ -1019,8 +1022,9 @@ def computed_field(
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
-    examples: list[Any] | None = None,
     description: str | None = None,
+    examples: list[Any] | None = None,
+    json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None = None,
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
@@ -1148,6 +1152,7 @@ def computed_field(
         description: Description to use when including this computed field in JSON Schema, defaults to the function's
             docstring
         examples: Example values to use when including this computed field in JSON Schema
+        json_schema_extra: Dictionary of extra JSON schema properties.
         repr: whether to include this computed field in model repr.
             Default is `False` for private properties and `True` for public properties.
         return_type: optional return for serialization logic to expect when serializing to JSON, if included
@@ -1174,7 +1179,9 @@ def computed_field(
         else:
             repr_ = repr
 
-        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, examples, repr_)
+        dec_info = ComputedFieldInfo(
+            f, return_type, alias, alias_priority, title, description, examples, json_schema_extra, repr_
+        )
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:

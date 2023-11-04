@@ -1556,6 +1556,10 @@ class GenerateSchema:
             if examples is not None:
                 json_schema['examples'] = to_jsonable_python(examples)
 
+            json_schema_extra = d.info.json_schema_extra
+            if json_schema_extra is not None:
+                add_json_schema_extra(json_schema, json_schema_extra)
+
             return json_schema
 
         metadata = build_metadata_dict(js_annotation_functions=[set_computed_field_metadata])
