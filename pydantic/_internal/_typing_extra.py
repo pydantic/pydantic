@@ -229,6 +229,10 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         return value
 
 
+def is_unsupported_types_for_union_error(e: TypeError):
+    return str(e).startswith('unsupported operand type(s) for |: ')
+
+
 class UnionTransformer(ast.NodeTransformer):
     def __init__(self, globalns: dict[str, Any] | None, localns: dict[str, Any] | None):
         # This logic for handling Nones is copied from typing.ForwardRef._evaluate
@@ -262,7 +266,9 @@ class UnionTransformer(ast.NodeTransformer):
             right_val = self.eval_type(right)
             try:
                 left_val | right_val  # type: ignore
-            except TypeError:
+            except TypeError as e:
+                if not is_unsupported_types_for_union_error(e):
+                    raise
                 # Replace `left | right` with `Union[left, right]`
                 replacement = ast.Subscript(
                     value=ast.Attribute(
@@ -285,8 +291,8 @@ def eval_type_backport(
         return typing._eval_type(  # type: ignore
             value, globalns, localns
         )
-    except TypeError:
-        if not isinstance(value, typing.ForwardRef):
+    except TypeError as e:
+        if not (isinstance(value, typing.ForwardRef) and is_unsupported_types_for_union_error(e)):
             raise
         tree = ast.parse(value.__forward_arg__, mode='eval')
         transformer = UnionTransformer(globalns, localns)
