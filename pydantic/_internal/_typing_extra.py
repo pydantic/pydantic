@@ -229,7 +229,7 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         return value
 
 
-def is_unsupported_types_for_union_error(e: TypeError):
+def is_unsupported_types_for_union_error(e: TypeError) -> bool:
     return str(e).startswith('unsupported operand type(s) for |: ')
 
 
@@ -265,7 +265,7 @@ class UnionTransformer(ast.NodeTransformer):
             left_val = self.eval_type(left)
             right_val = self.eval_type(right)
             try:
-                left_val | right_val  # type: ignore
+                _ = left_val | right_val
             except TypeError as e:
                 if not is_unsupported_types_for_union_error(e):
                     raise
