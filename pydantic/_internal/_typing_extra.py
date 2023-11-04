@@ -223,7 +223,7 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         value = _make_forward_ref(value, is_argument=False, is_class=True)
 
     try:
-        return eval_type_backport(value, globalns, localns)  # type: ignore
+        return eval_type_backport(value, globalns, localns)
     except NameError:
         # the point of this function is to be tolerant to this case
         return value
@@ -238,13 +238,25 @@ def node_to_ref(node: ast.AST):
 
 
 class UnionTransformer(ast.NodeTransformer):
-    def __init__(self, globalns, localns):
+    def __init__(self, globalns: dict[str, Any] | None, localns: dict[str, Any] | None):
+        # This logic for handling Nones is copied from typing.ForwardRef._evaluate
+        if globalns is None and localns is None:
+            globalns = localns = {}
+        elif globalns is None:
+            assert localns is not None
+            globalns = localns
+        elif localns is None:
+            assert globalns is not None
+            localns = globalns
+
         self.typing_name = f'typing_{uuid.uuid4().hex}'
         self.globalns = globalns
-        self.localns = {**(localns or {}), self.typing_name: typing}
+        self.localns = {**localns, self.typing_name: typing}
 
     def eval_type(self, node):
-        return typing._eval_type(node_to_ref(node), self.globalns, self.localns)  # type: ignore
+        return typing._eval_type(  # type: ignore
+            node_to_ref(node), self.globalns, self.localns
+        )
 
     def visit_BinOp(self, node):
         if isinstance(node.op, ast.BitOr):
