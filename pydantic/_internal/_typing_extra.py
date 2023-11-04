@@ -243,10 +243,10 @@ class UnionTransformer(ast.NodeTransformer):
         if globalns is None and localns is None:
             globalns = localns = {}
         elif globalns is None:
-            assert localns is not None
+            assert localns is not None  # apparently pyright doesn't infer this automatically
             globalns = localns
         elif localns is None:
-            assert globalns is not None
+            assert globalns is not None  # apparently pyright doesn't infer this automatically
             localns = globalns
 
         self.typing_name = f'typing_{uuid.uuid4().hex}'
