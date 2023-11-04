@@ -1558,6 +1558,10 @@ class GenerateSchema:
             if description is not None:
                 json_schema['description'] = description
 
+            examples = d.info.examples
+            if examples is not None:
+                json_schema['examples'] = examples
+
             return json_schema
 
         metadata = build_metadata_dict(js_annotation_functions=[set_computed_field_metadata])

@@ -962,6 +962,7 @@ class ComputedFieldInfo:
         alias_priority: priority of the alias. This affects whether an alias generator is used
         title: Title of the computed field as in OpenAPI document, should be a short summary.
         description: Description of the computed field as in OpenAPI document.
+        examples: Example values of the computed field as in OpenAPI document.
         repr: A boolean indicating whether or not to include the field in the __repr__ output.
     """
 
@@ -972,6 +973,7 @@ class ComputedFieldInfo:
     alias_priority: int | None
     title: str | None
     description: str | None
+    examples: list[Any] | None
     repr: bool
 
 
@@ -983,12 +985,13 @@ PropertyT = typing.TypeVar('PropertyT')
 @typing.overload
 def computed_field(
     *,
-    return_type: Any = PydanticUndefined,
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
     description: str | None = None,
+    examples: list[Any] | None = None,
     repr: bool = True,
+    return_type: Any = PydanticUndefined,
 ) -> typing.Callable[[PropertyT], PropertyT]:
     ...
 
@@ -1016,6 +1019,7 @@ def computed_field(
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
+    examples: list[Any] | None = None,
     description: str | None = None,
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
@@ -1140,9 +1144,10 @@ def computed_field(
         __f: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
         alias_priority: priority of the alias. This affects whether an alias generator is used
-        title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697
-        description: Description to used when including this computed field in JSON Schema, defaults to the functions
-            docstring, currently unused waiting for #4697
+        title: Title to use when including this computed field in JSON Schema
+        description: Description to use when including this computed field in JSON Schema, defaults to the function's
+            docstring
+        examples: Example values to use when including this computed field in JSON Schema
         repr: whether to include this computed field in model repr.
             Default is `False` for private properties and `True` for public properties.
         return_type: optional return for serialization logic to expect when serializing to JSON, if included
@@ -1169,7 +1174,7 @@ def computed_field(
         else:
             repr_ = repr
 
-        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, repr_)
+        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, examples, repr_)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:
