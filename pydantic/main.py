@@ -1441,7 +1441,6 @@ def create_model(  # noqa: C901
         __model_name,
         resolved_bases,
         namespace,
-        __pydantic_reset_parent_namespace__=False,
         _create_model_module=__module__,
         **kwds,
     )
