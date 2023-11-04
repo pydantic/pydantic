@@ -223,12 +223,13 @@ The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same ap
 
 ```py
 from typing import List
+from typing_extensions import Annotated
 
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import declarative_base
 
-from pydantic import BaseModel, ConfigDict, constr
+from pydantic import BaseModel, ConfigDict, StringConstraints
 
 Base = declarative_base()
 
@@ -246,9 +247,9 @@ class CompanyModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    public_key: constr(max_length=20)
-    name: constr(max_length=63)
-    domains: List[constr(max_length=255)]
+    public_key: Annotated[str, StringConstraints(max_length=20)]
+    name: Annotated[str, StringConstraints(max_length=63)]
+    domains: List[Annotated[str, StringConstraints(max_length=255)]]
 
 
 co_orm = CompanyOrm(
