@@ -229,14 +229,6 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         return value
 
 
-def node_to_ref(node: ast.AST) -> typing.ForwardRef:
-    if not isinstance(node, ast.Expression):
-        node = ast.copy_location(ast.Expression(node), node)
-    ref = typing.ForwardRef(ast.dump(node))
-    ref.__forward_code__ = compile(node, '<node>', 'eval')
-    return ref
-
-
 class UnionTransformer(ast.NodeTransformer):
     def __init__(self, globalns: dict[str, Any] | None, localns: dict[str, Any] | None):
         # This logic for handling Nones is copied from typing.ForwardRef._evaluate
@@ -254,8 +246,12 @@ class UnionTransformer(ast.NodeTransformer):
         self.localns = {**localns, self.typing_name: typing}
 
     def eval_type(self, node: ast.AST) -> Any:
+        if not isinstance(node, ast.Expression):
+            node = ast.copy_location(ast.Expression(node), node)
+        ref = typing.ForwardRef(ast.dump(node))
+        ref.__forward_code__ = compile(node, '<node>', 'eval')
         return typing._eval_type(  # type: ignore
-            node_to_ref(node), self.globalns, self.localns
+            ref, self.globalns, self.localns
         )
 
     def visit_BinOp(self, node) -> ast.BinOp | ast.Subscript:
