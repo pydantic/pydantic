@@ -347,6 +347,9 @@ def test_merge_field_infos_ordering() -> None:
 
 
 def test_validate_float_inf_nan_python() -> None:
+    ta = TypeAdapter(Annotated[float, AfterValidator(lambda x: x * 3), Field(allow_inf_nan=False)])
+    assert ta.validate_python(2.0) == 6.0
+
     ta = TypeAdapter(Annotated[float, AfterValidator(lambda _: float('nan')), Field(allow_inf_nan=False)])
 
     with pytest.raises(ValidationError) as exc_info:
