@@ -409,6 +409,19 @@ def test_annotated_field_info_not_lost_from_forwardref():
 def test_annotated_private_field_with_default():
     class AnnotatedPrivateFieldModel(BaseModel):
         _foo: Annotated[int, PrivateAttr(default=1)]
+        _bar: Annotated[str, 'hello']
 
     model = AnnotatedPrivateFieldModel()
     assert model._foo == 1
+
+    assert model.__pydantic_private__ == {'_foo': 1}
+
+    with pytest.raises(AttributeError):
+        assert model._bar
+
+    model._bar = 'world'
+    assert model._bar == 'world'
+    assert model.__pydantic_private__ == {'_foo': 1, '_bar': 'world'}
+
+    with pytest.raises(AttributeError):
+        assert model.bar
