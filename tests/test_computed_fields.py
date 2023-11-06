@@ -73,7 +73,12 @@ def test_computed_fields_json_schema():
             """An awesome area"""
             return self.width * self.length
 
-        @computed_field(title='Pikarea', description='Another area')
+        @computed_field(
+            title='Pikarea',
+            description='Another area',
+            examples=[100, 200],
+            json_schema_extra={'foo': 42},
+        )
         @property
         def area2(self) -> int:
             return self.width * self.length
@@ -103,6 +108,8 @@ def test_computed_fields_json_schema():
             'area2': {
                 'title': 'Pikarea',
                 'description': 'Another area',
+                'examples': [100, 200],
+                'foo': 42,
                 'type': 'integer',
                 'readOnly': True,
             },

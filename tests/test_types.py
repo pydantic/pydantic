@@ -47,6 +47,7 @@ from pydantic import (
     UUID3,
     UUID4,
     UUID5,
+    AfterValidator,
     AwareDatetime,
     Base64Bytes,
     Base64Str,
@@ -89,6 +90,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    Tag,
     TypeAdapter,
     ValidationError,
     conbytes,
@@ -3058,20 +3060,21 @@ ANY_THING = object()
             ],
         ),
         (dict(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
-        (
+        pytest.param(
             dict(max_digits=2, decimal_places=1),
             Decimal('0.99'),
             [
                 {
                     'type': 'decimal_max_places',
                     'loc': ('foo',),
-                    'msg': 'Decimal input should have no more than 1 decimal places',
+                    'msg': 'Decimal input should have no more than 1 decimal place',
                     'input': Decimal('0.99'),
                     'ctx': {
                         'decimal_places': 1,
                     },
                 }
             ],
+            marks=pytest.mark.xfail(reason='Needs new release of pydantic-core'),
         ),
         (
             dict(max_digits=3, decimal_places=1),
@@ -4174,7 +4177,9 @@ def test_secretbytes():
         empty_password: SecretBytes
 
     # Initialize the model.
-    f = Foobar(password=b'wearebytes', empty_password=b'')
+    # Use bytes that can't be decoded with UTF8 (https://github.com/pydantic/pydantic/issues/7971)
+    password = b'\x89PNG\r\n\x1a\n'
+    f = Foobar(password=password, empty_password=b'')
 
     # Assert correct types.
     assert f.password.__class__.__name__ == 'SecretBytes'
@@ -4187,7 +4192,7 @@ def test_secretbytes():
     assert repr(f.empty_password) == "SecretBytes(b'')"
 
     # Assert retrieval of secret value is correct
-    assert f.password.get_secret_value() == b'wearebytes'
+    assert f.password.get_secret_value() == password
     assert f.empty_password.get_secret_value() == b''
 
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
@@ -6026,6 +6031,60 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
         value: str
 
     assert Model.model_validate_json(f'{{"value": {number}}}').model_dump() == {'value': expected_str}
+
+
+def test_union_tags_in_errors():
+    DoubledList = Annotated[List[int], AfterValidator(lambda x: x * 2)]
+    StringsMap = Dict[str, str]
+
+    adapter = TypeAdapter(Union[DoubledList, StringsMap])
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python(['a'])
+
+    assert '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]' in str(exc_info)  # yuck
+    # the loc's are bad here:
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('function-after[<lambda>(), list[int]]', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('dict[str,str]',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+        },
+    ]
+
+    tag_adapter = TypeAdapter(
+        Union[Annotated[DoubledList, Tag('DoubledList')], Annotated[StringsMap, Tag('StringsMap')]]
+    )
+    with pytest.raises(ValidationError) as exc_info:
+        tag_adapter.validate_python(['a'])
+
+    assert '2 validation errors for union[DoubledList,StringsMap]' in str(exc_info)  # nice
+    # the loc's are good here:
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('DoubledList', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('StringsMap',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+        },
+    ]
 
 
 def test_json_value():
