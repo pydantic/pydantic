@@ -3984,11 +3984,6 @@ positionally, instead of using a keyword argument.</p>
 <span class="n">DataT</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;DataT&#39;</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">Error</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">code</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">message</span><span class="p">:</span> <span class="nb">str</span>
-
-
 <span class="k">class</span> <span class="nc">DataModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
     <span class="n">people</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
@@ -3999,7 +3994,6 @@ positionally, instead of using a keyword argument.</p>
 
 
 <span class="n">data</span> <span class="o">=</span> <span class="n">DataModel</span><span class="p">(</span><span class="n">numbers</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">people</span><span class="o">=</span><span class="p">[])</span>
-<span class="n">error</span> <span class="o">=</span> <span class="n">Error</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="mi">404</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s1">&#39;Not found&#39;</span><span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Response</span><span class="p">[</span><span class="nb">int</span><span class="p">](</span><span class="n">data</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 <span class="c1">#&gt; data=1</span>
