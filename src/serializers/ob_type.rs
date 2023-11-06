@@ -333,6 +333,7 @@ fn is_dataclass(op_value: Option<&PyAny>) -> bool {
         value
             .hasattr(intern!(value.py(), "__dataclass_fields__"))
             .unwrap_or(false)
+            && !value.is_instance_of::<PyType>()
     } else {
         false
     }
@@ -343,6 +344,7 @@ fn is_pydantic_serializable(op_value: Option<&PyAny>) -> bool {
         value
             .hasattr(intern!(value.py(), "__pydantic_serializer__"))
             .unwrap_or(false)
+            && !value.is_instance_of::<PyType>()
     } else {
         false
     }
