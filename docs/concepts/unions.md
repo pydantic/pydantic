@@ -11,7 +11,9 @@ To solve these problems, Pydantic supports three fundamental approaches to valid
 2. [smart mode](#smart-mode) - as with "left to right mode" all members are tried, but strict validation is used to try to find the best match
 3. [discriminated unions]() - only one member of the union is tried, based on a discriminator
 
-## Left to Right Mode
+## Union Modes
+
+### Left to Right Mode
 
 !!! note
     Because this mode often leads to unexpected validation results, it is not the default in Pydantic >=2, instead `union_mode='smart'` is the default.
@@ -72,7 +74,7 @@ print(User(id='456'))  # (2)
 2. We're in lax mode and the numeric string `'123'` is valid as input to the first member of the union, `int`.
    Since that is tried first, we get the surprising result of `id` being an `int` instead of a `str`.
 
-## Smart Mode
+### Smart Mode
 
 Because of the surprising side effects of `union_mode='left_to_right'`, in Pydantic >=2 the default mode for `Union` validation is `union_mode='smart'`.
 
