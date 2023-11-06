@@ -848,6 +848,32 @@
   
   
     <li class="md-nav__item">
+      <a href="../../concepts/unions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    Unions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../concepts/alias/" class="md-nav__link">
         
   
@@ -2064,62 +2090,6 @@
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="Union">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#discriminated-unions-aka-tagged-unions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Discriminated Unions (a.k.a. Tagged Unions)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Discriminated Unions (a.k.a. Tagged Unions)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#discriminated-unions-with-str-discriminators" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Discriminated Unions with str discriminators
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#discriminated-unions-with-callablediscriminator-discriminators" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Discriminated Unions with CallableDiscriminator discriminators
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#nested-discriminated-unions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Nested Discriminated Unions
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -3855,62 +3825,6 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Union">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#discriminated-unions-aka-tagged-unions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Discriminated Unions (a.k.a. Tagged Unions)
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Discriminated Unions (a.k.a. Tagged Unions)">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#discriminated-unions-with-str-discriminators" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Discriminated Unions with str discriminators
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#discriminated-unions-with-callablediscriminator-discriminators" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Discriminated Unions with CallableDiscriminator discriminators
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#nested-discriminated-unions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Nested Discriminated Unions
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
       
         <li class="md-nav__item">
@@ -4771,324 +4685,8 @@ There's a fallback to <code>UUID(bytes=v)</code> for <code>bytes</code> and <cod
 <li><a class="autorefs autorefs-internal" href="../types/#pydantic.types.UUID5"><code>UUID5</code></a>: requires UUID version 5.</li>
 </ul>
 <h2 id="union">Union<a class="headerlink" href="#union" title="Permanent link">&para;</a></h2>
-<p>The <code>typing.Union</code> type allows a model attribute to accept different types, e.g.:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-<span class="kn">from</span> <span class="nn">uuid</span> <span class="kn">import</span> <span class="n">UUID</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">UUID</span><span class="p">]</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">user_01</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="mi">123</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_01</span><span class="p">)</span>
-<span class="c1">#&gt; id=123 name=&#39;John Doe&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_01</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-<span class="c1">#&gt; 123</span>
-<span class="n">user_02</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;1234&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_02</span><span class="p">)</span>
-<span class="c1">#&gt; id=&#39;1234&#39; name=&#39;John Doe&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_02</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-<span class="c1">#&gt; 1234</span>
-<span class="n">user_03_uuid</span> <span class="o">=</span> <span class="n">UUID</span><span class="p">(</span><span class="s1">&#39;cf57432e-809e-4353-adbd-9d5c0d733868&#39;</span><span class="p">)</span>
-<span class="n">user_03</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">user_03_uuid</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_03</span><span class="p">)</span>
-<span class="c1">#&gt; id=UUID(&#39;cf57432e-809e-4353-adbd-9d5c0d733868&#39;) name=&#39;John Doe&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_03</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-<span class="c1">#&gt; cf57432e-809e-4353-adbd-9d5c0d733868</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user_03_uuid</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
-<span class="c1">#&gt; 275603287559914445491632874575877060712</span>
-</code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>The type <code>Optional[x]</code> is a shorthand for <code>Union[x, None]</code>.</p>
-<p><code>Optional[x]</code> can also be used to specify a required field that can take <code>None</code> as a value.</p>
-<p>See more details in <a href="../../concepts/models/#required-fields">Required fields</a>.</p>
-</div>
-<div class="admonition tip">
-<p class="admonition-title">Union Mode</p>
-<p>By default <code>Union</code> validation will try to return the variant which is the best match for the input.</p>
-<p>Consider for example the case of <code>Union[int, str]</code>. When <a href="../../concepts/strict_mode/"><code>strict</code> mode</a> is not enabled
-then <code>int</code> fields will accept <code>str</code> inputs. In the example below, the <code>id</code> field (which is <code>Union[int, str]</code>)
-will accept the string <code>'123'</code> as an input, and preserve it as a string:</p>
-</div>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;45&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; id=&#39;123&#39; age=45</span>
-
-<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;45&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
-<span class="c1">#&gt; &lt;class &#39;str&#39;&gt;</span>
-</code></pre></div>
-<p>This is known as <code>'smart'</code> mode for <code>Union</code> validation.</p>
-<p>At present only one other <code>Union</code> validation mode exists, called <code>'left_to_right'</code> validation. In this mode
-variants are attempted from left to right and the first successful validation is accepted as input.</p>
-<p>Consider the same example, this time with <code>union_mode='left_to_right'</code> set as a <a href="../../concepts/fields/"><code>Field</code></a>
-parameter on <code>id</code>. With this validation mode, the <code>int</code> variant will coerce strings of digits into <code>int</code>
-values:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">union_mode</span><span class="o">=</span><span class="s1">&#39;left_to_right&#39;</span><span class="p">)</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;45&#39;</span><span class="p">))</span>
-<span class="c1">#&gt; id=123 age=45</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;45&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
-<span class="c1">#&gt; &lt;class &#39;int&#39;&gt;</span>
-</code></pre></div>
-<h3 id="discriminated-unions-aka-tagged-unions">Discriminated Unions (a.k.a. Tagged Unions)<a class="headerlink" href="#discriminated-unions-aka-tagged-unions" title="Permanent link">&para;</a></h3>
-<p>We can use discriminated unions to more efficiently validate <code>Union</code> types.
-Discriminated unions can be used to validate <code>Union</code> types with multiple models, or combinations of
-models and primitive types.</p>
-<p>Setting a discriminated union has many benefits:</p>
-<ul>
-<li>validation is faster since it is only attempted against one model</li>
-<li>only one explicit error is raised in case of failure</li>
-<li>the generated JSON schema implements the <a href="https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#discriminator-object">associated OpenAPI specification</a></li>
-</ul>
-<h4 id="discriminated-unions-with-str-discriminators">Discriminated Unions with <code>str</code> discriminators<a class="headerlink" href="#discriminated-unions-with-str-discriminators" title="Permanent link">&para;</a></h4>
-<p>Frequently, in the case of a <code>Union</code> with multiple models,
-there is a common field to all members of the union that can be used to distinguish
-which union case the data should be validated against; this is referred to as the "discriminator" in
-<a href="https://swagger.io/docs/specification/data-models/inheritance-and-polymorphism/">OpenAPI</a>.
-To validate models based on that information you can set the same field - let's call it <code>my_discriminator</code> -
-in each of the models with a discriminated value, which is one (or many) <code>Literal</code> value(s).
-For your <code>Union</code>, you can set the discriminator in its value: <code>Field(discriminator='my_discriminator')</code>.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
-    <span class="n">meows</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-    <span class="n">barks</span><span class="p">:</span> <span class="nb">float</span>
-
-
-<span class="k">class</span> <span class="nc">Lizard</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;reptile&#39;</span><span class="p">,</span> <span class="s1">&#39;lizard&#39;</span><span class="p">]</span>
-    <span class="n">scales</span><span class="p">:</span> <span class="nb">bool</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">,</span> <span class="n">Lizard</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">,</span> <span class="s1">&#39;barks&#39;</span><span class="p">:</span> <span class="mf">3.14</span><span class="p">},</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-<span class="c1">#&gt; pet=Dog(pet_type=&#39;dog&#39;, barks=3.14) n=1</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;dog&#39;</span><span class="p">},</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    pet.dog.barks</span>
-<span class="sd">      Field required [type=missing, input_value={&#39;pet_type&#39;: &#39;dog&#39;}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-<h4 id="discriminated-unions-with-callablediscriminator-discriminators">Discriminated Unions with <code>CallableDiscriminator</code> discriminators<a class="headerlink" href="#discriminated-unions-with-callablediscriminator-discriminators" title="Permanent link">&para;</a></h4>
-<p>In the case of a <code>Union</code> with multiple models, sometimes there isn't a single uniform field
-across all models that you can use as a discriminator. This is the perfect use case for the <code>CallableDiscriminator</code> approach.</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Tag</span>
-
-
-<span class="k">class</span> <span class="nc">Pie</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">time_to_cook</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">num_ingredients</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="k">class</span> <span class="nc">ApplePie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
-    <span class="n">fruit</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;apple&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;apple&#39;</span>
-
-
-<span class="k">class</span> <span class="nc">PumpkinPie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
-    <span class="n">filling</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;pumpkin&#39;</span>
-
-
-<span class="k">def</span> <span class="nf">get_discriminator_value</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;fruit&#39;</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filling&#39;</span><span class="p">))</span>
-    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;fruit&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;filling&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
-
-
-<span class="k">class</span> <span class="nc">ThanksgivingDinner</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">dessert</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-        <span class="n">Union</span><span class="p">[</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="n">ApplePie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;apple&#39;</span><span class="p">)],</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="n">PumpkinPie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">)],</span>
-        <span class="p">],</span>
-        <span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">get_discriminator_value</span><span class="p">),</span>
-    <span class="p">]</span>
-
-
-<span class="n">apple_variation</span> <span class="o">=</span> <span class="n">ThanksgivingDinner</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
-    <span class="p">{</span><span class="s1">&#39;dessert&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;fruit&#39;</span><span class="p">:</span> <span class="s1">&#39;apple&#39;</span><span class="p">,</span> <span class="s1">&#39;time_to_cook&#39;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span> <span class="s1">&#39;num_ingredients&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}}</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">apple_variation</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit=&#39;apple&#39;))</span>
-<span class="sd">&quot;&quot;&quot;</span>
-
-<span class="n">pumpkin_variation</span> <span class="o">=</span> <span class="n">ThanksgivingDinner</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
-    <span class="p">{</span>
-        <span class="s1">&#39;dessert&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;filling&#39;</span><span class="p">:</span> <span class="s1">&#39;pumpkin&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;time_to_cook&#39;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
-            <span class="s1">&#39;num_ingredients&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">pumpkin_variation</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling=&#39;pumpkin&#39;))</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-<p><code>CallableDiscriminators</code> can also be used to validate <code>Union</code> types with combinations of models and primitive types.</p>
-<p>For example:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Tag</span>
-
-
-<span class="k">def</span> <span class="nf">model_x_discriminator</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;str&#39;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">)):</span>
-        <span class="k">return</span> <span class="s1">&#39;model&#39;</span>
-
-
-<span class="k">class</span> <span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-        <span class="n">Union</span><span class="p">[</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)],</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)],</span>
-        <span class="p">],</span>
-        <span class="n">CallableDiscriminator</span><span class="p">(</span>
-            <span class="n">model_x_discriminator</span><span class="p">,</span>
-            <span class="n">custom_error_type</span><span class="o">=</span><span class="s1">&#39;invalid_union_member&#39;</span><span class="p">,</span>
-            <span class="n">custom_error_message</span><span class="o">=</span><span class="s1">&#39;Invalid union member&#39;</span><span class="p">,</span>
-            <span class="n">custom_error_context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;discriminator&#39;</span><span class="p">:</span> <span class="s1">&#39;str_or_model&#39;</span><span class="p">},</span>
-        <span class="p">),</span>
-    <span class="p">]</span>
-
-
-<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">}}}</span>
-<span class="n">m</span> <span class="o">=</span> <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">m</span> <span class="o">==</span> <span class="p">(</span>
-    <span class="n">DiscriminatedModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">DiscriminatedModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">DiscriminatedModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)))</span>
-<span class="p">)</span>
-<span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="n">data</span>
-</code></pre></div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Using the <a href="../../concepts/json_schema/#typingannotated-fields"><code>typing.Annotated</code> fields syntax</a> can be handy to regroup
-the <code>Union</code> and <code>discriminator</code> information. See the next example for more details.</p>
-<p>There are a few ways to set a discriminator for a field, all varying slightly in syntax.</p>
-<p>For <code>str</code> discriminators:
-<div class="language-text highlight"><pre><span></span><code>some_field: Union[...] = Field(discriminator=&#39;my_discriminator&#39;
-some_field: Annotated[Union[...], Field(discriminator=&#39;my_discriminator&#39;)]
-</code></pre></div></p>
-<p>For <code>CallableDiscriminator</code> discriminators:
-<div class="language-text highlight"><pre><span></span><code>some_field: Union[...] = Field(discriminator=CallableDiscriminator(...))
-some_field: Annotated[Union[...], CallableDiscriminator(...)]
-some_field: Annotated[Union[...], Field(discriminator=CallableDiscriminator(...))]
-</code></pre></div></p>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Discriminated unions cannot be used with only a single variant, such as <code>Union[Cat]</code>.</p>
-<p>Python changes <code>Union[T]</code> into <code>T</code> at interpretation time, so it is not possible for <code>pydantic</code> to
-distinguish fields of <code>Union[T]</code> from <code>T</code>.</p>
-</div>
-<h4 id="nested-discriminated-unions">Nested Discriminated Unions<a class="headerlink" href="#nested-discriminated-unions" title="Permanent link">&para;</a></h4>
-<p>Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
-You can do it by creating nested <code>Annotated</code> types, e.g.:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="k">class</span> <span class="nc">BlackCat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
-    <span class="n">color</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;black&#39;</span><span class="p">]</span>
-    <span class="n">black_name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span> <span class="nc">WhiteCat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span>
-    <span class="n">color</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">]</span>
-    <span class="n">white_name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">Cat</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">BlackCat</span><span class="p">,</span> <span class="n">WhiteCat</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;color&#39;</span><span class="p">)]</span>
-
-
-<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">Pet</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">],</span> <span class="n">Field</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)]</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Pet</span>
-    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="s1">&#39;black_name&#39;</span><span class="p">:</span> <span class="s1">&#39;felix&#39;</span><span class="p">},</span> <span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
-<span class="c1">#&gt; pet=BlackCat(pet_type=&#39;cat&#39;, color=&#39;black&#39;, black_name=&#39;felix&#39;) n=1</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;red&#39;</span><span class="p">},</span> <span class="n">n</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    pet.cat</span>
-<span class="sd">      Input tag &#39;red&#39; found using &#39;color&#39; does not match any of the expected tags: &#39;black&#39;, &#39;white&#39; [type=union_tag_invalid, input_value={&#39;pet_type&#39;: &#39;cat&#39;, &#39;color&#39;: &#39;red&#39;}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">pet</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pet_type&#39;</span><span class="p">:</span> <span class="s1">&#39;cat&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">},</span> <span class="n">n</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    pet.cat.black.black_name</span>
-<span class="sd">      Field required [type=missing, input_value={&#39;pet_type&#39;: &#39;cat&#39;, &#39;color&#39;: &#39;black&#39;}, input_type=dict]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
+<p>Pydantic has extensive support for union validation, both <code>typing.Union</code> and Python 3.10's pipe syntax (<code>A | B</code>) are supported.
+Read more in the <a href="../../concepts/unions/"><code>Unions</code></a> section of the concepts docs.</p>
 <h2 id="type-and-typevar"><code>Type</code> and <code>TypeVar</code><a class="headerlink" href="#type-and-typevar" title="Permanent link">&para;</a></h2>
 <h3 id="type"><code>type</code><a class="headerlink" href="#type" title="Permanent link">&para;</a></h3>
 <p>Pydantic supports the use of <code>type[T]</code> to specify that a field may only accept classes (not instances)
@@ -5179,7 +4777,7 @@ that are subclasses of <code>T</code>.</p>
 <span class="c1">#&gt; a=None b=1.0 c=1</span>
 </code></pre></div>
 <h2 id="none-types">None Types<a class="headerlink" href="#none-types" title="Permanent link">&para;</a></h2>
-<p><code>None</code>, <code>type(None)</code>, or <code>Literal[None]</code> are all quivalent according to <a href="https://www.python.org/dev/peps/pep-0484/#using-none">PEP 484</a>.
+<p><code>None</code>, <code>type(None)</code>, or <code>Literal[None]</code> are all equivalent according to <a href="https://www.python.org/dev/peps/pep-0484/#using-none">PEP 484</a>.
 Allows only <code>None</code> value.</p>
 <h2 id="strings">Strings<a class="headerlink" href="#strings" title="Permanent link">&para;</a></h2>
 <p><code>str</code>: Strings are accepted as-is. <code>bytes</code> and <code>bytearray</code> are converted using <code>v.decode()</code>.

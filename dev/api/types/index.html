@@ -848,6 +848,32 @@
   
   
     <li class="md-nav__item">
+      <a href="../../concepts/unions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    
+  
+    Unions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../concepts/alias/" class="md-nav__link">
         
   
@@ -8682,50 +8708,58 @@ if <code>get_discriminator_value</code> returns <code>'apple'</code>, the input 
 returns <code>'pumpkin'</code>, the input should be validated as a <code>PumpkinPie</code>.</p>
 <p>The primary role of the <code>Tag</code> here is to map the return value from the <code>CallableDiscriminator</code> function to
 the appropriate member of the <code>Union</code> in question.</p>
-<p>```py requires="3.8"
-from typing import Any, Literal, Union</p>
-<p>from typing_extensions import Annotated</p>
-<p>from pydantic import BaseModel, CallableDiscriminator, Tag</p>
-<p>class Pie(BaseModel):
-    time_to_cook: int
-    num_ingredients: int</p>
-<p>class ApplePie(Pie):
-    fruit: Literal['apple'] = 'apple'</p>
-<p>class PumpkinPie(Pie):
-    filling: Literal['pumpkin'] = 'pumpkin'</p>
-<p>def get_discriminator_value(v: Any) -&gt; str:
-    if isinstance(v, dict):
-        return v.get('fruit', v.get('filling'))
-    return getattr(v, 'fruit', getattr(v, 'filling', None))</p>
-<p>class ThanksgivingDinner(BaseModel):
-    dessert: Annotated[
-        Union[
-            Annotated[ApplePie, Tag('apple')],
-            Annotated[PumpkinPie, Tag('pumpkin')],
-        ],
-        CallableDiscriminator(get_discriminator_value),
-    ]</p>
-<p>apple_variation = ThanksgivingDinner.model_validate(
-    {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
-)
-print(repr(apple_variation))
-'''
-ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
-'''</p>
-<p>pumpkin_variation = ThanksgivingDinner.model_validate(
-    {
-        'dessert': {
-            'filling': 'pumpkin',
-            'time_to_cook': 40,
-            'num_ingredients': 6,
-        }
-    }
-)
-print(repr(pumpkin_variation))
-'''
-ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
-'''
-```</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Tag</span>
+
+<span class="k">class</span> <span class="nc">Pie</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">time_to_cook</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">num_ingredients</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">class</span> <span class="nc">ApplePie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
+    <span class="n">fruit</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;apple&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;apple&#39;</span>
+
+<span class="k">class</span> <span class="nc">PumpkinPie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
+    <span class="n">filling</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;pumpkin&#39;</span>
+
+<span class="k">def</span> <span class="nf">get_discriminator_value</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;fruit&#39;</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filling&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;fruit&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;filling&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+<span class="k">class</span> <span class="nc">ThanksgivingDinner</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">dessert</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">Union</span><span class="p">[</span>
+            <span class="n">Annotated</span><span class="p">[</span><span class="n">ApplePie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;apple&#39;</span><span class="p">)],</span>
+            <span class="n">Annotated</span><span class="p">[</span><span class="n">PumpkinPie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">)],</span>
+        <span class="p">],</span>
+        <span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">get_discriminator_value</span><span class="p">),</span>
+    <span class="p">]</span>
+
+<span class="n">apple_variation</span> <span class="o">=</span> <span class="n">ThanksgivingDinner</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;dessert&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;fruit&#39;</span><span class="p">:</span> <span class="s1">&#39;apple&#39;</span><span class="p">,</span> <span class="s1">&#39;time_to_cook&#39;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span> <span class="s1">&#39;num_ingredients&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">apple_variation</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit=&#39;apple&#39;))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">pumpkin_variation</span> <span class="o">=</span> <span class="n">ThanksgivingDinner</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s1">&#39;dessert&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;filling&#39;</span><span class="p">:</span> <span class="s1">&#39;pumpkin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;time_to_cook&#39;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+            <span class="s1">&#39;num_ingredients&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">pumpkin_variation</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling=&#39;pumpkin&#39;))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>You must specify a <code>Tag</code> for every case in a <code>Union</code> that is associated with a <code>CallableDiscriminator</code>.
@@ -8783,50 +8817,58 @@ Finally, this allows you to use a custom callable as the way to identify which m
 belongs to, while still seeing all the performance benefits of a discriminated union.</p>
 <p>Consider this example, which is much more performant with the use of <code>CallableDiscriminator</code> and thus a <code>TaggedUnion</code>
 than it would be as a normal <code>Union</code>.</p>
-<p>```py requires="3.8"
-from typing import Any, Literal, Union</p>
-<p>from typing_extensions import Annotated</p>
-<p>from pydantic import BaseModel, CallableDiscriminator, Tag</p>
-<p>class Pie(BaseModel):
-    time_to_cook: int
-    num_ingredients: int</p>
-<p>class ApplePie(Pie):
-    fruit: Literal['apple'] = 'apple'</p>
-<p>class PumpkinPie(Pie):
-    filling: Literal['pumpkin'] = 'pumpkin'</p>
-<p>def get_discriminator_value(v: Any) -&gt; str:
-    if isinstance(v, dict):
-        return v.get('fruit', v.get('filling'))
-    return getattr(v, 'fruit', getattr(v, 'filling', None))</p>
-<p>class ThanksgivingDinner(BaseModel):
-    dessert: Annotated[
-        Union[
-            Annotated[ApplePie, Tag('apple')],
-            Annotated[PumpkinPie, Tag('pumpkin')],
-        ],
-        CallableDiscriminator(get_discriminator_value),
-    ]</p>
-<p>apple_variation = ThanksgivingDinner.model_validate(
-    {'dessert': {'fruit': 'apple', 'time_to_cook': 60, 'num_ingredients': 8}}
-)
-print(repr(apple_variation))
-'''
-ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit='apple'))
-'''</p>
-<p>pumpkin_variation = ThanksgivingDinner.model_validate(
-    {
-        'dessert': {
-            'filling': 'pumpkin',
-            'time_to_cook': 40,
-            'num_ingredients': 6,
-        }
-    }
-)
-print(repr(pumpkin_variation))
-'''
-ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
-'''
-```</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Tag</span>
+
+<span class="k">class</span> <span class="nc">Pie</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">time_to_cook</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">num_ingredients</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">class</span> <span class="nc">ApplePie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
+    <span class="n">fruit</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;apple&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;apple&#39;</span>
+
+<span class="k">class</span> <span class="nc">PumpkinPie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
+    <span class="n">filling</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;pumpkin&#39;</span>
+
+<span class="k">def</span> <span class="nf">get_discriminator_value</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;fruit&#39;</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filling&#39;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;fruit&#39;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;filling&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+
+<span class="k">class</span> <span class="nc">ThanksgivingDinner</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">dessert</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+        <span class="n">Union</span><span class="p">[</span>
+            <span class="n">Annotated</span><span class="p">[</span><span class="n">ApplePie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;apple&#39;</span><span class="p">)],</span>
+            <span class="n">Annotated</span><span class="p">[</span><span class="n">PumpkinPie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">)],</span>
+        <span class="p">],</span>
+        <span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">get_discriminator_value</span><span class="p">),</span>
+    <span class="p">]</span>
+
+<span class="n">apple_variation</span> <span class="o">=</span> <span class="n">ThanksgivingDinner</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
+    <span class="p">{</span><span class="s1">&#39;dessert&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;fruit&#39;</span><span class="p">:</span> <span class="s1">&#39;apple&#39;</span><span class="p">,</span> <span class="s1">&#39;time_to_cook&#39;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span> <span class="s1">&#39;num_ingredients&#39;</span><span class="p">:</span> <span class="mi">8</span><span class="p">}}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">apple_variation</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">ThanksgivingDinner(dessert=ApplePie(time_to_cook=60, num_ingredients=8, fruit=&#39;apple&#39;))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="n">pumpkin_variation</span> <span class="o">=</span> <span class="n">ThanksgivingDinner</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s1">&#39;dessert&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;filling&#39;</span><span class="p">:</span> <span class="s1">&#39;pumpkin&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;time_to_cook&#39;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span>
+            <span class="s1">&#39;num_ingredients&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">pumpkin_variation</span><span class="p">))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling=&#39;pumpkin&#39;))</span>
+<span class="sd">&#39;&#39;&#39;</span>
+</code></pre></div>
 <p>See the <a href="../standard_library_types/#discriminated-unions-aka-tagged-unions">Discriminated Unions</a>
 docs for more details on how to use <code>CallableDiscriminator</code>s.</p>
 
