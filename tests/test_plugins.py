@@ -61,8 +61,10 @@ def test_on_validate_json_on_success() -> None:
         class Model(BaseModel, plugin_settings={'observe': 'all'}):
             a: int
 
-        Model.model_validate({'a': 1}) == {'a': 1}
-        Model.model_validate_json('{"a": 1}') == {'a': 1}
+        assert Model.model_validate({'a': 1}) == Model(a=1)
+        assert Model.model_validate_json('{"a": 1}') == Model(a=1)
+
+        assert Model.__pydantic_validator__.title == 'Model'
 
 
 def test_on_validate_json_on_error() -> None:
@@ -103,7 +105,7 @@ def test_on_validate_json_on_error() -> None:
         class Model(BaseModel, plugin_settings={'observe': 'all'}):
             a: int
 
-        Model.model_validate({'a': 1}) == {'a': 1}
+        assert Model.model_validate({'a': 1}) == Model(a=1)
         with contextlib.suppress(ValidationError):
             Model.model_validate_json('{"a": "potato"}')
 
@@ -141,8 +143,8 @@ def test_on_validate_python_on_success() -> None:
         class Model(BaseModel, plugin_settings={'observe': 'all'}):
             a: int
 
-        Model.model_validate({'a': 1}) == {'a': 1}
-        Model.model_validate_json('{"a": 1}') == {'a': 1}
+        assert Model.model_validate({'a': 1}).model_dump() == {'a': 1}
+        assert Model.model_validate_json('{"a": 1}').model_dump() == {'a': 1}
 
 
 def test_on_validate_python_on_error() -> None:
@@ -188,7 +190,7 @@ def test_on_validate_python_on_error() -> None:
 
         with contextlib.suppress(ValidationError):
             Model.model_validate({'a': 'potato'})
-        Model.model_validate_json('{"a": 1}') == {'a': 1}
+        assert Model.model_validate_json('{"a": 1}').model_dump() == {'a': 1}
 
 
 def test_stateful_plugin() -> None:
