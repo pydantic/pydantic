@@ -2,7 +2,6 @@ import importlib
 import importlib.util
 import json
 import platform
-import subprocess
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -74,11 +73,8 @@ print(json.dumps(modules))
 """
 
 
-def test_import_pydantic(tmp_path: Path):
-    py_file = tmp_path / 'test.py'
-    py_file.write_text(IMPORTED_PYDANTIC_CODE)
-
-    output = subprocess.check_output([sys.executable, str(py_file)], cwd=tmp_path)
+def test_import_pydantic(subprocess_run_code):
+    output = subprocess_run_code(IMPORTED_PYDANTIC_CODE)
     imported_modules = json.loads(output)
     # debug(imported_modules)
     assert 'pydantic' in imported_modules
@@ -97,11 +93,8 @@ print(json.dumps(modules))
 """
 
 
-def test_import_base_model(tmp_path: Path):
-    py_file = tmp_path / 'test.py'
-    py_file.write_text(IMPORTED_BASEMODEL_CODE)
-
-    output = subprocess.check_output([sys.executable, str(py_file)], cwd=tmp_path)
+def test_import_base_model(subprocess_run_code):
+    output = subprocess_run_code(IMPORTED_BASEMODEL_CODE)
     imported_modules = json.loads(output)
     # debug(sorted(imported_modules))
     assert 'pydantic' in imported_modules
@@ -110,9 +103,9 @@ def test_import_base_model(tmp_path: Path):
     assert 'annotated_types' not in imported_modules
 
 
-def test_dataclass_import(create_module):
-    @create_module
-    def module():
+def test_dataclass_import(subprocess_run_code):
+    @subprocess_run_code
+    def run_in_subprocess():
         import pydantic
 
         assert pydantic.dataclasses.__name__ == 'pydantic.dataclasses'
@@ -129,9 +122,9 @@ def test_dataclass_import(create_module):
             raise AssertionError('Should have raised a ValueError')
 
 
-def test_dataclass_import2(create_module):
-    @create_module
-    def module():
+def test_dataclass_import2(subprocess_run_code):
+    @subprocess_run_code
+    def run_in_subprocess():
         import pydantic.dataclasses
 
         assert pydantic.dataclasses.__name__ == 'pydantic.dataclasses'
