@@ -4,13 +4,15 @@ use pyo3::exceptions::PyValueError;
 use pyo3::types::{PyDict, PyType};
 use pyo3::{intern, prelude::*};
 
-use crate::errors::{InputValue, LocItem, ValResult};
+use jiter::JsonValue;
+
+use crate::errors::{AsLocItem, InputValue, ValResult};
 use crate::tools::py_err;
 use crate::{PyMultiHostUrl, PyUrl};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherInt, EitherString};
-use super::{EitherFloat, GenericArguments, GenericIterable, GenericIterator, GenericMapping, JsonInput};
+use super::{EitherFloat, GenericArguments, GenericIterable, GenericIterator, GenericMapping};
 
 #[derive(Debug, Clone, Copy)]
 pub enum InputType {
@@ -46,9 +48,7 @@ impl TryFrom<&str> for InputType {
 /// the convention is to either implement:
 /// * `strict_*` & `lax_*` if they have different behavior
 /// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
-pub trait Input<'a>: fmt::Debug + ToPyObject {
-    fn as_loc_item(&self) -> LocItem;
-
+pub trait Input<'a>: fmt::Debug + ToPyObject + AsLocItem {
     fn as_error_value(&'a self) -> InputValue<'a>;
 
     fn identity(&self) -> Option<usize> {
@@ -89,7 +89,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
 
     fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<'a, GenericArguments<'a>>;
 
-    fn parse_json(&'a self) -> ValResult<'a, JsonInput>;
+    fn parse_json(&'a self) -> ValResult<'a, JsonValue>;
 
     fn validate_str(&'a self, strict: bool, coerce_numbers_to_str: bool) -> ValResult<EitherString<'a>> {
         if strict {

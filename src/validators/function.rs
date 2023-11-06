@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-use pyo3::exceptions::{PyAssertionError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyAssertionError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::errors::{
-    ErrorType, LocItem, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
+    AsLocItem, ErrorType, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
 };
 use crate::input::Input;
 use crate::py_gc::PyGcTraverse;
-use crate::tools::{function_name, py_err, safe_repr, SchemaDict};
+use crate::tools::{function_name, safe_repr, SchemaDict};
 use crate::PydanticUseDefault;
 
 use super::generator::InternalValidator;
@@ -406,13 +406,7 @@ struct ValidatorCallable {
 #[pymethods]
 impl ValidatorCallable {
     fn __call__(&mut self, py: Python, input_value: &PyAny, outer_location: Option<&PyAny>) -> PyResult<PyObject> {
-        let outer_location = match outer_location {
-            Some(ol) => match LocItem::try_from(ol) {
-                Ok(ol) => Some(ol),
-                Err(_) => return py_err!(PyTypeError; "outer_location must be a str or int"),
-            },
-            None => None,
-        };
+        let outer_location = outer_location.map(AsLocItem::as_loc_item);
         self.validator.validate(py, input_value, outer_location)
     }
 
@@ -440,13 +434,7 @@ struct AssignmentValidatorCallable {
 #[pymethods]
 impl AssignmentValidatorCallable {
     fn __call__(&mut self, py: Python, input_value: &PyAny, outer_location: Option<&PyAny>) -> PyResult<PyObject> {
-        let outer_location = match outer_location {
-            Some(ol) => match LocItem::try_from(ol) {
-                Ok(ol) => Some(ol),
-                Err(_) => return py_err!(PyTypeError; "outer_location must be a str or int"),
-            },
-            None => None,
-        };
+        let outer_location = outer_location.map(AsLocItem::as_loc_item);
         self.validator.validate_assignment(
             py,
             input_value,

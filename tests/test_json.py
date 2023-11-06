@@ -4,7 +4,7 @@ import re
 from typing import List
 
 import pytest
-from dirty_equals import IsList
+from dirty_equals import IsFloatNan, IsList
 
 import pydantic_core
 from pydantic_core import (
@@ -358,3 +358,10 @@ def test_bad_repr():
         to_json(b)
 
     assert to_json(b, serialize_unknown=True) == b'"<Unserializable BadRepr object>"'
+
+
+def test_inf_nan_allow():
+    v = SchemaValidator(core_schema.float_schema(allow_inf_nan=True))
+    assert v.validate_json('Infinity') == float('inf')
+    assert v.validate_json('-Infinity') == float('-inf')
+    assert v.validate_json('NaN') == IsFloatNan()
