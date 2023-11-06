@@ -1495,8 +1495,6 @@ class _SecretField(Generic[SecretType]):
 
 
 def _secret_display(value: str | bytes) -> str:
-    if isinstance(value, bytes):
-        value = value.decode()
     return '**********' if value else ''
 
 
@@ -2454,10 +2452,10 @@ class Tag:
     The primary role of the `Tag` here is to map the return value from the `CallableDiscriminator` function to
     the appropriate member of the `Union` in question.
 
-    ```py requires="3.8"
-    from typing import Any, Literal, Union
+    ```py
+    from typing import Any, Union
 
-    from typing_extensions import Annotated
+    from typing_extensions import Annotated, Literal
 
     from pydantic import BaseModel, CallableDiscriminator, Tag
 
@@ -2540,10 +2538,10 @@ class CallableDiscriminator:
     Consider this example, which is much more performant with the use of `CallableDiscriminator` and thus a `TaggedUnion`
     than it would be as a normal `Union`.
 
-    ```py requires="3.8"
-    from typing import Any, Literal, Union
+    ```py
+    from typing import Any, Union
 
-    from typing_extensions import Annotated
+    from typing_extensions import Annotated, Literal
 
     from pydantic import BaseModel, CallableDiscriminator, Tag
 

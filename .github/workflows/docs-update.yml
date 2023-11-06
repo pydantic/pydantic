@@ -43,7 +43,7 @@ jobs:
           cache: true
 
       - name: install deps
-        run: pdm install -G testing
+        run: pdm install -G testing -G email
 
       - run: pdm info && pdm list
 

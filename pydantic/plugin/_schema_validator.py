@@ -70,9 +70,12 @@ class PluggableSchemaValidator:
         json_event_handlers: list[BaseValidateHandlerProtocol] = []
         strings_event_handlers: list[BaseValidateHandlerProtocol] = []
         for plugin in plugins:
-            p, j, s = plugin.new_schema_validator(
-                schema, schema_type, schema_type_path, schema_kind, config, plugin_settings
-            )
+            try:
+                p, j, s = plugin.new_schema_validator(
+                    schema, schema_type, schema_type_path, schema_kind, config, plugin_settings
+                )
+            except TypeError as e:  # pragma: no cover
+                raise TypeError(f'Error using plugin `{plugin.__module__}:{plugin.__class__.__name__}`: {e}') from e
             if p is not None:
                 python_event_handlers.append(p)
             if j is not None:

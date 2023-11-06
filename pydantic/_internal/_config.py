@@ -120,8 +120,7 @@ class ConfigWrapper:
 
         config_from_namespace = config_dict_from_namespace or prepare_config(config_class_from_namespace)
 
-        if config_from_namespace is not None:
-            config_new.update(config_from_namespace)
+        config_new.update(config_from_namespace)
 
         for k in list(kwargs.keys()):
             if k in config_keys:
@@ -130,7 +129,7 @@ class ConfigWrapper:
         return cls(config_new)
 
     # we don't show `__getattr__` to type checkers so missing attributes cause errors
-    if not TYPE_CHECKING:
+    if not TYPE_CHECKING:  # pragma: no branch
 
         def __getattr__(self, name: str) -> Any:
             try:

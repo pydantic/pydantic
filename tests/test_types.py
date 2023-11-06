@@ -3060,20 +3060,21 @@ ANY_THING = object()
             ],
         ),
         (dict(max_digits=2, decimal_places=2), Decimal('0.99'), Decimal('0.99')),
-        (
+        pytest.param(
             dict(max_digits=2, decimal_places=1),
             Decimal('0.99'),
             [
                 {
                     'type': 'decimal_max_places',
                     'loc': ('foo',),
-                    'msg': 'Decimal input should have no more than 1 decimal places',
+                    'msg': 'Decimal input should have no more than 1 decimal place',
                     'input': Decimal('0.99'),
                     'ctx': {
                         'decimal_places': 1,
                     },
                 }
             ],
+            marks=pytest.mark.xfail(reason='Needs new release of pydantic-core'),
         ),
         (
             dict(max_digits=3, decimal_places=1),
@@ -4176,7 +4177,9 @@ def test_secretbytes():
         empty_password: SecretBytes
 
     # Initialize the model.
-    f = Foobar(password=b'wearebytes', empty_password=b'')
+    # Use bytes that can't be decoded with UTF8 (https://github.com/pydantic/pydantic/issues/7971)
+    password = b'\x89PNG\r\n\x1a\n'
+    f = Foobar(password=password, empty_password=b'')
 
     # Assert correct types.
     assert f.password.__class__.__name__ == 'SecretBytes'
@@ -4189,7 +4192,7 @@ def test_secretbytes():
     assert repr(f.empty_password) == "SecretBytes(b'')"
 
     # Assert retrieval of secret value is correct
-    assert f.password.get_secret_value() == b'wearebytes'
+    assert f.password.get_secret_value() == password
     assert f.empty_password.get_secret_value() == b''
 
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
