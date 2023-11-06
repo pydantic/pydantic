@@ -775,6 +775,7 @@ In case you want to constrain the UUID version, you can check the following type
 ## Union
 
 Pydantic has extensive support for union validation, both `typing.Union` and Python 3.10's pipe syntax (`A | B`) are supported.
+Read more in the [`Unions`](../concepts/unions.md) section of the concepts docs.
 
 ## `Type` and `TypeVar`
 

@@ -24,7 +24,8 @@ If validation fails on all members, the validation error includes the errors fro
 
 ```py title="Union with left to right mode"
 from typing import Union
-from pydantic import BaseModel, ValidationError, Field
+
+from pydantic import BaseModel, Field, ValidationError
 
 
 class User(BaseModel):
@@ -32,18 +33,28 @@ class User(BaseModel):
 
 
 print(User(id=123))
+#> id=123
 print(User(id='hello'))
+#> id='hello'
 
 try:
     User(id=[])
 except ValidationError as e:
     print(e)
+    """
+    2 validation errors for User
+    id.str
+      Input should be a valid string [type=string_type, input_value=[], input_type=list]
+    id.int
+      Input should be a valid integer [type=int_type, input_value=[], input_type=list]
+    """
 ```
 
 The order of members is very important in this case, as demonstrated by tweak the above example:
 
 ```py title="Union with left to right - unexpected results"
 from typing import Union
+
 from pydantic import BaseModel, Field
 
 
@@ -52,7 +63,9 @@ class User(BaseModel):
 
 
 print(User(id=123))  # (1)
+#> id=123
 print(User(id='456'))  # (2)
+#> id=456
 ```
 
 1. As expected the input is validated against the `int` member and the result is as expected.
