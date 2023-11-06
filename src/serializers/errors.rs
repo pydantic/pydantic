@@ -14,8 +14,33 @@ pub(super) fn py_err_se_err<T: ser::Error, E: fmt::Display>(py_error: E) -> T {
     T::custom(py_error.to_string())
 }
 
+#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
+#[derive(Debug, Clone)]
+pub struct PythonSerializerError {
+    pub message: String,
+}
+
+impl fmt::Display for PythonSerializerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl std::error::Error for PythonSerializerError {}
+
+impl serde::ser::Error for PythonSerializerError {
+    fn custom<T>(msg: T) -> Self
+    where
+        T: fmt::Display,
+    {
+        PythonSerializerError {
+            message: format!("{msg}"),
+        }
+    }
+}
+
 /// convert a serde serialization error into a `PyErr`
-pub(super) fn se_err_py_err(error: serde_json::Error) -> PyErr {
+pub(super) fn se_err_py_err(error: PythonSerializerError) -> PyErr {
     let s = error.to_string();
     if let Some(msg) = s.strip_prefix(UNEXPECTED_TYPE_SER_MARKER) {
         if msg.is_empty() {

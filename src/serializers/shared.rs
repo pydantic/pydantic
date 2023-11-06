@@ -15,6 +15,7 @@ use crate::build_tools::py_schema_err;
 use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
 use crate::py_gc::PyGcTraverse;
+use crate::serializers::ser::PythonSerializer;
 use crate::tools::{py_err, SchemaDict};
 
 use super::errors::se_err_py_err;
@@ -112,7 +113,7 @@ combined_serializer! {
         Nullable: super::type_serializers::nullable::NullableSerializer;
         Int: super::type_serializers::simple::IntSerializer;
         Bool: super::type_serializers::simple::BoolSerializer;
-        Float: super::type_serializers::simple::FloatSerializer;
+        Float: super::type_serializers::float::FloatSerializer;
         Decimal: super::type_serializers::decimal::DecimalSerializer;
         Str: super::type_serializers::string::StrSerializer;
         Bytes: super::type_serializers::bytes::BytesSerializer;
@@ -352,12 +353,12 @@ pub(crate) fn to_json_bytes(
         Some(indent) => {
             let indent = vec![b' '; indent];
             let formatter = PrettyFormatter::with_indent(&indent);
-            let mut ser = serde_json::Serializer::with_formatter(writer, formatter);
+            let mut ser = PythonSerializer::with_formatter(writer, formatter);
             serializer.serialize(&mut ser).map_err(se_err_py_err)?;
             ser.into_inner()
         }
         None => {
-            let mut ser = serde_json::Serializer::new(writer);
+            let mut ser = PythonSerializer::new(writer);
             serializer.serialize(&mut ser).map_err(se_err_py_err)?;
             ser.into_inner()
         }
