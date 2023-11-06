@@ -64,7 +64,7 @@ def pydantic_type_adapter():
 
 
 _NORTH_STAR_DATA_PATH = Path(__file__).parent / 'north_star_data.json'
-_EXPECTED_NORTH_STAR_DATA_MD5 = '0ff34599a0861026cf25b6cdbb4bbe81'
+_EXPECTED_NORTH_STAR_DATA_MD5 = '4d30ce33e301fd00c656f95e736c7785'
 
 
 @pytest.fixture(scope='module')
