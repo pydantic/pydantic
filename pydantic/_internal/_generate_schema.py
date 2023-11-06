@@ -42,7 +42,7 @@ from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation,
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
+from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
@@ -1033,7 +1033,7 @@ class GenerateSchema:
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
-        choices: list[CoreSchema | tuple[CoreSchema, str]] = []
+        choices: list[CoreSchema] = []
         nullable = False
         for arg in args:
             if arg is None or arg is _typing_extra.NoneType:
@@ -1042,10 +1042,18 @@ class GenerateSchema:
                 choices.append(self.generate_schema(arg))
 
         if len(choices) == 1:
-            first_choice = choices[0]
-            s = first_choice[0] if isinstance(first_choice, tuple) else first_choice
+            s = choices[0]
         else:
-            s = core_schema.union_schema(choices)
+            choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
+            for choice in choices:
+                metadata = choice.get('metadata')
+                if isinstance(metadata, dict):
+                    tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
+                    if tag is not None:
+                        choices_with_tags.append((choice, tag))
+                    else:
+                        choices_with_tags.append(choice)
+            s = core_schema.union_schema(choices_with_tags)
 
         if nullable:
             s = core_schema.nullable_schema(s)

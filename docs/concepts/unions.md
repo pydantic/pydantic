@@ -9,9 +9,11 @@ Validating unions feels like adding another orthogonal dimension to the validati
 To solve these problems, Pydantic supports three fundamental approaches to validating unions:
 1. [left to right mode](#left-to-right-mode) - the simplest approach, each member of the union is tried in order
 2. [smart mode](#smart-mode) - as with "left to right mode" all members are tried, but strict validation is used to try to find the best match
-3. [discriminated unions]() - only one member of the union is tried, based on a discriminator
+3. [discriminated unions](#discriminated-unions) - only one member of the union is tried, based on a discriminator
 
-## Left to Right Mode
+## Union Modes
+
+### Left to Right Mode
 
 !!! note
     Because this mode often leads to unexpected validation results, it is not the default in Pydantic >=2, instead `union_mode='smart'` is the default.
@@ -72,7 +74,7 @@ print(User(id='456'))  # (2)
 2. We're in lax mode and the numeric string `'123'` is valid as input to the first member of the union, `int`.
    Since that is tried first, we get the surprising result of `id` being an `int` instead of a `str`.
 
-## Smart Mode
+### Smart Mode
 
 Because of the surprising side effects of `union_mode='left_to_right'`, in Pydantic >=2 the default mode for `Union` validation is `union_mode='smart'`.
 
@@ -376,7 +378,7 @@ except ValidationError as e:
     """
 ```
 
-### Interpreting Error Messages
+## Union Validation Errors
 
 When validation fails, error messages can be quite verbose, especially when you're not using discriminated unions.
 The below example shows the benefits of using discriminated unions in terms of error message simplicity.
@@ -513,4 +515,81 @@ assert m == DiscriminatedModel(
 assert m.model_dump() == data
 ```
 
-You can also simplify error messages with a custom error, like this:
+You can also simplify error messages by labeling each case with a [`Tag`][pydantic.types.Tag].
+This is especially useful when you have complex types like those in this example:
+
+```py
+from typing import Dict, List, Union
+
+from typing_extensions import Annotated
+
+from pydantic import AfterValidator, Tag, TypeAdapter, ValidationError
+
+DoubledList = Annotated[List[int], AfterValidator(lambda x: x * 2)]
+StringsMap = Dict[str, str]
+
+
+# Not using any `Tag`s for each union case, the errors are not so nice to look at
+adapter = TypeAdapter(Union[DoubledList, StringsMap])
+
+try:
+    adapter.validate_python(['a'])
+except ValidationError as exc_info:
+    assert (
+        '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]'
+        in str(exc_info)
+    )
+
+    # the loc's are bad here:
+    assert exc_info.errors() == [
+        {
+            'input': 'a',
+            'loc': ('function-after[<lambda>(), list[int]]', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an '
+            'integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('dict[str,str]',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+        },
+    ]
+
+
+tag_adapter = TypeAdapter(
+    Union[
+        Annotated[DoubledList, Tag('DoubledList')],
+        Annotated[StringsMap, Tag('StringsMap')],
+    ]
+)
+
+try:
+    tag_adapter.validate_python(['a'])
+except ValidationError as exc_info:
+    assert '2 validation errors for union[DoubledList,StringsMap]' in str(
+        exc_info
+    )
+
+    # the loc's are good here:
+    assert exc_info.errors() == [
+        {
+            'input': 'a',
+            'loc': ('DoubledList', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an '
+            'integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('StringsMap',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+        },
+    ]
+```
