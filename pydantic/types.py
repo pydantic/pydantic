@@ -2749,7 +2749,6 @@ if TYPE_CHECKING:
     ```
     """
 
-
 else:
     JsonValue = TypeAliasType(
         'JsonValue',
