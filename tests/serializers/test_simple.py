@@ -136,3 +136,30 @@ def test_numpy():
     assert type(v) == float
 
     assert s.to_json(numpy.float64(1.0)) == b'1.0'
+
+
+@pytest.mark.parametrize(
+    'value,expected_json,config',
+    [
+        # default values of ser_json_inf_nan
+        (float('inf'), 'null', {}),
+        (float('-inf'), 'null', {}),
+        (float('nan'), 'null', {}),
+        # explicit values of ser_json_inf_nan
+        (float('inf'), 'null', {'ser_json_inf_nan': 'null'}),
+        (float('-inf'), 'null', {'ser_json_inf_nan': 'null'}),
+        (float('nan'), 'null', {'ser_json_inf_nan': 'null'}),
+        (float('inf'), 'Infinity', {'ser_json_inf_nan': 'constants'}),
+        (float('-inf'), '-Infinity', {'ser_json_inf_nan': 'constants'}),
+        (float('nan'), 'NaN', {'ser_json_inf_nan': 'constants'}),
+    ],
+)
+def test_float_inf_and_nan_serializers(value, expected_json, config):
+    s = SchemaSerializer(core_schema.float_schema(), config)
+
+    # Python can represent these values without needing any changes
+    assert s.to_python(value) is value
+    assert s.to_python(value, mode='json') is value
+
+    # Serialized JSON value respects the ser_json_inf_nan setting
+    assert s.to_json(value).decode() == expected_json

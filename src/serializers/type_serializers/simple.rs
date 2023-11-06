@@ -180,4 +180,3 @@ pub(crate) fn bool_json_key(key: &PyAny) -> PyResult<Cow<str>> {
 }
 
 build_simple_serializer!(BoolSerializer, "bool", bool, ObType::Bool, bool_json_key);
-build_simple_serializer!(FloatSerializer, "float", f64, ObType::Float, to_str_json_key);

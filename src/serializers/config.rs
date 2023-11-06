@@ -189,3 +189,32 @@ pub fn utf8_py_error(py: Python, err: Utf8Error, data: &[u8]) -> PyErr {
         Err(err) => err,
     }
 }
+
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+pub(crate) enum InfNanMode {
+    #[default]
+    Null,
+    Constants,
+}
+
+impl FromStr for InfNanMode {
+    type Err = PyErr;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "null" => Ok(Self::Null),
+            "constants" => Ok(Self::Constants),
+            s => py_schema_err!(
+                "Invalid inf_nan serialization mode: `{}`, expected `null` or `constants`",
+                s
+            ),
+        }
+    }
+}
+
+impl FromPyObject<'_> for InfNanMode {
+    fn extract(ob: &'_ PyAny) -> PyResult<Self> {
+        let s = ob.extract::<&str>()?;
+        Self::from_str(s)
+    }
+}

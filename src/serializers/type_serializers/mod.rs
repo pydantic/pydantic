@@ -5,6 +5,7 @@ pub mod datetime_etc;
 pub mod decimal;
 pub mod definitions;
 pub mod dict;
+pub mod float;
 pub mod format;
 pub mod function;
 pub mod generator;
