@@ -8702,6 +8702,7 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
 
   
       <p>Provides a way to specify the expected tag to use for a case with a callable discriminated union.</p>
+<p>Also provides a way to label a union case in error messages.</p>
 <p>When using a <code>CallableDiscriminator</code>, attach a <code>Tag</code> to each case in the <code>Union</code> to specify the tag that
 should be used to identify that case. For example, in the below example, the <code>Tag</code> is used to specify that
 if <code>get_discriminator_value</code> returns <code>'apple'</code>, the input should be validated as an <code>ApplePie</code>, and if it
@@ -8766,7 +8767,7 @@ the appropriate member of the <code>Union</code> in question.</p>
 Failing to do so will result in a <code>PydanticUserError</code> with code
 <a href="../../errors/usage_errors/#callable-discriminator-no-tag"><code>callable-discriminator-no-tag</code></a>.</p>
 </div>
-<p>See the <a href="../standard_library_types/#discriminated-unions-aka-tagged-unions">Discriminated Unions</a>
+<p>See the <a href="../../concepts/unions/#discriminated-unions">Discriminated Unions</a>
 docs for more details on how to use <code>Tag</code>s.</p>
 
 
@@ -8869,7 +8870,7 @@ than it would be as a normal <code>Union</code>.</p>
 <span class="sd">ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling=&#39;pumpkin&#39;))</span>
 <span class="sd">&#39;&#39;&#39;</span>
 </code></pre></div>
-<p>See the <a href="../standard_library_types/#discriminated-unions-aka-tagged-unions">Discriminated Unions</a>
+<p>See the <a href="../../concepts/unions/#discriminated-unions">Discriminated Unions</a>
 docs for more details on how to use <code>CallableDiscriminator</code>s.</p>
 
 

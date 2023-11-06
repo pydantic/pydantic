@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#left-to-right-mode" class="md-skip">
+        <a href="#union-modes" class="md-skip">
           Skip to content
         </a>
       
@@ -904,6 +904,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#union-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Union Modes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Union Modes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#left-to-right-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -913,8 +925,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#smart-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -922,6 +934,11 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -970,19 +987,19 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#interpreting-error-messages" class="md-nav__link">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#union-validation-errors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Interpreting Error Messages
+        Union Validation Errors
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2849,6 +2866,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#union-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Union Modes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Union Modes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#left-to-right-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2858,8 +2887,8 @@
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
+        
+          <li class="md-nav__item">
   <a href="#smart-mode" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2867,6 +2896,11 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2915,19 +2949,19 @@
   
 </li>
         
-          <li class="md-nav__item">
-  <a href="#interpreting-error-messages" class="md-nav__link">
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#union-validation-errors" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Interpreting Error Messages
+        Union Validation Errors
       
     </span>
   </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2961,8 +2995,9 @@
 <p>To solve these problems, Pydantic supports three fundamental approaches to validating unions:
 1. <a href="#left-to-right-mode">left to right mode</a> - the simplest approach, each member of the union is tried in order
 2. <a href="#smart-mode">smart mode</a> - as with "left to right mode" all members are tried, but strict validation is used to try to find the best match
-3. <a href="">discriminated unions</a> - only one member of the union is tried, based on a discriminator</p>
-<h2 id="left-to-right-mode">Left to Right Mode<a class="headerlink" href="#left-to-right-mode" title="Permanent link">&para;</a></h2>
+3. <a href="#discriminated-unions">discriminated unions</a> - only one member of the union is tried, based on a discriminator</p>
+<h2 id="union-modes">Union Modes<a class="headerlink" href="#union-modes" title="Permanent link">&para;</a></h2>
+<h3 id="left-to-right-mode">Left to Right Mode<a class="headerlink" href="#left-to-right-mode" title="Permanent link">&para;</a></h3>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Because this mode often leads to unexpected validation results, it is not the default in Pydantic &gt;=2, instead <code>union_mode='smart'</code> is the default.</p>
@@ -3016,7 +3051,7 @@
 <li>We're in lax mode and the numeric string <code>'123'</code> is valid as input to the first member of the union, <code>int</code>.
    Since that is tried first, we get the surprising result of <code>id</code> being an <code>int</code> instead of a <code>str</code>.</li>
 </ol>
-<h2 id="smart-mode">Smart Mode<a class="headerlink" href="#smart-mode" title="Permanent link">&para;</a></h2>
+<h3 id="smart-mode">Smart Mode<a class="headerlink" href="#smart-mode" title="Permanent link">&para;</a></h3>
 <p>Because of the surprising side effects of <code>union_mode='left_to_right'</code>, in Pydantic &gt;=2 the default mode for <code>Union</code> validation is <code>union_mode='smart'</code>.</p>
 <p>In this mode, the following steps are take to try to select the best match for the input:
 1. Validation is first attempted in <a href="../strict_mode/"><code>strict</code> mode</a> against each member of the union in the order they're defined.
@@ -3289,7 +3324,7 @@ You can do it by creating nested <code>Annotated</code> types, e.g.:</p>
 <span class="sd">      Field required [type=missing, input_value={&#39;pet_type&#39;: &#39;cat&#39;, &#39;color&#39;: &#39;black&#39;}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h3 id="interpreting-error-messages">Interpreting Error Messages<a class="headerlink" href="#interpreting-error-messages" title="Permanent link">&para;</a></h3>
+<h2 id="union-validation-errors">Union Validation Errors<a class="headerlink" href="#union-validation-errors" title="Permanent link">&para;</a></h2>
 <p>When validation fails, error messages can be quite verbose, especially when you're not using discriminated unions.
 The below example shows the benefits of using discriminated unions in terms of error message simplicity.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
@@ -3422,7 +3457,82 @@ The below example shows the benefits of using discriminated unions in terms of e
 <span class="p">)</span>
 <span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="n">data</span>
 </code></pre></div>
-<p>You can also simplify error messages with a custom error, like this:</p>
+<p>You can also simplify error messages by labeling each case with a <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.Tag"><code>Tag</code></a>.
+This is especially useful when you have complex types like those in this example:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AfterValidator</span><span class="p">,</span> <span class="n">Tag</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">DoubledList</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">AfterValidator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)]</span>
+<span class="n">StringsMap</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+
+
+<span class="c1"># Not using any `Tag`s for each union case, the errors are not so nice to look at</span>
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Union</span><span class="p">[</span><span class="n">DoubledList</span><span class="p">,</span> <span class="n">StringsMap</span><span class="p">])</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="s1">&#39;2 validation errors for union[function-after[&lt;lambda&gt;(), list[int]],dict[str,str]]&#39;</span>
+        <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc_info</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># the loc&#39;s are bad here:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;function-after[&lt;lambda&gt;(), list[int]]&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid integer, unable to parse string as an &#39;</span>
+            <span class="s1">&#39;integer&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;int_parsing&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://errors.pydantic.dev/2.4/v/int_parsing&#39;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;dict[str,str]&#39;</span><span class="p">,),</span>
+            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid dictionary&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;dict_type&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://errors.pydantic.dev/2.4/v/dict_type&#39;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+
+
+<span class="n">tag_adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span>
+    <span class="n">Union</span><span class="p">[</span>
+        <span class="n">Annotated</span><span class="p">[</span><span class="n">DoubledList</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;DoubledList&#39;</span><span class="p">)],</span>
+        <span class="n">Annotated</span><span class="p">[</span><span class="n">StringsMap</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;StringsMap&#39;</span><span class="p">)],</span>
+    <span class="p">]</span>
+<span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">tag_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">])</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="s1">&#39;2 validation errors for union[DoubledList,StringsMap]&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span>
+        <span class="n">exc_info</span>
+    <span class="p">)</span>
+
+    <span class="c1"># the loc&#39;s are good here:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;DoubledList&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid integer, unable to parse string as an &#39;</span>
+            <span class="s1">&#39;integer&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;int_parsing&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://errors.pydantic.dev/2.4/v/int_parsing&#39;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;StringsMap&#39;</span><span class="p">,),</span>
+            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid dictionary&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;dict_type&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://errors.pydantic.dev/2.4/v/dict_type&#39;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+</code></pre></div>
 
 
 
