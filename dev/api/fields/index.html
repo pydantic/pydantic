@@ -6389,6 +6389,8 @@ attribute if not provided.</p>
     <span class="n">alias_priority</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">examples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">json_schema_extra</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="nb">repr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span>
 <span class="p">)</span>
@@ -6562,7 +6564,7 @@ See the example below:</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Title to used when including this computed field in JSON Schema, currently unused waiting for #4697</p>
+              <p>Title to use when including this computed field in JSON Schema</p>
             </div>
           </td>
           <td>
@@ -6576,8 +6578,36 @@ See the example below:</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Description to used when including this computed field in JSON Schema, defaults to the functions
-docstring, currently unused waiting for #4697</p>
+              <p>Description to use when including this computed field in JSON Schema, defaults to the function's
+docstring</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>examples</code></td>
+          <td>
+                <code>list[<span title="typing.Any">Any</span>] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Example values to use when including this computed field in JSON Schema</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>json_schema_extra</code></td>
+          <td>
+                <code><span title="pydantic.config.JsonDict">JsonDict</span> | typing.<span title="typing.Callable">Callable</span>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Dictionary of extra JSON schema properties.</p>
             </div>
           </td>
           <td>
@@ -6643,13 +6673,7 @@ objects.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1013</span>
-<span class="normal">1014</span>
-<span class="normal">1015</span>
-<span class="normal">1016</span>
-<span class="normal">1017</span>
-<span class="normal">1018</span>
-<span class="normal">1019</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1019</span>
 <span class="normal">1020</span>
 <span class="normal">1021</span>
 <span class="normal">1022</span>
@@ -6808,13 +6832,27 @@ objects.</p>
 <span class="normal">1175</span>
 <span class="normal">1176</span>
 <span class="normal">1177</span>
-<span class="normal">1178</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">1178</span>
+<span class="normal">1179</span>
+<span class="normal">1180</span>
+<span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">alias_priority</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">examples</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">json_schema_extra</span><span class="p">:</span> <span class="n">JsonDict</span> <span class="o">|</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[</span><span class="n">JsonDict</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="nb">repr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">PydanticUndefined</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[</span><span class="n">PropertyT</span><span class="p">],</span> <span class="n">PropertyT</span><span class="p">]:</span>
@@ -6938,9 +6976,11 @@ objects.</p>
 <span class="sd">        __f: the function to wrap.</span>
 <span class="sd">        alias: alias to use when serializing this computed field, only used when `by_alias=True`</span>
 <span class="sd">        alias_priority: priority of the alias. This affects whether an alias generator is used</span>
-<span class="sd">        title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697</span>
-<span class="sd">        description: Description to used when including this computed field in JSON Schema, defaults to the functions</span>
-<span class="sd">            docstring, currently unused waiting for #4697</span>
+<span class="sd">        title: Title to use when including this computed field in JSON Schema</span>
+<span class="sd">        description: Description to use when including this computed field in JSON Schema, defaults to the function&#39;s</span>
+<span class="sd">            docstring</span>
+<span class="sd">        examples: Example values to use when including this computed field in JSON Schema</span>
+<span class="sd">        json_schema_extra: Dictionary of extra JSON schema properties.</span>
 <span class="sd">        repr: whether to include this computed field in model repr.</span>
 <span class="sd">            Default is `False` for private properties and `True` for public properties.</span>
 <span class="sd">        return_type: optional return for serialization logic to expect when serializing to JSON, if included</span>
@@ -6967,7 +7007,9 @@ objects.</p>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">repr_</span> <span class="o">=</span> <span class="nb">repr</span>
 
-        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">ComputedFieldInfo</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">alias_priority</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">repr_</span><span class="p">)</span>
+        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">ComputedFieldInfo</span><span class="p">(</span>
+            <span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">alias_priority</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="n">examples</span><span class="p">,</span> <span class="n">json_schema_extra</span><span class="p">,</span> <span class="n">repr_</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">__f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -7089,6 +7131,28 @@ objects.</p>
           <td>
             <div class="doc-md-description">
               <p>Description of the computed field as in OpenAPI document.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>examples</code></td>
+          <td>
+                <code>list[<span title="typing.Any">Any</span>] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Example values of the computed field as in OpenAPI document.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>json_schema_extra</code></td>
+          <td>
+                <code><span title="pydantic.config.JsonDict">JsonDict</span> | typing.<span title="typing.Callable">Callable</span>[[<span title="pydantic.config.JsonDict">JsonDict</span>], None] | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Dictionary of extra JSON schema properties.</p>
             </div>
           </td>
         </tr>
