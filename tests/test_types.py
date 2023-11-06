@@ -15,7 +15,6 @@ from enum import Enum, IntEnum
 from numbers import Number
 from pathlib import Path
 from typing import (
-    Annotated,
     Any,
     Callable,
     Counter,
@@ -6034,8 +6033,8 @@ def test_coerce_numbers_to_str_from_json(number: str, expected_str: str) -> None
 
 
 def test_union_tags_in_errors():
-    DoubledList = Annotated[list[int], AfterValidator(lambda x: x * 2)]
-    StringsMap = dict[str, str]
+    DoubledList = Annotated[List[int], AfterValidator(lambda x: x * 2)]
+    StringsMap = Dict[str, str]
 
     adapter = TypeAdapter(Union[DoubledList, StringsMap])
 

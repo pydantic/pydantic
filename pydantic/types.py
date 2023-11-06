@@ -2511,7 +2511,7 @@ class Tag:
         Failing to do so will result in a `PydanticUserError` with code
         [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
 
-    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
     docs for more details on how to use `Tag`s.
     """
 
@@ -2592,7 +2592,7 @@ class CallableDiscriminator:
     '''
     ```
 
-    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
     docs for more details on how to use `CallableDiscriminator`s.
     """
 

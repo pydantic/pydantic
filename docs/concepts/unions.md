@@ -513,4 +513,81 @@ assert m == DiscriminatedModel(
 assert m.model_dump() == data
 ```
 
-You can also simplify error messages with a custom error, like this:
+You can also simplify error messages by labeling each case with a `Tag`. This is especially useful
+when you have complex types like those in this example:
+
+```py
+from typing import Dict, List, Union
+
+from typing_extensions import Annotated
+
+from pydantic import AfterValidator, Tag, TypeAdapter, ValidationError
+
+DoubledList = Annotated[List[int], AfterValidator(lambda x: x * 2)]
+StringsMap = Dict[str, str]
+
+
+# Not using any `Tag`s for each union case, the errors are not so nice to look at
+adapter = TypeAdapter(Union[DoubledList, StringsMap])
+
+try:
+    adapter.validate_python(['a'])
+except ValidationError as exc_info:
+    assert (
+        '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]'
+        in str(exc_info)
+    )
+
+    # the loc's are bad here:
+    assert exc_info.errors() == [
+        {
+            'input': 'a',
+            'loc': ('function-after[<lambda>(), list[int]]', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an '
+            'integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('dict[str,str]',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+        },
+    ]
+
+
+tag_adapter = TypeAdapter(
+    Union[
+        Annotated[DoubledList, Tag('DoubledList')],
+        Annotated[StringsMap, Tag('StringsMap')],
+    ]
+)
+
+try:
+    tag_adapter.validate_python(['a'])
+except ValidationError as exc_info:
+    assert '2 validation errors for union[DoubledList,StringsMap]' in str(
+        exc_info
+    )
+
+    # the loc's are good here:
+    assert exc_info.errors() == [
+        {
+            'input': 'a',
+            'loc': ('DoubledList', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an '
+            'integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+        },
+        {
+            'input': ['a'],
+            'loc': ('StringsMap',),
+            'msg': 'Input should be a valid dictionary',
+            'type': 'dict_type',
+            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+        },
+    ]
+```
