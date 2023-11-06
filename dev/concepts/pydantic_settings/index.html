@@ -3459,19 +3459,16 @@ platform-independent manner.</p>
 <p>Once you have your <code>.env</code> file filled with variables, <em>pydantic</em> supports loading it in two ways:</p>
 <ol>
 <li>Setting the <code>env_file</code> (and <code>env_file_encoding</code> if you don't want the default encoding of your OS) on <code>model_config</code>
-in the <code>BaseSettings</code> class:</li>
-</ol>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+in the <code>BaseSettings</code> class:
+   <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
 
 <span class="hll"><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
 </span><span class="hll">    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="n">env_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
-</span></code></pre></div>
-<ol>
+</span></code></pre></div></li>
 <li>Instantiating the <code>BaseSettings</code> derived class with the <code>_env_file</code> keyword argument
-(and the <code>_env_file_encoding</code> if needed):</li>
-</ol>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+(and the <code>_env_file_encoding</code> if needed):
+   <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
@@ -3480,9 +3477,10 @@ in the <code>BaseSettings</code> class:</li>
 
 <span class="hll"><span class="n">settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="p">(</span><span class="n">_env_file</span><span class="o">=</span><span class="s1">&#39;prod.env&#39;</span><span class="p">,</span> <span class="n">_env_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
 </span></code></pre></div>
-<p>In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
+In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
 current working directory. From there, <em>pydantic</em> will handle everything for you by loading in your variables and
-validating them.</p>
+validating them.</li>
+</ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If a filename is specified for <code>env_file</code>, Pydantic will only check the current working directory and
@@ -3527,21 +3525,19 @@ is used as the key. A secret file will look like the following:</p>
 </code></pre></div>
 <p>Once you have your secret files, <em>pydantic</em> supports loading it in two ways:</p>
 <ol>
-<li>Setting the <code>secrets_dir</code> on <code>model_config</code> in a <code>BaseSettings</code> class to the directory where your secret files are stored.</li>
-</ol>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
+<li>Setting the <code>secrets_dir</code> on <code>model_config</code> in a <code>BaseSettings</code> class to the directory where your secret files are stored.
+   <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">SettingsConfigDict</span>
 
 
 <span class="hll"><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
 </span><span class="hll">    <span class="n">model_config</span> <span class="o">=</span> <span class="n">SettingsConfigDict</span><span class="p">(</span><span class="n">secrets_dir</span><span class="o">=</span><span class="s1">&#39;/var/run&#39;</span><span class="p">)</span>
 </span><span class="hll">
 </span><span class="hll">    <span class="n">database_password</span><span class="p">:</span> <span class="nb">str</span>
-</span></code></pre></div>
-<ol>
-<li>Instantiating the <code>BaseSettings</code> derived class with the <code>_secrets_dir</code> keyword argument:</li>
+</span></code></pre></div></li>
+<li>Instantiating the <code>BaseSettings</code> derived class with the <code>_secrets_dir</code> keyword argument:
+   <div class="language-text highlight"><pre><span></span><code>settings = Settings(_secrets_dir=&#39;/var/run&#39;)
+</code></pre></div></li>
 </ol>
-<div class="language-text highlight"><pre><span></span><code>settings = Settings(_secrets_dir=&#39;/var/run&#39;)
-</code></pre></div>
 <p>In either case, the value of the passed argument can be any valid directory, either absolute or relative to the
 current working directory. <strong>Note that a non existent directory will only generate a warning</strong>.
 From there, <em>pydantic</em> will handle everything for you by loading in your variables and validating them.</p>
