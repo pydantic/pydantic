@@ -2451,9 +2451,9 @@ class Tag:
     the appropriate member of the `Union` in question.
 
     ```py
-    from typing import Any, Literal, Union
+    from typing import Any, Union
 
-    from typing_extensions import Annotated
+    from typing_extensions import Annotated, Literal
 
     from pydantic import BaseModel, CallableDiscriminator, Tag
 
@@ -2537,9 +2537,9 @@ class CallableDiscriminator:
     than it would be as a normal `Union`.
 
     ```py
-    from typing import Any, Literal, Union
+    from typing import Any, Union
 
-    from typing_extensions import Annotated
+    from typing_extensions import Annotated, Literal
 
     from pydantic import BaseModel, CallableDiscriminator, Tag
 
