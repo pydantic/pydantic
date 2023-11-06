@@ -2711,13 +2711,14 @@ if TYPE_CHECKING:
     """A `JsonValue` is used to represent a value that can be serialized to JSON.
 
     It may be one of:
-    * List['JsonValue']
-    * Dict[str, 'JsonValue']
-    * str
-    * int
-    * float
-    * bool
-    * None
+
+    * `List['JsonValue']`
+    * `Dict[str, 'JsonValue']`
+    * `str`
+    * `int`
+    * `float`
+    * `bool`
+    * `None`
 
     The following example demonstrates how to use `JsonValue` to validate JSON data,
     and what kind of errors to expect when input data is not json serializable.
