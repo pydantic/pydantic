@@ -183,6 +183,7 @@ __all__ = (
     'GetPydanticSchema',
     'Tag',
     'CallableDiscriminator',
+    'JsonValue',
     # type_adapter
     'TypeAdapter',
     # version
@@ -324,6 +325,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'GetPydanticSchema': (__package__, '.types'),
     'Tag': (__package__, '.types'),
     'CallableDiscriminator': (__package__, '.types'),
+    'JsonValue': (__package__, '.types'),
     # type_adapter
     'TypeAdapter': (__package__, '.type_adapter'),
     # warnings

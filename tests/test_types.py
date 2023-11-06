@@ -66,6 +66,7 @@ from pydantic import (
     GetCoreSchemaHandler,
     InstanceOf,
     Json,
+    JsonValue,
     NaiveDatetime,
     NameEmail,
     NegativeFloat,
@@ -6083,4 +6084,24 @@ def test_union_tags_in_errors():
             'type': 'dict_type',
             'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
         },
+    ]
+
+
+def test_json_value():
+    adapter = TypeAdapter(JsonValue)
+    valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
+    invalid_json_data = {'a': {'b': ...}}  # would pass validation as a dict[str, Any]
+
+    assert adapter.validate_python(valid_json_data) == valid_json_data
+    assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
+
+    with pytest.raises(ValidationError) as exc_info:
+        adapter.validate_python(invalid_json_data)
+    assert exc_info.value.errors() == [
+        {
+            'input': Ellipsis,
+            'loc': ('dict', 'a', 'dict', 'b'),
+            'msg': 'input was not a valid JSON value',
+            'type': 'invalid-json-value',
+        }
     ]
