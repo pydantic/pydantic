@@ -375,3 +375,142 @@ except ValidationError as e:
       Field required [type=missing, input_value={'pet_type': 'cat', 'color': 'black'}, input_type=dict]
     """
 ```
+
+### Interpreting Error Messages
+
+When validation fails, error messages can be quite verbose, especially when you're not using discriminated unions.
+The below example shows the benefits of using discriminated unions in terms of error message simplicity.
+
+```py
+from typing import Union
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, CallableDiscriminator, Tag, ValidationError
+
+
+# Errors are quite verbose with a normal Union:
+class Model(BaseModel):
+    x: Union[str, 'Model']
+
+
+try:
+    Model.model_validate({'x': {'x': {'x': 1}}})
+except ValidationError as exc_info:
+    assert exc_info.errors(include_url=False) == [
+        {
+            'input': {'x': {'x': 1}},
+            'loc': ('x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': {'x': 1},
+            'loc': ('x', 'Model', 'x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': 1,
+            'loc': ('x', 'Model', 'x', 'Model', 'x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'ctx': {'class_name': 'Model'},
+            'input': 1,
+            'loc': ('x', 'Model', 'x', 'Model', 'x', 'Model'),
+            'msg': 'Input should be a valid dictionary or instance of Model',
+            'type': 'model_type',
+        },
+    ]
+
+try:
+    Model.model_validate({'x': {'x': {'x': {}}}})
+except ValidationError as exc_info:
+    assert exc_info.errors(include_url=False) == [
+        {
+            'input': {'x': {'x': {}}},
+            'loc': ('x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': {'x': {}},
+            'loc': ('x', 'Model', 'x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': {},
+            'loc': ('x', 'Model', 'x', 'Model', 'x', 'str'),
+            'msg': 'Input should be a valid string',
+            'type': 'string_type',
+        },
+        {
+            'input': {},
+            'loc': ('x', 'Model', 'x', 'Model', 'x', 'Model', 'x'),
+            'msg': 'Field required',
+            'type': 'missing',
+        },
+    ]
+
+
+# Errors are much more simple with a discriminated union:
+def model_x_discriminator(v):
+    if isinstance(v, str):
+        return 'str'
+    if isinstance(v, (dict, BaseModel)):
+        return 'model'
+
+
+class DiscriminatedModel(BaseModel):
+    x: Annotated[
+        Union[
+            Annotated[str, Tag('str')],
+            Annotated['DiscriminatedModel', Tag('model')],
+        ],
+        CallableDiscriminator(
+            model_x_discriminator,
+            custom_error_type='invalid_union_member',
+            custom_error_message='Invalid union member',
+            custom_error_context={'discriminator': 'str_or_model'},
+        ),
+    ]
+
+
+try:
+    DiscriminatedModel.model_validate({'x': {'x': {'x': 1}}})
+except ValidationError as exc_info:
+    assert exc_info.errors(include_url=False) == [
+        {
+            'ctx': {'discriminator': 'str_or_model'},
+            'input': 1,
+            'loc': ('x', 'model', 'x', 'model', 'x'),
+            'msg': 'Invalid union member',
+            'type': 'invalid_union_member',
+        }
+    ]
+
+try:
+    DiscriminatedModel.model_validate({'x': {'x': {'x': {}}}})
+except ValidationError as exc_info:
+    assert exc_info.errors(include_url=False) == [
+        {
+            'input': {},
+            'loc': ('x', 'model', 'x', 'model', 'x', 'model', 'x'),
+            'msg': 'Field required',
+            'type': 'missing',
+        }
+    ]
+
+# The data is still handled properly when valid:
+data = {'x': {'x': {'x': 'a'}}}
+m = DiscriminatedModel.model_validate(data)
+assert m == DiscriminatedModel(
+    x=DiscriminatedModel(x=DiscriminatedModel(x='a'))
+)
+assert m.model_dump() == data
+```
+
+You can also simplify error messages with a custom error, like this:
