@@ -264,7 +264,7 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
 
     - name: install node for pyright
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
 
