@@ -236,7 +236,7 @@ jobs:
           python-version: '3.11'
 
       # used to lint js code
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
 
@@ -318,7 +318,7 @@ jobs:
       - name: build wheels
         run: make build-wasm
 
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '18'
 
