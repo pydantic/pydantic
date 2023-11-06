@@ -673,7 +673,6 @@ def test_validating_assignment_pass(ValidateAssignmentModel):
     assert p.model_dump() == {'a': 2, 'b': 'hi'}
 
 
-@pytest.mark.xfail(reason='Needs new release of pydantic-core')
 def test_validating_assignment_fail(ValidateAssignmentModel):
     p = ValidateAssignmentModel(a=5, b='hello')
 
@@ -3031,7 +3030,6 @@ def test_schema_generator_customize_type_constraints() -> None:
     ]
 
 
-@pytest.mark.xfail(reason='Needs new release of pydantic-core')
 def test_schema_generator_customize_type_constraints_order() -> None:
     class Model(BaseModel):
         # whitespace will be stripped first, then max length will be checked, should pass on ' 1 '
