@@ -108,3 +108,41 @@ def test_import_base_model(tmp_path: Path):
     assert 'pydantic.fields' not in imported_modules
     assert 'pydantic.types' not in imported_modules
     assert 'annotated_types' not in imported_modules
+
+
+def test_dataclass_import(create_module):
+    @create_module
+    def module():
+        import pydantic
+
+        assert pydantic.dataclasses.__name__ == 'pydantic.dataclasses'
+
+        @pydantic.dataclasses.dataclass
+        class Foo:
+            a: int
+
+        try:
+            Foo('not an int')
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('Should have raised a ValueError')
+
+
+def test_dataclass_import2(create_module):
+    @create_module
+    def module():
+        import pydantic.dataclasses
+
+        assert pydantic.dataclasses.__name__ == 'pydantic.dataclasses'
+
+        @pydantic.dataclasses.dataclass
+        class Foo:
+            a: int
+
+        try:
+            Foo('not an int')
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('Should have raised a ValueError')
