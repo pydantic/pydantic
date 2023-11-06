@@ -71,7 +71,6 @@ dynamic = ['version', 'readme']
 email = ['email-validator>=2.0.0']
 
 [tool.pdm.dev-dependencies]
-# pytest-examples still using black, TODO: change to ruff
 docs = [
     "autoflake",
     "mkdocs",
@@ -111,6 +110,7 @@ testing-extra = [
     # used in docs tests
     "sqlalchemy>=2.0,<3.0",
     "greenlet>=3.0.0rc3",
+    "email-validator>=2.0.0"
 ]
 mypy = [
     "mypy",
