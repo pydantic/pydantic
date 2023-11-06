@@ -5,9 +5,11 @@ use pyo3::exceptions::{PyAttributeError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
 
+use jiter::{JsonObject, JsonValue};
+
 use crate::build_tools::py_schema_err;
 use crate::errors::{py_err_string, ErrorType, ValError, ValLineError, ValResult};
-use crate::input::{Input, JsonInput, JsonObject, StringMapping};
+use crate::input::{Input, StringMapping};
 use crate::tools::{extract_i64, py_err};
 
 /// Used for getting items from python dicts, python objects, or JSON objects, in different ways
@@ -264,7 +266,7 @@ impl LookupKey {
     pub fn json_get<'data, 's>(
         &'s self,
         dict: &'data JsonObject,
-    ) -> ValResult<'data, Option<(&'s LookupPath, &'data JsonInput)>> {
+    ) -> ValResult<'data, Option<(&'s LookupPath, &'data JsonValue)>> {
         match self {
             Self::Simple { key, path, .. } => match dict.get(key) {
                 Some(value) => Ok(Some((path, value))),
@@ -289,13 +291,13 @@ impl LookupKey {
 
                     // first step is different from the rest as we already know dict is JsonObject
                     // because of above checks, we know that path should have at least one element, hence unwrap
-                    let v: &JsonInput = match path_iter.next().unwrap().json_obj_get(dict) {
+                    let v: &JsonValue = match path_iter.next().unwrap().json_obj_get(dict) {
                         Some(v) => v,
                         None => continue,
                     };
 
                     // similar to above
-                    // iterate over the path and plug each value into the JsonInput from the last step, starting with v
+                    // iterate over the path and plug each value into the JsonValue from the last step, starting with v
                     // from the first step, this could just be a loop but should be somewhat faster with a functional design
                     if let Some(v) = path_iter.try_fold(v, |d, loc| loc.json_get(d)) {
                         // Successfully found an item, return it
@@ -481,10 +483,10 @@ impl PathItem {
         }
     }
 
-    pub fn json_get<'a>(&self, any_json: &'a JsonInput) -> Option<&'a JsonInput> {
+    pub fn json_get<'a>(&self, any_json: &'a JsonValue) -> Option<&'a JsonValue> {
         match any_json {
-            JsonInput::Object(v_obj) => self.json_obj_get(v_obj),
-            JsonInput::Array(v_array) => match self {
+            JsonValue::Object(v_obj) => self.json_obj_get(v_obj),
+            JsonValue::Array(v_array) => match self {
                 Self::Pos(index) => v_array.get(*index),
                 Self::Neg(index) => {
                     if let Some(index) = v_array.len().checked_sub(*index) {
@@ -499,7 +501,7 @@ impl PathItem {
         }
     }
 
-    pub fn json_obj_get<'a>(&self, json_obj: &'a JsonObject) -> Option<&'a JsonInput> {
+    pub fn json_obj_get<'a>(&self, json_obj: &'a JsonObject) -> Option<&'a JsonValue> {
         match self {
             Self::S(key, _) => json_obj.get(key),
             _ => None,

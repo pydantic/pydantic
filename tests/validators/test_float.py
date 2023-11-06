@@ -4,9 +4,9 @@ from decimal import Decimal
 from typing import Any, Dict
 
 import pytest
-from dirty_equals import FunctionCheck, IsStr
+from dirty_equals import FunctionCheck, IsFloatNan, IsStr
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -92,8 +92,6 @@ def test_float_strict(py_and_json: PyAndJson, input_value, expected):
 )
 def test_float_kwargs(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value, expected):
     v = py_and_json({'type': 'float', **kwargs})
-    if v.validator_type == 'json' and isinstance(input_value, float) and not math.isfinite(input_value):
-        expected = Err('Invalid JSON')
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)
@@ -376,3 +374,34 @@ def test_string_with_underscores() -> None:
             v.validate_python(edge_case)
         with pytest.raises(ValidationError):
             v.validate_json(f'"{edge_case}"')
+
+
+def test_allow_inf_nan_true_json() -> None:
+    v = SchemaValidator(core_schema.float_schema())
+
+    assert v.validate_json('123') == 123
+    assert v.validate_json('NaN') == IsFloatNan()
+    assert v.validate_json('Infinity') == float('inf')
+    assert v.validate_json('-Infinity') == float('-inf')
+
+
+def test_allow_inf_nan_false_json() -> None:
+    v = SchemaValidator(core_schema.float_schema(), core_schema.CoreConfig(allow_inf_nan=False))
+
+    assert v.validate_json('123') == 123
+    with pytest.raises(ValidationError) as exc_info1:
+        v.validate_json('NaN')
+    # insert_assert(exc_info.value.errors())
+    assert exc_info1.value.errors(include_url=False) == [
+        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': IsFloatNan()}
+    ]
+    with pytest.raises(ValidationError) as exc_info2:
+        v.validate_json('Infinity')
+    assert exc_info2.value.errors(include_url=False) == [
+        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': float('inf')}
+    ]
+    with pytest.raises(ValidationError) as exc_info3:
+        v.validate_json('-Infinity')
+    assert exc_info3.value.errors(include_url=False) == [
+        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': float('-inf')}
+    ]

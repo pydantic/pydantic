@@ -8,7 +8,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config, schema_or_config_same, ExtraBehavior};
-use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{AsLocItem, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{
     AttributesGenericIterator, BorrowInput, DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator,
     MappingGenericIterator, StringMappingGenericIterator,

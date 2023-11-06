@@ -140,7 +140,8 @@ def test_decimal_strict_json(input_value, expected):
             {'ge': 0},
             -0.1,
             Err(
-                'Input should be greater than or equal to 0 [type=greater_than_equal, input_value=-0.1, input_type=float]'
+                'Input should be greater than or equal to 0 '
+                '[type=greater_than_equal, input_value=-0.1, input_type=float]'
             ),
         ),
         ({'gt': 0}, 0.1, Decimal('0.1')),
@@ -150,14 +151,14 @@ def test_decimal_strict_json(input_value, expected):
         ({'le': 0}, 0.1, Err('Input should be less than or equal to 0')),
         ({'lt': 0, 'allow_inf_nan': True}, float('nan'), Err('Input should be less than 0')),
         ({'gt': 0, 'allow_inf_nan': True}, float('inf'), Decimal('inf')),
+        ({'allow_inf_nan': True}, float('-inf'), Decimal('-inf')),
+        ({'allow_inf_nan': True}, float('nan'), FunctionCheck(math.isnan)),
         ({'lt': 0}, 0, Err('Input should be less than 0')),
         ({'lt': 0.123456}, 1, Err('Input should be less than 0.123456')),
     ],
 )
 def test_decimal_kwargs(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_value, expected):
     v = py_and_json({'type': 'decimal', **kwargs})
-    if v.validator_type == 'json' and isinstance(input_value, float) and not math.isfinite(input_value):
-        expected = Err('Invalid JSON')
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_test(input_value)

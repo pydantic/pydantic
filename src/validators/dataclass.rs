@@ -7,7 +7,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
-use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{BorrowInput, GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 use crate::tools::SchemaDict;

@@ -4,6 +4,7 @@ use std::ops::Rem;
 use std::slice::Iter as SliceIter;
 use std::str::FromStr;
 
+use jiter::{JsonArray, JsonObject, JsonValue};
 use num_bigint::BigInt;
 
 use pyo3::exceptions::PyTypeError;
@@ -26,7 +27,6 @@ use crate::tools::py_err;
 use crate::validators::{CombinedValidator, ValidationState, Validator};
 
 use super::input_string::StringMapping;
-use super::parse_json::{JsonArray, JsonInput, JsonObject};
 use super::{py_error_on_minusone, Input};
 
 /// Container for all the collections (sized iterable containers) types, which
@@ -50,7 +50,7 @@ pub enum GenericIterable<'a> {
     PyByteArray(&'a PyByteArray),
     Sequence(&'a PySequence),
     Iterator(&'a PyIterator),
-    JsonArray(&'a [JsonInput]),
+    JsonArray(&'a [JsonValue]),
     JsonObject(&'a JsonObject),
     JsonString(&'a String),
 }
@@ -573,7 +573,7 @@ impl<'py> Iterator for AttributesGenericIterator<'py> {
 }
 
 pub struct JsonObjectGenericIterator<'py> {
-    object_iter: SliceIter<'py, (String, JsonInput)>,
+    object_iter: SliceIter<'py, (String, JsonValue)>,
 }
 
 impl<'py> JsonObjectGenericIterator<'py> {
@@ -585,7 +585,7 @@ impl<'py> JsonObjectGenericIterator<'py> {
 }
 
 impl<'py> Iterator for JsonObjectGenericIterator<'py> {
-    type Item = ValResult<'py, (&'py String, &'py JsonInput)>;
+    type Item = ValResult<'py, (&'py String, &'py JsonValue)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.object_iter.next().map(|(key, value)| Ok((key, value)))
@@ -653,7 +653,7 @@ pub struct GenericJsonIterator {
 }
 
 impl GenericJsonIterator {
-    pub fn next(&mut self, _py: Python) -> PyResult<Option<(&JsonInput, usize)>> {
+    pub fn next(&mut self, _py: Python) -> PyResult<Option<(&JsonValue, usize)>> {
         if self.index < self.array.len() {
             // panic here is impossible due to bounds check above; compiler should be
             // able to optimize it away even
@@ -667,7 +667,7 @@ impl GenericJsonIterator {
     }
 
     pub fn input_as_error_value<'py>(&self, _py: Python<'py>) -> InputValue<'py> {
-        InputValue::JsonInput(JsonInput::Array(self.array.clone()))
+        InputValue::JsonInput(JsonValue::Array(self.array.clone()))
     }
 
     pub fn index(&self) -> usize {
@@ -689,12 +689,12 @@ impl<'a> PyArgs<'a> {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct JsonArgs<'a> {
-    pub args: Option<&'a [JsonInput]>,
+    pub args: Option<&'a [JsonValue]>,
     pub kwargs: Option<&'a JsonObject>,
 }
 
 impl<'a> JsonArgs<'a> {
-    pub fn new(args: Option<&'a [JsonInput]>, kwargs: Option<&'a JsonObject>) -> Self {
+    pub fn new(args: Option<&'a [JsonValue]>, kwargs: Option<&'a JsonObject>) -> Self {
         Self { args, kwargs }
     }
 }

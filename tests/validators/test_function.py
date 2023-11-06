@@ -289,8 +289,19 @@ def test_function_wrap_invalid_location():
 
     v = SchemaValidator(core_schema.with_info_wrap_validator_function(f, core_schema.int_schema()))
 
-    with pytest.raises(TypeError, match='^outer_location must be a str or int$'):
-        v.validate_python(4)
+    assert v.validate_python(4) == 6
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('wrong')
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ("('4',)",),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'wrong',
+        }
+    ]
 
 
 def test_function_after():

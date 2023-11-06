@@ -6,7 +6,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
-use crate::errors::{ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::errors::{AsLocItem, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 

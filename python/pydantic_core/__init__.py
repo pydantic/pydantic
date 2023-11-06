@@ -22,6 +22,7 @@ from ._pydantic_core import (
     Url,
     ValidationError,
     __version__,
+    from_json,
     to_json,
     to_jsonable_python,
     validate_core_schema,
@@ -63,6 +64,7 @@ __all__ = [
     'PydanticSerializationUnexpectedValue',
     'TzInfo',
     'to_json',
+    'from_json',
     'to_jsonable_python',
     'validate_core_schema',
 ]

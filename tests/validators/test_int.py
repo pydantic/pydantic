@@ -6,7 +6,7 @@ from typing import Any, Dict
 import pytest
 from dirty_equals import IsStr
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -472,3 +472,27 @@ def test_int_subclass_plain_enum() -> None:
     v_lax = v.validate_python(PlainEnum.ONE)
     assert v_lax == 1
     assert type(v_lax) == int
+
+
+def test_allow_inf_nan_true_json() -> None:
+    v = SchemaValidator(core_schema.int_schema(), core_schema.CoreConfig(allow_inf_nan=True))
+
+    assert v.validate_json('123') == 123
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        v.validate_json('NaN')
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        v.validate_json('Infinity')
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        v.validate_json('-Infinity')
+
+
+def test_allow_inf_nan_false_json() -> None:
+    v = SchemaValidator(core_schema.int_schema(), core_schema.CoreConfig(allow_inf_nan=False))
+
+    assert v.validate_json('123') == 123
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        v.validate_json('NaN')
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        v.validate_json('Infinity')
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        v.validate_json('-Infinity')

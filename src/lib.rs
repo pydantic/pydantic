@@ -4,6 +4,8 @@ extern crate core;
 
 use std::sync::OnceLock;
 
+use pyo3::exceptions::PyTypeError;
+use pyo3::types::{PyByteArray, PyBytes, PyString};
 use pyo3::{prelude::*, sync::GILOnceCell};
 
 // parse this first to get access to the contained macro
@@ -15,7 +17,6 @@ mod build_tools;
 mod definitions;
 mod errors;
 mod input;
-mod lazy_index_map;
 mod lookup_key;
 mod recursion_guard;
 mod serializers;
@@ -35,6 +36,19 @@ pub use serializers::{
     to_json, to_jsonable_python, PydanticSerializationError, PydanticSerializationUnexpectedValue, SchemaSerializer,
 };
 pub use validators::{validate_core_schema, PySome, SchemaValidator};
+
+#[pyfunction(signature = (data, *, allow_inf_nan=true))]
+pub fn from_json(py: Python, data: &PyAny, allow_inf_nan: bool) -> PyResult<PyObject> {
+    if let Ok(py_bytes) = data.downcast::<PyBytes>() {
+        jiter::python_parse(py, py_bytes.as_bytes(), allow_inf_nan)
+    } else if let Ok(py_str) = data.downcast::<PyString>() {
+        jiter::python_parse(py, py_str.to_str()?.as_bytes(), allow_inf_nan)
+    } else if let Ok(py_byte_array) = data.downcast::<PyByteArray>() {
+        jiter::python_parse(py, &py_byte_array.to_vec(), allow_inf_nan)
+    } else {
+        Err(PyTypeError::new_err("Expected bytes, bytearray or str"))
+    }
+}
 
 pub fn get_pydantic_core_version() -> &'static str {
     static PYDANTIC_CORE_VERSION: OnceLock<String> = OnceLock::new();
@@ -95,6 +109,7 @@ fn _pydantic_core(py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<SchemaSerializer>()?;
     m.add_class::<TzInfo>()?;
     m.add_function(wrap_pyfunction!(to_json, m)?)?;
+    m.add_function(wrap_pyfunction!(from_json, m)?)?;
     m.add_function(wrap_pyfunction!(to_jsonable_python, m)?)?;
     m.add_function(wrap_pyfunction!(list_all_errors, m)?)?;
     m.add_function(wrap_pyfunction!(validate_core_schema, m)?)?;
