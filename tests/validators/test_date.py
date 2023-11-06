@@ -64,6 +64,8 @@ from ..conftest import Err, PyAndJson
             ),
             id='-inf',
         ),
+        pytest.param('-', Err('Input should be a valid date or datetime, input is too short'), id='minus'),
+        pytest.param('+', Err('Input should be a valid date or datetime, input is too short'), id='pus'),
     ],
 )
 def test_date(input_value, expected):
