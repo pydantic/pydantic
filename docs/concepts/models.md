@@ -620,11 +620,6 @@ from pydantic import BaseModel, ValidationError
 DataT = TypeVar('DataT')
 
 
-class Error(BaseModel):
-    code: int
-    message: str
-
-
 class DataModel(BaseModel):
     numbers: List[int]
     people: List[str]
@@ -635,7 +630,6 @@ class Response(BaseModel, Generic[DataT]):
 
 
 data = DataModel(numbers=[1, 2, 3], people=[])
-error = Error(code=404, message='Not found')
 
 print(Response[int](data=1))
 #> data=1
