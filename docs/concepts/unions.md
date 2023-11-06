@@ -9,7 +9,7 @@ Validating unions feels like adding another orthogonal dimension to the validati
 To solve these problems, Pydantic supports three fundamental approaches to validating unions:
 1. [left to right mode](#left-to-right-mode) - the simplest approach, each member of the union is tried in order
 2. [smart mode](#smart-mode) - as with "left to right mode" all members are tried, but strict validation is used to try to find the best match
-3. [discriminated unions]() - only one member of the union is tried, based on a discriminator
+3. [discriminated unions](#discriminated-unions) - only one member of the union is tried, based on a discriminator
 
 ## Union Modes
 
@@ -378,7 +378,7 @@ except ValidationError as e:
     """
 ```
 
-### Interpreting Error Messages
+## Union Validation Errors
 
 When validation fails, error messages can be quite verbose, especially when you're not using discriminated unions.
 The below example shows the benefits of using discriminated unions in terms of error message simplicity.
@@ -515,8 +515,8 @@ assert m == DiscriminatedModel(
 assert m.model_dump() == data
 ```
 
-You can also simplify error messages by labeling each case with a `Tag`. This is especially useful
-when you have complex types like those in this example:
+You can also simplify error messages by labeling each case with a [`Tag`][pydantic.types.Tag].
+This is especially useful when you have complex types like those in this example:
 
 ```py
 from typing import Dict, List, Union
