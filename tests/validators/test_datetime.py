@@ -36,6 +36,8 @@ from ..conftest import Err, PyAndJson
         (float('nan'), Err('Input should be a valid datetime, NaN values not permitted [type=datetime_parsing,')),
         (float('inf'), Err('Input should be a valid datetime, dates after 9999')),
         (float('-inf'), Err('Input should be a valid datetime, dates before 1600')),
+        ('-', Err('Input should be a valid datetime, input is too short [type=datetime_parsing,')),
+        ('+', Err('Input should be a valid datetime, input is too short [type=datetime_parsing,')),
     ],
 )
 def test_datetime(input_value, expected):
