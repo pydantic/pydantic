@@ -2708,6 +2708,46 @@ if TYPE_CHECKING:
         bool,
         None,
     ]
+    """A `JsonValue` is used to represent a value that can be serialized to JSON.
+
+    It may be one of:
+
+    * `List['JsonValue']`
+    * `Dict[str, 'JsonValue']`
+    * `str`
+    * `int`
+    * `float`
+    * `bool`
+    * `None`
+
+    The following example demonstrates how to use `JsonValue` to validate JSON data,
+    and what kind of errors to expect when input data is not json serializable.
+
+    ```py
+    import json
+
+    from pydantic import JsonValue, TypeAdapter, ValidationError
+
+    adapter = TypeAdapter(JsonValue)
+    valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
+    invalid_json_data = {'a': {'b': ...}}
+
+    assert adapter.validate_python(valid_json_data) == valid_json_data
+    assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
+
+    try:
+        adapter.validate_python(invalid_json_data)
+    except ValidationError as exc_info:
+        assert exc_info.errors() == [
+            {
+                'input': Ellipsis,
+                'loc': ('dict', 'a', 'dict', 'b'),
+                'msg': 'input was not a valid JSON value',
+                'type': 'invalid-json-value',
+            }
+        ]
+    ```
+    """
 
 else:
     JsonValue = TypeAliasType(
@@ -2730,42 +2770,3 @@ else:
             _AllowAnyJson,
         ],
     )
-"""
-That is, a `JsonValue` is used to represent a value that can be serialized to JSON.
-It may be one of:
-* List['JsonValue']
-* Dict[str, 'JsonValue']
-* str
-* int
-* float
-* bool
-* None
-
-The following example demonstrates how to use `JsonValue` to validate JSON data,
-and what kind of errors to expect when input data is not json serializable.
-
-```py
-import json
-
-from pydantic import JsonValue, TypeAdapter, ValidationError
-
-adapter = TypeAdapter(JsonValue)
-valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
-invalid_json_data = {'a': {'b': ...}}
-
-assert adapter.validate_python(valid_json_data) == valid_json_data
-assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
-
-try:
-    adapter.validate_python(invalid_json_data)
-except ValidationError as exc_info:
-    assert exc_info.errors() == [
-        {
-            'input': Ellipsis,
-            'loc': ('dict', 'a', 'dict', 'b'),
-            'msg': 'input was not a valid JSON value',
-            'type': 'invalid-json-value',
-        }
-    ]
-```
-"""
