@@ -505,6 +505,14 @@ def test_any_model():
     assert s.to_python(Foo(a='hello', b=b'more'), exclude={'a'}) == IsStrictDict()
     assert s.to_json(Foo(a='hello', b=b'more'), exclude={'a'}) == b'{}'
 
+    assert s.to_python(Foo) == Foo
+    with pytest.raises(PydanticSerializationError, match=r"Unable to serialize unknown type: <class 'type'>"):
+        s.to_python(Foo, mode='json')
+    with pytest.raises(PydanticSerializationError, match=r"Unable to serialize unknown type: <class 'type'>"):
+        s.to_json(Foo)
+    assert s.to_python(Foo, mode='json', fallback=lambda x: x.__name__) == 'Foo'
+    assert s.to_json(Foo, fallback=lambda x: x.__name__) == b'"Foo"'
+
 
 def test_dataclass_classvar(any_serializer):
     @dataclasses.dataclass
