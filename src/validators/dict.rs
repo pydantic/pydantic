@@ -3,7 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::is_strict;
-use crate::errors::{ValError, ValLineError, ValResult};
+use crate::errors::{AsLocItem, ValError, ValLineError, ValResult};
 use crate::input::BorrowInput;
 use crate::input::{
     DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator, MappingGenericIterator,

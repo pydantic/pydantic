@@ -1,9 +1,10 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
+use jiter::JsonValue;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
-use crate::errors::{ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{AsLocItem, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::input::py_string_str;
 use crate::tools::safe_repr;
 use crate::validators::decimal::create_decimal;
@@ -14,7 +15,7 @@ use super::datetime::{
 use super::shared::{map_json_err, str_as_bool, str_as_float};
 use super::{
     BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
-    GenericIterator, GenericMapping, Input, JsonInput,
+    GenericIterator, GenericMapping, Input,
 };
 
 #[derive(Debug)]
@@ -52,14 +53,16 @@ impl<'py> StringMapping<'py> {
     }
 }
 
-impl<'a> Input<'a> for StringMapping<'a> {
+impl AsLocItem for StringMapping<'_> {
     fn as_loc_item(&self) -> LocItem {
         match self {
             Self::String(s) => s.to_string_lossy().as_ref().into(),
             Self::Mapping(d) => safe_repr(d).to_string().into(),
         }
     }
+}
 
+impl<'a> Input<'a> for StringMapping<'a> {
     fn as_error_value(&'a self) -> InputValue<'a> {
         match self {
             Self::String(s) => s.as_error_value(),
@@ -83,11 +86,11 @@ impl<'a> Input<'a> for StringMapping<'a> {
         }
     }
 
-    fn parse_json(&'a self) -> ValResult<'a, JsonInput> {
+    fn parse_json(&'a self) -> ValResult<'a, JsonValue> {
         match self {
             Self::String(s) => {
                 let str = py_string_str(s)?;
-                serde_json::from_str(str).map_err(|e| map_json_err(self, e))
+                JsonValue::parse(str.as_bytes(), true).map_err(|e| map_json_err(self, e))
             }
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::JsonType, self)),
         }

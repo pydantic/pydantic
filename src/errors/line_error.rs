@@ -2,7 +2,9 @@ use pyo3::exceptions::PyTypeError;
 use pyo3::prelude::*;
 use pyo3::PyDowncastError;
 
-use crate::input::{Input, JsonInput};
+use jiter::JsonValue;
+
+use crate::input::Input;
 
 use super::location::{LocItem, Location};
 use super::types::ErrorType;
@@ -147,7 +149,7 @@ impl<'a> ValLineError<'a> {
 #[derive(Clone)]
 pub enum InputValue<'a> {
     PyAny(&'a PyAny),
-    JsonInput(JsonInput),
+    JsonInput(JsonValue),
     String(&'a str),
 }
 

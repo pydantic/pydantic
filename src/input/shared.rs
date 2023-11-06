@@ -1,12 +1,12 @@
-use num_bigint::BigInt;
 use pyo3::sync::GILOnceCell;
 use pyo3::{intern, Py, PyAny, Python, ToPyObject};
 
+use jiter::JsonValueError;
+use num_bigint::BigInt;
+
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 
-use super::parse_json::{JsonArray, JsonInput};
 use super::{EitherFloat, EitherInt, Input};
-
 static ENUM_META_OBJECT: GILOnceCell<Py<PyAny>> = GILOnceCell::new();
 
 pub fn get_enum_meta_object(py: Python) -> Py<PyAny> {
@@ -20,7 +20,7 @@ pub fn get_enum_meta_object(py: Python) -> Py<PyAny> {
         .clone()
 }
 
-pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: serde_json::Error) -> ValError<'a> {
+pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: JsonValueError) -> ValError<'a> {
     ValError::new(
         ErrorType::JsonInvalid {
             error: error.to_string(),
@@ -163,8 +163,4 @@ pub fn decimal_as_int<'a>(py: Python, input: &'a impl Input<'a>, decimal: &'a Py
         return Err(ValError::new(ErrorTypeDefaults::IntFromFloat, input));
     }
     Ok(EitherInt::Py(numerator))
-}
-
-pub fn string_to_vec(s: &str) -> JsonArray {
-    JsonArray::new(s.chars().map(|c| JsonInput::String(c.to_string())).collect())
 }

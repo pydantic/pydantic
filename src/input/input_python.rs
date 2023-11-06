@@ -9,9 +9,11 @@ use pyo3::types::{
 #[cfg(not(PyPy))]
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{intern, PyTypeInfo};
+
+use jiter::JsonValue;
 use speedate::MicrosecondsPrecisionOverflowBehavior;
 
-use crate::errors::{ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
+use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::{extract_i64, safe_repr};
 use crate::validators::decimal::{create_decimal, get_decimal_type};
 use crate::{ArgsKwargs, PyMultiHostUrl, PyUrl};
@@ -27,7 +29,7 @@ use super::shared::{
 };
 use super::{
     py_string_str, BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments,
-    GenericIterable, GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
+    GenericIterable, GenericIterator, GenericMapping, Input, PyArgs,
 };
 
 #[cfg(not(PyPy))]
@@ -90,7 +92,7 @@ macro_rules! extract_dict_items {
     };
 }
 
-impl<'a> Input<'a> for PyAny {
+impl AsLocItem for PyAny {
     fn as_loc_item(&self) -> LocItem {
         if let Ok(py_str) = self.downcast::<PyString>() {
             py_str.to_string_lossy().as_ref().into()
@@ -100,7 +102,9 @@ impl<'a> Input<'a> for PyAny {
             safe_repr(self).to_string().into()
         }
     }
+}
 
+impl<'a> Input<'a> for PyAny {
     fn as_error_value(&'a self) -> InputValue<'a> {
         InputValue::PyAny(self)
     }
@@ -183,19 +187,20 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn parse_json(&'a self) -> ValResult<'a, JsonInput> {
-        if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            serde_json::from_slice(py_bytes.as_bytes()).map_err(|e| map_json_err(self, e))
+    fn parse_json(&'a self) -> ValResult<'a, JsonValue> {
+        let bytes = if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+            py_bytes.as_bytes()
         } else if let Ok(py_str) = self.downcast::<PyString>() {
             let str = py_string_str(py_str)?;
-            serde_json::from_str(str).map_err(|e| map_json_err(self, e))
+            str.as_bytes()
         } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
             // Safety: from_slice does not run arbitrary Python code and the GIL is held so the
-            // bytes array will not be mutated while from_slice is reading it
-            serde_json::from_slice(unsafe { py_byte_array.as_bytes() }).map_err(|e| map_json_err(self, e))
+            // bytes array will not be mutated while `JsonValue::parse` is reading it
+            unsafe { py_byte_array.as_bytes() }
         } else {
-            Err(ValError::new(ErrorTypeDefaults::JsonType, self))
-        }
+            return Err(ValError::new(ErrorTypeDefaults::JsonType, self));
+        };
+        JsonValue::parse(bytes, true).map_err(|e| map_json_err(self, e))
     }
 
     fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
@@ -207,22 +212,6 @@ impl<'a> Input<'a> for PyAny {
             Ok(py_string_str(py_str)?.into())
         } else {
             Err(ValError::new(ErrorTypeDefaults::StringType, self))
-        }
-    }
-
-    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
-        if let Ok(py_str) = PyString::try_from_exact(self) {
-            Ok(EitherString::Py(py_str))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::IntType, self))
-        }
-    }
-
-    fn exact_int(&'a self) -> ValResult<EitherInt<'a>> {
-        if PyInt::is_exact_type_of(self) {
-            Ok(EitherInt::Py(self))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::IntType, self))
         }
     }
 
@@ -347,6 +336,22 @@ impl<'a> Input<'a> for PyAny {
             float_as_int(self, float)
         } else if let Some(enum_val) = maybe_as_enum(self) {
             Ok(EitherInt::Py(enum_val))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::IntType, self))
+        }
+    }
+
+    fn exact_int(&'a self) -> ValResult<EitherInt<'a>> {
+        if PyInt::is_exact_type_of(self) {
+            Ok(EitherInt::Py(self))
+        } else {
+            Err(ValError::new(ErrorTypeDefaults::IntType, self))
+        }
+    }
+
+    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
+        if let Ok(py_str) = PyString::try_from_exact(self) {
+            Ok(EitherString::Py(py_str))
         } else {
             Err(ValError::new(ErrorTypeDefaults::IntType, self))
         }

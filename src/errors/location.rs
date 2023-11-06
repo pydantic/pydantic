@@ -3,12 +3,11 @@ use pyo3::once_cell::GILOnceCell;
 use std::fmt;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyList, PyString, PyTuple};
+use pyo3::types::{PyList, PyTuple};
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 
 use crate::lookup_key::{LookupPath, PathItem};
-use crate::tools::extract_i64;
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
@@ -33,6 +32,12 @@ impl fmt::Display for LocItem {
             Self::I(i) => write!(f, "{i}"),
         }
     }
+}
+
+// TODO rename to ToLocItem
+pub trait AsLocItem {
+    // TODO rename to to_loc_item
+    fn as_loc_item(&self) -> LocItem;
 }
 
 impl From<String> for LocItem {
@@ -78,21 +83,6 @@ impl ToPyObject for LocItem {
         match self {
             Self::S(val) => val.to_object(py),
             Self::I(val) => val.to_object(py),
-        }
-    }
-}
-
-impl TryFrom<&PyAny> for LocItem {
-    type Error = PyErr;
-
-    fn try_from(loc_item: &PyAny) -> PyResult<Self> {
-        if let Ok(py_str) = loc_item.downcast::<PyString>() {
-            let str = py_str.to_str()?.to_string();
-            Ok(Self::S(str))
-        } else if let Ok(int) = extract_i64(loc_item) {
-            Ok(Self::I(int))
-        } else {
-            Err(PyTypeError::new_err("Item in a location must be a string or int"))
         }
     }
 }
@@ -211,9 +201,9 @@ impl TryFrom<Option<&PyAny>> for Location {
     fn try_from(location: Option<&PyAny>) -> PyResult<Self> {
         if let Some(location) = location {
             let mut loc_vec: Vec<LocItem> = if let Ok(tuple) = location.downcast::<PyTuple>() {
-                tuple.iter().map(LocItem::try_from).collect::<PyResult<_>>()?
+                tuple.iter().map(AsLocItem::as_loc_item).collect()
             } else if let Ok(list) = location.downcast::<PyList>() {
-                list.iter().map(LocItem::try_from).collect::<PyResult<_>>()?
+                list.iter().map(AsLocItem::as_loc_item).collect()
             } else {
                 return Err(PyTypeError::new_err(
                     "Location must be a list or tuple of strings and ints",
