@@ -195,8 +195,10 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 
     user = User(name='johndoe')  # (1)!
+    user = User(username='johndoe')  # (2)!
     ```
-    1. Now VSCode will not show a warning
+    1. Now VSCode will not show a warning.
+    2. VSCode will show a warning here though.
 
     This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
 
