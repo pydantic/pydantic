@@ -789,7 +789,7 @@ def test_error_json_python_error(pydantic_version: str):
     with pytest.raises(ValidationError) as exc_info:
         s.validate_python('anything')
 
-    exc = exc_info.value.errors()[0]['ctx']['error']  # type: ignore
+    exc = exc_info.value.errors()[0]['ctx']['error']
     assert isinstance(exc, ValueError)
     assert isinstance(exc.__context__, AssertionError)
 

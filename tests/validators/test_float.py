@@ -227,6 +227,7 @@ def test_float_key(py_and_json: PyAndJson):
         ('NaN', True, FunctionCheck(math.isnan)),
         ('NaN', False, Err("Input should be a finite number [type=finite_number, input_value='NaN', input_type=str]")),
         ('+inf', True, FunctionCheck(lambda x: math.isinf(x) and x > 0)),
+        ('inf', True, FunctionCheck(lambda x: math.isinf(x) and x > 0)),
         (
             '+inf',
             False,
