@@ -14,6 +14,7 @@ from typing import (
     Any,
     Callable,
     ClassVar,
+    Dict,
     FrozenSet,
     Generic,
     Hashable,
@@ -21,6 +22,7 @@ from typing import (
     List,
     Set,
     TypeVar,
+    Union,
     cast,
 )
 from uuid import UUID
@@ -28,7 +30,7 @@ from uuid import UUID
 import annotated_types
 from annotated_types import BaseMetadata, MaxLen, MinLen
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
-from typing_extensions import Annotated, Literal, Protocol, deprecated
+from typing_extensions import Annotated, Literal, Protocol, TypeAlias, TypeAliasType, deprecated
 
 from ._internal import (
     _core_utils,
@@ -101,6 +103,7 @@ __all__ = (
     'StringConstraints',
     'Tag',
     'CallableDiscriminator',
+    'JsonValue',
 )
 
 
@@ -1495,8 +1498,6 @@ class _SecretField(Generic[SecretType]):
 
 
 def _secret_display(value: str | bytes) -> str:
-    if isinstance(value, bytes):
-        value = value.decode()
     return '**********' if value else ''
 
 
@@ -2444,6 +2445,8 @@ class GetPydanticSchema:
 class Tag:
     """Provides a way to specify the expected tag to use for a case with a callable discriminated union.
 
+    Also provides a way to label a union case in error messages.
+
     When using a `CallableDiscriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
     should be used to identify that case. For example, in the below example, the `Tag` is used to specify that
     if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it
@@ -2452,10 +2455,10 @@ class Tag:
     The primary role of the `Tag` here is to map the return value from the `CallableDiscriminator` function to
     the appropriate member of the `Union` in question.
 
-    ```py requires="3.8"
-    from typing import Any, Literal, Union
+    ```py
+    from typing import Any, Union
 
-    from typing_extensions import Annotated
+    from typing_extensions import Annotated, Literal
 
     from pydantic import BaseModel, CallableDiscriminator, Tag
 
@@ -2511,7 +2514,7 @@ class Tag:
         Failing to do so will result in a `PydanticUserError` with code
         [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
 
-    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
     docs for more details on how to use `Tag`s.
     """
 
@@ -2538,10 +2541,10 @@ class CallableDiscriminator:
     Consider this example, which is much more performant with the use of `CallableDiscriminator` and thus a `TaggedUnion`
     than it would be as a normal `Union`.
 
-    ```py requires="3.8"
-    from typing import Any, Literal, Union
+    ```py
+    from typing import Any, Union
 
-    from typing_extensions import Annotated
+    from typing_extensions import Annotated, Literal
 
     from pydantic import BaseModel, CallableDiscriminator, Tag
 
@@ -2592,7 +2595,7 @@ class CallableDiscriminator:
     '''
     ```
 
-    See the [Discriminated Unions](../api/standard_library_types.md#discriminated-unions-aka-tagged-unions)
+    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
     docs for more details on how to use `CallableDiscriminator`s.
     """
 
@@ -2659,3 +2662,111 @@ class CallableDiscriminator:
             metadata=original_schema.get('metadata'),
             serialization=original_schema.get('serialization'),
         )
+
+
+_JSON_TYPES = {int, float, str, bool, list, dict, type(None)}
+
+
+def _get_type_name(x: Any) -> str:
+    type_ = type(x)
+    if type_ in _JSON_TYPES:
+        return type_.__name__
+
+    # Handle proper subclasses; note we don't need to handle None here
+    if isinstance(x, bool):
+        return 'bool'
+    if isinstance(x, int):
+        return 'int'
+    if isinstance(x, float):
+        return 'float'
+    if isinstance(x, str):
+        return 'str'
+    if isinstance(x, list):
+        return 'list'
+    if isinstance(x, dict):
+        return 'dict'
+
+    # Fail by returning the type's actual name
+    return getattr(type_, '__name__', '<no type name>')
+
+
+class _AllowAnyJson:
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        python_schema = handler(source_type)
+        return core_schema.json_or_python_schema(json_schema=core_schema.any_schema(), python_schema=python_schema)
+
+
+if TYPE_CHECKING:
+    # This seems to only be necessary for mypy
+    JsonValue: TypeAlias = Union[
+        List['JsonValue'],
+        Dict[str, 'JsonValue'],
+        str,
+        int,
+        float,
+        bool,
+        None,
+    ]
+    """A `JsonValue` is used to represent a value that can be serialized to JSON.
+
+    It may be one of:
+
+    * `List['JsonValue']`
+    * `Dict[str, 'JsonValue']`
+    * `str`
+    * `int`
+    * `float`
+    * `bool`
+    * `None`
+
+    The following example demonstrates how to use `JsonValue` to validate JSON data,
+    and what kind of errors to expect when input data is not json serializable.
+
+    ```py
+    import json
+
+    from pydantic import JsonValue, TypeAdapter, ValidationError
+
+    adapter = TypeAdapter(JsonValue)
+    valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
+    invalid_json_data = {'a': {'b': ...}}
+
+    assert adapter.validate_python(valid_json_data) == valid_json_data
+    assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
+
+    try:
+        adapter.validate_python(invalid_json_data)
+    except ValidationError as exc_info:
+        assert exc_info.errors() == [
+            {
+                'input': Ellipsis,
+                'loc': ('dict', 'a', 'dict', 'b'),
+                'msg': 'input was not a valid JSON value',
+                'type': 'invalid-json-value',
+            }
+        ]
+    ```
+    """
+
+else:
+    JsonValue = TypeAliasType(
+        'JsonValue',
+        Annotated[
+            Union[
+                Annotated[List['JsonValue'], Tag('list')],
+                Annotated[Dict[str, 'JsonValue'], Tag('dict')],
+                Annotated[str, Tag('str')],
+                Annotated[int, Tag('int')],
+                Annotated[float, Tag('float')],
+                Annotated[bool, Tag('bool')],
+                Annotated[None, Tag('NoneType')],
+            ],
+            CallableDiscriminator(
+                _get_type_name,
+                custom_error_type='invalid-json-value',
+                custom_error_message='input was not a valid JSON value',
+            ),
+            _AllowAnyJson,
+        ],
+    )

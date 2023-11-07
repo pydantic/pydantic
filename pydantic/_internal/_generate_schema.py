@@ -37,12 +37,12 @@ from pydantic_core import CoreSchema, PydanticUndefined, core_schema, to_jsonabl
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
-from ..config import ConfigDict, JsonEncoder
+from ..config import ConfigDict, JsonDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..json_schema import JsonSchemaValue
 from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
+from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper, ConfigWrapperStack
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
@@ -987,15 +987,9 @@ class GenerateSchema:
 
         json_schema_extra = field_info.json_schema_extra
 
-        def json_schema_update_func(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = {**handler(schema), **json_schema_updates}
-            if isinstance(json_schema_extra, dict):
-                json_schema.update(to_jsonable_python(json_schema_extra))
-            elif callable(json_schema_extra):
-                json_schema_extra(json_schema)
-            return json_schema
-
-        metadata = build_metadata_dict(js_annotation_functions=[json_schema_update_func])
+        metadata = build_metadata_dict(
+            js_annotation_functions=[get_json_schema_update_func(json_schema_updates, json_schema_extra)]
+        )
 
         # apply alias generator
         alias_generator = self._config_wrapper.alias_generator
@@ -1033,7 +1027,7 @@ class GenerateSchema:
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
-        choices: list[CoreSchema | tuple[CoreSchema, str]] = []
+        choices: list[CoreSchema] = []
         nullable = False
         for arg in args:
             if arg is None or arg is _typing_extra.NoneType:
@@ -1042,10 +1036,18 @@ class GenerateSchema:
                 choices.append(self.generate_schema(arg))
 
         if len(choices) == 1:
-            first_choice = choices[0]
-            s = first_choice[0] if isinstance(first_choice, tuple) else first_choice
+            s = choices[0]
         else:
-            s = core_schema.union_schema(choices)
+            choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
+            for choice in choices:
+                metadata = choice.get('metadata')
+                if isinstance(metadata, dict):
+                    tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
+                    if tag is not None:
+                        choices_with_tags.append((choice, tag))
+                    else:
+                        choices_with_tags.append(choice)
+            s = core_schema.union_schema(choices_with_tags)
 
         if nullable:
             s = core_schema.nullable_schema(s)
@@ -1558,6 +1560,14 @@ class GenerateSchema:
             if description is not None:
                 json_schema['description'] = description
 
+            examples = d.info.examples
+            if examples is not None:
+                json_schema['examples'] = to_jsonable_python(examples)
+
+            json_schema_extra = d.info.json_schema_extra
+            if json_schema_extra is not None:
+                add_json_schema_extra(json_schema, json_schema_extra)
+
             return json_schema
 
         metadata = build_metadata_dict(js_annotation_functions=[set_computed_field_metadata])
@@ -1707,20 +1717,8 @@ class GenerateSchema:
 
             json_schema_extra = metadata.json_schema_extra
             if json_schema_update or json_schema_extra:
-
-                def json_schema_update_func(
-                    core_schema: CoreSchemaOrField, handler: GetJsonSchemaHandler
-                ) -> JsonSchemaValue:
-                    json_schema = handler(core_schema)
-                    json_schema.update(json_schema_update)
-                    if isinstance(json_schema_extra, dict):
-                        json_schema.update(to_jsonable_python(json_schema_extra))
-                    elif callable(json_schema_extra):
-                        json_schema_extra(json_schema)
-                    return json_schema
-
                 CoreMetadataHandler(schema).metadata.setdefault('pydantic_js_annotation_functions', []).append(
-                    json_schema_update_func
+                    get_json_schema_update_func(json_schema_update, json_schema_extra)
                 )
         return schema
 
@@ -2003,6 +2001,28 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
         return None
 
     return js_modify_function
+
+
+def get_json_schema_update_func(
+    json_schema_update: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
+) -> GetJsonSchemaFunction:
+    def json_schema_update_func(
+        core_schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = {**handler(core_schema_or_field), **json_schema_update}
+        add_json_schema_extra(json_schema, json_schema_extra)
+        return json_schema
+
+    return json_schema_update_func
+
+
+def add_json_schema_extra(
+    json_schema: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
+):
+    if isinstance(json_schema_extra, dict):
+        json_schema.update(to_jsonable_python(json_schema_extra))
+    elif callable(json_schema_extra):
+        json_schema_extra(json_schema)
 
 
 class _CommonField(TypedDict):
