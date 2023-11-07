@@ -1,14 +1,16 @@
 Unions are fundamentally different to all other types Pydantic validates - instead of requiring all fields/items/values to be valid, unions require only one member to be valid.
 
 This leads to some nuance around how to validate unions:
+
 * which member(s) of the union should you validate data against, and in which order?
 * which errors to raise when validation fails?
 
 Validating unions feels like adding another orthogonal dimension to the validation process.
 
 To solve these problems, Pydantic supports three fundamental approaches to validating unions:
+
 1. [left to right mode](#left-to-right-mode) - the simplest approach, each member of the union is tried in order
-2. [smart mode](#smart-mode) - as with "left to right mode" all members are tried, but strict validation is used to try to find the best match
+2. [smart mode](#smart-mode) - as with "left to right mode" all members are tried, but strict validation is used to try to find the best match, this is the default mode for most union validation
 3. [discriminated unions](#discriminated-unions) - only one member of the union is tried, based on a discriminator
 
 ## Union Modes
@@ -130,7 +132,7 @@ We can use discriminated unions to more efficiently validate `Union` types, by c
 
 This makes validation more efficient and also avoids a proliferation of errors when validation fails.
 
-Add ing disciminator to unions also means the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#discriminator-object)
+Adding discriminator to unions also means the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/main/versions/3.1.0.md#discriminator-object).
 
 ### Discriminated Unions with `str` discriminators
 
