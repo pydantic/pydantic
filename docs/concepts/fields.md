@@ -597,8 +597,8 @@ print(user)
 ## Discriminator
 
 The parameter `discriminator` can be used to control the field that will be used to discriminate between different
-models in a union. It takes either the name of a field or a `CallableDiscriminator` instance. The `CallableDiscriminator`
-approach can be useful when the discriminator fields aren't the same for all of the models in the `Union`.
+models in a union. It takes either the name of a field or a `Discriminator` instance. The `Discriminator`
+approach can be useful when the discriminator fields aren't the same for all the models in the `Union`.
 
 The following example shows how to use `discriminator` with a field name:
 
@@ -628,14 +628,14 @@ print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
 
 1. See more about [Helper Functions] in the [Models] page.
 
-The following example shows how to use `discriminator` with a `CallableDiscriminator` instance:
+The following example shows how to use the `discriminator` keyword argument with a `Discriminator` instance:
 
 ```py requires="3.8"
 from typing import Literal, Union
 
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, CallableDiscriminator, Field, Tag
+from pydantic import BaseModel, Discriminator, Field, Tag
 
 
 class Cat(BaseModel):
@@ -656,7 +656,7 @@ def pet_discriminator(v):
 
 class Model(BaseModel):
     pet: Union[Annotated[Cat, Tag('cat')], Annotated[Dog, Tag('dog')]] = Field(
-        discriminator=CallableDiscriminator(pet_discriminator)
+        discriminator=Discriminator(pet_discriminator)
     )
 
 

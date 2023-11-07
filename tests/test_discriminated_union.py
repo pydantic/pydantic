@@ -9,7 +9,7 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, CallableDiscriminator, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Discriminator, Field, TypeAdapter, ValidationError, field_validator
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.errors import PydanticUserError
 from pydantic.types import Tag
@@ -130,7 +130,18 @@ def test_discriminated_union_root_same_discriminator():
     ]
 
 
-def test_discriminated_union_validation():
+@pytest.mark.parametrize('color_discriminator_kind', ['discriminator', 'field_str', 'field_discriminator'])
+@pytest.mark.parametrize('pet_discriminator_kind', ['discriminator', 'field_str', 'field_discriminator'])
+def test_discriminated_union_validation(color_discriminator_kind, pet_discriminator_kind):
+    def _get_str_discriminator(discriminator: str, kind: str):
+        if kind == 'discriminator':
+            return Discriminator(discriminator)
+        elif kind == 'field_str':
+            return Field(discriminator=discriminator)
+        elif kind == 'field_discriminator':
+            return Field(discriminator=Discriminator(discriminator))
+        raise ValueError(f'Invalid kind: {kind}')
+
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
         color: Literal['black']
@@ -141,7 +152,8 @@ def test_discriminated_union_validation():
         color: Literal['white']
         white_infos: str
 
-    Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+    color_discriminator = _get_str_discriminator('color', color_discriminator_kind)
+    Cat = Annotated[Union[BlackCat, WhiteCat], color_discriminator]
 
     class Dog(BaseModel):
         pet_type: Literal['dog']
@@ -151,8 +163,10 @@ def test_discriminated_union_validation():
         pet_type: Literal['reptile', 'lizard']
         m: str
 
+    pet_discriminator = _get_str_discriminator('pet_type', pet_discriminator_kind)
+
     class Model(BaseModel):
-        pet: Annotated[Union[Cat, Dog, Lizard], Field(discriminator='pet_type')]
+        pet: Annotated[Union[Cat, Dog, Lizard], pet_discriminator]
         number: int
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1389,7 +1403,7 @@ def test_callable_discriminated_union_with_type_adapter(
     pet_adapter = TypeAdapter(
         Annotated[
             Union[Annotated[animals.cat, Tag('cat')], Annotated[animals.dog, Tag('dog')]],
-            CallableDiscriminator(get_pet_discriminator_value),
+            Discriminator(get_pet_discriminator_value),
         ]
     )
 
@@ -1460,19 +1474,19 @@ def test_various_syntax_options_for_callable_union(
 ) -> None:
     class PetModelField(BaseModel):
         pet: Union[Annotated[animals.cat, Tag('cat')], Annotated[animals.dog, Tag('dog')]] = Field(
-            discriminator=CallableDiscriminator(get_pet_discriminator_value)
+            discriminator=Discriminator(get_pet_discriminator_value)
         )
 
     class PetModelAnnotated(BaseModel):
         pet: Annotated[
             Union[Annotated[animals.cat, Tag('cat')], Annotated[animals.dog, Tag('dog')]],
-            CallableDiscriminator(get_pet_discriminator_value),
+            Discriminator(get_pet_discriminator_value),
         ]
 
     class PetModelAnnotatedWithField(BaseModel):
         pet: Annotated[
             Union[Annotated[animals.cat, Tag('cat')], Annotated[animals.dog, Tag('dog')]],
-            Field(discriminator=CallableDiscriminator(get_pet_discriminator_value)),
+            Field(discriminator=Discriminator(get_pet_discriminator_value)),
         ]
 
     models = [PetModelField, PetModelAnnotated, PetModelAnnotatedWithField]
@@ -1541,7 +1555,7 @@ def test_various_syntax_options_for_callable_union(
 
 
 def test_callable_discriminated_union_recursive():
-    # Demonstrate that the errors suck without a callable discriminator:
+    # Demonstrate that the errors are very verbose without a callable discriminator:
     class Model(BaseModel):
         x: Union[str, 'Model']
 
@@ -1599,7 +1613,7 @@ def test_callable_discriminated_union_recursive():
         },
     ]
 
-    # Demonstrate that the errors suck less _with_ a callable discriminator:
+    # Demonstrate that the errors are less verbose _with_ a callable discriminator:
     def model_x_discriminator(v):
         if isinstance(v, str):
             return 'str'
@@ -1609,7 +1623,7 @@ def test_callable_discriminated_union_recursive():
     class DiscriminatedModel(BaseModel):
         x: Annotated[
             Union[Annotated[str, Tag('str')], Annotated['DiscriminatedModel', Tag('model')]],
-            CallableDiscriminator(
+            Discriminator(
                 model_x_discriminator,
                 custom_error_type='invalid_union_member',
                 custom_error_message='Invalid union member',
@@ -1658,7 +1672,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 Union[str, 'DiscriminatedModel'],
-                CallableDiscriminator(model_x_discriminator),
+                Discriminator(model_x_discriminator),
             ]
     except PydanticUserError as exc_info:
         assert exc_info.code == 'callable-discriminator-no-tag'
@@ -1668,7 +1682,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 Union[Annotated[str, Tag('str')], 'DiscriminatedModel'],
-                CallableDiscriminator(model_x_discriminator),
+                Discriminator(model_x_discriminator),
             ]
     except PydanticUserError as exc_info:
         assert exc_info.code == 'callable-discriminator-no-tag'
@@ -1678,7 +1692,7 @@ def test_callable_discriminated_union_with_missing_tag() -> None:
         class DiscriminatedModel(BaseModel):
             x: Annotated[
                 Union[str, Annotated['DiscriminatedModel', Tag('model')]],
-                CallableDiscriminator(model_x_discriminator),
+                Discriminator(model_x_discriminator),
             ]
     except PydanticUserError as exc_info:
         assert exc_info.code == 'callable-discriminator-no-tag'
