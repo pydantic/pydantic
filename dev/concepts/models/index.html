@@ -3823,12 +3823,12 @@ and that <code>ValidationError</code> will contain information about all of the 
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;Invalid JSON&#39;</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="s1">&#39;invalid JSON&#39;</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    1 validation error for User</span>
-<span class="sd">      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value=&#39;Invalid JSON&#39;, input_type=str]</span>
+<span class="sd">      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value=&#39;invalid JSON&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>If you want to validate serialized data in a format other than JSON, you should load the data into a dict yourself and
@@ -4928,7 +4928,7 @@ the type annotation for <code>__pydantic_extra__</code>:</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.4.2", "pydantic-core==2.11.0"]
+    window.mkdocs_run_deps = ["pydantic==2.4.2", "pydantic-core==2.12.0"]
     </script>
 
               </article>
