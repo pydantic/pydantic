@@ -30,6 +30,7 @@ authors = [
     {name = 'Adrian Garcia Badaracco', email = '1755071+adriangb@users.noreply.github.com'},
     {name = 'Terrence Dorsey', email = 'terry@pydantic.dev'},
     {name = 'David Montague', email = 'david@pydantic.dev'},
+    {name = 'Serge Matveenko', email = 'lig@countzero.co'},
 ]
 license = 'MIT'
 classifiers = [
