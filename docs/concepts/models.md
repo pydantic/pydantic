@@ -457,7 +457,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for User
-      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='Invalid JSON', input_type=str]
+      Invalid JSON: expected ident at line 1 column 3 [type=json_invalid, input_value='Invalid JSON', input_type=str]
     """
 ```
 
