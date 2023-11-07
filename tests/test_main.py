@@ -693,7 +693,7 @@ def test_validating_assignment_fail(ValidateAssignmentModel):
         {
             'type': 'string_too_short',
             'loc': ('b',),
-            'msg': 'String should have at least 1 characters',
+            'msg': 'String should have at least 1 character',
             'input': '',
             'ctx': {'min_length': 1},
         }
@@ -3045,7 +3045,7 @@ def test_schema_generator_customize_type_constraints_order() -> None:
         {
             'type': 'string_too_long',
             'loc': ('y',),
-            'msg': 'String should have at most 1 characters',
+            'msg': 'String should have at most 1 character',
             'input': ' 1 ',
             'ctx': {'max_length': 1},
         }

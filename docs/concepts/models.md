@@ -227,8 +227,9 @@ from typing import List
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import declarative_base
+from typing_extensions import Annotated
 
-from pydantic import BaseModel, ConfigDict, constr
+from pydantic import BaseModel, ConfigDict, StringConstraints
 
 Base = declarative_base()
 
@@ -246,9 +247,9 @@ class CompanyModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    public_key: constr(max_length=20)
-    name: constr(max_length=63)
-    domains: List[constr(max_length=255)]
+    public_key: Annotated[str, StringConstraints(max_length=20)]
+    name: Annotated[str, StringConstraints(max_length=63)]
+    domains: List[Annotated[str, StringConstraints(max_length=255)]]
 
 
 co_orm = CompanyOrm(
@@ -451,12 +452,12 @@ except ValidationError as e:
     """
 
 try:
-    m = User.model_validate_json('Invalid JSON')
+    m = User.model_validate_json('invalid JSON')
 except ValidationError as e:
     print(e)
     """
     1 validation error for User
-      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='Invalid JSON', input_type=str]
+      Invalid JSON: expected value at line 1 column 1 [type=json_invalid, input_value='invalid JSON', input_type=str]
     """
 ```
 
@@ -619,11 +620,6 @@ from pydantic import BaseModel, ValidationError
 DataT = TypeVar('DataT')
 
 
-class Error(BaseModel):
-    code: int
-    message: str
-
-
 class DataModel(BaseModel):
     numbers: List[int]
     people: List[str]
@@ -634,7 +630,6 @@ class Response(BaseModel, Generic[DataT]):
 
 
 data = DataModel(numbers=[1, 2, 3], people=[])
-error = Error(code=404, message='Not found')
 
 print(Response[int](data=1))
 #> data=1
