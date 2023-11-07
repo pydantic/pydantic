@@ -70,7 +70,7 @@ jobs:
           - '3.9'
           - '3.10'
           - '3.11'
-          - '3.12-dev'
+          - '3.12'
           - 'pypy3.7'
           - 'pypy3.8'
           - 'pypy3.9'
@@ -389,7 +389,7 @@ jobs:
             interpreter: 3.11 3.12
           - os: macos
             target: aarch64
-            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9 pypy3.10
+            interpreter: 3.7 3.8 3.9 pypy3.8 pypy3.9 pypy3.10
           - os: ubuntu
             platform: linux
             target: i686
@@ -465,25 +465,26 @@ jobs:
           path: dist
 
   build-pgo:
-    name: build pgo-optimized on ${{ matrix.platform || matrix.os }} (${{ matrix.interpreter}} - ${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
+    name: build pgo-optimized on ${{ matrix.os }} / ${{ matrix.interpreter }}
     # only run on push to main and on release
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build')
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, windows]
-        target: [x86_64]
-        manylinux: [auto]
-        interpreter: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12-dev", "pypy3.7", "pypy3.8", "pypy3.9", "pypy3.10"]
+        os: [ubuntu-latest, windows-latest, macos-latest-xlarge]
+        interpreter: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         include:
-          - os: ubuntu
-            platform: linux
-          - os: windows
+          - os: windows-latest
             ls: dir
-          - interpreter: 3.12-dev
-            maturin-interpreter: "3.12"
+        exclude:
+          - os: macos-latest-xlarge
+            interpreter: '3.7'
+          - os: macos-latest-xlarge
+            interpreter: '3.8'
+          - os: macos-latest-xlarge
+            interpreter: '3.9'
 
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -491,7 +492,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.interpreter }}
-          architecture: ${{ matrix.python-architecture || 'x64' }}
 
       - name: install rust stable
         id: rust-toolchain
@@ -504,15 +504,15 @@ jobs:
       # generate self-schema now, so we don't have to do so inside docker in maturin build
       - run: python generate_self_schema.py
 
+      - run: rustc --version --verbose
+
       - name: build initial wheel
         uses: PyO3/maturin-action@v1
         with:
-          target: ${{ matrix.target }}
-          manylinux: ${{ matrix.manylinux || 'auto' }}
           args: >
             --release
             --out pgo-wheel
-            --interpreter ${{ matrix.maturin-interpreter || matrix.interpreter }}
+            --interpreter ${{ matrix.interpreter }}
           rust-toolchain: stable
           docker-options: -e CI
         env:
@@ -536,12 +536,10 @@ jobs:
       - name: build pgo-optimized wheel
         uses: PyO3/maturin-action@v1
         with:
-          target: ${{ matrix.target }}
-          manylinux: ${{ matrix.manylinux || 'auto' }}
           args: >
             --release
             --out dist
-            --interpreter ${{ matrix.maturin-interpreter || matrix.interpreter }}
+            --interpreter ${{ matrix.interpreter }}
           rust-toolchain: stable
           docker-options: -e CI
         env:
@@ -551,7 +549,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: pypi_files
+          name: pypi_files_pgo
           path: dist
 
   inspect-pypi-assets:
@@ -567,7 +565,19 @@ jobs:
           name: pypi_files
           path: dist
 
-      - name: list dist files
+      - name: list dist files before PGO builds
+        run: |
+         ls -lh dist/
+         ls -l dist/
+         echo "`ls dist | wc -l` files"
+
+      - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files_pgo
+          path: dist
+
+      - name: list dist files with PGO builds
         run: |
          ls -lh dist/
          ls -l dist/
@@ -605,6 +615,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: pypi_files
+          path: dist
+
+      - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files_pgo
           path: dist
 
       - uses: uraimo/run-on-arch-action@v2.5.1
@@ -659,6 +675,12 @@ jobs:
           name: pypi_files
           path: dist
 
+      - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files_pgo
+          path: dist
+
       - run: pip install typing-extensions
       - run: pip install -r tests/requirements.txt
       - run: pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
@@ -686,6 +708,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: pypi_files
+          path: dist
+
+      - name: get PGO dist artifacts (comes after "get dist artifacts" to so these files override the non-PGO builds)
+        uses: actions/download-artifact@v3
+        with:
+          name: pypi_files_pgo
           path: dist
 
       - run: twine check --strict dist/*
