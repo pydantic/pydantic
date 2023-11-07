@@ -16,7 +16,7 @@ from ._config import ConfigWrapper
 from ._decorators import mro
 from ._generics import get_standard_typevars_map, replace_types
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar, typed_dict_types
+from ._typing_extra import get_cls_type_hints_lenient, eval_cls_annotations_lenient, get_type_hints, is_classvar, is_finalvar, typed_dict_types
 
 if TYPE_CHECKING:
     from annotated_types import BaseMetadata
@@ -74,7 +74,6 @@ def get_typed_dict_type_hints(
     """
     hints: dict[str, Any] = {}
     typevars_map: dict[type, dict[Any, Any]] = {}
-    required_keys: frozenset[str] = typed_dict_cls.__required_keys__
     previous_base_cls: type | None = None
 
     for base_cls in reversed(mro(typed_dict_cls)):
@@ -86,7 +85,7 @@ def get_typed_dict_type_hints(
         if get_args(base_cls):
             base: Any = get_origin(base_cls)
 
-        new_type_hints = get_cls_type_hints_lenient(base, types_namespace)
+        new_type_hints = eval_cls_annotations_lenient(base, types_namespace)
 
         typevars_map[base] = get_standard_typevars_map(base_cls) or {}
 
@@ -96,12 +95,6 @@ def get_typed_dict_type_hints(
                     hints[field_name] = replace_types(hints[field_name], typevars_map[previous_base_cls])
                 continue
 
-            origin = get_origin(annotation)
-            # if it's not required then wrap it in NotRequired
-            # so it's easy to parse later
-            if field_name not in required_keys:
-                if origin is not _typing_extra.NotRequired:
-                    annotation = _typing_extra.NotRequired[annotation]  # type: ignore
 
             hints[field_name] = annotation
 

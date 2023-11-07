@@ -1175,6 +1175,8 @@ class GenerateSchema:
 
                 self = self._current_generate_schema
 
+                required_keys: frozenset[str] = typed_dict_cls.__required_keys__
+
                 fields: dict[str, core_schema.TypedDictField] = {}
 
                 decorators = DecoratorInfos.build(typed_dict_cls)
@@ -1184,10 +1186,16 @@ class GenerateSchema:
                     types_namespace=self._types_namespace,
                 ).items():
                     annotation = replace_types(annotation, typevars_map)
-                    ann_origin = get_origin(annotation)
-                    required = ann_origin is not _typing_extra.NotRequired
+                    required = field_name in required_keys
 
-                    if ann_origin in [_typing_extra.NotRequired, _typing_extra.Required]:
+                    if get_origin(annotation) == _typing_extra.Required:
+                        required = True
+                        annotation = self._get_args_resolving_forward_refs(
+                            annotation,
+                            required=True,
+                        )[0]
+                    elif get_origin(annotation) == _typing_extra.NotRequired:
+                        required = False
                         annotation = self._get_args_resolving_forward_refs(
                             annotation,
                             required=True,
