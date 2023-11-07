@@ -3,7 +3,7 @@ Tests for TypedDict
 """
 import sys
 import typing
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from typing import Any, Dict, Generic, List, Optional, TypeVar, cast
 
 import pytest
 import typing_extensions
@@ -716,17 +716,17 @@ def test_nested_generic_typeddict():
     U = TypeVar('U')
 
     class BaseGenericTypedDict(TypedDict, Generic[U]):
-        type: U
+        format: U
 
     class NestedGenericTypedDict(BaseGenericTypedDict[T]):
         value: T
 
-    TypeAdapter(NestedGenericTypedDict[str]).validate_python(
-        {
-            'type': 'string',
-            'value': 'string',
-        }
-    )
+    adapter = TypeAdapter(NestedGenericTypedDict[str])
+    schema = cast(core_schema.TypedDictSchema, adapter.core_schema)
+    fields = schema['fields']
+
+    assert fields['format']['schema']['type'] == 'str'
+    assert fields['value']['schema']['type'] == 'str'
 
 
 def test_partial_generic_typeddict():
