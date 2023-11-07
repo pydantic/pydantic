@@ -2472,10 +2472,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.types.CallableDiscriminator" class="md-nav__link">
+  <a href="#pydantic.types.Discriminator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CallableDiscriminator
+        Discriminator
       
     </span>
   </a>
@@ -4504,10 +4504,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.types.CallableDiscriminator" class="md-nav__link">
+  <a href="#pydantic.types.Discriminator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        CallableDiscriminator
+        Discriminator
       
     </span>
   </a>
@@ -8789,19 +8789,19 @@ KiB, MiB, GiB, TiB, PiB, EiB.</p>
   <div class="doc doc-contents ">
 
   
-      <p>Provides a way to specify the expected tag to use for a case with a callable discriminated union.</p>
+      <p>Provides a way to specify the expected tag to use for a case of a (callable) discriminated union.</p>
 <p>Also provides a way to label a union case in error messages.</p>
-<p>When using a <code>CallableDiscriminator</code>, attach a <code>Tag</code> to each case in the <code>Union</code> to specify the tag that
+<p>When using a callable <code>Discriminator</code>, attach a <code>Tag</code> to each case in the <code>Union</code> to specify the tag that
 should be used to identify that case. For example, in the below example, the <code>Tag</code> is used to specify that
 if <code>get_discriminator_value</code> returns <code>'apple'</code>, the input should be validated as an <code>ApplePie</code>, and if it
 returns <code>'pumpkin'</code>, the input should be validated as a <code>PumpkinPie</code>.</p>
-<p>The primary role of the <code>Tag</code> here is to map the return value from the <code>CallableDiscriminator</code> function to
+<p>The primary role of the <code>Tag</code> here is to map the return value from the callable <code>Discriminator</code> function to
 the appropriate member of the <code>Union</code> in question.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Literal</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Tag</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Tag</span>
 
 <span class="k">class</span> <span class="nc">Pie</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">time_to_cook</span><span class="p">:</span> <span class="nb">int</span>
@@ -8824,7 +8824,7 @@ the appropriate member of the <code>Union</code> in question.</p>
             <span class="n">Annotated</span><span class="p">[</span><span class="n">ApplePie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;apple&#39;</span><span class="p">)],</span>
             <span class="n">Annotated</span><span class="p">[</span><span class="n">PumpkinPie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">)],</span>
         <span class="p">],</span>
-        <span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">get_discriminator_value</span><span class="p">),</span>
+        <span class="n">Discriminator</span><span class="p">(</span><span class="n">get_discriminator_value</span><span class="p">),</span>
     <span class="p">]</span>
 
 <span class="n">apple_variation</span> <span class="o">=</span> <span class="n">ThanksgivingDinner</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
@@ -8851,8 +8851,8 @@ the appropriate member of the <code>Union</code> in question.</p>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>You must specify a <code>Tag</code> for every case in a <code>Union</code> that is associated with a <code>CallableDiscriminator</code>.
-Failing to do so will result in a <code>PydanticUserError</code> with code
+<p>You must specify a <code>Tag</code> for every case in a <code>Union</code> that is associated with a
+callable <code>Discriminator</code>. Failing to do so will result in a <code>PydanticUserError</code> with code
 <a href="../../errors/usage_errors/#callable-discriminator-no-tag"><code>callable-discriminator-no-tag</code></a>.</p>
 </div>
 <p>See the <a href="../../concepts/unions/#discriminated-unions">Discriminated Unions</a>
@@ -8884,15 +8884,15 @@ docs for more details on how to use <code>Tag</code>s.</p>
 
 
 
-<h2 id="pydantic.types.CallableDiscriminator" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">CallableDiscriminator</span>
+<h2 id="pydantic.types.Discriminator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">Discriminator</span>
 
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
   </span>
 
-<a href="#pydantic.types.CallableDiscriminator" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic.types.Discriminator" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
   <div class="doc doc-contents ">
@@ -8904,13 +8904,13 @@ but without needing to have a single shared field across all the union choices. 
 possible to handle unions of models and primitive types with discriminated-union-style validation errors.
 Finally, this allows you to use a custom callable as the way to identify which member of a union a value
 belongs to, while still seeing all the performance benefits of a discriminated union.</p>
-<p>Consider this example, which is much more performant with the use of <code>CallableDiscriminator</code> and thus a <code>TaggedUnion</code>
+<p>Consider this example, which is much more performant with the use of <code>Discriminator</code> and thus a <code>TaggedUnion</code>
 than it would be as a normal <code>Union</code>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">Literal</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Tag</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Tag</span>
 
 <span class="k">class</span> <span class="nc">Pie</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">time_to_cook</span><span class="p">:</span> <span class="nb">int</span>
@@ -8933,7 +8933,7 @@ than it would be as a normal <code>Union</code>.</p>
             <span class="n">Annotated</span><span class="p">[</span><span class="n">ApplePie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;apple&#39;</span><span class="p">)],</span>
             <span class="n">Annotated</span><span class="p">[</span><span class="n">PumpkinPie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">)],</span>
         <span class="p">],</span>
-        <span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">get_discriminator_value</span><span class="p">),</span>
+        <span class="n">Discriminator</span><span class="p">(</span><span class="n">get_discriminator_value</span><span class="p">),</span>
     <span class="p">]</span>
 
 <span class="n">apple_variation</span> <span class="o">=</span> <span class="n">ThanksgivingDinner</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span>
@@ -8959,7 +8959,7 @@ than it would be as a normal <code>Union</code>.</p>
 <span class="sd">&#39;&#39;&#39;</span>
 </code></pre></div>
 <p>See the <a href="../../concepts/unions/#discriminated-unions">Discriminated Unions</a>
-docs for more details on how to use <code>CallableDiscriminator</code>s.</p>
+docs for more details on how to use <code>Discriminator</code>s.</p>
 
 
 

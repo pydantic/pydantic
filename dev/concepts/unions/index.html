@@ -966,10 +966,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#discriminated-unions-with-callablediscriminator-discriminators" class="md-nav__link">
+  <a href="#discriminated-unions-with-callable-discriminators" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Discriminated Unions with CallableDiscriminator discriminators
+        Discriminated Unions with callable Discriminators
       
     </span>
   </a>
@@ -2928,10 +2928,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#discriminated-unions-with-callablediscriminator-discriminators" class="md-nav__link">
+  <a href="#discriminated-unions-with-callable-discriminators" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Discriminated Unions with CallableDiscriminator discriminators
+        Discriminated Unions with callable Discriminators
       
     </span>
   </a>
@@ -3148,14 +3148,15 @@ For your <code>Union</code>, you can set the discriminator in its value: <code>F
 <span class="sd">      Field required [type=missing, input_value={&#39;pet_type&#39;: &#39;dog&#39;}, input_type=dict]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h3 id="discriminated-unions-with-callablediscriminator-discriminators">Discriminated Unions with <code>CallableDiscriminator</code> discriminators<a class="headerlink" href="#discriminated-unions-with-callablediscriminator-discriminators" title="Permanent link">&para;</a></h3>
+<h3 id="discriminated-unions-with-callable-discriminators">Discriminated Unions with callable <code>Discriminator</code>s<a class="headerlink" href="#discriminated-unions-with-callable-discriminators" title="Permanent link">&para;</a></h3>
 <p>In the case of a <code>Union</code> with multiple models, sometimes there isn't a single uniform field
-across all models that you can use as a discriminator. This is the perfect use case for the <code>CallableDiscriminator</code> approach.</p>
+across all models that you can use as a discriminator.
+This is the perfect use case for a callable <code>Discriminator</code>.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Tag</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Tag</span>
 
 
 <span class="k">class</span> <span class="nc">Pie</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3183,7 +3184,7 @@ across all models that you can use as a discriminator. This is the perfect use c
             <span class="n">Annotated</span><span class="p">[</span><span class="n">ApplePie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;apple&#39;</span><span class="p">)],</span>
             <span class="n">Annotated</span><span class="p">[</span><span class="n">PumpkinPie</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">)],</span>
         <span class="p">],</span>
-        <span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">get_discriminator_value</span><span class="p">),</span>
+        <span class="n">Discriminator</span><span class="p">(</span><span class="n">get_discriminator_value</span><span class="p">),</span>
     <span class="p">]</span>
 
 
@@ -3209,13 +3210,13 @@ across all models that you can use as a discriminator. This is the perfect use c
 <span class="sd">ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling=&#39;pumpkin&#39;))</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<p><code>CallableDiscriminators</code> can also be used to validate <code>Union</code> types with combinations of models and primitive types.</p>
+<p><code>Discriminator</code>s can also be used to validate <code>Union</code> types with combinations of models and primitive types.</p>
 <p>For example:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Tag</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Tag</span>
 
 
 <span class="k">def</span> <span class="nf">model_x_discriminator</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -3231,7 +3232,7 @@ across all models that you can use as a discriminator. This is the perfect use c
             <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)],</span>
             <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)],</span>
         <span class="p">],</span>
-        <span class="n">CallableDiscriminator</span><span class="p">(</span>
+        <span class="n">Discriminator</span><span class="p">(</span>
             <span class="n">model_x_discriminator</span><span class="p">,</span>
             <span class="n">custom_error_type</span><span class="o">=</span><span class="s1">&#39;invalid_union_member&#39;</span><span class="p">,</span>
             <span class="n">custom_error_message</span><span class="o">=</span><span class="s1">&#39;Invalid union member&#39;</span><span class="p">,</span>
@@ -3256,10 +3257,10 @@ the <code>Union</code> and <code>discriminator</code> information. See the next 
 <div class="language-text highlight"><pre><span></span><code>some_field: Union[...] = Field(discriminator=&#39;my_discriminator&#39;
 some_field: Annotated[Union[...], Field(discriminator=&#39;my_discriminator&#39;)]
 </code></pre></div></p>
-<p>For <code>CallableDiscriminator</code> discriminators:
-<div class="language-text highlight"><pre><span></span><code>some_field: Union[...] = Field(discriminator=CallableDiscriminator(...))
-some_field: Annotated[Union[...], CallableDiscriminator(...)]
-some_field: Annotated[Union[...], Field(discriminator=CallableDiscriminator(...))]
+<p>For callable <code>Discriminator</code>s:
+<div class="language-text highlight"><pre><span></span><code>some_field: Union[...] = Field(discriminator=Discriminator(...))
+some_field: Annotated[Union[...], Discriminator(...)]
+some_field: Annotated[Union[...], Field(discriminator=Discriminator(...))]
 </code></pre></div></p>
 </div>
 <div class="admonition warning">
@@ -3335,7 +3336,7 @@ The below example shows the benefits of using discriminated unions in terms of e
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Tag</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Tag</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="c1"># Errors are quite verbose with a normal Union:</span>
@@ -3419,7 +3420,7 @@ The below example shows the benefits of using discriminated unions in terms of e
             <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)],</span>
             <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)],</span>
         <span class="p">],</span>
-        <span class="n">CallableDiscriminator</span><span class="p">(</span>
+        <span class="n">Discriminator</span><span class="p">(</span>
             <span class="n">model_x_discriminator</span><span class="p">,</span>
             <span class="n">custom_error_type</span><span class="o">=</span><span class="s1">&#39;invalid_union_member&#39;</span><span class="p">,</span>
             <span class="n">custom_error_message</span><span class="o">=</span><span class="s1">&#39;Invalid union member&#39;</span><span class="p">,</span>

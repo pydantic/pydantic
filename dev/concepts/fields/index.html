@@ -3681,8 +3681,8 @@ representation of the model.</p>
 </ol>
 <h2 id="discriminator">Discriminator<a class="headerlink" href="#discriminator" title="Permanent link">&para;</a></h2>
 <p>The parameter <code>discriminator</code> can be used to control the field that will be used to discriminate between different
-models in a union. It takes either the name of a field or a <code>CallableDiscriminator</code> instance. The <code>CallableDiscriminator</code>
-approach can be useful when the discriminator fields aren't the same for all of the models in the <code>Union</code>.</p>
+models in a union. It takes either the name of a field or a <code>Discriminator</code> instance. The <code>Discriminator</code>
+approach can be useful when the discriminator fields aren't the same for all the models in the <code>Union</code>.</p>
 <p>The following example shows how to use <code>discriminator</code> with a field name:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
@@ -3742,12 +3742,12 @@ approach can be useful when the discriminator fields aren't the same for all of 
 </div>
 </div>
 </div>
-<p>The following example shows how to use <code>discriminator</code> with a <code>CallableDiscriminator</code> instance:</p>
+<p>The following example shows how to use the <code>discriminator</code> keyword argument with a <code>Discriminator</code> instance:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">CallableDiscriminator</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Tag</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Tag</span>
 
 
 <span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3768,7 +3768,7 @@ approach can be useful when the discriminator fields aren't the same for all of 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;cat&#39;</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Dog</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;dog&#39;</span><span class="p">)]]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">discriminator</span><span class="o">=</span><span class="n">CallableDiscriminator</span><span class="p">(</span><span class="n">pet_discriminator</span><span class="p">)</span>
+        <span class="n">discriminator</span><span class="o">=</span><span class="n">Discriminator</span><span class="p">(</span><span class="n">pet_discriminator</span><span class="p">)</span>
     <span class="p">)</span>
 
 
