@@ -82,7 +82,7 @@ from ._utils import is_valid_identifier, lenient_issubclass
 if TYPE_CHECKING:
     from ..fields import ComputedFieldInfo, FieldInfo
     from ..main import BaseModel
-    from ..types import CallableDiscriminator
+    from ..types import Discriminator
     from ..validators import FieldValidatorModes
     from ._dataclasses import StandardDataclass
     from ._schema_generation_shared import GetJsonSchemaFunction
@@ -374,7 +374,7 @@ class GenerateSchema:
         )
 
     def _apply_discriminator_to_union(
-        self, schema: CoreSchema, discriminator: str | CallableDiscriminator | None
+        self, schema: CoreSchema, discriminator: str | Discriminator | None
     ) -> CoreSchema:
         if discriminator is None:
             return schema
