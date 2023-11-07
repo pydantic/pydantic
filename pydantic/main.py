@@ -144,8 +144,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             code='base-model-instantiated',
         )
 
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
-
     model_config = ConfigDict()
     __pydantic_complete__ = False
     __pydantic_root_model__ = False

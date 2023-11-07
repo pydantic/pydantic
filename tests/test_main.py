@@ -3085,3 +3085,12 @@ def test_shadow_attribute() -> None:
     assert getattr(One, 'foo', None) == ' edited!'
     assert getattr(Two, 'foo', None) == ' edited! edited!'
     assert getattr(Three, 'foo', None) == ' edited! edited!'
+
+
+def test_multiple_inheritance_with_slotful_model() -> None:
+    # No asserts required here: the `class` operator itself would fail.
+    # See also:
+    # - https://github.com/pydantic/pydantic/discussions/5770
+    # - https://github.com/pydantic/pydantic/issues/1875
+    class Child(BaseModel, Exception):
+        pass
