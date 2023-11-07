@@ -3,8 +3,9 @@
 
 [metadata]
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-strategy = ["cross_platform"]
-lock_version = "4.4"
+cross_platform = true
+static_urls = false
+lock_version = "4.3"
 content_hash = "sha256:518384d96732e291b4ef42244a51cff5868bc002b23018d4e27c7c8c9c2f5ed2"
 
 [[package]]
