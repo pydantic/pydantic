@@ -1117,7 +1117,6 @@ def test_enum_as_dict_key() -> None:
     assert MyModel(foo={MyEnum.A: 'hello'}, bar=MyEnum.B).model_dump_json() == '{"foo":{"a":"hello"},"bar":"b"}'
 
 
-@pytest.mark.xfail(reason='Needs new release of pydantic-core')
 def test_subclass_support_unions() -> None:
     class Pet(BaseModel):
         name: str
@@ -1145,7 +1144,6 @@ def test_subclass_support_unions() -> None:
     assert s.model_dump() == {'pets': [{'name': 'fluffy'}, {'name': 'patches'}]}
 
 
-@pytest.mark.xfail(reason='Needs new release of pydantic-core')
 def test_subclass_support_unions_with_forward_ref() -> None:
     class Bar(BaseModel):
         bar_id: int

@@ -3074,7 +3074,6 @@ ANY_THING = object()
                     },
                 }
             ],
-            marks=pytest.mark.xfail(reason='Needs new release of pydantic-core'),
         ),
         (
             dict(max_digits=3, decimal_places=1),
