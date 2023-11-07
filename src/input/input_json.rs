@@ -368,8 +368,6 @@ impl AsLocItem for String {
     }
 }
 
-/// TODO: it would be good to get JsonInput and StringMapping string variants to go through this
-/// implementation
 /// Required for JSON Object keys so the string can behave like an Input
 impl<'a> Input<'a> for String {
     fn as_error_value(&'a self) -> InputValue<'a> {
