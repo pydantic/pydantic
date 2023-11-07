@@ -1946,6 +1946,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.types.JsonValue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JsonValue
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.types.Strict" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3967,6 +3978,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.types.JsonValue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JsonValue
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.types.Strict" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5667,6 +5689,72 @@ functions.</p>
 <span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">base64url_str</span><span class="o">=</span><span class="s1">&#39;SHc_dHc-TXc==&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
 <span class="c1">#&gt; base64url_str=&#39;Hw?tw&gt;Mw&#39;</span>
+</code></pre></div>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="pydantic.types.JsonValue" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">JsonValue</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.types.JsonValue" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">JsonValue</span><span class="p">:</span> <span class="n">TypeAlias</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span>
+    <span class="n">List</span><span class="p">[</span><span class="s2">&quot;JsonValue&quot;</span><span class="p">],</span>
+    <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s2">&quot;JsonValue&quot;</span><span class="p">],</span>
+    <span class="nb">str</span><span class="p">,</span>
+    <span class="nb">int</span><span class="p">,</span>
+    <span class="nb">float</span><span class="p">,</span>
+    <span class="nb">bool</span><span class="p">,</span>
+    <span class="kc">None</span><span class="p">,</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A <code>JsonValue</code> is used to represent a value that can be serialized to JSON.</p>
+<p>It may be one of:</p>
+<ul>
+<li><code>List['JsonValue']</code></li>
+<li><code>Dict[str, 'JsonValue']</code></li>
+<li><code>str</code></li>
+<li><code>int</code></li>
+<li><code>float</code></li>
+<li><code>bool</code></li>
+<li><code>None</code></li>
+</ul>
+<p>The following example demonstrates how to use <code>JsonValue</code> to validate JSON data,
+and what kind of errors to expect when input data is not json serializable.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">JsonValue</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">JsonValue</span><span class="p">)</span>
+<span class="n">valid_json_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}}}</span>
+<span class="n">invalid_json_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">}}</span>
+
+<span class="k">assert</span> <span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">valid_json_data</span><span class="p">)</span> <span class="o">==</span> <span class="n">valid_json_data</span>
+<span class="k">assert</span> <span class="n">adapter</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">valid_json_data</span><span class="p">))</span> <span class="o">==</span> <span class="n">valid_json_data</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">invalid_json_data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span> <span class="o">==</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="bp">Ellipsis</span><span class="p">,</span>
+            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;dict&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">),</span>
+            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;input was not a valid JSON value&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;invalid-json-value&#39;</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">]</span>
 </code></pre></div>
   </div>
 
