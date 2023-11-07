@@ -1,17 +1,24 @@
-Add filterwarnings rules to the pytest section of pyproject.toml to ignore warnings from changes to
-core_schemas types in https://github.com/pydantic/pydantic-core/pull/980
+Patch tests to support correct warning messages
 
-This can probably be removed once fastapi requires pydantic>2.4.
-
---- a/pyproject.toml
-+++ b/pyproject.toml
-@@ -108,6 +108,9 @@ filterwarnings = [
-     "ignore::trio.TrioDeprecationWarning",
-     # TODO remove pytest-cov
-     'ignore::pytest.PytestDeprecationWarning:pytest_cov',
-+    # CHANGE IN PYDANTIC, ignore warnings about pydantic-core validation methods
-+    'ignore:`general_(before|after|wrap|plain)_validator_function` is deprecated.*:DeprecationWarning:',
-+    'ignore:`FieldValidationInfo` is deprecated.*:DeprecationWarning:',
- ]
-
- [tool.coverage.run]
+diff --git a/tests/test_annotated.py b/tests/test_annotated.py
+index 541f84bc..f1a50788 100644
+--- a/tests/test_annotated.py
++++ b/tests/test_annotated.py
+@@ -57,7 +57,7 @@ foo_is_short = {
+             {
+                 "ctx": {"min_length": 1},
+                 "loc": ["query", "foo"],
+-                "msg": "String should have at least 1 characters",
++                "msg": "String should have at least 1 character",
+                 "type": "string_too_short",
+                 "input": "",
+                 "url": match_pydantic_error_url("string_too_short"),
+@@ -68,7 +68,7 @@ foo_is_short = {
+             {
+                 "ctx": {"limit_value": 1},
+                 "loc": ["query", "foo"],
+-                "msg": "ensure this value has at least 1 characters",
++                "msg": "ensure this value has at least 1 character",
+                 "type": "value_error.any_str.min_length",
+             }
+         )
