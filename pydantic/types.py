@@ -2530,7 +2530,9 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class CallableDiscriminator:
-    """Provides a way to use a custom callable as the way to extract the value of a union discriminator.
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/unions/#discriminated-unions-with-callablediscriminator-discriminators
+
+    Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
     This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
     but without needing to have a single shared field across all the union choices. This also makes it
@@ -2594,15 +2596,16 @@ class CallableDiscriminator:
     ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
     '''
     ```
-
-    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
-    docs for more details on how to use `CallableDiscriminator`s.
     """
 
     discriminator: Callable[[Any], Hashable]
+    """The callable to use to extract the value of the discriminator from the input."""
     custom_error_type: str | None = None
+    """TType to use in custom errors that replace standard errors related to the discrimination."""
     custom_error_message: str | None = None
+    """Message to use in custom errors that replace standard errors related to the discrimination."""
     custom_error_context: dict[str, int | str | float] | None = None
+    """Context to use in custom errors that replace standard errors related to the discrimination."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         origin = _typing_extra.get_origin(source_type)

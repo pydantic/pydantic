@@ -186,6 +186,9 @@ except ValidationError as e:
 
 ### Discriminated Unions with `CallableDiscriminator` discriminators
 
+??? api "API Documentation"
+    [`pydantic.types.CallableDiscriminator`][pydantic.types.CallableDiscriminator]<br>
+
 In the case of a `Union` with multiple models, sometimes there isn't a single uniform field
 across all models that you can use as a discriminator. This is the perfect use case for the `CallableDiscriminator` approach.
 
@@ -258,7 +261,7 @@ from typing import Any, Union
 
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, CallableDiscriminator, Tag
+from pydantic import BaseModel, CallableDiscriminator, Tag, ValidationError
 
 
 def model_x_discriminator(v: Any) -> str:
@@ -285,10 +288,18 @@ class DiscriminatedModel(BaseModel):
 
 data = {'x': {'x': {'x': 'a'}}}
 m = DiscriminatedModel.model_validate(data)
-assert m == (
-    DiscriminatedModel(x=DiscriminatedModel(x=DiscriminatedModel(x='a')))
-)
-assert m.model_dump() == data
+print(m)
+#> x=DiscriminatedModel(x=DiscriminatedModel(x='a'))
+
+try:
+    DiscriminatedModel.model_validate({'x': 123})
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for DiscriminatedModel
+    x
+      Invalid union member [type=invalid_union_member, input_value=123, input_type=int]
+    """
 ```
 
 !!! note
