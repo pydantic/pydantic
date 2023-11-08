@@ -38,19 +38,12 @@ impl Validator for BoolValidator {
     ) -> ValResult<'data, PyObject> {
         // TODO in theory this could be quicker if we used PyBool rather than going to a bool
         // and back again, might be worth profiling?
-        let strict = state.strict_or(self.strict);
-        Ok(input.validate_bool(strict)?.into_py(py))
-    }
-
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        !ultra_strict
+        input
+            .validate_bool(state.strict_or(self.strict))
+            .map(|val_match| val_match.unpack(state).into_py(py))
     }
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        Ok(())
     }
 }

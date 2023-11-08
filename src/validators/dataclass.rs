@@ -8,13 +8,14 @@ use ahash::AHashSet;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
 use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::{BorrowInput, GenericArguments, Input};
+use crate::input::{BorrowInput, GenericArguments, Input, ValidationMatch};
 use crate::lookup_key::LookupKey;
 use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
 
 use super::arguments::{json_get, json_slice, py_get, py_slice};
 use super::model::{create_class, force_setattr, Revalidate};
+use super::validation_state::Exactness;
 use super::{
     build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator,
 };
@@ -281,7 +282,7 @@ impl Validator for DataclassArgsValidator {
                         if let Some(kwargs) = $args.kwargs {
                             if kwargs.len() != used_keys.len() {
                                 for (raw_key, value) in kwargs.iter() {
-                                    match raw_key.strict_str() {
+                                    match raw_key.validate_str(true, false).map(ValidationMatch::into_inner) {
                                         Ok(either_str) => {
                                             if !used_keys.contains(either_str.as_cow()?.as_ref()) {
                                                 // Unknown / extra field
@@ -438,18 +439,8 @@ impl Validator for DataclassArgsValidator {
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        self.fields
-            .iter()
-            .any(|f| f.validator.different_strict_behavior(ultra_strict))
-    }
-
     fn get_name(&self) -> &str {
         &self.validator_name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.fields.iter().try_for_each(|field| field.validator.complete())
     }
 }
 
@@ -554,6 +545,7 @@ impl Validator for DataclassValidator {
             ))
         } else {
             let val_output = self.validator.validate(py, input, state)?;
+            state.floor_exactness(Exactness::Strict);
             let dc = create_class(self.class.as_ref(py))?;
             self.set_dict_call(py, dc.as_ref(py), val_output, input)?;
             Ok(dc)
@@ -594,20 +586,8 @@ impl Validator for DataclassValidator {
         Ok(obj.to_object(py))
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        if ultra_strict {
-            self.validator.different_strict_behavior(ultra_strict)
-        } else {
-            true
-        }
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.validator.complete()
     }
 }
 

@@ -1,6 +1,5 @@
 use std::fmt::Write;
 use std::str::FromStr;
-use std::sync::atomic::{AtomicBool, Ordering};
 
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple};
@@ -17,40 +16,14 @@ use crate::tools::SchemaDict;
 
 use super::custom_error::CustomError;
 use super::literal::LiteralLookup;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{
+    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator,
+};
 
 #[derive(Debug)]
 enum UnionMode {
-    Smart {
-        strict_required: AtomicBool,
-        ultra_strict_required: AtomicBool,
-    },
+    Smart,
     LeftToRight,
-}
-
-impl UnionMode {
-    // construct smart with some default values
-    const fn default_smart() -> Self {
-        Self::Smart {
-            strict_required: AtomicBool::new(true),
-            ultra_strict_required: AtomicBool::new(false),
-        }
-    }
-}
-
-impl Clone for UnionMode {
-    fn clone(&self) -> Self {
-        match self {
-            Self::Smart {
-                strict_required,
-                ultra_strict_required,
-            } => Self::Smart {
-                strict_required: AtomicBool::new(strict_required.load(Ordering::SeqCst)),
-                ultra_strict_required: AtomicBool::new(ultra_strict_required.load(Ordering::SeqCst)),
-            },
-            Self::LeftToRight => Self::LeftToRight,
-        }
-    }
 }
 
 impl FromStr for UnionMode {
@@ -58,7 +31,7 @@ impl FromStr for UnionMode {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "smart" => Ok(Self::default_smart()),
+            "smart" => Ok(Self::Smart),
             "left_to_right" => Ok(Self::LeftToRight),
             s => py_schema_err!("Invalid union mode: `{}`, expected `smart` or `left_to_right`", s),
         }
@@ -103,7 +76,7 @@ impl BuildValidator for UnionValidator {
         let auto_collapse = || schema.get_as_req(intern!(py, "auto_collapse")).unwrap_or(true);
         let mode = schema
             .get_as::<&str>(intern!(py, "mode"))?
-            .map_or(Ok(UnionMode::default_smart()), UnionMode::from_str)?;
+            .map_or(Ok(UnionMode::Smart), UnionMode::from_str)?;
         match choices.len() {
             0 => py_schema_err!("One or more union choices required"),
             1 if auto_collapse() => Ok(choices.into_iter().next().unwrap().0),
@@ -128,71 +101,74 @@ impl BuildValidator for UnionValidator {
 }
 
 impl UnionValidator {
-    fn validate_smart<'s, 'data>(
-        &'s self,
+    fn validate_smart<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-        strict_required: bool,
-        ultra_strict_required: bool,
     ) -> ValResult<'data, PyObject> {
-        if ultra_strict_required {
-            // do an ultra strict check first
-            let state = &mut state.rebind_extra(|extra| {
-                extra.strict = Some(true);
-                extra.ultra_strict = true;
-            });
-            if let Some(res) = self
-                .choices
-                .iter()
-                .map(|(validator, _label)| validator.validate(py, input, state))
-                .find(ValResult::is_ok)
-            {
-                return res;
-            }
-        }
-
+        let old_exactness = state.exactness;
+        let strict = state.strict_or(self.strict);
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
 
-        if state.strict_or(self.strict) {
-            let state = &mut state.rebind_extra(|extra| extra.strict = Some(true));
-            for (validator, label) in &self.choices {
-                match validator.validate(py, input, state) {
-                    Err(ValError::LineErrors(lines)) => errors.push(validator, label.as_deref(), lines),
-                    otherwise => return otherwise,
-                };
-            }
+        let mut success = None;
 
-            Err(errors.into_val_error(input))
-        } else {
-            if strict_required {
-                // 1st pass: check if the value is an exact instance of one of the Union types,
-                // e.g. use validate in strict mode
-                let state = &mut state.rebind_extra(|extra| extra.strict = Some(true));
-                if let Some(res) = self
-                    .choices
-                    .iter()
-                    .map(|(validator, _label)| validator.validate(py, input, state))
-                    .find(ValResult::is_ok)
-                {
-                    return res;
+        for (choice, label) in &self.choices {
+            let state = &mut state.rebind_extra(|extra| {
+                if strict {
+                    extra.strict = Some(strict);
                 }
+            });
+            state.exactness = Some(Exactness::Exact);
+            let result = choice.validate(py, input, state);
+            match result {
+                Ok(new_success) => match state.exactness {
+                    // exact match, return
+                    Some(Exactness::Exact) => {
+                        return {
+                            // exact match, return, restore any previous exactness
+                            state.exactness = old_exactness;
+                            Ok(new_success)
+                        };
+                    }
+                    _ => {
+                        // success should always have an exactness
+                        debug_assert_ne!(state.exactness, None);
+                        let new_exactness = state.exactness.unwrap_or(Exactness::Lax);
+                        // if the new result has higher exactness than the current success, replace it
+                        if success
+                            .as_ref()
+                            .map_or(true, |(_, current_exactness)| *current_exactness < new_exactness)
+                        {
+                            // TODO: is there a possible optimization here, where once there has
+                            // been one success, we turn on strict mode, to avoid unnecessary
+                            // coercions for further validation?
+                            success = Some((new_success, new_exactness));
+                        }
+                    }
+                },
+                Err(ValError::LineErrors(lines)) => {
+                    // if we don't yet know this validation will succeed, record the error
+                    if success.is_none() {
+                        errors.push(choice, label.as_deref(), lines);
+                    }
+                }
+                otherwise => return otherwise,
             }
-
-            // 2nd pass: check if the value can be coerced into one of the Union types, e.g. use validate
-            for (validator, label) in &self.choices {
-                match validator.validate(py, input, state) {
-                    Err(ValError::LineErrors(lines)) => errors.push(validator, label.as_deref(), lines),
-                    otherwise => return otherwise,
-                };
-            }
-
-            Err(errors.into_val_error(input))
         }
+        state.exactness = old_exactness;
+
+        if let Some((success, exactness)) = success {
+            state.floor_exactness(exactness);
+            return Ok(success);
+        }
+
+        // no matches, build errors
+        Err(errors.into_val_error(input))
     }
 
-    fn validate_left_to_right<'s, 'data>(
-        &'s self,
+    fn validate_left_to_right<'data>(
+        &self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
@@ -232,49 +208,14 @@ impl Validator for UnionValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        match &self.mode {
-            UnionMode::Smart {
-                strict_required,
-                ultra_strict_required,
-            } => self.validate_smart(
-                py,
-                input,
-                state,
-                strict_required.load(Ordering::SeqCst),
-                ultra_strict_required.load(Ordering::SeqCst),
-            ),
+        match self.mode {
+            UnionMode::Smart => self.validate_smart(py, input, state),
             UnionMode::LeftToRight => self.validate_left_to_right(py, input, state),
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        self.choices
-            .iter()
-            .any(|(v, _)| v.different_strict_behavior(ultra_strict))
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.choices.iter().try_for_each(|(v, _)| v.complete())?;
-        if let UnionMode::Smart {
-            strict_required,
-            ultra_strict_required,
-        } = &self.mode
-        {
-            strict_required.store(
-                self.choices.iter().any(|(v, _)| v.different_strict_behavior(false)),
-                Ordering::SeqCst,
-            );
-            ultra_strict_required.store(
-                self.choices.iter().any(|(v, _)| v.different_strict_behavior(true)),
-                Ordering::SeqCst,
-            );
-        }
-
-        Ok(())
     }
 }
 
@@ -494,19 +435,8 @@ impl Validator for TaggedUnionValidator {
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        self.lookup
-            .values
-            .iter()
-            .any(|v| v.different_strict_behavior(ultra_strict))
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.lookup.values.iter().try_for_each(CombinedValidator::complete)
     }
 }
 
@@ -519,7 +449,7 @@ impl TaggedUnionValidator {
         let dict = input.strict_dict()?;
         let either_tag = match dict {
             GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type"))? {
-                Some(t) => t.strict_str()?,
+                Some(t) => t.validate_str(true, false)?.into_inner(),
                 None => return Err(self.tag_not_found(input)),
             },
             _ => unreachable!(),
@@ -530,7 +460,7 @@ impl TaggedUnionValidator {
         if tag == "function" || tag == "tuple" {
             let mode = match dict {
                 GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "mode"))? {
-                    Some(m) => Some(m.strict_str()?),
+                    Some(m) => Some(m.validate_str(true, false)?.into_inner()),
                     None => None,
                 },
                 _ => unreachable!(),

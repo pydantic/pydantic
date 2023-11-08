@@ -11,6 +11,7 @@ use crate::input::{EitherDate, Input};
 use crate::tools::SchemaDict;
 use crate::validators::datetime::{NowConstraint, NowOp};
 
+use super::Exactness;
 use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
@@ -46,9 +47,12 @@ impl Validator for DateValidator {
     ) -> ValResult<'data, PyObject> {
         let strict = state.strict_or(self.strict);
         let date = match input.validate_date(strict) {
-            Ok(date) => date,
+            Ok(val_match) => val_match.unpack(state),
             // if the error was a parsing error, in lax mode we allow datetimes at midnight
-            Err(line_errors @ ValError::LineErrors(..)) if !strict => date_from_datetime(input)?.ok_or(line_errors)?,
+            Err(line_errors @ ValError::LineErrors(..)) if !strict => {
+                state.floor_exactness(Exactness::Lax);
+                date_from_datetime(input)?.ok_or(line_errors)?
+            }
             Err(otherwise) => return Err(otherwise),
         };
         if let Some(constraints) = &self.constraints {
@@ -96,16 +100,8 @@ impl Validator for DateValidator {
         Ok(date.try_into_py(py)?)
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        !ultra_strict
-    }
-
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        Ok(())
     }
 }
 
@@ -115,7 +111,7 @@ impl Validator for DateValidator {
 /// Ok(None) means that this is not relevant to dates (the input was not a datetime nor a string)
 fn date_from_datetime<'data>(input: &'data impl Input<'data>) -> Result<Option<EitherDate<'data>>, ValError<'data>> {
     let either_dt = match input.validate_datetime(false, speedate::MicrosecondsPrecisionOverflowBehavior::Truncate) {
-        Ok(dt) => dt,
+        Ok(val_match) => val_match.into_inner(),
         // if the error was a parsing error, update the error type from DatetimeParsing to DateFromDatetimeParsing
         // and return it
         Err(ValError::LineErrors(mut line_errors)) => {

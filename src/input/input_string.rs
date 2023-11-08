@@ -15,7 +15,7 @@ use super::datetime::{
 use super::shared::{map_json_err, str_as_bool, str_as_float};
 use super::{
     BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
-    GenericIterator, GenericMapping, Input,
+    GenericIterator, GenericMapping, Input, ValidationMatch,
 };
 
 #[derive(Debug)]
@@ -96,54 +96,44 @@ impl<'a> Input<'a> for StringMapping<'a> {
         }
     }
 
-    fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
+    fn validate_str(
+        &'a self,
+        _strict: bool,
+        _coerce_numbers_to_str: bool,
+    ) -> ValResult<ValidationMatch<EitherString<'a>>> {
         match self {
-            Self::String(s) => Ok((*s).into()),
+            Self::String(s) => Ok(ValidationMatch::strict((*s).into())),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
         }
     }
 
-    fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
+    fn validate_bytes(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>> {
         match self {
-            Self::String(s) => py_string_str(s).map(|b| b.as_bytes().into()),
+            Self::String(s) => py_string_str(s).map(|b| ValidationMatch::strict(b.as_bytes().into())),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::BytesType, self)),
         }
     }
 
-    fn lax_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
+    fn validate_bool(&self, _strict: bool) -> ValResult<'_, ValidationMatch<bool>> {
         match self {
-            Self::String(s) => {
-                let str = py_string_str(s)?;
-                Ok(str.as_bytes().into())
-            }
-            Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::BytesType, self)),
-        }
-    }
-
-    fn strict_bool(&self) -> ValResult<bool> {
-        match self {
-            Self::String(s) => str_as_bool(self, py_string_str(s)?),
+            Self::String(s) => str_as_bool(self, py_string_str(s)?).map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::BoolType, self)),
         }
     }
 
-    fn strict_int(&'a self) -> ValResult<EitherInt<'a>> {
+    fn validate_int(&'a self, _strict: bool) -> ValResult<'a, ValidationMatch<EitherInt<'a>>> {
         match self {
             Self::String(s) => match py_string_str(s)?.parse() {
-                Ok(i) => Ok(EitherInt::I64(i)),
+                Ok(i) => Ok(ValidationMatch::strict(EitherInt::I64(i))),
                 Err(_) => Err(ValError::new(ErrorTypeDefaults::IntParsing, self)),
             },
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::IntType, self)),
         }
     }
 
-    fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        self.strict_float()
-    }
-
-    fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
+    fn validate_float(&'a self, _strict: bool) -> ValResult<'a, ValidationMatch<EitherFloat<'a>>> {
         match self {
-            Self::String(s) => str_as_float(self, py_string_str(s)?),
+            Self::String(s) => str_as_float(self, py_string_str(s)?).map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::FloatType, self)),
         }
     }
@@ -186,39 +176,45 @@ impl<'a> Input<'a> for StringMapping<'a> {
         Err(ValError::new(ErrorTypeDefaults::IterableType, self))
     }
 
-    fn strict_date(&self) -> ValResult<EitherDate> {
+    fn validate_date(&self, _strict: bool) -> ValResult<ValidationMatch<EitherDate>> {
         match self {
-            Self::String(s) => bytes_as_date(self, py_string_str(s)?.as_bytes()),
+            Self::String(s) => bytes_as_date(self, py_string_str(s)?.as_bytes()).map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::DateType, self)),
         }
     }
 
-    fn strict_time(
+    fn validate_time(
         &self,
+        _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTime> {
+    ) -> ValResult<ValidationMatch<EitherTime>> {
         match self {
-            Self::String(s) => bytes_as_time(self, py_string_str(s)?.as_bytes(), microseconds_overflow_behavior),
+            Self::String(s) => bytes_as_time(self, py_string_str(s)?.as_bytes(), microseconds_overflow_behavior)
+                .map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::TimeType, self)),
         }
     }
 
-    fn strict_datetime(
+    fn validate_datetime(
         &self,
+        _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherDateTime> {
+    ) -> ValResult<ValidationMatch<EitherDateTime>> {
         match self {
-            Self::String(s) => bytes_as_datetime(self, py_string_str(s)?.as_bytes(), microseconds_overflow_behavior),
+            Self::String(s) => bytes_as_datetime(self, py_string_str(s)?.as_bytes(), microseconds_overflow_behavior)
+                .map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::DatetimeType, self)),
         }
     }
 
-    fn strict_timedelta(
+    fn validate_timedelta(
         &self,
+        _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTimedelta> {
+    ) -> ValResult<ValidationMatch<EitherTimedelta>> {
         match self {
-            Self::String(s) => bytes_as_timedelta(self, py_string_str(s)?.as_bytes(), microseconds_overflow_behavior),
+            Self::String(s) => bytes_as_timedelta(self, py_string_str(s)?.as_bytes(), microseconds_overflow_behavior)
+                .map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self)),
         }
     }

@@ -7,6 +7,7 @@ use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
 use pyo3::{ffi, intern};
 
 use super::function::convert_err;
+use super::validation_state::Exactness;
 use super::{
     build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator,
 };
@@ -143,6 +144,8 @@ impl Validator for ModelValidator {
                 Ok(input.to_object(py))
             }
         } else {
+            // Having to construct a new model is not an exact match
+            state.floor_exactness(Exactness::Strict);
             self.validate_construct(py, input, None, state)
         }
     }
@@ -206,20 +209,8 @@ impl Validator for ModelValidator {
         Ok(model.into_py(py))
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        if ultra_strict {
-            self.validator.different_strict_behavior(ultra_strict)
-        } else {
-            true
-        }
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.validator.complete()
     }
 }
 

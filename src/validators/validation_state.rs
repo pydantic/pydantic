@@ -2,15 +2,27 @@ use crate::recursion_guard::RecursionGuard;
 
 use super::Extra;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Ord, PartialOrd, Hash)]
+pub enum Exactness {
+    Lax,
+    Strict,
+    Exact,
+}
+
 pub struct ValidationState<'a> {
     pub recursion_guard: &'a mut RecursionGuard,
+    pub exactness: Option<Exactness>,
     // deliberately make Extra readonly
     extra: Extra<'a>,
 }
 
 impl<'a> ValidationState<'a> {
     pub fn new(extra: Extra<'a>, recursion_guard: &'a mut RecursionGuard) -> Self {
-        Self { recursion_guard, extra }
+        Self {
+            recursion_guard, // Don't care about exactness unless doing union validation
+            exactness: None,
+            extra,
+        }
     }
 
     pub fn with_new_extra<'r, R: 'r>(
@@ -22,9 +34,15 @@ impl<'a> ValidationState<'a> {
         // but lifetimes get in a tangle. Maybe someone brave wants to have a go at unpicking lifetimes.
         let mut new_state = ValidationState {
             recursion_guard: self.recursion_guard,
+            exactness: self.exactness,
             extra,
         };
-        f(&mut new_state)
+        let result = f(&mut new_state);
+        match new_state.exactness {
+            Some(exactness) => self.floor_exactness(exactness),
+            None => self.exactness = None,
+        }
+        result
     }
 
     /// Temporarily rebinds the extra field by calling `f` to modify extra.
@@ -46,6 +64,23 @@ impl<'a> ValidationState<'a> {
 
     pub fn strict_or(&self, default: bool) -> bool {
         self.extra.strict.unwrap_or(default)
+    }
+
+    /// Sets the exactness to the lower of the current exactness
+    /// and the given exactness.
+    ///
+    /// This is designed to be used in union validation, where the
+    /// idea is that the "most exact" validation wins.
+    pub fn floor_exactness(&mut self, exactness: Exactness) {
+        match self.exactness {
+            None | Some(Exactness::Lax) => {}
+            Some(Exactness::Strict) => {
+                if exactness == Exactness::Lax {
+                    self.exactness = Some(Exactness::Lax);
+                }
+            }
+            Some(Exactness::Exact) => self.exactness = Some(exactness),
+        }
     }
 }
 

@@ -1085,3 +1085,22 @@ def test_complex_recursive_type() -> None:
             'input': {'a': datetime.date(1992, 12, 11)},
         },
     ]
+
+
+def test_no_exponential_blowup():
+    """See https://github.com/pydantic/pydantic/issues/8049
+
+    There was a performance bug which led to exponential blowup when trying to
+    build a schema with many intermingled recursive definitions.
+    """
+    unions = core_schema.union_schema([core_schema.definition_reference_schema(f'foo_{i}') for i in range(100)])
+
+    schema = core_schema.definitions_schema(
+        core_schema.typed_dict_schema({'x': core_schema.typed_dict_field(unions)}),
+        definitions=[
+            core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(unions)}, ref=f'foo_{i}')
+            for i in range(100)
+        ],
+    )
+
+    SchemaValidator(schema)

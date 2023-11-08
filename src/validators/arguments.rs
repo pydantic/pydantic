@@ -7,7 +7,7 @@ use ahash::AHashSet;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{AsLocItem, ErrorTypeDefaults, ValError, ValLineError, ValResult};
-use crate::input::{GenericArguments, Input};
+use crate::input::{GenericArguments, Input, ValidationMatch};
 use crate::lookup_key::LookupKey;
 
 use crate::tools::SchemaDict;
@@ -282,7 +282,7 @@ impl Validator for ArgumentsValidator {
                 if let Some(kwargs) = $args.kwargs {
                     if kwargs.len() > used_kwargs.len() {
                         for (raw_key, value) in kwargs.iter() {
-                            let either_str = match raw_key.strict_str() {
+                            let either_str = match raw_key.validate_str(true, false).map(ValidationMatch::into_inner) {
                                 Ok(k) => k,
                                 Err(ValError::LineErrors(line_errors)) => {
                                     for err in line_errors {
@@ -332,26 +332,7 @@ impl Validator for ArgumentsValidator {
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        self.parameters
-            .iter()
-            .any(|p| p.validator.different_strict_behavior(ultra_strict))
-    }
-
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.parameters
-            .iter()
-            .try_for_each(|parameter| parameter.validator.complete())?;
-        if let Some(v) = &self.var_args_validator {
-            v.complete()?;
-        }
-        if let Some(v) = &self.var_kwargs_validator {
-            v.complete()?;
-        };
-        Ok(())
     }
 }
