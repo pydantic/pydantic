@@ -404,8 +404,12 @@ except ValidationError as e:
 
 ## Union Validation Errors
 
-When `Union` validation fails, error messages can be quite verbose, especially when dealing with recursive models.
-Discriminated unions help to simplify error messages in this case.
+When `Union` validation fails, error messages can be quite verbose, as they will produce validation errors for
+each case in the union.
+This is especially noticeable when dealing with recursive models, where reasons may be generated at each level of
+recursion.
+Discriminated unions help to simplify error messages in this case, as validation errors are only produced for
+the case with a matching discriminator value.
 
 You can also customize the error type, message, and context for a `Discriminator` by passing
 these specifications as parameters to the `Discriminator` constructor, as seen in the example below.
