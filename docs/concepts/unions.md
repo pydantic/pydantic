@@ -270,6 +270,9 @@ def model_x_discriminator(v: Any) -> str:
         return 'int'
     if isinstance(v, (dict, BaseModel)):
         return 'model'
+    else:
+        # return None if the discriminator value isn't found
+        return None
 
 
 class SpecialValue(BaseModel):
@@ -299,13 +302,16 @@ print(m)
 try:
     DiscriminatedModel.model_validate({'value': 'not an int or a model'})
 except ValidationError as e:
-    print(e)
+    print(e)  # (1)!
     """
     1 validation error for DiscriminatedModel
     value
       Unable to extract tag using discriminator model_x_discriminator() [type=union_tag_not_found, input_value='not an int or a model', input_type=str]
     """
 ```
+
+1. Notice the callable discriminator function returns `None` if a discriminator value is not found.
+   When `None` is returned, this error is raised.
 
 !!! note
     Using the [`typing.Annotated` fields syntax](../concepts/json_schema.md#typingannotated-fields) can be handy to regroup
