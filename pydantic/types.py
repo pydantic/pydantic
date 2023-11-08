@@ -2602,7 +2602,11 @@ class Discriminator:
     """
 
     discriminator: str | Callable[[Any], Hashable]
-    """The callable to use to extract the value of the discriminator from the input."""
+    """The callable or field name for discriminating the type in a tagged union.
+
+    A `Callable` discriminator must extract the value of the discriminator from the input.
+    A `str` discriminator must be the name of a field to discriminate against.
+    """
     custom_error_type: str | None = None
     """Type to use in [custom errors](../errors/errors.md#custom-errors) replacing the standard discriminated union
     validation errors.
