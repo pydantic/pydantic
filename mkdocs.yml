@@ -67,7 +67,7 @@ nav:
   - Dataclasses: concepts/dataclasses.md
   - Postponed Annotations: concepts/postponed_annotations.md
   - Strict Mode: concepts/strict_mode.md
-  - TypeAdapter: concepts/type_adapter.md
+  - Type Adapter: concepts/type_adapter.md
   - Validation Decorator: concepts/validation_decorator.md
   - Conversion Table: concepts/conversion_table.md
   - Settings Management: concepts/pydantic_settings.md
