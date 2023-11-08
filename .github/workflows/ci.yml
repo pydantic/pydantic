@@ -214,7 +214,9 @@ jobs:
 
       - run: pdm info && pdm list
         working-directory: pydantic
-      - run: pdm run pytest
+        # Run pytest with lax xfail because we often add tests to pydantic
+        # which xfail on a pending release of pydantic-core
+      - run: pdm run pytest --override-ini=xfail_strict=False
         working-directory: pydantic
 
   lint:
