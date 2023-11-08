@@ -187,7 +187,7 @@ except ValidationError as e:
 ### Discriminated Unions with callable `Discriminator`s
 
 ??? api "API Documentation"
-    [`pydantic.types.CallableDiscriminator`][pydantic.types.CallableDiscriminator]<br>
+    [`pydantic.types.Discriminator`][pydantic.types.Discriminator]<br>
 
 In the case of a `Union` with multiple models, sometimes there isn't a single uniform field
 across all models that you can use as a discriminator.
@@ -266,40 +266,44 @@ from pydantic import BaseModel, Discriminator, Tag, ValidationError
 
 
 def model_x_discriminator(v: Any) -> str:
-    if isinstance(v, str):
-        return 'str'
+    if isinstance(v, int):
+        return 'int'
     if isinstance(v, (dict, BaseModel)):
         return 'model'
 
 
+class SpecialValue(BaseModel):
+    value: int
+
+
 class DiscriminatedModel(BaseModel):
-    x: Annotated[
+    value: Annotated[
         Union[
-            Annotated[str, Tag('str')],
-            Annotated['DiscriminatedModel', Tag('model')],
+            Annotated[int, Tag('int')],
+            Annotated['SpecialValue', Tag('model')],
         ],
-        Discriminator(
-            model_x_discriminator,
-            custom_error_type='invalid_union_member',
-            custom_error_message='Invalid union member',
-            custom_error_context={'discriminator': 'str_or_model'},
-        ),
+        Discriminator(model_x_discriminator),
     ]
 
 
-data = {'x': {'x': {'x': 'a'}}}
-m = DiscriminatedModel.model_validate(data)
+model_data = {'value': {'value': 1}}
+m = DiscriminatedModel.model_validate(model_data)
 print(m)
-#> x=DiscriminatedModel(x=DiscriminatedModel(x='a'))
+#> value=SpecialValue(value=1)
+
+int_data = {'value': 123}
+m = DiscriminatedModel.model_validate(int_data)
+print(m)
+#> value=123
 
 try:
-    DiscriminatedModel.model_validate({'x': 123})
+    DiscriminatedModel.model_validate({'value': 'not an int or a model'})
 except ValidationError as e:
     print(e)
     """
     1 validation error for DiscriminatedModel
-    x
-      Invalid union member [type=invalid_union_member, input_value=123, input_type=int]
+    value
+      Unable to extract tag using discriminator model_x_discriminator() [type=union_tag_not_found, input_value='not an int or a model', input_type=str]
     """
 ```
 
@@ -412,64 +416,35 @@ class Model(BaseModel):
 
 try:
     Model.model_validate({'x': {'x': {'x': 1}}})
-except ValidationError as exc_info:
-    assert exc_info.errors(include_url=False) == [
-        {
-            'input': {'x': {'x': 1}},
-            'loc': ('x', 'str'),
-            'msg': 'Input should be a valid string',
-            'type': 'string_type',
-        },
-        {
-            'input': {'x': 1},
-            'loc': ('x', 'Model', 'x', 'str'),
-            'msg': 'Input should be a valid string',
-            'type': 'string_type',
-        },
-        {
-            'input': 1,
-            'loc': ('x', 'Model', 'x', 'Model', 'x', 'str'),
-            'msg': 'Input should be a valid string',
-            'type': 'string_type',
-        },
-        {
-            'ctx': {'class_name': 'Model'},
-            'input': 1,
-            'loc': ('x', 'Model', 'x', 'Model', 'x', 'Model'),
-            'msg': 'Input should be a valid dictionary or instance of Model',
-            'type': 'model_type',
-        },
-    ]
+except ValidationError as e:
+    print(e)
+    """
+    4 validation errors for Model
+    x.str
+      Input should be a valid string [type=string_type, input_value={'x': {'x': 1}}, input_type=dict]
+    x.Model.x.str
+      Input should be a valid string [type=string_type, input_value={'x': 1}, input_type=dict]
+    x.Model.x.Model.x.str
+      Input should be a valid string [type=string_type, input_value=1, input_type=int]
+    x.Model.x.Model.x.Model
+      Input should be a valid dictionary or instance of Model [type=model_type, input_value=1, input_type=int]
+    """
 
 try:
     Model.model_validate({'x': {'x': {'x': {}}}})
-except ValidationError as exc_info:
-    assert exc_info.errors(include_url=False) == [
-        {
-            'input': {'x': {'x': {}}},
-            'loc': ('x', 'str'),
-            'msg': 'Input should be a valid string',
-            'type': 'string_type',
-        },
-        {
-            'input': {'x': {}},
-            'loc': ('x', 'Model', 'x', 'str'),
-            'msg': 'Input should be a valid string',
-            'type': 'string_type',
-        },
-        {
-            'input': {},
-            'loc': ('x', 'Model', 'x', 'Model', 'x', 'str'),
-            'msg': 'Input should be a valid string',
-            'type': 'string_type',
-        },
-        {
-            'input': {},
-            'loc': ('x', 'Model', 'x', 'Model', 'x', 'Model', 'x'),
-            'msg': 'Field required',
-            'type': 'missing',
-        },
-    ]
+except ValidationError as e:
+    print(e)
+    """
+    4 validation errors for Model
+    x.str
+      Input should be a valid string [type=string_type, input_value={'x': {'x': {}}}, input_type=dict]
+    x.Model.x.str
+      Input should be a valid string [type=string_type, input_value={'x': {}}, input_type=dict]
+    x.Model.x.Model.x.str
+      Input should be a valid string [type=string_type, input_value={}, input_type=dict]
+    x.Model.x.Model.x.Model.x
+      Field required [type=missing, input_value={}, input_type=dict]
+    """
 
 
 # Errors are much more simple with a discriminated union:
@@ -497,36 +472,29 @@ class DiscriminatedModel(BaseModel):
 
 try:
     DiscriminatedModel.model_validate({'x': {'x': {'x': 1}}})
-except ValidationError as exc_info:
-    assert exc_info.errors(include_url=False) == [
-        {
-            'ctx': {'discriminator': 'str_or_model'},
-            'input': 1,
-            'loc': ('x', 'model', 'x', 'model', 'x'),
-            'msg': 'Invalid union member',
-            'type': 'invalid_union_member',
-        }
-    ]
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for DiscriminatedModel
+    x.model.x.model.x
+      Invalid union member [type=invalid_union_member, input_value=1, input_type=int]
+    """
 
 try:
     DiscriminatedModel.model_validate({'x': {'x': {'x': {}}}})
-except ValidationError as exc_info:
-    assert exc_info.errors(include_url=False) == [
-        {
-            'input': {},
-            'loc': ('x', 'model', 'x', 'model', 'x', 'model', 'x'),
-            'msg': 'Field required',
-            'type': 'missing',
-        }
-    ]
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for DiscriminatedModel
+    x.model.x.model.x.model.x
+      Field required [type=missing, input_value={}, input_type=dict]
+    """
 
 # The data is still handled properly when valid:
 data = {'x': {'x': {'x': 'a'}}}
 m = DiscriminatedModel.model_validate(data)
-assert m == DiscriminatedModel(
-    x=DiscriminatedModel(x=DiscriminatedModel(x='a'))
-)
-assert m.model_dump() == data
+print(m.model_dump())
+#> {'x': {'x': {'x': 'a'}}}
 ```
 
 You can also simplify error messages by labeling each case with a [`Tag`][pydantic.types.Tag].
@@ -549,30 +517,14 @@ adapter = TypeAdapter(Union[DoubledList, StringsMap])
 try:
     adapter.validate_python(['a'])
 except ValidationError as exc_info:
-    assert (
-        '2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]'
-        in str(exc_info)
-    )
-
-    # the loc's are bad here:
-    assert exc_info.errors() == [
-        {
-            'input': 'a',
-            'loc': ('function-after[<lambda>(), list[int]]', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an '
-            'integer',
-            'type': 'int_parsing',
-            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
-        },
-        {
-            'input': ['a'],
-            'loc': ('dict[str,str]',),
-            'msg': 'Input should be a valid dictionary',
-            'type': 'dict_type',
-            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
-        },
-    ]
-
+    print(exc_info)
+    """
+    2 validation errors for union[function-after[<lambda>(), list[int]],dict[str,str]]
+    function-after[<lambda>(), list[int]].0
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+    dict[str,str]
+      Input should be a valid dictionary [type=dict_type, input_value=['a'], input_type=list]
+    """
 
 tag_adapter = TypeAdapter(
     Union[
@@ -584,26 +536,12 @@ tag_adapter = TypeAdapter(
 try:
     tag_adapter.validate_python(['a'])
 except ValidationError as exc_info:
-    assert '2 validation errors for union[DoubledList,StringsMap]' in str(
-        exc_info
-    )
-
-    # the loc's are good here:
-    assert exc_info.errors() == [
-        {
-            'input': 'a',
-            'loc': ('DoubledList', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an '
-            'integer',
-            'type': 'int_parsing',
-            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
-        },
-        {
-            'input': ['a'],
-            'loc': ('StringsMap',),
-            'msg': 'Input should be a valid dictionary',
-            'type': 'dict_type',
-            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
-        },
-    ]
+    print(exc_info)
+    """
+    2 validation errors for union[DoubledList,StringsMap]
+    DoubledList.0
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+    StringsMap
+      Input should be a valid dictionary [type=dict_type, input_value=['a'], input_type=list]
+    """
 ```

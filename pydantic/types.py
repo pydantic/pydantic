@@ -2530,7 +2530,7 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/unions/#discriminated-unions-with-callablediscriminator-discriminators
+    """[Usage docs](../concepts/unions.md#discriminated-unions)
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
@@ -2604,7 +2604,9 @@ class Discriminator:
     discriminator: str | Callable[[Any], Hashable]
     """The callable to use to extract the value of the discriminator from the input."""
     custom_error_type: str | None = None
-    """TType to use in custom errors that replace standard errors related to the discrimination."""
+    """Type to use in [custom errors](../errors/errors.md#custom-errors) that replace standard errors related to the
+    discrimination.
+    """
     custom_error_message: str | None = None
     """Message to use in custom errors that replace standard errors related to the discrimination."""
     custom_error_context: dict[str, int | str | float] | None = None
@@ -2743,20 +2745,20 @@ if TYPE_CHECKING:
     valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
     invalid_json_data = {'a': {'b': ...}}
 
-    assert adapter.validate_python(valid_json_data) == valid_json_data
-    assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
+    print(adapter.validate_python(valid_json_data))
+    #> {'a': {'b': {'c': 1, 'd': [2, None]}}}
+    print(adapter.validate_json(json.dumps(valid_json_data)))
+    #> {'a': {'b': {'c': 1, 'd': [2, None]}}}
 
     try:
         adapter.validate_python(invalid_json_data)
-    except ValidationError as exc_info:
-        assert exc_info.errors() == [
-            {
-                'input': Ellipsis,
-                'loc': ('dict', 'a', 'dict', 'b'),
-                'msg': 'input was not a valid JSON value',
-                'type': 'invalid-json-value',
-            }
-        ]
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for json-or-python[json=any,python=tagged-union[list[...],dict[str,...],str,int,float,bool,none]]
+        dict.a.dict.b
+          input was not a valid JSON value [type=invalid-json-value, input_value=Ellipsis, input_type=ellipsis]
+        '''
     ```
     """
 
