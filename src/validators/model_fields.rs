@@ -10,13 +10,14 @@ use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
 use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{
     AttributesGenericIterator, BorrowInput, DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator,
-    MappingGenericIterator, StringMappingGenericIterator,
+    MappingGenericIterator, StringMappingGenericIterator, ValidationMatch,
 };
 use crate::lookup_key::LookupKey;
 use crate::tools::SchemaDict;
 
-use super::ValidationState;
-use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, Validator};
+use super::{
+    build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, ValidationState, Validator,
+};
 
 use std::ops::ControlFlow;
 
@@ -250,7 +251,7 @@ impl Validator for ModelFieldsValidator {
                     let model_extra_dict = PyDict::new(py);
                     for item_result in <$iter>::new($dict)? {
                         let (raw_key, value) = item_result?;
-                        let either_str = match raw_key.strict_str() {
+                        let either_str = match raw_key.validate_str(true, false).map(ValidationMatch::into_inner) {
                             Ok(k) => k,
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
@@ -433,21 +434,7 @@ impl Validator for ModelFieldsValidator {
         Ok((new_data.to_object(py), new_extra, fields_set.to_object(py)).to_object(py))
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        self.fields
-            .iter()
-            .any(|f| f.validator.different_strict_behavior(ultra_strict))
-    }
-
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.fields.iter().try_for_each(|f| f.validator.complete())?;
-        match &self.extras_validator {
-            Some(v) => v.complete(),
-            None => Ok(()),
-        }
     }
 }

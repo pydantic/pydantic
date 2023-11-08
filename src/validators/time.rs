@@ -46,7 +46,9 @@ impl Validator for TimeValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let time = input.validate_time(state.strict_or(self.strict), self.microseconds_precision)?;
+        let time = input
+            .validate_time(state.strict_or(self.strict), self.microseconds_precision)?
+            .unpack(state);
         if let Some(constraints) = &self.constraints {
             let raw_time = time.as_raw()?;
 
@@ -78,16 +80,8 @@ impl Validator for TimeValidator {
         Ok(time.try_into_py(py)?)
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        !ultra_strict
-    }
-
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        Ok(())
     }
 }
 

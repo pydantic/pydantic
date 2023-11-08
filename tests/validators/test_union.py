@@ -1,3 +1,9 @@
+from dataclasses import dataclass
+from datetime import date, time
+from enum import Enum, IntEnum
+from typing import Any
+from uuid import UUID
+
 import pytest
 from dirty_equals import IsFloat, IsInt
 
@@ -342,9 +348,6 @@ def test_dirty_behaviour():
 
 def test_int_float():
     v = SchemaValidator(core_schema.union_schema([core_schema.int_schema(), core_schema.float_schema()]))
-    assert 'strict_required:true' in plain_repr(v)
-    assert 'ultra_strict_required:true' in plain_repr(v)  # since "float" schema has ultra-strict behaviour
-
     assert v.validate_python(1) == IsInt(approx=1, delta=0)
     assert v.validate_json('1') == IsInt(approx=1, delta=0)
     assert v.validate_python(1.0) == IsFloat(approx=1, delta=0)
@@ -382,17 +385,8 @@ def test_str_float():
     assert v.validate_json('"1"') == '1'
 
 
-def test_strict_check():
-    v = SchemaValidator(core_schema.union_schema([core_schema.int_schema(), core_schema.json_schema()]))
-    assert 'strict_required:true' in plain_repr(v)
-    assert 'ultra_strict_required:false' in plain_repr(v)
-
-
 def test_no_strict_check():
     v = SchemaValidator(core_schema.union_schema([core_schema.is_instance_schema(int), core_schema.json_schema()]))
-    assert 'strict_required:false' in plain_repr(v)
-    assert 'ultra_strict_required:false' in plain_repr(v)
-
     assert v.validate_python(123) == 123
     assert v.validate_python('[1, 2, 3]') == [1, 2, 3]
 
@@ -414,8 +408,6 @@ def test_strict_reference():
             ],
         )
     )
-    assert 'strict_required:true' in plain_repr(v)
-    assert 'ultra_strict_required:true' in plain_repr(v)  # since "float" schema has ultra-strict behaviour
 
     assert repr(v.validate_python((1, 2))) == '(1.0, 2)'
     assert repr(v.validate_python((1.0, (2.0, 3)))) == '(1.0, (2.0, 3))'
@@ -501,3 +493,281 @@ def test_left_to_right_union_strict():
     out = v.validate_python(1)
     assert out == 1.0
     assert isinstance(out, float)
+
+
+def test_union_function_before_called_once():
+    # See https://github.com/pydantic/pydantic/issues/6830 - in particular the
+    # smart union validator used to call `remove_prefix` twice, which is not
+    # ideal from a user perspective.
+    class SpecialValues(str, Enum):
+        DEFAULT = 'default'
+        OTHER = 'other'
+
+    special_values_schema = core_schema.no_info_after_validator_function(SpecialValues, core_schema.str_schema())
+
+    validator_called_count = 0
+
+    def remove_prefix(v: str):
+        nonlocal validator_called_count
+        validator_called_count += 1
+        if v.startswith('uuid::'):
+            return v[6:]
+        return v
+
+    prefixed_uuid_schema = core_schema.no_info_before_validator_function(remove_prefix, core_schema.uuid_schema())
+
+    v = SchemaValidator(core_schema.union_schema([special_values_schema, prefixed_uuid_schema]))
+
+    assert v.validate_python('uuid::12345678-1234-5678-1234-567812345678') == UUID(
+        '12345678-1234-5678-1234-567812345678'
+    )
+    assert validator_called_count == 1
+
+
+@pytest.mark.parametrize(
+    ('schema', 'input_value', 'expected_value'),
+    (
+        (
+            core_schema.uuid_schema(),
+            '12345678-1234-5678-1234-567812345678',
+            UUID('12345678-1234-5678-1234-567812345678'),
+        ),
+        (core_schema.date_schema(), '2020-01-01', date(2020, 1, 1)),
+        (core_schema.time_schema(), '00:00:00', time(0, 0, 0)),
+        # In V2.4 these already returned strings, so we keep this behaviour in V2
+        (core_schema.datetime_schema(), '2020-01-01:00:00:00', '2020-01-01:00:00:00'),
+        (core_schema.url_schema(), 'https://foo.com', 'https://foo.com'),
+        (core_schema.multi_host_url_schema(), 'https://bar.com,foo.com', 'https://bar.com,foo.com'),
+    ),
+)
+def test_smart_union_json_string_types(schema: core_schema.CoreSchema, input_value: str, expected_value: Any):
+    # Many types have to be represented in strings as JSON, we make sure that
+    # when parsing in JSON mode these types are preferred
+    # TODO: in V3 we will make str win in all these cases.
+
+    validator = SchemaValidator(core_schema.union_schema([schema, core_schema.str_schema()]))
+    assert validator.validate_json(f'"{input_value}"') == expected_value
+    # in Python mode the string will be preferred
+    assert validator.validate_python(input_value) == input_value
+
+
+@pytest.mark.parametrize(
+    ('schema', 'input_value'),
+    (
+        pytest.param(
+            core_schema.uuid_schema(),
+            '12345678-1234-5678-1234-567812345678',
+            marks=pytest.mark.xfail(reason='TODO: V3'),
+        ),
+        (core_schema.date_schema(), '2020-01-01'),
+        (core_schema.time_schema(), '00:00:00'),
+        (core_schema.datetime_schema(), '2020-01-01:00:00:00'),
+        (core_schema.url_schema(), 'https://foo.com'),
+        (core_schema.multi_host_url_schema(), 'https://bar.com,foo.com'),
+    ),
+)
+def test_smart_union_json_string_types_str_first(schema: core_schema.CoreSchema, input_value: str):
+    # As above, but reversed order; str should always win
+    validator = SchemaValidator(core_schema.union_schema([core_schema.str_schema(), schema]))
+    assert validator.validate_json(f'"{input_value}"') == input_value
+    assert validator.validate_python(input_value) == input_value
+
+
+def test_smart_union_default_fallback():
+    """Using a default value does not affect the exactness of the smart union match."""
+
+    class ModelA:
+        x: int
+        y: int = 1
+
+    class ModelB:
+        x: int
+
+    schema = core_schema.union_schema(
+        [
+            core_schema.model_schema(
+                ModelA,
+                core_schema.model_fields_schema(
+                    {
+                        'x': core_schema.model_field(core_schema.int_schema()),
+                        'y': core_schema.model_field(
+                            core_schema.with_default_schema(core_schema.int_schema(), default=1)
+                        ),
+                    }
+                ),
+            ),
+            core_schema.model_schema(
+                ModelB, core_schema.model_fields_schema({'x': core_schema.model_field(core_schema.int_schema())})
+            ),
+        ]
+    )
+
+    validator = SchemaValidator(schema)
+
+    result = validator.validate_python({'x': 1})
+    assert isinstance(result, ModelA)
+    assert result.x == 1
+    assert result.y == 1
+
+    # passing a ModelB explicitly will not match the default value
+    b = ModelB()
+    assert validator.validate_python(b) is b
+
+
+def test_smart_union_model_field():
+    class ModelA:
+        x: int
+
+    class ModelB:
+        x: str
+
+    schema = core_schema.union_schema(
+        [
+            core_schema.model_schema(
+                ModelA, core_schema.model_fields_schema({'x': core_schema.model_field(core_schema.int_schema())})
+            ),
+            core_schema.model_schema(
+                ModelB, core_schema.model_fields_schema({'x': core_schema.model_field(core_schema.str_schema())})
+            ),
+        ]
+    )
+
+    validator = SchemaValidator(schema)
+
+    result = validator.validate_python({'x': 1})
+    assert isinstance(result, ModelA)
+    assert result.x == 1
+
+    result = validator.validate_python({'x': '1'})
+    assert isinstance(result, ModelB)
+    assert result.x == '1'
+
+
+def test_smart_union_dataclass_field():
+    @dataclass
+    class ModelA:
+        x: int
+
+    @dataclass
+    class ModelB:
+        x: str
+
+    schema = core_schema.union_schema(
+        [
+            core_schema.dataclass_schema(
+                ModelA,
+                core_schema.dataclass_args_schema(
+                    'ModelA', [core_schema.dataclass_field('x', core_schema.int_schema())]
+                ),
+                ['x'],
+            ),
+            core_schema.dataclass_schema(
+                ModelB,
+                core_schema.dataclass_args_schema(
+                    'ModelB', [core_schema.dataclass_field('x', core_schema.str_schema())]
+                ),
+                ['x'],
+            ),
+        ]
+    )
+
+    validator = SchemaValidator(schema)
+
+    result = validator.validate_python({'x': 1})
+    assert isinstance(result, ModelA)
+    assert result.x == 1
+
+    result = validator.validate_python({'x': '1'})
+    assert isinstance(result, ModelB)
+    assert result.x == '1'
+
+
+def test_smart_union_with_any():
+    """any is preferred over lax validations"""
+
+    # str not coerced to int
+    schema = core_schema.union_schema([core_schema.int_schema(), core_schema.any_schema()])
+    validator = SchemaValidator(schema)
+    assert validator.validate_python('1') == '1'
+
+    # int *is* coerced to float, this is a strict validation
+    schema = core_schema.union_schema([core_schema.float_schema(), core_schema.any_schema()])
+    validator = SchemaValidator(schema)
+    assert repr(validator.validate_python(1)) == '1.0'
+
+
+def test_smart_union_validator_function():
+    """adding a validator function should not change smart union behaviour"""
+
+    inner_schema = core_schema.union_schema([core_schema.int_schema(), core_schema.float_schema()])
+
+    validator = SchemaValidator(inner_schema)
+    assert repr(validator.validate_python(1)) == '1'
+    assert repr(validator.validate_python(1.0)) == '1.0'
+
+    schema = core_schema.union_schema(
+        [core_schema.no_info_after_validator_function(lambda v: v * 2, inner_schema), core_schema.str_schema()]
+    )
+
+    validator = SchemaValidator(schema)
+    assert repr(validator.validate_python(1)) == '2'
+    assert repr(validator.validate_python(1.0)) == '2.0'
+    assert validator.validate_python('1') == '1'
+
+    schema = core_schema.union_schema(
+        [
+            core_schema.no_info_wrap_validator_function(lambda v, handler: handler(v) * 2, inner_schema),
+            core_schema.str_schema(),
+        ]
+    )
+
+    validator = SchemaValidator(schema)
+    assert repr(validator.validate_python(1)) == '2'
+    assert repr(validator.validate_python(1.0)) == '2.0'
+    assert validator.validate_python('1') == '1'
+
+
+def test_smart_union_validator_function_one_arm():
+    """adding a validator function should not change smart union behaviour"""
+
+    schema = core_schema.union_schema(
+        [
+            core_schema.float_schema(),
+            core_schema.no_info_after_validator_function(lambda v: v * 2, core_schema.int_schema()),
+        ]
+    )
+
+    validator = SchemaValidator(schema)
+    assert repr(validator.validate_python(1)) == '2'
+    assert repr(validator.validate_python(1.0)) == '1.0'
+
+    schema = core_schema.union_schema(
+        [
+            core_schema.float_schema(),
+            core_schema.no_info_wrap_validator_function(lambda v, handler: handler(v) * 2, core_schema.int_schema()),
+        ]
+    )
+
+    validator = SchemaValidator(schema)
+    assert repr(validator.validate_python(1)) == '2'
+    assert repr(validator.validate_python(1.0)) == '1.0'
+
+
+def test_int_not_coerced_to_enum():
+    class BinaryEnum(IntEnum):
+        ZERO = 0
+        ONE = 1
+
+    enum_schema = core_schema.lax_or_strict_schema(
+        core_schema.no_info_after_validator_function(BinaryEnum, core_schema.int_schema()),
+        core_schema.is_instance_schema(BinaryEnum),
+    )
+
+    schema = core_schema.union_schema([enum_schema, core_schema.int_schema()])
+
+    validator = SchemaValidator(schema)
+
+    assert validator.validate_python(0) is not BinaryEnum.ZERO
+    assert validator.validate_python(1) is not BinaryEnum.ONE
+    assert validator.validate_python(BinaryEnum.ZERO) is BinaryEnum.ZERO
+    assert validator.validate_python(BinaryEnum.ONE) is BinaryEnum.ONE

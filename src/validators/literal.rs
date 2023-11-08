@@ -48,8 +48,8 @@ impl<T: Debug> LiteralLookup<T> {
         for (k, v) in expected {
             let id = values.len();
             values.push(v);
-            if let Ok(bool) = k.strict_bool() {
-                if bool {
+            if let Ok(bool) = k.validate_bool(true) {
+                if bool.into_inner() {
                     expected_bool.true_id = Some(id);
                 } else {
                     expected_bool.false_id = Some(id);
@@ -97,8 +97,8 @@ impl<T: Debug> LiteralLookup<T> {
         input: &'data I,
     ) -> ValResult<'data, Option<(&'data I, &T)>> {
         if let Some(expected_bool) = &self.expected_bool {
-            if let Ok(bool_value) = input.strict_bool() {
-                if bool_value {
+            if let Ok(bool_value) = input.validate_bool(true) {
+                if bool_value.into_inner() {
                     if let Some(true_value) = &expected_bool.true_id {
                         return Ok(Some((input, &self.values[*true_value])));
                     }
@@ -198,16 +198,8 @@ impl Validator for LiteralValidator {
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        !ultra_strict
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        Ok(())
     }
 }
 

@@ -6,6 +6,7 @@ use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
 use crate::input::{GenericIterable, Input};
 use crate::tools::SchemaDict;
+use crate::validators::Exactness;
 
 use super::list::{get_items_schema, min_length_check};
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
@@ -51,6 +52,12 @@ impl Validator for TupleVariableValidator {
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let seq = input.validate_tuple(state.strict_or(self.strict))?;
+        let exactness = match &seq {
+            GenericIterable::Tuple(_) | GenericIterable::JsonArray(_) => Exactness::Exact,
+            GenericIterable::List(_) => Exactness::Strict,
+            _ => Exactness::Lax,
+        };
+        state.floor_exactness(exactness);
 
         let output = match self.item_validator {
             Some(ref v) => seq.validate_to_vec(py, input, self.max_length, "Tuple", v, state)?,
@@ -60,26 +67,8 @@ impl Validator for TupleVariableValidator {
         Ok(PyTuple::new(py, &output).into_py(py))
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        if ultra_strict {
-            match self.item_validator {
-                Some(ref v) => v.different_strict_behavior(true),
-                None => false,
-            }
-        } else {
-            true
-        }
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        match &self.item_validator {
-            Some(v) => v.complete(),
-            None => Ok(()),
-        }
     }
 }
 
@@ -199,6 +188,13 @@ impl Validator for TuplePositionalValidator {
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
         let collection = input.validate_tuple(state.strict_or(self.strict))?;
+        let exactness: crate::validators::Exactness = match &collection {
+            GenericIterable::Tuple(_) | GenericIterable::JsonArray(_) => Exactness::Exact,
+            GenericIterable::List(_) => Exactness::Strict,
+            _ => Exactness::Lax,
+        };
+        state.floor_exactness(exactness);
+
         let actual_length = collection.generic_len();
         let expected_length = if self.extras_validator.is_some() {
             actual_length.unwrap_or(self.items_validators.len())
@@ -238,29 +234,7 @@ impl Validator for TuplePositionalValidator {
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        if ultra_strict {
-            if self.items_validators.iter().any(|v| v.different_strict_behavior(true)) {
-                true
-            } else if let Some(ref v) = self.extras_validator {
-                v.different_strict_behavior(true)
-            } else {
-                false
-            }
-        } else {
-            true
-        }
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.items_validators.iter().try_for_each(CombinedValidator::complete)?;
-        match &self.extras_validator {
-            Some(v) => v.complete(),
-            None => Ok(()),
-        }
     }
 }

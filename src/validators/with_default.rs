@@ -182,16 +182,8 @@ impl Validator for WithDefaultValidator {
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        self.validator.different_strict_behavior(ultra_strict)
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.validator.complete()
     }
 }
 
