@@ -2604,13 +2604,13 @@ class Discriminator:
     discriminator: str | Callable[[Any], Hashable]
     """The callable to use to extract the value of the discriminator from the input."""
     custom_error_type: str | None = None
-    """Type to use in [custom errors](../errors/errors.md#custom-errors) that replace standard errors related to the
-    discrimination.
+    """Type to use in [custom errors](../errors/errors.md#custom-errors) replacing the standard discriminated union
+    validation errors.
     """
     custom_error_message: str | None = None
-    """Message to use in custom errors that replace standard errors related to the discrimination."""
+    """Message to use in custom errors."""
     custom_error_context: dict[str, int | str | float] | None = None
-    """Context to use in custom errors that replace standard errors related to the discrimination."""
+    """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         origin = _typing_extra.get_origin(source_type)
