@@ -79,3 +79,8 @@ print(items)
 
 [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] is capable of parsing data into any of the types Pydantic can
 handle as fields of a [`BaseModel`][pydantic.main.BaseModel].
+
+!!! info "Performance considerations"
+    When creating an instance of `TypeAdapter`, the provided type must be analyzed and converted into a pydantic-core
+    schema. This comes with some non-trivial overhead, so it is recommended to create a `TypeAdapter` for a given type
+    just once and reuse it in loops or other performance-critical code.
