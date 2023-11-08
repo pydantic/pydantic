@@ -71,7 +71,9 @@ impl Validator for TimeDeltaValidator {
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
     ) -> ValResult<'data, PyObject> {
-        let timedelta = input.validate_timedelta(state.strict_or(self.strict), self.microseconds_precision)?;
+        let timedelta = input
+            .validate_timedelta(state.strict_or(self.strict), self.microseconds_precision)?
+            .unpack(state);
         let py_timedelta = timedelta.try_into_py(py)?;
         if let Some(constraints) = &self.constraints {
             let raw_timedelta = timedelta.to_duration()?;
@@ -101,16 +103,8 @@ impl Validator for TimeDeltaValidator {
         Ok(py_timedelta.into())
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        !ultra_strict
-    }
-
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        Ok(())
     }
 }
 fn pydelta_to_human_readable(py_delta: &PyDelta) -> String {

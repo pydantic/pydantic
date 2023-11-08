@@ -7,6 +7,7 @@ use crate::errors::ValResult;
 use crate::input::Input;
 use crate::tools::SchemaDict;
 
+use super::Exactness;
 use super::ValidationState;
 use super::{build_validator, BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
 
@@ -64,24 +65,20 @@ impl Validator for LaxOrStrictValidator {
         if state.strict_or(self.strict) {
             self.strict_validator.validate(py, input, state)
         } else {
+            // horrible edge case: if doing smart union validation, we need to try the strict validator
+            // anyway and prefer that if it succeeds
+            if state.exactness.is_some() {
+                if let Ok(strict_result) = self.strict_validator.validate(py, input, state) {
+                    return Ok(strict_result);
+                }
+                // this is now known to be not strict
+                state.floor_exactness(Exactness::Lax);
+            }
             self.lax_validator.validate(py, input, state)
-        }
-    }
-
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        if ultra_strict {
-            self.strict_validator.different_strict_behavior(true)
-        } else {
-            true
         }
     }
 
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.lax_validator.complete()?;
-        self.strict_validator.complete()
     }
 }

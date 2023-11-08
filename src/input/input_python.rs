@@ -16,6 +16,7 @@ use speedate::MicrosecondsPrecisionOverflowBehavior;
 use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, InputValue, LocItem, ValError, ValResult};
 use crate::tools::{extract_i64, safe_repr};
 use crate::validators::decimal::{create_decimal, get_decimal_type};
+use crate::validators::Exactness;
 use crate::{ArgsKwargs, PyMultiHostUrl, PyUrl};
 
 use super::datetime::{
@@ -23,6 +24,7 @@ use super::datetime::{
     float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime,
     EitherTime,
 };
+use super::return_enums::ValidationMatch;
 use super::shared::{
     decimal_as_int, float_as_int, get_enum_meta_object, int_as_bool, map_json_err, str_as_bool, str_as_float,
     str_as_int,
@@ -203,139 +205,60 @@ impl<'a> Input<'a> for PyAny {
         JsonValue::parse(bytes, true).map_err(|e| map_json_err(self, e))
     }
 
-    fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
-        if let Ok(py_str) = PyString::try_from_exact(self) {
-            Ok(py_str.into())
+    fn validate_str(
+        &'a self,
+        strict: bool,
+        coerce_numbers_to_str: bool,
+    ) -> ValResult<ValidationMatch<EitherString<'a>>> {
+        if let Ok(py_str) = self.downcast_exact::<PyString>() {
+            return Ok(ValidationMatch::exact(py_str.into()));
         } else if let Ok(py_str) = self.downcast::<PyString>() {
             // force to a rust string to make sure behavior is consistent whether or not we go via a
             // rust string in StrConstrainedValidator - e.g. to_lower
-            Ok(py_string_str(py_str)?.into())
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::StringType, self))
+            return Ok(ValidationMatch::strict(py_string_str(py_str)?.into()));
         }
+
+        'lax: {
+            if !strict {
+                return if let Ok(bytes) = self.downcast::<PyBytes>() {
+                    match from_utf8(bytes.as_bytes()) {
+                        Ok(str) => Ok(str.into()),
+                        Err(_) => Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
+                    }
+                } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
+                    // Safety: the gil is held while from_utf8 is running so py_byte_array is not mutated,
+                    // and we immediately copy the bytes into a new Python string
+                    match from_utf8(unsafe { py_byte_array.as_bytes() }) {
+                        // Why Python not Rust? to avoid an unnecessary allocation on the Rust side, the
+                        // final output needs to be Python anyway.
+                        Ok(s) => Ok(PyString::new(self.py(), s).into()),
+                        Err(_) => Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
+                    }
+                } else if coerce_numbers_to_str && !PyBool::is_exact_type_of(self) && {
+                    let py = self.py();
+                    let decimal_type: Py<PyType> = get_decimal_type(py);
+
+                    // only allow int, float, and decimal (not bool)
+                    self.is_instance_of::<PyInt>()
+                        || self.is_instance_of::<PyFloat>()
+                        || self.is_instance(decimal_type.as_ref(py)).unwrap_or_default()
+                } {
+                    Ok(self.str()?.into())
+                } else if let Some(enum_val) = maybe_as_enum(self) {
+                    Ok(enum_val.str()?.into())
+                } else {
+                    break 'lax;
+                }
+                .map(ValidationMatch::lax);
+            }
+        }
+
+        Err(ValError::new(ErrorTypeDefaults::StringType, self))
     }
 
-    fn lax_str(&'a self, coerce_numbers_to_str: bool) -> ValResult<EitherString<'a>> {
+    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
         if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
-            Ok(py_str.into())
-        } else if let Ok(py_str) = self.downcast::<PyString>() {
-            // force to a rust string to make sure behaviour is consistent whether or not we go via a
-            // rust string in StrConstrainedValidator - e.g. to_lower
-            Ok(py_string_str(py_str)?.into())
-        } else if let Ok(bytes) = self.downcast::<PyBytes>() {
-            let str = match from_utf8(bytes.as_bytes()) {
-                Ok(s) => s,
-                Err(_) => return Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
-            };
-            Ok(str.into())
-        } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
-            // Safety: the gil is held while from_utf8 is running so py_byte_array is not mutated,
-            // and we immediately copy the bytes into a new Python string
-            let s = match from_utf8(unsafe { py_byte_array.as_bytes() }) {
-                // Why Python not Rust? to avoid an unnecessary allocation on the Rust side, the
-                // final output needs to be Python anyway.
-                Ok(s) => PyString::new(self.py(), s),
-                Err(_) => return Err(ValError::new(ErrorTypeDefaults::StringUnicode, self)),
-            };
-            Ok(s.into())
-        } else if coerce_numbers_to_str && !PyBool::is_exact_type_of(self) && {
-            let py = self.py();
-            let decimal_type: Py<PyType> = get_decimal_type(py);
-
-            // only allow int, float, and decimal (not bool)
-            self.is_instance_of::<PyInt>()
-                || self.is_instance_of::<PyFloat>()
-                || self.is_instance(decimal_type.as_ref(py)).unwrap_or_default()
-        } {
-            Ok(self.str()?.into())
-        } else if let Some(enum_val) = maybe_as_enum(self) {
-            Ok(enum_val.str()?.into())
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::StringType, self))
-        }
-    }
-
-    fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
-        if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            Ok(py_bytes.into())
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::BytesType, self))
-        }
-    }
-
-    fn lax_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
-        if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            Ok(py_bytes.into())
-        } else if let Ok(py_str) = self.downcast::<PyString>() {
-            let str = py_string_str(py_str)?;
-            Ok(str.as_bytes().into())
-        } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
-            Ok(py_byte_array.to_vec().into())
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::BytesType, self))
-        }
-    }
-
-    fn strict_bool(&self) -> ValResult<bool> {
-        if let Ok(bool) = self.downcast::<PyBool>() {
-            Ok(bool.is_true())
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::BoolType, self))
-        }
-    }
-
-    fn lax_bool(&self) -> ValResult<bool> {
-        if let Ok(bool) = self.downcast::<PyBool>() {
-            Ok(bool.is_true())
-        } else if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::BoolParsing)? {
-            str_as_bool(self, &cow_str)
-        } else if let Ok(int) = extract_i64(self) {
-            int_as_bool(self, int)
-        } else if let Ok(float) = self.extract::<f64>() {
-            match float_as_int(self, float) {
-                Ok(int) => int
-                    .as_bool()
-                    .ok_or_else(|| ValError::new(ErrorTypeDefaults::BoolParsing, self)),
-                _ => Err(ValError::new(ErrorTypeDefaults::BoolType, self)),
-            }
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::BoolType, self))
-        }
-    }
-
-    fn strict_int(&'a self) -> ValResult<EitherInt<'a>> {
-        if PyInt::is_exact_type_of(self) {
-            Ok(EitherInt::Py(self))
-        } else if PyInt::is_type_of(self) {
-            // bools are a subclass of int, so check for bool type in this specific case
-            if PyBool::is_exact_type_of(self) {
-                Err(ValError::new(ErrorTypeDefaults::IntType, self))
-            } else {
-                // force to an int to upcast to a pure python int
-                EitherInt::upcast(self)
-            }
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::IntType, self))
-        }
-    }
-
-    fn lax_int(&'a self) -> ValResult<EitherInt<'a>> {
-        if PyInt::is_exact_type_of(self) {
-            Ok(EitherInt::Py(self))
-        } else if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::IntParsing)? {
-            // Try strings before subclasses of int as that will be far more common
-            str_as_int(self, &cow_str)
-        } else if PyInt::is_type_of(self) {
-            // force to an int to upcast to a pure python int to maintain current behaviour
-            EitherInt::upcast(self)
-        } else if PyFloat::is_exact_type_of(self) {
-            float_as_int(self, self.extract::<f64>()?)
-        } else if let Ok(decimal) = self.strict_decimal(self.py()) {
-            decimal_as_int(self.py(), self, decimal)
-        } else if let Ok(float) = self.extract::<f64>() {
-            float_as_int(self, float)
-        } else if let Some(enum_val) = maybe_as_enum(self) {
-            Ok(EitherInt::Py(enum_val))
+            Ok(EitherString::Py(py_str))
         } else {
             Err(ValError::new(ErrorTypeDefaults::IntType, self))
         }
@@ -349,48 +272,118 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
-        if let Ok(py_str) = PyString::try_from_exact(self) {
-            Ok(EitherString::Py(py_str))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::IntType, self))
+    fn validate_bytes(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>> {
+        if let Ok(py_bytes) = self.downcast_exact::<PyBytes>() {
+            return Ok(ValidationMatch::exact(py_bytes.into()));
+        } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+            return Ok(ValidationMatch::strict(py_bytes.into()));
         }
-    }
 
-    fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        if self.is_instance_of::<PyInt>() {
-            Err(ValError::new(ErrorTypeDefaults::FloatType, self))
-        } else if let Ok(float) = self.downcast::<PyFloat>() {
-            Ok(EitherFloat::Py(float))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::FloatType, self))
-        }
-    }
-    fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        if let Ok(py_float) = self.downcast_exact::<PyFloat>() {
-            Ok(EitherFloat::Py(py_float))
-        } else if let Ok(float) = self.extract::<f64>() {
-            // bools are cast to floats as either 0.0 or 1.0, so check for bool type in this specific case
-            if (float == 0.0 || float == 1.0) && PyBool::is_exact_type_of(self) {
-                Err(ValError::new(ErrorTypeDefaults::FloatType, self))
-            } else {
-                Ok(EitherFloat::F64(float))
+        'lax: {
+            if !strict {
+                return if let Ok(py_str) = self.downcast::<PyString>() {
+                    let str = py_string_str(py_str)?;
+                    Ok(str.as_bytes().into())
+                } else if let Ok(py_byte_array) = self.downcast::<PyByteArray>() {
+                    Ok(py_byte_array.to_vec().into())
+                } else {
+                    break 'lax;
+                }
+                .map(ValidationMatch::lax);
             }
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::FloatType, self))
         }
+
+        Err(ValError::new(ErrorTypeDefaults::BytesType, self))
     }
 
-    fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        if let Ok(py_float) = self.downcast_exact() {
-            Ok(EitherFloat::Py(py_float))
-        } else if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::FloatParsing)? {
-            str_as_float(self, &cow_str)
-        } else if let Ok(float) = self.extract::<f64>() {
-            Ok(EitherFloat::F64(float))
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::FloatType, self))
+    fn validate_bool(&self, strict: bool) -> ValResult<'_, ValidationMatch<bool>> {
+        if let Ok(bool) = self.downcast::<PyBool>() {
+            return Ok(ValidationMatch::exact(bool.is_true()));
         }
+
+        if !strict {
+            if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::BoolParsing)? {
+                return str_as_bool(self, &cow_str).map(ValidationMatch::lax);
+            } else if let Ok(int) = extract_i64(self) {
+                return int_as_bool(self, int).map(ValidationMatch::lax);
+            } else if let Ok(float) = self.extract::<f64>() {
+                if let Ok(int) = float_as_int(self, float) {
+                    return int
+                        .as_bool()
+                        .ok_or_else(|| ValError::new(ErrorTypeDefaults::BoolParsing, self))
+                        .map(ValidationMatch::lax);
+                };
+            }
+        }
+
+        Err(ValError::new(ErrorTypeDefaults::BoolType, self))
+    }
+
+    fn validate_int(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherInt<'a>>> {
+        if self.is_exact_instance_of::<PyInt>() {
+            return Ok(ValidationMatch::exact(EitherInt::Py(self)));
+        } else if self.is_instance_of::<PyInt>() {
+            // bools are a subclass of int, so check for bool type in this specific case
+            let exactness = if self.is_instance_of::<PyBool>() {
+                if strict {
+                    return Err(ValError::new(ErrorTypeDefaults::IntType, self));
+                }
+                Exactness::Lax
+            } else {
+                Exactness::Strict
+            };
+
+            // force to an int to upcast to a pure python int
+            return EitherInt::upcast(self).map(|either_int| ValidationMatch::new(either_int, exactness));
+        }
+
+        'lax: {
+            if !strict {
+                return if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::IntParsing)? {
+                    str_as_int(self, &cow_str)
+                } else if self.is_exact_instance_of::<PyFloat>() {
+                    float_as_int(self, self.extract::<f64>()?)
+                } else if let Ok(decimal) = self.strict_decimal(self.py()) {
+                    decimal_as_int(self.py(), self, decimal)
+                } else if let Ok(float) = self.extract::<f64>() {
+                    float_as_int(self, float)
+                } else if let Some(enum_val) = maybe_as_enum(self) {
+                    Ok(EitherInt::Py(enum_val))
+                } else {
+                    break 'lax;
+                }
+                .map(ValidationMatch::lax);
+            }
+        }
+
+        Err(ValError::new(ErrorTypeDefaults::IntType, self))
+    }
+
+    fn validate_float(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherFloat<'a>>> {
+        if let Ok(float) = self.downcast_exact::<PyFloat>() {
+            return Ok(ValidationMatch::exact(EitherFloat::Py(float)));
+        }
+
+        if !strict {
+            if let Some(cow_str) = maybe_as_string(self, ErrorTypeDefaults::FloatParsing)? {
+                // checking for bytes and string is fast, so do this before isinstance(float)
+                return str_as_float(self, &cow_str).map(ValidationMatch::lax);
+            }
+        }
+
+        if let Ok(float) = self.extract::<f64>() {
+            let exactness = if self.is_instance_of::<PyBool>() {
+                if strict {
+                    return Err(ValError::new(ErrorTypeDefaults::FloatType, self));
+                }
+                Exactness::Lax
+            } else {
+                Exactness::Strict
+            };
+            return Ok(ValidationMatch::new(EitherFloat::F64(float), exactness));
+        }
+
+        Err(ValError::new(ErrorTypeDefaults::FloatType, self))
     }
 
     fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
@@ -607,128 +600,136 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_date(&self) -> ValResult<EitherDate> {
-        if PyDateTime::is_type_of(self) {
-            // have to check if it's a datetime first, otherwise the line below converts to a date
-            Err(ValError::new(ErrorTypeDefaults::DateType, self))
-        } else if let Ok(date) = self.downcast::<PyDate>() {
-            Ok(date.into())
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::DateType, self))
-        }
-    }
-
-    fn lax_date(&self) -> ValResult<EitherDate> {
-        if PyDateTime::is_type_of(self) {
+    fn validate_date(&self, strict: bool) -> ValResult<ValidationMatch<EitherDate>> {
+        if let Ok(date) = self.downcast_exact::<PyDate>() {
+            Ok(ValidationMatch::exact(date.into()))
+        } else if PyDateTime::is_type_of(self) {
             // have to check if it's a datetime first, otherwise the line below converts to a date
             // even if we later try coercion from a datetime, we don't want to return a datetime now
             Err(ValError::new(ErrorTypeDefaults::DateType, self))
         } else if let Ok(date) = self.downcast::<PyDate>() {
-            Ok(date.into())
-        } else if let Ok(py_str) = self.downcast::<PyString>() {
-            let str = py_string_str(py_str)?;
-            bytes_as_date(self, str.as_bytes())
-        } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            bytes_as_date(self, py_bytes.as_bytes())
+            Ok(ValidationMatch::strict(date.into()))
+        } else if let Some(bytes) = {
+            if strict {
+                None
+            } else if let Ok(py_str) = self.downcast::<PyString>() {
+                let str = py_string_str(py_str)?;
+                Some(str.as_bytes())
+            } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+                Some(py_bytes.as_bytes())
+            } else {
+                None
+            }
+        } {
+            bytes_as_date(self, bytes).map(ValidationMatch::lax)
         } else {
             Err(ValError::new(ErrorTypeDefaults::DateType, self))
         }
     }
 
-    fn strict_time(
+    fn validate_time(
         &self,
-        _microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTime> {
-        if let Ok(time) = self.downcast::<PyTime>() {
-            Ok(time.into())
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::TimeType, self))
-        }
-    }
-
-    fn lax_time(&self, microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior) -> ValResult<EitherTime> {
-        if let Ok(time) = self.downcast::<PyTime>() {
-            Ok(time.into())
-        } else if let Ok(py_str) = self.downcast::<PyString>() {
-            let str = py_string_str(py_str)?;
-            bytes_as_time(self, str.as_bytes(), microseconds_overflow_behavior)
-        } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            bytes_as_time(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
-        } else if PyBool::is_exact_type_of(self) {
-            Err(ValError::new(ErrorTypeDefaults::TimeType, self))
-        } else if let Ok(int) = extract_i64(self) {
-            int_as_time(self, int, 0)
-        } else if let Ok(float) = self.extract::<f64>() {
-            float_as_time(self, float)
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::TimeType, self))
-        }
-    }
-
-    fn strict_datetime(
-        &self,
-        _microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherDateTime> {
-        if let Ok(dt) = self.downcast::<PyDateTime>() {
-            Ok(dt.into())
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
-        }
-    }
-
-    fn lax_datetime(
-        &self,
+        strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherDateTime> {
-        if let Ok(dt) = self.downcast::<PyDateTime>() {
-            Ok(dt.into())
-        } else if let Ok(py_str) = self.downcast::<PyString>() {
-            let str = py_string_str(py_str)?;
-            bytes_as_datetime(self, str.as_bytes(), microseconds_overflow_behavior)
-        } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            bytes_as_datetime(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
-        } else if PyBool::is_exact_type_of(self) {
-            Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
-        } else if let Ok(int) = extract_i64(self) {
-            int_as_datetime(self, int, 0)
-        } else if let Ok(float) = self.extract::<f64>() {
-            float_as_datetime(self, float)
-        } else if let Ok(date) = self.downcast::<PyDate>() {
-            Ok(date_as_datetime(date)?)
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
+    ) -> ValResult<ValidationMatch<EitherTime>> {
+        if let Ok(time) = self.downcast_exact::<PyTime>() {
+            return Ok(ValidationMatch::exact(time.into()));
+        } else if let Ok(time) = self.downcast::<PyTime>() {
+            return Ok(ValidationMatch::strict(time.into()));
         }
+
+        'lax: {
+            if !strict {
+                return if let Ok(py_str) = self.downcast::<PyString>() {
+                    let str = py_string_str(py_str)?;
+                    bytes_as_time(self, str.as_bytes(), microseconds_overflow_behavior)
+                } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+                    bytes_as_time(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
+                } else if PyBool::is_exact_type_of(self) {
+                    Err(ValError::new(ErrorTypeDefaults::TimeType, self))
+                } else if let Ok(int) = extract_i64(self) {
+                    int_as_time(self, int, 0)
+                } else if let Ok(float) = self.extract::<f64>() {
+                    float_as_time(self, float)
+                } else {
+                    break 'lax;
+                }
+                .map(ValidationMatch::lax);
+            }
+        }
+
+        Err(ValError::new(ErrorTypeDefaults::TimeType, self))
     }
 
-    fn strict_timedelta(
+    fn validate_datetime(
         &self,
-        _microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTimedelta> {
-        if let Ok(either_dt) = EitherTimedelta::try_from(self) {
-            Ok(either_dt)
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self))
-        }
-    }
-
-    fn lax_timedelta(
-        &self,
+        strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTimedelta> {
-        if let Ok(either_dt) = EitherTimedelta::try_from(self) {
-            Ok(either_dt)
-        } else if let Ok(py_str) = self.downcast::<PyString>() {
-            let str = py_string_str(py_str)?;
-            bytes_as_timedelta(self, str.as_bytes(), microseconds_overflow_behavior)
-        } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
-            bytes_as_timedelta(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
-        } else if let Ok(int) = extract_i64(self) {
-            Ok(int_as_duration(self, int)?.into())
-        } else if let Ok(float) = self.extract::<f64>() {
-            Ok(float_as_duration(self, float)?.into())
-        } else {
-            Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self))
+    ) -> ValResult<ValidationMatch<EitherDateTime>> {
+        if let Ok(dt) = self.downcast_exact::<PyDateTime>() {
+            return Ok(ValidationMatch::exact(dt.into()));
+        } else if let Ok(dt) = self.downcast::<PyDateTime>() {
+            return Ok(ValidationMatch::strict(dt.into()));
         }
+
+        'lax: {
+            if !strict {
+                return if let Ok(py_str) = self.downcast::<PyString>() {
+                    let str = py_string_str(py_str)?;
+                    bytes_as_datetime(self, str.as_bytes(), microseconds_overflow_behavior)
+                } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+                    bytes_as_datetime(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
+                } else if PyBool::is_exact_type_of(self) {
+                    Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
+                } else if let Ok(int) = extract_i64(self) {
+                    int_as_datetime(self, int, 0)
+                } else if let Ok(float) = self.extract::<f64>() {
+                    float_as_datetime(self, float)
+                } else if let Ok(date) = self.downcast::<PyDate>() {
+                    Ok(date_as_datetime(date)?)
+                } else {
+                    break 'lax;
+                }
+                .map(ValidationMatch::lax);
+            }
+        }
+
+        Err(ValError::new(ErrorTypeDefaults::DatetimeType, self))
+    }
+
+    fn validate_timedelta(
+        &self,
+        strict: bool,
+        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<ValidationMatch<EitherTimedelta>> {
+        if let Ok(either_dt) = EitherTimedelta::try_from(self) {
+            let exactness = if matches!(either_dt, EitherTimedelta::PyExact(_)) {
+                Exactness::Exact
+            } else {
+                Exactness::Strict
+            };
+            return Ok(ValidationMatch::new(either_dt, exactness));
+        }
+
+        'lax: {
+            if !strict {
+                return if let Ok(py_str) = self.downcast::<PyString>() {
+                    let str = py_string_str(py_str)?;
+                    bytes_as_timedelta(self, str.as_bytes(), microseconds_overflow_behavior)
+                } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
+                    bytes_as_timedelta(self, py_bytes.as_bytes(), microseconds_overflow_behavior)
+                } else if let Ok(int) = extract_i64(self) {
+                    Ok(int_as_duration(self, int)?.into())
+                } else if let Ok(float) = self.extract::<f64>() {
+                    Ok(float_as_duration(self, float)?.into())
+                } else {
+                    break 'lax;
+                }
+                .map(ValidationMatch::lax);
+            }
+        }
+
+        Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self))
     }
 }
 

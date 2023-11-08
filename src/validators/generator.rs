@@ -11,7 +11,9 @@ use crate::tools::SchemaDict;
 use crate::ValidationError;
 
 use super::list::get_items_schema;
-use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Extra, InputType, ValidationState, Validator};
+use super::{
+    BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, Extra, InputType, ValidationState, Validator,
+};
 
 #[derive(Debug, Clone)]
 pub struct GeneratorValidator {
@@ -86,23 +88,8 @@ impl Validator for GeneratorValidator {
         Ok(v_iterator.into_py(py))
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        if let Some(ref v) = self.item_validator {
-            v.different_strict_behavior(ultra_strict)
-        } else {
-            false
-        }
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        match &self.item_validator {
-            Some(v) => v.complete(),
-            None => Ok(()),
-        }
     }
 }
 
@@ -226,6 +213,7 @@ pub struct InternalValidator {
     context: Option<PyObject>,
     self_instance: Option<PyObject>,
     recursion_guard: RecursionGuard,
+    pub(crate) exactness: Option<Exactness>,
     validation_mode: InputType,
     hide_input_in_errors: bool,
     validation_error_cause: bool,
@@ -256,6 +244,7 @@ impl InternalValidator {
             context: extra.context.map(|d| d.into_py(py)),
             self_instance: extra.self_instance.map(|d| d.into_py(py)),
             recursion_guard: state.recursion_guard.clone(),
+            exactness: state.exactness,
             validation_mode: extra.input_type,
             hide_input_in_errors,
             validation_error_cause,
@@ -274,13 +263,14 @@ impl InternalValidator {
             input_type: self.validation_mode,
             data: self.data.as_ref().map(|data| data.as_ref(py)),
             strict: self.strict,
-            ultra_strict: false,
             from_attributes: self.from_attributes,
             context: self.context.as_ref().map(|data| data.as_ref(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
         };
         let mut state = ValidationState::new(extra, &mut self.recursion_guard);
-        self.validator
+        state.exactness = self.exactness;
+        let result = self
+            .validator
             .validate_assignment(py, model, field_name, field_value, &mut state)
             .map_err(|e| {
                 ValidationError::from_val_error(
@@ -292,7 +282,9 @@ impl InternalValidator {
                     self.hide_input_in_errors,
                     self.validation_error_cause,
                 )
-            })
+            });
+        self.exactness = state.exactness;
+        result
     }
 
     pub fn validate<'data>(
@@ -305,13 +297,13 @@ impl InternalValidator {
             input_type: self.validation_mode,
             data: self.data.as_ref().map(|data| data.as_ref(py)),
             strict: self.strict,
-            ultra_strict: false,
             from_attributes: self.from_attributes,
             context: self.context.as_ref().map(|data| data.as_ref(py)),
             self_instance: self.self_instance.as_ref().map(|data| data.as_ref(py)),
         };
         let mut state = ValidationState::new(extra, &mut self.recursion_guard);
-        self.validator.validate(py, input, &mut state).map_err(|e| {
+        state.exactness = self.exactness;
+        let result = self.validator.validate(py, input, &mut state).map_err(|e| {
             ValidationError::from_val_error(
                 py,
                 self.name.to_object(py),
@@ -321,7 +313,9 @@ impl InternalValidator {
                 self.hide_input_in_errors,
                 self.validation_error_cause,
             )
-        })
+        });
+        self.exactness = state.exactness;
+        result
     }
 }
 

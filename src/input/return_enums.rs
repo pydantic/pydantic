@@ -24,10 +24,43 @@ use serde::{ser::Error, Serialize, Serializer};
 
 use crate::errors::{py_err_string, ErrorType, ErrorTypeDefaults, InputValue, ValError, ValLineError, ValResult};
 use crate::tools::py_err;
-use crate::validators::{CombinedValidator, ValidationState, Validator};
+use crate::validators::{CombinedValidator, Exactness, ValidationState, Validator};
 
 use super::input_string::StringMapping;
 use super::{py_error_on_minusone, Input};
+
+pub struct ValidationMatch<T>(T, Exactness);
+
+impl<T> ValidationMatch<T> {
+    pub const fn new(value: T, exactness: Exactness) -> Self {
+        Self(value, exactness)
+    }
+
+    pub const fn exact(value: T) -> Self {
+        Self(value, Exactness::Exact)
+    }
+
+    pub const fn strict(value: T) -> Self {
+        Self(value, Exactness::Strict)
+    }
+
+    pub const fn lax(value: T) -> Self {
+        Self(value, Exactness::Lax)
+    }
+
+    pub fn require_exact(self) -> Option<T> {
+        (self.1 == Exactness::Exact).then_some(self.0)
+    }
+
+    pub fn unpack(self, state: &mut ValidationState) -> T {
+        state.floor_exactness(self.1);
+        self.0
+    }
+
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
 
 /// Container for all the collections (sized iterable containers) types, which
 /// can mostly be converted to each other in lax mode.

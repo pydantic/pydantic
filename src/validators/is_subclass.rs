@@ -6,8 +6,7 @@ use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::tools::SchemaDict;
 
-use super::ValidationState;
-use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IsSubclassValidator {
@@ -62,15 +61,7 @@ impl Validator for IsSubclassValidator {
         }
     }
 
-    fn different_strict_behavior(&self, _ultra_strict: bool) -> bool {
-        false
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        Ok(())
     }
 }

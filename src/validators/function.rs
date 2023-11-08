@@ -113,20 +113,8 @@ macro_rules! impl_validator {
                 self._validate(validate, py, obj, state)
             }
 
-            fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-                if ultra_strict {
-                    self.validator.different_strict_behavior(ultra_strict)
-                } else {
-                    true
-                }
-            }
-
             fn get_name(&self) -> &str {
                 &self.name
-            }
-
-            fn complete(&self) -> PyResult<()> {
-                self.validator.complete()
             }
         }
     };
@@ -252,17 +240,8 @@ impl Validator for FunctionPlainValidator {
         r.map_err(|e| convert_err(py, e, input))
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        // best guess, should we change this?
-        !ultra_strict
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        Ok(())
     }
 }
 
@@ -349,12 +328,10 @@ impl Validator for FunctionWrapValidator {
                 self.validation_error_cause,
             ),
         };
-        self._validate(
-            Py::new(py, handler)?.into_ref(py),
-            py,
-            input.to_object(py).into_ref(py),
-            state,
-        )
+        let handler = Py::new(py, handler)?.into_ref(py);
+        let result = self._validate(handler, py, input.to_object(py).into_ref(py), state);
+        state.exactness = handler.borrow_mut().validator.exactness;
+        result
     }
 
     fn validate_assignment<'data>(
@@ -380,20 +357,8 @@ impl Validator for FunctionWrapValidator {
         self._validate(Py::new(py, handler)?.into_ref(py), py, obj, state)
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        if ultra_strict {
-            self.validator.different_strict_behavior(ultra_strict)
-        } else {
-            true
-        }
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.validator.complete()
     }
 }
 

@@ -58,9 +58,8 @@ mod uuid;
 mod validation_state;
 mod with_default;
 
+pub use self::validation_state::{Exactness, ValidationState};
 pub use with_default::DefaultType;
-
-pub use self::validation_state::ValidationState;
 
 #[pyclass(module = "pydantic_core._pydantic_core", name = "Some")]
 pub struct PySome {
@@ -120,10 +119,6 @@ impl SchemaValidator {
 
         let validator = build_validator(schema, config, &mut definitions_builder)?;
         let definitions = definitions_builder.finish()?;
-        validator.complete()?;
-        for val in definitions.values() {
-            val.get().unwrap().complete()?;
-        }
         let py_schema = schema.into_py(py);
         let py_config = match config {
             Some(c) if !c.is_empty() => Some(c.into_py(py)),
@@ -271,7 +266,6 @@ impl SchemaValidator {
             data: None,
             strict,
             from_attributes,
-            ultra_strict: false,
             context,
             self_instance: None,
         };
@@ -290,7 +284,6 @@ impl SchemaValidator {
             data: None,
             strict,
             from_attributes: None,
-            ultra_strict: false,
             context,
             self_instance: None,
         };
@@ -402,10 +395,6 @@ impl<'py> SelfValidator<'py> {
             Err(err) => return py_schema_err!("Error building self-schema:\n  {}", err),
         };
         let definitions = definitions_builder.finish()?;
-        validator.complete()?;
-        for val in definitions.values() {
-            val.get().unwrap().complete()?;
-        }
         Ok(SchemaValidator {
             validator,
             definitions,
@@ -569,8 +558,6 @@ pub struct Extra<'a> {
     pub data: Option<&'a PyDict>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
-    /// whether we're in ultra-strict mode, only used occasionally in unions
-    pub ultra_strict: bool,
     /// Validation time setting of `from_attributes`
     pub from_attributes: Option<bool>,
     /// context used in validator functions
@@ -591,7 +578,6 @@ impl<'a> Extra<'a> {
             input_type,
             data: None,
             strict,
-            ultra_strict: false,
             from_attributes,
             context,
             self_instance,
@@ -600,12 +586,11 @@ impl<'a> Extra<'a> {
 }
 
 impl<'a> Extra<'a> {
-    pub fn as_strict(&self, ultra_strict: bool) -> Self {
+    pub fn as_strict(&self) -> Self {
         Self {
             input_type: self.input_type,
             data: self.data,
             strict: Some(true),
-            ultra_strict,
             from_attributes: self.from_attributes,
             context: self.context,
             self_instance: self.self_instance,
@@ -742,15 +727,7 @@ pub trait Validator: Send + Sync + Debug {
         Err(py_err.into())
     }
 
-    /// whether the validator behaves differently in strict mode, and in ultra strict mode
-    /// implementations should return true if any of their sub-validators return true
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool;
-
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`
     fn get_name(&self) -> &str;
-
-    /// this method must be implemented for any validator which holds references to other validators,
-    /// it is used by `UnionValidator` to calculate strictness
-    fn complete(&self) -> PyResult<()>;
 }

@@ -80,6 +80,7 @@ impl Validator for DictValidator {
                 self.validate_generic_mapping(py, input, DictGenericIterator::new(py_dict)?, state)
             }
             GenericMapping::PyMapping(mapping) => {
+                state.floor_exactness(super::Exactness::Lax);
                 self.validate_generic_mapping(py, input, MappingGenericIterator::new(mapping)?, state)
             }
             GenericMapping::StringMapping(dict) => {
@@ -92,21 +93,8 @@ impl Validator for DictValidator {
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        if ultra_strict {
-            self.key_validator.different_strict_behavior(true) || self.value_validator.different_strict_behavior(true)
-        } else {
-            true
-        }
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.key_validator.complete()?;
-        self.value_validator.complete()
     }
 }
 

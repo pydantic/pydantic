@@ -13,7 +13,7 @@ use crate::tools::SchemaDict;
 
 use super::model::create_class;
 use super::model::force_setattr;
-use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, ValidationState, Validator};
+use super::{BuildValidator, CombinedValidator, DefinitionsBuilder, Exactness, ValidationState, Validator};
 
 const UUID_INT: &str = "int";
 const UUID_IS_SAFE: &str = "is_safe";
@@ -117,21 +117,18 @@ impl Validator for UuidValidator {
                 input,
             ))
         } else {
+            // In python mode this is a coercion, in JSON mode we treat a UUID string as an
+            // exact match
+            if input.is_python() {
+                state.floor_exactness(Exactness::Lax);
+            }
             let uuid = self.get_uuid(input)?;
             self.create_py_uuid(py, class, &uuid)
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        !ultra_strict
-    }
-
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        Ok(())
     }
 }
 
@@ -154,7 +151,8 @@ impl UuidValidator {
             None => {
                 let either_bytes = input
                     .validate_bytes(true)
-                    .map_err(|_| ValError::new(ErrorTypeDefaults::UuidType, input))?;
+                    .map_err(|_| ValError::new(ErrorTypeDefaults::UuidType, input))?
+                    .into_inner();
                 let bytes_slice = either_bytes.as_slice();
                 'parse: {
                     // Try parsing as utf8, but don't care if it fails

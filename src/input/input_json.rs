@@ -13,6 +13,7 @@ use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
+use super::return_enums::ValidationMatch;
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_float, str_as_int};
 use super::{
     BorrowInput, EitherBytes, EitherFloat, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
@@ -84,97 +85,72 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
+    fn exact_str(&'a self) -> ValResult<EitherString<'a>> {
         match self {
             JsonValue::Str(s) => Ok(s.as_str().into()),
-            _ => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
-        }
-    }
-    fn lax_str(&'a self, coerce_numbers_to_str: bool) -> ValResult<EitherString<'a>> {
-        match self {
-            JsonValue::Str(s) => Ok(s.as_str().into()),
-            JsonValue::Int(i) if coerce_numbers_to_str => Ok(i.to_string().into()),
-            JsonValue::BigInt(b) if coerce_numbers_to_str => Ok(b.to_string().into()),
-            JsonValue::Float(f) if coerce_numbers_to_str => Ok(f.to_string().into()),
             _ => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
         }
     }
 
-    fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
+    fn validate_str(
+        &'a self,
+        strict: bool,
+        coerce_numbers_to_str: bool,
+    ) -> ValResult<ValidationMatch<EitherString<'a>>> {
+        // Justification for `strict` instead of `exact` is that in JSON strings can also
+        // represent other datatypes such as UUID and date more exactly, so string is a
+        // converting input
+        // TODO: in V3 we may want to make JSON str always win if in union, for consistency,
+        // see https://github.com/pydantic/pydantic-core/pull/867#discussion_r1386582501
         match self {
-            JsonValue::Str(s) => Ok(s.as_bytes().into()),
+            JsonValue::Str(s) => Ok(ValidationMatch::strict(s.as_str().into())),
+            JsonValue::Int(i) if !strict && coerce_numbers_to_str => Ok(ValidationMatch::lax(i.to_string().into())),
+            JsonValue::BigInt(b) if !strict && coerce_numbers_to_str => Ok(ValidationMatch::lax(b.to_string().into())),
+            JsonValue::Float(f) if !strict && coerce_numbers_to_str => Ok(ValidationMatch::lax(f.to_string().into())),
+            _ => Err(ValError::new(ErrorTypeDefaults::StringType, self)),
+        }
+    }
+
+    fn validate_bytes(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>> {
+        match self {
+            JsonValue::Str(s) => Ok(ValidationMatch::strict(s.as_bytes().into())),
             _ => Err(ValError::new(ErrorTypeDefaults::BytesType, self)),
         }
     }
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
-        self.validate_bytes(false)
-    }
 
-    fn strict_bool(&self) -> ValResult<bool> {
+    fn validate_bool(&self, strict: bool) -> ValResult<'_, ValidationMatch<bool>> {
         match self {
-            JsonValue::Bool(b) => Ok(*b),
-            _ => Err(ValError::new(ErrorTypeDefaults::BoolType, self)),
-        }
-    }
-    fn lax_bool(&self) -> ValResult<bool> {
-        match self {
-            JsonValue::Bool(b) => Ok(*b),
-            JsonValue::Str(s) => str_as_bool(self, s),
-            JsonValue::Int(int) => int_as_bool(self, *int),
-            JsonValue::Float(float) => match float_as_int(self, *float) {
+            JsonValue::Bool(b) => Ok(ValidationMatch::exact(*b)),
+            JsonValue::Str(s) if !strict => str_as_bool(self, s).map(ValidationMatch::lax),
+            JsonValue::Int(int) if !strict => int_as_bool(self, *int).map(ValidationMatch::lax),
+            JsonValue::Float(float) if !strict => match float_as_int(self, *float) {
                 Ok(int) => int
                     .as_bool()
-                    .ok_or_else(|| ValError::new(ErrorTypeDefaults::BoolParsing, self)),
+                    .ok_or_else(|| ValError::new(ErrorTypeDefaults::BoolParsing, self))
+                    .map(ValidationMatch::lax),
                 _ => Err(ValError::new(ErrorTypeDefaults::BoolType, self)),
             },
             _ => Err(ValError::new(ErrorTypeDefaults::BoolType, self)),
         }
     }
 
-    fn strict_int(&'a self) -> ValResult<EitherInt<'a>> {
+    fn validate_int(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherInt<'a>>> {
         match self {
-            JsonValue::Int(i) => Ok(EitherInt::I64(*i)),
-            JsonValue::BigInt(b) => Ok(EitherInt::BigInt(b.clone())),
-            _ => Err(ValError::new(ErrorTypeDefaults::IntType, self)),
-        }
-    }
-    fn lax_int(&'a self) -> ValResult<EitherInt<'a>> {
-        match self {
-            JsonValue::Bool(b) => match *b {
-                true => Ok(EitherInt::I64(1)),
-                false => Ok(EitherInt::I64(0)),
-            },
-            JsonValue::Int(i) => Ok(EitherInt::I64(*i)),
-            JsonValue::BigInt(b) => Ok(EitherInt::BigInt(b.clone())),
-            JsonValue::Float(f) => float_as_int(self, *f),
-            JsonValue::Str(str) => str_as_int(self, str),
+            JsonValue::Int(i) => Ok(ValidationMatch::exact(EitherInt::I64(*i))),
+            JsonValue::BigInt(b) => Ok(ValidationMatch::exact(EitherInt::BigInt(b.clone()))),
+            JsonValue::Bool(b) if !strict => Ok(ValidationMatch::lax(EitherInt::I64((*b).into()))),
+            JsonValue::Float(f) if !strict => float_as_int(self, *f).map(ValidationMatch::lax),
+            JsonValue::Str(str) if !strict => str_as_int(self, str).map(ValidationMatch::lax),
             _ => Err(ValError::new(ErrorTypeDefaults::IntType, self)),
         }
     }
 
-    fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
+    fn validate_float(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherFloat<'a>>> {
         match self {
-            JsonValue::Float(f) => Ok(EitherFloat::F64(*f)),
-            _ => Err(ValError::new(ErrorTypeDefaults::FloatType, self)),
-        }
-    }
-    fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        match self {
-            JsonValue::Float(f) => Ok(EitherFloat::F64(*f)),
-            JsonValue::Int(i) => Ok(EitherFloat::F64(*i as f64)),
-            _ => Err(ValError::new(ErrorTypeDefaults::FloatType, self)),
-        }
-    }
-    fn lax_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        match self {
-            JsonValue::Bool(b) => match *b {
-                true => Ok(EitherFloat::F64(1.0)),
-                false => Ok(EitherFloat::F64(0.0)),
-            },
-            JsonValue::Float(f) => Ok(EitherFloat::F64(*f)),
-            JsonValue::Int(i) => Ok(EitherFloat::F64(*i as f64)),
-            JsonValue::Str(str) => str_as_float(self, str),
+            JsonValue::Float(f) => Ok(ValidationMatch::exact(EitherFloat::F64(*f))),
+            JsonValue::Int(i) => Ok(ValidationMatch::strict(EitherFloat::F64(*i as f64))),
+            JsonValue::Bool(b) if !strict => Ok(ValidationMatch::lax(EitherFloat::F64(if *b { 1.0 } else { 0.0 }))),
+            JsonValue::Str(str) if !strict => str_as_float(self, str).map(ValidationMatch::lax),
             _ => Err(ValError::new(ErrorTypeDefaults::FloatType, self)),
         }
     }
@@ -270,34 +246,24 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_date(&self, _strict: bool) -> ValResult<EitherDate> {
+    fn validate_date(&self, _strict: bool) -> ValResult<ValidationMatch<EitherDate>> {
         match self {
-            JsonValue::Str(v) => bytes_as_date(self, v.as_bytes()),
+            JsonValue::Str(v) => bytes_as_date(self, v.as_bytes()).map(ValidationMatch::strict),
             _ => Err(ValError::new(ErrorTypeDefaults::DateType, self)),
         }
     }
-    // NO custom `lax_date` implementation, if strict_date fails, the validator will fallback to lax_datetime
-    // then check there's no remainder
-    #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn strict_date(&self) -> ValResult<EitherDate> {
-        self.validate_date(false)
-    }
-
-    fn strict_time(
+    fn validate_time(
         &self,
+        strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTime> {
+    ) -> ValResult<ValidationMatch<EitherTime>> {
         match self {
-            JsonValue::Str(v) => bytes_as_time(self, v.as_bytes(), microseconds_overflow_behavior),
-            _ => Err(ValError::new(ErrorTypeDefaults::TimeType, self)),
-        }
-    }
-    fn lax_time(&self, microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior) -> ValResult<EitherTime> {
-        match self {
-            JsonValue::Str(v) => bytes_as_time(self, v.as_bytes(), microseconds_overflow_behavior),
-            JsonValue::Int(v) => int_as_time(self, *v, 0),
-            JsonValue::Float(v) => float_as_time(self, *v),
-            JsonValue::BigInt(_) => Err(ValError::new(
+            JsonValue::Str(v) => {
+                bytes_as_time(self, v.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::strict)
+            }
+            JsonValue::Int(v) if !strict => int_as_time(self, *v, 0).map(ValidationMatch::lax),
+            JsonValue::Float(v) if !strict => float_as_time(self, *v).map(ValidationMatch::lax),
+            JsonValue::BigInt(_) if !strict => Err(ValError::new(
                 ErrorType::TimeParsing {
                     error: Cow::Borrowed(
                         speedate::ParseError::TimeTooLarge
@@ -312,44 +278,36 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn strict_datetime(
+    fn validate_datetime(
         &self,
-        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherDateTime> {
+        strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<ValidationMatch<EitherDateTime>> {
         match self {
-            JsonValue::Str(v) => bytes_as_datetime(self, v.as_bytes(), microseconds_overflow_behavior),
-            _ => Err(ValError::new(ErrorTypeDefaults::DatetimeType, self)),
-        }
-    }
-    fn lax_datetime(
-        &self,
-        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherDateTime> {
-        match self {
-            JsonValue::Str(v) => bytes_as_datetime(self, v.as_bytes(), microseconds_overflow_behavior),
-            JsonValue::Int(v) => int_as_datetime(self, *v, 0),
-            JsonValue::Float(v) => float_as_datetime(self, *v),
+            JsonValue::Str(v) => {
+                bytes_as_datetime(self, v.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::strict)
+            }
+            JsonValue::Int(v) if !strict => int_as_datetime(self, *v, 0).map(ValidationMatch::lax),
+            JsonValue::Float(v) if !strict => float_as_datetime(self, *v).map(ValidationMatch::lax),
             _ => Err(ValError::new(ErrorTypeDefaults::DatetimeType, self)),
         }
     }
 
-    fn strict_timedelta(
+    fn validate_timedelta(
         &self,
-        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTimedelta> {
+        strict: bool,
+        microseconds_overflow_behavior: speedate::MicrosecondsPrecisionOverflowBehavior,
+    ) -> ValResult<ValidationMatch<EitherTimedelta>> {
         match self {
-            JsonValue::Str(v) => bytes_as_timedelta(self, v.as_bytes(), microseconds_overflow_behavior),
-            _ => Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self)),
-        }
-    }
-    fn lax_timedelta(
-        &self,
-        microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTimedelta> {
-        match self {
-            JsonValue::Str(v) => bytes_as_timedelta(self, v.as_bytes(), microseconds_overflow_behavior),
-            JsonValue::Int(v) => Ok(int_as_duration(self, *v)?.into()),
-            JsonValue::Float(v) => Ok(float_as_duration(self, *v)?.into()),
+            JsonValue::Str(v) => {
+                bytes_as_timedelta(self, v.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::strict)
+            }
+            JsonValue::Int(v) if !strict => {
+                int_as_duration(self, *v).map(|duration| ValidationMatch::lax(duration.into()))
+            }
+            JsonValue::Float(v) if !strict => {
+                float_as_duration(self, *v).map(|duration| ValidationMatch::lax(duration.into()))
+            }
             _ => Err(ValError::new(ErrorTypeDefaults::TimeDeltaType, self)),
         }
     }
@@ -399,30 +357,36 @@ impl<'a> Input<'a> for String {
         JsonValue::parse(self.as_bytes(), true).map_err(|e| map_json_err(self, e))
     }
 
-    fn strict_str(&'a self) -> ValResult<EitherString<'a>> {
-        Ok(self.as_str().into())
+    fn validate_str(
+        &'a self,
+        _strict: bool,
+        _coerce_numbers_to_str: bool,
+    ) -> ValResult<ValidationMatch<EitherString<'a>>> {
+        // Justification for `strict` instead of `exact` is that in JSON strings can also
+        // represent other datatypes such as UUID and date more exactly, so string is a
+        // converting input
+        // TODO: in V3 we may want to make JSON str always win if in union, for consistency,
+        // see https://github.com/pydantic/pydantic-core/pull/867#discussion_r1386582501
+        Ok(ValidationMatch::strict(self.as_str().into()))
     }
 
-    fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
-        Ok(self.as_bytes().into())
+    fn validate_bytes(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>> {
+        Ok(ValidationMatch::strict(self.as_bytes().into()))
     }
 
-    fn strict_bool(&self) -> ValResult<bool> {
-        str_as_bool(self, self)
+    fn validate_bool(&self, _strict: bool) -> ValResult<'_, ValidationMatch<bool>> {
+        str_as_bool(self, self).map(ValidationMatch::lax)
     }
 
-    fn strict_int(&'a self) -> ValResult<EitherInt<'a>> {
+    fn validate_int(&'a self, _strict: bool) -> ValResult<'a, ValidationMatch<EitherInt<'a>>> {
         match self.parse() {
-            Ok(i) => Ok(EitherInt::I64(i)),
+            Ok(i) => Ok(ValidationMatch::lax(EitherInt::I64(i))),
             Err(_) => Err(ValError::new(ErrorTypeDefaults::IntParsing, self)),
         }
     }
 
-    fn ultra_strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        self.strict_float()
-    }
-    fn strict_float(&'a self) -> ValResult<EitherFloat<'a>> {
-        str_as_float(self, self)
+    fn validate_float(&'a self, _strict: bool) -> ValResult<'a, ValidationMatch<EitherFloat<'a>>> {
+        str_as_float(self, self).map(ValidationMatch::lax)
     }
 
     fn strict_decimal(&'a self, py: Python<'a>) -> ValResult<&'a PyAny> {
@@ -462,29 +426,32 @@ impl<'a> Input<'a> for String {
         Ok(string_to_vec(self).into())
     }
 
-    fn strict_date(&self) -> ValResult<EitherDate> {
-        bytes_as_date(self, self.as_bytes())
+    fn validate_date(&self, _strict: bool) -> ValResult<ValidationMatch<EitherDate>> {
+        bytes_as_date(self, self.as_bytes()).map(ValidationMatch::lax)
     }
 
-    fn strict_time(
+    fn validate_time(
         &self,
+        _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTime> {
-        bytes_as_time(self, self.as_bytes(), microseconds_overflow_behavior)
+    ) -> ValResult<ValidationMatch<EitherTime>> {
+        bytes_as_time(self, self.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::lax)
     }
 
-    fn strict_datetime(
+    fn validate_datetime(
         &self,
+        _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherDateTime> {
-        bytes_as_datetime(self, self.as_bytes(), microseconds_overflow_behavior)
+    ) -> ValResult<ValidationMatch<EitherDateTime>> {
+        bytes_as_datetime(self, self.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::lax)
     }
 
-    fn strict_timedelta(
+    fn validate_timedelta(
         &self,
+        _strict: bool,
         microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-    ) -> ValResult<EitherTimedelta> {
-        bytes_as_timedelta(self, self.as_bytes(), microseconds_overflow_behavior)
+    ) -> ValResult<ValidationMatch<EitherTimedelta>> {
+        bytes_as_timedelta(self, self.as_bytes(), microseconds_overflow_behavior).map(ValidationMatch::lax)
     }
 }
 

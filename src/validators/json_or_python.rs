@@ -7,9 +7,7 @@ use crate::errors::ValResult;
 use crate::input::Input;
 use crate::tools::SchemaDict;
 
-use super::InputType;
-use super::ValidationState;
-use super::{build_validator, BuildValidator, CombinedValidator, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, InputType, ValidationState, Validator};
 
 #[derive(Debug)]
 pub struct JsonOrPython {
@@ -63,16 +61,7 @@ impl Validator for JsonOrPython {
         }
     }
 
-    fn different_strict_behavior(&self, ultra_strict: bool) -> bool {
-        self.json.different_strict_behavior(ultra_strict) || self.python.different_strict_behavior(ultra_strict)
-    }
-
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn complete(&self) -> PyResult<()> {
-        self.json.complete()?;
-        self.python.complete()
     }
 }

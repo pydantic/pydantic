@@ -31,20 +31,8 @@ use crate::{build_tools::py_schema_err, py_gc::PyGcTraverse};
 #[derive(Clone)]
 pub struct Definitions<T>(AHashMap<Arc<String>, Definition<T>>);
 
-impl<T> Definitions<T> {
-    pub fn values(&self) -> impl Iterator<Item = &Definition<T>> {
-        self.0.values()
-    }
-}
-
 /// Internal type which contains a definition to be filled
 pub struct Definition<T>(Arc<DefinitionInner<T>>);
-
-impl<T> Definition<T> {
-    pub fn get(&self) -> Option<&T> {
-        self.0.value.get()
-    }
-}
 
 struct DefinitionInner<T> {
     value: OnceLock<T>,
