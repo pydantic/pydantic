@@ -311,7 +311,7 @@ except ValidationError as e:
 ```
 
 1. Notice the callable discriminator function returns `None` if a discriminator value is not found.
-   When `None` is returned, this error is raised.
+   When `None` is returned, this `union_tag_not_found` error is raised.
 
 !!! note
     Using the [`typing.Annotated` fields syntax](../concepts/json_schema.md#typingannotated-fields) can be handy to regroup
