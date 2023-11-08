@@ -2739,24 +2739,26 @@ if TYPE_CHECKING:
     ```py
     import json
 
-    from pydantic import JsonValue, TypeAdapter, ValidationError
+    from pydantic import BaseModel, JsonValue, ValidationError
 
-    adapter = TypeAdapter(JsonValue)
-    valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
-    invalid_json_data = {'a': {'b': ...}}
+    class Model(BaseModel):
+        j: JsonValue
 
-    print(adapter.validate_python(valid_json_data))
-    #> {'a': {'b': {'c': 1, 'd': [2, None]}}}
-    print(adapter.validate_json(json.dumps(valid_json_data)))
-    #> {'a': {'b': {'c': 1, 'd': [2, None]}}}
+    valid_json_data = {'j': {'a': {'b': {'c': 1, 'd': [2, None]}}}}
+    invalid_json_data = {'j': {'a': {'b': ...}}}
+
+    print(repr(Model.model_validate(valid_json_data)))
+    #> Model(j={'a': {'b': {'c': 1, 'd': [2, None]}}})
+    print(repr(Model.model_validate_json(json.dumps(valid_json_data))))
+    #> Model(j={'a': {'b': {'c': 1, 'd': [2, None]}}})
 
     try:
-        adapter.validate_python(invalid_json_data)
+        Model.model_validate(invalid_json_data)
     except ValidationError as e:
         print(e)
         '''
-        1 validation error for json-or-python[json=any,python=tagged-union[list[...],dict[str,...],str,int,float,bool,none]]
-        dict.a.dict.b
+        1 validation error for Model
+        j.dict.a.dict.b
           input was not a valid JSON value [type=invalid-json-value, input_value=Ellipsis, input_type=ellipsis]
         '''
     ```
