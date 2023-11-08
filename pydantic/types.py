@@ -2530,7 +2530,9 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Provides a way to use a custom callable as the way to extract the value of a union discriminator.
+    """[Usage docs](../concepts/unions.md#discriminated-unions)
+
+    Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
     This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
     but without needing to have a single shared field across all the union choices. This also makes it
@@ -2600,9 +2602,19 @@ class Discriminator:
     """
 
     discriminator: str | Callable[[Any], Hashable]
+    """The callable or field name for discriminating the type in a tagged union.
+
+    A `Callable` discriminator must extract the value of the discriminator from the input.
+    A `str` discriminator must be the name of a field to discriminate against.
+    """
     custom_error_type: str | None = None
+    """Type to use in [custom errors](../errors/errors.md#custom-errors) replacing the standard discriminated union
+    validation errors.
+    """
     custom_error_message: str | None = None
+    """Message to use in custom errors."""
     custom_error_context: dict[str, int | str | float] | None = None
+    """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         origin = _typing_extra.get_origin(source_type)
@@ -2731,26 +2743,28 @@ if TYPE_CHECKING:
     ```py
     import json
 
-    from pydantic import JsonValue, TypeAdapter, ValidationError
+    from pydantic import BaseModel, JsonValue, ValidationError
 
-    adapter = TypeAdapter(JsonValue)
-    valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
-    invalid_json_data = {'a': {'b': ...}}
+    class Model(BaseModel):
+        j: JsonValue
 
-    assert adapter.validate_python(valid_json_data) == valid_json_data
-    assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
+    valid_json_data = {'j': {'a': {'b': {'c': 1, 'd': [2, None]}}}}
+    invalid_json_data = {'j': {'a': {'b': ...}}}
+
+    print(repr(Model.model_validate(valid_json_data)))
+    #> Model(j={'a': {'b': {'c': 1, 'd': [2, None]}}})
+    print(repr(Model.model_validate_json(json.dumps(valid_json_data))))
+    #> Model(j={'a': {'b': {'c': 1, 'd': [2, None]}}})
 
     try:
-        adapter.validate_python(invalid_json_data)
-    except ValidationError as exc_info:
-        assert exc_info.errors() == [
-            {
-                'input': Ellipsis,
-                'loc': ('dict', 'a', 'dict', 'b'),
-                'msg': 'input was not a valid JSON value',
-                'type': 'invalid-json-value',
-            }
-        ]
+        Model.model_validate(invalid_json_data)
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        j.dict.a.dict.b
+          input was not a valid JSON value [type=invalid-json-value, input_value=Ellipsis, input_type=ellipsis]
+        '''
     ```
     """
 
