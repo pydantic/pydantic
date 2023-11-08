@@ -67,6 +67,7 @@ nav:
   - Dataclasses: concepts/dataclasses.md
   - Postponed Annotations: concepts/postponed_annotations.md
   - Strict Mode: concepts/strict_mode.md
+  - TypeAdapter: concepts/type_adapter.md
   - Validation Decorator: concepts/validation_decorator.md
   - Conversion Table: concepts/conversion_table.md
   - Settings Management: concepts/pydantic_settings.md
@@ -224,7 +225,7 @@ plugins:
       'usage/pydantic_settings.md': 'concepts/pydantic_settings.md'
       'usage/serialization.md': 'concepts/serialization.md'
       'usage/strict_mode.md': 'concepts/strict_mode.md'
-      'usage/type_adapter.md': 'api/type_adapter.md'
+      'usage/type_adapter.md': 'concepts/type_adapter.md'
       'usage/validation_decorator.md': 'concepts/validation_decorator.md'
       'usage/validators.md': 'concepts/validators.md'
       'usage/types/bytesize.md': 'api/types.md#pydantic.types.ByteSize'
