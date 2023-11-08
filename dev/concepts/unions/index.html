@@ -3175,6 +3175,10 @@ For your <code>Union</code>, you can set the discriminator in its value: <code>F
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h3 id="discriminated-unions-with-callable-discriminators">Discriminated Unions with callable <code>Discriminator</code>s<a class="headerlink" href="#discriminated-unions-with-callable-discriminators" title="Permanent link">&para;</a></h3>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.Discriminator"><code>pydantic.types.Discriminator</code></a><br></p>
+</details>
 <p>In the case of a <code>Union</code> with multiple models, sometimes there isn't a single uniform field
 across all models that you can use as a discriminator.
 This is the perfect use case for a callable <code>Discriminator</code>.</p>
@@ -3242,38 +3246,57 @@ This is the perfect use case for a callable <code>Discriminator</code>.</p>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Tag</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Tag</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">def</span> <span class="nf">model_x_discriminator</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;str&#39;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s1">&#39;int&#39;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">)):</span>
         <span class="k">return</span> <span class="s1">&#39;model&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># return None if the discriminator value isn&#39;t found</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">SpecialValue</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">value</span><span class="p">:</span> <span class="nb">int</span>
 
 
 <span class="k">class</span> <span class="nc">DiscriminatedModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
         <span class="n">Union</span><span class="p">[</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;str&#39;</span><span class="p">)],</span>
-            <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;DiscriminatedModel&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)],</span>
+            <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;int&#39;</span><span class="p">)],</span>
+            <span class="n">Annotated</span><span class="p">[</span><span class="s1">&#39;SpecialValue&#39;</span><span class="p">,</span> <span class="n">Tag</span><span class="p">(</span><span class="s1">&#39;model&#39;</span><span class="p">)],</span>
         <span class="p">],</span>
-        <span class="n">Discriminator</span><span class="p">(</span>
-            <span class="n">model_x_discriminator</span><span class="p">,</span>
-            <span class="n">custom_error_type</span><span class="o">=</span><span class="s1">&#39;invalid_union_member&#39;</span><span class="p">,</span>
-            <span class="n">custom_error_message</span><span class="o">=</span><span class="s1">&#39;Invalid union member&#39;</span><span class="p">,</span>
-            <span class="n">custom_error_context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;discriminator&#39;</span><span class="p">:</span> <span class="s1">&#39;str_or_model&#39;</span><span class="p">},</span>
-        <span class="p">),</span>
+        <span class="n">Discriminator</span><span class="p">(</span><span class="n">model_x_discriminator</span><span class="p">),</span>
     <span class="p">]</span>
 
 
-<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">}}}</span>
-<span class="n">m</span> <span class="o">=</span> <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">m</span> <span class="o">==</span> <span class="p">(</span>
-    <span class="n">DiscriminatedModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">DiscriminatedModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">DiscriminatedModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)))</span>
-<span class="p">)</span>
-<span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="n">data</span>
+<span class="n">model_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">model_data</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; value=SpecialValue(value=1)</span>
+
+<span class="n">int_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">}</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">int_data</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+<span class="c1">#&gt; value=123</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;not an int or a model&#39;</span><span class="p">})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for DiscriminatedModel</span>
+<span class="sd">    value</span>
+<span class="sd">      Unable to extract tag using discriminator model_x_discriminator() [type=union_tag_not_found, input_value=&#39;not an int or a model&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<ol>
+<li>Notice the callable discriminator function returns <code>None</code> if a discriminator value is not found.
+   When <code>None</code> is returned, this <code>union_tag_not_found</code> error is raised.</li>
+</ol>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Using the <a href="../json_schema/#typingannotated-fields"><code>typing.Annotated</code> fields syntax</a> can be handy to regroup
@@ -3356,8 +3379,14 @@ You can do it by creating nested <code>Annotated</code> types, e.g.:</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="union-validation-errors">Union Validation Errors<a class="headerlink" href="#union-validation-errors" title="Permanent link">&para;</a></h2>
-<p>When validation fails, error messages can be quite verbose, especially when you're not using discriminated unions.
-The below example shows the benefits of using discriminated unions in terms of error message simplicity.</p>
+<p>When <code>Union</code> validation fails, error messages can be quite verbose, as they will produce validation errors for
+each case in the union.
+This is especially noticeable when dealing with recursive models, where reasons may be generated at each level of
+recursion.
+Discriminated unions help to simplify error messages in this case, as validation errors are only produced for
+the case with a matching discriminator value.</p>
+<p>You can also customize the error type, message, and context for a <code>Discriminator</code> by passing
+these specifications as parameters to the <code>Discriminator</code> constructor, as seen in the example below.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -3372,67 +3401,38 @@ The below example shows the benefits of using discriminated unions in terms of e
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">(</span><span class="n">include_url</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}},</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid string&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string_type&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid string&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string_type&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid string&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string_type&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;ctx&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;class_name&#39;</span><span class="p">:</span> <span class="s1">&#39;Model&#39;</span><span class="p">},</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid dictionary or instance of Model&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;model_type&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-    <span class="p">]</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    4 validation errors for Model</span>
+<span class="sd">    x.str</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: {&#39;x&#39;: 1}}, input_type=dict]</span>
+<span class="sd">    x.Model.x.str</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: 1}, input_type=dict]</span>
+<span class="sd">    x.Model.x.Model.x.str</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value=1, input_type=int]</span>
+<span class="sd">    x.Model.x.Model.x.Model</span>
+<span class="sd">      Input should be a valid dictionary or instance of Model [type=model_type, input_value=1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{}}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">(</span><span class="n">include_url</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{}}},</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid string&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string_type&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{}},</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid string&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string_type&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid string&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string_type&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;Model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Field required&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;missing&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-    <span class="p">]</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    4 validation errors for Model</span>
+<span class="sd">    x.str</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: {&#39;x&#39;: {}}}, input_type=dict]</span>
+<span class="sd">    x.Model.x.str</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value={&#39;x&#39;: {}}, input_type=dict]</span>
+<span class="sd">    x.Model.x.Model.x.str</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value={}, input_type=dict]</span>
+<span class="sd">    x.Model.x.Model.x.Model.x</span>
+<span class="sd">      Field required [type=missing, input_value={}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 
-<span class="c1"># Errors are much more simple with a discriminated union:</span>
+<span class="c1"># Errors are much simpler with a discriminated union:</span>
 <span class="k">def</span> <span class="nf">model_x_discriminator</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="s1">&#39;str&#39;</span>
@@ -3448,46 +3448,44 @@ The below example shows the benefits of using discriminated unions in terms of e
         <span class="p">],</span>
         <span class="n">Discriminator</span><span class="p">(</span>
             <span class="n">model_x_discriminator</span><span class="p">,</span>
-            <span class="n">custom_error_type</span><span class="o">=</span><span class="s1">&#39;invalid_union_member&#39;</span><span class="p">,</span>
-            <span class="n">custom_error_message</span><span class="o">=</span><span class="s1">&#39;Invalid union member&#39;</span><span class="p">,</span>
-            <span class="n">custom_error_context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;discriminator&#39;</span><span class="p">:</span> <span class="s1">&#39;str_or_model&#39;</span><span class="p">},</span>
+            <span class="n">custom_error_type</span><span class="o">=</span><span class="s1">&#39;invalid_union_member&#39;</span><span class="p">,</span>  <span class="c1"># (1)!</span>
+            <span class="n">custom_error_message</span><span class="o">=</span><span class="s1">&#39;Invalid union member&#39;</span><span class="p">,</span>  <span class="c1"># (2)!</span>
+            <span class="n">custom_error_context</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;discriminator&#39;</span><span class="p">:</span> <span class="s1">&#39;str_or_model&#39;</span><span class="p">},</span>  <span class="c1"># (3)!</span>
         <span class="p">),</span>
     <span class="p">]</span>
 
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">(</span><span class="n">include_url</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;ctx&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;discriminator&#39;</span><span class="p">:</span> <span class="s1">&#39;str_or_model&#39;</span><span class="p">},</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Invalid union member&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;invalid_union_member&#39;</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">]</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for DiscriminatedModel</span>
+<span class="sd">    x.model.x.model.x</span>
+<span class="sd">      Invalid union member [type=invalid_union_member, input_value=1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{}}}})</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">(</span><span class="n">include_url</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">{},</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Field required&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;missing&#39;</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">]</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for DiscriminatedModel</span>
+<span class="sd">    x.model.x.model.x.model.x</span>
+<span class="sd">      Field required [type=missing, input_value={}, input_type=dict]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="c1"># The data is still handled properly when valid:</span>
 <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">}}}</span>
 <span class="n">m</span> <span class="o">=</span> <span class="n">DiscriminatedModel</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">m</span> <span class="o">==</span> <span class="n">DiscriminatedModel</span><span class="p">(</span>
-    <span class="n">x</span><span class="o">=</span><span class="n">DiscriminatedModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">DiscriminatedModel</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">))</span>
-<span class="p">)</span>
-<span class="k">assert</span> <span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span> <span class="o">==</span> <span class="n">data</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: {&#39;x&#39;: {&#39;x&#39;: &#39;a&#39;}}}</span>
 </code></pre></div>
+<ol>
+<li><code>custom_error_type</code> is the <code>type</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
+<li><code>custom_error_message</code> is the <code>msg</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
+<li><code>custom_error_context</code> is the <code>ctx</code> attribute of the <code>ValidationError</code> raised when validation fails.</li>
+</ol>
 <p>You can also simplify error messages by labeling each case with a <a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.Tag"><code>Tag</code></a>.
 This is especially useful when you have complex types like those in this example:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
@@ -3506,30 +3504,14 @@ This is especially useful when you have complex types like those in this example
 <span class="k">try</span><span class="p">:</span>
     <span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="p">(</span>
-        <span class="s1">&#39;2 validation errors for union[function-after[&lt;lambda&gt;(), list[int]],dict[str,str]]&#39;</span>
-        <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">exc_info</span><span class="p">)</span>
-    <span class="p">)</span>
-
-    <span class="c1"># the loc&#39;s are bad here:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span> <span class="o">==</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;function-after[&lt;lambda&gt;(), list[int]]&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid integer, unable to parse string as an &#39;</span>
-            <span class="s1">&#39;integer&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;int_parsing&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://errors.pydantic.dev/2.4/v/int_parsing&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;dict[str,str]&#39;</span><span class="p">,),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid dictionary&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;dict_type&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://errors.pydantic.dev/2.4/v/dict_type&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-    <span class="p">]</span>
-
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc_info</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for union[function-after[&lt;lambda&gt;(), list[int]],dict[str,str]]</span>
+<span class="sd">    function-after[&lt;lambda&gt;(), list[int]].0</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;a&#39;, input_type=str]</span>
+<span class="sd">    dict[str,str]</span>
+<span class="sd">      Input should be a valid dictionary [type=dict_type, input_value=[&#39;a&#39;], input_type=list]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="n">tag_adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span>
     <span class="n">Union</span><span class="p">[</span>
@@ -3541,28 +3523,14 @@ This is especially useful when you have complex types like those in this example
 <span class="k">try</span><span class="p">:</span>
     <span class="n">tag_adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">])</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="s1">&#39;2 validation errors for union[DoubledList,StringsMap]&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span>
-        <span class="n">exc_info</span>
-    <span class="p">)</span>
-
-    <span class="c1"># the loc&#39;s are good here:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span> <span class="o">==</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;DoubledList&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid integer, unable to parse string as an &#39;</span>
-            <span class="s1">&#39;integer&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;int_parsing&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://errors.pydantic.dev/2.4/v/int_parsing&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">],</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;StringsMap&#39;</span><span class="p">,),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;Input should be a valid dictionary&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;dict_type&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;url&#39;</span><span class="p">:</span> <span class="s1">&#39;https://errors.pydantic.dev/2.4/v/dict_type&#39;</span><span class="p">,</span>
-        <span class="p">},</span>
-    <span class="p">]</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc_info</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for union[DoubledList,StringsMap]</span>
+<span class="sd">    DoubledList.0</span>
+<span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;a&#39;, input_type=str]</span>
+<span class="sd">    StringsMap</span>
+<span class="sd">      Input should be a valid dictionary [type=dict_type, input_value=[&#39;a&#39;], input_type=list]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 
 

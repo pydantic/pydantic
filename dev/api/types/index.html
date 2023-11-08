@@ -2506,6 +2506,56 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Discriminator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.types.Discriminator.discriminator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        discriminator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.types.Discriminator.custom_error_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        custom_error_type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.types.Discriminator.custom_error_message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        custom_error_message
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.types.Discriminator.custom_error_context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        custom_error_context
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -4538,6 +4588,56 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Discriminator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.types.Discriminator.discriminator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        discriminator
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.types.Discriminator.custom_error_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        custom_error_type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.types.Discriminator.custom_error_message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        custom_error_message
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.types.Discriminator.custom_error_context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        custom_error_context
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -5761,26 +5861,28 @@ functions.</p>
 and what kind of errors to expect when input data is not json serializable.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">JsonValue</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">,</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">JsonValue</span><span class="p">,</span> <span class="n">ValidationError</span>
 
-<span class="n">adapter</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">JsonValue</span><span class="p">)</span>
-<span class="n">valid_json_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}}}</span>
-<span class="n">invalid_json_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">}}</span>
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">j</span><span class="p">:</span> <span class="n">JsonValue</span>
 
-<span class="k">assert</span> <span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">valid_json_data</span><span class="p">)</span> <span class="o">==</span> <span class="n">valid_json_data</span>
-<span class="k">assert</span> <span class="n">adapter</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">valid_json_data</span><span class="p">))</span> <span class="o">==</span> <span class="n">valid_json_data</span>
+<span class="n">valid_json_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;j&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;d&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}}}}</span>
+<span class="n">invalid_json_data</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;j&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">}}}</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">valid_json_data</span><span class="p">)))</span>
+<span class="c1">#&gt; Model(j={&#39;a&#39;: {&#39;b&#39;: {&#39;c&#39;: 1, &#39;d&#39;: [2, None]}}})</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">valid_json_data</span><span class="p">))))</span>
+<span class="c1">#&gt; Model(j={&#39;a&#39;: {&#39;b&#39;: {&#39;c&#39;: 1, &#39;d&#39;: [2, None]}}})</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">adapter</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">invalid_json_data</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()</span> <span class="o">==</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="bp">Ellipsis</span><span class="p">,</span>
-            <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;dict&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;dict&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">),</span>
-            <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;input was not a valid JSON value&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;invalid-json-value&#39;</span><span class="p">,</span>
-        <span class="p">}</span>
-    <span class="p">]</span>
+    <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">invalid_json_data</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    j.dict.a.dict.b</span>
+<span class="sd">      input was not a valid JSON value [type=invalid-json-value, input_value=Ellipsis, input_type=ellipsis]</span>
+<span class="sd">    &#39;&#39;&#39;</span>
 </code></pre></div>
   </div>
 
@@ -8924,7 +9026,8 @@ docs for more details on how to use <code>Tag</code>s.</p>
   <div class="doc doc-contents ">
 
   
-      <p>Provides a way to use a custom callable as the way to extract the value of a union discriminator.</p>
+      <p><a href="../../concepts/unions/#discriminated-unions">Usage docs</a></p>
+<p>Provides a way to use a custom callable as the way to extract the value of a union discriminator.</p>
 <p>This allows you to get validation behavior like you'd get from <code>Field(discriminator=&lt;field_name&gt;)</code>,
 but without needing to have a single shared field across all the union choices. This also makes it
 possible to handle unions of models and primitive types with discriminated-union-style validation errors.
@@ -8998,6 +9101,106 @@ docs for more details on how to use <code>Discriminator</code>s.</p>
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.types.Discriminator.discriminator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">discriminator</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.types.Discriminator.discriminator" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">discriminator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Hashable</span><span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The callable or field name for discriminating the type in a tagged union.</p>
+<p>A <code>Callable</code> discriminator must extract the value of the discriminator from the input.
+A <code>str</code> discriminator must be the name of a field to discriminate against.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.types.Discriminator.custom_error_type" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">custom_error_type</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+  </span>
+
+<a href="#pydantic.types.Discriminator.custom_error_type" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">custom_error_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Type to use in <a href="../../errors/errors/#custom-errors">custom errors</a> replacing the standard discriminated union
+validation errors.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.types.Discriminator.custom_error_message" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">custom_error_message</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+  </span>
+
+<a href="#pydantic.types.Discriminator.custom_error_message" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">custom_error_message</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Message to use in custom errors.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic.types.Discriminator.custom_error_context" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">custom_error_context</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+  </span>
+
+<a href="#pydantic.types.Discriminator.custom_error_context" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">custom_error_context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span>
+    <span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">float</span>
+<span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Context to use in custom errors.</p>
+  </div>
+
+</div>
 
 
 
