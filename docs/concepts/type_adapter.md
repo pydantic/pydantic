@@ -5,7 +5,7 @@ Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
     [`pydantic.type_adapter.TypeAdapter`][pydantic.type_adapter.TypeAdapter]<br>
 
 For use cases like this, Pydantic provides [`TypeAdapter`][pydantic.type_adapter.TypeAdapter],
-which can be used for type validation, serialization, and JSON schema generation without creating a
+which can be used for type validation, serialization, and JSON schema generation without needing to create a
 [`BaseModel`][pydantic.main.BaseModel].
 
 A [`TypeAdapter`][pydantic.type_adapter.TypeAdapter] instance exposes some of the functionality from
@@ -25,12 +25,12 @@ class User(TypedDict):
     id: int
 
 
-UserListValidator = TypeAdapter(List[User])
-print(repr(UserListValidator.validate_python([{'name': 'Fred', 'id': '3'}])))
+UserListAdapter = TypeAdapter(List[User])
+print(repr(UserListAdapter.validate_python([{'name': 'Fred', 'id': '3'}])))
 #> [{'name': 'Fred', 'id': 3}]
 
 try:
-    UserListValidator.validate_python(
+    UserListAdapter.validate_python(
         [{'name': 'Fred', 'id': 'wrong', 'other': 'no'}]
     )
 except ValidationError as e:
