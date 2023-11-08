@@ -404,8 +404,11 @@ except ValidationError as e:
 
 ## Union Validation Errors
 
-When validation fails, error messages can be quite verbose, especially when you're not using discriminated unions.
-The below example shows the benefits of using discriminated unions in terms of error message simplicity.
+When `Union` validation fails, error messages can be quite verbose, especially when dealing with recursive models.
+Discriminated unions help to simplify error messages in this case.
+
+You can also customize the error type, message, and context for a `Discriminator` by passing
+these specifications as parameters to the `Discriminator` constructor, as seen in the example below.
 
 ```py
 from typing import Union
@@ -469,9 +472,9 @@ class DiscriminatedModel(BaseModel):
         ],
         Discriminator(
             model_x_discriminator,
-            custom_error_type='invalid_union_member',
-            custom_error_message='Invalid union member',
-            custom_error_context={'discriminator': 'str_or_model'},
+            custom_error_type='invalid_union_member',  # (1)!
+            custom_error_message='Invalid union member',  # (2)!
+            custom_error_context={'discriminator': 'str_or_model'},  # (3)!
         ),
     ]
 
@@ -502,6 +505,10 @@ m = DiscriminatedModel.model_validate(data)
 print(m.model_dump())
 #> {'x': {'x': {'x': 'a'}}}
 ```
+
+1. `custom_error_type` is the `type` attribute of the `ValidationError` raised when validation fails.
+2. `custom_error_message` is the `msg` attribute of the `ValidationError` raised when validation fails.
+3. `custom_error_context` is the `ctx` attribute of the `ValidationError` raised when validation fails.
 
 You can also simplify error messages by labeling each case with a [`Tag`][pydantic.types.Tag].
 This is especially useful when you have complex types like those in this example:
