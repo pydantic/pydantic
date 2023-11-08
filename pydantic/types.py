@@ -102,7 +102,7 @@ __all__ = (
     'GetPydanticSchema',
     'StringConstraints',
     'Tag',
-    'CallableDiscriminator',
+    'Discriminator',
     'JsonValue',
 )
 
@@ -2443,16 +2443,16 @@ class GetPydanticSchema:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Tag:
-    """Provides a way to specify the expected tag to use for a case with a callable discriminated union.
+    """Provides a way to specify the expected tag to use for a case of a (callable) discriminated union.
 
     Also provides a way to label a union case in error messages.
 
-    When using a `CallableDiscriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
+    When using a callable `Discriminator`, attach a `Tag` to each case in the `Union` to specify the tag that
     should be used to identify that case. For example, in the below example, the `Tag` is used to specify that
     if `get_discriminator_value` returns `'apple'`, the input should be validated as an `ApplePie`, and if it
     returns `'pumpkin'`, the input should be validated as a `PumpkinPie`.
 
-    The primary role of the `Tag` here is to map the return value from the `CallableDiscriminator` function to
+    The primary role of the `Tag` here is to map the return value from the callable `Discriminator` function to
     the appropriate member of the `Union` in question.
 
     ```py
@@ -2460,7 +2460,7 @@ class Tag:
 
     from typing_extensions import Annotated, Literal
 
-    from pydantic import BaseModel, CallableDiscriminator, Tag
+    from pydantic import BaseModel, Discriminator, Tag
 
     class Pie(BaseModel):
         time_to_cook: int
@@ -2483,7 +2483,7 @@ class Tag:
                 Annotated[ApplePie, Tag('apple')],
                 Annotated[PumpkinPie, Tag('pumpkin')],
             ],
-            CallableDiscriminator(get_discriminator_value),
+            Discriminator(get_discriminator_value),
         ]
 
     apple_variation = ThanksgivingDinner.model_validate(
@@ -2510,8 +2510,8 @@ class Tag:
     ```
 
     !!! note
-        You must specify a `Tag` for every case in a `Union` that is associated with a `CallableDiscriminator`.
-        Failing to do so will result in a `PydanticUserError` with code
+        You must specify a `Tag` for every case in a `Union` that is associated with a
+        callable `Discriminator`. Failing to do so will result in a `PydanticUserError` with code
         [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
 
     See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
@@ -2529,7 +2529,7 @@ class Tag:
 
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
-class CallableDiscriminator:
+class Discriminator:
     """Usage docs: https://docs.pydantic.dev/2.4/concepts/unions/#discriminated-unions-with-callablediscriminator-discriminators
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
@@ -2540,7 +2540,7 @@ class CallableDiscriminator:
     Finally, this allows you to use a custom callable as the way to identify which member of a union a value
     belongs to, while still seeing all the performance benefits of a discriminated union.
 
-    Consider this example, which is much more performant with the use of `CallableDiscriminator` and thus a `TaggedUnion`
+    Consider this example, which is much more performant with the use of `Discriminator` and thus a `TaggedUnion`
     than it would be as a normal `Union`.
 
     ```py
@@ -2548,7 +2548,7 @@ class CallableDiscriminator:
 
     from typing_extensions import Annotated, Literal
 
-    from pydantic import BaseModel, CallableDiscriminator, Tag
+    from pydantic import BaseModel, Discriminator, Tag
 
     class Pie(BaseModel):
         time_to_cook: int
@@ -2571,7 +2571,7 @@ class CallableDiscriminator:
                 Annotated[ApplePie, Tag('apple')],
                 Annotated[PumpkinPie, Tag('pumpkin')],
             ],
-            CallableDiscriminator(get_discriminator_value),
+            Discriminator(get_discriminator_value),
         ]
 
     apple_variation = ThanksgivingDinner.model_validate(
@@ -2596,9 +2596,12 @@ class CallableDiscriminator:
     ThanksgivingDinner(dessert=PumpkinPie(time_to_cook=40, num_ingredients=6, filling='pumpkin'))
     '''
     ```
+
+    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
+    docs for more details on how to use `Discriminator`s.
     """
 
-    discriminator: Callable[[Any], Hashable]
+    discriminator: str | Callable[[Any], Hashable]
     """The callable to use to extract the value of the discriminator from the input."""
     custom_error_type: str | None = None
     """TType to use in custom errors that replace standard errors related to the discrimination."""
@@ -2612,8 +2615,13 @@ class CallableDiscriminator:
         if not origin or not _typing_extra.origin_is_union(origin):
             raise TypeError(f'{type(self).__name__} must be used with a Union type, not {source_type}')
 
-        original_schema = handler.generate_schema(source_type)
-        return self._convert_schema(original_schema)
+        if isinstance(self.discriminator, str):
+            from pydantic import Field
+
+            return handler(Annotated[source_type, Field(discriminator=self.discriminator)])
+        else:
+            original_schema = handler(source_type)
+            return self._convert_schema(original_schema)
 
     def _convert_schema(self, original_schema: core_schema.CoreSchema) -> core_schema.TaggedUnionSchema:
         if original_schema['type'] != 'union':
@@ -2635,7 +2643,7 @@ class CallableDiscriminator:
                     tag = metadata_tag
             if tag is None:
                 raise PydanticUserError(
-                    f'`Tag` not provided for choice {choice} used with `CallableDiscriminator`',
+                    f'`Tag` not provided for choice {choice} used with `Discriminator`',
                     code='callable-discriminator-no-tag',
                 )
             tagged_union_choices[tag] = choice
@@ -2765,7 +2773,7 @@ else:
                 Annotated[bool, Tag('bool')],
                 Annotated[None, Tag('NoneType')],
             ],
-            CallableDiscriminator(
+            Discriminator(
                 _get_type_name,
                 custom_error_type='invalid-json-value',
                 custom_error_message='input was not a valid JSON value',

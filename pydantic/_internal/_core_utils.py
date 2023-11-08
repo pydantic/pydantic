@@ -100,7 +100,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
 
     module_name = getattr(origin, '__module__', '<No __module__>')
     if isinstance(origin, TypeAliasType):
-        type_ref = f'{module_name}.{origin.__name__}'
+        type_ref = f'{module_name}.{origin.__name__}:{id(origin)}'
     else:
         try:
             qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')

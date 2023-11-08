@@ -337,3 +337,19 @@ def test_nested_generic_type_alias_type() -> None:
 
 def test_non_specified_generic_type_alias_type() -> None:
     assert TypeAdapter(MyList).json_schema() == {'items': {}, 'type': 'array'}
+
+
+def test_redefined_type_alias():
+    MyType = TypeAliasType('MyType', str)
+
+    class MyInnerModel(BaseModel):
+        x: MyType
+
+    MyType = TypeAliasType('MyType', int)
+
+    class MyOuterModel(BaseModel):
+        inner: MyInnerModel
+        y: MyType
+
+    data = {'inner': {'x': 'hello'}, 'y': 1}
+    assert MyOuterModel.model_validate(data).model_dump() == data
