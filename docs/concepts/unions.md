@@ -456,7 +456,7 @@ except ValidationError as e:
     """
 
 
-# Errors are much more simple with a discriminated union:
+# Errors are much simpler with a discriminated union:
 def model_x_discriminator(v):
     if isinstance(v, str):
         return 'str'
