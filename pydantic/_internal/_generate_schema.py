@@ -2187,7 +2187,7 @@ def generate_pydantic_signature(
         # Make sure the parameter for extra kwargs
         # does not have the same name as a field
         default_model_signature = [
-            ('__pydantic_self__', Parameter.POSITIONAL_OR_KEYWORD),
+            ('self', Parameter.POSITIONAL_ONLY),
             ('data', Parameter.VAR_KEYWORD),
         ]
         if [(p.name, p.kind) for p in present_params] == default_model_signature:

@@ -1296,6 +1296,14 @@ def test_self():
     }
 
 
+def test_no_name_conflict_in_constructor():
+    class Model(BaseModel):
+        self: int
+
+    m = Model(**{'__pydantic_self__': 4, 'self': 2})
+    assert m.self == 2
+
+
 def test_self_recursive():
     class SubModel(BaseModel):
         self: int

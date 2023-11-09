@@ -726,10 +726,10 @@ def init_context(value: Dict[str, Any]) -> Iterator[None]:
 class Model(BaseModel):
     my_number: int
 
-    def __init__(__pydantic_self__, **data: Any) -> None:
-        __pydantic_self__.__pydantic_validator__.validate_python(
+    def __init__(self, /, **data: Any) -> None:
+        self.__pydantic_validator__.validate_python(
             data,
-            self_instance=__pydantic_self__,
+            self_instance=self,
             context=_init_context_var.get(),
         )
 
