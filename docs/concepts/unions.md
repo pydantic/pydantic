@@ -9,8 +9,8 @@ Validating unions feels like adding another orthogonal dimension to the validati
 
 To solve these problems, Pydantic supports three fundamental approaches to validating unions:
 
-1. [left to right mode](#left-to-right-mode) - the simplest approach, each member of the union is tried in order
-2. [smart mode](#smart-mode) - as with "left to right mode" all members are tried, but strict validation is used to try to find the best match, this is the default mode for most union validation
+1. [left to right mode](#left-to-right-mode) - the simplest approach, each member of the union is tried in order and the first match is returned
+2. [smart mode](#smart-mode) - similar to "left to right mode" members are tried in order; however, validation will proceed past the first match to attempt to find a better match, this is the default mode for most union validation
 3. [discriminated unions](#discriminated-unions) - only one member of the union is tried, based on a discriminator
 
 ## Union Modes
@@ -80,12 +80,21 @@ print(User(id='456'))  # (2)
 
 Because of the surprising side effects of `union_mode='left_to_right'`, in Pydantic >=2 the default mode for `Union` validation is `union_mode='smart'`.
 
-In this mode, the following steps are take to try to select the best match for the input:
-1. Validation is first attempted in [`strict` mode](../concepts/strict_mode.md) against each member of the union in the order they're defined.
-2. If validation succeeds on any member, that member is accepted as input.
-3. If validation fails on all members, validation is attempted again in [`lax` mode](../concepts/strict_mode.md) against each member of the union in the order they're defined.
-4. If validation succeeds on any member, that member is accepted as input.
-5. If validation fails on all members, all errors from lax validation are returned.
+In this mode, pydantic scores a match of a union member into one of the following three groups (from highest score to lowest score):
+
+- An exact type match, for example an `int` input to a `float | int` union validation is an exact type match for the `int` member
+- Validation would have succeeded in [`strict` mode](../concepts/strict_mode.md)
+- Validation would have succeeded in lax mode
+
+The union match which produced the highest score will be selected as the best match.
+
+In this mode, the following steps are taken to try to select the best match for the input:
+
+1. Union members are attempted left to right, with any successful matches scored into one of the three categories described above.
+  - If validation succeeds with an exact type match, that member is returned immediately and following members will not be attempted.
+2. If validation succeeded on at least one member as a "strict" match, the leftmost of those "strict" matches is returned.
+3. If validation succeeded on at least one member in "lax" mode, the leftmost match is returned.
+4. Validation failed on all the members, return all the errors.
 
 ```py
 from typing import Union
