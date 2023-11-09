@@ -1,7 +1,9 @@
 !!! warning "🚧 Work in Progress"
     This page is a work in progress.
 
-# JSON Parsing
+# JSON
+
+## Json Parsing
 
 Pydantic provides builtin JSON parsing, which helps achieve:
 
@@ -9,7 +11,13 @@ Pydantic provides builtin JSON parsing, which helps achieve:
 * Support for custom errors
 * Support for `strict` specifications
 
-Here's an example of Pydantic's builtin JSON parsing, showcasing the support for `strict` specifications:
+JSON parsing methods:
+
+* [`BaseModel.model_validate_json`][pydantic.main.BaseModel.model_validate_json]
+* [`TypeAdatper.validate_json`][pydantic.type_adapter.TypeAdapter.validate_json]
+
+Here's an example of Pydantic's builtin JSON parsing via the `model_validate_json` method,
+showcasing the support for `strict` specifications that can be set at the model or field level:
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -47,3 +55,11 @@ The `jiter` JSON parser is almost entirely compatible with the `serde` JSON pars
 with one noticeable enhancement being that `jiter` supports deserialization of `inf` and `NaN` values.
 In the future, `jiter` is intended to enable support validation errors to include the location
 in the original JSON input which contained the invalid value.
+
+
+# JSON Serialization
+
+JSON serialization methods:
+
+* [`BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json]
+* [`TypeAdatper.dump_json`][pydantic.type_adapter.TypeAdapter.dump_json]
