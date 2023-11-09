@@ -1050,9 +1050,9 @@ def test_loc_with_dots(pydantic_version):
     ]
     # insert_assert(str(exc_info.value))
     assert str(exc_info.value) == (
-        "1 validation error for typed-dict\n"
-        "`foo.bar`.0\n"
-        "  Input should be a valid integer, unable to parse string as an integer "
+        '1 validation error for typed-dict\n'
+        '`foo.bar`.0\n'
+        '  Input should be a valid integer, unable to parse string as an integer '
         "[type=int_parsing, input_value='x', input_type=str]\n"
         f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/int_parsing'
     )
