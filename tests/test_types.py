@@ -6049,14 +6049,14 @@ def test_union_tags_in_errors():
             'loc': ('function-after[<lambda>(), list[int]]', 0),
             'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
-            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+            'url': 'https://errors.pydantic.dev/2.5/v/int_parsing',
         },
         {
             'input': ['a'],
             'loc': ('dict[str,str]',),
             'msg': 'Input should be a valid dictionary',
             'type': 'dict_type',
-            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+            'url': 'https://errors.pydantic.dev/2.5/v/dict_type',
         },
     ]
 
@@ -6074,14 +6074,14 @@ def test_union_tags_in_errors():
             'loc': ('DoubledList', 0),
             'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
-            'url': 'https://errors.pydantic.dev/2.4/v/int_parsing',
+            'url': 'https://errors.pydantic.dev/2.5/v/int_parsing',
         },
         {
             'input': ['a'],
             'loc': ('StringsMap',),
             'msg': 'Input should be a valid dictionary',
             'type': 'dict_type',
-            'url': 'https://errors.pydantic.dev/2.4/v/dict_type',
+            'url': 'https://errors.pydantic.dev/2.5/v/dict_type',
         },
     ]
 
