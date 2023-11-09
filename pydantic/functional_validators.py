@@ -36,7 +36,7 @@ class AfterValidator:
 
     Example:
         ```py
-        from typing import Annotated
+        from typing_extensions import Annotated
 
         from pydantic import AfterValidator, BaseModel, ValidationError
 
