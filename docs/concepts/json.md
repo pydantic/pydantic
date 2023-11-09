@@ -33,9 +33,8 @@ class Event(BaseModel):
     where: Tuple[int, int]
 
 
-print(
-    Event.model_validate_json('{"when":"1987-01-28","where":[51,-1]}')  # (1)!
-)
+json_data = '{"when": "1987-01-28", "where": [51, -1]}'
+print(Event.model_validate_json(json_data))  # (1)!
 #> when=datetime.date(1987, 1, 28) where=(51, -1)
 
 try:
