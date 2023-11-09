@@ -6,17 +6,14 @@
 
 #### Packaging
 
-* Update `pydantic-core` to 2.11.0 by @davidhewitt in [#7852](https://github.com/pydantic/pydantic/pull/7852)
-* Bump `pydantic-core` to `2.12.0` by @sydney-runkle in [#8029](https://github.com/pydantic/pydantic/pull/8029)
-* uprev pydantic-core to v2.13.0 by @samuelcolvin in [#8045](https://github.com/pydantic/pydantic/pull/8045)
-* bump pydantic-core to 2.14.0 by @davidhewitt in [#8067](https://github.com/pydantic/pydantic/pull/8067)
+* Update pydantic-core to 2.14.0 by @davidhewitt in [#8067](https://github.com/pydantic/pydantic/pull/8067)
 
 #### New Features
 
-* Allow plugins to catch non ValidationError errors by @adriangb in [#7806](https://github.com/pydantic/pydantic/pull/7806)
-* Support __doc__ argument in create_model() by @chris-spann in [#7863](https://github.com/pydantic/pydantic/pull/7863)
-* Expose regex_engine flag by @utkini in [#7768](https://github.com/pydantic/pydantic/pull/7768)
-* Save return type generated from type annotation in ComputedFieldInfo by @alexmojaki in [#7889](https://github.com/pydantic/pydantic/pull/7889)
+* Allow plugins to catch non `ValidationError` errors by @adriangb in [#7806](https://github.com/pydantic/pydantic/pull/7806)
+* Support `__doc__` argument in `create_model()` by @chris-spann in [#7863](https://github.com/pydantic/pydantic/pull/7863)
+* Expose `regex_engine` flag by @utkini in [#7768](https://github.com/pydantic/pydantic/pull/7768)
+* Save return type generated from type annotation in `ComputedFieldInfo` by @alexmojaki in [#7889](https://github.com/pydantic/pydantic/pull/7889)
 * Adopting `ruff` formatter by @Luca-Blight in [#7930](https://github.com/pydantic/pydantic/pull/7930)
 * Added `validation_error_cause` to config. by @zakstucke in [#7626](https://github.com/pydantic/pydantic/pull/7626)
 * Make path of the item to validate available in plugin by @hramezani in [#7861](https://github.com/pydantic/pydantic/pull/7861)
@@ -24,7 +21,7 @@
 * Make union case tags affect union error messages by @dmontagu in [#8001](https://github.com/pydantic/pydantic/pull/8001)
 * Add `examples` and `json_schema_extra` to `@computed_field` by @alexmojaki in [#8013](https://github.com/pydantic/pydantic/pull/8013)
 * Add `JsonValue` type by @dmontagu in [#7998](https://github.com/pydantic/pydantic/pull/7998)
-* Allow str as argument to `Discriminator` by @dmontagu in [#8047](https://github.com/pydantic/pydantic/pull/8047)
+* Allow `str` as argument to `Discriminator` by @dmontagu in [#8047](https://github.com/pydantic/pydantic/pull/8047)
 
 #### Changes
 
@@ -51,7 +48,7 @@
 * Raise an error when deleting frozen (model) fields by @alexmojaki in [#7800](https://github.com/pydantic/pydantic/pull/7800)
 * Fix schema sorting bug with default values by @sydney-runkle in [#7817](https://github.com/pydantic/pydantic/pull/7817)
 * Use generated alias for aliases that are not specified otherwise by @alexmojaki in [#7802](https://github.com/pydantic/pydantic/pull/7802)
-* Support strict specification for `UUID` types by @sydney-runkle in [#7865](https://github.com/pydantic/pydantic/pull/7865)
+* Support `strict` specification for `UUID` types by @sydney-runkle in [#7865](https://github.com/pydantic/pydantic/pull/7865)
 * JSON schema: fix extra parameter handling by @me-and in [#7810](https://github.com/pydantic/pydantic/pull/7810)
 * Fix: support `pydantic.Field(kw_only=True)` with inherited dataclasses by @PrettyWood in [#7827](https://github.com/pydantic/pydantic/pull/7827)
 * Support `validate_call` decorator for methods in classes with `__slots__` by @sydney-runkle in [#7883](https://github.com/pydantic/pydantic/pull/7883)
