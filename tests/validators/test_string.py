@@ -346,9 +346,9 @@ def test_backtracking_regex_rust_unsupported(mode) -> None:
             SchemaValidator(core_schema.str_schema(pattern=pattern), core_schema.CoreConfig(regex_engine='rust-regex'))
 
     assert exc_info.value.args[0] == (
-        'Error building \"str\" validator:\n'
+        'Error building "str" validator:\n'
         '  SchemaError: regex parse error:\n'
-        '    r(#*)\".*?\"\\1\n'
+        '    r(#*)".*?"\\1\n'
         '              ^^\n'
         'error: backreferences are not supported'
     )

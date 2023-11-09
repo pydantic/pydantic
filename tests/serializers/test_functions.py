@@ -228,7 +228,7 @@ def test_function_args_str():
         'exclude_defaults=False, exclude_none=False, round_trip=False)'
     )
     assert s.to_json(123) == (
-        b'"123 info=SerializationInfo(include=None, exclude=None, mode=\'json\', by_alias=True, exclude_unset=False, '
+        b"\"123 info=SerializationInfo(include=None, exclude=None, mode='json', by_alias=True, exclude_unset=False, "
         b'exclude_defaults=False, exclude_none=False, round_trip=False)"'
     )
 

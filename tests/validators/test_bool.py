@@ -63,7 +63,7 @@ def test_bool_error(pydantic_version):
         '1 validation error for bool\n'
         '  Input should be a valid boolean, '
         "unable to interpret input [type=bool_parsing, input_value='wrong', input_type=str]\n"
-        f"    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/bool_parsing"
+        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/bool_parsing'
     )
     assert exc_info.value.errors(include_url=False) == [
         {

@@ -1009,11 +1009,11 @@ def test_error_display(pydantic_version):
     ]
     # insert_assert(str(exc_info.value))
     assert str(exc_info.value) == (
-        "1 validation error for arguments\n"
-        "b\n"
-        "  Missing required argument [type=missing_argument, "
+        '1 validation error for arguments\n'
+        'b\n'
+        '  Missing required argument [type=missing_argument, '
         "input_value=ArgsKwargs((), {'a': 1}), input_type=ArgsKwargs]\n"
-        f"    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing_argument"
+        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing_argument'
     )
     # insert_assert(exc_info.value.json(include_url=False))
     assert exc_info.value.json(include_url=False) == (
