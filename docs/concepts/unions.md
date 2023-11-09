@@ -10,7 +10,7 @@ Validating unions feels like adding another orthogonal dimension to the validati
 To solve these problems, Pydantic supports three fundamental approaches to validating unions:
 
 1. [left to right mode](#left-to-right-mode) - the simplest approach, each member of the union is tried in order and the first match is returned
-2. [smart mode](#smart-mode) - similar to "left to right mode" members are tried in order, however validation will proceed past the first match to attempt to find a better match, this is the default mode for most union validation
+2. [smart mode](#smart-mode) - similar to "left to right mode" members are tried in order; however, validation will proceed past the first match to attempt to find a better match, this is the default mode for most union validation
 3. [discriminated unions](#discriminated-unions) - only one member of the union is tried, based on a discriminator
 
 ## Union Modes
