@@ -58,6 +58,7 @@ nav:
   - Models: concepts/models.md
   - Fields: concepts/fields.md
   - JSON Schema: concepts/json_schema.md
+  - JSON: concepts/json.md
   - Types: concepts/types.md
   - Unions: concepts/unions.md
   - Alias: concepts/alias.md
