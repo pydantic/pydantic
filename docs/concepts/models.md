@@ -465,13 +465,6 @@ If you want to validate serialized data in a format other than JSON, you should 
 then pass it to `model_validate`.
 
 !!! note
-    In v2.5.0 and above, Pydantic uses [`jiter`](https://docs.rs/jiter/latest/jiter/),
-    a fast and iterable JSON parser, to parse JSON data. Using `jiter` compared to `serde` results in modest performance
-    improvements that will get even better in the future. The `jiter` JSON parser is almost entirely compatible with
-    the `serde` JSON parser, with one noticeable enhancement being that `jiter` supports deserialization of `inf` and `NaN` values.
-    In the future, `jiter` will enable support for localizable JSON error messages from JSON parsing errors.
-
-!!! note
     Depending on the types and model configs involved, `model_validate` and `model_validate_json` may have
     different validation behavior. If you have data coming from a non-JSON source, but want the same validation
     behavior and errors you'd get from `model_validate_json`, our recommendation for now is to use
