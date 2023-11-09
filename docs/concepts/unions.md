@@ -82,7 +82,7 @@ Because of the surprising side effects of `union_mode='left_to_right'`, in Pydan
 
 In this mode, pydantic scores a match of a union member into one of the following three groups (from highest score to lowest score):
 
-- An exact type match
+- An exact type match, for example an `int` input to a `float | int` union validation is an exact type match for the `int` member
 - Validation would have succeeded in [`strict` mode](../concepts/strict_mode.md)
 - Validation would have succeeded in lax mode
 
