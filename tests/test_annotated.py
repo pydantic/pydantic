@@ -395,13 +395,12 @@ def test_annotated_field_info_not_lost_from_forwardref():
 
     with pytest.raises(ValidationError) as exc_info:
         ForwardRefAnnotatedFieldModel(bar='bar')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'bar',
             'loc': ('bar',),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
-            'url': 'https://errors.pydantic.dev/2.5/v/int_parsing',
         }
     ]
 
