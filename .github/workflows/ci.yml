@@ -511,6 +511,7 @@ jobs:
       - name: build initial wheel
         uses: PyO3/maturin-action@v1
         with:
+          manylinux: auto
           args: >
             --release
             --out pgo-wheel
@@ -538,6 +539,7 @@ jobs:
       - name: build pgo-optimized wheel
         uses: PyO3/maturin-action@v1
         with:
+          manylinux: auto
           args: >
             --release
             --out dist
