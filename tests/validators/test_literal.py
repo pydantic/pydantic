@@ -78,7 +78,7 @@ from ..conftest import Err, PyAndJson, plain_repr
         pytest.param(
             ['a', 'b'],
             'c',
-            Err("Input should be 'a' or 'b' [type=literal_error, input_value=\'c\', input_type=str]"),
+            Err("Input should be 'a' or 'b' [type=literal_error, input_value='c', input_type=str]"),
             id='wrong-multiple-str',
         ),
         ([1, '1'], 1, 1),

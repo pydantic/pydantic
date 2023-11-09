@@ -847,7 +847,6 @@ def list_all_errors() -> list[ErrorTypeInfo]:
     Returns:
         A list of `ErrorTypeInfo` typed dicts.
     """
-
 @final
 class TzInfo(datetime.tzinfo):
     def tzname(self, _dt: datetime.datetime | None) -> str | None: ...

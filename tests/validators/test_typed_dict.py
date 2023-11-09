@@ -107,10 +107,10 @@ def test_missing_error(pydantic_version):
         v.validate_python({'field_a': b'abc'})
     # insert_assert(str(exc_info.value))
     assert str(exc_info.value) == (
-        "1 validation error for typed-dict\n"
-        "field_b\n"
+        '1 validation error for typed-dict\n'
+        'field_b\n'
         "  Field required [type=missing, input_value={'field_a': b'abc'}, input_type=dict]\n"
-        f"    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing"
+        f'    For further information visit https://errors.pydantic.dev/{pydantic_version}/v/missing'
     )
 
 
