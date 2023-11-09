@@ -389,7 +389,7 @@ def from_json(data: str | bytes | bytearray, *, allow_inf_nan: bool = True) -> A
     """
     Deserialize JSON data to a Python object.
 
-    This is effectively a faster version of [`json.loads()`][json.loads].
+    This is effectively a faster version of `json.loads()`.
 
     Arguments:
         data: The JSON data to deserialize.
