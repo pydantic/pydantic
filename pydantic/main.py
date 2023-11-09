@@ -512,7 +512,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
     ) -> Model:
-        """Usage docs: https://docs.pydantic.dev/2.4/concepts/json/#json-parsing
+        """Usage docs: https://docs.pydantic.dev/2.5/concepts/json/#json-parsing
 
         Validate the given JSON data against the Pydantic model.
 

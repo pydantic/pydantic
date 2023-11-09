@@ -27,7 +27,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
