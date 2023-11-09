@@ -27,7 +27,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    '''Usage docs: https://docs.pydantic.dev/2.2/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -38,8 +38,7 @@ class AfterValidator:
         ```py
         from typing import Annotated
 
-        from pydantic import BaseModel, AfterValidator, ValidationError
-
+        from pydantic import AfterValidator, BaseModel, ValidationError
 
         MyInt = Annotated[int, AfterValidator(lambda v: v + 1)]
 
@@ -47,27 +46,27 @@ class AfterValidator:
             a: MyInt
 
         print(Model(a=1).a)
-        # > 2
+        #> 2
 
         try:
             Model(a='a')
         except ValidationError as e:
             print(e.json(indent=2))
-        """
-        [
-            {
+            '''
+            [
+              {
                 "type": "int_parsing",
                 "loc": [
-                    "a"
+                  "a"
                 ],
                 "msg": "Input should be a valid integer, unable to parse string as an integer",
                 "input": "a",
-                "url": "https://errors.pydantic.dev/0.38.0/v/int_parsing"
-            }
-        ]
-        """
+                "url": "https://errors.pydantic.dev/2/v/int_parsing"
+              }
+            ]
+            '''
         ```
-    '''
+    """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
