@@ -9,6 +9,7 @@
 * Update `pydantic-core` to 2.11.0 by @davidhewitt in [#7852](https://github.com/pydantic/pydantic/pull/7852)
 * Bump `pydantic-core` to `2.12.0` by @sydney-runkle in [#8029](https://github.com/pydantic/pydantic/pull/8029)
 * uprev pydantic-core to v2.13.0 by @samuelcolvin in [#8045](https://github.com/pydantic/pydantic/pull/8045)
+* bump pydantic-core to 2.14.0 by @davidhewitt in [#8067](https://github.com/pydantic/pydantic/pull/8067)
 
 #### New Features
 
@@ -17,9 +18,9 @@
 * Expose regex_engine flag by @utkini in [#7768](https://github.com/pydantic/pydantic/pull/7768)
 * Save return type generated from type annotation in ComputedFieldInfo by @alexmojaki in [#7889](https://github.com/pydantic/pydantic/pull/7889)
 * Adopting `ruff` formatter by @Luca-Blight in [#7930](https://github.com/pydantic/pydantic/pull/7930)
-* Added validation_error_cause to config. by @zakstucke in [#7626](https://github.com/pydantic/pydantic/pull/7626)
+* Added `validation_error_cause` to config. by @zakstucke in [#7626](https://github.com/pydantic/pydantic/pull/7626)
 * Make path of the item to validate available in plugin by @hramezani in [#7861](https://github.com/pydantic/pydantic/pull/7861)
-* Add CallableDiscriminator and Tag by @dmontagu in [#7983](https://github.com/pydantic/pydantic/pull/7983)
+* Add `CallableDiscriminator` and `Tag` by @dmontagu in [#7983](https://github.com/pydantic/pydantic/pull/7983)
 * Make union case tags affect union error messages by @dmontagu in [#8001](https://github.com/pydantic/pydantic/pull/8001)
 * Add `examples` and `json_schema_extra` to `@computed_field` by @alexmojaki in [#8013](https://github.com/pydantic/pydantic/pull/8013)
 * Add `JsonValue` type by @dmontagu in [#7998](https://github.com/pydantic/pydantic/pull/7998)
@@ -29,7 +30,7 @@
 
 * Add support for instance method reassignment when `extra='allow'` by @sydney-runkle in [#7683](https://github.com/pydantic/pydantic/pull/7683)
 * Support json schema generation for `Enum` types with no cases. by @sydney-runkle in [#7927](https://github.com/pydantic/pydantic/pull/7927)
-* Warn if a class inherits from Generic before BaseModel by @alexmojaki in [#7891](https://github.com/pydantic/pydantic/pull/7891)
+* Warn if a class inherits from `Generic` before `BaseModel` by @alexmojaki in [#7891](https://github.com/pydantic/pydantic/pull/7891)
 
 #### Performance
 
@@ -38,34 +39,31 @@
 #### Fixes
 
 * Fix `mypy` issue with subclasses of `RootModel` by @sydney-runkle in [#7677](https://github.com/pydantic/pydantic/pull/7677)
-* Properly rebuild the FieldInfo when a forward ref gets evaluated by @dmontagu in [#7698](https://github.com/pydantic/pydantic/pull/7698)
-* add tests for 7715 fix by @sydney-runkle in [#7723](https://github.com/pydantic/pydantic/pull/7723)
+* Properly rebuild the `FieldInfo` when a forward ref gets evaluated by @dmontagu in [#7698](https://github.com/pydantic/pydantic/pull/7698)
 * Fix failure to load `SecretStr` from JSON (regression in v2.4) by @sydney-runkle in [#7729](https://github.com/pydantic/pydantic/pull/7729)
 * Fix `defer_build` behavior with `TypeAdapter` by @sydney-runkle in [#7736](https://github.com/pydantic/pydantic/pull/7736)
-* Improve compatibility with legacy mypy versions by @dmontagu in [#7742](https://github.com/pydantic/pydantic/pull/7742)
-* fix: update typevar handling when default is not set by @pmmmwh in [#7719](https://github.com/pydantic/pydantic/pull/7719)
+* Improve compatibility with legacy `mypy` versions by @dmontagu in [#7742](https://github.com/pydantic/pydantic/pull/7742)
+* Fix: update `TypeVar` handling when default is not set by @pmmmwh in [#7719](https://github.com/pydantic/pydantic/pull/7719)
 * Support specification of `strict` on `Enum` type fields by @sydney-runkle in [#7761](https://github.com/pydantic/pydantic/pull/7761)
 * Wrap `weakref.ref` instead of subclassing to fix `cloudpickle` serialization by @edoakes in [#7780](https://github.com/pydantic/pydantic/pull/7780)
 * Keep values of private attributes set within `model_post_init` in subclasses by @alexmojaki in [#7775](https://github.com/pydantic/pydantic/pull/7775)
 * Add more specific type for non-callable `json_schema_extra` by @alexmojaki in [#7803](https://github.com/pydantic/pydantic/pull/7803)
 * Raise an error when deleting frozen (model) fields by @alexmojaki in [#7800](https://github.com/pydantic/pydantic/pull/7800)
-* Add test for enum as dict key re definition-ref bug fix by @sydney-runkle in [#7812](https://github.com/pydantic/pydantic/pull/7812)
 * Fix schema sorting bug with default values by @sydney-runkle in [#7817](https://github.com/pydantic/pydantic/pull/7817)
 * Use generated alias for aliases that are not specified otherwise by @alexmojaki in [#7802](https://github.com/pydantic/pydantic/pull/7802)
-* Support strict specification for UUID types by @sydney-runkle in [#7865](https://github.com/pydantic/pydantic/pull/7865)
-* JSON schema: fix extra parameter handling by @me-and in [#7810](https://github.com/pydantic/pydantic/pull/7810)
-* fix: support `pydantic.Field(kw_only=True)` with inherited dataclasses by @PrettyWood in [#7827](https://github.com/pydantic/pydantic/pull/7827)
-* Support validate call decorator for methods in classes with `__slots__` by @sydney-runkle in [#7883](https://github.com/pydantic/pydantic/pull/7883)
-* Fix pydantic dataclass problem with dataclasses.field default by @hramezani in [#7898](https://github.com/pydantic/pydantic/pull/7898)
+* Support strict specification for `UUID` types by @sydney-runkle in [#7865](https://github.com/pydantic/pydantic/pull/7865)
+* JSON schema: fix extra parameter handling by @me-and in [#7810](https://github.com/pydantic/pydantic/pull/7810)
+* Fix: support `pydantic.Field(kw_only=True)` with inherited dataclasses by @PrettyWood in [#7827](https://github.com/pydantic/pydantic/pull/7827)
+* Support `validate_call` decorator for methods in classes with `__slots__` by @sydney-runkle in [#7883](https://github.com/pydantic/pydantic/pull/7883)
+* Fix pydantic dataclass problem with `dataclasses.field` default by @hramezani in [#7898](https://github.com/pydantic/pydantic/pull/7898)
 * Fix schema generation for generics with union type bounds by @sydney-runkle in [#7899](https://github.com/pydantic/pydantic/pull/7899)
 * Fix version for `importlib_metadata` on python 3.7 by @sydney-runkle in [#7904](https://github.com/pydantic/pydantic/pull/7904)
 * Support `|` operator (Union) in PydanticRecursiveRef by @alexmojaki in [#7892](https://github.com/pydantic/pydantic/pull/7892)
 * Fix `display_as_type` for `TypeAliasType` in python 3.12 by @dmontagu in [#7929](https://github.com/pydantic/pydantic/pull/7929)
 * Add support for `NotRequired` generics in `TypedDict` by @sydney-runkle in [#7932](https://github.com/pydantic/pydantic/pull/7932)
-* Make generic TypeAliasType specifications produce different schema definitions by @alexdrydew in [#7893](https://github.com/pydantic/pydantic/pull/7893)
+* Make generic `TypeAliasType` specifications produce different schema definitions by @alexdrydew in [#7893](https://github.com/pydantic/pydantic/pull/7893)
 * Added fix for signature of inherited dataclass by @howsunjow in [#7925](https://github.com/pydantic/pydantic/pull/7925)
 * Make the model name generation more robust in JSON schema by @joakimnordling in [#7881](https://github.com/pydantic/pydantic/pull/7881)
-* Add tests for union serialization fix by @sydney-runkle in [#7959](https://github.com/pydantic/pydantic/pull/7959)
 * Fix plurals in validation error messages (in tests) by @Iipin in [#7972](https://github.com/pydantic/pydantic/pull/7972)
 * `PrivateAttr` is passed from `Annotated` default position by @tabassco in [#8004](https://github.com/pydantic/pydantic/pull/8004)
 * Don't decode bytes (which may not be UTF8) when displaying SecretBytes by @alexmojaki in [#8012](https://github.com/pydantic/pydantic/pull/8012)

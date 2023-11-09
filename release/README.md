@@ -4,7 +4,7 @@
 
 Prerequisites:
 * `gh` cli is installed - see installation instructions [here](https://docs.github.com/en/github-cli/github-cli/quickstart)
-  * `GH_TOKEN` environment variable is set to a valid GitHub token with `pydantic` API access
+  * Run `gh auth login` to authenticate with GitHub, which is needed for the API calls made in the release process.
 
 To create a new release:
 1. Edit `pydantic/version.py` to set the new version number.
