@@ -669,7 +669,9 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Apply constraints to `str` types.
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/fields/#string-constraints
+
+    Apply constraints to `str` types.
 
     Attributes:
         strip_whitespace: Whether to strip whitespace from the string.
@@ -2402,7 +2404,7 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """Usage docs: Usage docs: https://docs.pydantic.dev/2.5/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
 
     A convenience class for creating an annotation that provides pydantic custom type hooks.
 

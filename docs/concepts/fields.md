@@ -428,6 +428,9 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
 
 ## String Constraints
 
+??? api "API Documentation"
+    [`pydantic.types.StringConstraints`][pydantic.types.StringConstraints]<br>
+
 There are fields that can be used to constrain strings:
 
 * `min_length`: Minimum length of the string.
