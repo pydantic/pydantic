@@ -123,7 +123,7 @@ clean:
 
 .PHONY: docs  ## Generate the docs
 docs:
-	pdm run mkdocs build
+	pdm run mkdocs build --strict
 
 .PHONY: help  ## Display this message
 help:
