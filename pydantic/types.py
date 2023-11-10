@@ -1185,6 +1185,7 @@ class PathType:
 
     @staticmethod
     def validate_file(path: Path, _: core_schema.ValidationInfo) -> Path:
+        path = path.expanduser()
         if path.is_file():
             return path
         else:
@@ -1192,6 +1193,7 @@ class PathType:
 
     @staticmethod
     def validate_directory(path: Path, _: core_schema.ValidationInfo) -> Path:
+        path = path.expanduser()
         if path.is_dir():
             return path
         else:
@@ -1199,6 +1201,7 @@ class PathType:
 
     @staticmethod
     def validate_new(path: Path, _: core_schema.ValidationInfo) -> Path:
+        path = path.expanduser()
         if path.exists():
             raise PydanticCustomError('path_exists', 'Path already exists')
         elif not path.parent.exists():
@@ -1211,7 +1214,9 @@ class PathType:
 
 
 FilePath = Annotated[Path, PathType('file')]
-"""A path that must point to a file.
+"""A path that must point to an existing file.
+
+Home directory will be expanded and the path will be converted to a `pathlib.Path` object.
 
 ```py
 from pathlib import Path
@@ -1253,7 +1258,9 @@ except ValidationError as e:
 ```
 """
 DirectoryPath = Annotated[Path, PathType('dir')]
-"""A path that must point to a directory.
+"""A path that must point to an existing directory.
+
+Home directory will be expanded and the path will be converted to a `pathlib.Path` object.
 
 ```py
 from pathlib import Path
@@ -1295,7 +1302,10 @@ except ValidationError as e:
 ```
 """
 NewPath = Annotated[Path, PathType('new')]
-"""A path for a new file or directory that must not already exist."""
+"""A path for a new file or directory that must not already exist.
+
+Home directory will be expanded and the path will be converted to a `pathlib.Path` object.
+"""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
