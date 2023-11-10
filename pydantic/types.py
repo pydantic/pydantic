@@ -109,7 +109,9 @@ __all__ = (
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """A field metadata class to indicate that a field should be validated in strict mode.
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/strict_mode/#strict-mode-with-annotated-strict
+
+    A field metadata class to indicate that a field should be validated in strict mode.
 
     Attributes:
         strict: Whether to validate the field in strict mode.
@@ -2400,7 +2402,9 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """A convenience class for creating an annotation that provides pydantic custom type hooks.
+    """Usage docs: Usage docs: https://docs.pydantic.dev/2.5/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+
+    A convenience class for creating an annotation that provides pydantic custom type hooks.
 
     This class is intended to eliminate the need to create a custom "marker" which defines the
      `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__` custom hook methods.
@@ -2513,12 +2517,13 @@ class Tag:
     ```
 
     !!! note
-        You must specify a `Tag` for every case in a `Union` that is associated with a
+        You must specify a `Tag` for every case in a `Tag` that is associated with a
         callable `Discriminator`. Failing to do so will result in a `PydanticUserError` with code
         [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
 
-    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
-    docs for more details on how to use `Tag`s.
+    See the [Discriminated Unions] concepts docs for more details on how to use `Tag`s.
+
+    [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
     """
 
     tag: str
@@ -2533,7 +2538,7 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """[Usage docs](../concepts/unions.md#discriminated-unions)
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/unions/#discriminated-unions-with-callable-discriminator
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
@@ -2600,8 +2605,9 @@ class Discriminator:
     '''
     ```
 
-    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
-    docs for more details on how to use `Discriminator`s.
+    See the [Discriminated Unions] concepts docs for more details on how to use `Discriminator`s.
+
+    [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
     """
 
     discriminator: str | Callable[[Any], Hashable]

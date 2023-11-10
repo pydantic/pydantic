@@ -193,7 +193,7 @@ except ValidationError as e:
     """
 ```
 
-### Discriminated Unions with callable `Discriminator`s
+### Discriminated Unions with callable `Discriminator`
 
 ??? api "API Documentation"
     [`pydantic.types.Discriminator`][pydantic.types.Discriminator]<br>
