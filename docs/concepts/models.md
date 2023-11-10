@@ -15,8 +15,8 @@ Untrusted data can be passed to a model and, after validation, Pydantic guarante
 of the resultant model instance will conform to the field types defined on the model.
 
 !!! note
-    The use of the terms "parse" and "validation" within Pydantic's context has been a source of confusion.
-    While these terms were previously used interchangeably, moving forward, we aim to exclusively employ "validation",
+    The use of the terms "parse" and "validate" within Pydantic's context has been a source of confusion.
+    While these terms were previously used interchangeably, moving forward, we aim to exclusively employ "validate",
     with "parse" reserved specifically for discussions related to [JSON parsing](../concepts/json.md).
 
     The potential confusion arises from the fact that, strictly speaking, Pydantic's primary focus
@@ -32,7 +32,8 @@ of the resultant model instance will conform to the field types defined on the m
     when data cannot be successfully parsed into a model instance.
 
     While this distinction may initially seem subtle, it holds practical significance.
-    For a more in-depth understanding of the implications for your usage, refer to the [Data Conversion](#data-conversion) section below.
+    For a more in-depth understanding of the implications for your usage,
+    refer to the [Data Conversion](#data-conversion) section below.
 
     In essence, Pydantic's primary goal is to assure that the resulting structure post-processing (termed "validation")
     precisely conforms to the applied type hints. Given the widespread adoption of "validation" as the colloquial term
