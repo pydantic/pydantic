@@ -58,7 +58,7 @@ types:
     * `int` or `float`; assumed as Unix time, i.e. seconds (if >= `-2e10` and <= `2e10`) or milliseconds
       (if < `-2e10`or > `2e10`) since 1 January 1970
     * `str`; the following formats are accepted:
-        * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
+        * `str` in a format pareseable by `datetime.datetime.fromisoformat`
         * `int` or `float` as a string (assumed as Unix time)
 
 ```py
