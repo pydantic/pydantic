@@ -244,7 +244,7 @@ class FieldInfo(_repr.Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_annotation(cls, annotation: type[Any]) -> typing_extensions.Self:
+    def from_annotation(cls, annotation: type[Any]) -> FieldInfo:
         """Creates a `FieldInfo` instance from a bare annotation.
 
         Args:
@@ -306,7 +306,7 @@ class FieldInfo(_repr.Representation):
         return cls(annotation=annotation, frozen=final or None)
 
     @classmethod
-    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> typing_extensions.Self:
+    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> FieldInfo:
         """Create `FieldInfo` from an annotation with a default value.
 
         Args:
@@ -382,8 +382,8 @@ class FieldInfo(_repr.Representation):
 
             return cls(annotation=annotation, default=default, frozen=final or None)
 
-    @classmethod
-    def merge_field_infos(cls, *field_infos: FieldInfo, **overrides: Any) -> typing_extensions.Self:
+    @staticmethod
+    def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
         """Merge `FieldInfo` instances keeping only explicitly set attributes.
 
         Later `FieldInfo` instances override earlier ones.
@@ -412,7 +412,7 @@ class FieldInfo(_repr.Representation):
                 if not isinstance(x, FieldInfo):
                     metadata[type(x)] = x
         new_kwargs.update(overrides)
-        field_info = cls(**new_kwargs)
+        field_info = FieldInfo(**new_kwargs)
         field_info.metadata = list(metadata.values())
         return field_info
 
