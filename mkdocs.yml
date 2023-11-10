@@ -37,6 +37,12 @@ extra:
   version:
     provider: mike
 
+# https://www.mkdocs.org/user-guide/configuration/#validation
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+
 extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
