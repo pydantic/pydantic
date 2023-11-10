@@ -382,8 +382,8 @@ class FieldInfo(_repr.Representation):
 
             return cls(annotation=annotation, default=default, frozen=final or None)
 
-    @staticmethod
-    def merge_field_infos(*field_infos: FieldInfo, **overrides: Any) -> FieldInfo:
+    @classmethod
+    def merge_field_infos(cls, *field_infos: FieldInfo, **overrides: Any) -> typing_extensions.Self:
         """Merge `FieldInfo` instances keeping only explicitly set attributes.
 
         Later `FieldInfo` instances override earlier ones.
@@ -402,7 +402,7 @@ class FieldInfo(_repr.Representation):
             field_info._attributes_set.update(overrides)
             for k, v in overrides.items():
                 setattr(field_info, k, v)
-            return field_info
+            return field_info  # type: ignore
 
         new_kwargs: dict[str, Any] = {}
         metadata = {}
@@ -412,7 +412,7 @@ class FieldInfo(_repr.Representation):
                 if not isinstance(x, FieldInfo):
                     metadata[type(x)] = x
         new_kwargs.update(overrides)
-        field_info = FieldInfo(**new_kwargs)
+        field_info = cls(**new_kwargs)
         field_info.metadata = list(metadata.values())
         return field_info
 
