@@ -182,7 +182,8 @@ print(user.model_dump(by_alias=True))  # (2)!
 
     2. VSCode will show a warning here.
 
-    To "trick" VSCode into preferring the field name, you can use the `str` function to wrap the alias value:
+    To "trick" VSCode into preferring the field name, you can use the `str` function to wrap the alias value.
+    With this approach, though, a warning is shown when instantiating a model using the alias for the field:
 
     ```py
     from pydantic import BaseModel, ConfigDict, Field
@@ -195,8 +196,11 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 
     user = User(name='johndoe')  # (1)!
+    user = User(username='johndoe')  # (2)!
     ```
-    1. Now VSCode will not show a warning
+
+    3. Now VSCode will NOT show a warning
+    4. VSCode will show a warning here, though
 
     This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
 
