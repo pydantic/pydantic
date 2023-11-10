@@ -57,7 +57,7 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
                 pass
             else:
                 block_lines = inspect.getblock(lines[lnum - 1 :])
-                dedent_source = _dedent_source_lines(block_lines)  # type: ignore
+                dedent_source = _dedent_source_lines(block_lines)
                 try:
                     block_tree = ast.parse(dedent_source)
                 except SyntaxError:
@@ -68,7 +68,7 @@ def _extract_source_from_frame(cls: type[Any]) -> list[str] | None:
                         # `_dedent_source_lines` wrapped the class around the workaround function
                         stmt = stmt.body[0]
                     if isinstance(stmt, ast.ClassDef) and stmt.name == cls.__name__:
-                        return block_lines  # type: ignore
+                        return block_lines
 
         frame = frame.f_back
 
