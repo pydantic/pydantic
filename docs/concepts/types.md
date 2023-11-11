@@ -604,6 +604,9 @@ You can use this approach to e.g. define behavior for Pandas or Numpy types.
 
 #### Using `GetPydanticSchema` to reduce boilerplate
 
+??? api "API Documentation"
+    [`pydantic.types.GetPydanticSchema`][pydantic.types.GetPydanticSchema]<br>
+
 You may notice that the above examples where we create a marker class require a good amount of boilerplate.
 For many simple cases you can greatly minimize this by using `pydantic.GetPydanticSchema`:
 

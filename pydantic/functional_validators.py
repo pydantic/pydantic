@@ -288,6 +288,42 @@ def field_validator(
 
     Decorate methods on the class indicating that they should be used to validate fields.
 
+    Example usage:
+    ```py
+    from typing import Any
+
+    from pydantic import (
+        BaseModel,
+        ValidationError,
+        field_validator,
+    )
+
+    class Model(BaseModel):
+        a: str
+
+        @field_validator('a')
+        @classmethod
+        def ensure_foobar(cls, v: Any):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    print(repr(Model(a='this is foobar good')))
+    #> Model(a='this is foobar good')
+
+    try:
+        Model(a='snap')
+    except ValidationError as exc_info:
+        print(exc_info)
+        '''
+        1 validation error for Model
+        a
+          Value error, "foobar" not found in a [type=value_error, input_value='snap', input_type=str]
+        '''
+    ```
+
+    For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
+
     Args:
         __field: The first field the `field_validator` should be called on; this is separate
             from `fields` to ensure an error is raised if you don't pass at least one.
@@ -460,6 +496,39 @@ def model_validator(
     """Usage docs: https://docs.pydantic.dev/2.5/concepts/validators/#model-validators
 
     Decorate model methods for validation purposes.
+
+    Example usage:
+    ```py
+    from typing import Optional
+
+    from pydantic import BaseModel, ValidationError, model_validator
+
+    class Square(BaseModel):
+    width: float
+    height: float
+
+    @model_validator(mode='after')
+    def verify_square(self) -> 'Rectangle':
+        if self.width != self.height:
+            raise ValueError('width and height do not match')
+        return self
+
+    s = Square(width=1, height=1)
+    print(repr(s))
+    #> Square(width=1.0, height=1.0)
+
+    try:
+        Square(width=1, height=2)
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Square
+        __root__
+          width and height do not match (type=value_error)
+        '''
+    ```
+
+    For more in depth examples, see [Model Validators](../concepts/validators.md#model-validators).
 
     Args:
         mode: A required string literal that specifies the validation mode.
