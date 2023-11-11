@@ -4858,7 +4858,7 @@ function is explicitly used.</p>
     <tbody>
         <tr>
           <td>
-                <code>typing_extensions.<span title="typing_extensions.Self">Self</span></code>
+                <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4952,7 +4952,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">304</span>
 <span class="normal">305</span>
 <span class="normal">306</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Creates a `FieldInfo` instance from a bare annotation.</span>
 
 <span class="sd">    Args:</span>
@@ -5096,7 +5096,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
     <tbody>
         <tr>
           <td>
-                <code>typing_extensions.<span title="typing_extensions.Self">Self</span></code>
+                <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -5198,7 +5198,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">381</span>
 <span class="normal">382</span>
 <span class="normal">383</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create `FieldInfo` from an annotation with a default value.</span>
 
 <span class="sd">    Args:</span>
@@ -5381,7 +5381,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
         <span class="n">field_info</span><span class="o">.</span><span class="n">_attributes_set</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">overrides</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="n">field_info</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">field_info</span>
+        <span class="k">return</span> <span class="n">field_info</span>  <span class="c1"># type: ignore</span>
 
     <span class="n">new_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
