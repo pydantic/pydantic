@@ -3363,8 +3363,9 @@ a model using the field name (though it will work at runtime) — in this case, 
 <ol>
 <li>VSCode will show a warning here.</li>
 </ol>
-<p>To "trick" VSCode into preferring the field name, you can use the <code>str</code> function to wrap the alias value:</p>
-<p><div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+<p>To "trick" VSCode into preferring the field name, you can use the <code>str</code> function to wrap the alias value.
+With this approach, though, a warning is shown when instantiating a model using the alias for the field:</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3374,8 +3375,12 @@ a model using the field name (though it will work at runtime) — in this case, 
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;johndoe&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;johndoe&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
 </code></pre></div>
-1. Now VSCode will not show a warning</p>
+<ol>
+<li>Now VSCode will NOT show a warning</li>
+<li>VSCode will show a warning here, though</li>
+</ol>
 <p>This is discussed in more detail in <a href="https://github.com/pydantic/pydantic/issues/5893">this issue</a>.</p>
 <h3 id="validation-alias">Validation Alias<a class="headerlink" href="#validation-alias" title="Permanent link">&para;</a></h3>
 <p>Even though Pydantic treats <code>alias</code> and <code>validation_alias</code> the same when creating model instances, VSCode will not
@@ -3583,6 +3588,10 @@ you can use <code>Annotated</code>:</p>
 </code></pre></div>
 </div>
 <h2 id="string-constraints">String Constraints<a class="headerlink" href="#string-constraints" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.StringConstraints"><code>pydantic.types.StringConstraints</code></a><br></p>
+</details>
 <p>There are fields that can be used to constrain strings:</p>
 <ul>
 <li><code>min_length</code>: Minimum length of the string.</li>

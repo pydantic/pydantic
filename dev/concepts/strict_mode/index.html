@@ -3083,6 +3083,10 @@
 
   <h1>Strict Mode</h1>
 
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.Strict"><code>pydantic.types.Strict</code></a><br></p>
+</details>
 <p>By default, Pydantic will attempt to coerce values to the desired type when possible.
 For example, you can pass the string <code>"123"</code> as the input to an <code>int</code> field, and it will be converted to <code>123</code>.
 This coercion behavior is useful in many scenarios — think: UUIDs, URL parameters, HTTP headers, environment variables,
@@ -3329,6 +3333,10 @@ when working with <code>TypedDict</code>:</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="strict-mode-with-annotated-strict">Strict mode with <code>Annotated[..., Strict()]</code><a class="headerlink" href="#strict-mode-with-annotated-strict" title="Permanent link">&para;</a></h2>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.Strict"><code>pydantic.types.Strict</code></a><br></p>
+</details>
 <p>Pydantic also provides the <a href="../../api/types/#pydantic.types.Strict"><code>Strict</code></a> class, which is intended for use as
 metadata with <code>typing.Annotated</code> class; this annotation indicates that the annotated field should be validated in
 strict mode:</p>

@@ -3547,26 +3547,24 @@ arguments. (Note that <code>dict(user)</code> will not recursively convert neste
 <p>The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:</p>
 <ul>
-<li><code>model_computed_fields</code>: a dictionary of the computed fields of this model instance.</li>
-<li><code>model_construct()</code>: a class method for creating models without running validation. See
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_computed_fields"><code>model_computed_fields</code></a>: a dictionary of the computed fields of this model instance.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a>: a class method for creating models without running validation. See
     <a href="#creating-models-without-validation">Creating models without validation</a>.</li>
-<li><code>model_copy()</code>: returns a copy (by default, shallow copy) of the model. See
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_copy"><code>model_copy()</code></a>: returns a copy (by default, shallow copy) of the model. See
     <a href="../serialization/#modelcopy">Serialization</a>.</li>
-<li><code>model_dump()</code>: returns a dictionary of the model's fields and values. See
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_dump"><code>model_dump()</code></a>: returns a dictionary of the model's fields and values. See
     <a href="../serialization/#modeldump">Serialization</a>.</li>
-<li><code>model_dump_json()</code>: returns a JSON string representation of <code>model_dump()</code>. See
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_dump_json"><code>model_dump_json()</code></a>: returns a JSON string representation of <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_dump"><code>model_dump()</code></a>. See
     <a href="../serialization/#modeldumpjson">Serialization</a>.</li>
-<li><code>model_extra</code>: get extra fields set during validation.</li>
-<li><code>model_fields_set</code>: set of fields which were set when the model instance was initialized.</li>
-<li><code>model_json_schema()</code>: returns a jsonable dictionary representing the model as JSON Schema. See <a href="../json_schema/">JSON Schema</a>.</li>
-<li><code>model_modify_json_schema()</code>: a method for how the "generic" properties of the JSON schema are populated.
-    See <a href="../json_schema/">JSON Schema</a>.</li>
-<li><code>model_parametrized_name()</code>: compute the class name for parametrizations of generic classes.</li>
-<li><code>model_post_init()</code>: perform additional initialization after the model is initialized.</li>
-<li><code>model_rebuild()</code>: rebuild the model schema, which also supports building recursive generic models.
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_extra"><code>model_extra</code></a>: get extra fields set during validation.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_fields_set"><code>model_fields_set</code></a>: set of fields which were set when the model instance was initialized.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_json_schema"><code>model_json_schema()</code></a>: returns a jsonable dictionary representing the model as JSON Schema. See <a href="../json_schema/">JSON Schema</a>.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_parametrized_name"><code>model_parametrized_name()</code></a>: compute the class name for parametrizations of generic classes.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_post_init"><code>model_post_init()</code></a>: perform additional initialization after the model is initialized.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_rebuild"><code>model_rebuild()</code></a>: rebuild the model schema, which also supports building recursive generic models.
     See <a href="#rebuild-model-schema">Rebuild model schema</a>.</li>
-<li><code>model_validate()</code>: a utility for loading any object into a model. See <a href="#helper-functions">Helper functions</a>.</li>
-<li><code>model_validate_json()</code>: a utility for validating the given JSON data against the Pydantic model. See
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate()</code></a>: a utility for loading any object into a model. See <a href="#helper-functions">Helper functions</a>.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate_json"><code>model_validate_json()</code></a>: a utility for validating the given JSON data against the Pydantic model. See
     <a href="#helper-functions">Helper functions</a>.</li>
 </ul>
 <div class="admonition note">
@@ -3615,7 +3613,7 @@ Models possess the following methods and attributes:</p>
 </code></pre></div>
 <p>For self-referencing models, see <a href="../postponed_annotations/#self-referencing-or-recursive-models">postponed annotations</a>.</p>
 <h2 id="rebuild-model-schema">Rebuild model schema<a class="headerlink" href="#rebuild-model-schema" title="Permanent link">&para;</a></h2>
-<p>The model schema can be rebuilt using <code>model_rebuild()</code>. This is useful for building recursive generic models.</p>
+<p>The model schema can be rebuilt using <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_rebuild"><code>model_rebuild()</code></a>. This is useful for building recursive generic models.</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 
@@ -3651,10 +3649,10 @@ Models possess the following methods and attributes:</p>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 <p>Pydantic tries to determine when this is necessary automatically and error if it wasn't done, but you may want to
-call <code>model_rebuild()</code> proactively when dealing with recursive models or generics.</p>
-<p>In V2, <code>model_rebuild()</code> replaced <code>update_forward_refs()</code> from V1. There are some slight differences with the new behavior.
-The biggest change is that when calling <code>model_rebuild</code> on the outermost model, it builds a core schema used for validation of the
-whole model (nested models and all), so all types at all levels need to be ready before <code>model_rebuild</code> is called.</p>
+call <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_rebuild"><code>model_rebuild()</code></a> proactively when dealing with recursive models or generics.</p>
+<p>In V2, <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_rebuild"><code>model_rebuild()</code></a> replaced <code>update_forward_refs()</code> from V1. There are some slight differences with the new behavior.
+The biggest change is that when calling <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_rebuild"><code>model_rebuild()</code></a> on the outermost model, it builds a core schema used for validation of the
+whole model (nested models and all), so all types at all levels need to be ready before <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_rebuild"><code>model_rebuild()</code></a> is called.</p>
 <h2 id="arbitrary-class-instances">Arbitrary class instances<a class="headerlink" href="#arbitrary-class-instances" title="Permanent link">&para;</a></h2>
 <p>(Formerly known as "ORM Mode"/<code>from_orm</code>.)</p>
 <p>Pydantic models can also be created from arbitrary class instances by reading the instance attributes corresponding
@@ -3830,10 +3828,10 @@ and that <code>ValidationError</code> will contain information about all of the 
 <h2 id="helper-functions">Helper functions<a class="headerlink" href="#helper-functions" title="Permanent link">&para;</a></h2>
 <p><em>Pydantic</em> provides two <code>classmethod</code> helper functions on models for parsing data:</p>
 <ul>
-<li><strong><code>model_validate</code></strong>: this is very similar to the <code>__init__</code> method of the model, except it takes a dict or an object
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate()</code></a>: this is very similar to the <code>__init__</code> method of the model, except it takes a dict or an object
   rather than keyword arguments. If the object passed cannot be validated, or if it's not a dictionary
   or instance of the model in question, a <code>ValidationError</code> will be raised.</li>
-<li><strong><code>model_validate_json</code></strong>: this takes a <em>str</em> or <em>bytes</em> and parses it as <em>json</em>, then passes the result to <code>model_validate</code>.</li>
+<li><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate_json"><code>model_validate_json()</code></a>: this takes a <em>str</em> or <em>bytes</em> and parses it as <em>json</em>, then passes the result to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate()</code></a>.</li>
 </ul>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
@@ -3884,13 +3882,14 @@ and that <code>ValidationError</code> will contain information about all of the 
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <p>If you want to validate serialized data in a format other than JSON, you should load the data into a dict yourself and
-then pass it to <code>model_validate</code>.</p>
+then pass it to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate</code></a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Depending on the types and model configs involved, <code>model_validate</code> and <code>model_validate_json</code> may have
-different validation behavior. If you have data coming from a non-JSON source, but want the same validation
-behavior and errors you'd get from <code>model_validate_json</code>, our recommendation for now is to use
-<code>model_validate_json(json.dumps(data))</code>.</p>
+<p>Depending on the types and model configs involved, <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate</code></a>
+and <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate_json"><code>model_validate_json</code></a> may have different validation behavior.
+If you have data coming from a non-JSON source, but want the same validation
+behavior and errors you'd get from <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate_json"><code>model_validate_json</code></a>,
+our recommendation for now is to use <code>model_validate_json(json.dumps(data))</code>.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -3898,7 +3897,7 @@ behavior and errors you'd get from <code>model_validate_json</code>, our recomme
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>If you're passing in an instance of a model to <code>model_validate</code>, you will want to consider setting
+<p>If you're passing in an instance of a model to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate</code></a>, you will want to consider setting
 <a href="https://docs.pydantic.dev/latest/api/config/#pydantic.config.ConfigDict.revalidate_instances"><code>revalidate_instances</code></a>
 in the model's config. If you don't set this value, then validation will be skipped on model instances. See the below example:</p>
 </div>
@@ -3948,7 +3947,7 @@ in the model's config. If you don't set this value, then validation will be skip
 </div>
 </div>
 <h3 id="creating-models-without-validation">Creating models without validation<a class="headerlink" href="#creating-models-without-validation" title="Permanent link">&para;</a></h3>
-<p>Pydantic also provides the <code>model_construct()</code> method, which allows models to be created <strong>without validation</strong>. This
+<p>Pydantic also provides the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a> method, which allows models to be created <strong>without validation</strong>. This
 can be useful in at least a few cases:</p>
 <ul>
 <li>when working with complex data that is already known to be valid (for performance reasons)</li>
@@ -3958,13 +3957,13 @@ can be useful in at least a few cases:</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>In Pydantic V2, the performance gap between <code>BaseModel.__init__</code> and <code>BaseModel.model_construct</code> has been narrowed
-considerably. For simple models, calling <code>BaseModel.__init__</code> may even be faster. If you are using <code>model_construct</code>
-for performance reasons, you may want to profile your use case before assuming that <code>model_construct</code> is faster.</p>
+considerably. For simple models, calling <code>BaseModel.__init__</code> may even be faster. If you are using <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a>
+for performance reasons, you may want to profile your use case before assuming that <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a> is faster.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p><code>model_construct()</code> does not do any validation, meaning it can create models which are invalid. <strong>You should only
-ever use the <code>model_construct()</code> method with data which has already been validated, or that you definitely trust.</strong></p>
+<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a> does not do any validation, meaning it can create models which are invalid. <strong>You should only
+ever use the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a> method with data which has already been validated, or that you definitely trust.</strong></p>
 </div>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -4001,25 +4000,25 @@ ever use the <code>model_construct()</code> method with data which has already b
 <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">bad_user</span><span class="p">))</span>
 <span class="c1">#&gt; User(id=&#39;dog&#39;, name=&#39;John Doe&#39;)</span>
 </code></pre></div>
-<p>The <code>_fields_set</code> keyword argument to <code>model_construct()</code> is optional, but allows you to be more precise about
-which fields were originally set and which weren't. If it's omitted <code>model_fields_set</code> will just be the keys
+<p>The <code>_fields_set</code> keyword argument to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a> is optional, but allows you to be more precise about
+which fields were originally set and which weren't. If it's omitted <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_fields_set"><code>model_fields_set</code></a> will just be the keys
 of the data provided.</p>
 <p>For example, in the example above, if <code>_fields_set</code> was not provided,
 <code>new_user.model_fields_set</code> would be <code>{'id', 'age', 'name'}</code>.</p>
-<p>Note that for subclasses of <a href="#rootmodel-and-custom-root-types"><code>RootModel</code></a>, the root value can be passed to <code>model_construct</code>
+<p>Note that for subclasses of <a href="#rootmodel-and-custom-root-types"><code>RootModel</code></a>, the root value can be passed to <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a>
 positionally, instead of using a keyword argument.</p>
-<p>Here are some additional notes on the behavior of <code>model_construct</code>:</p>
+<p>Here are some additional notes on the behavior of <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a>:</p>
 <ul>
 <li>When we say "no validation is performed" — this includes converting dicts to model instances. So if you have a field
   with a <code>Model</code> type, you will need to convert the inner dict to a model yourself before passing it to
-  <code>model_construct</code>.</li>
-<li>In particular, the <code>model_construct</code> method does not support recursively constructing models from dicts.</li>
+  <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a>.</li>
+<li>In particular, the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a> method does not support recursively constructing models from dicts.</li>
 <li>If you do not pass keyword arguments for fields with defaults, the default values will still be used.</li>
 <li>For models with <code>model_config['extra'] == 'allow'</code>, data not corresponding to fields will be correctly stored in
   the <code>__pydantic_extra__</code> dict.</li>
 <li>For models with private attributes, the <code>__pydantic_private__</code> dict will be initialized the same as it would be when
   calling <code>__init__</code>.</li>
-<li>When constructing an instance using <code>model_construct()</code>, no <code>__init__</code> method from the model or any of its parent
+<li>When constructing an instance using <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_construct"><code>model_construct()</code></a>, no <code>__init__</code> method from the model or any of its parent
   classes will be called, even when a custom <code>__init__</code> method is defined.</li>
 </ul>
 <h2 id="generic-models">Generic models<a class="headerlink" href="#generic-models" title="Permanent link">&para;</a></h2>
@@ -4489,7 +4488,8 @@ extending a base model with extra fields.</p>
 </details>
 <p>Pydantic models can be defined with a "custom root type" by subclassing <a class="autorefs autorefs-internal" href="../../api/root_model/#pydantic.root_model.RootModel"><code>pydantic.RootModel</code></a>.</p>
 <p>The root type can be any type supported by Pydantic, and is specified by the generic parameter to <code>RootModel</code>.
-The root value can be passed to the model <code>__init__</code> or <code>model_validate</code> as via the first and only argument.</p>
+The root value can be passed to the model <code>__init__</code> or <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate</code></a>
+via the first and only argument.</p>
 <p>Here's an example of how this works:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 

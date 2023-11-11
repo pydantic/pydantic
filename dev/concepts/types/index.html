@@ -3847,6 +3847,10 @@ This is equivalent to implementing <code>__get_validators__</code> in Pydantic V
 </code></pre></div>
 <p>You can use this approach to e.g. define behavior for Pandas or Numpy types.</p>
 <h4 id="using-getpydanticschema-to-reduce-boilerplate">Using <code>GetPydanticSchema</code> to reduce boilerplate<a class="headerlink" href="#using-getpydanticschema-to-reduce-boilerplate" title="Permanent link">&para;</a></h4>
+<details class="api">
+<summary>API Documentation</summary>
+<p><a class="autorefs autorefs-internal" href="../../api/types/#pydantic.types.GetPydanticSchema"><code>pydantic.types.GetPydanticSchema</code></a><br></p>
+</details>
 <p>You may notice that the above examples where we create a marker class require a good amount of boilerplate.
 For many simple cases you can greatly minimize this by using <code>pydantic.GetPydanticSchema</code>:</p>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">core_schema</span>
