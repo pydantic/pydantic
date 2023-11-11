@@ -1,13 +1,11 @@
 from __future__ import annotations as _annotations
 
 import warnings
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ContextManager,
-    Iterator,
     cast,
 )
 
@@ -198,22 +196,20 @@ class ConfigWrapperStack:
     def tail(self) -> ConfigWrapper:
         return self._config_wrapper_stack[-1]
 
-    def push(self, config_wrapper: ConfigWrapper | ConfigDict | None) -> ContextManager[None]:
+    @contextmanager
+    def push(self, config_wrapper: ConfigWrapper | ConfigDict | None):
         if config_wrapper is None:
-            return nullcontext()
+            yield
+            return
 
         if not isinstance(config_wrapper, ConfigWrapper):
             config_wrapper = ConfigWrapper(config_wrapper, check=False)
 
-        @contextmanager
-        def _context_manager() -> Iterator[None]:
-            self._config_wrapper_stack.append(config_wrapper)
-            try:
-                yield
-            finally:
-                self._config_wrapper_stack.pop()
-
-        return _context_manager()
+        self._config_wrapper_stack.append(config_wrapper)
+        try:
+            yield
+        finally:
+            self._config_wrapper_stack.pop()
 
 
 config_defaults = ConfigDict(
