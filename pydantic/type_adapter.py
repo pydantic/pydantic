@@ -125,7 +125,7 @@ class TypeAdapter(Generic[T]):
         def __new__(cls, __type: T, *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
             ...
 
-        def __new__(cls, __type: Any, *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
+        def __new__(cls, __type: Any, *, config: ConfigDict | None = None) -> TypeAdapter[T]:
             """A class representing the type adapter."""
             raise NotImplementedError
 
