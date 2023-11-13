@@ -264,6 +264,7 @@ _dynamic_imports: 'dict[str, tuple[str, str]]' = {
     'RedisDsn': (__package__, '.networks'),
     'MongoDsn': (__package__, '.networks'),
     'KafkaDsn': (__package__, '.networks'),
+    'NatsDsn': (__package__, '.networks'),
     'MySQLDsn': (__package__, '.networks'),
     'MariaDBDsn': (__package__, '.networks'),
     'validate_email': (__package__, '.networks'),
