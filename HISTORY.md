@@ -1,3 +1,13 @@
+## v2.5.0 (2023-11-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0)
+
+### What's Changed
+
+#### Packaging
+
+* Update to `pyright==1.1.335` by @Viicos in [#8075](https://github.com/pydantic/pydantic/pull/8075)
+
 ## v2.5.0b1 (2023-11-09)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0b1)
