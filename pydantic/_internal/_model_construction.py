@@ -9,49 +9,36 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
+import typing_extensions
+from pydantic_core import PydanticUndefined, SchemaSerializer
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
-from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
-from ..warnings import PydanticDeprecatedSince20
+from ..plugin._schema_validator import create_schema_validator
+from ..warnings import GenericBeforeBaseModelWarning, PydanticDeprecatedSince20
 from ._config import ConfigWrapper
-from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
-from ._decorators import (
-    ComputedFieldInfo,
-    DecoratorInfos,
-    PydanticDescriptorProxy,
-    get_attribute_from_bases,
-)
-from ._discriminated_union import apply_discriminators
+from ._decorators import DecoratorInfos, PydanticDescriptorProxy, get_attribute_from_bases
 from ._fields import collect_model_fields, is_valid_field_name, is_valid_privateattr_name
-from ._generate_schema import GenerateSchema
+from ._generate_schema import GenerateSchema, generate_pydantic_signature
 from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_val_ser import MockValSer, set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import get_cls_types_namespace, is_classvar, parent_frame_namespace
-from ._utils import ClassAttribute, is_valid_identifier
+from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, parent_frame_namespace
+from ._utils import ClassAttribute
 from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
+    from ..fields import Field as PydanticModelField
+    from ..fields import FieldInfo, ModelPrivateAttr
     from ..main import BaseModel
 else:
     # See PyCharm issues https://youtrack.jetbrains.com/issue/PY-21915
     # and https://youtrack.jetbrains.com/issue/PY-51428
     DeprecationWarning = PydanticDeprecatedSince20
+    PydanticModelField = object()
 
-
-IGNORED_TYPES: tuple[Any, ...] = (
-    FunctionType,
-    property,
-    classmethod,
-    staticmethod,
-    PydanticDescriptorProxy,
-    ComputedFieldInfo,
-    ValidateCallWrapper,
-)
 object_setattr = object.__setattr__
 
 
@@ -68,7 +55,7 @@ class _ModelNamespaceDict(dict):
         return super().__setitem__(k, v)
 
 
-@dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
+@dataclass_transform(kw_only_default=True, field_specifiers=(PydanticModelField,))
 class ModelMetaclass(ABCMeta):
     def __new__(
         mcs,
@@ -77,6 +64,7 @@ class ModelMetaclass(ABCMeta):
         namespace: dict[str, Any],
         __pydantic_generic_metadata__: PydanticGenericMetadata | None = None,
         __pydantic_reset_parent_namespace__: bool = True,
+        _create_model_module: str | None = None,
         **kwargs: Any,
     ) -> type:
         """Metaclass for creating Pydantic models.
@@ -87,6 +75,7 @@ class ModelMetaclass(ABCMeta):
             namespace: The attribute dictionary of the class to be created.
             __pydantic_generic_metadata__: Metadata for generic models.
             __pydantic_reset_parent_namespace__: Reset parent namespace.
+            _create_model_module: The module of the class to be created, if created by `create_model`.
             **kwargs: Catch-all for any other keyword arguments.
 
         Returns:
@@ -128,6 +117,16 @@ class ModelMetaclass(ABCMeta):
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
             from ..main import BaseModel
+
+            mro = cls.__mro__
+            if Generic in mro and mro.index(Generic) < mro.index(BaseModel):
+                warnings.warn(
+                    GenericBeforeBaseModelWarning(
+                        'Classes should inherit from `BaseModel` before generic classes (e.g. `typing.Generic[T]`) '
+                        'for pydantic generics to work properly.'
+                    ),
+                    stacklevel=2,
+                )
 
             cls.__pydantic_custom_init__ = not getattr(cls.__init__, '__pydantic_base_init__', False)
             cls.__pydantic_post_init__ = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
@@ -186,6 +185,7 @@ class ModelMetaclass(ABCMeta):
                 config_wrapper,
                 raise_errors=False,
                 types_namespace=types_namespace,
+                create_model_module=_create_model_module,
             )
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
@@ -196,7 +196,7 @@ class ModelMetaclass(ABCMeta):
             # this is the BaseModel class itself being created, no logic required
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
-    if not typing.TYPE_CHECKING:
+    if not typing.TYPE_CHECKING:  # pragma: no branch
         # We put `__getattr__` in a non-TYPE_CHECKING block because otherwise, mypy allows arbitrary attribute access
 
         def __getattr__(self, item: str) -> Any:
@@ -258,12 +258,13 @@ def init_private_attributes(self: BaseModel, __context: Any) -> None:
         self: The BaseModel instance.
         __context: The context.
     """
-    pydantic_private = {}
-    for name, private_attr in self.__private_attributes__.items():
-        default = private_attr.get_default()
-        if default is not PydanticUndefined:
-            pydantic_private[name] = default
-    object_setattr(self, '__pydantic_private__', pydantic_private)
+    if getattr(self, '__pydantic_private__', None) is None:
+        pydantic_private = {}
+        for name, private_attr in self.__private_attributes__.items():
+            default = private_attr.get_default()
+            if default is not PydanticUndefined:
+                pydantic_private[name] = default
+        object_setattr(self, '__pydantic_private__', pydantic_private)
 
 
 def get_model_post_init(namespace: dict[str, Any], bases: tuple[type[Any], ...]) -> Callable[..., Any] | None:
@@ -304,7 +305,9 @@ def inspect_namespace(  # noqa C901
             - If a field does not have a type annotation.
             - If a field on base class was overridden by a non-annotated attribute.
     """
-    all_ignored_types = ignored_types + IGNORED_TYPES
+    from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
+
+    all_ignored_types = ignored_types + default_ignored_types()
 
     private_attributes: dict[str, ModelPrivateAttr] = {}
     raw_annotations = namespace.get('__annotations__', {})
@@ -367,8 +370,8 @@ def inspect_namespace(  # noqa C901
                 )
             else:
                 raise PydanticUserError(
-                    f"A non-annotated attribute was detected: `{var_name} = {value!r}`. All model fields require a "
-                    f"type annotation; if `{var_name}` is not meant to be a field, you may be able to resolve this "
+                    f'A non-annotated attribute was detected: `{var_name} = {value!r}`. All model fields require a '
+                    f'type annotation; if `{var_name}` is not meant to be a field, you may be able to resolve this '
                     f"error by annotating it as a `ClassVar` or updating `model_config['ignored_types']`.",
                     code='model-field-missing-annotation',
                 )
@@ -382,6 +385,12 @@ def inspect_namespace(  # noqa C901
             and ann_type not in all_ignored_types
             and getattr(ann_type, '__module__', None) != 'functools'
         ):
+            if is_annotated(ann_type):
+                _, *metadata = typing_extensions.get_args(ann_type)
+                private_attr = next((v for v in metadata if isinstance(v, ModelPrivateAttr)), None)
+                if private_attr is not None:
+                    private_attributes[ann_name] = private_attr
+                    continue
             private_attributes[ann_name] = PrivateAttr()
 
     return private_attributes
@@ -439,6 +448,7 @@ def complete_model_class(
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
+    create_model_module: str | None = None,
 ) -> bool:
     """Finish building a model class.
 
@@ -451,6 +461,7 @@ def complete_model_class(
         config_wrapper: The config wrapper instance.
         raise_errors: Whether to raise errors.
         types_namespace: Optional extra namespace to look for types in.
+        create_model_module: The module of the class to be created, if created by `create_model`.
 
     Returns:
         `True` if the model is successfully completed, else `False`.
@@ -486,17 +497,25 @@ def complete_model_class(
 
     core_config = config_wrapper.core_config(cls)
 
-    schema = gen_schema.collect_definitions(schema)
-    schema = apply_discriminators(flatten_schema_defs(schema))
-    if collect_invalid_schemas(schema):
+    try:
+        schema = gen_schema.clean_schema(schema)
+    except gen_schema.CollectedInvalid:
         set_model_mocks(cls, cls_name)
         return False
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-    simplified_core_schema = inline_schema_defs(schema)
-    cls.__pydantic_validator__ = SchemaValidator(simplified_core_schema, core_config)
-    cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
+
+    cls.__pydantic_validator__ = create_schema_validator(
+        schema,
+        cls,
+        create_model_module or cls.__module__,
+        cls.__qualname__,
+        'create_model' if create_model_module else 'BaseModel',
+        core_config,
+        config_wrapper.plugin_settings,
+    )
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
@@ -519,75 +538,42 @@ def generate_model_signature(
     Returns:
         The model signature.
     """
-    from inspect import Parameter, Signature, signature
-    from itertools import islice
+    return generate_pydantic_signature(init, fields, config_wrapper)
 
-    present_params = signature(init).parameters.values()
-    merged_params: dict[str, Parameter] = {}
-    var_kw = None
-    use_var_kw = False
 
-    for param in islice(present_params, 1, None):  # skip self arg
-        # inspect does "clever" things to show annotations as strings because we have
-        # `from __future__ import annotations` in main, we don't want that
-        if param.annotation == 'Any':
-            param = param.replace(annotation=Any)
-        if param.kind is param.VAR_KEYWORD:
-            var_kw = param
-            continue
-        merged_params[param.name] = param
+class _PydanticWeakRef:
+    """Wrapper for `weakref.ref` that enables `pickle` serialization.
 
-    if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
-        allow_names = config_wrapper.populate_by_name
-        for field_name, field in fields.items():
-            # when alias is a str it should be used for signature generation
-            if isinstance(field.alias, str):
-                param_name = field.alias
-            else:
-                param_name = field_name
+    Cloudpickle fails to serialize `weakref.ref` objects due to an arcane error related
+    to abstract base classes (`abc.ABC`). This class works around the issue by wrapping
+    `weakref.ref` instead of subclassing it.
 
-            if field_name in merged_params or param_name in merged_params:
-                continue
+    See https://github.com/pydantic/pydantic/issues/6763 for context.
 
-            if not is_valid_identifier(param_name):
-                if allow_names and is_valid_identifier(field_name):
-                    param_name = field_name
-                else:
-                    use_var_kw = True
-                    continue
+    Semantics:
+        - If not pickled, behaves the same as a `weakref.ref`.
+        - If pickled along with the referenced object, the same `weakref.ref` behavior
+          will be maintained between them after unpickling.
+        - If pickled without the referenced object, after unpickling the underlying
+          reference will be cleared (`__call__` will always return `None`).
+    """
 
-            kwargs = {} if field.is_required() else {'default': field.get_default(call_default_factory=False)}
-            merged_params[param_name] = Parameter(
-                param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
-            )
-
-    if config_wrapper.extra == 'allow':
-        use_var_kw = True
-
-    if var_kw and use_var_kw:
-        # Make sure the parameter for extra kwargs
-        # does not have the same name as a field
-        default_model_signature = [
-            ('__pydantic_self__', Parameter.POSITIONAL_OR_KEYWORD),
-            ('data', Parameter.VAR_KEYWORD),
-        ]
-        if [(p.name, p.kind) for p in present_params] == default_model_signature:
-            # if this is the standard model signature, use extra_data as the extra args name
-            var_kw_name = 'extra_data'
+    def __init__(self, obj: Any):
+        if obj is None:
+            # The object will be `None` upon deserialization if the serialized weakref
+            # had lost its underlying object.
+            self._wr = None
         else:
-            # else start from var_kw
-            var_kw_name = var_kw.name
+            self._wr = weakref.ref(obj)
 
-        # generate a name that's definitely unique
-        while var_kw_name in fields:
-            var_kw_name += '_'
-        merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
+    def __call__(self) -> Any:
+        if self._wr is None:
+            return None
+        else:
+            return self._wr()
 
-    return Signature(parameters=list(merged_params.values()), return_annotation=None)
-
-
-class _PydanticWeakRef(weakref.ReferenceType):
-    pass
+    def __reduce__(self) -> tuple[Callable, tuple[weakref.ReferenceType | None]]:
+        return _PydanticWeakRef, (self(),)
 
 
 def build_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -624,3 +610,17 @@ def unpack_lenient_weakvaluedict(d: dict[str, Any] | None) -> dict[str, Any] | N
         else:
             result[k] = v
     return result
+
+
+def default_ignored_types() -> tuple[type[Any], ...]:
+    from ..fields import ComputedFieldInfo
+
+    return (
+        FunctionType,
+        property,
+        classmethod,
+        staticmethod,
+        PydanticDescriptorProxy,
+        ComputedFieldInfo,
+        ValidateCallWrapper,
+    )

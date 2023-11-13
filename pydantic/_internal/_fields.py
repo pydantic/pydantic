@@ -5,9 +5,9 @@ import dataclasses
 import sys
 import warnings
 from copy import copy
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
-from annotated_types import BaseMetadata
 from pydantic_core import PydanticUndefined
 
 from . import _typing_extra
@@ -16,6 +16,8 @@ from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
 if TYPE_CHECKING:
+    from annotated_types import BaseMetadata
+
     from ..fields import FieldInfo
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
@@ -57,11 +59,30 @@ class PydanticMetadata(Representation):
     __slots__ = ()
 
 
-class PydanticGeneralMetadata(PydanticMetadata, BaseMetadata):
-    """Pydantic general metada like `max_digits`."""
+def pydantic_general_metadata(**metadata: Any) -> BaseMetadata:
+    """Create a new `_PydanticGeneralMetadata` class with the given metadata.
 
-    def __init__(self, **metadata: Any):
-        self.__dict__ = metadata
+    Args:
+        **metadata: The metadata to add.
+
+    Returns:
+        The new `_PydanticGeneralMetadata` class.
+    """
+    return _general_metadata_cls()(metadata)  # type: ignore
+
+
+@lru_cache(maxsize=None)
+def _general_metadata_cls() -> type[BaseMetadata]:
+    """Do it this way to avoid importing `annotated_types` at import time."""
+    from annotated_types import BaseMetadata
+
+    class _PydanticGeneralMetadata(PydanticMetadata, BaseMetadata):
+        """Pydantic general metadata like `max_digits`."""
+
+        def __init__(self, metadata: Any):
+            self.__dict__ = metadata
+
+    return _PydanticGeneralMetadata  # type: ignore
 
 
 def collect_model_fields(  # noqa: C901
@@ -248,7 +269,11 @@ def collect_dataclass_fields(
         if is_classvar(ann_type):
             continue
 
-        if not dataclass_field.init and dataclass_field.default_factory == dataclasses.MISSING:
+        if (
+            not dataclass_field.init
+            and dataclass_field.default == dataclasses.MISSING
+            and dataclass_field.default_factory == dataclasses.MISSING
+        ):
             # TODO: We should probably do something with this so that validate_assignment behaves properly
             #   Issue: https://github.com/pydantic/pydantic/issues/5470
             continue

@@ -4,8 +4,9 @@ New tests for v2 of serialization logic.
 import json
 import re
 import sys
+from enum import Enum
 from functools import partial, partialmethod
-from typing import Any, Callable, ClassVar, Dict, Optional, Pattern
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Pattern, Union
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
@@ -205,7 +206,7 @@ def test_annotated_customisation():
         @classmethod
         def __get_pydantic_core_schema__(cls, _source, _handler):
             # here we ignore the schema argument (which is just `{'type': 'int'}`) and return our own
-            return core_schema.general_before_validator_function(
+            return core_schema.with_info_before_validator_function(
                 parse_int,
                 core_schema.int_schema(),
                 serialization=core_schema.format_ser_schema(',', when_used='unless-none'),
@@ -1101,3 +1102,60 @@ def test_forward_ref_for_classmethod_computed_fields():
     }
 
     assert Model().model_dump() == {'two_y': 8}
+
+
+def test_enum_as_dict_key() -> None:
+    # See https://github.com/pydantic/pydantic/issues/7639
+    class MyEnum(Enum):
+        A = 'a'
+        B = 'b'
+
+    class MyModel(BaseModel):
+        foo: Dict[MyEnum, str]
+        bar: MyEnum
+
+    assert MyModel(foo={MyEnum.A: 'hello'}, bar=MyEnum.B).model_dump_json() == '{"foo":{"a":"hello"},"bar":"b"}'
+
+
+def test_subclass_support_unions() -> None:
+    class Pet(BaseModel):
+        name: str
+
+    class Dog(Pet):
+        breed: str
+
+    class Kid(BaseModel):
+        age: str
+
+    class Home(BaseModel):
+        little_guys: Union[List[Pet], List[Kid]]
+
+    class Shelter(BaseModel):
+        pets: List[Pet]
+
+    h1 = Home(little_guys=[Pet(name='spot'), Pet(name='buddy')])
+    assert h1.model_dump() == {'little_guys': [{'name': 'spot'}, {'name': 'buddy'}]}
+
+    h2 = Home(little_guys=[Dog(name='fluffy', breed='lab'), Dog(name='patches', breed='boxer')])
+    assert h2.model_dump() == {'little_guys': [{'name': 'fluffy'}, {'name': 'patches'}]}
+
+    # confirming same serialization + validation behavior as for a single list (not a union)
+    s = Shelter(pets=[Dog(name='fluffy', breed='lab'), Dog(name='patches', breed='boxer')])
+    assert s.model_dump() == {'pets': [{'name': 'fluffy'}, {'name': 'patches'}]}
+
+
+def test_subclass_support_unions_with_forward_ref() -> None:
+    class Bar(BaseModel):
+        bar_id: int
+
+    class Baz(Bar):
+        baz_id: int
+
+    class Foo(BaseModel):
+        items: Union[List['Foo'], List[Bar]]
+
+    foo = Foo(items=[Baz(bar_id=1, baz_id=2), Baz(bar_id=3, baz_id=4)])
+    assert foo.model_dump() == {'items': [{'bar_id': 1}, {'bar_id': 3}]}
+
+    foo_recursive = Foo(items=[Foo(items=[Baz(bar_id=42, baz_id=99)])])
+    assert foo_recursive.model_dump() == {'items': [{'items': [{'bar_id': 42}]}]}

@@ -90,8 +90,8 @@ Run tests and linting locally to make sure everything is working as expected.
 ```bash
 # Run automated code formatting and linting
 make format
-# Pydantic uses black and ruff
-# (https://github.com/ambv/black, https://github.com/charliermarsh/ruff)
+# Pydantic uses ruff, an awesome Python linter written in rust
+# https://github.com/astral-sh/ruff
 
 # Run tests and linting
 make

@@ -16,7 +16,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -35,7 +35,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -43,7 +43,7 @@ jobs:
           cache: true
 
       - name: install deps
-        run: pdm install -G testing
+        run: pdm install -G testing -G email
 
       - run: pdm info && pdm list
 
@@ -59,12 +59,12 @@ jobs:
 
     steps:
       - name: checkout docs-site
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: docs-site
 
       - name: checkout current branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -72,9 +72,9 @@ jobs:
 
       - name: install
         run: |
-          pdm venv create --with-pip $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G docs
-          pdm run python -m pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs_material-9.2.8+insiders.4.40.4-py3-none-any.whl
+          pdm run python -m pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs_material-9.4.2+insiders.4.42.0-py3-none-any.whl
         env:
           MKDOCS_TOKEN: ${{ secrets.MKDOCS_TOKEN }}
 
@@ -95,7 +95,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
 
-      - run: pdm run mike deploy -b docs-site dev-v2 --push
+      - run: pdm run mike deploy -b docs-site dev --push
         if: "github.ref == 'refs/heads/main'"
 
       - if: "github.ref == 'refs/heads/docs-update' || startsWith(github.ref, 'refs/tags/')"

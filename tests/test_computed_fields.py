@@ -73,7 +73,12 @@ def test_computed_fields_json_schema():
             """An awesome area"""
             return self.width * self.length
 
-        @computed_field(title='Pikarea', description='Another area')
+        @computed_field(
+            title='Pikarea',
+            description='Another area',
+            examples=[100, 200],
+            json_schema_extra={'foo': 42},
+        )
         @property
         def area2(self) -> int:
             return self.width * self.length
@@ -103,6 +108,8 @@ def test_computed_fields_json_schema():
             'area2': {
                 'title': 'Pikarea',
                 'description': 'Another area',
+                'examples': [100, 200],
+                'foo': 42,
                 'type': 'integer',
                 'readOnly': True,
             },
@@ -402,7 +409,7 @@ def test_private_computed_field():
     class MyModel(BaseModel):
         x: int
 
-        @computed_field
+        @computed_field(repr=True)
         def _double(self) -> int:
             return self.x * 2
 
@@ -506,6 +513,7 @@ def test_abstractmethod():
     assert m.model_dump() == {'side': 4.0, 'area': 5.0}
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='error message is different on older versions')
 @pytest.mark.parametrize(
     'bases',
     [
@@ -527,7 +535,9 @@ def test_abstractmethod_missing(bases: Tuple[Any, ...]):
     class Square(AbstractSquare):
         pass
 
-    with pytest.raises(TypeError, match="Can't instantiate abstract class Square with abstract methods? area"):
+    with pytest.raises(
+        TypeError, match="Can't instantiate abstract class Square without an implementation for abstract method 'area'"
+    ):
         Square(side=4.0)
 
 
@@ -732,6 +742,10 @@ def test_generic_computed_field():
 
     assert A[int](x=1).model_dump() == {'x': 1, 'double_x': 2}
     assert A[str](x='abc').model_dump() == {'x': 'abc', 'double_x': 'abcabc'}
+
+    assert A(x='xxxxxx').model_computed_fields['double_x'].return_type == T
+    assert A[int](x=123).model_computed_fields['double_x'].return_type == int
+    assert A[str](x='x').model_computed_fields['double_x'].return_type == str
 
     class B(BaseModel, Generic[T]):
         @computed_field

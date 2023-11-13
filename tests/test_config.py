@@ -19,11 +19,12 @@ from pydantic import (
     PydanticSchemaGenerationError,
     ValidationError,
     create_model,
+    field_validator,
     validate_call,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic._internal._mock_val_ser import MockValSer
-from pydantic.config import ConfigDict
+from pydantic.config import ConfigDict, JsonValue
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 from pydantic.fields import FieldInfo
@@ -524,7 +525,7 @@ def test_multiple_inheritance_config():
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_wrapper_match():
-    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema}
+    localns = {'_GenerateSchema': GenerateSchema, 'GenerateSchema': GenerateSchema, 'JsonValue': JsonValue}
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict, localns=localns).items()]
     config_dict_annotations.sort()
     # remove config
@@ -536,6 +537,34 @@ def test_config_wrapper_match():
     assert (
         config_dict_annotations == config_wrapper_annotations
     ), 'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason='requires backport pre 3.11, fully tested in pydantic core')
+def test_config_validation_error_cause():
+    class Foo(BaseModel):
+        foo: int
+
+        @field_validator('foo')
+        def check_foo(cls, v):
+            assert v > 5, 'Must be greater than 5'
+
+    # Should be disabled by default:
+    with pytest.raises(ValidationError) as exc_info:
+        Foo(foo=4)
+    assert exc_info.value.__cause__ is None
+
+    Foo.model_config = ConfigDict(validation_error_cause=True)
+    Foo.model_rebuild(force=True)
+    with pytest.raises(ValidationError) as exc_info:
+        Foo(foo=4)
+    # Confirm python error attached as a cause, and error location specified in a note:
+    assert exc_info.value.__cause__ is not None
+    assert isinstance(exc_info.value.__cause__, ExceptionGroup)
+    assert len(exc_info.value.__cause__.exceptions) == 1
+    src_exc = exc_info.value.__cause__.exceptions[0]
+    assert repr(src_exc) == "AssertionError('Must be greater than 5\\nassert 4 > 5')"
+    assert len(src_exc.__notes__) == 1
+    assert src_exc.__notes__[0] == '\nPydantic: cause of loc: foo'
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
@@ -683,6 +712,25 @@ def test_config_model_defer_build():
     m = MyModel(x=1)
     assert m.x == 1
 
+    assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
+    assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
+
+
+def test_config_type_adapter_defer_build():
+    class MyModel(BaseModel, defer_build=True):
+        x: int
+
+    ta = TypeAdapter(MyModel)
+
+    assert isinstance(ta.validator, MockValSer)
+    assert isinstance(ta.serializer, MockValSer)
+
+    m = ta.validate_python({'x': 1})
+    assert m.x == 1
+    m2 = ta.validate_python({'x': 2})
+    assert m2.x == 2
+
+    # in the future, can reassign said validators to the TypeAdapter
     assert isinstance(MyModel.__pydantic_validator__, SchemaValidator)
     assert isinstance(MyModel.__pydantic_serializer__, SchemaSerializer)
 

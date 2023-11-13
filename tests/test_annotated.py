@@ -8,6 +8,7 @@ from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
 from pydantic.errors import PydanticSchemaGenerationError
+from pydantic.fields import PrivateAttr
 from pydantic.functional_validators import AfterValidator
 
 NO_VALUE = object()
@@ -247,7 +248,7 @@ def test_get_pydantic_core_schema_source_type() -> None:
 
     T = TypeVar('T')
 
-    class GenericModel(Generic[T], BaseModel):
+    class GenericModel(BaseModel, Generic[T]):
         y: T
 
     class _(BaseModel):
@@ -346,6 +347,9 @@ def test_merge_field_infos_ordering() -> None:
 
 
 def test_validate_float_inf_nan_python() -> None:
+    ta = TypeAdapter(Annotated[float, AfterValidator(lambda x: x * 3), Field(allow_inf_nan=False)])
+    assert ta.validate_python(2.0) == 6.0
+
     ta = TypeAdapter(Annotated[float, AfterValidator(lambda _: float('nan')), Field(allow_inf_nan=False)])
 
     with pytest.raises(ValidationError) as exc_info:
@@ -373,3 +377,50 @@ def test_predicate_error_python() -> None:
             'input': -1,
         }
     ]
+
+
+def test_annotated_field_info_not_lost_from_forwardref():
+    from pydantic import BaseModel
+
+    class ForwardRefAnnotatedFieldModel(BaseModel):
+        foo: 'Annotated[Integer, Field(alias="bar", default=1)]' = 2
+        foo2: 'Annotated[Integer, Field(alias="bar2", default=1)]' = Field(default=2, alias='baz')
+
+    Integer = int
+
+    ForwardRefAnnotatedFieldModel.model_rebuild()
+
+    assert ForwardRefAnnotatedFieldModel(bar=3).foo == 3
+    assert ForwardRefAnnotatedFieldModel(baz=3).foo2 == 3
+
+    with pytest.raises(ValidationError) as exc_info:
+        ForwardRefAnnotatedFieldModel(bar='bar')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'bar',
+            'loc': ('bar',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
+def test_annotated_private_field_with_default():
+    class AnnotatedPrivateFieldModel(BaseModel):
+        _foo: Annotated[int, PrivateAttr(default=1)]
+        _bar: Annotated[str, 'hello']
+
+    model = AnnotatedPrivateFieldModel()
+    assert model._foo == 1
+
+    assert model.__pydantic_private__ == {'_foo': 1}
+
+    with pytest.raises(AttributeError):
+        assert model._bar
+
+    model._bar = 'world'
+    assert model._bar == 'world'
+    assert model.__pydantic_private__ == {'_foo': 1, '_bar': 'world'}
+
+    with pytest.raises(AttributeError):
+        assert model.bar

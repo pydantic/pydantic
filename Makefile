@@ -3,7 +3,7 @@ sources = pydantic tests docs/plugins
 
 .PHONY: .pdm  ## Check that PDM is installed
 .pdm:
-	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/\#installation'
+	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/#installation'
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
 .pre-commit:
@@ -25,13 +25,13 @@ rebuild-lockfiles: .pdm
 
 .PHONY: format  ## Auto-format python source files
 format: .pdm
-	pdm run black $(sources)
 	pdm run ruff --fix $(sources)
+	pdm run ruff format $(sources)
 
 .PHONY: lint  ## Lint python source files
 lint: .pdm
 	pdm run ruff $(sources)
-	pdm run black $(sources) --check --diff
+	pdm run ruff format --check $(sources)
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
 codespell: .pre-commit
@@ -123,7 +123,7 @@ clean:
 
 .PHONY: docs  ## Generate the docs
 docs:
-	pdm run mkdocs build
+	pdm run mkdocs build --strict
 
 .PHONY: help  ## Display this message
 help:

@@ -55,13 +55,13 @@ _r_sl = r'(\d{1,3}(?:\.\d+)?)%'
 r_hex_short = r'\s*(?:#|0x)?([0-9a-f])([0-9a-f])([0-9a-f])([0-9a-f])?\s*'
 r_hex_long = r'\s*(?:#|0x)?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})?\s*'
 # CSS3 RGB examples: rgb(0, 0, 0), rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 50%)
-r_rgb = fr'\s*rgba?\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}(?:{_r_comma}{_r_alpha})?\s*\)\s*'
+r_rgb = rf'\s*rgba?\(\s*{_r_255}{_r_comma}{_r_255}{_r_comma}{_r_255}(?:{_r_comma}{_r_alpha})?\s*\)\s*'
 # CSS3 HSL examples: hsl(270, 60%, 50%), hsla(270, 60%, 50%, 0.5), hsla(270, 60%, 50%, 50%)
-r_hsl = fr'\s*hsla?\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}(?:{_r_comma}{_r_alpha})?\s*\)\s*'
+r_hsl = rf'\s*hsla?\(\s*{_r_h}{_r_comma}{_r_sl}{_r_comma}{_r_sl}(?:{_r_comma}{_r_alpha})?\s*\)\s*'
 # CSS4 RGB examples: rgb(0 0 0), rgb(0 0 0 / 0.5), rgb(0 0 0 / 50%), rgba(0 0 0 / 50%)
-r_rgb_v4_style = fr'\s*rgba?\(\s*{_r_255}\s+{_r_255}\s+{_r_255}(?:\s*/\s*{_r_alpha})?\s*\)\s*'
+r_rgb_v4_style = rf'\s*rgba?\(\s*{_r_255}\s+{_r_255}\s+{_r_255}(?:\s*/\s*{_r_alpha})?\s*\)\s*'
 # CSS4 HSL examples: hsl(270 60% 50%), hsl(270 60% 50% / 0.5), hsl(270 60% 50% / 50%), hsla(270 60% 50% / 50%)
-r_hsl_v4_style = fr'\s*hsla?\(\s*{_r_h}\s+{_r_sl}\s+{_r_sl}(?:\s*/\s*{_r_alpha})?\s*\)\s*'
+r_hsl_v4_style = rf'\s*hsla?\(\s*{_r_h}\s+{_r_sl}\s+{_r_sl}(?:\s*/\s*{_r_alpha})?\s*\)\s*'
 
 # colors where the two hex characters are the same, if all colors match this the short version of hex colors can be used
 repeat_colors = {int(c * 2, 16) for c in '0123456789abcdef'}
@@ -70,7 +70,7 @@ rads = 2 * math.pi
 
 @deprecated(
     'The `Color` class is deprecated, use `pydantic_extra_types` instead. '
-    'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/color_types/.',
+    'See https://docs.pydantic.dev/latest/api/pydantic_extra_types_color/.',
     category=PydanticDeprecatedSince20,
 )
 class Color(_repr.Representation):
@@ -233,7 +233,7 @@ class Color(_repr.Representation):
     def __get_pydantic_core_schema__(
         cls, source: Type[Any], handler: Callable[[Any], CoreSchema]
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(
+        return core_schema.with_info_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
         )
 

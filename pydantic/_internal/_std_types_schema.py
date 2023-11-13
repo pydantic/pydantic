@@ -59,31 +59,6 @@ class SchemaTransformer:
 def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchema:
     cases: list[Any] = list(enum_type.__members__.values())
 
-    if not cases:
-        # Use an isinstance check for enums with no cases.
-        # This won't work with serialization or JSON schema, but that's okay -- the most important
-        # use case for this is creating typevar bounds for generics that should be restricted to enums.
-        # This is more consistent than it might seem at first, since you can only subclass enum.Enum
-        # (or subclasses of enum.Enum) if all parent classes have no cases.
-        return core_schema.is_instance_schema(enum_type)
-
-    use_enum_values = config.get('use_enum_values', False)
-
-    if len(cases) == 1:
-        expected = repr(cases[0].value)
-    else:
-        expected = ','.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
-
-    def to_enum(__input_value: Any) -> Enum:
-        try:
-            enum_field = enum_type(__input_value)
-            if use_enum_values:
-                return enum_field.value
-            return enum_field
-        except ValueError:
-            # The type: ignore on the next line is to ignore the requirement of LiteralString
-            raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})  # type: ignore
-
     enum_ref = get_type_ref(enum_type)
     description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
     if description == 'An enumeration.':  # This is the default value provided by enum.EnumMeta.__new__; don't use it
@@ -96,6 +71,32 @@ def get_enum_core_schema(enum_type: type[Enum], config: ConfigDict) -> CoreSchem
         original_schema = handler.resolve_ref_schema(json_schema)
         update_json_schema(original_schema, updates)
         return json_schema
+
+    if not cases:
+        # Use an isinstance check for enums with no cases.
+        # The most important use case for this is creating TypeVar bounds for generics that should
+        # be restricted to enums. This is more consistent than it might seem at first, since you can only
+        # subclass enum.Enum (or subclasses of enum.Enum) if all parent classes have no cases.
+        # We use the get_json_schema function when an Enum subclass has been declared with no cases
+        # so that we can still generate a valid json schema.
+        return core_schema.is_instance_schema(enum_type, metadata={'pydantic_js_functions': [get_json_schema]})
+
+    use_enum_values = config.get('use_enum_values', False)
+
+    if len(cases) == 1:
+        expected = repr(cases[0].value)
+    else:
+        expected = ', '.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
+
+    def to_enum(__input_value: Any) -> Enum:
+        try:
+            enum_field = enum_type(__input_value)
+            if use_enum_values:
+                return enum_field.value
+            return enum_field
+        except ValueError:
+            # The type: ignore on the next line is to ignore the requirement of LiteralString
+            raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})  # type: ignore
 
     strict_python_schema = core_schema.is_instance_schema(enum_type)
     if use_enum_values:

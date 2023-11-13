@@ -29,9 +29,11 @@ from typing_extensions import Annotated, Literal, TypedDict, get_args
 from pydantic import (
     BaseModel,
     ConfigDict,
+    GetCoreSchemaHandler,
     PydanticDeprecatedSince20,
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
+    RootModel,
     TypeAdapter,
     ValidationError,
     constr,
@@ -1125,7 +1127,7 @@ def test_annotation_inheritance():
         TypeError,
         match=(
             "Field 'integer' defined on a base class was overridden by a non-annotated attribute. "
-            "All field definitions, including overrides, require a type annotation."
+            'All field definitions, including overrides, require a type annotation.'
         ),
     ):
 
@@ -1195,8 +1197,8 @@ def test_unable_to_infer():
     with pytest.raises(
         errors.PydanticUserError,
         match=re.escape(
-            "A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; "
-            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it as a "
+            'A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; '
+            'if `x` is not meant to be a field, you may be able to resolve this error by annotating it as a '
             "`ClassVar` or updating `model_config['ignored_types']`"
         ),
     ):
@@ -1539,7 +1541,7 @@ def test_field_type_display(type_, expected):
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    assert re.search(fr'\(annotation={re.escape(expected)},', str(Model.model_fields))
+    assert re.search(rf'\(annotation={re.escape(expected)},', str(Model.model_fields))
 
 
 def test_any_none():
@@ -1890,10 +1892,7 @@ def test_custom_generic_validators():
             self.t2 = t2
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls,
-            source: Any,
-        ):
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler):
             schema = core_schema.is_instance_schema(cls)
 
             args = get_args(source)
@@ -1926,7 +1925,7 @@ def test_custom_generic_validators():
                     ) from exc
                 return v
 
-            return core_schema.general_after_validator_function(validate, schema)
+            return core_schema.with_info_after_validator_function(validate, schema)
 
     class Model(BaseModel):
         a: str
@@ -2298,6 +2297,7 @@ def test_parent_field_with_default():
     assert c.c == 3
 
 
+@pytest.mark.skipif(sys.version_info < (3, 12), reason='error message different on older versions')
 @pytest.mark.parametrize(
     'bases',
     [
@@ -2360,14 +2360,14 @@ def test_abstractmethod_missing_for_all_decorators(bases):
     with pytest.raises(
         TypeError,
         match=(
-            "Can't instantiate abstract class Square with abstract methods"
-            " my_computed_field,"
-            " my_field_validator,"
-            " my_model_serializer,"
-            " my_model_validator,"
-            " my_root_validator,"
-            " my_serializer,"
-            " my_validator"
+            "Can't instantiate abstract class Square without an implementation for abstract methods"
+            " 'my_computed_field',"
+            " 'my_field_validator',"
+            " 'my_model_serializer',"
+            " 'my_model_validator',"
+            " 'my_root_validator',"
+            " 'my_serializer',"
+            " 'my_validator'"
         ),
     ):
         Square(side=1.0)
@@ -2561,3 +2561,146 @@ def test_type_union():
     m = Model(a=bytes, b=int)
     assert m.model_dump() == {'a': bytes, 'b': int}
     assert m.a == bytes
+
+
+def test_model_repr_before_validation():
+    log = []
+
+    class MyModel(BaseModel):
+        x: int
+
+        def __init__(self, **kwargs):
+            log.append(f'before={self!r}')
+            super().__init__(**kwargs)
+            log.append(f'after={self!r}')
+
+    m = MyModel(x='10')
+    assert m.x == 10
+    # insert_assert(log)
+    assert log == ['before=MyModel()', 'after=MyModel(x=10)']
+
+
+def test_custom_exception_handler():
+    from traceback import TracebackException
+
+    from pydantic import BaseModel
+
+    traceback_exceptions = []
+
+    class MyModel(BaseModel):
+        name: str
+
+    class CustomErrorCatcher:
+        def __enter__(self):
+            return None
+
+        def __exit__(self, _exception_type, exception, exception_traceback):
+            if exception is not None:
+                traceback_exceptions.append(
+                    TracebackException(
+                        exc_type=type(exception),
+                        exc_value=exception,
+                        exc_traceback=exception_traceback,
+                        capture_locals=True,
+                    )
+                )
+
+                return True
+            return False
+
+    with CustomErrorCatcher():
+        data = {'age': 'John Doe'}
+        MyModel(**data)
+
+    assert len(traceback_exceptions) == 1
+
+
+def test_recursive_walk_fails_on_double_diamond_composition():
+    class A(BaseModel):
+        pass
+
+    class B(BaseModel):
+        a_1: A
+        a_2: A
+
+    class C(BaseModel):
+        b: B
+
+    class D(BaseModel):
+        c_1: C
+        c_2: C
+
+    class E(BaseModel):
+        c: C
+
+    # This is just to check that above model contraption doesn't fail
+    assert E(c=C(b=B(a_1=A(), a_2=A()))).model_dump() == {'c': {'b': {'a_1': {}, 'a_2': {}}}}
+
+
+def test_recursive_root_models_in_discriminated_union():
+    class Model1(BaseModel):
+        kind: Literal['1'] = '1'
+        two: Optional['Model2']
+
+    class Model2(BaseModel):
+        kind: Literal['2'] = '2'
+        one: Optional[Model1]
+
+    class Root1(RootModel[Model1]):
+        @property
+        def kind(self):
+            # Ensures discriminated union validation works even with model instances
+            return self.root.kind
+
+    class Root2(RootModel[Model2]):
+        @property
+        def kind(self):
+            # Ensures discriminated union validation works even with model instances
+            return self.root.kind
+
+    class Outer(BaseModel):
+        a: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
+        b: Annotated[Union[Root1, Root2], Field(discriminator='kind')]
+
+    validated = Outer.model_validate({'a': {'kind': '1', 'two': None}, 'b': {'kind': '2', 'one': None}})
+    assert validated == Outer(a=Root1(root=Model1(two=None)), b=Root2(root=Model2(one=None)))
+
+    assert Outer.model_json_schema() == {
+        '$defs': {
+            'Model1': {
+                'properties': {
+                    'kind': {'const': '1', 'default': '1', 'title': 'Kind'},
+                    'two': {'anyOf': [{'$ref': '#/$defs/Model2'}, {'type': 'null'}]},
+                },
+                'required': ['two'],
+                'title': 'Model1',
+                'type': 'object',
+            },
+            'Model2': {
+                'properties': {
+                    'kind': {'const': '2', 'default': '2', 'title': 'Kind'},
+                    'one': {'anyOf': [{'$ref': '#/$defs/Model1'}, {'type': 'null'}]},
+                },
+                'required': ['one'],
+                'title': 'Model2',
+                'type': 'object',
+            },
+            'Root1': {'allOf': [{'$ref': '#/$defs/Model1'}], 'title': 'Root1'},
+            'Root2': {'allOf': [{'$ref': '#/$defs/Model2'}], 'title': 'Root2'},
+        },
+        'properties': {
+            'a': {
+                'discriminator': {'mapping': {'1': '#/$defs/Root1', '2': '#/$defs/Root2'}, 'propertyName': 'kind'},
+                'oneOf': [{'$ref': '#/$defs/Root1'}, {'$ref': '#/$defs/Root2'}],
+                'title': 'A',
+            },
+            'b': {
+                'discriminator': {'mapping': {'1': '#/$defs/Root1', '2': '#/$defs/Root2'}, 'propertyName': 'kind'},
+                'oneOf': [{'$ref': '#/$defs/Root1'}, {'$ref': '#/$defs/Root2'}],
+                'title': 'B',
+            },
+        },
+        'required': ['a', 'b'],
+        'title': 'Outer',
+        'type': 'object',
+    }
