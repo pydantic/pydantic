@@ -915,7 +915,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 return False
 
             # We only want to compare pydantic fields but ignoring fields is costly.
-            # We'll performance fast check first, and fallback only when need
+            # We'll perform a fast check first, and fallback only when needed
             # See GH-7444 and GH-7825 for rationale and a performance benchmark
 
             # First, do the fast (and sometimes faulty) __dict__ comparison
