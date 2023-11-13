@@ -305,7 +305,7 @@ def foo() -> None:
 
 
 class InnerModel(BaseModel):
-    my_var: str | None = Field(default=None)
+    my_var: Union[str, None] = Field(default=None)
 
 
 class OuterModel(InnerModel):
