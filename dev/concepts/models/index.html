@@ -84,7 +84,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#basic-model-usage" class="md-skip">
+        <a href="#tldr" class="md-skip">
           Skip to content
         </a>
       
@@ -798,6 +798,39 @@
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tldr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TL;DR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-long-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The long version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validation
+      
+    </span>
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#basic-model-usage" class="md-nav__link">
@@ -3139,6 +3172,39 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#tldr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TL;DR
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-long-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The long version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#basic-model-usage" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3495,14 +3561,34 @@ You can find more discussion of this in the <a href="../dataclasses/">Dataclasse
 <p>Untrusted data can be passed to a model and, after parsing and validation, Pydantic guarantees that the fields
 of the resultant model instance will conform to the field types defined on the model.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Pydantic is primarily a parsing and transformation library, <strong>not a validation library</strong>.
-Validation is a means to an end: building a model which conforms to the types and constraints provided.</p>
-<p>In other words, Pydantic guarantees the types and constraints of the output model, not the input data.</p>
-<p>This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
-how it might affect your usage you should read the section about <a href="#data-conversion">Data Conversion</a> below.</p>
-<p>Although validation is not the main purpose of Pydantic, you <strong>can</strong> use this library for custom
-<a href="../validators/">validation</a>.</p>
+<p class="admonition-title">Validation — a <em>deliberate</em> misnomer</p>
+<h3 id="tldr">TL;DR<a class="headerlink" href="#tldr" title="Permanent link">&para;</a></h3>
+<p>We use the term "validation" to refer to the process of instantiating a model (or other type) that adheres to specified types and
+constraints. This task, which Pydantic is well known for, is most widely recognized as "validation" in colloquial terms,
+even though in other contexts the term "validation" may be more restrictive.</p>
+<hr />
+<h3 id="the-long-version">The long version<a class="headerlink" href="#the-long-version" title="Permanent link">&para;</a></h3>
+<p>The potential confusion around the term "validation" arises from the fact that, strictly speaking, Pydantic's
+primary focus doesn't align precisely with the dictionary definition of "validation":</p>
+<blockquote>
+<h3 id="validation">validation<a class="headerlink" href="#validation" title="Permanent link">&para;</a></h3>
+<p><em>noun</em>
+the action of checking or proving the validity or accuracy of something.</p>
+</blockquote>
+<p>In Pydantic, the term "validation" refers to the process of instantiating a model (or other type) that adheres to specified
+types and constraints. Pydantic guarantees the types and constraints of the output, not the input data.
+This distinction becomes apparent when considering that Pydantic's <code>ValidationError</code> is raised
+when data cannot be successfully parsed into a model instance.</p>
+<p>While this distinction may initially seem subtle, it holds practical significance.
+In some cases, "validation" goes beyond just model creation, and can include the copying and coercion of data.
+This can involve copying arguments passed to the constructor in order to perform coercion to a new type
+without mutating the original input data. For a more in-depth understanding of the implications for your usage,
+refer to the <a href="#data-conversion">Data Conversion</a> and <a href="#attribute-copies">Attribute Copies</a> sections below.</p>
+<p>In essence, Pydantic's primary goal is to assure that the resulting structure post-processing (termed "validation")
+precisely conforms to the applied type hints. Given the widespread adoption of "validation" as the colloquial term
+for this process, we will consistently use it in our documentation.</p>
+<p>While the terms "parse" and "validation" were previously used interchangeably, moving forward, we aim to exclusively employ "validate",
+with "parse" reserved specifically for discussions related to <a href="../json/">JSON parsing</a>.</p>
 </div>
 <h2 id="basic-model-usage">Basic model usage<a class="headerlink" href="#basic-model-usage" title="Permanent link">&para;</a></h2>
 <div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
