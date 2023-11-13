@@ -6,17 +6,8 @@
 
 #### Packaging
 
-* Update to `pyright==1.1.335` by @Viicos in [#8075](https://github.com/pydantic/pydantic/pull/8075)
-
-## v2.5.0b1 (2023-11-09)
-
-[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0b1)
-
-### What's Changed
-
-#### Packaging
-
 * Update pydantic-core from 2.10.1 to 2.14.1, significant changes from these updates are described below, full changelog [here](https://github.com/pydantic/pydantic-core/compare/v2.10.1...v2.14.1)
+* Update to `pyright==1.1.335` by @Viicos in [#8075](https://github.com/pydantic/pydantic/pull/8075)
 
 #### New Features
 
@@ -125,6 +116,10 @@
 #### `pydantic-core`
 * @sisp made their first contribution in [pydantic/pydantic-core#995](https://github.com/pydantic/pydantic-core/pull/995)
 * @michaelhly made their first contribution in [pydantic/pydantic-core#1015](https://github.com/pydantic/pydantic-core/pull/1015)
+
+## v2.5.0b1 (2023-11-09)
+
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0b1) for details.
 
 ## v2.4.2 (2023-09-27)
 
