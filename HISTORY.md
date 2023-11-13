@@ -521,6 +521,8 @@ First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
 
+<!-- package description limit -->
+
 ## v1.10.13 (2023-09-27)
 
 * Fix: Add max length check to `pydantic.validate_email`, #7673 by @hramezani
@@ -1342,8 +1344,6 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * Only check `TypeVar` param on base `GenericModel` class, [#842](https://github.com/pydantic/pydantic/pull/842) by @zpencerq
 * rename `Model._schema_cache` -> `Model.__schema_cache__`, `Model._json_encoder` -> `Model.__json_encoder__`,
   `Model._custom_root_type` -> `Model.__custom_root_type__`, [#851](https://github.com/pydantic/pydantic/pull/851) by @samuelcolvin
-
-<!-- package description limit -->
 
 ## v0.32.2 (2019-08-17)
 
