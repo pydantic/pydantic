@@ -1,4 +1,6 @@
 """
+Usage docs: https://docs.pydantic.dev/2.5/concepts/json_schema/
+
 The `json_schema` module contains classes and functions to allow the way [JSON Schema](https://json-schema.org/)
 is generated to be customized.
 
@@ -220,7 +222,9 @@ class _DefinitionsRemapping:
 
 
 class GenerateJsonSchema:
-    """A class for generating JSON schemas.
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/json_schema/#customizing-the-json-schema-generation-process
+
+    A class for generating JSON schemas.
 
     This class generates JSON schemas based on configured parameters. The default schema dialect
     is [https://json-schema.org/draft/2020-12/schema](https://json-schema.org/draft/2020-12/schema).

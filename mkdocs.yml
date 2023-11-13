@@ -37,6 +37,12 @@ extra:
   version:
     provider: mike
 
+# https://www.mkdocs.org/user-guide/configuration/#validation
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+
 extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
@@ -58,6 +64,7 @@ nav:
   - Models: concepts/models.md
   - Fields: concepts/fields.md
   - JSON Schema: concepts/json_schema.md
+  - JSON: concepts/json.md
   - Types: concepts/types.md
   - Unions: concepts/unions.md
   - Alias: concepts/alias.md
@@ -67,6 +74,7 @@ nav:
   - Dataclasses: concepts/dataclasses.md
   - Postponed Annotations: concepts/postponed_annotations.md
   - Strict Mode: concepts/strict_mode.md
+  - Type Adapter: concepts/type_adapter.md
   - Validation Decorator: concepts/validation_decorator.md
   - Conversion Table: concepts/conversion_table.md
   - Settings Management: concepts/pydantic_settings.md
@@ -224,7 +232,7 @@ plugins:
       'usage/pydantic_settings.md': 'concepts/pydantic_settings.md'
       'usage/serialization.md': 'concepts/serialization.md'
       'usage/strict_mode.md': 'concepts/strict_mode.md'
-      'usage/type_adapter.md': 'api/type_adapter.md'
+      'usage/type_adapter.md': 'concepts/type_adapter.md'
       'usage/validation_decorator.md': 'concepts/validation_decorator.md'
       'usage/validators.md': 'concepts/validators.md'
       'usage/types/bytesize.md': 'api/types.md#pydantic.types.ByteSize'

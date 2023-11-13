@@ -109,7 +109,9 @@ __all__ = (
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """A field metadata class to indicate that a field should be validated in strict mode.
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/strict_mode/#strict-mode-with-annotated-strict
+
+    A field metadata class to indicate that a field should be validated in strict mode.
 
     Attributes:
         strict: Whether to validate the field in strict mode.
@@ -667,7 +669,9 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Apply constraints to `str` types.
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/fields/#string-constraints
+
+    Apply constraints to `str` types.
 
     Attributes:
         strip_whitespace: Whether to strip whitespace from the string.
@@ -843,6 +847,9 @@ def conlist(
         min_length: The minimum length of the list. Defaults to None.
         max_length: The maximum length of the list. Defaults to None.
         unique_items: Whether the items in the list must be unique. Defaults to None.
+            !!! warning Deprecated
+                The `unique_items` parameter is deprecated, use `Set` instead.
+                See [this issue](https://github.com/pydantic/pydantic-core/issues/296) for more details.
 
     Returns:
         The wrapped list type.
@@ -2397,7 +2404,9 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """A convenience class for creating an annotation that provides pydantic custom type hooks.
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+
+    A convenience class for creating an annotation that provides pydantic custom type hooks.
 
     This class is intended to eliminate the need to create a custom "marker" which defines the
      `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__` custom hook methods.
@@ -2510,12 +2519,13 @@ class Tag:
     ```
 
     !!! note
-        You must specify a `Tag` for every case in a `Union` that is associated with a
+        You must specify a `Tag` for every case in a `Tag` that is associated with a
         callable `Discriminator`. Failing to do so will result in a `PydanticUserError` with code
         [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
 
-    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
-    docs for more details on how to use `Tag`s.
+    See the [Discriminated Unions] concepts docs for more details on how to use `Tag`s.
+
+    [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
     """
 
     tag: str
@@ -2530,7 +2540,9 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """Provides a way to use a custom callable as the way to extract the value of a union discriminator.
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/unions/#discriminated-unions-with-callable-discriminator
+
+    Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
     This allows you to get validation behavior like you'd get from `Field(discriminator=<field_name>)`,
     but without needing to have a single shared field across all the union choices. This also makes it
@@ -2595,14 +2607,25 @@ class Discriminator:
     '''
     ```
 
-    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
-    docs for more details on how to use `Discriminator`s.
+    See the [Discriminated Unions] concepts docs for more details on how to use `Discriminator`s.
+
+    [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
     """
 
     discriminator: str | Callable[[Any], Hashable]
+    """The callable or field name for discriminating the type in a tagged union.
+
+    A `Callable` discriminator must extract the value of the discriminator from the input.
+    A `str` discriminator must be the name of a field to discriminate against.
+    """
     custom_error_type: str | None = None
+    """Type to use in [custom errors](../errors/errors.md#custom-errors) replacing the standard discriminated union
+    validation errors.
+    """
     custom_error_message: str | None = None
+    """Message to use in custom errors."""
     custom_error_context: dict[str, int | str | float] | None = None
+    """Context to use in custom errors."""
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
         origin = _typing_extra.get_origin(source_type)
@@ -2731,26 +2754,28 @@ if TYPE_CHECKING:
     ```py
     import json
 
-    from pydantic import JsonValue, TypeAdapter, ValidationError
+    from pydantic import BaseModel, JsonValue, ValidationError
 
-    adapter = TypeAdapter(JsonValue)
-    valid_json_data = {'a': {'b': {'c': 1, 'd': [2, None]}}}
-    invalid_json_data = {'a': {'b': ...}}
+    class Model(BaseModel):
+        j: JsonValue
 
-    assert adapter.validate_python(valid_json_data) == valid_json_data
-    assert adapter.validate_json(json.dumps(valid_json_data)) == valid_json_data
+    valid_json_data = {'j': {'a': {'b': {'c': 1, 'd': [2, None]}}}}
+    invalid_json_data = {'j': {'a': {'b': ...}}}
+
+    print(repr(Model.model_validate(valid_json_data)))
+    #> Model(j={'a': {'b': {'c': 1, 'd': [2, None]}}})
+    print(repr(Model.model_validate_json(json.dumps(valid_json_data))))
+    #> Model(j={'a': {'b': {'c': 1, 'd': [2, None]}}})
 
     try:
-        adapter.validate_python(invalid_json_data)
-    except ValidationError as exc_info:
-        assert exc_info.errors() == [
-            {
-                'input': Ellipsis,
-                'loc': ('dict', 'a', 'dict', 'b'),
-                'msg': 'input was not a valid JSON value',
-                'type': 'invalid-json-value',
-            }
-        ]
+        Model.model_validate(invalid_json_data)
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Model
+        j.dict.a.dict.b
+          input was not a valid JSON value [type=invalid-json-value, input_value=Ellipsis, input_type=ellipsis]
+        '''
     ```
     """
 

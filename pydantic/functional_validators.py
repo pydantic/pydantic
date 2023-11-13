@@ -27,7 +27,7 @@ _inspect_validator = _decorators.inspect_validator
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class AfterValidator:
-    '''Usage docs: https://docs.pydantic.dev/2.2/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
@@ -36,10 +36,9 @@ class AfterValidator:
 
     Example:
         ```py
-        from typing import Annotated
+        from typing_extensions import Annotated
 
-        from pydantic import BaseModel, AfterValidator, ValidationError
-
+        from pydantic import AfterValidator, BaseModel, ValidationError
 
         MyInt = Annotated[int, AfterValidator(lambda v: v + 1)]
 
@@ -47,27 +46,27 @@ class AfterValidator:
             a: MyInt
 
         print(Model(a=1).a)
-        # > 2
+        #> 2
 
         try:
             Model(a='a')
         except ValidationError as e:
             print(e.json(indent=2))
-        """
-        [
-            {
+            '''
+            [
+              {
                 "type": "int_parsing",
                 "loc": [
-                    "a"
+                  "a"
                 ],
                 "msg": "Input should be a valid integer, unable to parse string as an integer",
                 "input": "a",
-                "url": "https://errors.pydantic.dev/0.38.0/v/int_parsing"
-            }
-        ]
-        """
+                "url": "https://errors.pydantic.dev/2/v/int_parsing"
+              }
+            ]
+            '''
         ```
-    '''
+    """
 
     func: core_schema.NoInfoValidatorFunction | core_schema.WithInfoValidatorFunction
 
@@ -84,7 +83,7 @@ class AfterValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class BeforeValidator:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **before** the inner validation logic.
 
@@ -128,7 +127,7 @@ class BeforeValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class PlainValidator:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
 
@@ -165,7 +164,7 @@ class PlainValidator:
 
 @dataclasses.dataclass(frozen=True, **_internal_dataclass.slots_true)
 class WrapValidator:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#annotated-validators
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/validators/#annotated-validators
 
     A metadata class that indicates that a validation should be applied **around** the inner validation logic.
 
@@ -285,9 +284,45 @@ def field_validator(
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#field-validators
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/validators/#field-validators
 
     Decorate methods on the class indicating that they should be used to validate fields.
+
+    Example usage:
+    ```py
+    from typing import Any
+
+    from pydantic import (
+        BaseModel,
+        ValidationError,
+        field_validator,
+    )
+
+    class Model(BaseModel):
+        a: str
+
+        @field_validator('a')
+        @classmethod
+        def ensure_foobar(cls, v: Any):
+            if 'foobar' not in v:
+                raise ValueError('"foobar" not found in a')
+            return v
+
+    print(repr(Model(a='this is foobar good')))
+    #> Model(a='this is foobar good')
+
+    try:
+        Model(a='snap')
+    except ValidationError as exc_info:
+        print(exc_info)
+        '''
+        1 validation error for Model
+        a
+          Value error, "foobar" not found in a [type=value_error, input_value='snap', input_type=str]
+        '''
+    ```
+
+    For more in depth examples, see [Field Validators](../concepts/validators.md#field-validators).
 
     Args:
         __field: The first field the `field_validator` should be called on; this is separate
@@ -458,9 +493,42 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.4/concepts/validators/#model-validators
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/validators/#model-validators
 
     Decorate model methods for validation purposes.
+
+    Example usage:
+    ```py
+    from typing import Optional
+
+    from pydantic import BaseModel, ValidationError, model_validator
+
+    class Square(BaseModel):
+    width: float
+    height: float
+
+    @model_validator(mode='after')
+    def verify_square(self) -> 'Rectangle':
+        if self.width != self.height:
+            raise ValueError('width and height do not match')
+        return self
+
+    s = Square(width=1, height=1)
+    print(repr(s))
+    #> Square(width=1.0, height=1.0)
+
+    try:
+        Square(width=1, height=2)
+    except ValidationError as e:
+        print(e)
+        '''
+        1 validation error for Square
+        __root__
+          width and height do not match (type=value_error)
+        '''
+    ```
+
+    For more in depth examples, see [Model Validators](../concepts/validators.md#model-validators).
 
     Args:
         mode: A required string literal that specifies the validation mode.

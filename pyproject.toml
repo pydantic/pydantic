@@ -65,7 +65,7 @@ requires-python = '>=3.8'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==2.13.0",
+    "pydantic-core==2.14.1",
 ]
 dynamic = ['version', 'readme']
 
@@ -104,6 +104,7 @@ testing = [
     "pytest-examples",
     "faker>=18.13.0",
     "pytest-benchmark>=4.0.0",
+    "pytest-codspeed~=2.2.0",
 ]
 testing-extra = [
     # used when generate devtools docs example
