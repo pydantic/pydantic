@@ -11,22 +11,27 @@ Models share many similarities with Python's dataclasses, but have been designed
 differences that streamline certain workflows related to validation, serialization, and JSON schema generation.
 You can find more discussion of this in the [Dataclasses](dataclasses.md) section of the docs.
 
-Untrusted data can be passed to a model and, after validation, Pydantic guarantees that the fields
+Untrusted data can be passed to a model and, after parsing and validation, Pydantic guarantees that the fields
 of the resultant model instance will conform to the field types defined on the model.
 
-!!! note
-    The use of the terms "parse" and "validate" within Pydantic's context has been a source of confusion.
-    While these terms were previously used interchangeably, moving forward, we aim to exclusively employ "validate",
-    with "parse" reserved specifically for discussions related to [JSON parsing](../concepts/json.md).
+!!! note "Validation - a _deliberate_ misnomer"
+    ### TL;DR
 
-    The potential confusion arises from the fact that, strictly speaking, Pydantic's primary focus
-    doesn't align precisely with the dictionary definition of "validation":
+    We use the term "validation" to refer to the process of constructing a model that adheres to specified types and
+    constraints. This task, which Pydantic is well known for, is most widely recognized as "validation" in colloquial terms.
+
+    ---
+
+    ### The long version
+
+    The potential confusion around the term "validation" arises from the fact that, strictly speaking, Pydantic's
+    primary focus doesn't align precisely with the dictionary definition of "validation":
 
     > ### validation
     > _noun_
     > the action of checking or proving the validity or accuracy of something.
 
-    In Pydantic, the term "validation" often refers to the process of constructing a model that adheres to specified
+    In Pydantic, the term "validation" refers to the process of constructing a model that adheres to specified
     types and constraints. Pydantic guarantees the types and constraints of the output, not the input data.
     This distinction becomes apparent when considering that Pydantic's `ValidationError` is raised
     when data cannot be successfully parsed into a model instance.
@@ -38,6 +43,9 @@ of the resultant model instance will conform to the field types defined on the m
     In essence, Pydantic's primary goal is to assure that the resulting structure post-processing (termed "validation")
     precisely conforms to the applied type hints. Given the widespread adoption of "validation" as the colloquial term
     for this process, we will consistently use it in our documentation.
+
+    While the terms "parse" and "validation" were previously used interchangeably, moving forward, we aim to exclusively employ "validate",
+    with "parse" reserved specifically for discussions related to [JSON parsing](../concepts/json.md).
 
 ## Basic model usage
 
