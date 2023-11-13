@@ -14,17 +14,41 @@ You can find more discussion of this in the [Dataclasses](dataclasses.md) sectio
 Untrusted data can be passed to a model and, after parsing and validation, Pydantic guarantees that the fields
 of the resultant model instance will conform to the field types defined on the model.
 
-!!! note
-    Pydantic is primarily a parsing and transformation library, **not a validation library**.
-    Validation is a means to an end: building a model which conforms to the types and constraints provided.
+!!! note "Validation — a _deliberate_ misnomer"
+    ### TL;DR
 
-    In other words, Pydantic guarantees the types and constraints of the output model, not the input data.
+    We use the term "validation" to refer to the process of instantiating a model (or other type) that adheres to specified types and
+    constraints. This task, which Pydantic is well known for, is most widely recognized as "validation" in colloquial terms,
+    even though in other contexts the term "validation" may be more restrictive.
 
-    This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
-    how it might affect your usage you should read the section about [Data Conversion](#data-conversion) below.
+    ---
 
-    Although validation is not the main purpose of Pydantic, you **can** use this library for custom
-    [validation](validators.md).
+    ### The long version
+
+    The potential confusion around the term "validation" arises from the fact that, strictly speaking, Pydantic's
+    primary focus doesn't align precisely with the dictionary definition of "validation":
+
+    > ### validation
+    > _noun_
+    > the action of checking or proving the validity or accuracy of something.
+
+    In Pydantic, the term "validation" refers to the process of instantiating a model (or other type) that adheres to specified
+    types and constraints. Pydantic guarantees the types and constraints of the output, not the input data.
+    This distinction becomes apparent when considering that Pydantic's `ValidationError` is raised
+    when data cannot be successfully parsed into a model instance.
+
+    While this distinction may initially seem subtle, it holds practical significance.
+    In some cases, "validation" goes beyond just model creation, and can include the copying and coercion of data.
+    This can involve copying arguments passed to the constructor in order to perform coercion to a new type
+    without mutating the original input data. For a more in-depth understanding of the implications for your usage,
+    refer to the [Data Conversion](#data-conversion) and [Attribute Copies](#attribute-copies) sections below.
+
+    In essence, Pydantic's primary goal is to assure that the resulting structure post-processing (termed "validation")
+    precisely conforms to the applied type hints. Given the widespread adoption of "validation" as the colloquial term
+    for this process, we will consistently use it in our documentation.
+
+    While the terms "parse" and "validation" were previously used interchangeably, moving forward, we aim to exclusively employ "validate",
+    with "parse" reserved specifically for discussions related to [JSON parsing](../concepts/json.md).
 
 ## Basic model usage
 
