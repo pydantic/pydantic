@@ -933,7 +933,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # Resort to costly filtering of the __dict__ objects
             # We use operator.itemgetter because it is much faster than dict comprehensions
             # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
-            # attribute  and the model instance doesn't have a corresponding attribute, accessing the missing attribute
+            # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
             # raises an error in BaseModel.__getattr__ instead of returning the class attribute
             # So we can use operator.itemgetter() instead of operator.attrgetter()
             getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _SENTINEL
