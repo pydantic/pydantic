@@ -1859,6 +1859,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.networks.NatsDsn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NatsDsn
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.networks.MySQLDsn" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3174,6 +3185,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.networks.NatsDsn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        NatsDsn
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.networks.MySQLDsn" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3785,6 +3807,40 @@ underscores are allowed, but you can always do further validation in a validator
 
 
 
+<h2 id="pydantic.networks.NatsDsn" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">NatsDsn</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+<a href="#pydantic.networks.NatsDsn" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">NatsDsn</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
+    <span class="n">MultiHostUrl</span><span class="p">,</span>
+    <span class="n">UrlConstraints</span><span class="p">(</span>
+        <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;nats&quot;</span><span class="p">,</span> <span class="s2">&quot;tls&quot;</span><span class="p">,</span> <span class="s2">&quot;ws&quot;</span><span class="p">],</span>
+        <span class="n">default_host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
+        <span class="n">default_port</span><span class="o">=</span><span class="mi">4222</span><span class="p">,</span>
+    <span class="p">),</span>
+<span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>A type that will accept any NATS DSN.</p>
+<p>NATS is a connective technology built for the ever increasingly hyper-connected world.
+It is a single technology that enables applications to securely communicate across
+any combination of cloud vendors, on-premise, edge, web and mobile, and devices.
+More: https://nats.io</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h2 id="pydantic.networks.MySQLDsn" class="doc doc-heading">
         <span class="doc doc-object-name doc-attribute-name">MySQLDsn</span>
 
@@ -4112,9 +4168,9 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 
           <details class="quote">
             <summary>Source code in <code>pydantic/networks.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">444</span>
-<span class="normal">445</span>
-<span class="normal">446</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">email</span> <span class="o">=</span> <span class="n">email</span>
 </code></pre></div></td></tr></table></div>
@@ -4306,18 +4362,7 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 </details>
       <details class="quote">
         <summary>Source code in <code>pydantic/networks.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">653</span>
-<span class="normal">654</span>
-<span class="normal">655</span>
-<span class="normal">656</span>
-<span class="normal">657</span>
-<span class="normal">658</span>
-<span class="normal">659</span>
-<span class="normal">660</span>
-<span class="normal">661</span>
-<span class="normal">662</span>
-<span class="normal">663</span>
-<span class="normal">664</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">664</span>
 <span class="normal">665</span>
 <span class="normal">666</span>
 <span class="normal">667</span>
@@ -4344,7 +4389,18 @@ In case the <code>name</code> is not provided, it's inferred from the email addr
 <span class="normal">688</span>
 <span class="normal">689</span>
 <span class="normal">690</span>
-<span class="normal">691</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="normal">691</span>
+<span class="normal">692</span>
+<span class="normal">693</span>
+<span class="normal">694</span>
+<span class="normal">695</span>
+<span class="normal">696</span>
+<span class="normal">697</span>
+<span class="normal">698</span>
+<span class="normal">699</span>
+<span class="normal">700</span>
+<span class="normal">701</span>
+<span class="normal">702</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Email address validation using [email-validator](https://pypi.org/project/email-validator/).</span>
 
 <span class="sd">    Note:</span>
