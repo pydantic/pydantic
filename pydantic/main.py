@@ -923,7 +923,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 # If the check above passes, then pydantic fields are equal, we can return early
                 return True
 
-            # We don't want to trigger unnecessary coslty filtering of __dict__ on all unequal objects, so we return
+            # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
             # early if there are no keys to ignore (we would just return False later on anyway)
             model_fields = type(self).model_fields.keys()
             if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
