@@ -16,6 +16,7 @@ from pydantic import (
     MongoDsn,
     MySQLDsn,
     NameEmail,
+    NatsDsn,
     PostgresDsn,
     RedisDsn,
     Strict,
@@ -659,6 +660,23 @@ def test_kafka_dsns():
     m = Model(a='kafka://kafka3:9093')
     assert m.a.username is None
     assert m.a.password is None
+
+
+@pytest.mark.parametrize(
+    'dsn,result',
+    [
+        ('nats://user:pass@localhost:4222', 'nats://user:pass@localhost:4222'),
+        ('tls://user@localhost', 'tls://user@localhost:4222'),
+        ('ws://localhost:2355', 'ws://localhost:2355/'),
+        ('tls://', 'tls://localhost:4222'),
+        ('ws://:password@localhost:9999', 'ws://:password@localhost:9999/'),
+    ],
+)
+def test_nats_dsns(dsn, result):
+    class Model(BaseModel):
+        dsn: NatsDsn
+
+    assert str(Model(dsn=dsn).dsn) == result
 
 
 def test_custom_schemes():
