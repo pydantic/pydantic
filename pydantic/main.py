@@ -932,7 +932,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
             # Resort to costly filtering of the __dict__ objects
             # We use operator.itemgetter because it is much faster than dict comprehensions
-            # NOTE: Contratry to standard python class and instances, when the Model class has default value for an
+            # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
             # attribute  and the model instance doesn't have a corresponding attribute, accessing the missing attribute
             # raises an error in BaseModel.__getattr__ instead of returning the class attribute
             # So we can use operator.itemgetter() instead of operator.attrgetter()
