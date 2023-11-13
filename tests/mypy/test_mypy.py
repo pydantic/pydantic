@@ -155,6 +155,7 @@ def get_test_config(module_path: Path, config_path: Path) -> MypyTestConfig:
     return MypyTestConfig(existing, current)
 
 
+@pytest.mark.filterwarnings('ignore:ast.:DeprecationWarning')  # these are produced by mypy in python 3.12
 @pytest.mark.parametrize('config_filename,python_filename', cases)
 def test_mypy_results(config_filename: str, python_filename: str, request: pytest.FixtureRequest) -> None:
     input_path = PYDANTIC_ROOT / 'tests/mypy/modules' / python_filename
