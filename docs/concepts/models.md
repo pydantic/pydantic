@@ -14,7 +14,7 @@ You can find more discussion of this in the [Dataclasses](dataclasses.md) sectio
 Untrusted data can be passed to a model and, after parsing and validation, Pydantic guarantees that the fields
 of the resultant model instance will conform to the field types defined on the model.
 
-!!! note "Validation - a _deliberate_ misnomer"
+!!! note "Validation — a _deliberate_ misnomer"
     ### TL;DR
 
     We use the term "validation" to refer to the process of constructing a model that adheres to specified types and
