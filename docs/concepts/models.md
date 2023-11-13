@@ -37,8 +37,10 @@ of the resultant model instance will conform to the field types defined on the m
     when data cannot be successfully parsed into a model instance.
 
     While this distinction may initially seem subtle, it holds practical significance.
-    For a more in-depth understanding of the implications for your usage,
-    refer to the [Data Conversion](#data-conversion) section below.
+    In some cases, "validation" goes beyond just model creation, and can include the copying and coercion of data.
+    This can involve copying arguments passed to the constructor in order to perform coercion to a new type
+    without mutating the original input data. For a more in-depth understanding of the implications for your usage,
+    refer to the [Data Conversion](#data-conversion) and [Attribute Copies](#attribute-copies) sections below.
 
     In essence, Pydantic's primary goal is to assure that the resulting structure post-processing (termed "validation")
     precisely conforms to the applied type hints. Given the widespread adoption of "validation" as the colloquial term
