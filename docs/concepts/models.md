@@ -17,7 +17,7 @@ of the resultant model instance will conform to the field types defined on the m
 !!! note "Validation — a _deliberate_ misnomer"
     ### TL;DR
 
-    We use the term "validation" to refer to the process of constructing a model that adheres to specified types and
+    We use the term "validation" to refer to the process of instantiating a model (or other type) that adheres to specified types and
     constraints. This task, which Pydantic is well known for, is most widely recognized as "validation" in colloquial terms,
     even though in other contexts the term "validation" may be more restrictive.
 
@@ -32,7 +32,7 @@ of the resultant model instance will conform to the field types defined on the m
     > _noun_
     > the action of checking or proving the validity or accuracy of something.
 
-    In Pydantic, the term "validation" refers to the process of constructing a model that adheres to specified
+    In Pydantic, the term "validation" refers to the process of instantiating a model (or other type) that adheres to specified
     types and constraints. Pydantic guarantees the types and constraints of the output, not the input data.
     This distinction becomes apparent when considering that Pydantic's `ValidationError` is raised
     when data cannot be successfully parsed into a model instance.
