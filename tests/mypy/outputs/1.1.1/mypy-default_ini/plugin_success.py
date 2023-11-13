@@ -307,3 +307,17 @@ def foo() -> None:
             return self
 
     MyModel(number=2)
+
+
+class InnerModel(BaseModel):
+    my_var: str | None = Field(default=None)
+
+
+class OuterModel(InnerModel):
+    pass
+
+
+m = OuterModel()
+if m.my_var is None:
+    # In https://github.com/pydantic/pydantic/issues/7399, this was unreachable
+    print('not unreachable')
