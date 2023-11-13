@@ -18,7 +18,8 @@ of the resultant model instance will conform to the field types defined on the m
     ### TL;DR
 
     We use the term "validation" to refer to the process of constructing a model that adheres to specified types and
-    constraints. This task, which Pydantic is well known for, is most widely recognized as "validation" in colloquial terms.
+    constraints. This task, which Pydantic is well known for, is most widely recognized as "validation" in colloquial terms,
+    even though in other contexts the term "validation" may be more restrictive.
 
     ---
 
