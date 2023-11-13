@@ -24,6 +24,7 @@ theme:
   features:
     - content.tabs.link
     - content.code.annotate
+    - content.code.copy
     - announce.dismiss
     - navigation.tabs
   logo: 'logo-white.svg'
@@ -36,11 +37,18 @@ extra:
   version:
     provider: mike
 
+# https://www.mkdocs.org/user-guide/configuration/#validation
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+
 extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
 extra_javascript:
   - 'extra/fluff.js'
+  - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
 
 nav:
 - Get Started:
@@ -49,100 +57,78 @@ nav:
   - Help with Pydantic: help_with_pydantic.md
   - Installation: install.md
   - Migration Guide: migration.md
-  - Version Compatibility: version-compatibility.md
+  - Version Policy: version-policy.md
   - Contributing: contributing.md
-  - changelog.md
-- Usage:
-  - usage/models.md
-  - Field Types:
-    - Types Overview: usage/types/types.md
-    - Standard Library Types: usage/types/standard_types.md
-    - Booleans: usage/types/booleans.md
-    - ByteSize: usage/types/bytesize.md
-    - Callables: usage/types/callables.md
-    - Datetimes: usage/types/datetime.md
-    - Dicts and Mapping: usage/types/dicts_mapping.md
-    - Encoded Types: usage/types/encoded.md
-    - Enums and Choices: usage/types/enums.md
-    - File Types: usage/types/file_types.md
-    - JSON: usage/types/json.md
-    - Lists and Tuples: usage/types/list_types.md
-    - Number Types: usage/types/number_types.md
-    - Secret Types: usage/types/secrets.md
-    - Sequence, Iterable & Iterator: usage/types/sequence_iterable.md
-    - Sets and frozenset: usage/types/set_types.md
-    - Strict Types: usage/types/strict_types.md
-    - String Types: usage/types/string_types.md
-    - Type and TypeVar: usage/types/typevars.md
-    - Types with Fields: usage/types/types_fields.md
-    - Unions: usage/types/unions.md
-    - URLs: usage/types/urls.md
-    - UUIDs: usage/types/uuids.md
-    - Encoded: usage/types/encoded.md
-    - Custom Data Types: usage/types/custom.md
-    - Extra Types:
-      - Extra Types Overview: usage/types/extra_types/extra_types.md
-      - Color Types: usage/types/extra_types/color_types.md
-      - Payment Card Numbers: usage/types/extra_types/payment_cards.md
-      - Phone Numbers: usage/types/extra_types/phone_numbers.md
-      - Routing Numbers: usage/types/extra_types/routing_numbers.md
-      - MAC Address: usage/types/extra_types/mac_address.md
-  - usage/validators.md
-  - 'Model Config': usage/model_config.md
-  - 'Fields': usage/fields.md
-  - 'JSON Schema': usage/json_schema.md
-  - 'Serialization': usage/serialization.md
-  - 'Computed Fields': usage/computed_fields.md
-  - 'Dataclasses': usage/dataclasses.md
-  - 'TypeAdapter': usage/type_adapter.md
-  - 'Validation Decorator': usage/validation_decorator.md
-  - 'Postponed Annotations': usage/postponed_annotations.md
-  - 'Strict Mode': usage/strict_mode.md
-  - 'Conversion Table': usage/conversion_table.md
-  - 'Settings Management': usage/pydantic_settings.md
+  - Changelog: changelog.md
+- Concepts:
+  - Models: concepts/models.md
+  - Fields: concepts/fields.md
+  - JSON Schema: concepts/json_schema.md
+  - JSON: concepts/json.md
+  - Types: concepts/types.md
+  - Unions: concepts/unions.md
+  - Alias: concepts/alias.md
+  - Configuration: concepts/config.md
+  - Serialization: concepts/serialization.md
+  - Validators: concepts/validators.md
+  - Dataclasses: concepts/dataclasses.md
+  - Postponed Annotations: concepts/postponed_annotations.md
+  - Strict Mode: concepts/strict_mode.md
+  - Type Adapter: concepts/type_adapter.md
+  - Validation Decorator: concepts/validation_decorator.md
+  - Conversion Table: concepts/conversion_table.md
+  - Settings Management: concepts/pydantic_settings.md
+  - Performance: concepts/performance.md
+  - Pydantic Plugins: concepts/plugins.md
+- API Documentation:
+  - Pydantic:
+    - BaseModel: api/base_model.md
+    - RootModel: api/root_model.md
+    - Pydantic Dataclasses: api/dataclasses.md
+    - TypeAdapter: api/type_adapter.md
+    - Validate Call: api/validate_call.md
+    - Fields: api/fields.md
+    - Configuration: api/config.md
+    - JSON Schema: api/json_schema.md
+    - Errors: api/errors.md
+    - Functional Validators: api/functional_validators.md
+    - Functional Serializers: api/functional_serializers.md
+    - Standard Library Types: api/standard_library_types.md
+    - Pydantic Types: api/types.md
+    - Network Types: api/networks.md
+    - Version Information: api/version.md
+    - Pydantic Plugins: api/plugin.md
+    - Annotated Handlers: api/annotated_handlers.md
+  - Pydantic Core:
+    - pydantic_core: api/pydantic_core.md
+    - pydantic_core.core_schema: api/pydantic_core_schema.md
+  - Pydantic Settings: api/pydantic_settings.md
+  - Pydantic Extra Types:
+    - Color: api/pydantic_extra_types_color.md
+    - Country: api/pydantic_extra_types_country.md
+    - Payment: api/pydantic_extra_types_payment.md
+    - Phone Numbers: api/pydantic_extra_types_phone_numbers.md
+    - Routing Numbers: api/pydantic_extra_types_routing_numbers.md
+    - Coordinate: api/pydantic_extra_types_coordinate.md
+    - Mac Address: api/pydantic_extra_types_mac_address.md
+- Examples:
+  - Secrets: examples/secrets.md
 - Error Messages:
   - Error Handling: errors/errors.md
   - Validation Errors: errors/validation_errors.md
   - Usage Errors: errors/usage_errors.md
 - Integrations:
-  - 'Mypy': integrations/mypy.md
-  - 'PyCharm': integrations/pycharm.md
-  - 'Hypothesis': integrations/hypothesis.md
-  - 'Visual Studio Code': integrations/visual_studio_code.md
-  - 'datamodel-code-generator': integrations/datamodel_code_generator.md
-  - 'devtools': integrations/devtools.md
-  - 'Rich': integrations/rich.md
+  - Mypy: integrations/mypy.md/.
+  - PyCharm: integrations/pycharm.md
+  - Hypothesis: integrations/hypothesis.md
+  - Visual Studio Code: integrations/visual_studio_code.md
+  - datamodel-code-generator: integrations/datamodel_code_generator.md
+  - devtools: integrations/devtools.md
+  - Rich: integrations/rich.md
 - Blog:
   - blog/pydantic-v2-final.md
   - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
-- API Documentation:
-  - Pydantic:
-    - BaseModel: api/base_model.md
-    - RootModel: api/root_model.md
-    - 'Pydantic Dataclasses': api/dataclasses.md
-    - TypeAdapter: api/type_adapter.md
-    - validate_call: api/validate_call.md
-    - Fields: api/fields.md
-    - Config: api/config.md
-    - json_schema: api/json_schema.md
-    - Errors: api/errors.md
-    - 'Functional Validators': api/functional_validators.md
-    - 'Functional Serializers': api/functional_serializers.md
-    - 'Pydantic Types': api/types.md
-    - 'Network Types': api/networks.md
-    - 'Version Information': api/version.md
-  - Pydantic Core:
-    - 'pydantic_core': api/pydantic_core.md
-    - 'pydantic_core.core_schema': api/pydantic_core_schema.md
-  - Pydantic Settings:
-    - 'pydantic_settings': api/pydantic_settings.md
-  - Pydantic Extra Types:
-    - 'pydantic_extra_types.color': api/pydantic_extra_types_color.md
-    - 'pydantic_extra_types.country': api/pydantic_extra_types_country.md
-    - 'pydantic_extra_types.payment': api/pydantic_extra_types_payment.md
-    - 'pydantic_extra_types.phone_numbers': api/pydantic_extra_types_phone_numbers.md
-    - 'pydantic_extra_types.routing_number': api/pydantic_extra_types_routing_number.md
 
 markdown_extensions:
 - tables
@@ -152,7 +138,8 @@ markdown_extensions:
 - admonition
 - pymdownx.details
 - pymdownx.superfences
-- pymdownx.highlight
+- pymdownx.highlight:
+    pygments_lang_class: true
 - pymdownx.extra
 - pymdownx.emoji:
     emoji_index: !!python/name:materialx.emoji.twemoji
@@ -199,13 +186,61 @@ plugins:
       'visual_studio_code.md': 'integrations/visual_studio_code.md'
       'hypothesis_plugin.md': 'integrations/hypothesis.md'
       'pycharm_plugin.md': 'integrations/pycharm.md'
+      'usage/model_config.md': 'api/config.md'
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
-      'usage/types.md': 'usage/types/types.md'
+      'usage/types.md': 'concepts/types.md'
+      'usage/types/secrets.md': 'examples/secrets.md'
+      'usage/types/string_types.md': 'api/types.md#pydantic.types.StringConstraints'
+      'usage/types/file_types.md': 'api/types.md#pydantic.types.FilePath'
       'api/main.md': 'api/base_model.md'
       'api/color.md': 'api/pydantic_extra_types_color.md'
-      'api/alias_generators.md': 'api/config.md'
+      'api/alias_generators.md': 'api/config.md#pydantic.config.ConfigDict.alias_generator'
       'api/pydantic_core_init.md': 'api/pydantic_core.md'
+      'usage/types/booleans.md': 'api/standard_library_types.md#booleans'
+      'usage/types/callables.md': 'api/standard_library_types.md#callable'
+      'usage/types/custom.md': 'concepts/types.md#custom-types'
+      'usage/types/datetime.md': 'api/standard_library_types.md#datetime-types'
+      'usage/types/enum.md': 'api/standard_library_types.md#enum'
+      'usage/types/json.md': 'api/types.md#pydantic.types.Json'
+      'usage/types/list_types.md': 'api/standard_library_types.md#list'
+      'usage/types/standard_types.md': 'api/standard_library_types.md'
+      'usage/types/strict_types.md': 'concepts/types.md#strict-types'
+      'usage/types/types.md': 'concepts/types.md'
+      'usage/types/urls.md': 'api/networks.md'
+      'usage/types/unions.md': 'api/standard_library_types.md#union'
+      'usage/types/typevars.md': 'api/standard_library_types.md#type-and-typevar'
+      'usage/types/types_fields.md': 'api/standard_library_types.md'
       'usage/validation_errors.md': 'errors/validation_errors.md'
       'usage/errors.md': 'errors/usage_errors.md'
+      'usage/types/extra_types/color_types.md': 'api/pydantic_extra_types_color.md'
+      'usage/types/extra_types/extra_types.md': 'api/pydantic_extra_types_color.md'
+      'usage/types/extra_types/coordinate.md': 'api/pydantic_extra_types_coordinate.md'
+      'usage/types/extra_types/mac_address.md': 'api/pydantic_extra_types_mac_address.md'
+      'usage/types/extra_types/payment_cards.md': 'api/pydantic_extra_types_payment.md'
+      'usage/types/extra_types/phone_numbers.md': 'api/pydantic_extra_types_phone_numbers.md'
+      'usage/types/extra_types/routing_numbers.md': 'api/pydantic_extra_types_routing_numbers.md'
+      'version-compatibility.md': 'version-policy.md'
+      'api/pydantic_extra_types_routing_number.md': 'api/pydantic_extra_types_routing_numbers.md'
+      'usage/computed_fields.md': 'api/fields.md#pydantic.fields.computed_field'
+      'usage/conversion_table.md': 'concepts/conversion_table.md'
+      'usage/dataclasses.md': 'concepts/dataclasses.md'
+      'usage/fields.md': 'concepts/fields.md'
+      'usage/json_schema.md': 'concepts/json_schema.md'
+      'usage/models.md': 'concepts/models.md'
+      'usage/postponed_annotations.md': 'concepts/postponed_annotations.md'
+      'usage/pydantic_settings.md': 'concepts/pydantic_settings.md'
+      'usage/serialization.md': 'concepts/serialization.md'
+      'usage/strict_mode.md': 'concepts/strict_mode.md'
+      'usage/type_adapter.md': 'concepts/type_adapter.md'
+      'usage/validation_decorator.md': 'concepts/validation_decorator.md'
+      'usage/validators.md': 'concepts/validators.md'
+      'usage/types/bytesize.md': 'api/types.md#pydantic.types.ByteSize'
+      'usage/types/dicts_mapping.md': 'api/standard_library_types.md#mapping-types'
+      'usage/types/encoded.md': 'api/types.md#pydantic.types.EncodedBytes'
+      'usage/types/enums.md': 'api/standard_library_types.md#enum'
+      'usage/types/number_types.md': 'api/standard_library_types.md#number-types'
+      'usage/types/sequence_iterable.md': 'api/standard_library_types.md#other-iterables'
+      'usage/types/set_types.md': 'api/standard_library_types.md#sets'
+      'usage/types/uuids.md': 'api/standard_library_types.md#uuid'
 - external-markdown:

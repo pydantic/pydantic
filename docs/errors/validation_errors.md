@@ -479,6 +479,115 @@ except ValidationError as exc:
 
 This error is also raised for strict fields when the input value is not an instance of `datetime`.
 
+## `decimal_max_digits`
+
+This error is raised when the value provided for a `Decimal` has too many digits:
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(max_digits=3)
+
+
+try:
+    Model(x='42.1234')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_max_digits'
+```
+
+## `decimal_max_places`
+
+This error is raised when the value provided for a `Decimal` has too many digits after the decimal point:
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(decimal_places=3)
+
+
+try:
+    Model(x='42.1234')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_max_places'
+```
+
+## `decimal_parsing`
+
+This error is raised when the value provided for a `Decimal` could not be parsed as a decimal number:
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(decimal_places=3)
+
+
+try:
+    Model(x='test')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_parsing'
+```
+
+## `decimal_type`
+
+This error is raised when the value provided for a `Decimal` is of the wrong type:
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(decimal_places=3)
+
+
+try:
+    Model(x=[1, 2, 3])
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_type'
+```
+
+This error is also raised for strict fields when the input value is not an instance of `Decimal`.
+
+## `decimal_whole_digits`
+
+This error is raised when the value provided for a `Decimal` has more digits before the decimal point than `max_digits` - `decimal_places` (as long as both are specified):
+
+```py
+from decimal import Decimal
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Model(BaseModel):
+    x: Decimal = Field(max_digits=6, decimal_places=3)
+
+
+try:
+    Model(x='12345.6')
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'decimal_whole_digits'
+```
+
+This error is also raised for strict fields when the input value is not an instance of `Decimal`.
+
 ## `dict_type`
 
 This error is raised when the input value's type is not `dict` for a `dict` field:
@@ -544,7 +653,7 @@ except ValidationError as exc:
     #> 'extra_forbidden'
 ```
 
-You can read more about the `extra` configuration in the [Extra Attributes](../usage/model_config.md#extra-attributes) section.
+You can read more about the `extra` configuration in the [Extra Attributes][pydantic.config.ConfigDict.extra] section.
 
 ## `finite_number`
 
@@ -606,22 +715,26 @@ except ValidationError as exc:
 
 ## `frozen_field`
 
-This error is raised when `model_config['validate_assignment'] == True` and you attempt to assign
-a value to a field with `frozen=True`:
+This error is raised when you attempt to assign a value to a field with `frozen=True`, or to delete such a field:
 
 ```py
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 
 class Model(BaseModel):
     x: str = Field('test', frozen=True)
 
-    model_config = ConfigDict(validate_assignment=True)
-
 
 model = Model()
+
 try:
     model.x = 'test1'
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'frozen_field'
+
+try:
+    del model.x
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'frozen_field'
@@ -629,7 +742,7 @@ except ValidationError as exc:
 
 ## `frozen_instance`
 
-This error is raised when `model_config['frozen] == True` and you attempt to assign a new value to
+This error is raised when `model_config['frozen] == True` and you attempt to delete or assign a new value to
 any of the fields:
 
 ```py
@@ -643,8 +756,15 @@ class Model(BaseModel):
 
 
 m = Model(x=1)
+
 try:
     m.x = 2
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
+    #> 'frozen_instance'
+
+try:
+    del m.x
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'frozen_instance'
@@ -778,8 +898,8 @@ except ValidationError as exc:
 
 ## `int_parsing_size`
 
-This error is raised when attempting to parse a python value from a string outside the maximum range of a Python `int`,
-or when trying to parse an integer from JSON that is outside the valid range of a 64 bit integer:
+This error is raised when attempting to parse a python or JSON value from a string outside the maximum range that Python
+`str` to `int` parsing permits:
 
 ```py
 import json
@@ -802,9 +922,8 @@ except ValidationError as exc:
     #> 'int_parsing_size'
 
 # from JSON
-i64_max = 9_223_372_036_854_775_807
 try:
-    Model.model_validate_json(json.dumps({'x': -i64_max * 2}))
+    Model.model_validate_json(json.dumps({'x': too_long}))
 except ValidationError as exc:
     print(repr(exc.errors()[0]['type']))
     #> 'int_parsing_size'
@@ -1711,6 +1830,25 @@ try:
     foo(a=2)
 except ValidationError as exc:
     print(repr(exc.errors()[1]['type']))
+    #> 'unexpected_keyword_argument'
+```
+
+It is also raised when using pydantic.dataclasses and `extra=forbid`:
+
+```py
+from pydantic import TypeAdapter, ValidationError
+from pydantic.dataclasses import dataclass
+
+
+@dataclass(config={'extra': 'forbid'})
+class Foo:
+    bar: int
+
+
+try:
+    TypeAdapter(Foo).validate_python({'bar': 1, 'foobar': 2})
+except ValidationError as exc:
+    print(repr(exc.errors()[0]['type']))
     #> 'unexpected_keyword_argument'
 ```
 

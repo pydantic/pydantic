@@ -595,3 +595,17 @@ def test_invalid_annotated_type(annotation):
 
         class Model(BaseModel):
             foo: Annotated[str, annotation()]
+
+
+def test_tzinfo_could_be_reused():
+    class Model(BaseModel):
+        value: datetime
+
+    m = Model(value='2015-10-21T15:28:00.000000+01:00')
+    assert m.model_dump_json() == '{"value":"2015-10-21T15:28:00+01:00"}'
+
+    target = datetime(1955, 11, 12, 14, 38, tzinfo=m.value.tzinfo)
+    assert target == datetime(1955, 11, 12, 14, 38, tzinfo=timezone(timedelta(hours=1)))
+
+    now = datetime.now(tz=m.value.tzinfo)
+    assert isinstance(now, datetime)

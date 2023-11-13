@@ -120,7 +120,7 @@ class ValidatedFunction:
             else:
                 assert p.kind == Parameter.VAR_KEYWORD, p.kind
                 self.v_kwargs_name = name
-                fields[name] = Dict[str, annotation], None  # type: ignore
+                fields[name] = Dict[str, annotation], None
                 takes_kwargs = True
 
         # these checks avoid a clash between "args" and a field with that name

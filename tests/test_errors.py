@@ -3,7 +3,7 @@ import re
 import pytest
 
 from pydantic import BaseModel, PydanticUserError, ValidationError
-from pydantic.version import VERSION
+from pydantic.version import version_short
 
 
 def test_user_error_url():
@@ -13,7 +13,7 @@ def test_user_error_url():
     # insert_assert(str(exc_info.value))
     assert str(exc_info.value) == (
         'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly\n\n'
-        f'For further information visit https://errors.pydantic.dev/{VERSION}/u/base-model-instantiated'
+        f'For further information visit https://errors.pydantic.dev/{version_short()}/u/base-model-instantiated'
     )
 
 

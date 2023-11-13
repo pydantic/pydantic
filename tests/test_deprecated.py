@@ -1,7 +1,7 @@
 import platform
 import re
 import sys
-from datetime import timedelta
+from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, Iterable, List, Type
@@ -431,6 +431,14 @@ def test_field_const():
             x: str = Field('test', const=True)
 
 
+def test_field_include_deprecation():
+    m = '`include` is deprecated and does nothing. It will be removed, use `exclude` instead'
+    with pytest.warns(PydanticDeprecatedSince20, match=m):
+
+        class Model(BaseModel):
+            x: int = Field(include=True)
+
+
 def test_unique_items_items():
     with pytest.raises(PydanticUserError, match='`unique_items` is removed. use `Set` instead'):
 
@@ -515,20 +523,79 @@ def test_v1_v2_custom_type_compatibility() -> None:
     assert ta.json_schema() == {'anyOf': [{'type': 'string'}, {'type': 'number'}]}
 
 
+def test_v1_get_validators():
+    class CustomDate(date):
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.validate1
+            yield cls.validate2
+
+        @classmethod
+        def validate1(cls, v, i):
+            print(v)
+
+            if v.year < 2000:
+                raise ValueError('Invalid year')
+            return v
+
+        @classmethod
+        def validate2(cls, v, i):
+            return date.today().replace(month=1, day=1)
+
+    with pytest.warns(
+        PydanticDeprecatedSince20,
+        match='^`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+    ):
+
+        class Model(BaseModel):
+            x: CustomDate
+
+    with pytest.raises(ValidationError, match='Value error, Invalid year'):
+        Model(x=date(1999, 1, 1))
+
+    m = Model(x=date.today())
+    assert m.x.day == 1
+
+
+def test_v1_get_validators_invalid_validator():
+    class InvalidValidator:
+        @classmethod
+        def __get_validators__(cls):
+            yield cls.has_wrong_arguments
+
+        @classmethod
+        def has_wrong_arguments(cls):
+            pass
+
+    with pytest.warns(
+        PydanticDeprecatedSince20,
+        match='^`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+    ):
+
+        class InvalidValidatorModel(BaseModel):
+            x: InvalidValidator
+
+    with pytest.raises(TypeError, match='takes 1 positional argument but 3 were given'):
+        InvalidValidatorModel(x=1)
+
+
 def test_field_extra_arguments():
-    m = 'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead'
+    m = re.escape(
+        'Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead. '
+        "(Extra keys: 'test', 'foo')"
+    )
     with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):
-            x: str = Field('test', test='test')
+            x: str = Field('test', test='test', foo='bar')
 
     assert Model.model_json_schema(by_alias=True)['properties'] == {
-        'x': {'default': 'test', 'test': 'test', 'title': 'X', 'type': 'string'}
+        'x': {'default': 'test', 'foo': 'bar', 'test': 'test', 'title': 'X', 'type': 'string'}
     }
 
 
 def test_field_extra_does_not_rewrite_json_schema_extra():
-    m = 'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead'
+    m = 'Using extra keyword arguments on `Field` is deprecated and will be removed. Use `json_schema_extra` instead'
     with pytest.warns(PydanticDeprecatedSince20, match=m):
 
         class Model(BaseModel):

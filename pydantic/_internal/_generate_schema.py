@@ -8,8 +8,8 @@ import re
 import sys
 import typing
 import warnings
-from contextlib import contextmanager, nullcontext
-from copy import copy
+from contextlib import contextmanager
+from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
@@ -20,7 +20,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ContextManager,
     Dict,
     ForwardRef,
     Iterable,
@@ -34,31 +33,30 @@ from typing import (
 )
 from warnings import warn
 
-from pydantic_core import CoreSchema, PydanticUndefined, core_schema
+from pydantic_core import CoreSchema, PydanticUndefined, core_schema, to_jsonable_python
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
-from ..config import ConfigDict, JsonEncoder
+from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
+from ..config import ConfigDict, JsonDict, JsonEncoder
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
-from ..fields import AliasChoices, AliasPath, FieldInfo
 from ..json_schema import JsonSchemaValue
-from ..version import VERSION
+from ..version import version_short
 from ..warnings import PydanticDeprecatedSince20
-from . import _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
-from ._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
-from ._config import ConfigWrapper
-from ._core_metadata import (
-    CoreMetadataHandler,
-    build_metadata_dict,
-)
+from . import _core_utils, _decorators, _discriminated_union, _known_annotated_metadata, _typing_extra
+from ._config import ConfigWrapper, ConfigWrapperStack
+from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
+    NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
     CoreSchemaOrField,
+    collect_invalid_schemas,
     define_expected_missing_refs,
-    flatten_schema_defs,
+    get_ref,
     get_type_ref,
     is_list_like_schema_with_items_schema,
+    simplify_schema_references,
+    validate_core_schema,
 )
 from ._decorators import (
-    ComputedFieldInfo,
     Decorator,
     DecoratorInfos,
     FieldSerializerDecoratorInfo,
@@ -67,6 +65,7 @@ from ._decorators import (
     ModelValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
     ValidatorDecoratorInfo,
+    get_attribute_from_bases,
     inspect_field_serializer,
     inspect_model_serializer,
     inspect_validator,
@@ -78,15 +77,18 @@ from ._schema_generation_shared import (
     CallbackGetCoreSchemaHandler,
 )
 from ._typing_extra import is_finalvar
-from ._utils import lenient_issubclass
+from ._utils import is_valid_identifier, lenient_issubclass
 
 if TYPE_CHECKING:
+    from ..fields import ComputedFieldInfo, FieldInfo
     from ..main import BaseModel
+    from ..types import Discriminator
     from ..validators import FieldValidatorModes
     from ._dataclasses import StandardDataclass
     from ._schema_generation_shared import GetJsonSchemaFunction
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
+_AnnotatedType = type(Annotated[int, 123])
 
 FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
@@ -218,7 +220,7 @@ def modify_model_json_schema(
         original_schema['title'] = cls.__name__
     docstring = cls.__doc__
     if docstring and 'description' not in original_schema:
-        original_schema['description'] = docstring
+        original_schema['description'] = inspect.cleandoc(docstring)
     return json_schema
 
 
@@ -241,64 +243,50 @@ def _add_custom_serialization_from_json_encoders(
         return schema
     # Check the class type and its superclasses for a matching encoder
     # Decimal.__class__.__mro__ (and probably other cases) doesn't include Decimal itself
-    for base in (tp, *tp.__class__.__mro__[:-1]):
+    # if the type is a GenericAlias (e.g. from list[int]) we need to use __class__ instead of .__mro__
+    for base in (tp, *getattr(tp, '__mro__', tp.__class__.__mro__)[:-1]):
         encoder = json_encoders.get(base)
         if encoder is None:
             continue
 
         warnings.warn(
-            f'`json_encoders` is deprecated. See https://docs.pydantic.dev/{VERSION}/usage/serialization/#custom-serializers for alternatives',
+            f'`json_encoders` is deprecated. See https://docs.pydantic.dev/{version_short()}/concepts/serialization/#custom-serializers for alternatives',
             PydanticDeprecatedSince20,
         )
 
         # TODO: in theory we should check that the schema accepts a serialization key
-        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(encoder, when_used='json')  # type: ignore
+        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(encoder, when_used='json')
         return schema
 
     return schema
 
 
-class ConfigWrapperStack:
-    """A stack of `ConfigWrapper` instances."""
-
-    def __init__(self, config_wrapper: ConfigWrapper):
-        self._config_wrapper_stack: list[ConfigWrapper] = [config_wrapper]
-
-    @property
-    def tail(self) -> ConfigWrapper:
-        return self._config_wrapper_stack[-1]
-
-    def push(self, config_wrapper: ConfigWrapper | ConfigDict | None) -> ContextManager[None]:
-        if config_wrapper is None:
-            return nullcontext()
-
-        if not isinstance(config_wrapper, ConfigWrapper):
-            config_wrapper = ConfigWrapper(config_wrapper, check=False)
-
-        @contextmanager
-        def _context_manager() -> Iterator[None]:
-            self._config_wrapper_stack.append(config_wrapper)
-            try:
-                yield
-            finally:
-                self._config_wrapper_stack.pop()
-
-        return _context_manager()
-
-
 class GenerateSchema:
-    """Generate core schema for a Pydantic model, dataclass and types like `str`, `datatime`, ... ."""
+    """Generate core schema for a Pydantic model, dataclass and types like `str`, `datetime`, ... ."""
+
+    __slots__ = (
+        '_config_wrapper_stack',
+        '_types_namespace',
+        '_typevars_map',
+        '_needs_apply_discriminated_union',
+        '_has_invalid_schema',
+        'field_name_stack',
+        'defs',
+    )
 
     def __init__(
         self,
         config_wrapper: ConfigWrapper,
         types_namespace: dict[str, Any] | None,
         typevars_map: dict[Any, Any] | None = None,
-    ):
+    ) -> None:
         # we need a stack for recursing into child models
         self._config_wrapper_stack = ConfigWrapperStack(config_wrapper)
         self._types_namespace = types_namespace
         self._typevars_map = typevars_map
+        self._needs_apply_discriminated_union = False
+        self._has_invalid_schema = False
+        self.field_name_stack = _FieldNameStack()
         self.defs = _Definitions()
 
     @classmethod
@@ -313,6 +301,9 @@ class GenerateSchema:
         obj._config_wrapper_stack = config_wrapper_stack
         obj._types_namespace = types_namespace
         obj._typevars_map = typevars_map
+        obj._needs_apply_discriminated_union = False
+        obj._has_invalid_schema = False
+        obj.field_name_stack = _FieldNameStack()
         obj.defs = defs
         return obj
 
@@ -382,20 +373,67 @@ class GenerateSchema:
             ' `__get_pydantic_core_schema__` on `<some type>` otherwise to avoid infinite recursion.'
         )
 
+    def _apply_discriminator_to_union(
+        self, schema: CoreSchema, discriminator: str | Discriminator | None
+    ) -> CoreSchema:
+        if discriminator is None:
+            return schema
+        try:
+            return _discriminated_union.apply_discriminator(
+                schema,
+                discriminator,
+            )
+        except _discriminated_union.MissingDefinitionForUnionRef:
+            # defer until defs are resolved
+            _discriminated_union.set_discriminator(
+                schema,
+                discriminator,
+            )
+            if 'metadata' in schema:
+                schema['metadata'][NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = True
+            else:
+                schema['metadata'] = {NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: True}
+            self._needs_apply_discriminated_union = True
+            return schema
+
+    class CollectedInvalid(Exception):
+        pass
+
+    def clean_schema(self, schema: CoreSchema) -> CoreSchema:
+        schema = self.collect_definitions(schema)
+        schema = simplify_schema_references(schema)
+        schema = _discriminated_union.apply_discriminators(schema)
+        if collect_invalid_schemas(schema):
+            raise self.CollectedInvalid()
+        schema = validate_core_schema(schema)
+        return schema
+
     def collect_definitions(self, schema: CoreSchema) -> CoreSchema:
         ref = cast('str | None', schema.get('ref', None))
         if ref:
             self.defs.definitions[ref] = schema
+        if 'ref' in schema:
+            schema = core_schema.definition_reference_schema(schema['ref'])
         return core_schema.definitions_schema(
             schema,
             list(self.defs.definitions.values()),
         )
 
+    def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
+        metadata = CoreMetadataHandler(metadata_schema).metadata
+        pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
+        # because of how we generate core schemas for nested generic models
+        # we can end up adding `BaseModel.__get_pydantic_json_schema__` multiple times
+        # this check may fail to catch duplicates if the function is a `functools.partial`
+        # or something like that
+        # but if it does it'll fail by inserting the duplicate
+        if js_function not in pydantic_js_functions:
+            pydantic_js_functions.append(js_function)
+
     def generate_schema(
         self,
         obj: Any,
         from_dunder_get_core_schema: bool = True,
-        from_prepare_args: bool = True,
     ) -> core_schema.CoreSchema:
         """Generate core schema.
 
@@ -403,8 +441,6 @@ class GenerateSchema:
             obj: The object to generate core schema for.
             from_dunder_get_core_schema: Whether to generate schema from either the
                 `__get_pydantic_core_schema__` function or `__pydantic_core_schema__` property.
-            from_prepare_args: Whether to generate schema from either the
-                `__prepare_pydantic_annotations__` function or `__prepare_pydantic_annotations__` property.
 
         Returns:
             The generated core schema.
@@ -421,33 +457,7 @@ class GenerateSchema:
                 - If `typing.TypedDict` is used instead of `typing_extensions.TypedDict` on Python < 3.12.
                 - If `__modify_schema__` method is used instead of `__get_pydantic_json_schema__`.
         """
-        if isinstance(obj, type(Annotated[int, 123])):
-            return self._annotated_schema(obj)
-        return self._generate_schema_for_type(
-            obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
-        )
-
-    def _add_js_function(self, metadata_schema: CoreSchema, js_function: Callable[..., Any]) -> None:
-        metadata = CoreMetadataHandler(metadata_schema).metadata
-        pydantic_js_functions = metadata.setdefault('pydantic_js_functions', [])
-        # because of how we generate core schemas for nested generic models
-        # we can end up adding `BaseModel.__get_pydantic_json_schema__` multiple times
-        # this check may fail to catch duplicates if the function is a `functools.partial`
-        # or something like that
-        # but if it does it'll fail by inserting the duplicate
-        if js_function not in pydantic_js_functions:
-            pydantic_js_functions.append(js_function)
-
-    def _generate_schema_for_type(
-        self,
-        obj: Any,
-        from_dunder_get_core_schema: bool = True,
-        from_prepare_args: bool = True,
-    ) -> CoreSchema:
         schema: CoreSchema | None = None
-
-        if from_prepare_args:
-            schema = self._generate_schema_from_prepare_annotations(obj)
 
         if from_dunder_get_core_schema:
             from_property = self._generate_schema_from_property(obj, obj)
@@ -465,6 +475,8 @@ class GenerateSchema:
 
         schema = _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, obj, schema)
 
+        schema = self._post_process_generated_schema(schema)
+
         return schema
 
     def _model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
@@ -475,13 +487,14 @@ class GenerateSchema:
 
             fields = cls.model_fields
             decorators = cls.__pydantic_decorators__
+            computed_fields = decorators.computed_fields
             check_decorator_fields_exist(
                 chain(
                     decorators.field_validators.values(),
                     decorators.field_serializers.values(),
                     decorators.validators.values(),
                 ),
-                fields.keys(),
+                {*fields.keys(), *computed_fields.keys()},
             )
             config_wrapper = ConfigWrapper(cls.model_config, check=False)
             core_config = config_wrapper.core_config(cls)
@@ -489,7 +502,7 @@ class GenerateSchema:
 
             model_validators = decorators.model_validators.values()
 
-            extra_validator = None
+            extras_schema = None
             if core_config.get('extra_fields_behavior') == 'allow':
                 for tp in (cls, *cls.__mro__):
                     extras_annotation = cls.__annotations__.get('__pydantic_extra__', None)
@@ -504,7 +517,7 @@ class GenerateSchema:
                             required=True,
                         )[1]
                         if extra_items_type is not Any:
-                            extra_validator = self.generate_schema(extra_items_type)
+                            extras_schema = self.generate_schema(extra_items_type)
                             break
 
             with self._config_wrapper_stack.push(config_wrapper):
@@ -526,13 +539,17 @@ class GenerateSchema:
                 else:
                     fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
                         {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
-                        computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
-                        extra_validator=extra_validator,
+                        computed_fields=[
+                            self._computed_field_schema(d, decorators.field_serializers)
+                            for d in computed_fields.values()
+                        ],
+                        extras_schema=extras_schema,
                         model_name=cls.__name__,
                     )
-
                     inner_schema = apply_validators(fields_schema, decorators.root_validators.values(), None)
-                    inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
+                    new_inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
+                    if new_inner_schema is not None:
+                        inner_schema = new_inner_schema
                     inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
                     model_schema = core_schema.model_schema(
@@ -548,20 +565,8 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[model_ref] = schema
+                self.defs.definitions[model_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(model_ref)
-
-    def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
-        """Try to generate schema from either the `__prepare_pydantic_annotations__` function or
-        `__prepare_pydantic_annotations__` property.
-        """
-        new_obj, new_annotations = self._prepare_annotations(obj, [])
-        if new_obj is not obj or new_annotations:
-            return self._apply_annotations(
-                new_obj,
-                new_annotations,
-            )
-        return None
 
     def _unpack_refs_defs(self, schema: CoreSchema) -> CoreSchema:
         """Unpack all 'definitions' schemas into `GenerateSchema.defs.definitions`
@@ -570,8 +575,6 @@ class GenerateSchema:
 
         def get_ref(s: CoreSchema) -> str:
             return s['ref']  # type: ignore
-
-        schema = flatten_schema_defs(schema)
 
         if schema['type'] == 'definitions':
             self.defs.definitions.update({get_ref(s): s for s in schema['definitions']})
@@ -594,23 +597,35 @@ class GenerateSchema:
         else:
             ref_mode = 'to-def'
 
+        schema: CoreSchema
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         if get_schema is None:
-            return None
-
-        schema: CoreSchema
-        if len(inspect.signature(get_schema).parameters) == 1:
-            # (source) -> CoreSchema
-            schema = get_schema(source)
+            validators = getattr(obj, '__get_validators__', None)
+            if validators is None:
+                return None
+            warn(
+                '`__get_validators__` is deprecated and will be removed, use `__get_pydantic_core_schema__` instead.',
+                PydanticDeprecatedSince20,
+            )
+            schema = core_schema.chain_schema([core_schema.with_info_plain_validator_function(v) for v in validators()])
         else:
-            schema = get_schema(source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode))
+            if len(inspect.signature(get_schema).parameters) == 1:
+                # (source) -> CoreSchema
+                schema = get_schema(source)
+            else:
+                schema = get_schema(
+                    source, CallbackGetCoreSchemaHandler(self._generate_schema, self, ref_mode=ref_mode)
+                )
 
         schema = self._unpack_refs_defs(schema)
 
-        ref: str | None = schema.get('ref', None)
+        ref = get_ref(schema)
         if ref:
-            self.defs.definitions[ref] = schema
+            self.defs.definitions[ref] = self._post_process_generated_schema(schema)
             return core_schema.definition_reference_schema(ref)
+
+        schema = self._post_process_generated_schema(schema)
+
         return schema
 
     def _resolve_forward_ref(self, obj: Any) -> Any:
@@ -649,7 +664,7 @@ class GenerateSchema:
             args = tuple([self._resolve_forward_ref(a) if isinstance(a, ForwardRef) else a for a in args])
         elif required:  # pragma: no cover
             raise TypeError(f'Expected {obj} to have generic parameters but it had none')
-        return args  # type: ignore
+        return args
 
     def _get_first_arg_or_any(self, obj: Any) -> Any:
         args = self._get_args_resolving_forward_refs(obj)
@@ -666,8 +681,31 @@ class GenerateSchema:
             raise TypeError(f'Expected two type arguments for {origin}, got 1')
         return args[0], args[1]
 
+    def _post_process_generated_schema(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        if 'metadata' in schema:
+            metadata = schema['metadata']
+            metadata[NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY] = self._needs_apply_discriminated_union
+        else:
+            schema['metadata'] = {
+                NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY: self._needs_apply_discriminated_union,
+            }
+        return schema
+
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         """Recursively generate a pydantic-core schema for any supported python type."""
+        has_invalid_schema = self._has_invalid_schema
+        self._has_invalid_schema = False
+        needs_apply_discriminated_union = self._needs_apply_discriminated_union
+        self._needs_apply_discriminated_union = False
+        schema = self._post_process_generated_schema(self._generate_schema_inner(obj))
+        self._has_invalid_schema = self._has_invalid_schema or has_invalid_schema
+        self._needs_apply_discriminated_union = self._needs_apply_discriminated_union or needs_apply_discriminated_union
+        return schema
+
+    def _generate_schema_inner(self, obj: Any) -> core_schema.CoreSchema:
+        if isinstance(obj, _AnnotatedType):
+            return self._annotated_schema(obj)
+
         if isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
@@ -875,8 +913,12 @@ class GenerateSchema:
             metadata=common_field['metadata'],
         )
 
-    def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
+    def _common_field_schema(  # noqa C901
+        self, name: str, field_info: FieldInfo, decorators: DecoratorInfos
+    ) -> _CommonField:
         # Update FieldInfo annotation if appropriate:
+        from ..fields import AliasChoices, AliasPath, FieldInfo
+
         if has_instance_in_type(field_info.annotation, (ForwardRef, str)):
             types_namespace = self._types_namespace
             if self._typevars_map:
@@ -888,19 +930,28 @@ class GenerateSchema:
             if evaluated is not field_info.annotation and not has_instance_in_type(evaluated, PydanticRecursiveRef):
                 field_info.annotation = evaluated
 
+                # Handle any field info attributes that may have been obtained from now-resolved annotations
+                new_field_info = FieldInfo.from_annotation(evaluated)
+                for k, v in new_field_info._attributes_set.items():
+                    # If an attribute is already set, it means it was set by assigning to a call to Field (or just a
+                    # default value), and that should take the highest priority. So don't overwrite existing attributes.
+                    if k not in field_info._attributes_set:
+                        setattr(field_info, k, v)
+
         source_type, annotations = field_info.annotation, field_info.metadata
 
         def set_discriminator(schema: CoreSchema) -> CoreSchema:
-            _discriminated_union.set_discriminator(schema, field_info.discriminator)
+            schema = self._apply_discriminator_to_union(schema, field_info.discriminator)
             return schema
 
-        if field_info.discriminator is not None:
-            schema = self._apply_annotations(source_type, annotations, transform_inner_schema=set_discriminator)
-        else:
-            schema = self._apply_annotations(
-                source_type,
-                annotations,
-            )
+        with self.field_name_stack.push(name):
+            if field_info.discriminator is not None:
+                schema = self._apply_annotations(source_type, annotations, transform_inner_schema=set_discriminator)
+            else:
+                schema = self._apply_annotations(
+                    source_type,
+                    annotations,
+                )
 
         # This V1 compatibility shim should eventually be removed
         # push down any `each_item=True` validators
@@ -930,32 +981,34 @@ class GenerateSchema:
         json_schema_updates = {
             'title': field_info.title,
             'description': field_info.description,
-            'examples': field_info.examples,
+            'examples': to_jsonable_python(field_info.examples),
         }
         json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
 
         json_schema_extra = field_info.json_schema_extra
 
-        def json_schema_update_func(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = {**handler(schema), **json_schema_updates}
-            if isinstance(json_schema_extra, dict):
-                json_schema.update(json_schema_extra)
-            elif callable(json_schema_extra):
-                json_schema_extra(json_schema)
-            return json_schema
-
-        metadata = build_metadata_dict(js_annotation_functions=[json_schema_update_func])
+        metadata = build_metadata_dict(
+            js_annotation_functions=[get_json_schema_update_func(json_schema_updates, json_schema_extra)]
+        )
 
         # apply alias generator
         alias_generator = self._config_wrapper.alias_generator
-        if alias_generator and (field_info.alias_priority is None or field_info.alias_priority <= 1):
+        if alias_generator and (
+            field_info.alias_priority is None or field_info.alias_priority <= 1 or field_info.alias is None
+        ):
             alias = alias_generator(name)
             if not isinstance(alias, str):
                 raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+            if field_info.alias is None:
+                if field_info.serialization_alias is None:
+                    field_info.serialization_alias = alias
+                if field_info.validation_alias is None:
+                    field_info.validation_alias = alias
+            else:
+                field_info.serialization_alias = alias
+                field_info.validation_alias = alias
+                field_info.alias_priority = 1
             field_info.alias = alias
-            field_info.validation_alias = alias
-            field_info.serialization_alias = alias
-            field_info.alias_priority = 1
 
         if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
             validation_alias = field_info.validation_alias.convert_to_aliases()
@@ -974,7 +1027,7 @@ class GenerateSchema:
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Union."""
         args = self._get_args_resolving_forward_refs(union_type, required=True)
-        choices: list[core_schema.CoreSchema] = []
+        choices: list[CoreSchema] = []
         nullable = False
         for arg in args:
             if arg is None or arg is _typing_extra.NoneType:
@@ -985,7 +1038,16 @@ class GenerateSchema:
         if len(choices) == 1:
             s = choices[0]
         else:
-            s = core_schema.union_schema(choices)
+            choices_with_tags: list[CoreSchema | tuple[CoreSchema, str]] = []
+            for choice in choices:
+                metadata = choice.get('metadata')
+                if isinstance(metadata, dict):
+                    tag = metadata.get(_core_utils.TAGGED_UNION_TAG_KEY)
+                    if tag is not None:
+                        choices_with_tags.append((choice, tag))
+                    else:
+                        choices_with_tags.append(choice)
+            s = core_schema.union_schema(choices_with_tags)
 
         if nullable:
             s = core_schema.nullable_schema(s)
@@ -995,11 +1057,11 @@ class GenerateSchema:
         self,
         obj: Any,  # TypeAliasType
     ) -> CoreSchema:
-        origin = get_origin(obj)
-        origin = origin or obj
-        with self.defs.get_schema_or_ref(origin) as (ref, maybe_schema):
+        with self.defs.get_schema_or_ref(obj) as (ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
+
+            origin = get_origin(obj) or obj
 
             namespace = (self._types_namespace or {}).copy()
             new_namespace = {**_typing_extra.get_cls_types_namespace(origin), **namespace}
@@ -1007,6 +1069,8 @@ class GenerateSchema:
 
             self._types_namespace = new_namespace
             typevars_map = get_standard_typevars_map(obj)
+
+            annotation = _typing_extra.eval_type_lenient(annotation, self._types_namespace, None)
             annotation = replace_types(annotation, typevars_map)
             schema = self.generate_schema(annotation)
             assert schema['type'] != 'definitions'
@@ -1037,6 +1101,8 @@ class GenerateSchema:
         Hence to avoid creating validators that do not do what users expect we only
         support typing.TypedDict on Python >= 3.12 or typing_extension.TypedDict on all versions
         """
+        from ..fields import FieldInfo
+
         with self.defs.get_schema_or_ref(typed_dict_cls) as (typed_dict_ref, maybe_schema):
             if maybe_schema is not None:
                 return maybe_schema
@@ -1051,7 +1117,11 @@ class GenerateSchema:
                     code='typed-dict-version',
                 )
 
-            config = getattr(typed_dict_cls, '__pydantic_config__', None)
+            try:
+                config: ConfigDict | None = get_attribute_from_bases(typed_dict_cls, '__pydantic_config__')
+            except AttributeError:
+                config = None
+
             with self._config_wrapper_stack.push(config):
                 core_config = self._config_wrapper.core_config(typed_dict_cls)
 
@@ -1087,11 +1157,16 @@ class GenerateSchema:
                         field_name, field_info, decorators, required=required
                     )
 
-                metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls)])
+                metadata = build_metadata_dict(
+                    js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls)], typed_dict_cls=typed_dict_cls
+                )
 
                 td_schema = core_schema.typed_dict_schema(
                     fields,
-                    computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                    computed_fields=[
+                        self._computed_field_schema(d, decorators.field_serializers)
+                        for d in decorators.computed_fields.values()
+                    ],
                     ref=typed_dict_ref,
                     metadata=metadata,
                     config=core_config,
@@ -1099,7 +1174,7 @@ class GenerateSchema:
 
                 schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, decorators.model_validators.values(), 'all')
-                self.defs.definitions[typed_dict_ref] = schema
+                self.defs.definitions[typed_dict_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(typed_dict_ref)
 
     def _namedtuple_schema(self, namedtuple_cls: Any, origin: Any) -> core_schema.CoreSchema:
@@ -1126,7 +1201,9 @@ class GenerateSchema:
 
             arguments_schema = core_schema.arguments_schema(
                 [
-                    self._generate_parameter_schema(field_name, annotation)
+                    self._generate_parameter_schema(
+                        field_name, annotation, default=namedtuple_cls._field_defaults.get(field_name, Parameter.empty)
+                    )
                     for field_name, annotation in annotations.items()
                 ],
                 metadata=build_metadata_dict(js_prefer_positional_arguments=True),
@@ -1141,13 +1218,16 @@ class GenerateSchema:
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
         """Prepare a ArgumentsParameter to represent a field in a namedtuple or function signature."""
+        from ..fields import FieldInfo
+
         if default is Parameter.empty:
             field = FieldInfo.from_annotation(annotation)
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         source_type, annotations = field.annotation, field.metadata
-        schema = self._apply_annotations(source_type, annotations)
+        with self.field_name_stack.push(name):
+            schema = self._apply_annotations(source_type, annotations)
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -1200,6 +1280,11 @@ class GenerateSchema:
             custom_error_message='Input should be a type',
         )
 
+    def _union_is_subclass_schema(self, union_type: Any) -> core_schema.CoreSchema:
+        """Generate schema for `Type[Union[X, ...]]`."""
+        args = self._get_args_resolving_forward_refs(union_type, required=True)
+        return core_schema.union_schema([self.generate_schema(typing.Type[args]) for args in args])
+
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
         """Generate schema for a Type, e.g. `Type[int]`."""
         type_param = self._get_first_arg_or_any(type_)
@@ -1207,6 +1292,8 @@ class GenerateSchema:
             return self._type_schema()
         elif isinstance(type_param, typing.TypeVar):
             if type_param.__bound__:
+                if _typing_extra.origin_is_union(get_origin(type_param.__bound__)):
+                    return self._union_is_subclass_schema(type_param.__bound__)
                 return core_schema.is_subclass_schema(type_param.__bound__)
             elif type_param.__constraints__:
                 return core_schema.union_schema(
@@ -1214,18 +1301,14 @@ class GenerateSchema:
                 )
             else:
                 return self._type_schema()
+        elif _typing_extra.origin_is_union(get_origin(type_param)):
+            return self._union_is_subclass_schema(type_param)
         else:
             return core_schema.is_subclass_schema(type_param)
 
     def _sequence_schema(self, sequence_type: Any) -> core_schema.CoreSchema:
         """Generate schema for a Sequence, e.g. `Sequence[int]`."""
         item_type = self._get_first_arg_or_any(sequence_type)
-
-        def json_schema_func(_schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            items_schema = self._generate_schema(item_type)
-            return handler(core_schema.list_schema(items_schema))
-
-        metadata = build_metadata_dict(js_functions=[json_schema_func])
 
         list_schema = core_schema.list_schema(self.generate_schema(item_type))
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
@@ -1235,9 +1318,7 @@ class GenerateSchema:
             python_schema = core_schema.chain_schema(
                 [python_schema, core_schema.no_info_wrap_validator_function(sequence_validator, list_schema)],
             )
-        return core_schema.json_or_python_schema(
-            json_schema=list_schema, python_schema=python_schema, metadata=metadata
-        )
+        return core_schema.json_or_python_schema(json_schema=list_schema, python_schema=python_schema)
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
         """Generate a schema for an `Iterable`."""
@@ -1298,10 +1379,10 @@ class GenerateSchema:
 
                 self = self._current_generate_schema
 
-                from ._dataclasses import is_pydantic_dataclass
+                from ..dataclasses import is_pydantic_dataclass
 
                 if is_pydantic_dataclass(dataclass):
-                    fields = dataclass.__pydantic_fields__
+                    fields = deepcopy(dataclass.__pydantic_fields__)
                     if typevars_map:
                         for field in fields.values():
                             field.apply_typevars_map(typevars_map, self._types_namespace)
@@ -1324,7 +1405,10 @@ class GenerateSchema:
                 args_schema = core_schema.dataclass_args_schema(
                     dataclass.__name__,
                     args,
-                    computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                    computed_fields=[
+                        self._computed_field_schema(d, decorators.field_serializers)
+                        for d in decorators.computed_fields.values()
+                    ],
                     collect_init_only=has_post_init,
                 )
 
@@ -1344,7 +1428,7 @@ class GenerateSchema:
                 )
                 schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
                 schema = apply_model_validators(schema, model_validators, 'outer')
-                self.defs.definitions[dataclass_ref] = schema
+                self.defs.definitions[dataclass_ref] = self._post_process_generated_schema(schema)
                 return core_schema.definition_reference_schema(dataclass_ref)
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
@@ -1403,14 +1487,33 @@ class GenerateSchema:
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
         assert isinstance(typevar, typing.TypeVar)
 
-        if typevar.__bound__:
-            return self.generate_schema(typevar.__bound__)
-        elif typevar.__constraints__:
-            return self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
+        bound = typevar.__bound__
+        constraints = typevar.__constraints__
+        default = getattr(typevar, '__default__', None)
+
+        if (bound is not None) + (len(constraints) != 0) + (default is not None) > 1:
+            raise NotImplementedError(
+                'Pydantic does not support mixing more than one of TypeVar bounds, constraints and defaults'
+            )
+
+        if default is not None:
+            return self.generate_schema(default)
+        elif constraints:
+            return self._union_schema(typing.Union[constraints])  # type: ignore
+        elif bound:
+            schema = self.generate_schema(bound)
+            schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+                lambda x, h: h(x), schema=core_schema.any_schema()
+            )
+            return schema
         else:
             return core_schema.any_schema()
 
-    def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
+    def _computed_field_schema(
+        self,
+        d: Decorator[ComputedFieldInfo],
+        field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]],
+    ) -> core_schema.ComputedField:
         try:
             return_type = _decorators.get_function_return_type(d.func, d.info.return_type, self._types_namespace)
         except NameError as e:
@@ -1422,8 +1525,17 @@ class GenerateSchema:
                 code='model-field-missing-annotation',
             )
 
+        return_type = replace_types(return_type, self._typevars_map)
+        # Create a new ComputedFieldInfo so that different type parametrizations of the same
+        # generic model's computed field can have different return types.
+        d.info = dataclasses.replace(d.info, return_type=return_type)
         return_type_schema = self.generate_schema(return_type)
-
+        # Apply serializers to computed field if there exist
+        return_type_schema = self._apply_field_serializers(
+            return_type_schema,
+            filter_field_decorator_info_by_field(field_serializers.values(), d.cls_var_name),
+            computed_field=True,
+        )
         # Handle alias_generator using similar logic to that from
         # pydantic._internal._generate_schema.GenerateSchema._common_field_schema,
         # with field_info -> d.info and name -> d.cls_var_name
@@ -1448,6 +1560,14 @@ class GenerateSchema:
             if description is not None:
                 json_schema['description'] = description
 
+            examples = d.info.examples
+            if examples is not None:
+                json_schema['examples'] = to_jsonable_python(examples)
+
+            json_schema_extra = d.info.json_schema_extra
+            if json_schema_extra is not None:
+                add_json_schema_extra(json_schema, json_schema_extra)
+
             return json_schema
 
         metadata = build_metadata_dict(js_annotation_functions=[set_computed_field_metadata])
@@ -1457,6 +1577,8 @@ class GenerateSchema:
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
+        from ..fields import FieldInfo
+
         source_type, *annotations = self._get_args_resolving_forward_refs(
             annotated_type,
             required=True,
@@ -1488,28 +1610,7 @@ class GenerateSchema:
 
         return None
 
-    def _prepare_annotations(self, source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]]:
-        """Call `__prepare_pydantic_annotations__` if it exists and return a tuple of
-            (new_source_type, new_annotations).
-
-        This should be treated conceptually similar to the transformation
-        `Annotated[source_type, *annotations]` -> `Annotated[new_source_type, *new_annotations]`
-        """
-        prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
-
-        annotations = tuple(annotations)  # make them immutable to avoid confusion over mutating them
-
-        if prepare is not None:
-            source_type, annotations = prepare(source_type, tuple(annotations), self._config_wrapper.config_dict)
-            annotations = list(annotations)
-        else:
-            res = self._get_prepare_pydantic_annotations_for_known_type(source_type, annotations)
-            if res is not None:
-                source_type, annotations = res
-
-        return source_type, list(annotations)
-
-    def _apply_annotations(  # noqa: C901
+    def _apply_annotations(
         self,
         source_type: Any,
         annotations: list[Any],
@@ -1521,64 +1622,31 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
-        # expand annotations before we start processing them so that `__prepare_pydantic_annotations` can consume
-        # individual items from GroupedMetadata
         annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
-        non_field_infos, field_infos = [a for a in annotations if not isinstance(a, FieldInfo)], [
-            a for a in annotations if isinstance(a, FieldInfo)
-        ]
-        if field_infos:
-            annotations = [*non_field_infos, FieldInfo.merge_field_infos(*field_infos)]
-        idx = -1
-        prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
-        if prepare:
-            source_type, annotations = prepare(source_type, tuple(annotations), self._config_wrapper.config_dict)
-            annotations = list(annotations)
-        else:
-            res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
-            if res is not None:
-                source_type, annotations = res
+        res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
+        if res is not None:
+            source_type, annotations = res
 
         pydantic_js_annotation_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
-            if isinstance(obj, type(Annotated[int, 123])):
-                schema = transform_inner_schema(self._annotated_schema(obj))
+            from_property = self._generate_schema_from_property(obj, obj)
+            if from_property is None:
+                schema = self._generate_schema(obj)
             else:
-                from_property = self._generate_schema_from_property(obj, obj)
-                if from_property is None:
-                    schema = self._generate_schema(obj)
-                else:
-                    schema = from_property
-                metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
-                if metadata_js_function is not None:
-                    metadata_schema = resolve_original_schema(schema, self.defs.definitions)
-                    if metadata_schema is not None:
-                        self._add_js_function(metadata_schema, metadata_js_function)
+                schema = from_property
+            metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+            if metadata_js_function is not None:
+                metadata_schema = resolve_original_schema(schema, self.defs.definitions)
+                if metadata_schema is not None:
+                    self._add_js_function(metadata_schema, metadata_js_function)
             return transform_inner_schema(schema)
 
         get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self)
 
-        while True:
-            idx += 1
-            if idx == len(annotations):
-                break
-            annotation = annotations[idx]
+        for annotation in annotations:
             if annotation is None:
                 continue
-            prepare = getattr(annotation, '__prepare_pydantic_annotations__', None)
-            if prepare is not None:
-                previous = annotations[:idx]
-                remaining = annotations[idx + 1 :]
-                new_source_type, remaining = prepare(source_type, tuple(remaining), self._config_wrapper.config_dict)
-                annotations = previous + list(remaining)
-                if new_source_type is not source_type:
-                    return self._apply_annotations(
-                        new_source_type,
-                        annotations,
-                        transform_inner_schema=transform_inner_schema,
-                    )
-            annotation = annotations[idx]
             get_inner_schema = self._get_wrapped_inner_schema(
                 get_inner_schema, annotation, pydantic_js_annotation_functions
             )
@@ -1590,15 +1658,14 @@ class GenerateSchema:
         return _add_custom_serialization_from_json_encoders(self._config_wrapper.json_encoders, source_type, schema)
 
     def _apply_single_annotation(self, schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:
+        from ..fields import FieldInfo
+
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation(schema, field_metadata)
 
             if metadata.discriminator is not None:
-                _discriminated_union.set_discriminator(
-                    schema,
-                    metadata.discriminator,
-                )
+                schema = self._apply_discriminator_to_union(schema, metadata.discriminator)
             return schema
 
         if schema['type'] == 'nullable':
@@ -1635,6 +1702,8 @@ class GenerateSchema:
     def _apply_single_annotation_json_schema(
         self, schema: core_schema.CoreSchema, metadata: Any
     ) -> core_schema.CoreSchema:
+        from ..fields import FieldInfo
+
         if isinstance(metadata, FieldInfo):
             for field_metadata in metadata.metadata:
                 schema = self._apply_single_annotation_json_schema(schema, field_metadata)
@@ -1644,24 +1713,12 @@ class GenerateSchema:
             if metadata.description:
                 json_schema_update['description'] = metadata.description
             if metadata.examples:
-                json_schema_update['examples'] = metadata.examples
+                json_schema_update['examples'] = to_jsonable_python(metadata.examples)
 
             json_schema_extra = metadata.json_schema_extra
             if json_schema_update or json_schema_extra:
-
-                def json_schema_update_func(
-                    core_schema: CoreSchemaOrField, handler: GetJsonSchemaHandler
-                ) -> JsonSchemaValue:
-                    json_schema = handler(core_schema)
-                    json_schema.update(json_schema_update)
-                    if isinstance(json_schema_extra, dict):
-                        json_schema.update(json_schema_extra)
-                    elif callable(json_schema_extra):
-                        json_schema_extra(json_schema)
-                    return json_schema
-
                 CoreMetadataHandler(schema).metadata.setdefault('pydantic_js_annotation_functions', []).append(
-                    json_schema_update_func
+                    get_json_schema_update_func(json_schema_update, json_schema_extra)
                 )
         return schema
 
@@ -1688,7 +1745,10 @@ class GenerateSchema:
         return CallbackGetCoreSchemaHandler(new_handler, self)
 
     def _apply_field_serializers(
-        self, schema: core_schema.CoreSchema, serializers: list[Decorator[FieldSerializerDecoratorInfo]]
+        self,
+        schema: core_schema.CoreSchema,
+        serializers: list[Decorator[FieldSerializerDecoratorInfo]],
+        computed_field: bool = False,
     ) -> core_schema.CoreSchema:
         """Apply field serializers to a schema."""
         if serializers:
@@ -1704,7 +1764,9 @@ class GenerateSchema:
 
             # use the last serializer to make it easy to override a serializer set on a parent model
             serializer = serializers[-1]
-            is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
+            is_field_serializer, info_arg = inspect_field_serializer(
+                serializer.func, serializer.info.mode, computed_field=computed_field
+            )
 
             try:
                 return_type = _decorators.get_function_return_type(
@@ -1779,28 +1841,25 @@ class GenerateSchema:
 
 
 _VALIDATOR_F_MATCH: Mapping[
-    tuple[FieldValidatorModes, Literal['no-info', 'general', 'field']],
-    Callable[[Callable[..., Any], None, core_schema.CoreSchema], core_schema.CoreSchema],
+    tuple[FieldValidatorModes, Literal['no-info', 'with-info']],
+    Callable[[Callable[..., Any], core_schema.CoreSchema, str | None], core_schema.CoreSchema],
 ] = {
-    ('before', 'no-info'): lambda f, _, schema: core_schema.no_info_before_validator_function(f, schema),
-    ('after', 'no-info'): lambda f, _, schema: core_schema.no_info_after_validator_function(f, schema),
+    ('before', 'no-info'): lambda f, schema, _: core_schema.no_info_before_validator_function(f, schema),
+    ('after', 'no-info'): lambda f, schema, _: core_schema.no_info_after_validator_function(f, schema),
     ('plain', 'no-info'): lambda f, _1, _2: core_schema.no_info_plain_validator_function(f),
-    ('wrap', 'no-info'): lambda f, _, schema: core_schema.no_info_wrap_validator_function(f, schema),
-    ('before', 'general'): lambda f, _, schema: core_schema.general_before_validator_function(f, schema),
-    ('after', 'general'): lambda f, _, schema: core_schema.general_after_validator_function(f, schema),
-    ('plain', 'general'): lambda f, _1, _2: core_schema.general_plain_validator_function(f),
-    ('wrap', 'general'): lambda f, _, schema: core_schema.general_wrap_validator_function(f, schema),
-}
-
-
-_FIELD_VALIDATOR_F_MATCH: Mapping[
-    tuple[FieldValidatorModes, Literal['no-info', 'general', 'field']],
-    Callable[[Callable[..., Any], str, core_schema.CoreSchema], core_schema.CoreSchema],
-] = {
-    ('before', 'field'): core_schema.field_before_validator_function,
-    ('after', 'field'): core_schema.field_after_validator_function,
-    ('plain', 'field'): lambda f, field_name, _: core_schema.field_plain_validator_function(f, field_name),
-    ('wrap', 'field'): core_schema.field_wrap_validator_function,
+    ('wrap', 'no-info'): lambda f, schema, _: core_schema.no_info_wrap_validator_function(f, schema),
+    ('before', 'with-info'): lambda f, schema, field_name: core_schema.with_info_before_validator_function(
+        f, schema, field_name=field_name
+    ),
+    ('after', 'with-info'): lambda f, schema, field_name: core_schema.with_info_after_validator_function(
+        f, schema, field_name=field_name
+    ),
+    ('plain', 'with-info'): lambda f, _, field_name: core_schema.with_info_plain_validator_function(
+        f, field_name=field_name
+    ),
+    ('wrap', 'with-info'): lambda f, schema, field_name: core_schema.with_info_wrap_validator_function(
+        f, schema, field_name=field_name
+    ),
 }
 
 
@@ -1823,18 +1882,9 @@ def apply_validators(
     """
     for validator in validators:
         info_arg = inspect_validator(validator.func, validator.info.mode)
-        if not info_arg:
-            val_type: Literal['no-info', 'general', 'field'] = 'no-info'
-        elif isinstance(validator.info, (FieldValidatorDecoratorInfo, ValidatorDecoratorInfo)):
-            assert field_name is not None, 'field validators must be used within a model field'
-            val_type = 'field'
-        else:
-            val_type = 'general'
+        val_type = 'with-info' if info_arg else 'no-info'
 
-        if field_name is None or val_type != 'field':
-            schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, None, schema)
-        else:
-            schema = _FIELD_VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, field_name, schema)
+        schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, schema, field_name)
     return schema
 
 
@@ -1882,18 +1932,18 @@ def apply_model_validators(
         info_arg = inspect_validator(validator.func, validator.info.mode)
         if validator.info.mode == 'wrap':
             if info_arg:
-                schema = core_schema.general_wrap_validator_function(function=validator.func, schema=schema)
+                schema = core_schema.with_info_wrap_validator_function(function=validator.func, schema=schema)
             else:
                 schema = core_schema.no_info_wrap_validator_function(function=validator.func, schema=schema)
         elif validator.info.mode == 'before':
             if info_arg:
-                schema = core_schema.general_before_validator_function(function=validator.func, schema=schema)
+                schema = core_schema.with_info_before_validator_function(function=validator.func, schema=schema)
             else:
                 schema = core_schema.no_info_before_validator_function(function=validator.func, schema=schema)
         else:
             assert validator.info.mode == 'after'
             if info_arg:
-                schema = core_schema.general_after_validator_function(function=validator.func, schema=schema)
+                schema = core_schema.with_info_after_validator_function(function=validator.func, schema=schema)
             else:
                 schema = core_schema.no_info_after_validator_function(function=validator.func, schema=schema)
     if ref:
@@ -1943,7 +1993,7 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
                 code='custom-json-schema',
             )
 
-    # handle GenericAlias' but ignore Annotated which "lies" about it's origin (in this case it would be `int`)
+    # handle GenericAlias' but ignore Annotated which "lies" about its origin (in this case it would be `int`)
     if hasattr(tp, '__origin__') and not isinstance(tp, type(Annotated[int, 'placeholder'])):
         return _extract_get_pydantic_json_schema(tp.__origin__, schema)
 
@@ -1951,6 +2001,28 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
         return None
 
     return js_modify_function
+
+
+def get_json_schema_update_func(
+    json_schema_update: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
+) -> GetJsonSchemaFunction:
+    def json_schema_update_func(
+        core_schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = {**handler(core_schema_or_field), **json_schema_update}
+        add_json_schema_extra(json_schema, json_schema_extra)
+        return json_schema
+
+    return json_schema_update_func
+
+
+def add_json_schema_extra(
+    json_schema: JsonSchemaValue, json_schema_extra: JsonDict | typing.Callable[[JsonDict], None] | None
+):
+    if isinstance(json_schema_extra, dict):
+        json_schema.update(to_jsonable_python(json_schema_extra))
+    elif callable(json_schema_extra):
+        json_schema_extra(json_schema)
 
 
 class _CommonField(TypedDict):
@@ -2027,3 +2099,106 @@ def resolve_original_schema(schema: CoreSchema, definitions: dict[str, CoreSchem
         return schema['schema']
     else:
         return schema
+
+
+class _FieldNameStack:
+    __slots__ = ('_stack',)
+
+    def __init__(self) -> None:
+        self._stack: list[str] = []
+
+    @contextmanager
+    def push(self, field_name: str) -> Iterator[None]:
+        self._stack.append(field_name)
+        yield
+        self._stack.pop()
+
+    def get(self) -> str | None:
+        if self._stack:
+            return self._stack[-1]
+        else:
+            return None
+
+
+def generate_pydantic_signature(
+    init: Callable[..., None],
+    fields: dict[str, FieldInfo],
+    config_wrapper: ConfigWrapper,
+    post_process_parameter: Callable[[Parameter], Parameter] = lambda x: x,
+) -> inspect.Signature:
+    """Generate signature for a pydantic class generated by inheriting from BaseModel or
+       using the dataclass annotation
+
+    Args:
+        init: The class init.
+        fields: The model fields.
+        config_wrapper: The config wrapper instance.
+        post_process_parameter: Optional additional processing for parameter
+
+    Returns:
+        The dataclass/BaseModel subclass signature.
+    """
+    from itertools import islice
+
+    present_params = signature(init).parameters.values()
+    merged_params: dict[str, Parameter] = {}
+    var_kw = None
+    use_var_kw = False
+
+    for param in islice(present_params, 1, None):  # skip self arg
+        # inspect does "clever" things to show annotations as strings because we have
+        # `from __future__ import annotations` in main, we don't want that
+        if param.annotation == 'Any':
+            param = param.replace(annotation=Any)
+        if param.kind is param.VAR_KEYWORD:
+            var_kw = param
+            continue
+        merged_params[param.name] = post_process_parameter(param)
+
+    if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
+        allow_names = config_wrapper.populate_by_name
+        for field_name, field in fields.items():
+            # when alias is a str it should be used for signature generation
+            if isinstance(field.alias, str):
+                param_name = field.alias
+            else:
+                param_name = field_name
+
+            if field_name in merged_params or param_name in merged_params:
+                continue
+
+            if not is_valid_identifier(param_name):
+                if allow_names and is_valid_identifier(field_name):
+                    param_name = field_name
+                else:
+                    use_var_kw = True
+                    continue
+
+            kwargs = {} if field.is_required() else {'default': field.get_default(call_default_factory=False)}
+            merged_params[param_name] = post_process_parameter(
+                Parameter(param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs)
+            )
+
+    if config_wrapper.extra == 'allow':
+        use_var_kw = True
+
+    if var_kw and use_var_kw:
+        # Make sure the parameter for extra kwargs
+        # does not have the same name as a field
+        default_model_signature = [
+            ('__pydantic_self__', Parameter.POSITIONAL_OR_KEYWORD),
+            ('data', Parameter.VAR_KEYWORD),
+        ]
+        if [(p.name, p.kind) for p in present_params] == default_model_signature:
+            # if this is the standard model signature, use extra_data as the extra args name
+            var_kw_name = 'extra_data'
+        else:
+            # else start from var_kw
+            var_kw_name = var_kw.name
+
+        # generate a name that's definitely unique
+        while var_kw_name in fields:
+            var_kw_name += '_'
+        merged_params[var_kw_name] = post_process_parameter(var_kw.replace(name=var_kw_name))
+
+    return inspect.Signature(parameters=list(merged_params.values()), return_annotation=None)

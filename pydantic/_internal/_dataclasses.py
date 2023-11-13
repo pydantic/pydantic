@@ -6,22 +6,30 @@ import inspect
 import typing
 import warnings
 from functools import partial, wraps
-from inspect import Parameter, Signature, signature
+from inspect import Parameter, Signature
 from typing import Any, Callable, ClassVar
 
-from pydantic_core import ArgsKwargs, PydanticUndefined, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import (
+    ArgsKwargs,
+    PydanticUndefined,
+    SchemaSerializer,
+    SchemaValidator,
+    core_schema,
+)
 from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
+from ..plugin._schema_validator import create_schema_validator
 from ..warnings import PydanticDeprecatedSince20
-from . import _config, _decorators, _discriminated_union, _typing_extra
-from ._core_utils import collect_invalid_schemas, flatten_schema_defs, inline_schema_defs
+from . import _config, _decorators, _typing_extra
+from ._config import ConfigWrapper
 from ._fields import collect_dataclass_fields
-from ._generate_schema import GenerateSchema
+from ._generate_schema import GenerateSchema, generate_pydantic_signature
 from ._generics import get_standard_typevars_map
-from ._mock_validator import set_dataclass_mock_validator
+from ._mock_val_ser import set_dataclass_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
+from ._utils import is_valid_identifier
 
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
@@ -116,19 +124,20 @@ def complete_dataclass(
         typevars_map,
     )
 
-    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied.
+    # This needs to be called before we change the __init__
+    sig = generate_dataclass_signature(cls, cls.__pydantic_fields__, config_wrapper)  # type: ignore
 
+    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied.
     def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
         __tracebackhide__ = True
         s = __dataclass_self__
         s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
 
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
-    sig = generate_dataclass_signature(cls)
-    cls.__init__ = __init__  # type: ignore
-    cls.__signature__ = sig  # type: ignore
-    cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
 
+    cls.__init__ = __init__  # type: ignore
+    cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
+    cls.__signature__ = sig  # type: ignore
     get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
     try:
         if get_core_schema:
@@ -145,25 +154,27 @@ def complete_dataclass(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        set_dataclass_mock_validator(cls, cls.__name__, f'`{e.name}`')
+        set_dataclass_mocks(cls, cls.__name__, f'`{e.name}`')
         return False
 
     core_config = config_wrapper.core_config(cls)
 
-    schema = gen_schema.collect_definitions(schema)
-    schema = flatten_schema_defs(schema)
-    if collect_invalid_schemas(schema):
-        set_dataclass_mock_validator(cls, cls.__name__, 'all referenced types')
+    try:
+        schema = gen_schema.clean_schema(schema)
+    except gen_schema.CollectedInvalid:
+        set_dataclass_mocks(cls, cls.__name__, 'all referenced types')
         return False
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
-    cls.__pydantic_core_schema__ = schema = _discriminated_union.apply_discriminators(flatten_schema_defs(schema))
-    simplified_core_schema = inline_schema_defs(schema)
-    cls.__pydantic_validator__ = validator = SchemaValidator(simplified_core_schema, core_config)
-    cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
+
+    cls.__pydantic_core_schema__ = schema
+    cls.__pydantic_validator__ = validator = create_schema_validator(
+        schema, cls, cls.__module__, cls.__qualname__, 'dataclass', core_config, config_wrapper.plugin_settings
+    )
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
 
     if config_wrapper.validate_assignment:
 
@@ -176,52 +187,61 @@ def complete_dataclass(
     return True
 
 
-def generate_dataclass_signature(cls: type[StandardDataclass]) -> Signature:
-    """Generate signature for a pydantic dataclass.
+def process_param_defaults(param: Parameter) -> Parameter:
+    """Custom processing where the parameter default is of type FieldInfo
 
-    This implementation assumes we do not support custom `__init__`, which is currently true for pydantic dataclasses.
-    If we change this eventually, we should make this function's logic more closely mirror that from
-    `pydantic._internal._model_construction.generate_model_signature`.
+    Args:
+        param (Parameter): The parameter
+
+    Returns:
+        Parameter: The custom processed parameter
+    """
+    param_default = param.default
+    if isinstance(param_default, FieldInfo):
+        annotation = param.annotation
+        # Replace the annotation if appropriate
+        # inspect does "clever" things to show annotations as strings because we have
+        # `from __future__ import annotations` in main, we don't want that
+        if annotation == 'Any':
+            annotation = Any
+
+        # Replace the field name with the alias if present
+        name = param.name
+        alias = param_default.alias
+        validation_alias = param_default.validation_alias
+        if validation_alias is None and isinstance(alias, str) and is_valid_identifier(alias):
+            name = alias
+        elif isinstance(validation_alias, str) and is_valid_identifier(validation_alias):
+            name = validation_alias
+
+        # Replace the field default
+        default = param_default.default
+        if default is PydanticUndefined:
+            if param_default.default_factory is PydanticUndefined:
+                default = inspect.Signature.empty
+            else:
+                # this is used by dataclasses to indicate a factory exists:
+                default = dataclasses._HAS_DEFAULT_FACTORY  # type: ignore
+        return param.replace(annotation=annotation, name=name, default=default)
+    return param
+
+
+def generate_dataclass_signature(
+    cls: type[StandardDataclass], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper
+) -> Signature:
+    """Generate signature for a pydantic dataclass.
 
     Args:
         cls: The dataclass.
+        fields: The model fields.
+        config_wrapper: The config wrapper instance.
 
     Returns:
-        The signature.
+        The dataclass signature.
     """
-    sig = signature(cls)
-    final_params: dict[str, Parameter] = {}
-
-    for param in sig.parameters.values():
-        param_default = param.default
-        if isinstance(param_default, FieldInfo):
-            annotation = param.annotation
-            # Replace the annotation if appropriate
-            # inspect does "clever" things to show annotations as strings because we have
-            # `from __future__ import annotations` in main, we don't want that
-            if annotation == 'Any':
-                annotation = Any
-
-            # Replace the field name with the alias if present
-            name = param.name
-            if param_default.validation_alias is None and isinstance(param_default.alias, str):
-                name = param_default.alias
-            elif isinstance(param_default.validation_alias, str):
-                name = param_default.validation_alias
-
-            # Replace the field default
-            default = param_default.default
-            if default is PydanticUndefined:
-                if param_default.default_factory is PydanticUndefined:
-                    default = inspect.Signature.empty
-                else:
-                    # this is used by dataclasses to indicate a factory exists:
-                    default = dataclasses._HAS_DEFAULT_FACTORY  # type: ignore
-
-            param = param.replace(annotation=annotation, name=name, default=default)
-        final_params[param.name] = param
-
-    return Signature(parameters=list(final_params.values()), return_annotation=None)
+    return generate_pydantic_signature(
+        init=cls.__init__, fields=fields, config_wrapper=config_wrapper, post_process_parameter=process_param_defaults
+    )
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
@@ -259,15 +279,3 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
         and not hasattr(_cls, '__pydantic_validator__')
         and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
     )
-
-
-def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
-    """Whether a class is a pydantic dataclass.
-
-    Args:
-        cls: The class.
-
-    Returns:
-        `True` if the class is a pydantic dataclass, `False` otherwise.
-    """
-    return dataclasses.is_dataclass(_cls) and '__pydantic_validator__' in _cls.__dict__

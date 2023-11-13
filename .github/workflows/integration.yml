@@ -10,7 +10,7 @@ jobs:
     name: test pydantic settings
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: test
       run: make test-pydantic-settings
@@ -19,24 +19,7 @@ jobs:
     name: test pydantic extra types
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: test
       run: make test-pydantic-extra-types
-
-  test-fastapi:
-    name: test fastapi
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: set up python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: install pydantic
-      run: pip install -e .
-
-    - name: test
-      run: make test-fastapi

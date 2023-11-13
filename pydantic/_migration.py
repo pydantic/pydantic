@@ -1,9 +1,7 @@
 import sys
-import warnings
 from typing import Any, Callable, Dict
 
-from ._internal._validators import import_string
-from .version import VERSION
+from .version import version_short
 
 MOVED_IN_V2 = {
     'pydantic.utils:version_info': 'pydantic.version:version_info',
@@ -26,6 +24,8 @@ DEPRECATED_MOVED_IN_V2 = {
     'pydantic.decorator:validate_arguments': 'pydantic.deprecated.decorator:validate_arguments',
     'pydantic.class_validators:validator': 'pydantic.deprecated.class_validators:validator',
     'pydantic.class_validators:root_validator': 'pydantic.deprecated.class_validators:root_validator',
+    'pydantic.config:BaseConfig': 'pydantic.deprecated.config:BaseConfig',
+    'pydantic.config:Extra': 'pydantic.deprecated.config:Extra',
 }
 
 REDIRECT_TO_V1 = {
@@ -270,6 +270,13 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         Returns:
             The object.
         """
+        if name == '__path__':
+            raise AttributeError(f'module {module!r} has no attribute {name!r}')
+
+        import warnings
+
+        from ._internal._validators import import_string
+
         import_path = f'{module}:{name}'
         if import_path in MOVED_IN_V2.keys():
             new_location = MOVED_IN_V2[import_path]
@@ -288,7 +295,7 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         if import_path == 'pydantic:BaseSettings':
             raise PydanticImportError(
                 '`BaseSettings` has been moved to the `pydantic-settings` package. '
-                f'See https://docs.pydantic.dev/{VERSION}/migration/#basesettings-has-moved-to-pydantic-settings '
+                f'See https://docs.pydantic.dev/{version_short()}/migration/#basesettings-has-moved-to-pydantic-settings '
                 'for more details.'
             )
         if import_path in REMOVED_IN_V2:
@@ -296,6 +303,6 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
         globals: Dict[str, Any] = sys.modules[module].__dict__
         if name in globals:
             return globals[name]
-        raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+        raise AttributeError(f'module {module!r} has no attribute {name!r}')
 
     return wrapper

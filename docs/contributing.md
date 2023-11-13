@@ -66,7 +66,8 @@ cd pydantic
 # https://pre-commit.com/#install
 # To get pipx itself:
 # https://pypa.github.io/pipx/
-pipx install pdm pre-commit
+pipx install pdm
+pipx install pre-commit
 
 # Install pydantic, dependencies, test dependencies and doc dependencies
 make install
@@ -89,8 +90,8 @@ Run tests and linting locally to make sure everything is working as expected.
 ```bash
 # Run automated code formatting and linting
 make format
-# Pydantic uses black and ruff
-# (https://github.com/ambv/black, https://github.com/charliermarsh/ruff)
+# Pydantic uses ruff, an awesome Python linter written in rust
+# https://github.com/astral-sh/ruff
 
 # Run tests and linting
 make
@@ -190,26 +191,26 @@ pytest tests/test_docs.py --update-examples
 
 ## Badges
 
-[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json)](https://pydantic.dev)
-[![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json)](https://pydantic.dev)
+[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json)](https://pydantic.dev)
+[![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
 
 Pydantic has a badge that you can use to show that your project uses Pydantic. You can use this badge in your `README.md`:
 
 ### With Markdown
 ```md
-[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json)](https://pydantic.dev)
+[![Pydantic v1](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json)](https://pydantic.dev)
 
-[![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json)](https://pydantic.dev)
+[![Pydantic v2](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json)](https://pydantic.dev)
 ```
 
 ### With reStructuredText
 
 ```rst
-.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json
     :target: https://pydantic.dev
     :alt: Pydantic
 
-.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json
     :target: https://pydantic.dev
     :alt: Pydantic
 ```
@@ -217,7 +218,7 @@ Pydantic has a badge that you can use to show that your project uses Pydantic. Y
 ### With HTML
 
 ```html
-<a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v1.json" alt="Pydantic Version 1" style="max-width:100%;"></a>
+<a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v1.json" alt="Pydantic Version 1" style="max-width:100%;"></a>
 
-<a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/5697b1e4c4a9790ece607654e6c02a160620c7e1/docs/badge/v2.json" alt="Pydantic Version 2" style="max-width:100%;"></a>
+<a href="https://pydantic.dev"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/pydantic/pydantic/main/docs/badge/v2.json" alt="Pydantic Version 2" style="max-width:100%;"></a>
 ```

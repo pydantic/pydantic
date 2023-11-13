@@ -1,14 +1,32 @@
 from __future__ import annotations as _annotations
 
-from typing import Any, Hashable, Sequence
+from typing import TYPE_CHECKING, Any, Hashable, Sequence
 
 from pydantic_core import CoreSchema, core_schema
 
 from ..errors import PydanticUserError
 from . import _core_utils
-from ._core_utils import CoreSchemaField, collect_definitions
+from ._core_utils import (
+    NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY,
+    CoreSchemaField,
+    collect_definitions,
+    simplify_schema_references,
+)
+
+if TYPE_CHECKING:
+    from ..types import Discriminator
 
 CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY = 'pydantic.internal.union_discriminator'
+
+
+class MissingDefinitionForUnionRef(Exception):
+    """Raised when applying a discriminated union discriminator to a schema
+    requires a definition that is not yet defined
+    """
+
+    def __init__(self, ref: str) -> None:
+        self.ref = ref
+        super().__init__(f'Missing definition for ref {self.ref!r}')
 
 
 def set_discriminator(schema: CoreSchema, discriminator: Any) -> None:
@@ -19,9 +37,14 @@ def set_discriminator(schema: CoreSchema, discriminator: Any) -> None:
 
 
 def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    definitions = collect_definitions(schema)
+    definitions: dict[str, CoreSchema] | None = None
 
     def inner(s: core_schema.CoreSchema, recurse: _core_utils.Recurse) -> core_schema.CoreSchema:
+        nonlocal definitions
+        if 'metadata' in s:
+            if s['metadata'].get(NEEDS_APPLY_DISCRIMINATED_UNION_METADATA_KEY, True) is False:
+                return s
+
         s = recurse(s, inner)
         if s['type'] == 'tagged-union':
             return s
@@ -29,14 +52,18 @@ def apply_discriminators(schema: core_schema.CoreSchema) -> core_schema.CoreSche
         metadata = s.get('metadata', {})
         discriminator = metadata.get(CORE_SCHEMA_METADATA_DISCRIMINATOR_PLACEHOLDER_KEY, None)
         if discriminator is not None:
+            if definitions is None:
+                definitions = collect_definitions(schema)
             s = apply_discriminator(s, discriminator, definitions)
         return s
 
-    return _core_utils.walk_core_schema(schema, inner)
+    return simplify_schema_references(_core_utils.walk_core_schema(schema, inner))
 
 
 def apply_discriminator(
-    schema: core_schema.CoreSchema, discriminator: str, definitions: dict[str, core_schema.CoreSchema] | None = None
+    schema: core_schema.CoreSchema,
+    discriminator: str | Discriminator,
+    definitions: dict[str, core_schema.CoreSchema] | None = None,
 ) -> core_schema.CoreSchema:
     """Applies the discriminator and returns a new core schema.
 
@@ -53,7 +80,7 @@ def apply_discriminator(
             - If `discriminator` is used with invalid union variant.
             - If `discriminator` is used with `Union` type with one variant.
             - If `discriminator` value mapped to multiple choices.
-        ValueError:
+        MissingDefinitionForUnionRef:
             If the definition for ref is missing.
         PydanticUserError:
             - If a model in union doesn't have a discriminator field.
@@ -61,6 +88,14 @@ def apply_discriminator(
             - If discriminator fields have different aliases.
             - If discriminator field not of type `Literal`.
     """
+    from ..types import Discriminator
+
+    if isinstance(discriminator, Discriminator):
+        if isinstance(discriminator.discriminator, str):
+            discriminator = discriminator.discriminator
+        else:
+            return discriminator._convert_schema(schema)
+
     return _ApplyInferredDiscriminator(discriminator, definitions or {}).apply(schema)
 
 
@@ -160,6 +195,10 @@ class _ApplyInferredDiscriminator:
         if self._should_be_nullable and not self._is_nullable:
             schema = core_schema.nullable_schema(schema)
         self._used = True
+        new_defs = collect_definitions(schema)
+        missing_defs = self.definitions.keys() - new_defs.keys()
+        if missing_defs:
+            schema = core_schema.definitions_schema(schema, [self.definitions[ref] for ref in missing_defs])
         return schema
 
     def _apply_to_root(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
@@ -188,7 +227,8 @@ class _ApplyInferredDiscriminator:
             schema = core_schema.union_schema([schema])
 
         # Reverse the choices list before extending the stack so that they get handled in the order they occur
-        self._choices_to_handle.extend(schema['choices'][::-1])
+        choices_schemas = [v[0] if isinstance(v, tuple) else v for v in schema['choices'][::-1]]
+        self._choices_to_handle.extend(choices_schemas)
         while self._choices_to_handle:
             choice = self._choices_to_handle.pop()
             self._handle_choice(choice)
@@ -237,10 +277,11 @@ class _ApplyInferredDiscriminator:
             self._handle_choice(choice['schema'])  # unwrap the nullable schema
         elif choice['type'] == 'union':
             # Reverse the choices list before extending the stack so that they get handled in the order they occur
-            self._choices_to_handle.extend(choice['choices'][::-1])
+            choices_schemas = [v[0] if isinstance(v, tuple) else v for v in choice['choices'][::-1]]
+            self._choices_to_handle.extend(choices_schemas)
         elif choice['type'] == 'definition-ref':
             if choice['schema_ref'] not in self.definitions:
-                raise ValueError(f"Missing definition for ref {choice['schema_ref']!r}")
+                raise MissingDefinitionForUnionRef(choice['schema_ref'])
             self._handle_choice(self.definitions[choice['schema_ref']])
         elif choice['type'] not in {
             'model',
@@ -315,7 +356,8 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'union':
             values = []
             for subchoice in choice['choices']:
-                subchoice_values = self._infer_discriminator_values_for_choice(subchoice, source_name=None)
+                subchoice_schema = subchoice[0] if isinstance(subchoice, tuple) else subchoice
+                subchoice_values = self._infer_discriminator_values_for_choice(subchoice_schema, source_name=None)
                 values.extend(subchoice_values)
             return values
 
@@ -341,9 +383,8 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'definition-ref':
             schema_ref = choice['schema_ref']
             if schema_ref not in self.definitions:
-                raise ValueError(f'Missing definition for inner ref {schema_ref!r}')
+                raise MissingDefinitionForUnionRef(schema_ref)
             return self._infer_discriminator_values_for_choice(self.definitions[schema_ref], source_name=source_name)
-
         else:
             raise TypeError(
                 f'{choice["type"]!r} is not a valid discriminated union variant;'
@@ -422,7 +463,8 @@ class _ApplyInferredDiscriminator:
             # For example, this lets us handle `Union[Literal['key'], Union[Literal['Key'], Literal['KEY']]]`
             values: list[Any] = []
             for choice in schema['choices']:
-                choice_values = self._infer_discriminator_values_for_inner_schema(choice, source)
+                choice_schema = choice[0] if isinstance(choice, tuple) else choice
+                choice_values = self._infer_discriminator_values_for_inner_schema(choice_schema, source)
                 values.extend(choice_values)
             return values
 

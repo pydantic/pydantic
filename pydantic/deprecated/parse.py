@@ -46,11 +46,11 @@ def load_str_bytes(
     if proto == Protocol.json:
         if isinstance(b, bytes):
             b = b.decode(encoding)
-        return json_loads(b)
+        return json_loads(b)  # type: ignore
     elif proto == Protocol.pickle:
         if not allow_pickle:
             raise RuntimeError('Trying to decode with pickle with allow_pickle=False')
-        bb = b if isinstance(b, bytes) else b.encode()
+        bb = b if isinstance(b, bytes) else b.encode()  # type: ignore
         return pickle.loads(bb)
     else:
         raise TypeError(f'Unknown protocol: {proto}')

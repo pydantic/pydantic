@@ -1,6 +1,6 @@
 name: 🐛 Pydantic V1.X Bug
 description: Report a bug or unexpected behavior in Pydantic V1.X, e.g. all releases prior to V2
-labels: [bug V1, unconfirmed]
+labels: [bug V1, pending]
 
 body:
   - type: markdown
@@ -79,13 +79,13 @@ body:
       # keep this lis in sync with feature_request.yml
       options:
         - label: '[Compatibility between releases](https://docs.pydantic.dev/changelog/)'
-        - label: '[Data validation/parsing](https://docs.pydantic.dev/usage/models/#basic-model-usage)'
-        - label: '[Data serialization](https://docs.pydantic.dev/usage/exporting_models/) - `.dict()` and `.json()`'
-        - label: '[JSON Schema](https://docs.pydantic.dev/usage/schema/)'
-        - label: '[Dataclasses](https://docs.pydantic.dev/usage/dataclasses/)'
-        - label: '[Model Config](https://docs.pydantic.dev/usage/model_config/)'
-        - label: '[Field Types](https://docs.pydantic.dev/usage/types/) - adding or changing a particular data type'
-        - label: '[Function validation decorator](https://docs.pydantic.dev/usage/validation_decorator/)'
-        - label: '[Generic Models](https://docs.pydantic.dev/usage/models/#generic-models)'
-        - label: '[Other Model behaviour](https://docs.pydantic.dev/usage/models/) - `construct()`, pickling, private attributes, ORM mode'
+        - label: '[Data validation/parsing](https://docs.pydantic.dev/concepts/models/#basic-model-usage)'
+        - label: '[Data serialization](https://docs.pydantic.dev/concepts/serialization/) - `.model_dump()` and `.model_dump_json()`'
+        - label: '[JSON Schema](https://docs.pydantic.dev/concepts/json_schema/)'
+        - label: '[Dataclasses](https://docs.pydantic.dev/concepts/dataclasses/)'
+        - label: '[Model Config](https://docs.pydantic.dev/concepts/config/)'
+        - label: '[Field Types](https://docs.pydantic.dev/api/types/) - adding or changing a particular data type'
+        - label: '[Function validation decorator](https://docs.pydantic.dev/concepts/validation_decorator/)'
+        - label: '[Generic Models](https://docs.pydantic.dev/concepts/models/#generic-models)'
+        - label: '[Other Model behaviour](https://docs.pydantic.dev/concepts/models/) - `model_construct()`, pickling, private attributes, ORM mode'
         - label: '[Plugins](https://docs.pydantic.dev/) and integration with other tools - mypy, FastAPI, python-devtools, Hypothesis, VS Code, PyCharm, etc.'

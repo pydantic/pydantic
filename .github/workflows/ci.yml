@@ -10,7 +10,7 @@ on:
 
 env:
   COLUMNS: 150
-  PDM_DEPS: 'urllib3<2,git+https://github.com/adriangb/findpython.git@version-timeout-env'
+  PDM_DEPS: 'urllib3<2'
   FINDPYTHON_GET_VERSION_TIMEOUT: 30
 
 jobs:
@@ -20,18 +20,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
+          allow-python-prereleases: true
 
       - name: install
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G linting -G email
 
       - uses: pre-commit/action@v3.0.0
@@ -43,17 +44,19 @@ jobs:
   docs-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
         # cloudflare pages build containers run 3.8, hence using it here
         python-version: '3.8'
-        cache: true
 
     - name: install dependencies
+      # Unlike the docs build, we don't use mkdocs_material-insiders
+      # Because the secret for accessing the library is not accessible from forks, but we still want to run
+      # this job on public CI runs.
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
@@ -74,7 +77,7 @@ jobs:
     name: test memray
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: pdm-project/setup-pdm@v3
         with:
@@ -83,7 +86,7 @@ jobs:
 
       - name: install deps
         run: |
-          pdm use -f $PYTHON
+          pdm venv create --with-pip --force $PYTHON
           pdm install -G testing -G testing-extra -G email -G memray
           pdm add pytest-memray
 
@@ -96,7 +99,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
@@ -107,25 +110,28 @@ jobs:
             python-version: 'pypy3.8'
           - os: ubuntu
             python-version: 'pypy3.9'
+          - os: ubuntu
+            python-version: 'pypy3.10'
 
     env:
-      PYTHON: ${{ matrix.python-version }}
       OS: ${{ matrix.os }}
       DEPS: yes
 
     runs-on: ${{ matrix.os }}-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
+        cache: true
+        allow-python-prereleases: true
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
-        pdm install -G testing
+        pdm venv create --with-pip --force $PYTHON
+        pdm install -G testing -G email
 
     - run: pdm info && pdm list
 
@@ -156,6 +162,50 @@ jobs:
         name: coverage
         path: coverage
 
+  test-fastapi:
+    # If some tests start failing due to out-of-date schemas/validation errors/etc.,
+    # update the `tests/test_fastapi.sh` script to exclude tests that have known-acceptable failures.
+    name: test fastapi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: test
+        run: make test-fastapi
+
+  test-plugin:
+    name: test pydantic plugin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pdm-project/setup-pdm@v3
+        with:
+          python-version: '3.11'
+          cache: true
+
+      - name: install deps
+        run: |
+          pdm venv create --with-pip --force $PYTHON
+          pdm install -G testing
+
+      - name: install example plugin
+        run: pdm add ./tests/plugin
+
+      - run: pdm run pytest ./tests/plugin
+        env:
+          TEST_PLUGIN: 1
+
+      # uninstalling is necessary to avoid creating a pdm cache shared with other jobs
+      # which includes the plugin
+      - name: uninstall example plugin
+        run: pdm remove ./tests/plugin
+
   test-mypy:
     name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
@@ -164,7 +214,7 @@ jobs:
       matrix:
         # test recent mypy versions on 3.10 and mypy 1.0.1 on all supported python versions
         # if you change the value in the lockfile add the old value to this list
-        mypy-version: ['1.0.1', 'lockfile', '1.2.0', '1.4.1']
+        mypy-version: ['1.0.1', 'lockfile', '1.2.0', '1.4.1', '1.5.1']
         python-version: ['3.10']
         include:
           - mypy-version: 'lockfile'
@@ -175,23 +225,31 @@ jobs:
             python-version: '3.9'
           - mypy-version: 'lockfile'
             python-version: '3.11'
+          # TODO: Once Python 3.7 is removed, and mypy is bumped on the lockfile, we can add 'lockfile' again.
+          - mypy-version: '1.5.1'
+            python-version: '3.12'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
+        allow-python-prereleases: true
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G mypy
 
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
+        if [ ${{ matrix.mypy-version }} == '1.5.1' ]; then
+          # mypy 1.5.0 only supports 3.8 and newer, so adjust pyproject.toml
+          sed -i "s/requires-python = '>=3.7'/requires-python = '>=3.8'/g" pyproject.toml
+        fi
         if [ ${{ matrix.mypy-version }} != 'lockfile' ]; then
           pdm remove -G linting mypy && pdm remove -G mypy mypy && pdm add mypy==${{ matrix.mypy-version }}
         fi
@@ -206,12 +264,12 @@ jobs:
         CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
 
     - name: install node for pyright
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
 
     - name: install pyright
-      run: npm install -g pyright@1.1.302  # try to keep this in sync with .pre-commit-config.yaml
+      run: npm install -g pyright@1.1.335  # try to keep this in sync with .pre-commit-config.yaml
 
     - name: run pyright tests
       run: make test-pyright
@@ -230,7 +288,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v4
         with:
@@ -263,28 +321,31 @@ jobs:
       matrix:
         # test the oldest supported version and main
         typing-extensions-version: ['4.6.1', 'main']
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         include:
           - typing-extensions-version: '4.6.1'
             python-version: '3.7'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - uses: pdm-project/setup-pdm@v3
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
+        allow-python-prereleases: true
 
     - name: install deps
       run: |
-        pdm use -f $PYTHON
+        pdm venv create --with-pip --force $PYTHON
         pdm install -G testing -G email
 
     - name: install typing-extensions
       run: |
         if [ ${{ matrix.typing-extensions-version }} == 'main' ]; then
-          pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git ; python_version >= "3.8"'
+          # typing-extensions main only supports 3.8 and newer, so adjust pyproject.toml
+          sed -i "s/requires-python = '>=3.7'/requires-python = '>=3.8'/g" pyproject.toml
+          pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
         else
           pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}'
         fi
@@ -306,6 +367,8 @@ jobs:
       - test
       - test-memray
       - test-mypy
+      - test-fastapi
+      - test-plugin
 
     runs-on: ubuntu-latest
 
@@ -329,7 +392,7 @@ jobs:
       pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: set up python
         uses: actions/setup-python@v4

@@ -1,4 +1,4 @@
-"""Logic related to validators applied to models etc. via the `@field_validator` and `@root_validator` decorators."""
+"""Logic related to validators applied to models etc. via the `@field_validator` and `@model_validator` decorators."""
 from __future__ import annotations as _annotations
 
 from collections import deque
@@ -12,12 +12,12 @@ from pydantic_core import PydanticUndefined, core_schema
 from typing_extensions import Literal, TypeAlias, is_typeddict
 
 from ..errors import PydanticUserError
-from ..fields import ComputedFieldInfo
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_true
 from ._typing_extra import get_function_type_hints
 
 if TYPE_CHECKING:
+    from ..fields import ComputedFieldInfo
     from ..functional_validators import FieldValidatorModes
 
 try:
@@ -140,7 +140,7 @@ class ModelValidatorDecoratorInfo:
     mode: Literal['wrap', 'before', 'after']
 
 
-DecoratorInfo = Union[
+DecoratorInfo: TypeAlias = """Union[
     ValidatorDecoratorInfo,
     FieldValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
@@ -148,7 +148,7 @@ DecoratorInfo = Union[
     ModelSerializerDecoratorInfo,
     ModelValidatorDecoratorInfo,
     ComputedFieldInfo,
-]
+]"""
 
 ReturnType = TypeVar('ReturnType')
 DecoratedType: TypeAlias = (
@@ -309,6 +309,11 @@ def mro(tp: type[Any]) -> tuple[type[Any], ...]:
             # GenericAlias and some other cases
             pass
 
+    bases = get_bases(tp)
+    return (tp,) + mro_for_bases(bases)
+
+
+def mro_for_bases(bases: tuple[type[Any], ...]) -> tuple[type[Any], ...]:
     def merge_seqs(seqs: list[deque[type[Any]]]) -> Iterable[type[Any]]:
         while True:
             non_empty = [seq for seq in seqs if seq]
@@ -332,14 +337,14 @@ def mro(tp: type[Any]) -> tuple[type[Any], ...]:
                 if seq[0] == candidate:
                     seq.popleft()
 
-    bases = get_bases(tp)
     seqs = [deque(mro(base)) for base in bases] + [deque(bases)]
-    res = tuple(merge_seqs(seqs))
-
-    return (tp,) + res
+    return tuple(merge_seqs(seqs))
 
 
-def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
+_sentinel = object()
+
+
+def get_attribute_from_bases(tp: type[Any] | tuple[type[Any], ...], name: str) -> Any:
     """Get the attribute from the next class in the MRO that has it,
     aiming to simulate calling the method on the actual class.
 
@@ -349,7 +354,7 @@ def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
     from its bases (as done here).
 
     Args:
-        tp: The type or class to search for the attribute.
+        tp: The type or class to search for the attribute. If a tuple, this is treated as a set of base classes.
         name: The name of the attribute to retrieve.
 
     Returns:
@@ -358,13 +363,20 @@ def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
     Raises:
         AttributeError: If the attribute is not found in any class in the MRO.
     """
-    try:
-        return getattr(tp, name)
-    except AttributeError as e:
-        for base in reversed(mro(tp)):
-            if hasattr(base, name):
-                return getattr(base, name)
-        raise e
+    if isinstance(tp, tuple):
+        for base in mro_for_bases(tp):
+            attribute = base.__dict__.get(name, _sentinel)
+            if attribute is not _sentinel:
+                attribute_get = getattr(attribute, '__get__', None)
+                if attribute_get is not None:
+                    return attribute_get(None, tp)
+                return attribute
+        raise AttributeError(f'{name} not found in {tp}')
+    else:
+        try:
+            return getattr(tp, name)
+        except AttributeError:
+            return get_attribute_from_bases(mro(tp), name)
 
 
 def get_attribute_from_base_dicts(tp: type[Any], name: str) -> Any:
@@ -476,6 +488,8 @@ class DecoratorInfos:
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 else:
+                    from ..fields import ComputedFieldInfo
+
                     isinstance(var_value, ComputedFieldInfo)
                     res.computed_fields[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=None, info=info
@@ -493,7 +507,7 @@ class DecoratorInfos:
 
 
 def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:
-    """Look at a field or model validator function and determine if it whether it takes an info argument.
+    """Look at a field or model validator function and determine whether it takes an info argument.
 
     An error is raised if the function has an invalid signature.
 
@@ -504,10 +518,13 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
     Returns:
         Whether the validator takes an info argument.
     """
-    if getattr(validator, '__module__', None) == 'builtins':
-        # int, str, etc.
+    try:
+        sig = signature(validator)
+    except ValueError:
+        # builtins and some C extensions don't have signatures
+        # assume that they don't take an info argument and only take a single argument
+        # e.g. `str.strip` or `datetime.datetime`
         return False
-    sig = signature(validator)
     n_positional = count_positional_params(sig)
     if mode == 'wrap':
         if n_positional == 3:
@@ -527,7 +544,9 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
     )
 
 
-def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> tuple[bool, bool]:
+def inspect_field_serializer(
+    serializer: Callable[..., Any], mode: Literal['plain', 'wrap'], computed_field: bool = False
+) -> tuple[bool, bool]:
     """Look at a field serializer function and determine if it is a field serializer,
     and whether it takes an info argument.
 
@@ -536,6 +555,8 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
     Args:
         serializer: The serializer function to inspect.
         mode: The serializer mode, either 'plain' or 'wrap'.
+        computed_field: When serializer is applied on computed_field. It doesn't require
+            info signature.
 
     Returns:
         Tuple of (is_field_serializer, info_arg).
@@ -557,6 +578,11 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
             f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
             code='field-serializer-signature',
         )
+    if info_arg and computed_field:
+        raise PydanticUserError(
+            'field_serializer on computed_field does not use info signature', code='field-serializer-signature'
+        )
+
     else:
         return is_field_serializer, info_arg
 
@@ -707,7 +733,7 @@ def unwrap_wrapped_function(
     try:
         from functools import cached_property  # type: ignore
     except ImportError:
-        cached_property = type('', (), {})  # type: ignore
+        cached_property = type('', (), {})
     else:
         all.add(cached_property)
 

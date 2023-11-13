@@ -26,7 +26,7 @@ pip install -U pydantic
 
 Pydantic V2 is compatible with Python 3.7 and above.
 
-See [the docs](/) for examples of Pydantic at work.
+See [the docs](../index.md) for examples of Pydantic at work.
 
 ## Migration guide
 

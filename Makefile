@@ -3,7 +3,7 @@ sources = pydantic tests docs/plugins
 
 .PHONY: .pdm  ## Check that PDM is installed
 .pdm:
-	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/\#installation'
+	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/#installation'
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
 .pre-commit:
@@ -11,6 +11,7 @@ sources = pydantic tests docs/plugins
 
 .PHONY: install  ## Install the package, dependencies, and pre-commit for local development
 install: .pdm .pre-commit
+	pdm info
 	pdm install --group :all
 	pre-commit install --install-hooks
 
@@ -24,13 +25,13 @@ rebuild-lockfiles: .pdm
 
 .PHONY: format  ## Auto-format python source files
 format: .pdm
-	pdm run black $(sources)
 	pdm run ruff --fix $(sources)
+	pdm run ruff format $(sources)
 
 .PHONY: lint  ## Lint python source files
 lint: .pdm
 	pdm run ruff $(sources)
-	pdm run black $(sources) --check --diff
+	pdm run ruff format --check $(sources)
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
 codespell: .pre-commit
@@ -55,6 +56,7 @@ test-mypy-update-all: .pdm
 	pip install --force mypy==1.1.1 && make test-mypy-update
 	pip install --force mypy==1.2.0 && make test-mypy-update
 	pip install --force mypy==1.4.1 && make test-mypy-update
+	pip install --force mypy==1.5.0 && make test-mypy-update
 
 .PHONY: test-pyright  ## Run the pyright integration tests
 test-pyright: .pdm
@@ -82,9 +84,7 @@ test-examples: .pdm
 
 .PHONY: test-fastapi  ## Run the FastAPI tests with this version of pydantic
 test-fastapi:
-	# TODO: Fetch single branch after FastAPI compatible release
-	# git clone https://github.com/tiangolo/fastapi.git --single-branch
-	git clone https://github.com/tiangolo/fastapi.git
+	git clone https://github.com/tiangolo/fastapi.git --single-branch
 	./tests/test_fastapi.sh
 
 .PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
@@ -123,7 +123,7 @@ clean:
 
 .PHONY: docs  ## Generate the docs
 docs:
-	pdm run mkdocs build
+	pdm run mkdocs build --strict
 
 .PHONY: help  ## Display this message
 help:

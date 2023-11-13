@@ -75,11 +75,12 @@ except ImportError:  # pragma: no cover
 
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
-BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
-BASESETTINGS_FULLNAME = 'pydantic.env_settings.BaseSettings'
-MODEL_METACLASS_FULLNAME = 'pydantic.main.ModelMetaclass'
-FIELD_FULLNAME = 'pydantic.fields.Field'
-DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
+_NAMESPACE = __name__[:-5]  # 'pydantic' in 1.10.X, 'pydantic.v1' in v2.X
+BASEMODEL_FULLNAME = f'{_NAMESPACE}.main.BaseModel'
+BASESETTINGS_FULLNAME = f'{_NAMESPACE}.env_settings.BaseSettings'
+MODEL_METACLASS_FULLNAME = f'{_NAMESPACE}.main.ModelMetaclass'
+FIELD_FULLNAME = f'{_NAMESPACE}.fields.Field'
+DATACLASS_FULLNAME = f'{_NAMESPACE}.dataclasses.dataclass'
 
 
 def parse_mypy_version(version: str) -> Tuple[int, ...]:
@@ -335,7 +336,7 @@ class PydanticModelTransformer:
                 if (
                     isinstance(first_dec, CallExpr)
                     and isinstance(first_dec.callee, NameExpr)
-                    and first_dec.callee.fullname == 'pydantic.class_validators.validator'
+                    and first_dec.callee.fullname == f'{_NAMESPACE}.class_validators.validator'
                 ):
                     sym.node.func.is_class = True
 

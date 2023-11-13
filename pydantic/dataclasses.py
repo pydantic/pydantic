@@ -6,13 +6,13 @@ import sys
 import types
 from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
 
-from typing_extensions import Literal, dataclass_transform
+from typing_extensions import Literal, TypeGuard, dataclass_transform
 
 from ._internal import _config, _decorators, _typing_extra
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict
-from .fields import Field
+from .fields import Field, FieldInfo
 
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
@@ -107,7 +107,7 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """Usage docs: https://docs.pydantic.dev/dev-v2/usage/dataclasses/
+    """Usage docs: https://docs.pydantic.dev/2.5/concepts/dataclasses/
 
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclass`,
     but with added validation.
@@ -143,8 +143,28 @@ def dataclass(
 
     if sys.version_info >= (3, 10):
         kwargs = dict(kw_only=kw_only, slots=slots)
+
+        def make_pydantic_fields_compatible(cls: type[Any]) -> None:
+            """Make sure that stdlib `dataclasses` understands `Field` kwargs like `kw_only`
+            To do that, we simply change
+              `x: int = pydantic.Field(..., kw_only=True)`
+            into
+              `x: int = dataclasses.field(default=pydantic.Field(..., kw_only=True), kw_only=True)`
+            """
+            for field_name in cls.__annotations__:
+                try:
+                    field_value = getattr(cls, field_name)
+                except AttributeError:
+                    # no default value has been set for this field
+                    continue
+                if isinstance(field_value, FieldInfo) and field_value.kw_only:
+                    setattr(cls, field_name, dataclasses.field(default=field_value, kw_only=True))
+
     else:
         kwargs = {}
+
+        def make_pydantic_fields_compatible(_) -> None:
+            return None
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
         """Create a Pydantic dataclass from a regular dataclass.
@@ -180,10 +200,12 @@ def dataclass(
             #   If the class is generic, we need to make sure the subclass also inherits from Generic
             #   with all the same parameters.
             bases = (cls,)
-            if issubclass(cls, Generic):  # type: ignore
+            if issubclass(cls, Generic):
                 generic_base = Generic[cls.__parameters__]  # type: ignore
                 bases = bases + (generic_base,)
             cls = types.new_class(cls.__name__, bases)
+
+        make_pydantic_fields_compatible(cls)
 
         cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
@@ -226,7 +248,7 @@ if (3, 8) <= sys.version_info < (3, 11):
         """
         raise TypeError("'InitVar' object is not callable")
 
-    dataclasses.InitVar.__call__ = _call_initvar  # type: ignore
+    dataclasses.InitVar.__call__ = _call_initvar
 
 
 def rebuild_dataclass(
@@ -276,3 +298,15 @@ def rebuild_dataclass(
             raise_errors=raise_errors,
             types_namespace=types_namespace,
         )
+
+
+def is_pydantic_dataclass(__cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
+    """Whether a class is a pydantic dataclass.
+
+    Args:
+        __cls: The class.
+
+    Returns:
+        `True` if the class is a pydantic dataclass, `False` otherwise.
+    """
+    return dataclasses.is_dataclass(__cls) and '__pydantic_validator__' in __cls.__dict__

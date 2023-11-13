@@ -1,7 +1,7 @@
 """Pydantic-specific warnings."""
 from __future__ import annotations as _annotations
 
-from .version import VERSION
+from .version import version_short
 
 __all__ = 'PydanticDeprecatedSince20', 'PydanticDeprecationWarning'
 
@@ -36,7 +36,7 @@ class PydanticDeprecationWarning(DeprecationWarning):
             f' to be removed in V{self.expected_removal[0]}.{self.expected_removal[1]}.'
         )
         if self.since == (2, 0):
-            message += f' See Pydantic V2 Migration Guide at https://errors.pydantic.dev/{VERSION}/migration/'
+            message += f' See Pydantic V2 Migration Guide at https://errors.pydantic.dev/{version_short()}/migration/'
         return message
 
 
@@ -45,3 +45,7 @@ class PydanticDeprecatedSince20(PydanticDeprecationWarning):
 
     def __init__(self, message: str, *args: object) -> None:
         super().__init__(message, *args, since=(2, 0), expected_removal=(3, 0))
+
+
+class GenericBeforeBaseModelWarning(Warning):
+    pass

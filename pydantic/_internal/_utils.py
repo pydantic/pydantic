@@ -79,17 +79,13 @@ def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:  # pragma: no cov
         raise  # pragma: no cover
 
 
-def is_basemodel(cls: Any) -> TypeGuard[type[BaseModel]]:
-    """We can remove this function and go back to using lenient_issubclass, but this is nice because it
-    ensures that we get proper type-checking, which lenient_issubclass doesn't provide.
-
-    Would be nice if there was a lenient_issubclass-equivalent in typing_extensions, or otherwise
-    a way to define such a function that would support proper type-checking; maybe we should bring it up
-    at the typing summit..
+def is_model_class(cls: Any) -> TypeGuard[type[BaseModel]]:
+    """Returns true if cls is a _proper_ subclass of BaseModel, and provides proper type-checking,
+    unlike raw calls to lenient_issubclass.
     """
     from ..main import BaseModel
 
-    return lenient_issubclass(cls, BaseModel)
+    return lenient_issubclass(cls, BaseModel) and cls is not BaseModel
 
 
 def is_valid_identifier(identifier: str) -> bool:
@@ -118,11 +114,6 @@ def update_not_none(mapping: dict[Any, Any], **update: Any) -> None:
     mapping.update({k: v for k, v in update.items() if v is not None})
 
 
-def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
-    """Return True if two floats are almost equal."""
-    return abs(value_1 - value_2) <= delta
-
-
 T = TypeVar('T')
 
 
@@ -133,7 +124,7 @@ def unique_list(
 ) -> list[T]:
     """Make a list unique while maintaining order.
     We update the list if another one with the same name is set
-    (e.g. root validator overridden in subclass).
+    (e.g. model validator overridden in subclass).
     """
     result: list[T] = []
     result_names: list[str] = []
@@ -261,7 +252,7 @@ class ValueItems(_repr.Representation):
     def _coerce_items(items: AbstractSetIntStr | MappingIntStrAny) -> MappingIntStrAny:
         if isinstance(items, typing.Mapping):
             pass
-        elif isinstance(items, typing.AbstractSet):  # type: ignore
+        elif isinstance(items, typing.AbstractSet):
             items = dict.fromkeys(items, ...)  # type: ignore
         else:
             class_name = getattr(items, '__class__', '???')
@@ -318,7 +309,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
     try:
         if not obj and obj_type in BUILTIN_COLLECTIONS:
             # faster way for empty collections, no need to copy its members
-            return obj if obj_type is tuple else obj.copy()  # type: ignore  # tuple doesn't have copy method
+            return obj if obj_type is tuple else obj.copy()  # tuple doesn't have copy method  # type: ignore
     except (TypeError, ValueError, RuntimeError):
         # do we really dare to catch ALL errors? Seems a bit risky
         pass
