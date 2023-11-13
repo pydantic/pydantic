@@ -28,7 +28,8 @@ def main():
     history_path = root_dir / 'HISTORY.md'
     history_content = history_path.read_text()
 
-    if f'## v{new_version}' in history_content:
+    # use ( to avoid matching beta versions
+    if f'## v{new_version} (' in history_content:
         print(f'WARNING: v{new_version} already in history, stopping')
         sys.exit(1)
 
@@ -65,7 +66,7 @@ def get_notes(new_version: str) -> str:
     response.raise_for_status()
 
     body = response.json()['body']
-    body = body.removeprefix('<!-- Release notes generated using configuration in .github/release.yml at main -->\n\n')
+    body = body.replace('<!-- Release notes generated using configuration in .github/release.yml at main -->\n\n', "")
 
     # Add one level to all headers so they match HISTORY.md, and add trailing newline
     body = re.sub(pattern='^(#+ .+?)$', repl=r'#\1\n', string=body, flags=re.MULTILINE)
