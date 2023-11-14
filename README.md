@@ -67,3 +67,7 @@ contribution to Pydantic, see
 ## Reporting a Security Vulnerability
 
 See our [security policy](https://github.com/pydantic/pydantic/security/policy).
+
+## Release History
+
+See our [Release History](https://github.com/pydantic/pydantic/blob/main/HISTORY.md) on GitHub.
