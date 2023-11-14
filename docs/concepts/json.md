@@ -8,8 +8,7 @@
 ??? api "API Documentation"
     [`pydantic.main.BaseModel.model_validate_json`][pydantic.main.BaseModel.model_validate_json]<br>
     [`pydantic.type_adapter.TypeAdapter.validate_json`][pydantic.type_adapter.TypeAdapter.validate_json]<br>
-<!-- waiting for https://github.com/pydantic/pydantic-core/pull/1070 -->
-<!--     [`pydantic_core.from_json`][pydantic_core.from_json]<br>) -->
+    [`pydantic_core.from_json`][pydantic_core.from_json]<br>
 
 Pydantic provides builtin JSON parsing, which helps achieve:
 
