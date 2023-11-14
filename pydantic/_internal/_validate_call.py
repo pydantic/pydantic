@@ -145,5 +145,12 @@ class ValidateCallWrapper:
     def __repr__(self) -> str:
         return f'ValidateCallWrapper({self.raw_function})'
 
-    def __eq__(self, other):
-        return self.raw_function == other.raw_function
+    def __eq__(self, other) -> bool:
+        return (
+            (self.raw_function == other.raw_function)
+            and (self._config == other._config)
+            and (self._validate_return == other._validate_return)
+        )
+
+    def __hash__(self):
+        return hash(self.raw_function)
