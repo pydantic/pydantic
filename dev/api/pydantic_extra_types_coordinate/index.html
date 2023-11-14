@@ -2161,7 +2161,40 @@
   <a href="#pydantic_extra_types.coordinate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic_extra_types.coordinate
+        coordinate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.coordinate.Latitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Latitude
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.coordinate.Longitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Longitude
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.coordinate.Coordinate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coordinate
       
     </span>
   </a>
@@ -2836,7 +2869,40 @@
   <a href="#pydantic_extra_types.coordinate" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic_extra_types.coordinate
+        coordinate
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.coordinate.Latitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Latitude
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.coordinate.Longitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Longitude
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.coordinate.Coordinate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Coordinate
       
     </span>
   </a>
@@ -2868,8 +2934,13 @@
 <div class="doc doc-object doc-module">
 
 
+
 <a id="pydantic_extra_types.coordinate"></a>
   <div class="doc doc-contents first">
+  
+      <p>The <code>pydantic_extra_types.coordinate</code> module provides the <a class="autorefs autorefs-internal" href="#pydantic_extra_types.coordinate.Latitude"><code>Latitude</code></a>,
+<a class="autorefs autorefs-internal" href="#pydantic_extra_types.coordinate.Longitude"><code>Longitude</code></a>, and
+<a class="autorefs autorefs-internal" href="#pydantic_extra_types.coordinate.Coordinate"><code>Coordinate</code></a> data types.</p>
 
   
 
@@ -2881,6 +2952,167 @@
 
 
 
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h2 id="pydantic_extra_types.coordinate.Latitude" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">Latitude</span>
+
+
+<a href="#pydantic_extra_types.coordinate.Latitude" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code>float</code></p>
+
+  
+      <p>Latitude value should be between -90 and 90, inclusive.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic_extra_types.coordinate</span> <span class="kn">import</span> <span class="n">Latitude</span>
+
+<span class="k">class</span> <span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">latitude</span><span class="p">:</span> <span class="n">Latitude</span>
+
+<span class="n">location</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="mf">41.40338</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+<span class="c1">#&gt; latitude=41.40338</span>
+</code></pre></div>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h2 id="pydantic_extra_types.coordinate.Longitude" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">Longitude</span>
+
+
+<a href="#pydantic_extra_types.coordinate.Longitude" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code>float</code></p>
+
+  
+      <p>Longitude value should be between -180 and 180, inclusive.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_extra_types.coordinate</span> <span class="kn">import</span> <span class="n">Longitude</span>
+
+<span class="k">class</span> <span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">longitude</span><span class="p">:</span> <span class="n">Longitude</span>
+
+<span class="n">location</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">longitude</span><span class="o">=</span><span class="mf">2.17403</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">location</span><span class="p">)</span>
+<span class="c1">#&gt; longitude=2.17403</span>
+</code></pre></div>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+
+<h2 id="pydantic_extra_types.coordinate.Coordinate" class="doc doc-heading">
+          <span class="doc doc-object-name doc-class-name">Coordinate</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+<a href="#pydantic_extra_types.coordinate.Coordinate" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
+
+  
+      <p>Coordinate parses Latitude and Longitude.</p>
+<p>You can use the <code>Coordinate</code> data type for storing coordinates. Coordinates can be
+defined using one of the following formats:</p>
+<ol>
+<li>Tuple: <code>(Latitude, Longitude)</code>. For example: <code>(41.40338, 2.17403)</code>.</li>
+<li><code>Coordinate</code> instance: <code>Coordinate(latitude=Latitude, longitude=Longitude)</code>.</li>
+</ol>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_extra_types.coordinate</span> <span class="kn">import</span> <span class="n">Coordinate</span>
+
+<span class="k">class</span> <span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">coordinate</span><span class="p">:</span> <span class="n">Coordinate</span>
+
+<span class="n">location</span> <span class="o">=</span> <span class="n">Location</span><span class="p">(</span><span class="n">coordinate</span><span class="o">=</span><span class="p">(</span><span class="mf">41.40338</span><span class="p">,</span> <span class="mf">2.17403</span><span class="p">))</span>
+<span class="c1">#&gt; coordinate=Coordinate(latitude=41.40338, longitude=2.17403)</span>
+</code></pre></div>
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 
 

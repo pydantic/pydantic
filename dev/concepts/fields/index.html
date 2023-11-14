@@ -3279,7 +3279,7 @@ and <code>serialization_alias</code> parameters, which will apply only in their 
 <li>The alias <code>'username'</code> is used for instance creation and validation.</li>
 <li>
 <p>We are using <code>model_dump</code> to convert the model into a serializable format.</p>
-<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_dump"><code>model_dump</code></a> in the API reference.</p>
+<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a> in the API reference.</p>
 <p>Note that the <code>by_alias</code> keyword argument defaults to <code>False</code>, and must be specified explicitly to dump
 models using the field (serialization) aliases.</p>
 <p>When <code>by_alias=True</code>, the alias <code>'username'</code> is also used during serialization.</p>
@@ -3435,7 +3435,7 @@ decorator, such as Pyright.</p>
 <ol>
 <li>
 <p>We are using <code>model_validate</code> to validate a dictionary using the field aliases.</p>
-<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate</code></a> in the API reference.</p>
+<p>You can see more details about <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> in the API reference.</p>
 </li>
 </ol>
 <p>In the <code>'first_name'</code> field, we are using the alias <code>'names'</code> and the index <code>0</code> to specify the path to the first name.

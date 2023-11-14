@@ -3178,7 +3178,7 @@ to refer to both of these situations, even though it does not always imply conve
 <h2 id="modelmodel_dump"><code>model.model_dump(...)</code><a class="headerlink" href="#modelmodel_dump" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_dump"><code>pydantic.main.BaseModel.model_dump</code></a><br></p>
+<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump"><code>pydantic.main.BaseModel.model_dump</code></a><br></p>
 </details>
 <p>This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.</p>
 <div class="admonition note">
@@ -3257,11 +3257,11 @@ done recursively.</p>
 <h2 id="modelmodel_dump_json"><code>model.model_dump_json(...)</code><a class="headerlink" href="#modelmodel_dump_json" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_dump_json"><code>pydantic.main.BaseModel.model_dump_json</code></a><br></p>
+<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>pydantic.main.BaseModel.model_dump_json</code></a><br></p>
 </details>
 <p>The <code>.model_dump_json()</code> method serializes a model directly to a JSON-encoded string
 that is equivalent to the result produced by <a href="#modelmodel_dump"><code>.model_dump()</code></a>.</p>
-<p>See <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_dump_json">arguments</a> for more information.</p>
+<p>See <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json">arguments</a> for more information.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Pydantic can serialize many commonly used types to JSON that would otherwise be incompatible with a simple
@@ -3837,7 +3837,7 @@ over the <code>exclude_unset</code>, <code>exclude_none</code>, and <code>exclud
 <h2 id="model_copy"><code>model_copy(...)</code><a class="headerlink" href="#model_copy" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_copy"><code>pydantic.main.BaseModel.model_copy</code></a><br></p>
+<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_copy"><code>pydantic.main.BaseModel.model_copy</code></a><br></p>
 </details>
 <p><code>model_copy()</code> allows models to be duplicated (with optional updates), which is particularly useful when working with frozen models.</p>
 <p>Example:</p>

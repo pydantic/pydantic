@@ -2895,7 +2895,7 @@
 <h2 id="json-parsing">Json Parsing<a class="headerlink" href="#json-parsing" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate_json"><code>pydantic.main.BaseModel.model_validate_json</code></a><br>
+<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>pydantic.main.BaseModel.model_validate_json</code></a><br>
 <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.validate_json"><code>pydantic.type_adapter.TypeAdapter.validate_json</code></a><br></p>
 </details>
 <!-- waiting for https://github.com/pydantic/pydantic-core/pull/1070 -->
@@ -2907,7 +2907,7 @@
 <li>Support for custom errors</li>
 <li>Support for <code>strict</code> specifications</li>
 </ul>
-<p>Here's an example of Pydantic's builtin JSON parsing via the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate_json"><code>model_validate_json</code></a> method, showcasing the support for <code>strict</code> specifications while parsing JSON data that doesn't match the model's type annotations:</p>
+<p>Here's an example of Pydantic's builtin JSON parsing via the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate_json"><code>model_validate_json</code></a> method, showcasing the support for <code>strict</code> specifications while parsing JSON data that doesn't match the model's type annotations:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2942,7 +2942,7 @@
 </code></pre></div>
 <ol>
 <li>JSON has no <code>date</code> or tuple types, but Pydantic knows that so allows strings and arrays as inputs respectively when parsing JSON directly.</li>
-<li>If you pass the same values to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate</code></a> method, Pydantic will raise a validation error because the <code>strict</code> configuration is enabled.</li>
+<li>If you pass the same values to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> method, Pydantic will raise a validation error because the <code>strict</code> configuration is enabled.</li>
 </ol>
 </div>
 <div class="tabbed-block">
@@ -2976,7 +2976,7 @@
 </code></pre></div>
 <ol>
 <li>JSON has no <code>date</code> or tuple types, but Pydantic knows that so allows strings and arrays as inputs respectively when parsing JSON directly.</li>
-<li>If you pass the same values to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>model_validate</code></a> method, Pydantic will raise a validation error because the <code>strict</code> configuration is enabled.</li>
+<li>If you pass the same values to the <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>model_validate</code></a> method, Pydantic will raise a validation error because the <code>strict</code> configuration is enabled.</li>
 </ol>
 </div>
 </div>
@@ -2990,7 +2990,7 @@ in the original JSON input which contained the invalid value.</p>
 <h2 id="json-serialization">JSON Serialization<a class="headerlink" href="#json-serialization" title="Permanent link">&para;</a></h2>
 <details class="api">
 <summary>API Documentation</summary>
-<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_dump_json"><code>pydantic.main.BaseModel.model_dump_json</code></a><br>
+<p><a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_dump_json"><code>pydantic.main.BaseModel.model_dump_json</code></a><br>
 <a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter.dump_json"><code>pydantic.type_adapter.TypeAdapter.dump_json</code></a><br>
 <a class="autorefs autorefs-internal" href="../../api/pydantic_core/#pydantic_core.to_json"><code>pydantic_core.to_json</code></a><br></p>
 </details>

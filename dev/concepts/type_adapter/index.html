@@ -2910,7 +2910,7 @@ specifying fields of a <code>BaseModel</code>, etc.</p>
 <h2 id="parsing-data-into-a-specified-type">Parsing data into a specified type<a class="headerlink" href="#parsing-data-into-a-specified-type" title="Permanent link">&para;</a></h2>
 <p><a class="autorefs autorefs-internal" href="../../api/type_adapter/#pydantic.type_adapter.TypeAdapter"><code>TypeAdapter</code></a> can be used to apply the parsing logic to populate Pydantic models
 in a more ad-hoc way. This function behaves similarly to
-<a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.main.BaseModel.model_validate"><code>BaseModel.model_validate</code></a>,
+<a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel.model_validate"><code>BaseModel.model_validate</code></a>,
 but works with arbitrary Pydantic-compatible types.</p>
 <p>This is especially useful when you want to parse results into a type that is not a direct subclass of
 <a class="autorefs autorefs-internal" href="../../api/base_model/#pydantic.BaseModel"><code>BaseModel</code></a>. For example:</p>

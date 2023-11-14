@@ -1507,7 +1507,7 @@
   <a href="#pydantic.validate_call_decorator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.validate_call_decorator
+        validate_call_decorator
       
     </span>
   </a>
@@ -2847,7 +2847,7 @@
   <a href="#pydantic.validate_call_decorator" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.validate_call_decorator
+        validate_call_decorator
       
     </span>
   </a>
@@ -2890,6 +2890,7 @@
 <div class="doc doc-object doc-module">
 
 
+
 <a id="pydantic.validate_call_decorator"></a>
   <div class="doc doc-contents first">
   
@@ -2907,16 +2908,18 @@
 
 
 
+
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.validate_call_decorator.validate_call" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">validate_call</span>
+          <span class="doc doc-object-name doc-function-name">validate_call</span>
 
 
 <a href="#pydantic.validate_call_decorator.validate_call" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">validate_call</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_call</span><span class="p">(</span>
     <span class="n">__func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">validate_return</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -2929,6 +2932,8 @@
 </div>
 <p>Returns a decorated wrapper around the function that validates the arguments and, optionally, the return value.</p>
 <p>Usage may be either as a plain decorator <code>@validate_call</code> or with arguments <code>@validate_call(...)</code>.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -2986,6 +2991,8 @@
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3008,9 +3015,9 @@
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/validate_call_decorator.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">28</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/validate_call_decorator.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">28</span>
 <span class="normal">29</span>
 <span class="normal">30</span>
 <span class="normal">31</span>
@@ -3072,7 +3079,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">validate</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>

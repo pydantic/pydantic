@@ -1819,7 +1819,7 @@
   <a href="#pydantic.annotated_handlers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.annotated_handlers
+        annotated_handlers
       
     </span>
   </a>
@@ -2914,7 +2914,7 @@
   <a href="#pydantic.annotated_handlers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.annotated_handlers
+        annotated_handlers
       
     </span>
   </a>
@@ -3024,6 +3024,7 @@
 <div class="doc doc-object doc-module">
 
 
+
 <a id="pydantic.annotated_handlers"></a>
   <div class="doc doc-contents first">
   
@@ -3044,8 +3045,9 @@
 
 
 
+
 <h2 id="pydantic.annotated_handlers.GetJsonSchemaHandler" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">GetJsonSchemaHandler</span>
+          <span class="doc doc-object-name doc-class-name">GetJsonSchemaHandler</span>
 
 
 <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
@@ -3055,6 +3057,8 @@
 
   
       <p>Handler to call into the next JSON schema generation function.</p>
+
+
 
   <p><strong>Attributes:</strong></p>
   <table>
@@ -3081,10 +3085,10 @@
   </table>
 
 
-
   
 
   <div class="doc doc-children">
+
 
 
 
@@ -3098,12 +3102,13 @@
 
 
 
+
 <h3 id="pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
+          <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
 
 
 <a href="#pydantic.annotated_handlers.GetJsonSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">__maybe_ref_json_schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">__maybe_ref_json_schema</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3111,6 +3116,8 @@
       <p>Get the real schema for a <code>{"$ref": ...}</code> schema.
 If the schema given is not a <code>$ref</code> schema, it will be returned as is.
 This means you don't have to check before calling this function.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3140,6 +3147,8 @@ This means you don't have to check before calling this function.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Raises:</strong></p>
   <table>
     <thead>
@@ -3161,6 +3170,8 @@ This means you don't have to check before calling this function.</p>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Returns:</strong></p>
   <table>
@@ -3184,9 +3195,9 @@ This means you don't have to check before calling this function.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">47</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">47</span>
 <span class="normal">48</span>
 <span class="normal">49</span>
 <span class="normal">50</span>
@@ -3216,7 +3227,7 @@ This means you don't have to check before calling this function.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
@@ -3233,8 +3244,9 @@ This means you don't have to check before calling this function.</p>
 
 
 
+
 <h2 id="pydantic.annotated_handlers.GetCoreSchemaHandler" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">GetCoreSchemaHandler</span>
+          <span class="doc doc-object-name doc-class-name">GetCoreSchemaHandler</span>
 
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
@@ -3244,7 +3256,6 @@ This means you don't have to check before calling this function.</p>
 
   
       <p>Handler to call into the next CoreSchema schema generation function.</p>
-
 
 
   
@@ -3261,8 +3272,9 @@ This means you don't have to check before calling this function.</p>
 
 
 
+
 <h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="doc doc-heading">
-        <span class="doc doc-object-name doc-attribute-name">field_name</span>
+          <span class="doc doc-object-name doc-attribute-name">field_name</span>
 
   
   <span class="doc doc-labels">
@@ -3270,7 +3282,7 @@ This means you don't have to check before calling this function.</p>
   </span>
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.field_name" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_name</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3282,16 +3294,18 @@ This means you don't have to check before calling this function.</p>
 
 
 
+
 <div class="doc doc-object doc-function">
 
 
 
+
 <h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">generate_schema</span>
+          <span class="doc doc-object-name doc-function-name">generate_schema</span>
 
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.generate_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">generate_schema</span><span class="p">(</span><span class="n">__source_type</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">generate_schema</span><span class="p">(</span><span class="n">__source_type</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3301,6 +3315,8 @@ Use this function if e.g. you are handling schema generation for a sequence
 and want to generate a schema for its items.
 Otherwise, you may end up doing something like applying a <code>min_length</code> constraint
 that was intended for the sequence itself to its items!</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3330,6 +3346,8 @@ that was intended for the sequence itself to its items!</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3341,7 +3359,7 @@ that was intended for the sequence itself to its items!</p>
     <tbody>
         <tr>
 <td><code>CoreSchema</code></td>          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
+                <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3352,9 +3370,9 @@ that was intended for the sequence itself to its items!</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
 <span class="normal">83</span>
 <span class="normal">84</span>
 <span class="normal">85</span>
@@ -3382,21 +3400,23 @@ that was intended for the sequence itself to its items!</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h3 id="pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
+          <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
 
 
 <a href="#pydantic.annotated_handlers.GetCoreSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">__maybe_ref_schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">__maybe_ref_schema</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3404,6 +3424,8 @@ that was intended for the sequence itself to its items!</p>
       <p>Get the real schema for a <code>definition-ref</code> schema.
 If the schema given is not a <code>definition-ref</code> schema, it will be returned as is.
 This means you don't have to check before calling this function.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3419,7 +3441,7 @@ This means you don't have to check before calling this function.</p>
         <tr>
           <td><code>__maybe_ref_schema</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
+                <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3432,6 +3454,8 @@ This means you don't have to check before calling this function.</p>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Raises:</strong></p>
   <table>
@@ -3455,6 +3479,8 @@ This means you don't have to check before calling this function.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3466,7 +3492,7 @@ This means you don't have to check before calling this function.</p>
     <tbody>
         <tr>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
+                <code><span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3477,9 +3503,9 @@ This means you don't have to check before calling this function.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 97</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/annotated_handlers.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 97</span>
 <span class="normal"> 98</span>
 <span class="normal"> 99</span>
 <span class="normal">100</span>
@@ -3509,7 +3535,7 @@ This means you don't have to check before calling this function.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>

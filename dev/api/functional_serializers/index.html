@@ -1663,7 +1663,7 @@
   <a href="#pydantic.functional_serializers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.functional_serializers
+        functional_serializers
       
     </span>
   </a>
@@ -2880,7 +2880,7 @@
   <a href="#pydantic.functional_serializers" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.functional_serializers
+        functional_serializers
       
     </span>
   </a>
@@ -2956,6 +2956,7 @@
 <div class="doc doc-object doc-module">
 
 
+
 <a id="pydantic.functional_serializers"></a>
   <div class="doc doc-contents first">
   
@@ -2976,8 +2977,9 @@
 
 
 
+
 <h2 id="pydantic.functional_serializers.PlainSerializer" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">PlainSerializer</span>
+          <span class="doc doc-object-name doc-class-name">PlainSerializer</span>
 
   
   <span class="doc doc-labels">
@@ -2992,6 +2994,8 @@
   
       <p>Plain serializers use a function to modify the output of serialization.</p>
 
+
+
   <p><strong>Attributes:</strong></p>
   <table>
     <thead>
@@ -3005,7 +3009,7 @@
         <tr>
           <td><code>func</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.SerializerFunction">SerializerFunction</span></code>
+                <code><span title="pydantic_core.core_schema.SerializerFunction">SerializerFunction</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3040,7 +3044,6 @@
   </table>
 
 
-
   
 
   <div class="doc doc-children">
@@ -3065,8 +3068,9 @@
 
 
 
+
 <h2 id="pydantic.functional_serializers.WrapSerializer" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">WrapSerializer</span>
+          <span class="doc doc-object-name doc-class-name">WrapSerializer</span>
 
   
   <span class="doc doc-labels">
@@ -3082,6 +3086,8 @@
       <p>Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization
 logic, and can modify the resulting value before returning it as the final output of serialization.</p>
 
+
+
   <p><strong>Attributes:</strong></p>
   <table>
     <thead>
@@ -3095,7 +3101,7 @@ logic, and can modify the resulting value before returning it as the final outpu
         <tr>
           <td><code>func</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.WrapSerializerFunction">WrapSerializerFunction</span></code>
+                <code><span title="pydantic_core.core_schema.WrapSerializerFunction">WrapSerializerFunction</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3130,7 +3136,6 @@ logic, and can modify the resulting value before returning it as the final outpu
   </table>
 
 
-
   
 
   <div class="doc doc-children">
@@ -3152,16 +3157,18 @@ logic, and can modify the resulting value before returning it as the final outpu
 </div>
 
 
+
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.functional_serializers.field_serializer" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">field_serializer</span>
+          <span class="doc doc-object-name doc-function-name">field_serializer</span>
 
 
 <a href="#pydantic.functional_serializers.field_serializer" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">field_serializer</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_serializer</span><span class="p">(</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">,</span>
     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
     <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">,</span>
@@ -3181,6 +3188,8 @@ logic, and can modify the resulting value before returning it as the final outpu
 <li><code>(value: Any, info: SerializationInfo)</code></li>
 <li><code>(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)</code></li>
 </ul>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3237,7 +3246,7 @@ logic, and can modify the resulting value before returning it as the final outpu
             </div>
           </td>
           <td>
-                <code>PydanticUndefined</code>
+                <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
           </td>
         </tr>
         <tr>
@@ -3271,6 +3280,8 @@ logic, and can modify the resulting value before returning it as the final outpu
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3293,9 +3304,9 @@ logic, and can modify the resulting value before returning it as the final outpu
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">145</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">145</span>
 <span class="normal">146</span>
 <span class="normal">147</span>
 <span class="normal">148</span>
@@ -3387,21 +3398,23 @@ logic, and can modify the resulting value before returning it as the final outpu
 
     <span class="k">return</span> <span class="n">dec</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.functional_serializers.model_serializer" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">model_serializer</span>
+          <span class="doc doc-object-name doc-function-name">model_serializer</span>
 
 
 <a href="#pydantic.functional_serializers.model_serializer" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">model_serializer</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_serializer</span><span class="p">(</span>
     <span class="n">__f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
@@ -3414,6 +3427,8 @@ logic, and can modify the resulting value before returning it as the final outpu
   
       <p>Decorator that enables custom model serialization.</p>
 <p>See <a href="../../concepts/serialization/#custom-serializers">Custom serializers</a> for more information.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3484,11 +3499,13 @@ logic, and can modify the resulting value before returning it as the final outpu
             </div>
           </td>
           <td>
-                <code>PydanticUndefined</code>
+                <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
           </td>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Returns:</strong></p>
   <table>
@@ -3512,9 +3529,9 @@ logic, and can modify the resulting value before returning it as the final outpu
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span>
 <span class="normal">214</span>
@@ -3580,7 +3597,7 @@ logic, and can modify the resulting value before returning it as the final outpu
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dec</span><span class="p">(</span><span class="n">__f</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>

@@ -2135,7 +2135,7 @@
   <a href="#pydantic_extra_types.routing_number" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic_extra_types.routing_number
+        routing_number
       
     </span>
   </a>
@@ -2150,23 +2150,6 @@
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="ABARoutingNumber">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic_extra_types.routing_number.ABARoutingNumber.validate_routing_number" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_routing_number()
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2864,7 +2847,7 @@
   <a href="#pydantic_extra_types.routing_number" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic_extra_types.routing_number
+        routing_number
       
     </span>
   </a>
@@ -2879,23 +2862,6 @@
       
     </span>
   </a>
-  
-    <nav class="md-nav" aria-label="ABARoutingNumber">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic_extra_types.routing_number.ABARoutingNumber.validate_routing_number" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        validate_routing_number()
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2924,8 +2890,12 @@
 <div class="doc doc-object doc-module">
 
 
+
 <a id="pydantic_extra_types.routing_number"></a>
   <div class="doc doc-contents first">
+  
+      <p>The <code>pydantic_extra_types.routing_number</code> module provides the
+<a class="autorefs autorefs-internal" href="#pydantic_extra_types.routing_number.ABARoutingNumber"><code>ABARoutingNumber</code></a> data type.</p>
 
   
 
@@ -2942,29 +2912,45 @@
 
 
 
+
 <h2 id="pydantic_extra_types.routing_number.ABARoutingNumber" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">ABARoutingNumber</span>
+          <span class="doc doc-object-name doc-class-name">ABARoutingNumber</span>
 
 
 <a href="#pydantic_extra_types.routing_number.ABARoutingNumber" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">ABARoutingNumber</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">ABARoutingNumber</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code>str</code></p>
+          <p class="doc doc-class-bases">
+            Bases: <code>str</code></p>
 
+  
+      <p>The <code>ABARoutingNumber</code> data type is a string of 9 digits representing an ABA routing transit number.</p>
+<p>The algorithm used to validate the routing number is described in the
+<a href="https://en.wikipedia.org/wiki/ABA_routing_transit_number#Check_digit">ABA routing transit number</a>
+Wikipedia article.</p>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
+<span class="kn">from</span> <span class="nn">pydantic_extra_types.routing_number</span> <span class="kn">import</span> <span class="n">ABARoutingNumber</span>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic_extra_types/routing_number.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">12</span>
-<span class="normal">13</span>
-<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">validate_digits</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">_routing_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_routing_number</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">BankAccount</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">routing_number</span><span class="p">:</span> <span class="n">ABARoutingNumber</span>
+
+<span class="n">account</span> <span class="o">=</span> <span class="n">BankAccount</span><span class="p">(</span><span class="n">routing_number</span><span class="o">=</span><span class="s1">&#39;122105155&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">account</span><span class="p">)</span>
+<span class="c1">#&gt; routing_number=&#39;122105155&#39;</span>
+</code></pre></div>
+
+                <details class="quote">
+                  <summary>Source code in <code>pydantic_extra_types/routing_number.py</code></summary>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_validate_digits</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_routing_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_routing_number</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
+                </details>
 
   
 
@@ -2977,65 +2963,6 @@
 
 
 
-
-<div class="doc doc-object doc-function">
-
-
-
-<h3 id="pydantic_extra_types.routing_number.ABARoutingNumber.validate_routing_number" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">validate_routing_number</span>
-
-  
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#pydantic_extra_types.routing_number.ABARoutingNumber.validate_routing_number" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">validate_routing_number</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Check digit algorithm for ABA routing transit number.
-https://en.wikipedia.org/wiki/ABA_routing_transit_number#Check_digit
-https://www.routingnumber.com/</p>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/routing_number.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">validate_routing_number</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Check digit algorithm for ABA routing transit number.</span>
-<span class="sd">    https://en.wikipedia.org/wiki/ABA_routing_transit_number#Check_digit</span>
-<span class="sd">    https://www.routingnumber.com/</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">checksum</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">[</span><span class="n">routing_number</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">6</span><span class="p">]])))</span>
-        <span class="o">+</span> <span class="mi">7</span> <span class="o">*</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">[</span><span class="n">routing_number</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">7</span><span class="p">]])))</span>
-        <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">[</span><span class="n">routing_number</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">8</span><span class="p">]]))</span>
-    <span class="p">)</span>
-    <span class="k">if</span> <span class="n">checksum</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;aba_routing_number&#39;</span><span class="p">,</span> <span class="s1">&#39;Incorrect ABA routing transit number&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">routing_number</span>
-</code></pre></div></td></tr></table></div>
-      </details>
-  </div>
-
-</div>
 
 
 

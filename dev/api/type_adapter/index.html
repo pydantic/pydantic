@@ -1481,7 +1481,7 @@
   <a href="#pydantic.type_adapter.TypeAdapter" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.type_adapter.TypeAdapter
+        TypeAdapter
       
     </span>
   </a>
@@ -2924,7 +2924,7 @@
   <a href="#pydantic.type_adapter.TypeAdapter" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.type_adapter.TypeAdapter
+        TypeAdapter
       
     </span>
   </a>
@@ -3044,16 +3044,19 @@
 <div class="doc doc-object doc-class">
 
 
+
 <a id="pydantic.type_adapter.TypeAdapter"></a>
   <div class="doc doc-contents first">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="typing.Generic">Generic</span>[<span title="pydantic.type_adapter.T">T</span>]</code></p>
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.Generic">Generic</span>[<span title="pydantic.type_adapter.T">T</span>]</code></p>
 
   
       <p>Type adapters provide a flexible way to perform validation and serialization based on a Python type.</p>
 <p>A <code>TypeAdapter</code> instance exposes some of the functionality from <code>BaseModel</code> instance methods
 for types that do not have such methods (such as dataclasses, primitive types, and more).</p>
 <p>Note that <code>TypeAdapter</code> is not an actual type, so you cannot use it in type annotations.</p>
+
+
 
   <p><strong>Attributes:</strong></p>
   <table>
@@ -3098,8 +3101,9 @@ for types that do not have such methods (such as dataclasses, primitive types, a
         </tr>
     </tbody>
   </table>
-
   
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3183,6 +3187,8 @@ It may be deprecated in a minor version, so we only recommend using it if you're
 comfortable with potential change in behavior / support.</p>
 </div>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3205,9 +3211,9 @@ comfortable with potential change in behavior / support.</p>
     </tbody>
   </table>
 
-          <details class="quote">
-            <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">147</span>
+                <details class="quote">
+                  <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">147</span>
 <span class="normal">148</span>
 <span class="normal">149</span>
 <span class="normal">150</span>
@@ -3343,7 +3349,7 @@ comfortable with potential change in behavior / support.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">validator</span> <span class="o">=</span> <span class="n">validator</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span> <span class="o">=</span> <span class="n">serializer</span>
 </code></pre></div></td></tr></table></div>
-          </details>
+                </details>
 
   
 
@@ -3357,16 +3363,18 @@ comfortable with potential change in behavior / support.</p>
 
 
 
+
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.type_adapter.TypeAdapter.validate_python" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">validate_python</span>
+          <span class="doc doc-object-name doc-function-name">validate_python</span>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.validate_python" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">validate_python</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_python</span><span class="p">(</span>
     <span class="n">__object</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -3378,6 +3386,8 @@ comfortable with potential change in behavior / support.</p>
   <div class="doc doc-contents ">
   
       <p>Validate a Python object against the model.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3454,6 +3464,8 @@ comfortable with potential change in behavior / support.</p>
 argument is not supported.</p>
 </div>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3476,9 +3488,9 @@ argument is not supported.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">216</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">216</span>
 <span class="normal">217</span>
 <span class="normal">218</span>
 <span class="normal">219</span>
@@ -3526,21 +3538,23 @@ argument is not supported.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">__object</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span> <span class="n">from_attributes</span><span class="o">=</span><span class="n">from_attributes</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.type_adapter.TypeAdapter.validate_json" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">validate_json</span>
+          <span class="doc doc-object-name doc-function-name">validate_json</span>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.validate_json" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">validate_json</span><span class="p">(</span><span class="n">__data</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_json</span><span class="p">(</span><span class="n">__data</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3550,6 +3564,8 @@ argument is not supported.</p>
 <p><a href="../../concepts/json/#json-parsing">Json Parsing</a></p>
 </div>
 <p>Validate a JSON string or bytes against the model.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3607,6 +3623,8 @@ argument is not supported.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3629,9 +3647,9 @@ argument is not supported.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">241</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">241</span>
 <span class="normal">242</span>
 <span class="normal">243</span>
 <span class="normal">244</span>
@@ -3663,26 +3681,30 @@ argument is not supported.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validator</span><span class="o">.</span><span class="n">validate_json</span><span class="p">(</span><span class="n">__data</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.type_adapter.TypeAdapter.validate_strings" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">validate_strings</span>
+          <span class="doc doc-object-name doc-function-name">validate_strings</span>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.validate_strings" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">validate_strings</span><span class="p">(</span><span class="n">__obj</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">validate_strings</span><span class="p">(</span><span class="n">__obj</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Validate object contains string data against the model.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3740,6 +3762,8 @@ argument is not supported.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3762,9 +3786,9 @@ argument is not supported.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">258</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">258</span>
 <span class="normal">259</span>
 <span class="normal">260</span>
 <span class="normal">261</span>
@@ -3788,26 +3812,30 @@ argument is not supported.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validator</span><span class="o">.</span><span class="n">validate_strings</span><span class="p">(</span><span class="n">__obj</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.type_adapter.TypeAdapter.get_default_value" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">get_default_value</span>
+          <span class="doc doc-object-name doc-function-name">get_default_value</span>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.get_default_value" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">get_default_value</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">get_default_value</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Get the default value for the wrapped type.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3851,6 +3879,8 @@ argument is not supported.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3873,9 +3903,9 @@ argument is not supported.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">271</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">271</span>
 <span class="normal">272</span>
 <span class="normal">273</span>
 <span class="normal">274</span>
@@ -3897,21 +3927,23 @@ argument is not supported.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validator</span><span class="o">.</span><span class="n">get_default_value</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.type_adapter.TypeAdapter.dump_python" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">dump_python</span>
+          <span class="doc doc-object-name doc-function-name">dump_python</span>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.dump_python" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">dump_python</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dump_python</span><span class="p">(</span>
     <span class="n">__instance</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
@@ -3929,6 +3961,8 @@ argument is not supported.</p>
   <div class="doc doc-contents ">
   
       <p>Dump an instance of the adapted type to a Python object.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4084,6 +4118,8 @@ argument is not supported.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -4106,9 +4142,9 @@ argument is not supported.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">283</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">283</span>
 <span class="normal">284</span>
 <span class="normal">285</span>
 <span class="normal">286</span>
@@ -4194,21 +4230,23 @@ argument is not supported.</p>
         <span class="n">warnings</span><span class="o">=</span><span class="n">warnings</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.type_adapter.TypeAdapter.dump_json" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">dump_json</span>
+          <span class="doc doc-object-name doc-function-name">dump_json</span>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.dump_json" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">dump_json</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dump_json</span><span class="p">(</span>
     <span class="n">__instance</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -4230,6 +4268,8 @@ argument is not supported.</p>
 <p><a href="../../concepts/json/#json-serialization">JSON Serialization</a></p>
 </div>
 <p>Serialize an instance of the adapted type to JSON.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4385,6 +4425,8 @@ argument is not supported.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -4407,9 +4449,9 @@ argument is not supported.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">327</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">327</span>
 <span class="normal">328</span>
 <span class="normal">329</span>
 <span class="normal">330</span>
@@ -4499,21 +4541,23 @@ argument is not supported.</p>
         <span class="n">warnings</span><span class="o">=</span><span class="n">warnings</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.type_adapter.TypeAdapter.json_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">json_schema</span>
+          <span class="doc doc-object-name doc-function-name">json_schema</span>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter.json_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">json_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
@@ -4525,6 +4569,8 @@ argument is not supported.</p>
   <div class="doc doc-contents ">
   
       <p>Generate a JSON schema for the adapted type.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4562,7 +4608,7 @@ argument is not supported.</p>
             </div>
           </td>
           <td>
-                <code>DEFAULT_REF_TEMPLATE</code>
+                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.DEFAULT_REF_TEMPLATE" href="../json_schema/#pydantic.json_schema.DEFAULT_REF_TEMPLATE">DEFAULT_REF_TEMPLATE</a></code>
           </td>
         </tr>
         <tr>
@@ -4576,7 +4622,7 @@ argument is not supported.</p>
             </div>
           </td>
           <td>
-                <code>GenerateJsonSchema</code>
+                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></code>
           </td>
         </tr>
         <tr>
@@ -4595,6 +4641,8 @@ argument is not supported.</p>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Returns:</strong></p>
   <table>
@@ -4618,9 +4666,9 @@ argument is not supported.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">373</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">373</span>
 <span class="normal">374</span>
 <span class="normal">375</span>
 <span class="normal">376</span>
@@ -4662,17 +4710,19 @@ argument is not supported.</p>
     <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.type_adapter.TypeAdapter.json_schemas" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">json_schemas</span>
+          <span class="doc doc-object-name doc-function-name">json_schemas</span>
 
   
   <span class="doc doc-labels">
@@ -4680,7 +4730,7 @@ argument is not supported.</p>
   </span>
 
 <a href="#pydantic.type_adapter.TypeAdapter.json_schemas" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">json_schemas</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_schemas</span><span class="p">(</span>
     <span class="n">__inputs</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -4694,6 +4744,8 @@ argument is not supported.</p>
   <div class="doc doc-contents ">
   
       <p>Generate a JSON schema including definitions from multiple type adapters.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4775,7 +4827,7 @@ definitions in the output JSON schema.</p>
             </div>
           </td>
           <td>
-                <code>DEFAULT_REF_TEMPLATE</code>
+                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.DEFAULT_REF_TEMPLATE" href="../json_schema/#pydantic.json_schema.DEFAULT_REF_TEMPLATE">DEFAULT_REF_TEMPLATE</a></code>
           </td>
         </tr>
         <tr>
@@ -4789,11 +4841,13 @@ definitions in the output JSON schema.</p>
             </div>
           </td>
           <td>
-                <code>GenerateJsonSchema</code>
+                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a></code>
           </td>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Returns:</strong></p>
   <table>
@@ -4824,9 +4878,9 @@ definitions in the output JSON schema.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">395</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">395</span>
 <span class="normal">396</span>
 <span class="normal">397</span>
 <span class="normal">398</span>
@@ -4920,7 +4974,7 @@ definitions in the output JSON schema.</p>
 
     <span class="k">return</span> <span class="n">json_schemas_map</span><span class="p">,</span> <span class="n">json_schema</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>

@@ -4252,9 +4252,9 @@ You can use a custom serializer to override this behavior if desired. For exampl
 <span class="c1">#&gt; {&quot;x&quot;:&quot;1.1&quot;,&quot;y&quot;:2.1}</span>
 </code></pre></div>
 <ol>
-<li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.main.BaseModel.model_dump"><code>model_dump</code></a>, both <code>x</code> and <code>y</code> remain instances of the <code>Decimal</code> type</li>
-<li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.main.BaseModel.model_dump"><code>model_dump</code></a> with <code>mode='json'</code>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
-<li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.main.BaseModel.model_dump_json"><code>model_dump_json</code></a>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
+<li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a>, both <code>x</code> and <code>y</code> remain instances of the <code>Decimal</code> type</li>
+<li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.BaseModel.model_dump"><code>model_dump</code></a> with <code>mode='json'</code>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
+<li>Using <a class="autorefs autorefs-internal" href="../base_model/#pydantic.BaseModel.model_dump_json"><code>model_dump_json</code></a>, <code>x</code> is serialized as a <code>string</code>, and <code>y</code> is serialized as a <code>float</code> because of the custom serializer applied.</li>
 </ol>
 <h2 id="enum"><code>Enum</code><a class="headerlink" href="#enum" title="Permanent link">&para;</a></h2>
 <p>Pydantic uses Python's standard <code>enum</code> classes to define choices.</p>

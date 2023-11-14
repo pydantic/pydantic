@@ -1455,7 +1455,7 @@
   <a href="#pydantic.dataclasses" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.dataclasses
+        dataclasses
       
     </span>
   </a>
@@ -2869,7 +2869,7 @@
   <a href="#pydantic.dataclasses" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic.dataclasses
+        dataclasses
       
     </span>
   </a>
@@ -2934,6 +2934,7 @@
 <div class="doc doc-object doc-module">
 
 
+
 <a id="pydantic.dataclasses"></a>
   <div class="doc doc-contents first">
   
@@ -2951,16 +2952,18 @@
 
 
 
+
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.dataclasses.dataclass" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">dataclass</span>
+          <span class="doc doc-object-name doc-function-name">dataclass</span>
 
 
 <a href="#pydantic.dataclasses.dataclass" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">dataclass</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass</span><span class="p">(</span>
     <span class="n">_cls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -2985,6 +2988,8 @@
 <p>A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python <code>dataclass</code>,
 but with added validation.</p>
 <p>This function should be used similarly to <code>dataclasses.dataclass</code>.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3159,6 +3164,8 @@ new attributes after instantiation.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3180,6 +3187,8 @@ new attributes after instantiation.</p>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Raises:</strong></p>
   <table>
@@ -3203,9 +3212,9 @@ new attributes after instantiation.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 95</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 95</span>
 <span class="normal"> 96</span>
 <span class="normal"> 97</span>
 <span class="normal"> 98</span>
@@ -3487,21 +3496,23 @@ new attributes after instantiation.</p>
 
     <span class="k">return</span> <span class="n">create_dataclass</span><span class="p">(</span><span class="n">_cls</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.dataclasses.rebuild_dataclass" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">rebuild_dataclass</span>
+          <span class="doc doc-object-name doc-function-name">rebuild_dataclass</span>
 
 
 <a href="#pydantic.dataclasses.rebuild_dataclass" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">rebuild_dataclass</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">rebuild_dataclass</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -3517,6 +3528,8 @@ new attributes after instantiation.</p>
 <p>This may be necessary when one of the annotations is a ForwardRef which could not be resolved during
 the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <p>This is analogous to <code>BaseModel.model_rebuild</code>.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3602,6 +3615,8 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3634,9 +3649,9 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">254</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">254</span>
 <span class="normal">255</span>
 <span class="normal">256</span>
 <span class="normal">257</span>
@@ -3730,26 +3745,30 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
             <span class="n">types_namespace</span><span class="o">=</span><span class="n">types_namespace</span><span class="p">,</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic.dataclasses.is_pydantic_dataclass" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">is_pydantic_dataclass</span>
+          <span class="doc doc-object-name doc-function-name">is_pydantic_dataclass</span>
 
 
 <a href="#pydantic.dataclasses.is_pydantic_dataclass" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">is_pydantic_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_pydantic_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Whether a class is a pydantic dataclass.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3779,6 +3798,8 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3801,9 +3822,9 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">303</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">303</span>
 <span class="normal">304</span>
 <span class="normal">305</span>
 <span class="normal">306</span>
@@ -3823,7 +3844,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">dataclasses</span><span class="o">.</span><span class="n">is_dataclass</span><span class="p">(</span><span class="n">__cls</span><span class="p">)</span> <span class="ow">and</span> <span class="s1">&#39;__pydantic_validator__&#39;</span> <span class="ow">in</span> <span class="n">__cls</span><span class="o">.</span><span class="vm">__dict__</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>

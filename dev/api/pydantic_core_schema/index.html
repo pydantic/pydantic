@@ -1925,7 +1925,7 @@
   <a href="#pydantic_core.core_schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic_core.core_schema
+        core_schema
       
     </span>
   </a>
@@ -3612,7 +3612,7 @@
   <a href="#pydantic_core.core_schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic_core.core_schema
+        core_schema
       
     </span>
   </a>
@@ -4420,6 +4420,7 @@
 <div class="doc doc-object doc-module">
 
 
+
 <a id="pydantic_core.core_schema"></a>
   <div class="doc doc-contents first">
   
@@ -4440,8 +4441,9 @@ validate and serialize.</p>
 
 
 
+
 <h2 id="pydantic_core.core_schema.WhenUsed" class="doc doc-heading">
-        <span class="doc doc-object-name doc-attribute-name">WhenUsed</span>
+          <span class="doc doc-object-name doc-attribute-name">WhenUsed</span>
 
   
   <span class="doc doc-labels">
@@ -4449,7 +4451,7 @@ validate and serialize.</p>
   </span>
 
 <a href="#pydantic_core.core_schema.WhenUsed" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">WhenUsed</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">WhenUsed</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span>
     <span class="s2">&quot;always&quot;</span><span class="p">,</span> <span class="s2">&quot;unless-none&quot;</span><span class="p">,</span> <span class="s2">&quot;json&quot;</span><span class="p">,</span> <span class="s2">&quot;json-unless-none&quot;</span>
 <span class="p">]</span>
 </code></pre></div>
@@ -4472,19 +4474,22 @@ validate and serialize.</p>
 
 
 
+
 <h2 id="pydantic_core.core_schema.CoreConfig" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">CoreConfig</span>
+          <span class="doc doc-object-name doc-class-name">CoreConfig</span>
 
 
 <a href="#pydantic_core.core_schema.CoreConfig" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
   <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="typing.TypedDict">TypedDict</span></code></p>
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.TypedDict">TypedDict</span></code></p>
 
   
       <p>Base class for schema configuration options.</p>
+
+
 
   <p><strong>Attributes:</strong></p>
   <table>
@@ -4746,7 +4751,6 @@ Requires exceptiongroup backport pre Python 3.11.</p>
   </table>
 
 
-
   
 
   <div class="doc doc-children">
@@ -4771,20 +4775,20 @@ Requires exceptiongroup backport pre Python 3.11.</p>
 
 
 
+
 <h2 id="pydantic_core.core_schema.ValidationInfo" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">ValidationInfo</span>
+          <span class="doc doc-object-name doc-class-name">ValidationInfo</span>
 
 
 <a href="#pydantic_core.core_schema.ValidationInfo" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
   <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
 
   
       <p>Argument passed to validation functions.</p>
-
 
 
   
@@ -4801,8 +4805,9 @@ Requires exceptiongroup backport pre Python 3.11.</p>
 
 
 
+
 <h3 id="pydantic_core.core_schema.ValidationInfo.context" class="doc doc-heading">
-        <span class="doc doc-object-name doc-attribute-name">context</span>
+          <span class="doc doc-object-name doc-attribute-name">context</span>
 
   
   <span class="doc doc-labels">
@@ -4810,7 +4815,7 @@ Requires exceptiongroup backport pre Python 3.11.</p>
   </span>
 
 <a href="#pydantic_core.core_schema.ValidationInfo.context" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">context</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">context</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4824,8 +4829,9 @@ Requires exceptiongroup backport pre Python 3.11.</p>
 
 
 
+
 <h3 id="pydantic_core.core_schema.ValidationInfo.config" class="doc doc-heading">
-        <span class="doc doc-object-name doc-attribute-name">config</span>
+          <span class="doc doc-object-name doc-attribute-name">config</span>
 
   
   <span class="doc doc-labels">
@@ -4833,7 +4839,7 @@ Requires exceptiongroup backport pre Python 3.11.</p>
   </span>
 
 <a href="#pydantic_core.core_schema.ValidationInfo.config" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">config</span><span class="p">:</span> <span class="n">CoreConfig</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">config</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4847,8 +4853,9 @@ Requires exceptiongroup backport pre Python 3.11.</p>
 
 
 
+
 <h3 id="pydantic_core.core_schema.ValidationInfo.mode" class="doc doc-heading">
-        <span class="doc doc-object-name doc-attribute-name">mode</span>
+          <span class="doc doc-object-name doc-attribute-name">mode</span>
 
   
   <span class="doc doc-labels">
@@ -4856,7 +4863,7 @@ Requires exceptiongroup backport pre Python 3.11.</p>
   </span>
 
 <a href="#pydantic_core.core_schema.ValidationInfo.mode" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">mode</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4870,8 +4877,9 @@ Requires exceptiongroup backport pre Python 3.11.</p>
 
 
 
+
 <h3 id="pydantic_core.core_schema.ValidationInfo.data" class="doc doc-heading">
-        <span class="doc doc-object-name doc-attribute-name">data</span>
+          <span class="doc doc-object-name doc-attribute-name">data</span>
 
   
   <span class="doc doc-labels">
@@ -4879,7 +4887,7 @@ Requires exceptiongroup backport pre Python 3.11.</p>
   </span>
 
 <a href="#pydantic_core.core_schema.ValidationInfo.data" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">data</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4893,8 +4901,9 @@ Requires exceptiongroup backport pre Python 3.11.</p>
 
 
 
+
 <h3 id="pydantic_core.core_schema.ValidationInfo.field_name" class="doc doc-heading">
-        <span class="doc doc-object-name doc-attribute-name">field_name</span>
+          <span class="doc doc-object-name doc-attribute-name">field_name</span>
 
   
   <span class="doc doc-labels">
@@ -4902,7 +4911,7 @@ Requires exceptiongroup backport pre Python 3.11.</p>
   </span>
 
 <a href="#pydantic_core.core_schema.ValidationInfo.field_name" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">field_name</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4924,21 +4933,25 @@ attached to a model field.</p>
 </div>
 
 
+
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.simple_ser_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">simple_ser_schema</span>
+          <span class="doc doc-object-name doc-function-name">simple_ser_schema</span>
 
 
 <a href="#pydantic_core.core_schema.simple_ser_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">simple_ser_schema</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">simple_ser_schema</span><span class="p">(</span><span class="nb">type</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Returns a schema for serialization with a custom type.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4968,9 +4981,9 @@ attached to a model field.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">230</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">230</span>
 <span class="normal">231</span>
 <span class="normal">232</span>
 <span class="normal">233</span>
@@ -4986,21 +4999,23 @@ attached to a model field.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">SimpleSerSchema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="nb">type</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.plain_serializer_function_ser_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">plain_serializer_function_ser_schema</span>
+          <span class="doc doc-object-name doc-function-name">plain_serializer_function_ser_schema</span>
 
 
 <a href="#pydantic_core.core_schema.plain_serializer_function_ser_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">plain_serializer_function_ser_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">plain_serializer_function_ser_schema</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">is_field_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -5013,6 +5028,8 @@ attached to a model field.</p>
   <div class="doc doc-contents ">
   
       <p>Returns a schema for serialization with a function, can be either a "general" or "field" function.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5099,9 +5116,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">275</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">275</span>
 <span class="normal">276</span>
 <span class="normal">277</span>
 <span class="normal">278</span>
@@ -5161,21 +5178,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">when_used</span><span class="o">=</span><span class="n">when_used</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.wrap_serializer_function_ser_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">wrap_serializer_function_ser_schema</span>
+          <span class="doc doc-object-name doc-function-name">wrap_serializer_function_ser_schema</span>
 
 
 <a href="#pydantic_core.core_schema.wrap_serializer_function_ser_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">wrap_serializer_function_ser_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">wrap_serializer_function_ser_schema</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">is_field_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -5189,6 +5208,8 @@ and <code>info</code> includes <code>field_name</code></p>
   <div class="doc doc-contents ">
   
       <p>Returns a schema for serialization with a wrap function, can be either a "general" or "field" function.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5289,9 +5310,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">338</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">338</span>
 <span class="normal">339</span>
 <span class="normal">340</span>
 <span class="normal">341</span>
@@ -5357,21 +5378,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">when_used</span><span class="o">=</span><span class="n">when_used</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.format_ser_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">format_ser_schema</span>
+          <span class="doc doc-object-name doc-function-name">format_ser_schema</span>
 
 
 <a href="#pydantic_core.core_schema.format_ser_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">format_ser_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">format_ser_schema</span><span class="p">(</span>
     <span class="n">formatting_string</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s2">&quot;json-unless-none&quot;</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -5379,6 +5402,8 @@ and <code>info</code> includes <code>field_name</code></p>
   <div class="doc doc-contents ">
   
       <p>Returns a schema for serialization using python's <code>format</code> method.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5422,9 +5447,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">379</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">379</span>
 <span class="normal">380</span>
 <span class="normal">381</span>
 <span class="normal">382</span>
@@ -5448,26 +5473,30 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">when_used</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;format&#39;</span><span class="p">,</span> <span class="n">formatting_string</span><span class="o">=</span><span class="n">formatting_string</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="n">when_used</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.to_string_ser_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">to_string_ser_schema</span>
+          <span class="doc doc-object-name doc-function-name">to_string_ser_schema</span>
 
 
 <a href="#pydantic_core.core_schema.to_string_ser_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">to_string_ser_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json-unless-none&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">to_string_ser_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;json-unless-none&#39;</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Returns a schema for serialization using python's <code>str()</code> / <code>__str__</code> method.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5497,9 +5526,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">398</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">398</span>
 <span class="normal">399</span>
 <span class="normal">400</span>
 <span class="normal">401</span>
@@ -5523,26 +5552,30 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">s</span><span class="p">[</span><span class="s1">&#39;when_used&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">when_used</span>
     <span class="k">return</span> <span class="n">s</span>  <span class="c1"># type: ignore</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.model_ser_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">model_ser_schema</span>
+          <span class="doc doc-object-name doc-function-name">model_ser_schema</span>
 
 
 <a href="#pydantic_core.core_schema.model_ser_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">model_ser_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_ser_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">schema</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Returns a schema for serialization using a model.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5586,9 +5619,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">418</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">418</span>
 <span class="normal">419</span>
 <span class="normal">420</span>
 <span class="normal">421</span>
@@ -5606,21 +5639,23 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">ModelSerSchema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;model&#39;</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="bp">cls</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.computed_field" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">computed_field</span>
+          <span class="doc doc-object-name doc-function-name">computed_field</span>
 
 
 <a href="#pydantic_core.core_schema.computed_field" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">computed_field</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">computed_field</span><span class="p">(</span>
     <span class="n">property_name</span><span class="p">,</span>
     <span class="n">return_schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -5632,6 +5667,8 @@ and <code>info</code> includes <code>field_name</code></p>
   <div class="doc doc-contents ">
   
       <p>ComputedFields are properties of a model or dataclass that are included in serialization.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5703,9 +5740,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">447</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">447</span>
 <span class="normal">448</span>
 <span class="normal">449</span>
 <span class="normal">450</span>
@@ -5735,21 +5772,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;computed-field&#39;</span><span class="p">,</span> <span class="n">property_name</span><span class="o">=</span><span class="n">property_name</span><span class="p">,</span> <span class="n">return_schema</span><span class="o">=</span><span class="n">return_schema</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="n">alias</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.any_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">any_schema</span>
+          <span class="doc doc-object-name doc-function-name">any_schema</span>
 
 
 <a href="#pydantic_core.core_schema.any_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">any_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">any_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -5761,6 +5800,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5818,9 +5859,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">471</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">471</span>
 <span class="normal">472</span>
 <span class="normal">473</span>
 <span class="normal">474</span>
@@ -5856,21 +5897,23 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;any&#39;</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.none_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">none_schema</span>
+          <span class="doc doc-object-name doc-function-name">none_schema</span>
 
 
 <a href="#pydantic_core.core_schema.none_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">none_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">none_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -5882,6 +5925,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5939,9 +5984,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">498</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">498</span>
 <span class="normal">499</span>
 <span class="normal">500</span>
 <span class="normal">501</span>
@@ -5977,21 +6022,23 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.bool_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">bool_schema</span>
+          <span class="doc doc-object-name doc-function-name">bool_schema</span>
 
 
 <a href="#pydantic_core.core_schema.bool_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">bool_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">bool_schema</span><span class="p">(</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -6005,6 +6052,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;True&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -6076,9 +6125,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">526</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">526</span>
 <span class="normal">527</span>
 <span class="normal">528</span>
 <span class="normal">529</span>
@@ -6120,21 +6169,23 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;bool&#39;</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.int_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">int_schema</span>
+          <span class="doc doc-object-name doc-function-name">int_schema</span>
 
 
 <a href="#pydantic_core.core_schema.int_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">int_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">int_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">multiple_of</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -6157,6 +6208,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;4&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -6298,9 +6351,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">562</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">562</span>
 <span class="normal">563</span>
 <span class="normal">564</span>
 <span class="normal">565</span>
@@ -6392,21 +6445,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.float_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">float_schema</span>
+          <span class="doc doc-object-name doc-function-name">float_schema</span>
 
 
 <a href="#pydantic_core.core_schema.float_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">float_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">float_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">allow_inf_nan</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">multiple_of</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -6430,6 +6485,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;0.5&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.5</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -6585,9 +6642,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">624</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">624</span>
 <span class="normal">625</span>
 <span class="normal">626</span>
 <span class="normal">627</span>
@@ -6685,21 +6742,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.decimal_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">decimal_schema</span>
+          <span class="doc doc-object-name doc-function-name">decimal_schema</span>
 
 
 <a href="#pydantic_core.core_schema.decimal_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">decimal_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">decimal_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">allow_inf_nan</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">multiple_of</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -6726,6 +6785,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;0.5&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;0.5&#39;</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -6909,9 +6970,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">691</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">691</span>
 <span class="normal">692</span>
 <span class="normal">693</span>
 <span class="normal">694</span>
@@ -7023,21 +7084,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.str_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">str_schema</span>
+          <span class="doc doc-object-name doc-function-name">str_schema</span>
 
 
 <a href="#pydantic_core.core_schema.str_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">str_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">str_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">pattern</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -7062,6 +7125,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;hello&#39;</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -7236,9 +7301,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">764</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">764</span>
 <span class="normal">765</span>
 <span class="normal">766</span>
 <span class="normal">767</span>
@@ -7352,21 +7417,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.bytes_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">bytes_schema</span>
+          <span class="doc doc-object-name doc-function-name">bytes_schema</span>
 
 
 <a href="#pydantic_core.core_schema.bytes_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">bytes_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">bytes_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -7386,6 +7453,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;hello&#39;</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -7485,9 +7554,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">833</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">833</span>
 <span class="normal">834</span>
 <span class="normal">835</span>
 <span class="normal">836</span>
@@ -7561,21 +7630,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.date_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">date_schema</span>
+          <span class="doc doc-object-name doc-function-name">date_schema</span>
 
 
 <a href="#pydantic_core.core_schema.date_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">date_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">date_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -7600,6 +7671,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">date</span><span class="p">(</span><span class="mi">2019</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span> <span class="o">==</span> <span class="n">date</span><span class="p">(</span><span class="mi">2019</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -7755,9 +7828,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">888</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">888</span>
 <span class="normal">889</span>
 <span class="normal">890</span>
 <span class="normal">891</span>
@@ -7857,21 +7930,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.time_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">time_schema</span>
+          <span class="doc doc-object-name doc-function-name">time_schema</span>
 
 
 <a href="#pydantic_core.core_schema.time_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">time_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">time_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -7896,6 +7971,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">time</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">==</span> <span class="n">time</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -8051,9 +8128,9 @@ and <code>info</code> includes <code>field_name</code></p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 954</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 954</span>
 <span class="normal"> 955</span>
 <span class="normal"> 956</span>
 <span class="normal"> 957</span>
@@ -8153,21 +8230,23 @@ and <code>info</code> includes <code>field_name</code></p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.datetime_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">datetime_schema</span>
+          <span class="doc doc-object-name doc-function-name">datetime_schema</span>
 
 
 <a href="#pydantic_core.core_schema.datetime_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">datetime_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">datetime_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -8195,6 +8274,8 @@ and <code>info</code> includes <code>field_name</code></p>
 <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">now</span><span class="p">))</span> <span class="o">==</span> <span class="n">now</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -8379,9 +8460,9 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1024</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1024</span>
 <span class="normal">1025</span>
 <span class="normal">1026</span>
 <span class="normal">1027</span>
@@ -8497,21 +8578,23 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.timedelta_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">timedelta_schema</span>
+          <span class="doc doc-object-name doc-function-name">timedelta_schema</span>
 
 
 <a href="#pydantic_core.core_schema.timedelta_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">timedelta_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">timedelta_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">le</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -8535,6 +8618,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">12</span><span class="p">))</span> <span class="o">==</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -8676,9 +8761,9 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1097</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1097</span>
 <span class="normal">1098</span>
 <span class="normal">1099</span>
 <span class="normal">1100</span>
@@ -8772,21 +8857,23 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.literal_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">literal_schema</span>
+          <span class="doc doc-object-name doc-function-name">literal_schema</span>
 
 
 <a href="#pydantic_core.core_schema.literal_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">literal_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">literal_schema</span><span class="p">(</span>
     <span class="n">expected</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -8800,6 +8887,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;hello&#39;</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -8871,9 +8960,9 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1154</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1154</span>
 <span class="normal">1155</span>
 <span class="normal">1156</span>
 <span class="normal">1157</span>
@@ -8915,21 +9004,23 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;literal&#39;</span><span class="p">,</span> <span class="n">expected</span><span class="o">=</span><span class="n">expected</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.is_instance_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">is_instance_schema</span>
+          <span class="doc doc-object-name doc-function-name">is_instance_schema</span>
 
 
 <a href="#pydantic_core.core_schema.is_instance_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">is_instance_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_instance_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">cls_repr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -8951,6 +9042,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">A</span><span class="p">())</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -9036,9 +9129,9 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1190</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1190</span>
 <span class="normal">1191</span>
 <span class="normal">1192</span>
 <span class="normal">1193</span>
@@ -9102,21 +9195,23 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
         <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;is-instance&#39;</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cls_repr</span><span class="o">=</span><span class="n">cls_repr</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.is_subclass_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">is_subclass_schema</span>
+          <span class="doc doc-object-name doc-function-name">is_subclass_schema</span>
 
 
 <a href="#pydantic_core.core_schema.is_subclass_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">is_subclass_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">is_subclass_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">cls_repr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -9141,6 +9236,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="n">B</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -9226,9 +9323,9 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1233</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1233</span>
 <span class="normal">1234</span>
 <span class="normal">1235</span>
 <span class="normal">1236</span>
@@ -9298,21 +9395,23 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
         <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;is-subclass&#39;</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="bp">cls</span><span class="p">,</span> <span class="n">cls_repr</span><span class="o">=</span><span class="n">cls_repr</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.callable_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">callable_schema</span>
+          <span class="doc doc-object-name doc-function-name">callable_schema</span>
 
 
 <a href="#pydantic_core.core_schema.callable_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">callable_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">callable_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -9326,6 +9425,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="nb">min</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -9383,9 +9484,9 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1277</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1277</span>
 <span class="normal">1278</span>
 <span class="normal">1279</span>
 <span class="normal">1280</span>
@@ -9425,21 +9526,23 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;callable&#39;</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.list_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">list_schema</span>
+          <span class="doc doc-object-name doc-function-name">list_schema</span>
 
 
 <a href="#pydantic_core.core_schema.list_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">list_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">list_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -9460,6 +9563,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;4&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">4</span><span class="p">]</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -9573,9 +9678,9 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1345</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1345</span>
 <span class="normal">1346</span>
 <span class="normal">1347</span>
 <span class="normal">1348</span>
@@ -9655,21 +9760,23 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.tuple_positional_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">tuple_positional_schema</span>
+          <span class="doc doc-object-name doc-function-name">tuple_positional_schema</span>
 
 
 <a href="#pydantic_core.core_schema.tuple_positional_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">tuple_positional_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">tuple_positional_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">extras_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -9691,6 +9798,8 @@ TODO: use of a tzinfo where offset changes based on the datetime is not yet supp
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;hello&#39;</span><span class="p">))</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;hello&#39;</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -9793,9 +9902,9 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1397</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1397</span>
 <span class="normal">1398</span>
 <span class="normal">1399</span>
 <span class="normal">1400</span>
@@ -9879,21 +9988,23 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.tuple_variable_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">tuple_variable_schema</span>
+          <span class="doc doc-object-name doc-function-name">tuple_variable_schema</span>
 
 
 <a href="#pydantic_core.core_schema.tuple_variable_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">tuple_variable_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">tuple_variable_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -9916,6 +10027,8 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">((</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span> <span class="o">==</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -10029,9 +10142,9 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1452</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1452</span>
 <span class="normal">1453</span>
 <span class="normal">1454</span>
 <span class="normal">1455</span>
@@ -10115,21 +10228,23 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.set_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">set_schema</span>
+          <span class="doc doc-object-name doc-function-name">set_schema</span>
 
 
 <a href="#pydantic_core.core_schema.set_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">set_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">set_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -10152,6 +10267,8 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">})</span> <span class="o">==</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -10265,9 +10382,9 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1507</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1507</span>
 <span class="normal">1508</span>
 <span class="normal">1509</span>
 <span class="normal">1510</span>
@@ -10351,21 +10468,23 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.frozenset_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">frozenset_schema</span>
+          <span class="doc doc-object-name doc-function-name">frozenset_schema</span>
 
 
 <a href="#pydantic_core.core_schema.frozenset_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">frozenset_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">frozenset_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -10388,6 +10507,8 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="nb">frozenset</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)))</span> <span class="o">==</span> <span class="nb">frozenset</span><span class="p">({</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">})</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -10501,9 +10622,9 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1562</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1562</span>
 <span class="normal">1563</span>
 <span class="normal">1564</span>
 <span class="normal">1565</span>
@@ -10587,21 +10708,23 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.generator_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">generator_schema</span>
+          <span class="doc doc-object-name doc-function-name">generator_schema</span>
 
 
 <a href="#pydantic_core.core_schema.generator_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">generator_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">generator_schema</span><span class="p">(</span>
     <span class="n">items_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -10628,6 +10751,8 @@ if the length is variable. So this field won't be set from a <code>typing.Tuple<
 <p>Unlike other types, validated generators do not raise ValidationErrors eagerly,
 but instead will raise a ValidationError when a violating value is actually read from the generator.
 This is to ensure that "validated" generators retain the benefit of lazy evaluation.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -10727,9 +10852,9 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1616</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1616</span>
 <span class="normal">1617</span>
 <span class="normal">1618</span>
 <span class="normal">1619</span>
@@ -10819,21 +10944,23 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.dict_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">dict_schema</span>
+          <span class="doc doc-object-name doc-function-name">dict_schema</span>
 
 
 <a href="#pydantic_core.core_schema.dict_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">dict_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dict_schema</span><span class="p">(</span>
     <span class="n">keys_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">values_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -10857,6 +10984,8 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -10984,9 +11113,9 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1691</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1691</span>
 <span class="normal">1692</span>
 <span class="normal">1693</span>
 <span class="normal">1694</span>
@@ -11076,21 +11205,23 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.no_info_before_validator_function" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">no_info_before_validator_function</span>
+          <span class="doc doc-object-name doc-function-name">no_info_before_validator_function</span>
 
 
 <a href="#pydantic_core.core_schema.no_info_before_validator_function" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">no_info_before_validator_function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">no_info_before_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11116,6 +11247,8 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="sa">b</span><span class="s1">&#39;hello &#39;</span><span class="p">})</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello world&#39;</span><span class="p">}</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -11201,9 +11334,9 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1772</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1772</span>
 <span class="normal">1773</span>
 <span class="normal">1774</span>
 <span class="normal">1775</span>
@@ -11285,21 +11418,23 @@ This is to ensure that "validated" generators retain the benefit of lazy evaluat
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.with_info_before_validator_function" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">with_info_before_validator_function</span>
+          <span class="doc doc-object-name doc-function-name">with_info_before_validator_function</span>
 
 
 <a href="#pydantic_core.core_schema.with_info_before_validator_function" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">with_info_before_validator_function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">with_info_before_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11329,6 +11464,8 @@ an <code>info</code> argument, e.g.:</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="sa">b</span><span class="s1">&#39;hello &#39;</span><span class="p">})</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello world&#39;</span><span class="p">}</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -11428,9 +11565,9 @@ an <code>info</code> argument, e.g.:</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1815</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1815</span>
 <span class="normal">1816</span>
 <span class="normal">1817</span>
 <span class="normal">1818</span>
@@ -11522,21 +11659,23 @@ an <code>info</code> argument, e.g.:</p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.no_info_after_validator_function" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">no_info_after_validator_function</span>
+          <span class="doc doc-object-name doc-function-name">no_info_after_validator_function</span>
 
 
 <a href="#pydantic_core.core_schema.no_info_after_validator_function" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">no_info_after_validator_function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">no_info_after_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11560,6 +11699,8 @@ an <code>info</code> argument, e.g.:</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="sa">b</span><span class="s1">&#39;hello &#39;</span><span class="p">})</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello world&#39;</span><span class="p">}</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -11645,9 +11786,9 @@ an <code>info</code> argument, e.g.:</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1867</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1867</span>
 <span class="normal">1868</span>
 <span class="normal">1869</span>
 <span class="normal">1870</span>
@@ -11725,21 +11866,23 @@ an <code>info</code> argument, e.g.:</p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.with_info_after_validator_function" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">with_info_after_validator_function</span>
+          <span class="doc doc-object-name doc-function-name">with_info_after_validator_function</span>
 
 
 <a href="#pydantic_core.core_schema.with_info_after_validator_function" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">with_info_after_validator_function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">with_info_after_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -11769,6 +11912,8 @@ an <code>info</code> argument, e.g.:</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="sa">b</span><span class="s1">&#39;hello &#39;</span><span class="p">})</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello world&#39;</span><span class="p">}</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -11868,9 +12013,9 @@ an <code>info</code> argument, e.g.:</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1908</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1908</span>
 <span class="normal">1909</span>
 <span class="normal">1910</span>
 <span class="normal">1911</span>
@@ -11962,21 +12107,23 @@ an <code>info</code> argument, e.g.:</p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.no_info_wrap_validator_function" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">no_info_wrap_validator_function</span>
+          <span class="doc doc-object-name doc-function-name">no_info_wrap_validator_function</span>
 
 
 <a href="#pydantic_core.core_schema.no_info_wrap_validator_function" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -12005,6 +12152,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;hello &#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;hello world&#39;</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -12090,9 +12239,9 @@ optionally be used to call inner validation with the function logic, this is muc
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1992</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1992</span>
 <span class="normal">1993</span>
 <span class="normal">1994</span>
 <span class="normal">1995</span>
@@ -12180,21 +12329,23 @@ optionally be used to call inner validation with the function logic, this is muc
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.with_info_wrap_validator_function" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">with_info_wrap_validator_function</span>
+          <span class="doc doc-object-name doc-function-name">with_info_wrap_validator_function</span>
 
 
 <a href="#pydantic_core.core_schema.with_info_wrap_validator_function" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">with_info_wrap_validator_function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">with_info_wrap_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -12225,6 +12376,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;hello &#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;hello world&#39;</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -12324,9 +12477,9 @@ optionally be used to call inner validation with the function logic, this is muc
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2038</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2038</span>
 <span class="normal">2039</span>
 <span class="normal">2040</span>
 <span class="normal">2041</span>
@@ -12420,21 +12573,23 @@ optionally be used to call inner validation with the function logic, this is muc
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.no_info_plain_validator_function" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">no_info_plain_validator_function</span>
+          <span class="doc doc-object-name doc-function-name">no_info_plain_validator_function</span>
 
 
 <a href="#pydantic_core.core_schema.no_info_plain_validator_function" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">no_info_plain_validator_function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">no_info_plain_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -12452,6 +12607,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;hello &#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;hello world&#39;</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -12523,9 +12680,9 @@ optionally be used to call inner validation with the function logic, this is muc
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2095</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2095</span>
 <span class="normal">2096</span>
 <span class="normal">2097</span>
 <span class="normal">2098</span>
@@ -12595,21 +12752,23 @@ optionally be used to call inner validation with the function logic, this is muc
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.with_info_plain_validator_function" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">with_info_plain_validator_function</span>
+          <span class="doc doc-object-name doc-function-name">with_info_plain_validator_function</span>
 
 
 <a href="#pydantic_core.core_schema.with_info_plain_validator_function" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">with_info_plain_validator_function</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">with_info_plain_validator_function</span><span class="p">(</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">field_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -12632,6 +12791,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;hello &#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;hello world&#39;</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -12717,9 +12878,9 @@ optionally be used to call inner validation with the function logic, this is muc
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2132</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2132</span>
 <span class="normal">2133</span>
 <span class="normal">2134</span>
 <span class="normal">2135</span>
@@ -12793,21 +12954,23 @@ optionally be used to call inner validation with the function logic, this is muc
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.with_default_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">with_default_schema</span>
+          <span class="doc doc-object-name doc-function-name">with_default_schema</span>
 
 
 <a href="#pydantic_core.core_schema.with_default_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">with_default_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">with_default_schema</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">,</span>
@@ -12833,6 +12996,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">wrapper_schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({})</span> <span class="o">==</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">})</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -12870,7 +13035,7 @@ optionally be used to call inner validation with the function logic, this is muc
             </div>
           </td>
           <td>
-                <code>PydanticUndefined</code>
+                <code><span title="pydantic_core.PydanticUndefined">PydanticUndefined</span></code>
           </td>
         </tr>
         <tr>
@@ -12974,9 +13139,9 @@ optionally be used to call inner validation with the function logic, this is muc
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2184</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2184</span>
 <span class="normal">2185</span>
 <span class="normal">2186</span>
 <span class="normal">2187</span>
@@ -13078,21 +13243,23 @@ optionally be used to call inner validation with the function logic, this is muc
         <span class="n">s</span><span class="p">[</span><span class="s1">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
     <span class="k">return</span> <span class="n">s</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.nullable_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">nullable_schema</span>
+          <span class="doc doc-object-name doc-function-name">nullable_schema</span>
 
 
 <a href="#pydantic_core.core_schema.nullable_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">nullable_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">nullable_schema</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -13111,6 +13278,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -13196,9 +13365,9 @@ optionally be used to call inner validation with the function logic, this is muc
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2246</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2246</span>
 <span class="normal">2247</span>
 <span class="normal">2248</span>
 <span class="normal">2249</span>
@@ -13256,21 +13425,23 @@ optionally be used to call inner validation with the function logic, this is muc
         <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;nullable&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.union_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">union_schema</span>
+          <span class="doc doc-object-name doc-function-name">union_schema</span>
 
 
 <a href="#pydantic_core.core_schema.union_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">union_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">union_schema</span><span class="p">(</span>
     <span class="n">choices</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">auto_collapse</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -13295,6 +13466,8 @@ optionally be used to call inner validation with the function logic, this is muc
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;hello&#39;</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -13452,9 +13625,9 @@ optionally be used to call inner validation with the function logic, this is muc
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2292</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2292</span>
 <span class="normal">2293</span>
 <span class="normal">2294</span>
 <span class="normal">2295</span>
@@ -13558,21 +13731,23 @@ optionally be used to call inner validation with the function logic, this is muc
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.tagged_union_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">tagged_union_schema</span>
+          <span class="doc doc-object-name doc-function-name">tagged_union_schema</span>
 
 
 <a href="#pydantic_core.core_schema.tagged_union_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">tagged_union_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">tagged_union_schema</span><span class="p">(</span>
     <span class="n">choices</span><span class="p">,</span>
     <span class="n">discriminator</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -13620,6 +13795,8 @@ optionally be used to call inner validation with the function logic, this is muc
     <span class="s1">&#39;spam&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span>
 <span class="p">}</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -13783,9 +13960,9 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2360</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2360</span>
 <span class="normal">2361</span>
 <span class="normal">2362</span>
 <span class="normal">2363</span>
@@ -13947,21 +14124,23 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.chain_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">chain_schema</span>
+          <span class="doc doc-object-name doc-function-name">chain_schema</span>
 
 
 <a href="#pydantic_core.core_schema.chain_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">chain_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">chain_schema</span><span class="p">(</span>
     <span class="n">steps</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -13982,6 +14161,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;hello&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;hello world world world&#39;</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -14053,9 +14234,9 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2451</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2451</span>
 <span class="normal">2452</span>
 <span class="normal">2453</span>
 <span class="normal">2454</span>
@@ -14111,21 +14292,23 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;chain&#39;</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.lax_or_strict_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">lax_or_strict_schema</span>
+          <span class="doc doc-object-name doc-function-name">lax_or_strict_schema</span>
 
 
 <a href="#pydantic_core.core_schema.lax_or_strict_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">lax_or_strict_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">lax_or_strict_schema</span><span class="p">(</span>
     <span class="n">lax_schema</span><span class="p">,</span>
     <span class="n">strict_schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -14160,6 +14343,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;123&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">123</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -14259,9 +14444,9 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2491</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2491</span>
 <span class="normal">2492</span>
 <span class="normal">2493</span>
 <span class="normal">2494</span>
@@ -14365,21 +14550,23 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.json_or_python_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">json_or_python_schema</span>
+          <span class="doc doc-object-name doc-function-name">json_or_python_schema</span>
 
 
 <a href="#pydantic_core.core_schema.json_or_python_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">json_or_python_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_or_python_schema</span><span class="p">(</span>
     <span class="n">json_schema</span><span class="p">,</span>
     <span class="n">python_schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -14410,6 +14597,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="k">else</span><span class="p">:</span>
     <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s1">&#39;Validation should have failed&#39;</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -14495,9 +14684,9 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2554</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2554</span>
 <span class="normal">2555</span>
 <span class="normal">2556</span>
 <span class="normal">2557</span>
@@ -14589,21 +14778,23 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.typed_dict_field" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">typed_dict_field</span>
+          <span class="doc doc-object-name doc-function-name">typed_dict_field</span>
 
 
 <a href="#pydantic_core.core_schema.typed_dict_field" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">typed_dict_field</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">typed_dict_field</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">required</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -14621,6 +14812,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
 <span class="n">field</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">typed_dict_field</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">core_schema</span><span class="o">.</span><span class="n">int_schema</span><span class="p">(),</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -14720,9 +14913,9 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2612</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2612</span>
 <span class="normal">2613</span>
 <span class="normal">2614</span>
 <span class="normal">2615</span>
@@ -14792,21 +14985,23 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
         <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.typed_dict_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">typed_dict_schema</span>
+          <span class="doc doc-object-name doc-function-name">typed_dict_schema</span>
 
 
 <a href="#pydantic_core.core_schema.typed_dict_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">typed_dict_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">typed_dict_schema</span><span class="p">(</span>
     <span class="n">fields</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">computed_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -14833,6 +15028,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">wrapper_schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">})</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">}</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -14988,9 +15185,9 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2665</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2665</span>
 <span class="normal">2666</span>
 <span class="normal">2667</span>
 <span class="normal">2668</span>
@@ -15096,21 +15293,23 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
         <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.model_field" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">model_field</span>
+          <span class="doc doc-object-name doc-function-name">model_field</span>
 
 
 <a href="#pydantic_core.core_schema.model_field" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">model_field</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_field</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">validation_alias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -15128,6 +15327,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 
 <span class="n">field</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">model_field</span><span class="p">(</span><span class="n">schema</span><span class="o">=</span><span class="n">core_schema</span><span class="o">.</span><span class="n">int_schema</span><span class="p">())</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -15227,9 +15428,9 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2730</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2730</span>
 <span class="normal">2731</span>
 <span class="normal">2732</span>
 <span class="normal">2733</span>
@@ -15299,21 +15500,23 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
         <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.model_fields_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">model_fields_schema</span>
+          <span class="doc doc-object-name doc-function-name">model_fields_schema</span>
 
 
 <a href="#pydantic_core.core_schema.model_fields_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">model_fields_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_fields_schema</span><span class="p">(</span>
     <span class="n">fields</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -15341,6 +15544,8 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
 <span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; ({&#39;a&#39;: &#39;hello&#39;}, None, {&#39;a&#39;})</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -15510,9 +15715,9 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2783</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2783</span>
 <span class="normal">2784</span>
 <span class="normal">2785</span>
 <span class="normal">2786</span>
@@ -15622,21 +15827,23 @@ it should be fed back into the <code>choices</code> map until a schema is obtain
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.model_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">model_schema</span>
+          <span class="doc doc-object-name doc-function-name">model_schema</span>
 
 
 <a href="#pydantic_core.core_schema.model_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">model_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">model_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -15682,6 +15889,8 @@ to <code>__dict__</code> and <code>__pydantic_fields_set__</code> respectively.<
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">isinstance_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">})</span> <span class="ow">is</span> <span class="kc">True</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">isinstance_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;too long&#39;</span><span class="p">})</span> <span class="ow">is</span> <span class="kc">False</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -15880,9 +16089,9 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2857</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2857</span>
 <span class="normal">2858</span>
 <span class="normal">2859</span>
 <span class="normal">2860</span>
@@ -16040,21 +16249,23 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.dataclass_field" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">dataclass_field</span>
+          <span class="doc doc-object-name doc-function-name">dataclass_field</span>
 
 
 <a href="#pydantic_core.core_schema.dataclass_field" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">dataclass_field</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass_field</span><span class="p">(</span>
     <span class="n">name</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -16080,6 +16291,8 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">})</span> <span class="o">==</span> <span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">},</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -16221,9 +16434,9 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2951</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">2951</span>
 <span class="normal">2952</span>
 <span class="normal">2953</span>
 <span class="normal">2954</span>
@@ -16321,21 +16534,23 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
         <span class="n">frozen</span><span class="o">=</span><span class="n">frozen</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.dataclass_args_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">dataclass_args_schema</span>
+          <span class="doc doc-object-name doc-function-name">dataclass_args_schema</span>
 
 
 <a href="#pydantic_core.core_schema.dataclass_args_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">dataclass_args_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass_args_schema</span><span class="p">(</span>
     <span class="n">dataclass_name</span><span class="p">,</span>
     <span class="n">fields</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -16364,6 +16579,8 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span> <span class="o">==</span> <span class="p">({</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -16505,9 +16722,9 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3015</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3015</span>
 <span class="normal">3016</span>
 <span class="normal">3017</span>
 <span class="normal">3018</span>
@@ -16611,21 +16828,23 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
         <span class="n">extra_behavior</span><span class="o">=</span><span class="n">extra_behavior</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.dataclass_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">dataclass_schema</span>
+          <span class="doc doc-object-name doc-function-name">dataclass_schema</span>
 
 
 <a href="#pydantic_core.core_schema.dataclass_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">dataclass_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">dataclass_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="n">fields</span><span class="p">,</span>
@@ -16647,6 +16866,8 @@ should re-validate defaults to config.revalidate_instances, else 'never'</p>
   
       <p>Returns a schema for a dataclass. As with <code>ModelSchema</code>, this schema can only be used as a field within
 another schema, not as the root type.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -16833,9 +17054,9 @@ simply setting <code>__dict__</code>, default false</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3086</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3086</span>
 <span class="normal">3087</span>
 <span class="normal">3088</span>
 <span class="normal">3089</span>
@@ -16941,21 +17162,23 @@ simply setting <code>__dict__</code>, default false</p>
         <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.arguments_parameter" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">arguments_parameter</span>
+          <span class="doc doc-object-name doc-function-name">arguments_parameter</span>
 
 
 <a href="#pydantic_core.core_schema.arguments_parameter" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">arguments_parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">arguments_parameter</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">schema</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -16970,6 +17193,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">((</span><span class="s1">&#39;hello&#39;</span><span class="p">,))</span> <span class="o">==</span> <span class="p">((</span><span class="s1">&#39;hello&#39;</span><span class="p">,),</span> <span class="p">{})</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -17041,9 +17266,9 @@ simply setting <code>__dict__</code>, default false</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3148</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3148</span>
 <span class="normal">3149</span>
 <span class="normal">3150</span>
 <span class="normal">3151</span>
@@ -17099,21 +17324,23 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="n">alias</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.arguments_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">arguments_schema</span>
+          <span class="doc doc-object-name doc-function-name">arguments_schema</span>
 
 
 <a href="#pydantic_core.core_schema.arguments_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">arguments_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">arguments_schema</span><span class="p">(</span>
     <span class="n">arguments</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">populate_by_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -17140,6 +17367,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">((</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">))</span> <span class="o">==</span> <span class="p">((</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span> <span class="p">{})</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -17253,9 +17482,9 @@ simply setting <code>__dict__</code>, default false</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3189</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3189</span>
 <span class="normal">3190</span>
 <span class="normal">3191</span>
 <span class="normal">3192</span>
@@ -17347,21 +17576,23 @@ simply setting <code>__dict__</code>, default false</p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.call_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">call_schema</span>
+          <span class="doc doc-object-name doc-function-name">call_schema</span>
 
 
 <a href="#pydantic_core.core_schema.call_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">call_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">call_schema</span><span class="p">(</span>
     <span class="n">arguments</span><span class="p">,</span>
     <span class="n">function</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -17394,6 +17625,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(((</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)))</span> <span class="o">==</span> <span class="s1">&#39;helloFalse&#39;</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -17507,9 +17740,9 @@ simply setting <code>__dict__</code>, default false</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3248</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3248</span>
 <span class="normal">3249</span>
 <span class="normal">3250</span>
 <span class="normal">3251</span>
@@ -17613,21 +17846,23 @@ simply setting <code>__dict__</code>, default false</p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.custom_error_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">custom_error_schema</span>
+          <span class="doc doc-object-name doc-function-name">custom_error_schema</span>
 
 
 <a href="#pydantic_core.core_schema.custom_error_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">custom_error_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">custom_error_schema</span><span class="p">(</span>
     <span class="n">schema</span><span class="p">,</span>
     <span class="n">custom_error_type</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -17652,6 +17887,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -17765,9 +18002,9 @@ simply setting <code>__dict__</code>, default false</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3313</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3313</span>
 <span class="normal">3314</span>
 <span class="normal">3315</span>
 <span class="normal">3316</span>
@@ -17855,21 +18092,23 @@ simply setting <code>__dict__</code>, default false</p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.json_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">json_schema</span>
+          <span class="doc doc-object-name doc-function-name">json_schema</span>
 
 
 <a href="#pydantic_core.core_schema.json_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">json_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">json_schema</span><span class="p">(</span>
     <span class="n">schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">ref</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -17906,6 +18145,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="n">m</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;{&quot;field_a&quot;: &quot;hello&quot;, &quot;field_b&quot;: true}&#39;</span><span class="p">)</span>
 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">MyModel</span><span class="p">)</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -17977,9 +18218,9 @@ simply setting <code>__dict__</code>, default false</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3367</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3367</span>
 <span class="normal">3368</span>
 <span class="normal">3369</span>
 <span class="normal">3370</span>
@@ -18067,21 +18308,23 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.url_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">url_schema</span>
+          <span class="doc doc-object-name doc-function-name">url_schema</span>
 
 
 <a href="#pydantic_core.core_schema.url_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">url_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">url_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">allowed_schemes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -18106,6 +18349,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;https://example.com&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; https://example.com/</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -18261,9 +18506,9 @@ simply setting <code>__dict__</code>, default false</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3427</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3427</span>
 <span class="normal">3428</span>
 <span class="normal">3429</span>
 <span class="normal">3430</span>
@@ -18363,21 +18608,23 @@ simply setting <code>__dict__</code>, default false</p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.multi_host_url_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">multi_host_url_schema</span>
+          <span class="doc doc-object-name doc-function-name">multi_host_url_schema</span>
 
 
 <a href="#pydantic_core.core_schema.multi_host_url_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">multi_host_url_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">multi_host_url_schema</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">allowed_schemes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -18402,6 +18649,8 @@ simply setting <code>__dict__</code>, default false</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span><span class="s1">&#39;redis://localhost,0.0.0.0,127.0.0.1&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; redis://localhost,0.0.0.0,127.0.0.1</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -18557,9 +18806,9 @@ simply setting <code>__dict__</code>, default false</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3493</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3493</span>
 <span class="normal">3494</span>
 <span class="normal">3495</span>
 <span class="normal">3496</span>
@@ -18659,21 +18908,23 @@ simply setting <code>__dict__</code>, default false</p>
         <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.definitions_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">definitions_schema</span>
+          <span class="doc doc-object-name doc-function-name">definitions_schema</span>
 
 
 <a href="#pydantic_core.core_schema.definitions_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">definitions_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="n">definitions</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">definitions_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="n">definitions</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -18689,6 +18940,8 @@ within the inner schema.</p>
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -18732,9 +18985,9 @@ within the inner schema.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3553</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3553</span>
 <span class="normal">3554</span>
 <span class="normal">3555</span>
 <span class="normal">3556</span>
@@ -18776,21 +19029,23 @@ within the inner schema.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">DefinitionsSchema</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;definitions&#39;</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">,</span> <span class="n">definitions</span><span class="o">=</span><span class="n">definitions</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_core.core_schema.definition_reference_schema" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">definition_reference_schema</span>
+          <span class="doc doc-object-name doc-function-name">definition_reference_schema</span>
 
 
 <a href="#pydantic_core.core_schema.definition_reference_schema" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">definition_reference_schema</span><span class="p">(</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">definition_reference_schema</span><span class="p">(</span>
     <span class="n">schema_ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -18811,6 +19066,8 @@ models and also when you want to define validators separately from the main sche
 <span class="n">v</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([()])</span> <span class="o">==</span> <span class="p">[[]]</span>
 </code></pre></div>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -18868,9 +19125,9 @@ models and also when you want to define validators separately from the main sche
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3583</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_core/core_schema.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">3583</span>
 <span class="normal">3584</span>
 <span class="normal">3585</span>
 <span class="normal">3586</span>
@@ -18924,7 +19181,7 @@ models and also when you want to define validators separately from the main sche
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_dict_not_none</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;definition-ref&#39;</span><span class="p">,</span> <span class="n">schema_ref</span><span class="o">=</span><span class="n">schema_ref</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">serialization</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>

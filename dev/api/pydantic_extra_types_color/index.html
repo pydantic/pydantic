@@ -2031,7 +2031,7 @@
   <a href="#pydantic_extra_types.color" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic_extra_types.color
+        color
       
     </span>
   </a>
@@ -3018,7 +3018,7 @@
   <a href="#pydantic_extra_types.color" class="md-nav__link">
     <span class="md-ellipsis">
       
-        pydantic_extra_types.color
+        color
       
     </span>
   </a>
@@ -3232,6 +3232,7 @@
 <div class="doc doc-object doc-module">
 
 
+
 <a id="pydantic_extra_types.color"></a>
   <div class="doc doc-contents first">
   
@@ -3256,12 +3257,13 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 
 
 
+
 <h2 id="pydantic_extra_types.color.RGBA" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">RGBA</span>
+          <span class="doc doc-object-name doc-class-name">RGBA</span>
 
 
 <a href="#pydantic_extra_types.color.RGBA" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">RGBA</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">RGBA</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3269,10 +3271,9 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
   
       <p>Internal use only as a representation of a color.</p>
 
-
-          <details class="quote">
-            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
+                <details class="quote">
+                  <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">40</span>
 <span class="normal">41</span>
 <span class="normal">42</span>
 <span class="normal">43</span>
@@ -3286,7 +3287,7 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 
     <span class="bp">self</span><span class="o">.</span><span class="n">_tuple</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-          </details>
+                </details>
 
   
 
@@ -3312,25 +3313,25 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 
 
 
+
 <h2 id="pydantic_extra_types.color.Color" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">Color</span>
+          <span class="doc doc-object-name doc-class-name">Color</span>
 
 
 <a href="#pydantic_extra_types.color.Color" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">Color</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">Color</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
-      <p class="doc doc-class-bases">
-        Bases: <code><span title="pydantic._internal._repr">_repr</span>.<span title="pydantic._internal._repr.Representation">Representation</span></code></p>
+          <p class="doc doc-class-bases">
+            Bases: <code><span title="pydantic._internal._repr.Representation">Representation</span></code></p>
 
   
       <p>Represents a color.</p>
 
-
-          <details class="quote">
-            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">81</span>
+                <details class="quote">
+                  <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+                  <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">81</span>
 <span class="normal">82</span>
 <span class="normal">83</span>
 <span class="normal">84</span>
@@ -3366,7 +3367,7 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
     <span class="c1"># if we&#39;ve got here value must be a valid color</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_original</span> <span class="o">=</span> <span class="n">value</span>
 </code></pre></div></td></tr></table></div>
-          </details>
+                </details>
 
   
 
@@ -3380,25 +3381,27 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 
 
 
+
 <div class="doc doc-object doc-function">
 
 
 
+
 <h3 id="pydantic_extra_types.color.Color.original" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">original</span>
+          <span class="doc doc-object-name doc-function-name">original</span>
 
 
 <a href="#pydantic_extra_types.color.Color.original" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">original</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">original</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Original value passed to <code>Color</code>.</p>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
 <span class="normal">109</span>
 <span class="normal">110</span>
 <span class="normal">111</span>
@@ -3408,27 +3411,31 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_original</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h3 id="pydantic_extra_types.color.Color.as_named" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">as_named</span>
+          <span class="doc doc-object-name doc-function-name">as_named</span>
 
 
 <a href="#pydantic_extra_types.color.Color.as_named" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">as_named</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">fallback</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_named</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">fallback</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Returns the name of the color if it can be found in <code>COLORS_BY_VALUE</code> dictionary,
 otherwise returns the hexadecimal representation of the color or raises <code>ValueError</code>.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3459,6 +3466,8 @@ the color instead of raising a ValueError when no named color is found.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3480,6 +3489,8 @@ the color instead of raising a ValueError when no named color is found.</p>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Raises:</strong></p>
   <table>
@@ -3503,9 +3514,9 @@ the color instead of raising a ValueError when no named color is found.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">114</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">114</span>
 <span class="normal">115</span>
 <span class="normal">116</span>
 <span class="normal">117</span>
@@ -3557,21 +3568,23 @@ the color instead of raising a ValueError when no named color is found.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_hex</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h3 id="pydantic_extra_types.color.Color.as_hex" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">as_hex</span>
+          <span class="doc doc-object-name doc-function-name">as_hex</span>
 
 
 <a href="#pydantic_extra_types.color.Color.as_hex" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">as_hex</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;short&#39;</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_hex</span><span class="p">(</span><span class="nb">format</span><span class="o">=</span><span class="s1">&#39;short&#39;</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -3579,6 +3592,8 @@ the color instead of raising a ValueError when no named color is found.</p>
       <p>Returns the hexadecimal representation of the color.</p>
 <p>Hex string representing the color can be 3, 4, 6, or 8 characters depending on whether the string
 a "short" representation of the color is possible and whether there's an alpha channel.</p>
+
+
 
   <p><strong>Returns:</strong></p>
   <table>
@@ -3602,9 +3617,9 @@ a "short" representation of the color is possible and whether there's an alpha c
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">141</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">141</span>
 <span class="normal">142</span>
 <span class="normal">143</span>
 <span class="normal">144</span>
@@ -3638,30 +3653,32 @@ a "short" representation of the color is possible and whether there's an alpha c
         <span class="n">as_hex</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">as_hex</span><span class="p">[</span><span class="n">c</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">as_hex</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
     <span class="k">return</span> <span class="s1">&#39;#&#39;</span> <span class="o">+</span> <span class="n">as_hex</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h3 id="pydantic_extra_types.color.Color.as_rgb" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">as_rgb</span>
+          <span class="doc doc-object-name doc-function-name">as_rgb</span>
 
 
 <a href="#pydantic_extra_types.color.Color.as_rgb" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">as_rgb</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_rgb</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Color as an <code>rgb(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;)</code> or <code>rgba(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;, &lt;a&gt;)</code> string.</p>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">159</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">159</span>
 <span class="normal">160</span>
 <span class="normal">161</span>
 <span class="normal">162</span>
@@ -3683,26 +3700,30 @@ a "short" representation of the color is possible and whether there's an alpha c
             <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alpha_float</span><span class="p">(),</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h3 id="pydantic_extra_types.color.Color.as_rgb_tuple" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">as_rgb_tuple</span>
+          <span class="doc doc-object-name doc-function-name">as_rgb_tuple</span>
 
 
 <a href="#pydantic_extra_types.color.Color.as_rgb_tuple" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">as_rgb_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_rgb_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Returns the color as an RGB or RGBA tuple.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3737,6 +3758,8 @@ a "short" representation of the color is possible and whether there's an alpha c
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3760,9 +3783,9 @@ If alpha is included, it is in the range 0 to 1.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">171</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">171</span>
 <span class="normal">172</span>
 <span class="normal">173</span>
 <span class="normal">174</span>
@@ -3814,30 +3837,32 @@ If alpha is included, it is in the range 0 to 1.</p>
         <span class="c1"># alpha is False</span>
         <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h3 id="pydantic_extra_types.color.Color.as_hsl" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">as_hsl</span>
+          <span class="doc doc-object-name doc-function-name">as_hsl</span>
 
 
 <a href="#pydantic_extra_types.color.Color.as_hsl" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">as_hsl</span><span class="p">()</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_hsl</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Color as an <code>hsl(&lt;h&gt;, &lt;s&gt;, &lt;l&gt;)</code> or <code>hsl(&lt;h&gt;, &lt;s&gt;, &lt;l&gt;, &lt;a&gt;)</code> string.</p>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">198</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">198</span>
 <span class="normal">199</span>
 <span class="normal">200</span>
 <span class="normal">201</span>
@@ -3857,26 +3882,30 @@ If alpha is included, it is in the range 0 to 1.</p>
         <span class="n">h</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">li</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_hsl_tuple</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;hsl(</span><span class="si">{</span><span class="n">h</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">360</span><span class="si">:</span><span class="s1">0.0f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">s</span><span class="si">:</span><span class="s1">0.0%</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">li</span><span class="si">:</span><span class="s1">0.0%</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h3 id="pydantic_extra_types.color.Color.as_hsl_tuple" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">as_hsl_tuple</span>
+          <span class="doc doc-object-name doc-function-name">as_hsl_tuple</span>
 
 
 <a href="#pydantic_extra_types.color.Color.as_hsl_tuple" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">as_hsl_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">as_hsl_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Returns the color as an HSL or HSLA tuple.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3911,6 +3940,8 @@ If alpha is included, it is in the range 0 to 1.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -3938,9 +3969,9 @@ All elements are in the range 0 to 1.</p>
   <summary>Note</summary>
   <p>This is HSL as used in HTML and most other places, not HLS as used in Python's <code>colorsys</code>.</p>
 </details>
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">209</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">209</span>
 <span class="normal">210</span>
 <span class="normal">211</span>
 <span class="normal">212</span>
@@ -3998,7 +4029,7 @@ All elements are in the range 0 to 1.</p>
         <span class="c1"># alpha is False</span>
         <span class="k">return</span> <span class="n">h</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">l</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
@@ -4010,23 +4041,27 @@ All elements are in the range 0 to 1.</p>
   </div>
 
 </div>
+
 
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_extra_types.color.parse_tuple" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">parse_tuple</span>
+          <span class="doc doc-object-name doc-function-name">parse_tuple</span>
 
 
 <a href="#pydantic_extra_types.color.parse_tuple" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">parse_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Parse a tuple or list to get RGBA values.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4056,6 +4091,8 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -4077,6 +4114,8 @@ All elements are in the range 0 to 1.</p>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Raises:</strong></p>
   <table>
@@ -4100,9 +4139,9 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">267</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">267</span>
 <span class="normal">268</span>
 <span class="normal">269</span>
 <span class="normal">270</span>
@@ -4142,21 +4181,23 @@ All elements are in the range 0 to 1.</p>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;color_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid color: tuples must have length 3 or 4&#39;</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_extra_types.color.parse_str" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">parse_str</span>
+          <span class="doc doc-object-name doc-function-name">parse_str</span>
 
 
 <a href="#pydantic_extra_types.color.parse_str" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">parse_str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4171,6 +4212,8 @@ All elements are in the range 0 to 1.</p>
 <li><code>rgba(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;, &lt;a&gt;)</code></li>
 <li><code>transparent</code></li>
 </ul>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4200,6 +4243,8 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -4221,6 +4266,8 @@ All elements are in the range 0 to 1.</p>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Raises:</strong></p>
   <table>
@@ -4244,9 +4291,9 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">289</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">289</span>
 <span class="normal">290</span>
 <span class="normal">291</span>
 <span class="normal">292</span>
@@ -4376,26 +4423,30 @@ All elements are in the range 0 to 1.</p>
         <span class="s1">&#39;value is not a valid color: string not recognised as a valid color&#39;</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_extra_types.color.ints_to_rgba" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">ints_to_rgba</span>
+          <span class="doc doc-object-name doc-function-name">ints_to_rgba</span>
 
 
 <a href="#pydantic_extra_types.color.ints_to_rgba" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">ints_to_rgba</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">ints_to_rgba</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Converts integer or string values for RGB color and an optional alpha value to an <code>RGBA</code> object.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4467,6 +4518,8 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -4489,9 +4542,9 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">356</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">356</span>
 <span class="normal">357</span>
 <span class="normal">358</span>
 <span class="normal">359</span>
@@ -4539,26 +4592,30 @@ All elements are in the range 0 to 1.</p>
         <span class="n">parse_float_alpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_extra_types.color.parse_color_value" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">parse_color_value</span>
+          <span class="doc doc-object-name doc-function-name">parse_color_value</span>
 
 
 <a href="#pydantic_extra_types.color.parse_color_value" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">parse_color_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_color_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Parse the color value provided and return a number between 0 and 1.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4602,6 +4659,8 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Raises:</strong></p>
   <table>
     <thead>
@@ -4623,6 +4682,8 @@ All elements are in the range 0 to 1.</p>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Returns:</strong></p>
   <table>
@@ -4646,9 +4707,9 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">382</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">382</span>
 <span class="normal">383</span>
 <span class="normal">384</span>
 <span class="normal">385</span>
@@ -4706,26 +4767,30 @@ All elements are in the range 0 to 1.</p>
             <span class="p">{</span><span class="s1">&#39;max_val&#39;</span><span class="p">:</span> <span class="n">max_val</span><span class="p">},</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_extra_types.color.parse_float_alpha" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">parse_float_alpha</span>
+          <span class="doc doc-object-name doc-function-name">parse_float_alpha</span>
 
 
 <a href="#pydantic_extra_types.color.parse_float_alpha" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">parse_float_alpha</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_float_alpha</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Parse an alpha value checking it's a valid float in the range 0 to 1.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4755,6 +4820,8 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -4776,6 +4843,8 @@ All elements are in the range 0 to 1.</p>
         </tr>
     </tbody>
   </table>
+
+
 
   <p><strong>Raises:</strong></p>
   <table>
@@ -4799,9 +4868,9 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">413</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">413</span>
 <span class="normal">414</span>
 <span class="normal">415</span>
 <span class="normal">416</span>
@@ -4871,26 +4940,30 @@ All elements are in the range 0 to 1.</p>
             <span class="s1">&#39;value is not a valid color: alpha values must be in the range 0 to 1&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_extra_types.color.parse_hsl" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">parse_hsl</span>
+          <span class="doc doc-object-name doc-function-name">parse_hsl</span>
 
 
 <a href="#pydantic_extra_types.color.parse_hsl" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">parse_hsl</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">h_units</span><span class="p">,</span> <span class="n">sat</span><span class="p">,</span> <span class="n">light</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">parse_hsl</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">h_units</span><span class="p">,</span> <span class="n">sat</span><span class="p">,</span> <span class="n">light</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Parse raw hue, saturation, lightness, and alpha values and convert to RGBA.</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -4976,6 +5049,8 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -4998,9 +5073,9 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">450</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">450</span>
 <span class="normal">451</span>
 <span class="normal">452</span>
 <span class="normal">453</span>
@@ -5054,26 +5129,30 @@ All elements are in the range 0 to 1.</p>
     <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">hls_to_rgb</span><span class="p">(</span><span class="n">h_value</span><span class="p">,</span> <span class="n">l_value</span><span class="p">,</span> <span class="n">s_value</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">RGBA</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">parse_float_alpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
+
 <h2 id="pydantic_extra_types.color.float_to_255" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">float_to_255</span>
+          <span class="doc doc-object-name doc-function-name">float_to_255</span>
 
 
 <a href="#pydantic_extra_types.color.float_to_255" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
       <p>Converts a float value between 0 and 1 (inclusive) to an integer between 0 and 255 (inclusive).</p>
+
+
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5103,6 +5182,8 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
+
+
   <p><strong>Returns:</strong></p>
   <table>
     <thead>
@@ -5125,9 +5206,9 @@ All elements are in the range 0 to 1.</p>
     </tbody>
   </table>
 
-      <details class="quote">
-        <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">479</span>
+          <details class="quote">
+            <summary>Source code in <code>pydantic_extra_types/color.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">479</span>
 <span class="normal">480</span>
 <span class="normal">481</span>
 <span class="normal">482</span>
@@ -5149,7 +5230,7 @@ All elements are in the range 0 to 1.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="mi">255</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-      </details>
+          </details>
   </div>
 
 </div>
