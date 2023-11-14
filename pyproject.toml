@@ -13,7 +13,6 @@ allow-direct-references = true
 # see https://github.com/pydantic/pydantic/pull/4542
 include = [
     '/README.md',
-    '/HISTORY.md',
     '/Makefile',
     '/pydantic',
     '/tests',
