@@ -63,6 +63,11 @@ strip = true
 debug = true
 strip = false
 
+[profile.codspeed]
+inherits = "release"
+debug = true
+strip = false
+
 [dev-dependencies]
 pyo3 = { version = "0.20.0", features = ["auto-initialize"] }
 
