@@ -1920,8 +1920,7 @@ def test_v1_validator_deprecated():
     # parameter to warnings.warn in _decorators.py
     assert w.filename == __file__
     source = _get_source_line(w.filename, w.lineno)
-    # the reported location varies slightly from 3.7 to 3.11
-    assert 'check_x' in source or "@validator('x')" in source
+    assert "@validator('x')" in source
 
 
 def test_info_field_name_data_before():

@@ -21,6 +21,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Final,
     ForwardRef,
     Iterable,
     Iterator,
@@ -34,7 +35,7 @@ from typing import (
 from warnings import warn
 
 from pydantic_core import CoreSchema, PydanticUndefined, core_schema, to_jsonable_python
-from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import Annotated, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict, JsonDict, JsonEncoder
@@ -776,7 +777,7 @@ class GenerateSchema:
         elif _typing_extra.is_namedtuple(obj):
             return self._namedtuple_schema(obj, None)
         elif _typing_extra.is_new_type(obj):
-            # NewType, can't use isinstance because it fails <3.7
+            # NewType, can't use isinstance because it fails <3.10
             return self.generate_schema(obj.__supertype__)
         elif obj == re.Pattern:
             return self._pattern_schema(obj)
@@ -1596,7 +1597,7 @@ class GenerateSchema:
     ) -> tuple[Any, list[Any]] | None:
         from ._std_types_schema import PREPARE_METHODS
 
-        # This check for hashability is only necessary for python 3.7
+        # Check for hashability
         try:
             hash(obj)
         except TypeError:

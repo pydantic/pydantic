@@ -13,6 +13,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Final,
     Generic,
     List,
     Mapping,
@@ -27,7 +28,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated, Final, Literal
+from typing_extensions import Annotated, Literal
 
 from pydantic import (
     AfterValidator,

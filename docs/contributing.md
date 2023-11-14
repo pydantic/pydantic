@@ -45,7 +45,7 @@ Because of this, setting up and running the tests should be very simple.
 
 You'll need the following prerequisites:
 
-- Any Python version between **Python 3.7 and 3.11**
+- Any Python version between **Python 3.8 and 3.11**
 - **virtualenv** or other virtual environment tool
 - **git**
 - **make**

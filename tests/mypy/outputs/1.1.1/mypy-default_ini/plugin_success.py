@@ -1,3 +1,4 @@
+from dataclasses import InitVar
 from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
 
 from typing_extensions import Self
@@ -263,20 +264,9 @@ class OrmMixin(Generic[_TModel, _TType]):
         return cls.from_orm(model)
 
 
-import sys  # noqa E402
-
-if sys.version_info >= (3, 8):
-    from dataclasses import InitVar  # E402
-
-    InitVarStr = InitVar[str]
-else:
-    # InitVar is not supported in 3.7 due to loss of type information
-    InitVarStr = str
-
-
 @dataclass
 class MyDataClass:
-    foo: InitVarStr
+    foo: InitVar[str]
     bar: str
 
 

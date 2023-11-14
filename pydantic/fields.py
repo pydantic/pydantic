@@ -3,16 +3,10 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import inspect
-import sys
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
-
-try:
-    from functools import cached_property  # type: ignore
-except ImportError:
-    # python 3.7
-    cached_property = None
+from functools import cached_property
 from typing import Any, ClassVar
 from warnings import warn
 
@@ -346,9 +340,6 @@ class FieldInfo(_repr.Representation):
         elif isinstance(default, dataclasses.Field):
             init_var = False
             if annotation is dataclasses.InitVar:
-                if sys.version_info < (3, 8):
-                    raise RuntimeError('InitVar is not supported in Python 3.7 as type information is lost')
-
                 init_var = True
                 annotation = Any
             elif isinstance(annotation, dataclasses.InitVar):
