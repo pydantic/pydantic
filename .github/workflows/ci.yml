@@ -365,74 +365,73 @@ jobs:
           path: dist
 
   build:
-    name: build on ${{ matrix.platform || matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})
+    name: build on ${{ matrix.os }} (${{ matrix.target }} - ${{ matrix.interpreter || 'all' }}${{ matrix.os == 'linux' && format(' - {0}', matrix.manylinux == 'auto' && 'manylinux' || matrix.manylinux) || '' }})
     # only run on push to main and on release
     if: startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main' || contains(github.event.pull_request.labels.*.name, 'Full Build')
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos, windows]
+        os: [linux, macos, windows]
         target: [x86_64, aarch64]
         manylinux: [auto]
         include:
-          - os: ubuntu
-            platform: linux
+          # manylinux for various platforms, plus x86_64 pypy
+          - os: linux
+            manylinux: auto
+            target: i686
+          - os: linux
+            manylinux: auto
+            target: aarch64
+          - os: linux
+            manylinux: auto
+            target: armv7
+            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
+          - os: linux
+            manylinux: auto
+            target: ppc64le
+            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
+          - os: linux
+            manylinux: auto
+            target: s390x
+            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
+          - os: linux
+            manylinux: auto
+            target: x86_64
+            interpreter: pypy3.7 pypy3.8 pypy3.9 pypy3.10
+
+          # musllinux
+          - os: linux
+            manylinux: musllinux_1_1
+            target: x86_64
+          - os: linux
+            manylinux: musllinux_1_1
+            target: aarch64
+
+          # macos;
+          # all versions x86_64
+          # arm pypy and older pythons which can't be run on the arm hardware for PGO
+          - os: macos
+            target: x86_64
+          - os: macos
+            target: aarch64
+            interpreter: 3.7 3.8 3.9 pypy3.8 pypy3.9 pypy3.10
+
+          # windows;
+          # x86_64 pypy builds are not PGO optimized
+          # i686 not supported by pypy
+          # aarch64 only 3.11 and up, also not PGO optimized
           - os: windows
-            ls: dir
-            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12 pypy3.8 pypy3.9 pypy3.10
+            target: x86_64
+            interpreter: pypy3.8 pypy3.9 pypy3.10
           - os: windows
-            ls: dir
             target: i686
             python-architecture: x86
             interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
           - os: windows
-            ls: dir
             target: aarch64
             interpreter: 3.11 3.12
-          - os: macos
-            target: aarch64
-            interpreter: 3.7 3.8 3.9 pypy3.8 pypy3.9 pypy3.10
-          - os: ubuntu
-            platform: linux
-            target: i686
-          - os: ubuntu
-            platform: linux
-            target: aarch64
 
-          - os: ubuntu
-            platform: linux
-            target: armv7
-            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
-          # musllinux
-          - os: ubuntu
-            platform: linux
-            target: x86_64
-            manylinux: musllinux_1_1
-          - os: ubuntu
-            platform: linux
-            target: aarch64
-            manylinux: musllinux_1_1
-          - os: ubuntu
-            platform: linux
-            target: ppc64le
-            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
-          - os: ubuntu
-            platform: linux
-            target: s390x
-            interpreter: 3.7 3.8 3.9 3.10 3.11 3.12
-        exclude:
-          # Optimized PGO builds for x86_64 manylinux and windows follow a different matrix,
-          # maybe in future maturin-action can support this automatically
-          - os: ubuntu
-            target: x86_64
-            manylinux: auto
-          - os: windows
-            target: x86_64
-          # Windows on arm64 only supports Python 3.11+
-          - os: windows
-            target: aarch64
-
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ${{ (matrix.os == 'linux' && 'ubuntu') || matrix.os }}-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -451,13 +450,12 @@ jobs:
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.target }}
-          manylinux: ${{ matrix.manylinux || 'auto' }}
-          container: ${{ matrix.container }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12 pypy3.7 pypy3.8 pypy3.9 pypy3.10' }} ${{ matrix.extra-build-args }}
+          manylinux: ${{ matrix.manylinux == 'manylinux' && 'auto' || matrix.manylinux }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.7 3.8 3.9 3.10 3.11 3.12 pypy3.7 pypy3.8 pypy3.9 pypy3.10' }}
           rust-toolchain: stable
           docker-options: -e CI
 
-      - run: ${{ matrix.ls || 'ls -lh' }} dist/
+      - run: ${{ (matrix.os == 'windows' && 'dir') || 'ls -lh' }} dist/
 
       - run: twine check --strict dist/*
 
@@ -473,20 +471,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest-xlarge]
+        os: [linux, windows, macos]
         interpreter: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
         include:
-          - os: windows-latest
+          # standard runners with override for macos arm
+          - os: linux
+            runs-on: ubuntu-latest
+          - os: windows
             ls: dir
+            runs-on: windows-latest
+          - os: macos
+            runs-on: macos-latest-xlarge
         exclude:
-          - os: macos-latest-xlarge
+          # macos arm only supported from 3.10 and up
+          - os: macos
             interpreter: '3.7'
-          - os: macos-latest-xlarge
+          - os: macos
             interpreter: '3.8'
-          - os: macos-latest-xlarge
+          - os: macos
             interpreter: '3.9'
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
 
