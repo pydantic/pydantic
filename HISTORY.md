@@ -1,3 +1,18 @@
+## v2.5.1 (2023-11-14)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.1)
+
+### What's Changed
+
+#### Packaging
+
+* Update pydantic-core from 2.14.1 to 2.14.2, full changelog [here](https://github.com/pydantic/pydantic-core/compare/v2.14.1...v2.14.2)
+
+#### Fixes
+
+* Move the package description limit in `HISTORY.md` by @dmontagu [#8097](https://github.com/pydantic/pydantic/pull/8097)
+* Support hash for `ValidateCallWrapper` by @sydney-runkle in [#8110](https://github.com/pydantic/pydantic/pull/8110)
+
 ## v2.5.0 (2023-11-13)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0)
