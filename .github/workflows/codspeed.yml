@@ -18,7 +18,7 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       - uses: actions/cache@v3
         id: cache-py
@@ -48,10 +48,12 @@ jobs:
 
       - name: cache rust
         uses: Swatinem/rust-cache@v2
+        with:
+          key: v1
 
       - name: Compile pydantic-core for profiling
         run: |
-          pip install -e . --config-settings=build-args='--verbose' -v
+          pip install -e . --config-settings=build-args='--verbose --profile codspeed' -v
         env:
           CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
           RUSTFLAGS: "-Cprofile-generate=${{ github.workspace }}/profdata"
@@ -64,7 +66,7 @@ jobs:
 
       - name: Compile pydantic-core for benchmarking
         run: |
-          pip install -e . --config-settings=build-args='--verbose' -v
+          pip install -e . --config-settings=build-args='--verbose --profile codspeed' -v
         env:
           CONST_RANDOM_SEED: 0 # Fix the compile time RNG seed
           RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"
