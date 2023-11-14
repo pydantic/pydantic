@@ -147,3 +147,6 @@ class ValidateCallWrapper:
 
     def __eq__(self, other):
         return self.raw_function == other.raw_function
+
+    def __hash__(self):
+        return hash(self.raw_function)
