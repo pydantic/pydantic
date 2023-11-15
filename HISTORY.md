@@ -1,3 +1,18 @@
+## v2.5.1 (2023-11-15)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.1)
+
+### What's Changed
+
+#### Packaging
+
+* uprev pydantic-core to 2.14.3 by @samuelcolvin in [#8120](https://github.com/pydantic/pydantic/pull/8120)
+
+#### Fixes
+
+* Fix package description limit by @dmontagu in [#8097](https://github.com/pydantic/pydantic/pull/8097)
+* Fix `ValidateCallWrapper` error when creating a model which has a @validate_call wrapped field annotation by @sydney-runkle in [#8110](https://github.com/pydantic/pydantic/pull/8110)
+
 ## v2.5.0 (2023-11-13)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0)
