@@ -6,6 +6,11 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
+    Optional,
+    Tuple,
+    Type,
+    Union,
     cast,
 )
 
@@ -30,6 +35,7 @@ if TYPE_CHECKING:
 DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
 
 
+# ruff: noqa: UP006,UP007
 class ConfigWrapper:
     """Internal wrapper for Config which exposes ConfigDict items as attributes."""
 
@@ -39,13 +45,13 @@ class ConfigWrapper:
 
     # all annotations are copied directly from ConfigDict, and should be kept up to date, a test will fail if they
     # stop matching
-    title: str | None
+    title: Optional[str]
     str_to_lower: bool
     str_to_upper: bool
     str_strip_whitespace: bool
     str_min_length: int
-    str_max_length: int | None
-    extra: ExtraValues | None
+    str_max_length: Optional[int]
+    extra: Optional[ExtraValues]
     frozen: bool
     populate_by_name: bool
     use_enum_values: bool
@@ -55,11 +61,11 @@ class ConfigWrapper:
     # whether to use the actual key provided in the data (e.g. alias or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default `True`
     loc_by_alias: bool
-    alias_generator: Callable[[str], str] | None
-    ignored_types: tuple[type, ...]
+    alias_generator: Optional[Callable[[str], str]]
+    ignored_types: Tuple[Type[Any], ...]
     allow_inf_nan: bool
-    json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
-    json_encoders: dict[type[object], JsonEncoder] | None
+    json_schema_extra: Optional[Union[JsonDict, JsonSchemaExtraCallable]]
+    json_encoders: Optional[Dict[Type[Any], JsonEncoder]]
 
     # new in V2
     strict: bool
@@ -70,11 +76,11 @@ class ConfigWrapper:
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: Tuple[str, ...]
     hide_input_in_errors: bool
     defer_build: bool
-    plugin_settings: dict[str, object] | None
-    schema_generator: type[GenerateSchema] | None
+    plugin_settings: Optional[Dict[str, object]]
+    schema_generator: Optional[Type[GenerateSchema]]
     json_schema_serialization_defaults_required: bool
     json_schema_mode_override: Literal['validation', 'serialization', None]
     coerce_numbers_to_str: bool
