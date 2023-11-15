@@ -1,7 +1,7 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from typing_extensions import Literal, TypeAlias, TypedDict
 
@@ -26,10 +26,11 @@ JsonSchemaExtraCallable: TypeAlias = Union[
 ExtraValues = Literal['allow', 'ignore', 'forbid']
 
 
+# ruff: noqa: UP006,UP007
 class ConfigDict(TypedDict, total=False):
     """A TypedDict for configuring Pydantic behaviour."""
 
-    title: str | None
+    title: Optional[str]
     """The title for the generated JSON schema, defaults to the model's name"""
 
     str_to_lower: bool
@@ -43,10 +44,10 @@ class ConfigDict(TypedDict, total=False):
     str_min_length: int
     """The minimum length for str types. Defaults to `None`."""
 
-    str_max_length: int | None
+    str_max_length: Optional[int]
     """The maximum length for str types. Defaults to `None`."""
 
-    extra: ExtraValues | None
+    extra: Optional[ExtraValues]
     """
     Whether to ignore, allow, or forbid extra attributes during model initialization. Defaults to `'ignore'`.
 
@@ -315,7 +316,7 @@ class ConfigDict(TypedDict, total=False):
     loc_by_alias: bool
     """Whether to use the actual key provided in the data (e.g. alias) for error `loc`s rather than the field's name. Defaults to `True`."""
 
-    alias_generator: Callable[[str], str] | None
+    alias_generator: Optional[Callable[[str], str]]
     """
     A callable that takes a field name and returns an alias for it.
 
@@ -344,7 +345,7 @@ class ConfigDict(TypedDict, total=False):
         [`to_camel`][pydantic.alias_generators.to_camel], and [`to_snake`][pydantic.alias_generators.to_snake].
     """
 
-    ignored_types: tuple[type, ...]
+    ignored_types: Tuple[Type[Any], ...]
     """A tuple of types that may occur as values of class attributes without annotations. This is
     typically used for custom descriptors (classes that behave like `property`). If an attribute is set on a
     class without an annotation and has a type that is not in this tuple (or otherwise recognized by
@@ -354,10 +355,10 @@ class ConfigDict(TypedDict, total=False):
     allow_inf_nan: bool
     """Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`."""
 
-    json_schema_extra: JsonDict | JsonSchemaExtraCallable | None
+    json_schema_extra: Optional[Union[JsonDict, JsonSchemaExtraCallable]]
     """A dict or callable to provide extra JSON schema properties. Defaults to `None`."""
 
-    json_encoders: dict[type[object], JsonEncoder] | None
+    json_encoders: Optional[Dict[Type[Any], JsonEncoder]]
     """
     A `dict` of custom JSON encoders for specific types. Defaults to `None`.
 
@@ -547,7 +548,7 @@ class ConfigDict(TypedDict, total=False):
     validate_return: bool
     """whether to validate the return value from call validators. Defaults to `False`."""
 
-    protected_namespaces: tuple[str, ...]
+    protected_namespaces: Tuple[str, ...]
     """
     A `tuple` of strings that prevent model to have field which conflict with them.
     Defaults to `('model_', )`).
@@ -676,13 +677,13 @@ class ConfigDict(TypedDict, total=False):
     [`Model.model_rebuild(_types_namespace=...)`][pydantic.BaseModel.model_rebuild]. Defaults to False.
     """
 
-    plugin_settings: dict[str, object] | None
+    plugin_settings: Optional[Dict[str, object]]
     """A `dict` of settings for plugins. Defaults to `None`.
 
     See [Pydantic Plugins](../concepts/plugins.md) for details.
     """
 
-    schema_generator: type[_GenerateSchema] | None
+    schema_generator: Optional[Type[_GenerateSchema]]
     """
     A custom core schema generator class to use when generating JSON schemas.
     Useful if you want to change the way types are validated across an entire model/schema. Defaults to `None`.
