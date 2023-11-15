@@ -341,16 +341,18 @@ _KeyType = TypeVar('_KeyType')
 _ValueType = TypeVar('_ValueType')
 
 
-# We need a sentinel value for missing fields when comparing models
-# Models are equals if-and-only-if they miss the same fields, and since None is a legitimate value
-# we can't default to None
-# We use the single-value enum trick to allow correct typing when using a sentinel
+# We need a sentinel value for missing keys that cannot be None, since None is a legitimate value
+# This sentinel must be hashable, compare equal only to itself, and properly typeable in type annotations
+# We use the single-value enum trick to allow correct typing when using a sentinel, from the MyPy suggestion:
 # https://github.com/python/typing/issues/689#issuecomment-561568944
 class SentinelType(enum.Enum):
+    """Class for a sentinel value so that sentinel usage can written and type-checked in type annotations"""
+
     SENTINEL = enum.auto()
 
 
 SENTINEL = SentinelType.SENTINEL
+"""Sentinel value that can be properly typed in type annotations"""
 
 
 @dataclasses.dataclass(frozen=True)
