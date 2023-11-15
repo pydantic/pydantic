@@ -257,7 +257,10 @@ impl ModelValidator {
             // this work with from_attributes, and would essentially allow you to
             // handle init vars by adding them to the __init__ signature.
             if let Some(kwargs) = input.as_kwargs(py) {
-                return Ok(self.class.call(py, (), Some(kwargs))?);
+                return self
+                    .class
+                    .call(py, (), Some(kwargs))
+                    .map_err(|e| convert_err(py, e, input));
             }
         }
 

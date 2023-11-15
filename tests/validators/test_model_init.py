@@ -479,3 +479,48 @@ def test_leak_model(validator):
     gc.collect()
 
     assert ref() is None
+
+
+def test_model_custom_init_with_union() -> None:
+    class A:
+        def __init__(self, **kwargs):
+            assert 'a' in kwargs
+            self.a = kwargs.get('a')
+
+    class B:
+        def __init__(self, **kwargs):
+            assert 'b' in kwargs
+            self.b = kwargs.get('b')
+
+    schema = {
+        'type': 'union',
+        'choices': [
+            {
+                'type': 'model',
+                'cls': A,
+                'schema': {
+                    'type': 'model-fields',
+                    'fields': {'a': {'type': 'model-field', 'schema': {'type': 'bool'}}},
+                    'model_name': 'A',
+                },
+                'custom_init': True,
+                'ref': '__main__.A:4947206928',
+            },
+            {
+                'type': 'model',
+                'cls': B,
+                'schema': {
+                    'type': 'model-fields',
+                    'fields': {'b': {'type': 'model-field', 'schema': {'type': 'bool'}}},
+                    'model_name': 'B',
+                },
+                'custom_init': True,
+                'ref': '__main__.B:4679932848',
+            },
+        ],
+    }
+
+    validator = SchemaValidator(schema)
+
+    assert validator.validate_python({'a': False}).a is False
+    assert validator.validate_python({'b': True}).b is True
