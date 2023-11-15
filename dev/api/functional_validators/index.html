@@ -4371,14 +4371,14 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">model_validator</span>
 
 <span class="k">class</span> <span class="nc">Square</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="n">width</span><span class="p">:</span> <span class="nb">float</span>
-<span class="n">height</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">width</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">height</span><span class="p">:</span> <span class="nb">float</span>
 
-<span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
-<span class="k">def</span> <span class="nf">verify_square</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Rectangle&#39;</span><span class="p">:</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;width and height do not match&#39;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="bp">self</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">verify_square</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Rectangle&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">width</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">height</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;width and height do not match&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span>
 
 <span class="n">s</span> <span class="o">=</span> <span class="n">Square</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
@@ -4523,14 +4523,14 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 <span class="sd">    from pydantic import BaseModel, ValidationError, model_validator</span>
 
 <span class="sd">    class Square(BaseModel):</span>
-<span class="sd">    width: float</span>
-<span class="sd">    height: float</span>
+<span class="sd">        width: float</span>
+<span class="sd">        height: float</span>
 
-<span class="sd">    @model_validator(mode=&#39;after&#39;)</span>
-<span class="sd">    def verify_square(self) -&gt; &#39;Rectangle&#39;:</span>
-<span class="sd">        if self.width != self.height:</span>
-<span class="sd">            raise ValueError(&#39;width and height do not match&#39;)</span>
-<span class="sd">        return self</span>
+<span class="sd">        @model_validator(mode=&#39;after&#39;)</span>
+<span class="sd">        def verify_square(self) -&gt; &#39;Rectangle&#39;:</span>
+<span class="sd">            if self.width != self.height:</span>
+<span class="sd">                raise ValueError(&#39;width and height do not match&#39;)</span>
+<span class="sd">            return self</span>
 
 <span class="sd">    s = Square(width=1, height=1)</span>
 <span class="sd">    print(repr(s))</span>
