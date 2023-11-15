@@ -2114,6 +2114,72 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.strip_whitespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        strip_whitespace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.min_length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        min_length
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.max_length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_length
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.bin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.last4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        last4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.brand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        brand
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic_extra_types.payment.PaymentCardNumber.masked" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2950,6 +3016,72 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.strip_whitespace" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        strip_whitespace
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.min_length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        min_length
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.max_length" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        max_length
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.bin" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bin
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.last4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        last4
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.payment.PaymentCardNumber.brand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        brand
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic_extra_types.payment.PaymentCardNumber.masked" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3037,8 +3169,8 @@
 <a id="pydantic_extra_types.payment"></a>
   <div class="doc doc-contents first">
   
-      <p>Represents and validates payment cards (such as a debit or credit card),
-including validation for payment card number and issuer.</p>
+      <p>The <code>pydantic_extra_types.payment</code> module provides the
+<a class="autorefs autorefs-internal" href="#pydantic_extra_types.payment.PaymentCardNumber"><code>PaymentCardNumber</code></a> data type.</p>
 
   
 
@@ -3067,14 +3199,7 @@ including validation for payment card number and issuer.</p>
         Bases: <code>str</code>, <code><span title="enum.Enum">Enum</span></code></p>
 
   
-      <p>Enumeration of payment card brands.</p>
-<p><code>PaymentCardBrand</code> can be one of the following based on the BIN:</p>
-<ul>
-<li>PaymentCardBrand.amex</li>
-<li>PaymentCardBrand.mastercard</li>
-<li>PaymentCardBrand.visa</li>
-<li>PaymentCardBrand.other</li>
-</ul>
+      <p>Payment card brands supported by the <a class="autorefs autorefs-internal" href="#pydantic_extra_types.payment.PaymentCardNumber"><code>PaymentCardNumber</code></a>.</p>
 
 
 
@@ -3117,96 +3242,17 @@ including validation for payment card number and issuer.</p>
   
       <p>A <a href="https://en.wikipedia.org/wiki/Payment_card_number">payment card number</a>.</p>
 
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>strip_whitespace</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Whether to strip whitespace from the input value.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>min_length</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The minimum length of the card number.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>max_length</code></td>
-          <td>
-                <code>int</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The maximum length of the card number.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>bin</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The first 6 digits of the card number.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>last4</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The last 4 digits of the card number.</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td><code>brand</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_extra_types.payment.PaymentCardBrand" href="#pydantic_extra_types.payment.PaymentCardBrand">PaymentCardBrand</a></code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The brand of the card.</p>
-            </div>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
 
           <details class="quote">
             <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">validate_digits</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
 
     <span class="n">card_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_luhn_check_digit</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
@@ -3226,6 +3272,144 @@ including validation for payment card number and issuer.</p>
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic_extra_types.payment.PaymentCardNumber.strip_whitespace" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">strip_whitespace</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+  </span>
+
+<a href="#pydantic_extra_types.payment.PaymentCardNumber.strip_whitespace" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">strip_whitespace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Whether to strip whitespace from the input value.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic_extra_types.payment.PaymentCardNumber.min_length" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">min_length</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+  </span>
+
+<a href="#pydantic_extra_types.payment.PaymentCardNumber.min_length" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The minimum length of the card number.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic_extra_types.payment.PaymentCardNumber.max_length" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">max_length</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+  </span>
+
+<a href="#pydantic_extra_types.payment.PaymentCardNumber.max_length" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">19</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The maximum length of the card number.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic_extra_types.payment.PaymentCardNumber.bin" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">bin</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic_extra_types.payment.PaymentCardNumber.bin" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="nb">bin</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">card_number</span><span class="p">[:</span><span class="mi">6</span><span class="p">]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The first 6 digits of the card number.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic_extra_types.payment.PaymentCardNumber.last4" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">last4</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic_extra_types.payment.PaymentCardNumber.last4" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">last4</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">card_number</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The last 4 digits of the card number.</p>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="pydantic_extra_types.payment.PaymentCardNumber.brand" class="doc doc-heading">
+        <span class="doc doc-object-name doc-attribute-name">brand</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic_extra_types.payment.PaymentCardNumber.brand" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">brand</span><span class="p">:</span> <span class="n">PaymentCardBrand</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The brand of the card.</p>
+  </div>
+
+</div>
 
 <div class="doc doc-object doc-attribute">
 
@@ -3338,18 +3522,18 @@ including validation for payment card number and issuer.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">__input_value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardNumber</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the `PaymentCardNumber` instance.</span>
 
@@ -3439,18 +3623,18 @@ including validation for payment card number and issuer.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">validate_digits</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that the card number is all digits.</span>
 
@@ -3563,7 +3747,18 @@ Based on the <a href="https://en.wikipedia.org/wiki/Luhn_algorithm">Luhn algorit
 
       <details class="quote">
         <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">105</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
 <span class="normal">106</span>
 <span class="normal">107</span>
 <span class="normal">108</span>
@@ -3579,18 +3774,7 @@ Based on the <a href="https://en.wikipedia.org/wiki/Luhn_algorithm">Luhn algorit
 <span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">validate_luhn_check_digit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the payment card number.</span>
 <span class="sd">    Based on the [Luhn algorithm](https://en.wikipedia.org/wiki/Luhn_algorithm).</span>
@@ -3720,7 +3904,18 @@ for major brands.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic_extra_types/payment.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">134</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
 <span class="normal">135</span>
 <span class="normal">136</span>
 <span class="normal">137</span>
@@ -3757,18 +3952,7 @@ for major brands.</p>
 <span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">171</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardBrand</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate length based on</span>
 <span class="sd">    [BIN](https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN))</span>
@@ -3848,7 +4032,7 @@ for major brands.</p>
                 
   <script src="/flarelytics/client.js"></script>
       <script>
-    window.mkdocs_run_deps = ["pydantic==2.5.0", "pydantic-core==2.14.1"]
+    window.mkdocs_run_deps = ["pydantic==2.5.1", "pydantic-core==2.14.3"]
     </script>
 
               </article>
