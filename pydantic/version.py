@@ -3,7 +3,7 @@ from __future__ import annotations as _annotations
 
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.5.0'
+VERSION = '2.6.0a1'
 """The version of Pydantic."""
 
 
@@ -17,16 +17,12 @@ def version_short() -> str:
 
 def version_info() -> str:
     """Return complete version information for Pydantic and its dependencies."""
+    import importlib.metadata as importlib_metadata
     import platform
     import sys
     from pathlib import Path
 
     import pydantic_core._pydantic_core as pdc
-
-    if sys.version_info >= (3, 8):
-        import importlib.metadata as importlib_metadata
-    else:
-        import importlib_metadata
 
     # get data about packages that are closely related to pydantic, use pydantic or often conflict with pydantic
     package_names = {

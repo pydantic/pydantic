@@ -222,7 +222,7 @@ class _DefinitionsRemapping:
 
 
 class GenerateJsonSchema:
-    """Usage docs: https://docs.pydantic.dev/2.5/concepts/json_schema/#customizing-the-json-schema-generation-process
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#customizing-the-json-schema-generation-process
 
     A class for generating JSON schemas.
 
