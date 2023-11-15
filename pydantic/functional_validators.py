@@ -504,14 +504,14 @@ def model_validator(
     from pydantic import BaseModel, ValidationError, model_validator
 
     class Square(BaseModel):
-    width: float
-    height: float
+        width: float
+        height: float
 
-    @model_validator(mode='after')
-    def verify_square(self) -> 'Rectangle':
-        if self.width != self.height:
-            raise ValueError('width and height do not match')
-        return self
+        @model_validator(mode='after')
+        def verify_square(self) -> 'Rectangle':
+            if self.width != self.height:
+                raise ValueError('width and height do not match')
+            return self
 
     s = Square(width=1, height=1)
     print(repr(s))
