@@ -25,7 +25,7 @@ from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._mock_val_ser import MockValSer, set_model_mocks
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import get_cls_types_namespace, is_annotated, is_classvar, parent_frame_namespace
-from ._utils import ClassAttribute
+from ._utils import ClassAttribute, SafeGetItemProxy
 from ._validate_call import ValidateCallWrapper
 
 if typing.TYPE_CHECKING:
@@ -422,17 +422,9 @@ def make_hash_func(cls: type[BaseModel]) -> Any:
             # all model fields, which is how we can get here.
             # getter(self.__dict__) is much faster than any 'safe' method that accounts for missing keys,
             # and wrapping it in a `try` doesn't slow things down much in the common case.
-            return hash(getter(FallbackDict(self.__dict__)))  # type: ignore
+            return hash(getter(SafeGetItemProxy(self.__dict__)))
 
     return hash_func
-
-
-class FallbackDict:
-    def __init__(self, inner):
-        self.inner = inner
-
-    def __getitem__(self, key):
-        return self.inner.get(key)
 
 
 def set_model_fields(

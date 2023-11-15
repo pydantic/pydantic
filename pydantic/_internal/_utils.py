@@ -4,6 +4,8 @@ This should be reduced as much as possible with functions only used in one place
 """
 from __future__ import annotations as _annotations
 
+import dataclasses
+import enum
 import keyword
 import typing
 import weakref
@@ -11,7 +13,7 @@ from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import Any, TypeVar
+from typing import Any, Generic, Mapping, TypeVar
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -333,3 +335,41 @@ def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bo
         if left_item is not right_item:
             return False
     return True
+
+
+_KeyType = TypeVar('_KeyType')
+_ValueType = TypeVar('_ValueType')
+
+
+# We need a sentinel value for missing fields when comparing models
+# Models are equals if-and-only-if they miss the same fields, and since None is a legitimate value
+# we can't default to None
+# We use the single-value enum trick to allow correct typing when using a sentinel
+# https://github.com/python/typing/issues/689#issuecomment-561568944
+class SentinelType(enum.Enum):
+    SENTINEL = enum.auto()
+
+
+SENTINEL = SentinelType.SENTINEL
+
+
+@dataclasses.dataclass(frozen=True)
+class SafeGetItemProxy(Generic[_KeyType, _ValueType]):
+    """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
+
+    This makes is safe to use in `operator.itemgetter` when some keys may be missing
+    """
+
+    wrapped: Mapping[_KeyType, _ValueType]
+
+    def __getitem__(self, __key: _KeyType) -> SentinelType | _ValueType:
+        return self.wrapped.get(__key, SENTINEL)
+
+    # required to pass the object to operator.itemgetter() instances due to a quirk of typeshed
+    # https://github.com/python/mypy/issues/13713
+    # https://github.com/python/typeshed/pull/8785
+    # Since this is typing-only, hide it in a typing.TYPE_CHECKING block
+    if typing.TYPE_CHECKING:
+
+        def __contains__(self, __key: _KeyType) -> bool:
+            return self.wrapped.__contains__(__key)
