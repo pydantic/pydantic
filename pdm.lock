@@ -468,7 +468,7 @@ files = [
 
 [[package]]
 name = "dirty-equals"
-version = "0.7.1"
+version = "0.6.0"
 requires_python = ">=3.7"
 summary = "Doing dirty (but extremely useful) things with equals."
 dependencies = [
@@ -476,8 +476,8 @@ dependencies = [
     "typing-extensions>=4.0.1; python_version < \"3.8\"",
 ]
 files = [
-    {file = "dirty_equals-0.7.1-py3-none-any.whl", hash = "sha256:66243dc58e23afd396284720d03589e72c05e628798a16ac43285843347a4bf4"},
-    {file = "dirty_equals-0.7.1.tar.gz", hash = "sha256:a580513f3285e93656a770a04e428f8bfc513848877bf278282dbfbb907fdbb4"},
+    {file = "dirty_equals-0.6.0-py3-none-any.whl", hash = "sha256:7c29af40193a862ce66f932236c2a4be97489bbf7caf8a90e4a606e7c47c41b3"},
+    {file = "dirty_equals-0.6.0.tar.gz", hash = "sha256:4c4e4b9b52670ad8b880c46734e5ffc52e023250ae817398b78b30e329c3955d"},
 ]
 
 [[package]]
