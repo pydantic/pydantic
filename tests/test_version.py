@@ -11,7 +11,7 @@ from pydantic.version import version_info, version_short
 def test_version_info():
     s = version_info()
     assert re.match(' *pydantic version: ', s)
-    assert s.count('\n') == 6
+    assert s.count('\n') == 7
 
 
 def test_standard_version():
