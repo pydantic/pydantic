@@ -2809,6 +2809,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic_core.from_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_json()
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic_core.to_jsonable_python" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4652,6 +4663,17 @@
     <span class="md-ellipsis">
       
         to_json()
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.from_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_json()
       
     </span>
   </a>
@@ -8896,6 +8918,121 @@ if <code>None</code> a <a class="autorefs autorefs-internal" href="#pydantic_cor
           <td>
             <div class="doc-md-description">
               <p>JSON bytes.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+
+<h2 id="pydantic_core.from_json" class="doc doc-heading">
+          <span class="doc doc-object-name doc-function-name">from_json</span>
+
+
+<a href="#pydantic_core.from_json" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">from_json</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">allow_inf_nan</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Deserialize JSON data to a Python object.</p>
+<p>This is effectively a faster version of <code>json.loads()</code>.</p>
+
+
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>data</code></td>
+          <td>
+                <code>str | bytes | bytearray</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The JSON data to deserialize.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>allow_inf_nan</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Whether to allow <code>Infinity</code>, <code>-Infinity</code> and <code>NaN</code> values as <code>json.loads()</code> does by default.</p>
+            </div>
+          </td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Raises:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code>ValueError</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If deserialization fails.</p>
+            </div>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td>
+                <code><span title="typing.Any">Any</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>The deserialized Python object.</p>
             </div>
           </td>
         </tr>
