@@ -99,7 +99,7 @@ linting = [
 testing = [
     "cloudpickle",
     "coverage[toml]",
-    "dirty-equals",
+    "dirty-equals==0.6.0",
     "pytest",
     "pytest-mock",
     "pytest-pretty",

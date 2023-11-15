@@ -6,7 +6,7 @@ groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "t
 cross_platform = true
 static_urls = false
 lock_version = "4.3"
-content_hash = "sha256:4c7cfdbd2f51e4edeb007bf95926c07f04bb96eb5f62c73ae6bde0269e6ea44a"
+content_hash = "sha256:70d25651689316173be309493768ef97d1f9e42831800cfd6fc156ba05947cba"
 
 [[package]]
 name = "annotated-types"
@@ -410,15 +410,16 @@ files = [
 
 [[package]]
 name = "dirty-equals"
-version = "0.7.1.post0"
+version = "0.6.0"
 requires_python = ">=3.7"
 summary = "Doing dirty (but extremely useful) things with equals."
 dependencies = [
     "pytz>=2021.3",
+    "typing-extensions>=4.0.1; python_version < \"3.8\"",
 ]
 files = [
-    {file = "dirty_equals-0.7.1.post0-py3-none-any.whl", hash = "sha256:7fb9217ea7cd04c0e95ace3bc717e2ee5532b8990518533483e53b5a43903c88"},
-    {file = "dirty_equals-0.7.1.post0.tar.gz", hash = "sha256:78ff80578a46163831ecb3255cf30d03d1dc2fbca8e67f820105691a1bc556dc"},
+    {file = "dirty_equals-0.6.0-py3-none-any.whl", hash = "sha256:7c29af40193a862ce66f932236c2a4be97489bbf7caf8a90e4a606e7c47c41b3"},
+    {file = "dirty_equals-0.6.0.tar.gz", hash = "sha256:4c4e4b9b52670ad8b880c46734e5ffc52e023250ae817398b78b30e329c3955d"},
 ]
 
 [[package]]
