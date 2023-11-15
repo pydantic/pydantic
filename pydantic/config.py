@@ -826,7 +826,7 @@ class ConfigDict(TypedDict, total=False):
 
     regex_engine: Literal['rust-regex', 'python-re']
     """
-    The regex engine to used for pattern validation
+    The regex engine to be used for pattern validation.
     Defaults to `'rust-regex'`.
 
     - `rust-regex` uses the [`regex`](https://docs.rs/regex) Rust crate,
@@ -859,13 +859,13 @@ class ConfigDict(TypedDict, total=False):
 
     validation_error_cause: bool
     """
-    If `True`, python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to `False`.
+    If `True`, Python exceptions that were part of a validation failure will be shown as an exception group as a cause. Can be useful for debugging. Defaults to `False`.
 
     Note:
         Python 3.10 and older don't support exception groups natively. <=3.10, backport must be installed: `pip install exceptiongroup`.
 
     Note:
-        The structure of validation errors are likely to change in future pydantic versions. Pydantic offers no guarantees about the structure of validation errors. Should be used for visual traceback debugging only.
+        The structure of validation errors are likely to change in future Pydantic versions. Pydantic offers no guarantees about their structure. Should be used for visual traceback debugging only.
     """
 
     use_attribute_docstrings: bool

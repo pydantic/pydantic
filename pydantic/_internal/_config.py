@@ -79,6 +79,7 @@ class ConfigWrapper:
     json_schema_mode_override: Literal['validation', 'serialization', None]
     coerce_numbers_to_str: bool
     regex_engine: Literal['rust-regex', 'python-re']
+    validation_error_cause: bool
     use_attribute_docstrings: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
