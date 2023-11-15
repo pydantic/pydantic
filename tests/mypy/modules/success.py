@@ -6,7 +6,7 @@ Do a little skipping about with types to demonstrate its usage.
 import os
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path, PurePath
-from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
+from typing import Any, ClassVar, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
 from typing_extensions import Annotated, TypedDict
@@ -300,3 +300,11 @@ def double(value: Any, handler: Any) -> int:
 
 class WrapValidatorModel(BaseModel):
     x: Annotated[int, WrapValidator(double)]
+
+
+class Abstract(BaseModel):
+    class_id: ClassVar
+
+
+class Concrete(Abstract):
+    class_id = 1
