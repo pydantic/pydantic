@@ -9,7 +9,7 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::build_tools::{py_schema_err, py_schema_error_type};
 use crate::errors::{ErrorType, ValError, ValResult};
-use crate::input::Input;
+use crate::input::{Input, ValidationMatch};
 use crate::py_gc::PyGcTraverse;
 use crate::tools::SchemaDict;
 
@@ -116,8 +116,18 @@ impl<T: Debug> LiteralLookup<T> {
             }
         }
         if let Some(expected_strings) = &self.expected_str {
-            // dbg!(expected_strings);
-            if let Ok(either_str) = input.exact_str() {
+            let validation_result = if input.is_python() {
+                input.exact_str()
+            } else {
+                // Strings coming from JSON are treated as "strict" but not "exact" for reasons
+                // of parsing types like UUID; see the implementation of `validate_str` for Json
+                // inputs for justification. We might change that eventually, but for now we need
+                // to work around this when loading from JSON
+                // V3 TODO: revisit making this "exact" for JSON inputs
+                input.validate_str(true, false).map(ValidationMatch::into_inner)
+            };
+
+            if let Ok(either_str) = validation_result {
                 let cow = either_str.as_cow()?;
                 if let Some(id) = expected_strings.get(cow.as_ref()) {
                     return Ok(Some((input, &self.values[*id])));
