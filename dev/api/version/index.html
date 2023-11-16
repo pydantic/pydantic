@@ -2964,14 +2964,26 @@
 <span class="normal">50</span>
 <span class="normal">51</span>
 <span class="normal">52</span>
-<span class="normal">53</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">version_info</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">version_info</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return complete version information for Pydantic and its dependencies.&quot;&quot;&quot;</span>
     <span class="kn">import</span> <span class="nn">importlib.metadata</span> <span class="k">as</span> <span class="nn">importlib_metadata</span>
+    <span class="kn">import</span> <span class="nn">os</span>
     <span class="kn">import</span> <span class="nn">platform</span>
     <span class="kn">import</span> <span class="nn">sys</span>
     <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
     <span class="kn">import</span> <span class="nn">pydantic_core._pydantic_core</span> <span class="k">as</span> <span class="nn">pdc</span>
+
+    <span class="kn">from</span> <span class="nn">._internal</span> <span class="kn">import</span> <span class="n">_git</span> <span class="k">as</span> <span class="n">git</span>
 
     <span class="c1"># get data about packages that are closely related to pydantic, use pydantic or often conflict with pydantic</span>
     <span class="n">package_names</span> <span class="o">=</span> <span class="p">{</span>
@@ -2990,6 +3002,11 @@
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">package_names</span><span class="p">:</span>
             <span class="n">related_packages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="n">dist</span><span class="o">.</span><span class="n">version</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
+    <span class="n">pydantic_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))</span>
+    <span class="n">most_recent_commit</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">git</span><span class="o">.</span><span class="n">git_revision</span><span class="p">(</span><span class="n">pydantic_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">git</span><span class="o">.</span><span class="n">is_git_repo</span><span class="p">(</span><span class="n">pydantic_dir</span><span class="p">)</span> <span class="ow">and</span> <span class="n">git</span><span class="o">.</span><span class="n">have_git</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;unknown&#39;</span>
+    <span class="p">)</span>
+
     <span class="n">info</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;pydantic version&#39;</span><span class="p">:</span> <span class="n">VERSION</span><span class="p">,</span>
         <span class="s1">&#39;pydantic-core version&#39;</span><span class="p">:</span> <span class="n">pdc</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
@@ -2998,6 +3015,7 @@
         <span class="s1">&#39;python version&#39;</span><span class="p">:</span> <span class="n">sys</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
         <span class="s1">&#39;platform&#39;</span><span class="p">:</span> <span class="n">platform</span><span class="o">.</span><span class="n">platform</span><span class="p">(),</span>
         <span class="s1">&#39;related packages&#39;</span><span class="p">:</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">related_packages</span><span class="p">),</span>
+        <span class="s1">&#39;commit&#39;</span><span class="p">:</span> <span class="n">most_recent_commit</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:&gt;30}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">k</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">))</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">info</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
 </code></pre></div></td></tr></table></div>
