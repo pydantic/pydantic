@@ -21,8 +21,7 @@ def test_version_info():
     ]
 
     s = version_info()
-    for field in version_info_fields:
-        assert re.search(f'{field}', s)
+    assert all([f'{field}:' in s for field in version_info_fields])
     assert s.count('\n') == 7
 
 
