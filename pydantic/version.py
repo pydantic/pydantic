@@ -48,7 +48,6 @@ def version_info() -> str:
     most_recent_commit = (
         git.git_revision(pydantic_dir) if git.is_git_repo(pydantic_dir) and git.have_git() else 'unknown'
     )
-    del pydantic_dir
 
     info = {
         'pydantic version': VERSION,
