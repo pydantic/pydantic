@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use _pydantic_core::SchemaSerializer;
+    use _pydantic_core::{SchemaSerializer, SchemaValidator};
     use pyo3::prelude::*;
     use pyo3::types::PyDict;
 
@@ -84,6 +84,37 @@ a = A()
                 .extract(py)
                 .unwrap();
             assert_eq!(serialized, b"{\"b\":\"b\"}");
+        });
+    }
+
+    #[test]
+    fn test_literal_schema() {
+        Python::with_gil(|py| {
+            let code = r#"
+schema = {
+    "type": "dict",
+    "keys_schema": {
+        "type": "literal",
+        "expected": ["a", "b"],
+    },
+    "values_schema": {
+        "type": "str",
+    },
+    "strict": False,
+}
+json_input = '{"a": "something"}'
+            "#;
+            let locals = PyDict::new(py);
+            py.run(code, None, Some(locals)).unwrap();
+            let schema: &PyDict = locals.get_item("schema").unwrap().unwrap().extract().unwrap();
+            let json_input: &PyAny = locals.get_item("json_input").unwrap().unwrap().extract().unwrap();
+            let binding = SchemaValidator::py_new(py, schema, None)
+                .unwrap()
+                .validate_json(py, json_input, None, None, None)
+                .unwrap();
+            let validation_result: &PyAny = binding.extract(py).unwrap();
+            let repr = format!("{}", validation_result.repr().unwrap());
+            assert_eq!(repr, "{'a': 'something'}");
         });
     }
 }
