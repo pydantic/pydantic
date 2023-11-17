@@ -336,16 +336,16 @@ def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bo
     return True
 
 
-
 @dataclasses.dataclass(frozen=True)
 class SafeGetItemProxy:
     """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
 
     This makes is safe to use in `operator.itemgetter` when some keys may be missing
     """
+
     # Define __slots__manually for performances
     # @dataclasses.dataclass() only support slots=True in python>=3.10
-    __slots__ = ('wrapped', )
+    __slots__ = ('wrapped',)
 
     wrapped: Mapping[str, Any]
 
