@@ -1510,6 +1510,27 @@ def test_dataclass_json():
     ]
 
 
+def test_dataclass_wrap_json():
+    # https://github.com/pydantic/pydantic/issues/8147
+    schema = core_schema.no_info_wrap_validator_function(
+        lambda v, handler: handler(v),
+        core_schema.dataclass_schema(
+            FooDataclass,
+            core_schema.dataclass_args_schema(
+                'FooDataclass',
+                [
+                    core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
+                    core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
+                ],
+            ),
+            ['a', 'b'],
+        ),
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_json('{"a": "hello", "b": true}') == FooDataclass(a='hello', b=True)
+    assert v.validate_json('{"a": "hello", "b": true}', strict=True) == FooDataclass(a='hello', b=True)
+
+
 @pytest.mark.xfail(
     condition=platform.python_implementation() == 'PyPy', reason='https://foss.heptapod.net/pypy/pypy/-/issues/3899'
 )
