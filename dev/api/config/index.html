@@ -1832,6 +1832,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.ser_json_inf_nan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ser_json_inf_nan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.validate_default" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3572,6 +3583,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#pydantic.config.ConfigDict.ser_json_inf_nan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ser_json_inf_nan
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pydantic.config.ConfigDict.validate_default" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4888,6 +4910,40 @@ Defaults to <code>'utf8'</code>.</p>
 <ul>
 <li><code>'utf8'</code> will serialize bytes to UTF-8 strings.</li>
 <li><code>'base64'</code> will serialize bytes to URL safe base64 strings.</li>
+</ul>
+  </div>
+
+</div>
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+
+<h3 id="pydantic.config.ConfigDict.ser_json_inf_nan" class="doc doc-heading">
+          <span class="doc doc-object-name doc-attribute-name">ser_json_inf_nan</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#pydantic.config.ConfigDict.ser_json_inf_nan" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="n">ser_json_inf_nan</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>The encoding of JSON serialized infinity and NaN float values. Accepts the string values of <code>'null'</code> and <code>'constants'</code>.
+Defaults to <code>'null'</code>.</p>
+<ul>
+<li><code>'null'</code> will serialize infinity and NaN values as <code>null</code>.</li>
+<li><code>'constants'</code> will serialize infinity and NaN values as <code>Infinity</code> and <code>NaN</code>.</li>
 </ul>
   </div>
 
