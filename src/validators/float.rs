@@ -109,7 +109,7 @@ impl Validator for ConstrainedFloatValidator {
         }
         if let Some(multiple_of) = self.multiple_of {
             let rem = float % multiple_of;
-            let threshold = float / 1e9;
+            let threshold = float.abs() / 1e9;
             if rem.abs() > threshold && (rem - multiple_of).abs() > threshold {
                 return Err(ValError::new(
                     ErrorType::MultipleOf {
