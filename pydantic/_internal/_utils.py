@@ -5,7 +5,6 @@ This should be reduced as much as possible with functions only used in one place
 from __future__ import annotations as _annotations
 
 import dataclasses
-import enum
 import keyword
 import typing
 import weakref
@@ -13,7 +12,7 @@ from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import Any, Generic, Mapping, TypeVar
+from typing import Any, Mapping, TypeVar
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -319,7 +318,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
     return deepcopy(obj)  # slowest way when we actually might need a deepcopy
 
 
-_EMPTY = object()
+_SENTINEL = object()
 
 
 def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bool:
@@ -331,41 +330,27 @@ def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bo
     >>> all_identical([a, b, [a]], [a, b, [a]])  # new list object, while "equal" is not "identical"
     False
     """
-    for left_item, right_item in zip_longest(left, right, fillvalue=_EMPTY):
+    for left_item, right_item in zip_longest(left, right, fillvalue=_SENTINEL):
         if left_item is not right_item:
             return False
     return True
 
 
-_KeyType = TypeVar('_KeyType')
-_ValueType = TypeVar('_ValueType')
-
-
-# We need a sentinel value for missing keys that cannot be None, since None is a legitimate value
-# This sentinel must be hashable, compare equal only to itself, and properly typeable in type annotations
-# We use the single-value enum trick to allow correct typing when using a sentinel, from the MyPy suggestion:
-# https://github.com/python/typing/issues/689#issuecomment-561568944
-class SentinelType(enum.Enum):
-    """Class for a sentinel value so that sentinel usage can written and type-checked in type annotations"""
-
-    SENTINEL = enum.auto()
-
-
-SENTINEL = SentinelType.SENTINEL
-"""Sentinel value that can be properly typed in type annotations"""
-
 
 @dataclasses.dataclass(frozen=True)
-class SafeGetItemProxy(Generic[_KeyType, _ValueType]):
+class SafeGetItemProxy:
     """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
 
     This makes is safe to use in `operator.itemgetter` when some keys may be missing
     """
+    # Define __slots__manually for performances
+    # @dataclasses.dataclass() only support slots=True in python>=3.10
+    __slots__ = ('wrapped', )
 
-    wrapped: Mapping[_KeyType, _ValueType]
+    wrapped: Mapping
 
-    def __getitem__(self, __key: _KeyType) -> SentinelType | _ValueType:
-        return self.wrapped.get(__key, SENTINEL)
+    def __getitem__(self, __key: Any) -> Any:
+        return self.wrapped.get(__key, _SENTINEL)
 
     # required to pass the object to operator.itemgetter() instances due to a quirk of typeshed
     # https://github.com/python/mypy/issues/13713
@@ -373,5 +358,5 @@ class SafeGetItemProxy(Generic[_KeyType, _ValueType]):
     # Since this is typing-only, hide it in a typing.TYPE_CHECKING block
     if typing.TYPE_CHECKING:
 
-        def __contains__(self, __key: _KeyType) -> bool:
+        def __contains__(self, __key: Any) -> bool:
             return self.wrapped.__contains__(__key)

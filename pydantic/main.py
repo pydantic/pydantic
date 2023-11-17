@@ -899,7 +899,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
             # raises an error in BaseModel.__getattr__ instead of returning the class attribute
             # So we can use operator.itemgetter() instead of operator.attrgetter()
-            getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils.SENTINEL
+            getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
             try:
                 return getter(self.__dict__) == getter(other.__dict__)
             except KeyError:
