@@ -542,7 +542,7 @@ class ConfigDict(TypedDict, total=False):
 
     ser_json_inf_nan: Literal['null', 'constants']
     """
-    The encoding of JSON serialized infinity and NaN float values. Accepts the string values of `'null'` and `'base64'`.
+    The encoding of JSON serialized infinity and NaN float values. Accepts the string values of `'null'` and `'constants'`.
     Defaults to `'null'`.
 
     - `'null'` will serialize infinity and NaN values as `null`.
