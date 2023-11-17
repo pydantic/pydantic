@@ -188,6 +188,7 @@ def test_decimal_kwargs(py_and_json: PyAndJson, kwargs: Dict[str, Any], input_va
         (0.1, 1, None),
         (0.1, 1.0, None),
         (0.1, int(5e10), None),
+        (2.0, -2.0, None),
     ],
     ids=repr,
 )
