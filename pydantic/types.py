@@ -1918,7 +1918,7 @@ else:
             return 'AwareDatetime'
 
     class UTCDatetime:
-        """A datetime that requires timezone info."""
+        """A datetime that needs UTC as the timezone."""
 
         @classmethod
         def __get_pydantic_core_schema__(
