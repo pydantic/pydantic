@@ -9,6 +9,7 @@ use uuid::Uuid;
 use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ErrorTypeDefaults, ValError, ValResult};
 use crate::input::Input;
+use crate::input::InputType;
 use crate::tools::SchemaDict;
 
 use super::model::create_class;
@@ -108,7 +109,7 @@ impl Validator for UuidValidator {
                 }
             }
             Ok(py_input.to_object(py))
-        } else if state.strict_or(self.strict) && input.is_python() {
+        } else if state.strict_or(self.strict) && state.extra().input_type == InputType::Python {
             Err(ValError::new(
                 ErrorType::IsInstanceOf {
                     class: class.name().unwrap_or("UUID").to_string(),
@@ -118,8 +119,9 @@ impl Validator for UuidValidator {
             ))
         } else {
             // In python mode this is a coercion, in JSON mode we treat a UUID string as an
-            // exact match
-            if input.is_python() {
+            // exact match.
+            // TODO V3: we might want to remove the JSON special case
+            if state.extra().input_type == InputType::Python {
                 state.floor_exactness(Exactness::Lax);
             }
             let uuid = self.get_uuid(input)?;
