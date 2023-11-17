@@ -3802,10 +3802,10 @@ the use of <code>contextvars.ContextVar</code> and a custom <code>__init__</code
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">my_number</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">__pydantic_self__</span><span class="o">.</span><span class="n">__pydantic_validator__</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__pydantic_validator__</span><span class="o">.</span><span class="n">validate_python</span><span class="p">(</span>
             <span class="n">data</span><span class="p">,</span>
-            <span class="n">self_instance</span><span class="o">=</span><span class="n">__pydantic_self__</span><span class="p">,</span>
+            <span class="n">self_instance</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
             <span class="n">context</span><span class="o">=</span><span class="n">_init_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
         <span class="p">)</span>
 
