@@ -6,9 +6,11 @@ import typing
 from copy import copy, deepcopy
 
 from pydantic_core import PydanticUndefined
+from typing_extensions import dataclass_transform
 
 from . import PydanticUserError
 from ._internal import _repr
+from .fields import Field as PydanticModelField
 from .main import BaseModel, _object_setattr
 
 if typing.TYPE_CHECKING:
@@ -25,6 +27,7 @@ __all__ = ('RootModel',)
 RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
+@dataclass_transform(kw_only_default=False, field_specifiers=(PydanticModelField,))
 class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     """Usage docs: https://docs.pydantic.dev/2.6/concepts/models/#rootmodel-and-custom-root-types
 
