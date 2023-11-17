@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-sources = python/pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py 
+sources = python/pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
 
 mypy-stubtest = python -m mypy.stubtest pydantic_core._pydantic_core --allowlist .mypy-stubtest-allowlist
 
@@ -90,14 +90,14 @@ build-wasm:
 
 .PHONY: format
 format:
-	ruff --fix $(sources) 
-	ruff format $(sources) 
+	ruff --fix $(sources)
+	ruff format $(sources)
 	cargo fmt
 
 .PHONY: lint-python
 lint-python:
-	ruff $(sources) 
-	ruff format --check $(sources) 
+	ruff $(sources)
+	ruff format --check $(sources)
 	$(mypy-stubtest)
 	griffe dump -f -d google -LWARNING -o/dev/null python/pydantic_core
 
@@ -109,8 +109,6 @@ lint-rust:
 	cargo clippy --tests -- \
 		-D warnings \
 		-W clippy::pedantic \
-		-W clippy::dbg_macro \
-		-W clippy::print_stdout \
 		-A clippy::cast-possible-truncation \
 		-A clippy::cast-possible-wrap \
 		-A clippy::cast-precision-loss \
