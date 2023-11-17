@@ -22,7 +22,7 @@ mod tests {
             //         'type': 'function-wrap',
             //         'function': lambda: None,
             //     },
-            let code = r#"{
+            let code = r"{
                 'type': 'definitions',
                 'schema': {'type': 'definition-ref', 'schema_ref': 'C-ref'},
                 'definitions': [
@@ -44,7 +44,7 @@ mod tests {
                         },
                     },
                 ]
-            }"#;
+            }";
             let schema: &PyDict = py.eval(code, None, None).unwrap().extract().unwrap();
             SchemaSerializer::py_new(py, schema, None).unwrap();
         });
