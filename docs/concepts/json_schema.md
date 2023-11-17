@@ -187,6 +187,7 @@ Specifically, the following config options are relevant:
 * [`json_schema_extra`][pydantic.config.ConfigDict.json_schema_extra]
 * [`ser_json_timedelta`][pydantic.config.ConfigDict.ser_json_timedelta]
 * [`ser_json_bytes`][pydantic.config.ConfigDict.ser_json_bytes]
+* [`ser_json_inf_nan`][pydantic.config.ConfigDict.ser_json_inf_nan]
 
 ### Unenforced `Field` constraints
 
