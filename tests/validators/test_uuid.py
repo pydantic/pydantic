@@ -4,7 +4,7 @@ from uuid import UUID
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -197,3 +197,16 @@ def test_uuid_copy():
     assert repr(output) == "UUID('a6cc5730-2261-11ee-9c43-2eb5a363657c')"
     assert c == output
     assert isinstance(output, UUID)
+
+
+def test_uuid_wrap_json():
+    # https://github.com/pydantic/pydantic/issues/8147
+    schema = core_schema.no_info_wrap_validator_function(lambda v, handler: handler(v), core_schema.uuid_schema())
+    v = SchemaValidator(schema)
+
+    assert v.validate_python(UUID('a6cc5730-2261-11ee-9c43-2eb5a363657c'), strict=True) == UUID(
+        'a6cc5730-2261-11ee-9c43-2eb5a363657c'
+    )
+    assert v.validate_json('"a6cc5730-2261-11ee-9c43-2eb5a363657c"', strict=True) == UUID(
+        'a6cc5730-2261-11ee-9c43-2eb5a363657c'
+    )

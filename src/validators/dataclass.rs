@@ -8,6 +8,7 @@ use ahash::AHashSet;
 use crate::build_tools::py_schema_err;
 use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
 use crate::errors::{AsLocItem, ErrorType, ErrorTypeDefaults, ValError, ValLineError, ValResult};
+use crate::input::InputType;
 use crate::input::{BorrowInput, GenericArguments, Input, ValidationMatch};
 use crate::lookup_key::LookupKey;
 use crate::tools::SchemaDict;
@@ -535,7 +536,7 @@ impl Validator for DataclassValidator {
             } else {
                 Ok(input.to_object(py))
             }
-        } else if state.strict_or(self.strict) && input.is_python() {
+        } else if state.strict_or(self.strict) && state.extra().input_type == InputType::Python {
             Err(ValError::new(
                 ErrorType::DataclassExactType {
                     class_name: self.get_name().to_string(),
