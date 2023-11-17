@@ -1,4 +1,3 @@
-import re
 from unittest.mock import patch
 
 import pytest
@@ -9,9 +8,20 @@ from pydantic.version import version_info, version_short
 
 
 def test_version_info():
+    version_info_fields = [
+        'pydantic version',
+        'pydantic-core version',
+        'pydantic-core build',
+        'install path',
+        'python version',
+        'platform',
+        'related packages',
+        'commit',
+    ]
+
     s = version_info()
-    assert re.match(' *pydantic version: ', s)
-    assert s.count('\n') == 6
+    assert all([f'{field}:' in s for field in version_info_fields])
+    assert s.count('\n') == 7
 
 
 def test_standard_version():
