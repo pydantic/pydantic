@@ -89,6 +89,7 @@ __all__ = (
     'FutureDatetime',
     'condate',
     'AwareDatetime',
+    'UTCDatetime',
     'NaiveDatetime',
     'AllowInfNan',
     'EncoderProtocol',
@@ -1890,6 +1891,7 @@ def condate(
 
 if TYPE_CHECKING:
     AwareDatetime = Annotated[datetime, ...]
+    UTCDatetime = Annotated[datetime, ...]
     NaiveDatetime = Annotated[datetime, ...]
     PastDatetime = Annotated[datetime, ...]
     FutureDatetime = Annotated[datetime, ...]
@@ -1914,6 +1916,25 @@ else:
 
         def __repr__(self) -> str:
             return 'AwareDatetime'
+
+    class UTCDatetime:
+        """A datetime that requires timezone info."""
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            if cls is source:
+                # used directly as a type
+                return core_schema.datetime_schema(tz_constraint=0)
+            else:
+                schema = handler(source)
+                _check_annotated_type(schema['type'], 'datetime', cls.__name__)
+                schema['tz_constraint'] = 0
+                return schema
+
+        def __repr__(self) -> str:
+            return 'UTCDatetime'
 
     class NaiveDatetime:
         """A datetime that doesn't require timezone info."""

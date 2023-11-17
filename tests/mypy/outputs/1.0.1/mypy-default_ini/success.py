@@ -14,6 +14,7 @@ from typing_extensions import Annotated, TypedDict
 from pydantic import (
     UUID1,
     AwareDatetime,
+    UTCDatetime,
     BaseModel,
     ConfigDict,
     DirectoryPath,
@@ -248,6 +249,7 @@ class PydanticTypes(BaseModel):
     my_past_datetime: PastDatetime = datetime.now() - timedelta(1)
     my_future_datetime: FutureDatetime = datetime.now() + timedelta(1)
     my_aware_datetime: AwareDatetime = datetime.now(tz=timezone.utc)
+    my_utc_datetime: UTCDatetime = datetime.now(tz=timezone.utc)
     my_naive_datetime: NaiveDatetime = datetime.now()
 
 

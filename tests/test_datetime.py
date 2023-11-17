@@ -13,6 +13,7 @@ from pydantic import (
     NaiveDatetime,
     PastDate,
     PastDatetime,
+    UTCDatetime,
     ValidationError,
     condate,
 )
@@ -46,6 +47,11 @@ def past_datetime_type(request):
 
 @pytest.fixture(scope='module', params=[AwareDatetime, Annotated[datetime, AwareDatetime()]])
 def aware_datetime_type(request):
+    return request.param
+
+
+@pytest.fixture(scope='module', params=[UTCDatetime, Annotated[datetime, UTCDatetime()]])
+def utc_datetime_type(request):
     return request.param
 
 
@@ -588,6 +594,7 @@ def test_future_datetime_validation_fails(value, future_datetime_type):
         FutureDatetime,
         NaiveDatetime,
         AwareDatetime,
+        UTCDatetime,
     ),
 )
 def test_invalid_annotated_type(annotation):
