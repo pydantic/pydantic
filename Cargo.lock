@@ -321,7 +321,7 @@ dependencies = [
 
 [[package]]
 name = "pydantic-core"
-version = "2.14.3"
+version = "2.14.4"
 dependencies = [
  "ahash",
  "base64",
