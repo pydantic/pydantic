@@ -1,6 +1,7 @@
 """Logic for creating models."""
 from __future__ import annotations as _annotations
 
+import operator
 import sys
 import types
 import typing
@@ -868,12 +869,50 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
             other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
 
-            return (
+            # Perform common checks first
+            if not (
                 self_type == other_type
-                and self.__dict__ == other.__dict__
                 and self.__pydantic_private__ == other.__pydantic_private__
                 and self.__pydantic_extra__ == other.__pydantic_extra__
-            )
+            ):
+                return False
+
+            # We only want to compare pydantic fields but ignoring fields is costly.
+            # We'll perform a fast check first, and fallback only when needed
+            # See GH-7444 and GH-7825 for rationale and a performance benchmark
+
+            # First, do the fast (and sometimes faulty) __dict__ comparison
+            if self.__dict__ == other.__dict__:
+                # If the check above passes, then pydantic fields are equal, we can return early
+                return True
+
+            # We don't want to trigger unnecessary costly filtering of __dict__ on all unequal objects, so we return
+            # early if there are no keys to ignore (we would just return False later on anyway)
+            model_fields = type(self).model_fields.keys()
+            if self.__dict__.keys() <= model_fields and other.__dict__.keys() <= model_fields:
+                return False
+
+            # If we reach here, there are non-pydantic-fields keys, mapped to unequal values, that we need to ignore
+            # Resort to costly filtering of the __dict__ objects
+            # We use operator.itemgetter because it is much faster than dict comprehensions
+            # NOTE: Contrary to standard python class and instances, when the Model class has a default value for an
+            # attribute and the model instance doesn't have a corresponding attribute, accessing the missing attribute
+            # raises an error in BaseModel.__getattr__ instead of returning the class attribute
+            # So we can use operator.itemgetter() instead of operator.attrgetter()
+            getter = operator.itemgetter(*model_fields) if model_fields else lambda _: _utils._SENTINEL
+            try:
+                return getter(self.__dict__) == getter(other.__dict__)
+            except KeyError:
+                # In rare cases (such as when using the deprecated BaseModel.copy() method),
+                # the __dict__ may not contain all model fields, which is how we can get here.
+                # getter(self.__dict__) is much faster than any 'safe' method that accounts
+                # for missing keys, and wrapping it in a `try` doesn't slow things down much
+                # in the common case.
+                self_fields_proxy = _utils.SafeGetItemProxy(self.__dict__)
+                other_fields_proxy = _utils.SafeGetItemProxy(other.__dict__)
+                return getter(self_fields_proxy) == getter(other_fields_proxy)
+
+        # other instance is not a BaseModel
         else:
             return NotImplemented  # delegate to the other item in the comparison
 

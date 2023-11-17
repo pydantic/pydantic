@@ -4,6 +4,7 @@ This should be reduced as much as possible with functions only used in one place
 """
 from __future__ import annotations as _annotations
 
+import dataclasses
 import keyword
 import typing
 import weakref
@@ -11,7 +12,7 @@ from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
 from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
-from typing import Any, TypeVar
+from typing import Any, Mapping, TypeVar
 
 from typing_extensions import TypeAlias, TypeGuard
 
@@ -317,7 +318,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
     return deepcopy(obj)  # slowest way when we actually might need a deepcopy
 
 
-_EMPTY = object()
+_SENTINEL = object()
 
 
 def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bool:
@@ -329,7 +330,33 @@ def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bo
     >>> all_identical([a, b, [a]], [a, b, [a]])  # new list object, while "equal" is not "identical"
     False
     """
-    for left_item, right_item in zip_longest(left, right, fillvalue=_EMPTY):
+    for left_item, right_item in zip_longest(left, right, fillvalue=_SENTINEL):
         if left_item is not right_item:
             return False
     return True
+
+
+@dataclasses.dataclass(frozen=True)
+class SafeGetItemProxy:
+    """Wrapper redirecting `__getitem__` to `get` with a sentinel value as default
+
+    This makes is safe to use in `operator.itemgetter` when some keys may be missing
+    """
+
+    # Define __slots__manually for performances
+    # @dataclasses.dataclass() only support slots=True in python>=3.10
+    __slots__ = ('wrapped',)
+
+    wrapped: Mapping[str, Any]
+
+    def __getitem__(self, __key: str) -> Any:
+        return self.wrapped.get(__key, _SENTINEL)
+
+    # required to pass the object to operator.itemgetter() instances due to a quirk of typeshed
+    # https://github.com/python/mypy/issues/13713
+    # https://github.com/python/typeshed/pull/8785
+    # Since this is typing-only, hide it in a typing.TYPE_CHECKING block
+    if typing.TYPE_CHECKING:
+
+        def __contains__(self, __key: str) -> bool:
+            return self.wrapped.__contains__(__key)
