@@ -151,18 +151,17 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_complete__ = False
     __pydantic_root_model__ = False
 
-    def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
+    def __init__(self, /, **data: Any) -> None:  # type: ignore
         """Create a new model by parsing and validating input data from keyword arguments.
 
         Raises [`ValidationError`][pydantic_core.ValidationError] if the input data cannot be
         validated to form a valid model.
 
-        `__init__` uses `__pydantic_self__` instead of the more common `self` for the first arg to
-        allow `self` as a field name.
+        `self` is explicitly positional-only to allow `self` as a field name.
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+        self.__pydantic_validator__.validate_python(data, self_instance=self)
 
     # The following line sets a flag that we use to determine when `__init__` gets overridden by the user
     __init__.__pydantic_base_init__ = True

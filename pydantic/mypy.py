@@ -1187,6 +1187,16 @@ def add_method(
         first = [Argument(Var('_cls'), self_type, None, ARG_POS, True)]
     else:
         self_type = self_type or fill_typevars(info)
+        # `self` is positional *ONLY* here, but this can't be expressed
+        # fully in the mypy internal API. ARG_POS is the closest we can get.
+        # Using ARG_POS will, however, give mypy errors if a `self` field
+        # is present on a model:
+        #
+        #     Name "self" already defined (possibly by an import)  [no-redef]
+        #
+        # As a workaround, we give this argument a name that will
+        # never conflict. By its positional nature, this name will not
+        # be used or exposed to users.
         first = [Argument(Var('__pydantic_self__'), self_type, None, ARG_POS)]
     args = first + args
 
