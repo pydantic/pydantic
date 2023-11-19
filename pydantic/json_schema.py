@@ -2330,20 +2330,53 @@ else:
 
     @dataclasses.dataclass(**_internal_dataclass.slots_true)
     class SkipJsonSchema:
-        """Add this as an annotation on a field to skip generating a JSON schema for that field.
+        """Usage docs: https://docs.pydantic.dev/2.6/concepts/json_schema/#skipping-fields
+
+        Add this as an annotation on a field to skip generating a JSON schema for that field.
 
         Example:
             ```py
+            from typing import Union
+
             from pydantic import BaseModel
             from pydantic.json_schema import SkipJsonSchema
 
+            from pprint import pprint
+
+
             class Model(BaseModel):
-                a: int | SkipJsonSchema[None] = None
+                a: Union[int, None] = None  # (1)!
+                b: Union[int, SkipJsonSchema[None]] = None  # (2)!
+                c: SkipJsonSchema[Union[int, None]] = None  # (3)!
 
 
-            print(Model.model_json_schema())
-            #> {'properties': {'a': {'default': None, 'title': 'A', 'type': 'integer'}}, 'title': 'Model', 'type': 'object'}
+            pprint(Model.model_json_schema())
+            '''
+            {
+                'properties': {
+                    'a': {
+                        'anyOf': [
+                            {'type': 'integer'},
+                            {'type': 'null'}
+                        ],
+                        'default': None,
+                        'title': 'A'
+                    },
+                    'b': {
+                        'default': None,
+                        'title': 'B',
+                        'type': 'integer'
+                    }
+                },
+                'title': 'Model',
+                'type': 'object'
+            }
+            '''
             ```
+
+            1. The integer and null types are both included in the schema for `a`.
+            2. The integer type is the only type included in the schema for `b`.
+            3. The entirety of the `c` field is omitted from the schema.
         """
 
         def __class_getitem__(cls, item: AnyType) -> AnyType:
