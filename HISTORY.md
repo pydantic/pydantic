@@ -1,3 +1,22 @@
+## v2.5.2 (2023-11-19)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.2)
+
+### What's Changed
+
+#### Packaging
+
+* uprev `pydantic-core` to 2.14.4
+
+#### New Features
+
+* Add `ConfigDict.ser_json_inf_nan` by @davidhewitt in [#8159](https://github.com/pydantic/pydantic/pull/8159)
+
+#### Fixes
+
+* Fix validation of `Literal` from JSON keys when used as `dict` key by @sydney-runkle in [pydantic/pydantic-core#1075](https://github.com/pydantic/pydantic-core/pull/1075)
+* Fix bug re `custom_init` on members of `Union` by @sydney-runkle in [pydantic/pydantic-core#1076](https://github.com/pydantic/pydantic-core/pull/1076)
+
 ## v2.5.1 (2023-11-15)
 
 [GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.1)
