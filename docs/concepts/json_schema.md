@@ -187,6 +187,7 @@ class Cat(BaseModel):
     name: str
     color: str
 
+
 class Dog(BaseModel):
     name: str
     breed: str
