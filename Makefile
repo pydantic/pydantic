@@ -106,32 +106,7 @@ lint-rust:
 	cargo fmt --version
 	cargo fmt --all -- --check
 	cargo clippy --version
-	cargo clippy --tests -- \
-		-D warnings \
-		-W clippy::pedantic \
-		-A clippy::cast-possible-truncation \
-		-A clippy::cast-possible-wrap \
-		-A clippy::cast-precision-loss \
-		-A clippy::cast-sign-loss \
-		-A clippy::doc-markdown \
-		-A clippy::float-cmp \
-		-A clippy::fn-params-excessive-bools \
-		-A clippy::if-not-else \
-		-A clippy::manual-let-else \
-		-A clippy::match-bool \
-		-A clippy::match-same-arms \
-		-A clippy::missing-errors-doc \
-		-A clippy::missing-panics-doc \
-		-A clippy::module-name-repetitions \
-		-A clippy::must-use-candidate \
-		-A clippy::needless-pass-by-value \
-		-A clippy::similar-names \
-		-A clippy::single-match-else \
-		-A clippy::struct-excessive-bools \
-		-A clippy::too-many-lines \
-		-A clippy::unnecessary-wraps \
-		-A clippy::unused-self \
-		-A clippy::used-underscore-binding
+	cargo clippy --tests -- -D warnings
 
 .PHONY: lint
 lint: lint-python lint-rust
