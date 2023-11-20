@@ -41,6 +41,7 @@ class User(BaseModel):
 ## Using `Annotated`
 
 The `Field` function can also be used together with `Annotated`.
+For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 
 ```py
 from uuid import uuid4
@@ -53,6 +54,11 @@ from pydantic import BaseModel, Field
 class User(BaseModel):
     id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
 ```
+
+!!! note
+    Defaults can be set outside `Annotated` as the assigned value or with `Field.default_factory` inside `Annotated`.
+    The `Field.default` argument is not supported inside `Annotated`.
+
 
 ## Field aliases
 
@@ -761,7 +767,7 @@ See the [Serialization] section for more details.
 
 ## Customizing JSON Schema
 
-There are fields that exclusively to customise the generated JSON Schema:
+There are fields that exclusively to used to customise the generated JSON Schema:
 
 * `title`: The title of the field.
 * `description`: The description of the field.
@@ -819,6 +825,8 @@ print(User.model_json_schema())
 """
 ```
 
+Read more about JSON schema customization / modification in the [Modifying JSON Schema] section of the JSON schema docs.
+
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
 [Discriminated Unions]: ../api/standard_library_types.md#discriminated-unions-aka-tagged-unions
@@ -828,3 +836,4 @@ print(User.model_json_schema())
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Validate Assignment]: models.md#validate-assignment
 [Serialization]: serialization.md#model-and-field-level-include-and-exclude
+[Customizing JSON Schema]: json_schema.md#modifying-the-schema
