@@ -3862,7 +3862,7 @@ def field_after_validator_function(function: WithInfoValidatorFunction, field_na
 @deprecated('`general_after_validator_function` is deprecated, use `with_info_after_validator_function` instead.')
 def general_after_validator_function(*args, **kwargs):
     warnings.warn(
-        '`with_info_after_validator_function` is deprecated, use `with_info_after_validator_function` instead.',
+        '`general_after_validator_function` is deprecated, use `with_info_after_validator_function` instead.',
         DeprecationWarning,
     )
     return with_info_after_validator_function(*args, **kwargs)
