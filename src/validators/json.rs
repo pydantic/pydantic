@@ -49,12 +49,12 @@ impl Validator for JsonValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let json_value = input.parse_json()?;
         match self.validator {
             Some(ref validator) => match validator.validate(py, &json_value, state) {
                 Ok(v) => Ok(v),
-                Err(err) => Err(err.into_owned(py)),
+                Err(err) => Err(err),
             },
             None => Ok(json_value.to_object(py)),
         }

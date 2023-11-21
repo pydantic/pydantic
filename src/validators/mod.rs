@@ -330,7 +330,7 @@ impl SchemaValidator {
         context: Option<&'data PyAny>,
         self_instance: Option<&PyAny>,
         recursion_guard: &'data mut RecursionGuard,
-    ) -> ValResult<'data, PyObject>
+    ) -> ValResult<PyObject>
     where
         's: 'data,
     {
@@ -701,15 +701,15 @@ pub trait Validator: Send + Sync + Debug {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject>;
+    ) -> ValResult<PyObject>;
 
     /// Get a default value, currently only used by `WithDefaultValidator`
-    fn default_value<'data>(
+    fn default_value(
         &self,
-        _py: Python<'data>,
+        _py: Python<'_>,
         _outer_loc: Option<impl Into<LocItem>>,
         _state: &mut ValidationState,
-    ) -> ValResult<'data, Option<PyObject>> {
+    ) -> ValResult<Option<PyObject>> {
         Ok(None)
     }
 
@@ -722,7 +722,7 @@ pub trait Validator: Send + Sync + Debug {
         _field_name: &'data str,
         _field_value: &'data PyAny,
         _state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let py_err = PyTypeError::new_err(format!("validate_assignment is not supported for {}", self.get_name()));
         Err(py_err.into())
     }

@@ -50,7 +50,7 @@ impl Validator for TupleVariableValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let seq = input.validate_tuple(state.strict_or(self.strict))?;
         let exactness = match &seq {
             GenericIterable::Tuple(_) | GenericIterable::JsonArray(_) => Exactness::Exact,
@@ -118,12 +118,12 @@ fn validate_tuple_positional<'s, 'data, T: Iterator<Item = PyResult<&'data I>>, 
     input: &'data impl Input<'data>,
     state: &mut ValidationState,
     output: &mut Vec<PyObject>,
-    errors: &mut Vec<ValLineError<'data>>,
+    errors: &mut Vec<ValLineError>,
     extras_validator: &Option<Box<CombinedValidator>>,
     items_validators: &[CombinedValidator],
     collection_iter: &mut T,
     actual_length: Option<usize>,
-) -> ValResult<'data, ()> {
+) -> ValResult<()> {
     for (index, validator) in items_validators.iter().enumerate() {
         match collection_iter.next() {
             Some(result) => match validator.validate(py, result?, state) {
@@ -186,7 +186,7 @@ impl Validator for TuplePositionalValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let collection = input.validate_tuple(state.strict_or(self.strict))?;
         let exactness: crate::validators::Exactness = match &collection {
             GenericIterable::Tuple(_) | GenericIterable::JsonArray(_) => Exactness::Exact,

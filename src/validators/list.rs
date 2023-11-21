@@ -121,7 +121,7 @@ impl Validator for ListValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let seq = input.validate_list(state.strict_or(self.strict))?;
         let exactness = match &seq {
             GenericIterable::List(_) | GenericIterable::JsonArray(_) => Exactness::Exact,

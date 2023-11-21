@@ -131,7 +131,7 @@ impl Validator for WithDefaultValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         if input.to_object(py).is(&PydanticUndefinedType::py_undefined()) {
             Ok(self.default_value(py, None::<usize>, state)?.unwrap())
         } else {
@@ -149,12 +149,12 @@ impl Validator for WithDefaultValidator {
         }
     }
 
-    fn default_value<'data>(
+    fn default_value(
         &self,
-        py: Python<'data>,
+        py: Python<'_>,
         outer_loc: Option<impl Into<LocItem>>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, Option<PyObject>> {
+    ) -> ValResult<Option<PyObject>> {
         match self.default.default_value(py)? {
             Some(stored_dft) => {
                 let dft: Py<PyAny> = if self.copy_default {

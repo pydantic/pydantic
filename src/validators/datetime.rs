@@ -63,7 +63,7 @@ impl Validator for DateTimeValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
         let datetime = input
             .validate_datetime(strict, self.microseconds_precision)?
@@ -263,7 +263,7 @@ impl TZConstraint {
         }
     }
 
-    pub(super) fn tz_check<'d>(&self, tz_offset: Option<i32>, input: &'d impl Input<'d>) -> ValResult<'d, ()> {
+    pub(super) fn tz_check<'d>(&self, tz_offset: Option<i32>, input: &'d impl Input<'d>) -> ValResult<()> {
         match (self, tz_offset) {
             (TZConstraint::Aware(_), None) => return Err(ValError::new(ErrorTypeDefaults::TimezoneAware, input)),
             (TZConstraint::Aware(Some(tz_expected)), Some(tz_actual)) => {

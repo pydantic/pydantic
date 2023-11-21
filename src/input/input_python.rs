@@ -106,9 +106,15 @@ impl AsLocItem for PyAny {
     }
 }
 
+impl AsLocItem for &'_ PyAny {
+    fn as_loc_item(&self) -> LocItem {
+        AsLocItem::as_loc_item(*self)
+    }
+}
+
 impl<'a> Input<'a> for PyAny {
-    fn as_error_value(&'a self) -> InputValue<'a> {
-        InputValue::PyAny(self)
+    fn as_error_value(&self) -> InputValue {
+        InputValue::Python(self.into())
     }
 
     fn identity(&self) -> Option<usize> {
@@ -154,7 +160,7 @@ impl<'a> Input<'a> for PyAny {
         self.is_callable()
     }
 
-    fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_args(&'a self) -> ValResult<GenericArguments<'a>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict)).into())
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
@@ -170,7 +176,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
             Ok(PyArgs::new(None, Some(dict)).into())
         } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
@@ -189,7 +195,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn parse_json(&'a self) -> ValResult<'a, JsonValue> {
+    fn parse_json(&'a self) -> ValResult<JsonValue> {
         let bytes = if let Ok(py_bytes) = self.downcast::<PyBytes>() {
             py_bytes.as_bytes()
         } else if let Ok(py_str) = self.downcast::<PyString>() {
@@ -296,7 +302,7 @@ impl<'a> Input<'a> for PyAny {
         Err(ValError::new(ErrorTypeDefaults::BytesType, self))
     }
 
-    fn validate_bool(&self, strict: bool) -> ValResult<'_, ValidationMatch<bool>> {
+    fn validate_bool(&self, strict: bool) -> ValResult<ValidationMatch<bool>> {
         if let Ok(bool) = self.downcast::<PyBool>() {
             return Ok(ValidationMatch::exact(bool.is_true()));
         }
@@ -319,7 +325,7 @@ impl<'a> Input<'a> for PyAny {
         Err(ValError::new(ErrorTypeDefaults::BoolType, self))
     }
 
-    fn validate_int(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherInt<'a>>> {
+    fn validate_int(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>> {
         if self.is_exact_instance_of::<PyInt>() {
             return Ok(ValidationMatch::exact(EitherInt::Py(self)));
         } else if self.is_instance_of::<PyInt>() {
@@ -359,7 +365,7 @@ impl<'a> Input<'a> for PyAny {
         Err(ValError::new(ErrorTypeDefaults::IntType, self))
     }
 
-    fn validate_float(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherFloat<'a>>> {
+    fn validate_float(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
         if let Ok(float) = self.downcast_exact::<PyFloat>() {
             return Ok(ValidationMatch::exact(EitherFloat::Py(float)));
         }

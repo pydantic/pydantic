@@ -111,7 +111,7 @@ impl LookupKey {
     pub fn py_get_dict_item<'data, 's>(
         &'s self,
         dict: &'data PyDict,
-    ) -> ValResult<'data, Option<(&'s LookupPath, &'data PyAny)>> {
+    ) -> ValResult<Option<(&'s LookupPath, &'data PyAny)>> {
         match self {
             Self::Simple { py_key, path, .. } => match dict.get_item(py_key)? {
                 Some(value) => Ok(Some((path, value))),
@@ -148,7 +148,7 @@ impl LookupKey {
     pub fn py_get_string_mapping_item<'data, 's>(
         &'s self,
         dict: &'data PyDict,
-    ) -> ValResult<'data, Option<(&'s LookupPath, StringMapping<'data>)>> {
+    ) -> ValResult<Option<(&'s LookupPath, StringMapping<'data>)>> {
         if let Some((path, py_any)) = self.py_get_dict_item(dict)? {
             let value = StringMapping::new_value(py_any)?;
             Ok(Some((path, value)))
@@ -160,7 +160,7 @@ impl LookupKey {
     pub fn py_get_mapping_item<'data, 's>(
         &'s self,
         dict: &'data PyMapping,
-    ) -> ValResult<'data, Option<(&'s LookupPath, &'data PyAny)>> {
+    ) -> ValResult<Option<(&'s LookupPath, &'data PyAny)>> {
         match self {
             Self::Simple { py_key, path, .. } => match dict.get_item(py_key) {
                 Ok(value) => Ok(Some((path, value))),
@@ -198,7 +198,7 @@ impl LookupKey {
         &'s self,
         obj: &'data PyAny,
         kwargs: Option<&'data PyDict>,
-    ) -> ValResult<'data, Option<(&'s LookupPath, &'data PyAny)>> {
+    ) -> ValResult<Option<(&'s LookupPath, &'data PyAny)>> {
         match self._py_get_attr(obj, kwargs) {
             Ok(v) => Ok(v),
             Err(err) => {
@@ -266,7 +266,7 @@ impl LookupKey {
     pub fn json_get<'data, 's>(
         &'s self,
         dict: &'data JsonObject,
-    ) -> ValResult<'data, Option<(&'s LookupPath, &'data JsonValue)>> {
+    ) -> ValResult<Option<(&'s LookupPath, &'data JsonValue)>> {
         match self {
             Self::Simple { key, path, .. } => match dict.get(key) {
                 Some(value) => Ok(Some((path, value))),
@@ -316,7 +316,7 @@ impl LookupKey {
         input: &'d impl Input<'d>,
         loc_by_alias: bool,
         field_name: &str,
-    ) -> ValLineError<'d> {
+    ) -> ValLineError {
         if loc_by_alias {
             let lookup_path = match self {
                 Self::Simple { path, .. } => path,
@@ -369,12 +369,7 @@ impl LookupPath {
         }
     }
 
-    pub fn apply_error_loc<'a>(
-        &self,
-        mut line_error: ValLineError<'a>,
-        loc_by_alias: bool,
-        field_name: &str,
-    ) -> ValLineError<'a> {
+    pub fn apply_error_loc(&self, mut line_error: ValLineError, loc_by_alias: bool, field_name: &str) -> ValLineError {
         if loc_by_alias {
             for path_item in self.iter().rev() {
                 line_error = line_error.with_outer_location(path_item.clone().into());

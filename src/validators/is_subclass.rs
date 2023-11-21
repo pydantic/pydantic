@@ -48,7 +48,7 @@ impl Validator for IsSubclassValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         _state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         match input.input_is_subclass(self.class.as_ref(py))? {
             true => Ok(input.to_object(py)),
             false => Err(ValError::new(

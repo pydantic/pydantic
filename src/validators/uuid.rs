@@ -90,7 +90,7 @@ impl Validator for UuidValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let class = get_uuid_type(py)?;
         if let Some(py_input) = input.input_is_instance(class) {
             if let Some(expected_version) = self.version {
@@ -135,7 +135,7 @@ impl Validator for UuidValidator {
 }
 
 impl UuidValidator {
-    fn get_uuid<'s, 'data>(&'s self, input: &'data impl Input<'data>) -> ValResult<'data, Uuid> {
+    fn get_uuid<'s, 'data>(&'s self, input: &'data impl Input<'data>) -> ValResult<Uuid> {
         let uuid = match input.exact_str().ok() {
             Some(either_string) => {
                 let cow = either_string.as_cow()?;
@@ -198,7 +198,7 @@ impl UuidValidator {
     ///
     /// This implementation does not use the Python `__init__` function to speed up the process,
     /// as the `__init__` function in the Python `uuid` module performs extensive checks.
-    fn create_py_uuid<'py>(&self, py: Python<'py>, py_type: &PyType, uuid: &Uuid) -> ValResult<'py, Py<PyAny>> {
+    fn create_py_uuid(&self, py: Python<'_>, py_type: &PyType, uuid: &Uuid) -> ValResult<Py<PyAny>> {
         let class = create_class(py_type)?;
         let dc = class.as_ref(py);
         let int = uuid.as_u128();

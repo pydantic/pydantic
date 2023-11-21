@@ -63,7 +63,7 @@ impl Validator for SetValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let collection = input.validate_set(state.strict_or(self.strict))?;
         let exactness = match &collection {
             GenericIterable::Set(_) => Exactness::Exact,

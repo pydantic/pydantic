@@ -286,7 +286,7 @@ impl<'a> EitherDateTime<'a> {
     }
 }
 
-pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<'a, EitherDate<'a>> {
+pub fn bytes_as_date<'a>(input: &'a impl Input<'a>, bytes: &[u8]) -> ValResult<EitherDate<'a>> {
     match Date::parse_bytes(bytes) {
         Ok(date) => Ok(date.into()),
         Err(err) => Err(ValError::new(
@@ -303,7 +303,7 @@ pub fn bytes_as_time<'a>(
     input: &'a impl Input<'a>,
     bytes: &[u8],
     microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-) -> ValResult<'a, EitherTime<'a>> {
+) -> ValResult<EitherTime<'a>> {
     match Time::parse_bytes_with_config(
         bytes,
         &TimeConfig {
@@ -326,7 +326,7 @@ pub fn bytes_as_datetime<'a, 'b>(
     input: &'a impl Input<'a>,
     bytes: &'b [u8],
     microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-) -> ValResult<'a, EitherDateTime<'a>> {
+) -> ValResult<EitherDateTime<'a>> {
     match DateTime::parse_bytes_with_config(
         bytes,
         &TimeConfig {
@@ -455,7 +455,7 @@ pub fn float_as_time<'a>(input: &'a impl Input<'a>, timestamp: f64) -> ValResult
     int_as_time(input, timestamp.floor() as i64, microseconds.round() as u32)
 }
 
-fn map_timedelta_err<'a>(input: &'a impl Input<'a>, err: ParseError) -> ValError<'a> {
+fn map_timedelta_err<'a>(input: &'a impl Input<'a>, err: ParseError) -> ValError {
     ValError::new(
         ErrorType::TimeDeltaParsing {
             error: Cow::Borrowed(err.get_documentation().unwrap_or_default()),
@@ -469,7 +469,7 @@ pub fn bytes_as_timedelta<'a, 'b>(
     input: &'a impl Input<'a>,
     bytes: &'b [u8],
     microseconds_overflow_behavior: MicrosecondsPrecisionOverflowBehavior,
-) -> ValResult<'a, EitherTimedelta<'a>> {
+) -> ValResult<EitherTimedelta<'a>> {
     match Duration::parse_bytes_with_config(
         bytes,
         &TimeConfig {

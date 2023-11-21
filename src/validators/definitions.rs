@@ -72,7 +72,7 @@ impl Validator for DefinitionRefValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let validator = self.definition.get().unwrap();
         if let Some(id) = input.identity() {
             if state.recursion_guard.contains_or_insert(id, self.definition.id()) {
@@ -99,7 +99,7 @@ impl Validator for DefinitionRefValidator {
         field_name: &'data str,
         field_value: &'data PyAny,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let validator = self.definition.get().unwrap();
         if let Some(id) = obj.identity() {
             if state.recursion_guard.contains_or_insert(id, self.definition.id()) {

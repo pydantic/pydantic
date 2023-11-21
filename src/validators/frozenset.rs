@@ -33,7 +33,7 @@ impl Validator for FrozenSetValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let collection = input.validate_frozenset(state.strict_or(self.strict))?;
         let exactness = match &collection {
             GenericIterable::FrozenSet(_) => Exactness::Exact,
