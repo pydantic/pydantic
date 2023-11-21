@@ -6121,3 +6121,12 @@ def test_json_value():
             'type': 'invalid-json-value',
         }
     ]
+
+
+def test_json_value_roundtrip() -> None:
+    # see https://github.com/pydantic/pydantic/issues/8175
+    class MyModel(BaseModel):
+        val: Union[str, JsonValue]
+
+    round_trip_value = json.loads(MyModel(val=True).model_dump_json())['val']
+    assert round_trip_value is True, round_trip_value

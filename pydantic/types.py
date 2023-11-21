@@ -2731,9 +2731,9 @@ if TYPE_CHECKING:
         List['JsonValue'],
         Dict[str, 'JsonValue'],
         str,
+        bool,
         int,
         float,
-        bool,
         None,
     ]
     """A `JsonValue` is used to represent a value that can be serialized to JSON.
@@ -2743,9 +2743,9 @@ if TYPE_CHECKING:
     * `List['JsonValue']`
     * `Dict[str, 'JsonValue']`
     * `str`
+    * `bool`
     * `int`
     * `float`
-    * `bool`
     * `None`
 
     The following example demonstrates how to use `JsonValue` to validate JSON data,
@@ -2787,9 +2787,9 @@ else:
                 Annotated[List['JsonValue'], Tag('list')],
                 Annotated[Dict[str, 'JsonValue'], Tag('dict')],
                 Annotated[str, Tag('str')],
+                Annotated[bool, Tag('bool')],
                 Annotated[int, Tag('int')],
                 Annotated[float, Tag('float')],
-                Annotated[bool, Tag('bool')],
                 Annotated[None, Tag('NoneType')],
             ],
             Discriminator(
