@@ -1196,7 +1196,7 @@ def is_instance_schema(
     serialization: SerSchema | None = None,
 ) -> IsInstanceSchema:
     """
-    Returns a schema that checks if a value is an instance of a class, equivalent to python's `isinstnace` method, e.g.:
+    Returns a schema that checks if a value is an instance of a class, equivalent to python's `isinstance` method, e.g.:
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
