@@ -477,7 +477,7 @@ impl BuildValidator for DataclassValidator {
         let validator = build_validator(sub_schema, config, definitions)?;
 
         let post_init = if schema.get_as::<bool>(intern!(py, "post_init"))?.unwrap_or(false) {
-            Some(PyString::intern(py, "__post_init__").into_py(py))
+            Some(PyString::new(py, "__post_init__").into_py(py))
         } else {
             None
         };

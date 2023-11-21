@@ -39,7 +39,7 @@ impl BuildSerializer for DataclassArgsBuilder {
             let field_info: &PyDict = item.downcast()?;
             let name: String = field_info.get_as_req(intern!(py, "name"))?;
 
-            let key_py: Py<PyString> = PyString::intern(py, &name).into_py(py);
+            let key_py: Py<PyString> = PyString::new(py, &name).into_py(py);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
                 fields.insert(name, SerField::new(py, key_py, None, None, true));

@@ -93,7 +93,7 @@ impl BuildValidator for ModelFieldsValidator {
             fields.push(Field {
                 name: field_name.to_string(),
                 lookup_key,
-                name_py: PyString::intern(py, field_name).into(),
+                name_py: PyString::new(py, field_name).into(),
                 validator,
                 frozen: field_info.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
