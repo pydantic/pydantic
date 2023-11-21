@@ -89,7 +89,7 @@ impl BuildValidator for ModelValidator {
             class: class.into(),
             post_init: schema
                 .get_as::<&str>(intern!(py, "post_init"))?
-                .map(|s| PyString::intern(py, s).into_py(py)),
+                .map(|s| PyString::new(py, s).into_py(py)),
             frozen: schema.get_as(intern!(py, "frozen"))?.unwrap_or(false),
             custom_init: schema.get_as(intern!(py, "custom_init"))?.unwrap_or(false),
             root_model: schema.get_as(intern!(py, "root_model"))?.unwrap_or(false),

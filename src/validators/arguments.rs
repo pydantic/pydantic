@@ -73,7 +73,7 @@ impl BuildValidator for ArgumentsValidator {
                     }
                     None => Some(LookupKey::from_string(py, &name)),
                 };
-                kwarg_key = Some(PyString::intern(py, &name).into());
+                kwarg_key = Some(PyString::new(py, &name).into());
             }
 
             let schema: &PyAny = arg.get_as_req(intern!(py, "schema"))?;
