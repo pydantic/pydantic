@@ -72,7 +72,7 @@ impl Validator for DictValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
         let dict = input.validate_dict(strict)?;
         match dict {
@@ -103,9 +103,9 @@ impl DictValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-        mapping_iter: impl Iterator<Item = ValResult<'data, (impl BorrowInput + 'data, impl BorrowInput + 'data)>>,
+        mapping_iter: impl Iterator<Item = ValResult<(impl BorrowInput + AsLocItem + 'data, impl BorrowInput + 'data)>>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let output = PyDict::new(py);
         let mut errors: Vec<ValLineError> = Vec::new();
 
@@ -113,34 +113,31 @@ impl DictValidator {
         let value_validator = self.value_validator.as_ref();
         for item_result in mapping_iter {
             let (key, value) = item_result?;
-            let key = key.borrow_input();
-            let value = value.borrow_input();
-            let output_key = match key_validator.validate(py, key, state) {
+            let output_key = match key_validator.validate(py, key.borrow_input(), state) {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
                     for err in line_errors {
                         // these are added in reverse order so [key] is shunted along by the second call
                         errors.push(
                             err.with_outer_location("[key]".into())
-                                .with_outer_location(key.as_loc_item())
-                                .into_owned(py),
+                                .with_outer_location(key.as_loc_item()),
                         );
                     }
                     None
                 }
                 Err(ValError::Omit) => continue,
-                Err(err) => return Err(err.into_owned(py)),
+                Err(err) => return Err(err),
             };
-            let output_value = match value_validator.validate(py, value, state) {
+            let output_value = match value_validator.validate(py, value.borrow_input(), state) {
                 Ok(value) => Some(value),
                 Err(ValError::LineErrors(line_errors)) => {
                     for err in line_errors {
-                        errors.push(err.with_outer_location(key.as_loc_item()).into_owned(py));
+                        errors.push(err.with_outer_location(key.as_loc_item()));
                     }
                     None
                 }
                 Err(ValError::Omit) => continue,
-                Err(err) => return Err(err.into_owned(py)),
+                Err(err) => return Err(err),
             };
             if let (Some(key), Some(value)) = (output_key, output_value) {
                 output.set_item(key, value)?;

@@ -123,7 +123,7 @@ impl Validator for ModelFieldsValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
         let from_attributes = state.extra().from_attributes.unwrap_or(self.from_attributes);
 
@@ -205,11 +205,11 @@ impl Validator for ModelFieldsValidator {
                                     for err in line_errors {
                                         errors.push(
                                             lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name)
-                                            .into_owned(py)
+
                                         );
                                     }
                                 }
-                                Err(err) => return ControlFlow::Break(err.into_owned(py)),
+                                Err(err) => return ControlFlow::Break(err),
                             }
                             continue;
                         }
@@ -258,14 +258,14 @@ impl Validator for ModelFieldsValidator {
                                     errors.push(
                                         err.with_outer_location(raw_key.as_loc_item())
                                             .with_type(ErrorTypeDefaults::InvalidKey)
-                                            .into_owned(py)
+
                                     );
                                 }
                                 continue;
                             }
-                            Err(err) => return Err(err.into_owned(py)),
+                            Err(err) => return Err(err),
                         };
-                        let cow = either_str.as_cow().map_err(|err| err.into_owned(py))?;
+                        let cow = either_str.as_cow().map_err(|err| err)?;
                         if used_keys.contains(cow.as_ref()) {
                             continue;
                         }
@@ -280,7 +280,7 @@ impl Validator for ModelFieldsValidator {
                                         value,
                                         raw_key.as_loc_item(),
                                     )
-                                    .into_owned(py)
+
                                 );
                             }
                             ExtraBehavior::Ignore => {}
@@ -294,10 +294,10 @@ impl Validator for ModelFieldsValidator {
                                         }
                                         Err(ValError::LineErrors(line_errors)) => {
                                             for err in line_errors {
-                                                errors.push(err.with_outer_location(raw_key.as_loc_item()).into_owned(py));
+                                                errors.push(err.with_outer_location(raw_key.as_loc_item()));
                                             }
                                         }
-                                        Err(err) => return Err(err.into_owned(py)),
+                                        Err(err) => return Err(err),
                                     }
                                 } else {
                                     model_extra_dict.set_item(py_key, value.to_object(py))?;
@@ -342,7 +342,7 @@ impl Validator for ModelFieldsValidator {
         field_name: &'data str,
         field_value: &'data PyAny,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let dict: &PyDict = obj.downcast()?;
 
         let get_updated_dict = |output: PyObject| {
@@ -350,7 +350,7 @@ impl Validator for ModelFieldsValidator {
             Ok(dict)
         };
 
-        let prepare_result = |result: ValResult<'data, PyObject>| match result {
+        let prepare_result = |result: ValResult<PyObject>| match result {
             Ok(output) => get_updated_dict(output),
             Err(ValError::LineErrors(line_errors)) => {
                 let errors = line_errors

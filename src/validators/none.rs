@@ -29,7 +29,7 @@ impl Validator for NoneValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         _state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         match input.is_none() {
             true => Ok(py.None()),
             false => Err(ValError::new(ErrorTypeDefaults::NoneRequired, input)),

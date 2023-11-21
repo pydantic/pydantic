@@ -31,10 +31,16 @@ impl AsLocItem for JsonValue {
     }
 }
 
+impl AsLocItem for &JsonValue {
+    fn as_loc_item(&self) -> LocItem {
+        AsLocItem::as_loc_item(*self)
+    }
+}
+
 impl<'a> Input<'a> for JsonValue {
-    fn as_error_value(&'a self) -> InputValue<'a> {
+    fn as_error_value(&self) -> InputValue {
         // cloning JsonValue is cheap due to use of Arc
-        InputValue::JsonInput(self.clone())
+        InputValue::Json(self.clone())
     }
 
     fn is_none(&self) -> bool {
@@ -54,7 +60,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_args(&'a self) -> ValResult<GenericArguments<'a>> {
         match self {
             JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object)).into()),
             JsonValue::Array(array) => Ok(JsonArgs::new(Some(array), None).into()),
@@ -62,7 +68,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
         match self {
             JsonValue::Object(object) => Ok(JsonArgs::new(None, Some(object)).into()),
             _ => {
@@ -78,7 +84,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn parse_json(&'a self) -> ValResult<'a, JsonValue> {
+    fn parse_json(&'a self) -> ValResult<JsonValue> {
         match self {
             JsonValue::Str(s) => JsonValue::parse(s.as_bytes(), true).map_err(|e| map_json_err(self, e)),
             _ => Err(ValError::new(ErrorTypeDefaults::JsonType, self)),
@@ -118,7 +124,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_bool(&self, strict: bool) -> ValResult<'_, ValidationMatch<bool>> {
+    fn validate_bool(&self, strict: bool) -> ValResult<ValidationMatch<bool>> {
         match self {
             JsonValue::Bool(b) => Ok(ValidationMatch::exact(*b)),
             JsonValue::Str(s) if !strict => str_as_bool(self, s).map(ValidationMatch::lax),
@@ -134,7 +140,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_int(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherInt<'a>>> {
+    fn validate_int(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>> {
         match self {
             JsonValue::Int(i) => Ok(ValidationMatch::exact(EitherInt::I64(*i))),
             JsonValue::BigInt(b) => Ok(ValidationMatch::exact(EitherInt::BigInt(b.clone()))),
@@ -145,7 +151,7 @@ impl<'a> Input<'a> for JsonValue {
         }
     }
 
-    fn validate_float(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherFloat<'a>>> {
+    fn validate_float(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
         match self {
             JsonValue::Float(f) => Ok(ValidationMatch::exact(EitherFloat::F64(*f))),
             JsonValue::Int(i) => Ok(ValidationMatch::strict(EitherFloat::F64(*i as f64))),
@@ -326,10 +332,18 @@ impl AsLocItem for String {
     }
 }
 
+impl AsLocItem for &String {
+    fn as_loc_item(&self) -> LocItem {
+        AsLocItem::as_loc_item(*self)
+    }
+}
+
 /// Required for JSON Object keys so the string can behave like an Input
 impl<'a> Input<'a> for String {
-    fn as_error_value(&'a self) -> InputValue<'a> {
-        InputValue::String(self)
+    fn as_error_value(&self) -> InputValue {
+        // Justification for the clone: this is on the error pathway and we are generally ok
+        // with errors having a performance penalty
+        InputValue::Json(JsonValue::Str(self.clone()))
     }
 
     fn as_kwargs(&'a self, _py: Python<'a>) -> Option<&'a PyDict> {
@@ -337,12 +351,12 @@ impl<'a> Input<'a> for String {
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_args(&'a self) -> ValResult<GenericArguments<'a>> {
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
     #[cfg_attr(has_coverage_attribute, coverage(off))]
-    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_dataclass_args(&'a self, class_name: &str) -> ValResult<GenericArguments<'a>> {
         let class_name = class_name.to_string();
         Err(ValError::new(
             ErrorType::DataclassType {
@@ -353,7 +367,7 @@ impl<'a> Input<'a> for String {
         ))
     }
 
-    fn parse_json(&'a self) -> ValResult<'a, JsonValue> {
+    fn parse_json(&'a self) -> ValResult<JsonValue> {
         JsonValue::parse(self.as_bytes(), true).map_err(|e| map_json_err(self, e))
     }
 
@@ -374,18 +388,18 @@ impl<'a> Input<'a> for String {
         Ok(ValidationMatch::strict(self.as_bytes().into()))
     }
 
-    fn validate_bool(&self, _strict: bool) -> ValResult<'_, ValidationMatch<bool>> {
+    fn validate_bool(&self, _strict: bool) -> ValResult<ValidationMatch<bool>> {
         str_as_bool(self, self).map(ValidationMatch::lax)
     }
 
-    fn validate_int(&'a self, _strict: bool) -> ValResult<'a, ValidationMatch<EitherInt<'a>>> {
+    fn validate_int(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>> {
         match self.parse() {
             Ok(i) => Ok(ValidationMatch::lax(EitherInt::I64(i))),
             Err(_) => Err(ValError::new(ErrorTypeDefaults::IntParsing, self)),
         }
     }
 
-    fn validate_float(&'a self, _strict: bool) -> ValResult<'a, ValidationMatch<EitherFloat<'a>>> {
+    fn validate_float(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
         str_as_float(self, self).map(ValidationMatch::lax)
     }
 

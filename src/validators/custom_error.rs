@@ -3,6 +3,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::py_schema_err;
+use crate::errors::AsErrorValue;
 use crate::errors::{ErrorType, PydanticCustomError, PydanticKnownError, ValError, ValResult};
 use crate::input::Input;
 use crate::tools::SchemaDict;
@@ -49,7 +50,7 @@ impl CustomError {
         }
     }
 
-    pub fn as_val_error<'a>(&self, input: &'a impl Input<'a>) -> ValError<'a> {
+    pub fn as_val_error(&self, input: &impl AsErrorValue) -> ValError {
         match self {
             CustomError::KnownError(ref known_error) => known_error.clone().into_val_error(input),
             CustomError::Custom(ref custom_error) => custom_error.clone().into_val_error(input),
@@ -93,7 +94,7 @@ impl Validator for CustomErrorValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         self.validator
             .validate(py, input, state)
             .map_err(|_| self.custom_error.as_val_error(input))

@@ -166,7 +166,7 @@ impl Validator for ArgumentsValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let args = input.validate_args()?;
 
         let mut output_args: Vec<PyObject> = Vec::with_capacity(self.positional_params_count);

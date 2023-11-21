@@ -44,7 +44,7 @@ impl Validator for DateValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
         let date = match input.validate_date(strict) {
             Ok(val_match) => val_match.unpack(state),
@@ -109,7 +109,7 @@ impl Validator for DateValidator {
 /// "exact date", e.g. has a zero time component.
 ///
 /// Ok(None) means that this is not relevant to dates (the input was not a datetime nor a string)
-fn date_from_datetime<'data>(input: &'data impl Input<'data>) -> Result<Option<EitherDate<'data>>, ValError<'data>> {
+fn date_from_datetime<'data>(input: &'data impl Input<'data>) -> Result<Option<EitherDate<'data>>, ValError> {
     let either_dt = match input.validate_datetime(false, speedate::MicrosecondsPrecisionOverflowBehavior::Truncate) {
         Ok(val_match) => val_match.into_inner(),
         // if the error was a parsing error, update the error type from DatetimeParsing to DateFromDatetimeParsing

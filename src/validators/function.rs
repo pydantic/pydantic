@@ -94,7 +94,7 @@ macro_rules! impl_validator {
                 py: Python<'data>,
                 input: &'data impl Input<'data>,
                 state: &mut ValidationState<'_>,
-            ) -> ValResult<'data, PyObject> {
+            ) -> ValResult<PyObject> {
                 let validate = |v, s: &mut ValidationState<'_>| self.validator.validate(py, v, s);
                 self._validate(validate, py, input, state)
             }
@@ -105,7 +105,7 @@ macro_rules! impl_validator {
                 field_name: &'data str,
                 field_value: &'data PyAny,
                 state: &mut ValidationState,
-            ) -> ValResult<'data, PyObject> {
+            ) -> ValResult<PyObject> {
                 let validate = move |v, s: &mut ValidationState<'_>| {
                     self.validator
                         .validate_assignment(py, v, field_name, field_value, s)
@@ -135,11 +135,11 @@ impl_build!(FunctionBeforeValidator, "function-before");
 impl FunctionBeforeValidator {
     fn _validate<'s, 'data>(
         &'s self,
-        call: impl FnOnce(&'data PyAny, &mut ValidationState<'_>) -> ValResult<'data, PyObject>,
+        call: impl FnOnce(&'data PyAny, &mut ValidationState<'_>) -> ValResult<PyObject>,
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &'s mut ValidationState<'_>,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let r = if self.info_arg {
             let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
             self.func.call1(py, (input.to_object(py), info))
@@ -168,11 +168,11 @@ impl_build!(FunctionAfterValidator, "function-after");
 impl FunctionAfterValidator {
     fn _validate<'s, 'data, I: Input<'data>>(
         &'s self,
-        call: impl FnOnce(&'data I, &mut ValidationState<'_>) -> ValResult<'data, PyObject>,
+        call: impl FnOnce(&'data I, &mut ValidationState<'_>) -> ValResult<PyObject>,
         py: Python<'data>,
         input: &'data I,
         state: &mut ValidationState<'_>,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let v = call(input, state)?;
         let r = if self.info_arg {
             let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
@@ -230,7 +230,7 @@ impl Validator for FunctionPlainValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let r = if self.info_arg {
             let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
             self.func.call1(py, (input.to_object(py), info))
@@ -294,7 +294,7 @@ impl FunctionWrapValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let r = if self.info_arg {
             let info = ValidationInfo::new(py, state.extra(), &self.config, self.field_name.clone());
             self.func.call1(py, (input.to_object(py), handler, info))
@@ -317,7 +317,7 @@ impl Validator for FunctionWrapValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let handler = ValidatorCallable {
             validator: InternalValidator::new(
                 py,
@@ -341,7 +341,7 @@ impl Validator for FunctionWrapValidator {
         field_name: &'data str,
         field_value: &'data PyAny,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let handler = AssignmentValidatorCallable {
             validator: InternalValidator::new(
                 py,
@@ -438,7 +438,7 @@ macro_rules! py_err_string {
 
 /// Only `ValueError` (including `PydanticCustomError` and `ValidationError`) and `AssertionError` are considered
 /// as validation errors, `TypeError` is now considered as a runtime error to catch errors in function signatures
-pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> ValError<'a> {
+pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) -> ValError {
     if err.is_instance_of::<PyValueError>(py) {
         let error_value = err.value(py);
         if let Ok(pydantic_value_error) = error_value.extract::<PydanticCustomError>() {
@@ -446,7 +446,7 @@ pub fn convert_err<'a>(py: Python<'a>, err: PyErr, input: &'a impl Input<'a>) ->
         } else if let Ok(pydantic_error_type) = error_value.extract::<PydanticKnownError>() {
             pydantic_error_type.into_val_error(input)
         } else if let Ok(validation_error) = err.value(py).extract::<ValidationError>() {
-            validation_error.into_val_error(py)
+            validation_error.into_val_error()
         } else {
             py_err_string!(py, err, error_value, ValueError, input)
         }

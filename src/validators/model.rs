@@ -109,7 +109,7 @@ impl Validator for ModelValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         if let Some(self_instance) = state.extra().self_instance {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
             return self.validate_init(py, self_instance, input, state);
@@ -157,7 +157,7 @@ impl Validator for ModelValidator {
         field_name: &'data str,
         field_value: &'data PyAny,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         if self.frozen {
             return Err(ValError::new(ErrorTypeDefaults::FrozenInstance, field_value));
         } else if self.root_model {
@@ -222,7 +222,7 @@ impl ModelValidator {
         self_instance: &'s PyAny,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on self_instance
         // anymore
         let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
@@ -249,7 +249,7 @@ impl ModelValidator {
         input: &'data impl Input<'data>,
         existing_fields_set: Option<&'data PyAny>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         if self.custom_init {
             // If we wanted, we could introspect the __init__ signature, and store the
             // keyword arguments and types, and create a validator for them.
@@ -291,7 +291,7 @@ impl ModelValidator {
         instance: PyObject,
         input: &'data impl Input<'data>,
         extra: &Extra,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         if let Some(ref post_init) = self.post_init {
             instance
                 .call_method1(py, post_init.as_ref(py), (extra.context,))

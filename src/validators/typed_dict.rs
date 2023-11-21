@@ -148,7 +148,7 @@ impl Validator for TypedDictValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let strict = state.strict_or(self.strict);
         let dict = input.validate_dict(strict)?;
 
@@ -205,11 +205,10 @@ impl Validator for TypedDictValidator {
                                         errors.push(
                                             lookup_path
                                             .apply_error_loc(err, self.loc_by_alias, &field.name)
-                                            .into_owned(py)
                                         );
                                     }
                                 }
-                                Err(err) => return ControlFlow::Break(err.into_owned(py)),
+                                Err(err) => return ControlFlow::Break(err),
                             }
                             continue;
                         }
@@ -259,14 +258,14 @@ impl Validator for TypedDictValidator {
                                     errors.push(
                                         err.with_outer_location(raw_key.as_loc_item())
                                             .with_type(ErrorTypeDefaults::InvalidKey)
-                                            .into_owned(py)
+
                                     );
                                 }
                                 continue;
                             }
-                            Err(err) => return Err(err.into_owned(py)),
+                            Err(err) => return Err(err),
                         };
-                        let cow = either_str.as_cow().map_err(|err| err.into_owned(py))?;
+                        let cow = either_str.as_cow().map_err(|err| err)?;
                         if used_keys.contains(cow.as_ref()) {
                             continue;
                         }
@@ -281,7 +280,7 @@ impl Validator for TypedDictValidator {
                                         value,
                                         raw_key.as_loc_item(),
                                     )
-                                    .into_owned(py)
+
                                 );
                             }
                             ExtraBehavior::Ignore => {}
@@ -297,11 +296,11 @@ impl Validator for TypedDictValidator {
                                                 errors.push(
                                                     err
                                                     .with_outer_location(raw_key.as_loc_item())
-                                                    .into_owned(py)
+
                                                 );
                                             }
                                         }
-                                        Err(err) => return Err(err.into_owned(py)),
+                                        Err(err) => return Err(err),
                                     }
                                 } else {
                                     output_dict.set_item(py_key, value.to_object(py))?;

@@ -70,7 +70,7 @@ impl Validator for TimeDeltaValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let timedelta = input
             .validate_timedelta(state.strict_or(self.strict), self.microseconds_precision)?
             .unpack(state);

@@ -9,44 +9,54 @@ use crate::input::Input;
 use super::location::{LocItem, Location};
 use super::types::ErrorType;
 
-pub type ValResult<'a, T> = Result<T, ValError<'a>>;
+pub type ValResult<T> = Result<T, ValError>;
+
+pub trait AsErrorValue {
+    fn as_error_value(&self) -> InputValue;
+}
+
+impl<'a, T: Input<'a>> AsErrorValue for T {
+    fn as_error_value(&self) -> InputValue {
+        Input::as_error_value(self)
+    }
+}
 
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub enum ValError<'a> {
-    LineErrors(Vec<ValLineError<'a>>),
+pub enum ValError {
+    LineErrors(Vec<ValLineError>),
     InternalErr(PyErr),
     Omit,
     UseDefault,
 }
 
-impl<'a> From<PyErr> for ValError<'a> {
+impl From<PyErr> for ValError {
     fn from(py_err: PyErr) -> Self {
         Self::InternalErr(py_err)
     }
 }
 
-impl<'a> From<PyDowncastError<'_>> for ValError<'a> {
+impl From<PyDowncastError<'_>> for ValError {
     fn from(py_downcast: PyDowncastError) -> Self {
         Self::InternalErr(PyTypeError::new_err(py_downcast.to_string()))
     }
 }
 
-impl<'a> From<Vec<ValLineError<'a>>> for ValError<'a> {
-    fn from(line_errors: Vec<ValLineError<'a>>) -> Self {
+impl From<Vec<ValLineError>> for ValError {
+    fn from(line_errors: Vec<ValLineError>) -> Self {
         Self::LineErrors(line_errors)
     }
 }
 
-impl<'a> ValError<'a> {
-    pub fn new(error_type: ErrorType, input: &'a impl Input<'a>) -> ValError<'a> {
+impl ValError {
+    pub fn new(error_type: ErrorType, input: &impl AsErrorValue) -> ValError {
         Self::LineErrors(vec![ValLineError::new(error_type, input)])
     }
 
-    pub fn new_with_loc(error_type: ErrorType, input: &'a impl Input<'a>, loc: impl Into<LocItem>) -> ValError<'a> {
+    pub fn new_with_loc(error_type: ErrorType, input: &impl AsErrorValue, loc: impl Into<LocItem>) -> ValError {
         Self::LineErrors(vec![ValLineError::new_with_loc(error_type, input, loc)])
     }
 
-    pub fn new_custom_input(error_type: ErrorType, input_value: InputValue<'a>) -> ValError<'a> {
+    pub fn new_custom_input(error_type: ErrorType, input_value: InputValue) -> ValError {
         Self::LineErrors(vec![ValLineError::new_custom_input(error_type, input_value)])
     }
 
@@ -62,31 +72,21 @@ impl<'a> ValError<'a> {
             other => other,
         }
     }
-
-    /// a bit like clone but change the lifetime to match py
-    pub fn into_owned(self, py: Python<'_>) -> ValError<'_> {
-        match self {
-            ValError::LineErrors(errors) => errors.into_iter().map(|e| e.into_owned(py)).collect::<Vec<_>>().into(),
-            ValError::InternalErr(err) => ValError::InternalErr(err),
-            ValError::Omit => ValError::Omit,
-            ValError::UseDefault => ValError::UseDefault,
-        }
-    }
 }
 
 /// A `ValLineError` is a single error that occurred during validation which is converted to a `PyLineError`
 /// to eventually form a `ValidationError`.
 /// I don't like the name `ValLineError`, but it's the best I could come up with (for now).
 #[cfg_attr(debug_assertions, derive(Debug))]
-pub struct ValLineError<'a> {
+pub struct ValLineError {
     pub error_type: ErrorType,
     // location is reversed so that adding an "outer" location item is pushing, it's reversed before showing to the user
     pub location: Location,
-    pub input_value: InputValue<'a>,
+    pub input_value: InputValue,
 }
 
-impl<'a> ValLineError<'a> {
-    pub fn new(error_type: ErrorType, input: &'a impl Input<'a>) -> ValLineError<'a> {
+impl ValLineError {
+    pub fn new(error_type: ErrorType, input: &impl AsErrorValue) -> ValLineError {
         Self {
             error_type,
             input_value: input.as_error_value(),
@@ -94,7 +94,7 @@ impl<'a> ValLineError<'a> {
         }
     }
 
-    pub fn new_with_loc(error_type: ErrorType, input: &'a impl Input<'a>, loc: impl Into<LocItem>) -> ValLineError<'a> {
+    pub fn new_with_loc(error_type: ErrorType, input: &impl AsErrorValue, loc: impl Into<LocItem>) -> ValLineError {
         Self {
             error_type,
             input_value: input.as_error_value(),
@@ -102,7 +102,7 @@ impl<'a> ValLineError<'a> {
         }
     }
 
-    pub fn new_with_full_loc(error_type: ErrorType, input: &'a impl Input<'a>, location: Location) -> ValLineError<'a> {
+    pub fn new_with_full_loc(error_type: ErrorType, input: &impl AsErrorValue, location: Location) -> ValLineError {
         Self {
             error_type,
             input_value: input.as_error_value(),
@@ -110,7 +110,7 @@ impl<'a> ValLineError<'a> {
         }
     }
 
-    pub fn new_custom_input(error_type: ErrorType, input_value: InputValue<'a>) -> ValLineError<'a> {
+    pub fn new_custom_input(error_type: ErrorType, input_value: InputValue) -> ValLineError {
         Self {
             error_type,
             input_value,
@@ -130,35 +130,20 @@ impl<'a> ValLineError<'a> {
         self.error_type = error_type;
         self
     }
-
-    /// a bit like clone but change the lifetime to match py, used by ValError.into_owned above
-    pub fn into_owned(self, py: Python<'_>) -> ValLineError<'_> {
-        ValLineError {
-            error_type: self.error_type,
-            input_value: match self.input_value {
-                InputValue::PyAny(input) => InputValue::PyAny(input.to_object(py).into_ref(py)),
-                InputValue::JsonInput(input) => InputValue::JsonInput(input),
-                InputValue::String(input) => InputValue::PyAny(input.to_object(py).into_ref(py)),
-            },
-            location: self.location,
-        }
-    }
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 #[derive(Clone)]
-pub enum InputValue<'a> {
-    PyAny(&'a PyAny),
-    JsonInput(JsonValue),
-    String(&'a str),
+pub enum InputValue {
+    Python(PyObject),
+    Json(JsonValue),
 }
 
-impl<'a> ToPyObject for InputValue<'a> {
+impl ToPyObject for InputValue {
     fn to_object(&self, py: Python) -> PyObject {
         match self {
-            Self::PyAny(input) => input.into_py(py),
-            Self::JsonInput(input) => input.to_object(py),
-            Self::String(input) => input.into_py(py),
+            Self::Python(input) => input.clone_ref(py),
+            Self::Json(input) => input.to_object(py),
         }
     }
 }

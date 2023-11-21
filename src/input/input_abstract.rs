@@ -49,7 +49,7 @@ impl TryFrom<&str> for InputType {
 /// * `strict_*` & `lax_*` if they have different behavior
 /// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
 pub trait Input<'a>: fmt::Debug + ToPyObject + AsLocItem + Sized {
-    fn as_error_value(&'a self) -> InputValue<'a>;
+    fn as_error_value(&self) -> InputValue;
 
     fn identity(&self) -> Option<usize> {
         None
@@ -85,11 +85,11 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + AsLocItem + Sized {
         false
     }
 
-    fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>>;
+    fn validate_args(&'a self) -> ValResult<GenericArguments<'a>>;
 
-    fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<'a, GenericArguments<'a>>;
+    fn validate_dataclass_args(&'a self, dataclass_name: &str) -> ValResult<GenericArguments<'a>>;
 
-    fn parse_json(&'a self) -> ValResult<'a, JsonValue>;
+    fn parse_json(&'a self) -> ValResult<JsonValue>;
 
     fn validate_str(
         &'a self,
@@ -99,9 +99,9 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + AsLocItem + Sized {
 
     fn validate_bytes(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherBytes<'a>>>;
 
-    fn validate_bool(&self, strict: bool) -> ValResult<'_, ValidationMatch<bool>>;
+    fn validate_bool(&self, strict: bool) -> ValResult<ValidationMatch<bool>>;
 
-    fn validate_int(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherInt<'a>>>;
+    fn validate_int(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>>;
 
     fn exact_int(&'a self) -> ValResult<EitherInt<'a>> {
         self.validate_int(true).and_then(|val_match| {
@@ -121,7 +121,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + AsLocItem + Sized {
         })
     }
 
-    fn validate_float(&'a self, strict: bool) -> ValResult<'a, ValidationMatch<EitherFloat<'a>>>;
+    fn validate_float(&'a self, strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>>;
 
     fn validate_decimal(&'a self, strict: bool, py: Python<'a>) -> ValResult<&'a PyAny> {
         if strict {
@@ -230,15 +230,11 @@ pub trait Input<'a>: fmt::Debug + ToPyObject + AsLocItem + Sized {
     ) -> ValResult<ValidationMatch<EitherTimedelta>>;
 }
 
-/// The problem to solve here is that iterating a `StringMapping` returns an owned
-/// `StringMapping`, but all the other iterators return references. By introducing
+/// The problem to solve here is that iterating collections often returns owned
+/// values, but inputs are usually taken by reference. By introducing
 /// this trait we abstract over whether the return value from the iterator is owned
 /// or borrowed; all we care about is that we can borrow it again with `borrow_input`
 /// for some lifetime 'a.
-///
-/// This lifetime `'a` is shorter than the original lifetime `'data` of the input,
-/// which is only a problem in error branches. To resolve we have to call `into_owned`
-/// to extend out the lifetime to match the original input.
 pub trait BorrowInput {
     type Input<'a>: Input<'a>
     where

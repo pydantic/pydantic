@@ -64,7 +64,7 @@ impl Validator for GeneratorValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let iterator = input.validate_iter()?;
         let validator = self.item_validator.as_ref().map(|v| {
             InternalValidator::new(

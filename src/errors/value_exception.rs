@@ -2,9 +2,10 @@ use pyo3::exceptions::{PyException, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
-use crate::input::{Input, InputType};
+use crate::input::InputType;
 use crate::tools::extract_i64;
 
+use super::line_error::AsErrorValue;
 use super::{ErrorType, ValError};
 
 #[pyclass(extends=PyException, module="pydantic_core._pydantic_core")]
@@ -105,7 +106,7 @@ impl PydanticCustomError {
 }
 
 impl PydanticCustomError {
-    pub fn into_val_error<'a>(self, input: &'a impl Input<'a>) -> ValError<'a> {
+    pub fn into_val_error(self, input: &impl AsErrorValue) -> ValError {
         let error_type = ErrorType::CustomError {
             error_type: self.error_type,
             message_template: self.message_template,
@@ -184,7 +185,7 @@ impl PydanticKnownError {
 }
 
 impl PydanticKnownError {
-    pub fn into_val_error<'a>(self, input: &'a impl Input<'a>) -> ValError<'a> {
+    pub fn into_val_error(self, input: &impl AsErrorValue) -> ValError {
         ValError::new(self.error_type, input)
     }
 }

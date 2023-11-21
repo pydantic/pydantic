@@ -225,12 +225,8 @@ fn get_url_prefix(py: Python, include_url: bool) -> Option<&str> {
 
 // used to convert a validation error back to ValError for wrap functions
 impl ValidationError {
-    pub(crate) fn into_val_error(self, py: Python<'_>) -> ValError<'_> {
-        self.line_errors
-            .into_iter()
-            .map(|e| e.into_val_line_error(py))
-            .collect::<Vec<_>>()
-            .into()
+    pub(crate) fn into_val_error(self) -> ValError {
+        self.line_errors.into_iter().map(Into::into).collect::<Vec<_>>().into()
     }
 }
 
@@ -416,7 +412,7 @@ pub struct PyLineError {
     input_value: PyObject,
 }
 
-impl<'a> IntoPy<PyLineError> for ValLineError<'a> {
+impl IntoPy<PyLineError> for ValLineError {
     fn into_py(self, py: Python<'_>) -> PyLineError {
         PyLineError {
             error_type: self.error_type,
@@ -426,13 +422,13 @@ impl<'a> IntoPy<PyLineError> for ValLineError<'a> {
     }
 }
 
-impl PyLineError {
+impl From<PyLineError> for ValLineError {
     /// Used to extract line errors from a validation error for wrap functions
-    fn into_val_line_error(self, py: Python<'_>) -> ValLineError<'_> {
+    fn from(other: PyLineError) -> ValLineError {
         ValLineError {
-            error_type: self.error_type,
-            location: self.location,
-            input_value: InputValue::PyAny(self.input_value.into_ref(py)),
+            error_type: other.error_type,
+            location: other.location,
+            input_value: InputValue::Python(other.input_value),
         }
     }
 }

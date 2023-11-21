@@ -34,7 +34,7 @@ impl<'py> ToPyObject for StringMapping<'py> {
 }
 
 impl<'py> StringMapping<'py> {
-    pub fn new_key(py_key: &'py PyAny) -> ValResult<'py, StringMapping> {
+    pub fn new_key(py_key: &'py PyAny) -> ValResult<StringMapping> {
         if let Ok(py_str) = py_key.downcast::<PyString>() {
             Ok(Self::String(py_str))
         } else {
@@ -42,7 +42,7 @@ impl<'py> StringMapping<'py> {
         }
     }
 
-    pub fn new_value(py_value: &'py PyAny) -> ValResult<'py, Self> {
+    pub fn new_value(py_value: &'py PyAny) -> ValResult<Self> {
         if let Ok(py_str) = py_value.downcast::<PyString>() {
             Ok(Self::String(py_str))
         } else if let Ok(value) = py_value.downcast::<PyDict>() {
@@ -63,10 +63,10 @@ impl AsLocItem for StringMapping<'_> {
 }
 
 impl<'a> Input<'a> for StringMapping<'a> {
-    fn as_error_value(&'a self) -> InputValue<'a> {
+    fn as_error_value(&self) -> InputValue {
         match self {
             Self::String(s) => s.as_error_value(),
-            Self::Mapping(d) => InputValue::PyAny(d),
+            Self::Mapping(d) => d.as_error_value(),
         }
     }
 
@@ -74,19 +74,19 @@ impl<'a> Input<'a> for StringMapping<'a> {
         None
     }
 
-    fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_args(&'a self) -> ValResult<GenericArguments<'a>> {
         // do we want to support this?
         Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self))
     }
 
-    fn validate_dataclass_args(&'a self, _dataclass_name: &str) -> ValResult<'a, GenericArguments<'a>> {
+    fn validate_dataclass_args(&'a self, _dataclass_name: &str) -> ValResult<GenericArguments<'a>> {
         match self {
             StringMapping::String(_) => Err(ValError::new(ErrorTypeDefaults::ArgumentsType, self)),
             StringMapping::Mapping(m) => Ok(GenericArguments::StringMapping(m)),
         }
     }
 
-    fn parse_json(&'a self) -> ValResult<'a, JsonValue> {
+    fn parse_json(&'a self) -> ValResult<JsonValue> {
         match self {
             Self::String(s) => {
                 let str = py_string_str(s)?;
@@ -114,14 +114,14 @@ impl<'a> Input<'a> for StringMapping<'a> {
         }
     }
 
-    fn validate_bool(&self, _strict: bool) -> ValResult<'_, ValidationMatch<bool>> {
+    fn validate_bool(&self, _strict: bool) -> ValResult<ValidationMatch<bool>> {
         match self {
             Self::String(s) => str_as_bool(self, py_string_str(s)?).map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::BoolType, self)),
         }
     }
 
-    fn validate_int(&'a self, _strict: bool) -> ValResult<'a, ValidationMatch<EitherInt<'a>>> {
+    fn validate_int(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherInt<'a>>> {
         match self {
             Self::String(s) => match py_string_str(s)?.parse() {
                 Ok(i) => Ok(ValidationMatch::strict(EitherInt::I64(i))),
@@ -131,7 +131,7 @@ impl<'a> Input<'a> for StringMapping<'a> {
         }
     }
 
-    fn validate_float(&'a self, _strict: bool) -> ValResult<'a, ValidationMatch<EitherFloat<'a>>> {
+    fn validate_float(&'a self, _strict: bool) -> ValResult<ValidationMatch<EitherFloat<'a>>> {
         match self {
             Self::String(s) => str_as_float(self, py_string_str(s)?).map(ValidationMatch::strict),
             Self::Mapping(_) => Err(ValError::new(ErrorTypeDefaults::FloatType, self)),
