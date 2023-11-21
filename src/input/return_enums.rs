@@ -153,7 +153,7 @@ impl<'a, INPUT: Input<'a>> MaxLengthCheck<'a, INPUT> {
         }
     }
 
-    fn incr(&mut self) -> ValResult<'a, ()> {
+    fn incr(&mut self) -> ValResult<()> {
         if let Some(max_length) = self.max_length {
             self.current_length += 1;
             if self.current_length > max_length {
@@ -193,7 +193,7 @@ fn validate_iter_to_vec<'a, 's>(
     mut max_length_check: MaxLengthCheck<'a, impl Input<'a>>,
     validator: &'s CombinedValidator,
     state: &mut ValidationState,
-) -> ValResult<'a, Vec<PyObject>> {
+) -> ValResult<Vec<PyObject>> {
     let mut output: Vec<PyObject> = Vec::with_capacity(capacity);
     let mut errors: Vec<ValLineError> = Vec::new();
     for (index, item_result) in iter.enumerate() {
@@ -259,7 +259,7 @@ fn validate_iter_to_set<'a, 's>(
     max_length: Option<usize>,
     validator: &'s CombinedValidator,
     state: &mut ValidationState,
-) -> ValResult<'a, ()> {
+) -> ValResult<()> {
     let mut errors: Vec<ValLineError> = Vec::new();
     for (index, item_result) in iter.enumerate() {
         let item = item_result.map_err(|e| any_next_error!(py, e, input, index))?;
@@ -303,7 +303,7 @@ fn no_validator_iter_to_vec<'a, 's>(
     input: &'a (impl Input<'a> + 'a),
     iter: impl Iterator<Item = PyResult<&'a (impl Input<'a> + 'a)>>,
     mut max_length_check: MaxLengthCheck<'a, impl Input<'a>>,
-) -> ValResult<'a, Vec<PyObject>> {
+) -> ValResult<Vec<PyObject>> {
     iter.enumerate()
         .map(|(index, result)| {
             let v = result.map_err(|e| any_next_error!(py, e, input, index))?;
@@ -348,7 +348,7 @@ impl<'a> GenericIterable<'a> {
         field_type: &'static str,
         validator: &'s CombinedValidator,
         state: &mut ValidationState,
-    ) -> ValResult<'a, Vec<PyObject>> {
+    ) -> ValResult<Vec<PyObject>> {
         let actual_length = self.generic_len();
         let capacity = actual_length.unwrap_or(DEFAULT_CAPACITY);
         let max_length_check = MaxLengthCheck::new(max_length, field_type, input, actual_length);
@@ -381,7 +381,7 @@ impl<'a> GenericIterable<'a> {
         field_type: &'static str,
         validator: &'s CombinedValidator,
         state: &mut ValidationState,
-    ) -> ValResult<'a, ()> {
+    ) -> ValResult<()> {
         macro_rules! validate_set {
             ($iter:expr) => {
                 validate_iter_to_set(py, set, $iter, input, field_type, max_length, validator, state)
@@ -406,7 +406,7 @@ impl<'a> GenericIterable<'a> {
         input: &'a impl Input<'a>,
         field_type: &'static str,
         max_length: Option<usize>,
-    ) -> ValResult<'a, Vec<PyObject>> {
+    ) -> ValResult<Vec<PyObject>> {
         let actual_length = self.generic_len();
         let max_length_check = MaxLengthCheck::new(max_length, field_type, input, actual_length);
 
@@ -456,13 +456,13 @@ pub struct DictGenericIterator<'py> {
 }
 
 impl<'py> DictGenericIterator<'py> {
-    pub fn new(dict: &'py PyDict) -> ValResult<'py, Self> {
+    pub fn new(dict: &'py PyDict) -> ValResult<Self> {
         Ok(Self { dict_iter: dict.iter() })
     }
 }
 
 impl<'py> Iterator for DictGenericIterator<'py> {
-    type Item = ValResult<'py, (&'py PyAny, &'py PyAny)>;
+    type Item = ValResult<(&'py PyAny, &'py PyAny)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.dict_iter.next().map(Ok)
@@ -475,7 +475,7 @@ pub struct MappingGenericIterator<'py> {
     iter: &'py PyIterator,
 }
 
-fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py impl Input<'py>) -> ValError<'py> {
+fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py impl Input<'py>) -> ValError {
     ValError::new(
         ErrorType::MappingType {
             error: py_err_string(py, err).into(),
@@ -486,7 +486,7 @@ fn mapping_err<'py>(err: PyErr, py: Python<'py>, input: &'py impl Input<'py>) ->
 }
 
 impl<'py> MappingGenericIterator<'py> {
-    pub fn new(mapping: &'py PyMapping) -> ValResult<'py, Self> {
+    pub fn new(mapping: &'py PyMapping) -> ValResult<Self> {
         let py = mapping.py();
         let input: &PyAny = mapping;
         let iter = mapping
@@ -501,7 +501,7 @@ impl<'py> MappingGenericIterator<'py> {
 const MAPPING_TUPLE_ERROR: &str = "Mapping items must be tuples of (key, value) pairs";
 
 impl<'py> Iterator for MappingGenericIterator<'py> {
-    type Item = ValResult<'py, (&'py PyAny, &'py PyAny)>;
+    type Item = ValResult<(&'py PyAny, &'py PyAny)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         Some(match self.iter.next()? {
@@ -524,14 +524,14 @@ pub struct StringMappingGenericIterator<'py> {
 }
 
 impl<'py> StringMappingGenericIterator<'py> {
-    pub fn new(dict: &'py PyDict) -> ValResult<'py, Self> {
+    pub fn new(dict: &'py PyDict) -> ValResult<Self> {
         Ok(Self { dict_iter: dict.iter() })
     }
 }
 
 impl<'py> Iterator for StringMappingGenericIterator<'py> {
     // key (the first member of the tuple could be a simple String)
-    type Item = ValResult<'py, (StringMapping<'py>, StringMapping<'py>)>;
+    type Item = ValResult<(StringMapping<'py>, StringMapping<'py>)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self.dict_iter.next() {
@@ -558,7 +558,7 @@ pub struct AttributesGenericIterator<'py> {
 }
 
 impl<'py> AttributesGenericIterator<'py> {
-    pub fn new(py_any: &'py PyAny) -> ValResult<'py, Self> {
+    pub fn new(py_any: &'py PyAny) -> ValResult<Self> {
         Ok(Self {
             object: py_any,
             attributes_iterator: py_any.dir().into_iter(),
@@ -567,7 +567,7 @@ impl<'py> AttributesGenericIterator<'py> {
 }
 
 impl<'py> Iterator for AttributesGenericIterator<'py> {
-    type Item = ValResult<'py, (&'py PyAny, &'py PyAny)>;
+    type Item = ValResult<(&'py PyAny, &'py PyAny)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // loop until we find an attribute who's name does not start with underscore,
@@ -610,7 +610,7 @@ pub struct JsonObjectGenericIterator<'py> {
 }
 
 impl<'py> JsonObjectGenericIterator<'py> {
-    pub fn new(json_object: &'py JsonObject) -> ValResult<'py, Self> {
+    pub fn new(json_object: &'py JsonObject) -> ValResult<Self> {
         Ok(Self {
             object_iter: json_object.iter(),
         })
@@ -618,7 +618,7 @@ impl<'py> JsonObjectGenericIterator<'py> {
 }
 
 impl<'py> Iterator for JsonObjectGenericIterator<'py> {
-    type Item = ValResult<'py, (&'py String, &'py JsonValue)>;
+    type Item = ValResult<(&'py String, &'py JsonValue)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.object_iter.next().map(|(key, value)| Ok((key, value)))
@@ -670,8 +670,8 @@ impl GenericPyIterator {
         }
     }
 
-    pub fn input_as_error_value<'py>(&self, py: Python<'py>) -> InputValue<'py> {
-        InputValue::PyAny(self.obj.clone_ref(py).into_ref(py))
+    pub fn input_as_error_value(&self, py: Python<'_>) -> InputValue {
+        InputValue::Python(self.obj.clone_ref(py))
     }
 
     pub fn index(&self) -> usize {
@@ -699,8 +699,8 @@ impl GenericJsonIterator {
         }
     }
 
-    pub fn input_as_error_value<'py>(&self, _py: Python<'py>) -> InputValue<'py> {
-        InputValue::JsonInput(JsonValue::Array(self.array.clone()))
+    pub fn input_as_error_value(&self, _py: Python<'_>) -> InputValue {
+        InputValue::Json(JsonValue::Array(self.array.clone()))
     }
 
     pub fn index(&self) -> usize {
@@ -758,7 +758,7 @@ pub enum EitherString<'a> {
 }
 
 impl<'a> EitherString<'a> {
-    pub fn as_cow(&self) -> ValResult<'a, Cow<str>> {
+    pub fn as_cow(&self) -> ValResult<Cow<str>> {
         match self {
             Self::Cow(data) => Ok(data.clone()),
             Self::Py(py_str) => Ok(Cow::Borrowed(py_string_str(py_str)?)),
@@ -800,7 +800,7 @@ impl<'a> IntoPy<PyObject> for EitherString<'a> {
 pub fn py_string_str(py_str: &PyString) -> ValResult<&str> {
     py_str
         .to_str()
-        .map_err(|_| ValError::new_custom_input(ErrorTypeDefaults::StringUnicode, InputValue::PyAny(py_str as &PyAny)))
+        .map_err(|_| ValError::new_custom_input(ErrorTypeDefaults::StringUnicode, InputValue::Python(py_str.into())))
 }
 
 #[cfg_attr(debug_assertions, derive(Debug))]
@@ -870,7 +870,7 @@ impl<'a> EitherInt<'a> {
             Ok(Self::BigInt(big_int))
         }
     }
-    pub fn into_i64(self, py: Python<'a>) -> ValResult<'a, i64> {
+    pub fn into_i64(self, py: Python<'a>) -> ValResult<i64> {
         match self {
             EitherInt::I64(i) => Ok(i),
             EitherInt::U64(u) => match i64::try_from(u) {
@@ -893,7 +893,7 @@ impl<'a> EitherInt<'a> {
         }
     }
 
-    pub fn as_int(&self) -> ValResult<'a, Int> {
+    pub fn as_int(&self) -> ValResult<Int> {
         match self {
             EitherInt::I64(i) => Ok(Int::I64(*i)),
             EitherInt::U64(u) => match i64::try_from(*u) {

@@ -65,7 +65,7 @@ impl Validator for UrlValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let mut lib_url = self.get_url(input, state.strict_or(self.strict))?;
 
         if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
@@ -93,7 +93,7 @@ impl Validator for UrlValidator {
                 state.floor_exactness(Exactness::Lax);
                 Ok(PyUrl::new(lib_url).into_py(py))
             }
-            Err(error_type) => return Err(ValError::new(error_type, input)),
+            Err(error_type) => Err(ValError::new(error_type, input)),
         }
     }
 
@@ -103,7 +103,7 @@ impl Validator for UrlValidator {
 }
 
 impl UrlValidator {
-    fn get_url<'s, 'data>(&'s self, input: &'data impl Input<'data>, strict: bool) -> ValResult<'data, Url> {
+    fn get_url<'s, 'data>(&'s self, input: &'data impl Input<'data>, strict: bool) -> ValResult<Url> {
         match input.validate_str(strict, false) {
             Ok(val_match) => {
                 let either_str = val_match.into_inner();
@@ -133,7 +133,7 @@ impl UrlValidator {
         }
     }
 
-    fn check_length<'s, 'data>(&self, input: &'data impl Input<'data>, url_str: &str) -> ValResult<'data, ()> {
+    fn check_length<'s, 'data>(&self, input: &'data impl Input<'data>, url_str: &str) -> ValResult<()> {
         if let Some(max_length) = self.max_length {
             if url_str.len() > max_length {
                 return Err(ValError::new(
@@ -199,7 +199,7 @@ impl Validator for MultiHostUrlValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let mut multi_url = self.get_url(input, state.strict_or(self.strict))?;
 
         if let Some((ref allowed_schemes, ref expected_schemes_repr)) = self.allowed_schemes {
@@ -226,7 +226,7 @@ impl Validator for MultiHostUrlValidator {
                 state.floor_exactness(Exactness::Lax);
                 Ok(multi_url.into_py(py))
             }
-            Err(error_type) => return Err(ValError::new(error_type, input)),
+            Err(error_type) => Err(ValError::new(error_type, input)),
         }
     }
 
@@ -236,7 +236,7 @@ impl Validator for MultiHostUrlValidator {
 }
 
 impl MultiHostUrlValidator {
-    fn get_url<'s, 'data>(&'s self, input: &'data impl Input<'data>, strict: bool) -> ValResult<'data, PyMultiHostUrl> {
+    fn get_url<'s, 'data>(&'s self, input: &'data impl Input<'data>, strict: bool) -> ValResult<PyMultiHostUrl> {
         match input.validate_str(strict, false) {
             Ok(val_match) => {
                 let either_str = val_match.into_inner();
@@ -264,7 +264,7 @@ impl MultiHostUrlValidator {
         }
     }
 
-    fn check_length<'s, 'data, F>(&self, input: &'data impl Input<'data>, func: F) -> ValResult<'data, ()>
+    fn check_length<'s, 'data, F>(&self, input: &'data impl Input<'data>, func: F) -> ValResult<()>
     where
         F: FnOnce() -> usize,
     {
@@ -287,7 +287,7 @@ fn parse_multihost_url<'url, 'input>(
     url_str: &'url str,
     input: &'input impl Input<'input>,
     strict: bool,
-) -> ValResult<'input, PyMultiHostUrl> {
+) -> ValResult<PyMultiHostUrl> {
     macro_rules! parsing_err {
         ($parse_error:expr) => {
             Err(ValError::new(
@@ -402,11 +402,7 @@ fn parse_multihost_url<'url, 'input>(
     }
 }
 
-fn parse_url<'url, 'input>(
-    url_str: &'url str,
-    input: &'input impl Input<'input>,
-    strict: bool,
-) -> ValResult<'input, Url> {
+fn parse_url<'url, 'input>(url_str: &'url str, input: &'input impl Input<'input>, strict: bool) -> ValResult<Url> {
     if url_str.is_empty() {
         return Err(ValError::new(
             ErrorType::UrlParsing {

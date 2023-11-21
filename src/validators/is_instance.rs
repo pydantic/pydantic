@@ -61,7 +61,7 @@ impl Validator for IsInstanceValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         _state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         if !input.is_python() {
             return Err(ValError::InternalErr(PyNotImplementedError::new_err(
                 "Cannot check isinstance when validating from json, \

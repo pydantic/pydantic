@@ -20,7 +20,7 @@ pub fn get_enum_meta_object(py: Python) -> Py<PyAny> {
         .clone()
 }
 
-pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: JsonValueError) -> ValError<'a> {
+pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: JsonValueError) -> ValError {
     ValError::new(
         ErrorType::JsonInvalid {
             error: error.to_string(),
@@ -30,7 +30,7 @@ pub fn map_json_err<'a>(input: &'a impl Input<'a>, error: JsonValueError) -> Val
     )
 }
 
-pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<'a, bool> {
+pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<bool> {
     if str == "0"
         || str.eq_ignore_ascii_case("f")
         || str.eq_ignore_ascii_case("n")
@@ -52,7 +52,7 @@ pub fn str_as_bool<'a>(input: &'a impl Input<'a>, str: &str) -> ValResult<'a, bo
     }
 }
 
-pub fn int_as_bool<'a>(input: &'a impl Input<'a>, int: i64) -> ValResult<'a, bool> {
+pub fn int_as_bool<'a>(input: &'a impl Input<'a>, int: i64) -> ValResult<bool> {
     if int == 0 {
         Ok(false)
     } else if int == 1 {
@@ -82,7 +82,7 @@ fn strip_underscores(s: &str) -> Option<String> {
 /// max length of the input is 4300, see
 /// https://docs.python.org/3/whatsnew/3.11.html#other-cpython-implementation-changes and
 /// https://github.com/python/cpython/issues/95778 for more info in that length bound
-pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<'s, EitherInt<'s>> {
+pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<EitherInt<'s>> {
     let len = str.len();
     if len > 4300 {
         Err(ValError::new(ErrorTypeDefaults::IntParsingSize, input))
@@ -106,7 +106,7 @@ pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<
 }
 
 /// parse a float as a float
-pub fn str_as_float<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<'s, EitherFloat<'s>> {
+pub fn str_as_float<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<EitherFloat<'s>> {
     match str.parse() {
         Ok(float) => Ok(EitherFloat::F64(float)),
         Err(_) => match strip_underscores(str).and_then(|stripped| stripped.parse().ok()) {
@@ -140,7 +140,7 @@ fn strip_decimal_zeros(s: &str) -> Option<&str> {
     None
 }
 
-pub fn float_as_int<'a>(input: &'a impl Input<'a>, float: f64) -> ValResult<'a, EitherInt<'a>> {
+pub fn float_as_int<'a>(input: &'a impl Input<'a>, float: f64) -> ValResult<EitherInt<'a>> {
     if float.is_infinite() || float.is_nan() {
         Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input))
     } else if float % 1.0 != 0.0 {
@@ -152,7 +152,7 @@ pub fn float_as_int<'a>(input: &'a impl Input<'a>, float: f64) -> ValResult<'a, 
     }
 }
 
-pub fn decimal_as_int<'a>(py: Python, input: &'a impl Input<'a>, decimal: &'a PyAny) -> ValResult<'a, EitherInt<'a>> {
+pub fn decimal_as_int<'a>(py: Python, input: &'a impl Input<'a>, decimal: &'a PyAny) -> ValResult<EitherInt<'a>> {
     if !decimal.call_method0(intern!(py, "is_finite"))?.extract::<bool>()? {
         return Err(ValError::new(ErrorTypeDefaults::FiniteNumber, input));
     }

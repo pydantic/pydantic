@@ -46,7 +46,7 @@ impl Validator for StrValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         input
             .validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)
             .map(|val_match| val_match.unpack(state).into_py(py))
@@ -78,7 +78,7 @@ impl Validator for StrConstrainedValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let either_str = input
             .validate_str(state.strict_or(self.strict), self.coerce_numbers_to_str)?
             .unpack(state);

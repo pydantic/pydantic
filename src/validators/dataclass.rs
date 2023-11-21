@@ -144,7 +144,7 @@ impl Validator for DataclassArgsValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let args = input.validate_dataclass_args(&self.dataclass_name)?;
 
         let output_dict = PyDict::new(py);
@@ -202,8 +202,7 @@ impl Validator for DataclassArgsValidator {
                                             ErrorTypeDefaults::MultipleArgumentValues,
                                             kw_value,
                                             field.name.clone(),
-                                        )
-                                        .into_owned(py),
+                                        ),
                                     );
                                 }
                                 // found a positional argument, validate it
@@ -226,10 +225,9 @@ impl Validator for DataclassArgsValidator {
                                             errors.extend(line_errors.into_iter().map(|err| {
                                                 lookup_path
                                                     .apply_error_loc(err, self.loc_by_alias, &field.name)
-                                                    .into_owned(py)
                                             }));
                                         }
-                                        Err(err) => return Err(err.into_owned(py)),
+                                        Err(err) => return Err(err),
                                     }
                                 }
                                 // found neither, check if there is a default value, otherwise error
@@ -294,8 +292,7 @@ impl Validator for DataclassArgsValidator {
                                                                 ErrorTypeDefaults::UnexpectedKeywordArgument,
                                                                 value,
                                                                 raw_key.as_loc_item(),
-                                                            )
-                                                            .into_owned(py),
+                                                            ),
                                                         );
                                                     }
                                                     ExtraBehavior::Ignore => {}
@@ -375,7 +372,7 @@ impl Validator for DataclassArgsValidator {
         field_name: &'data str,
         field_value: &'data PyAny,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let dict: &PyDict = obj.downcast()?;
 
         let ok = |output: PyObject| {
@@ -518,7 +515,7 @@ impl Validator for DataclassValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         if let Some(self_instance) = state.extra().self_instance {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
             return self.validate_init(py, self_instance, input, state);
@@ -560,7 +557,7 @@ impl Validator for DataclassValidator {
         field_name: &'data str,
         field_value: &'data PyAny,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         if self.frozen {
             return Err(ValError::new(ErrorTypeDefaults::FrozenInstance, field_value));
         }
@@ -600,7 +597,7 @@ impl DataclassValidator {
         self_instance: &'s PyAny,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         // we need to set `self_instance` to None for nested validators as we don't want to operate on the self_instance
         // instance anymore
         let state = &mut state.rebind_extra(|extra| extra.self_instance = None);
@@ -627,7 +624,7 @@ impl DataclassValidator {
         dc: &PyAny,
         val_output: PyObject,
         input: &'data impl Input<'data>,
-    ) -> ValResult<'data, ()> {
+    ) -> ValResult<()> {
         let (dc_dict, post_init_kwargs): (&PyAny, &PyAny) = val_output.extract(py)?;
         if self.slots {
             let dc_dict: &PyDict = dc_dict.downcast()?;

@@ -106,7 +106,7 @@ impl UnionValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let old_exactness = state.exactness;
         let strict = state.strict_or(self.strict);
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
@@ -172,7 +172,7 @@ impl UnionValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let mut errors = MaybeErrors::new(self.custom_error.as_ref());
 
         let mut rebound_state;
@@ -207,7 +207,7 @@ impl Validator for UnionValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         match self.mode {
             UnionMode::Smart => self.validate_smart(py, input, state),
             UnionMode::LeftToRight => self.validate_left_to_right(py, input, state),
@@ -219,18 +219,18 @@ impl Validator for UnionValidator {
     }
 }
 
-struct ChoiceLineErrors<'a, 'data> {
+struct ChoiceLineErrors<'a> {
     choice: &'a CombinedValidator,
     label: Option<&'a str>,
-    line_errors: Vec<ValLineError<'data>>,
+    line_errors: Vec<ValLineError>,
 }
 
-enum MaybeErrors<'a, 'data> {
+enum MaybeErrors<'a> {
     Custom(&'a CustomError),
-    Errors(SmallVec<[ChoiceLineErrors<'a, 'data>; 4]>),
+    Errors(SmallVec<[ChoiceLineErrors<'a>; 4]>),
 }
 
-impl<'a, 'data> MaybeErrors<'a, 'data> {
+impl<'a> MaybeErrors<'a> {
     fn new(custom_error: Option<&'a CustomError>) -> Self {
         match custom_error {
             Some(custom_error) => Self::Custom(custom_error),
@@ -238,7 +238,7 @@ impl<'a, 'data> MaybeErrors<'a, 'data> {
         }
     }
 
-    fn push(&mut self, choice: &'a CombinedValidator, label: Option<&'a str>, line_errors: Vec<ValLineError<'data>>) {
+    fn push(&mut self, choice: &'a CombinedValidator, label: Option<&'a str>, line_errors: Vec<ValLineError>) {
         match self {
             Self::Custom(_) => {}
             Self::Errors(errors) => errors.push(ChoiceLineErrors {
@@ -249,7 +249,7 @@ impl<'a, 'data> MaybeErrors<'a, 'data> {
         }
     }
 
-    fn into_val_error(self, input: &'data impl Input<'data>) -> ValError<'data> {
+    fn into_val_error<'i>(self, input: &impl Input<'i>) -> ValError {
         match self {
             Self::Custom(custom_error) => custom_error.as_val_error(input),
             Self::Errors(errors) => ValError::LineErrors(
@@ -395,7 +395,7 @@ impl Validator for TaggedUnionValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         match self.discriminator {
             Discriminator::LookupKey(ref lookup_key) => {
                 macro_rules! find_validator {
@@ -445,7 +445,7 @@ impl TaggedUnionValidator {
         &'s self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
-    ) -> ValResult<'data, &'data PyString> {
+    ) -> ValResult<&'data PyString> {
         let dict = input.strict_dict()?;
         let either_tag = match dict {
             GenericMapping::PyDict(dict) => match dict.get_item(intern!(py, "type"))? {
@@ -492,7 +492,7 @@ impl TaggedUnionValidator {
         tag: &'data PyAny,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         if let Ok(Some((tag, validator))) = self.lookup.validate(py, tag) {
             return match validator.validate(py, input, state) {
                 Ok(res) => Ok(res),
@@ -513,7 +513,7 @@ impl TaggedUnionValidator {
         }
     }
 
-    fn tag_not_found<'s, 'data>(&'s self, input: &'data impl Input<'data>) -> ValError<'data> {
+    fn tag_not_found<'s, 'data>(&'s self, input: &'data impl Input<'data>) -> ValError {
         match self.custom_error {
             Some(ref custom_error) => custom_error.as_val_error(input),
             None => ValError::new(

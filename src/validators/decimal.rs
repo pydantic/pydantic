@@ -83,11 +83,7 @@ impl_py_gc_traverse!(DecimalValidator {
     gt
 });
 
-fn extract_decimal_digits_info<'data>(
-    decimal: &PyAny,
-    normalized: bool,
-    py: Python<'data>,
-) -> ValResult<'data, (u64, u64)> {
+fn extract_decimal_digits_info(decimal: &PyAny, normalized: bool, py: Python<'_>) -> ValResult<(u64, u64)> {
     let mut normalized_decimal: Option<&PyAny> = None;
     if normalized {
         normalized_decimal = Some(decimal.call_method0(intern!(py, "normalize")).unwrap_or(decimal));
@@ -124,7 +120,7 @@ impl Validator for DecimalValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let decimal = input.validate_decimal(state.strict_or(self.strict), py)?;
 
         if !self.allow_inf_nan || self.check_digits {
@@ -269,11 +265,7 @@ impl Validator for DecimalValidator {
     }
 }
 
-pub(crate) fn create_decimal<'a>(
-    arg: &'a PyAny,
-    input: &'a impl Input<'a>,
-    py: Python<'a>,
-) -> ValResult<'a, &'a PyAny> {
+pub(crate) fn create_decimal<'a>(arg: &'a PyAny, input: &'a impl Input<'a>, py: Python<'a>) -> ValResult<&'a PyAny> {
     let decimal_type_obj: Py<PyType> = get_decimal_type(py);
     decimal_type_obj
         .call1(py, (arg,))
@@ -293,10 +285,10 @@ pub(crate) fn create_decimal<'a>(
 
 fn handle_decimal_new_error<'a>(
     py: Python<'a>,
-    input: InputValue<'a>,
+    input: InputValue,
     error: PyErr,
     decimal_exception: &'a PyAny,
-) -> ValError<'a> {
+) -> ValError {
     if error.matches(py, decimal_exception) {
         ValError::new_custom_input(ErrorTypeDefaults::DecimalParsing, input)
     } else if error.matches(py, PyTypeError::type_object(py)) {

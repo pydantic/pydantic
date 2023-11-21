@@ -45,7 +45,7 @@ impl Validator for TimeValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         state: &mut ValidationState,
-    ) -> ValResult<'data, PyObject> {
+    ) -> ValResult<PyObject> {
         let time = input
             .validate_time(state.strict_or(self.strict), self.microseconds_precision)?
             .unpack(state);
