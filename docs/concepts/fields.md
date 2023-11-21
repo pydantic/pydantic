@@ -825,7 +825,37 @@ print(User.model_json_schema())
 """
 ```
 
-Read more about JSON schema customization / modification in the [Modifying JSON Schema] section of the JSON schema docs.
+Read more about JSON schema customization / modification in the [Customizing JSON Schema] section of the JSON schema docs.
+
+## The `computed_field` decorator
+
+??? api "API Documentation"
+    [`pydantic.fields.computed_field`][pydantic.fields.computed_field]<br>
+
+The `computed_field` decorator can be used to include `property` or `cached_property` attributes when serializing a
+model or dataclass. This can be useful for fields that are computed from other fields, or for fields that
+are expensive to computed (and thus, are cached).
+
+Here's an example:
+
+```py
+from pydantic import BaseModel, computed_field
+
+
+class Box(BaseModel):
+    width: float
+    height: float
+    depth: float
+
+    @computed_field
+    def volume(self) -> float:
+        return self.width * self.height * self.depth
+
+
+b = Box(width=1, height=2, depth=3)
+print(b.model_dump())
+#> {'width': 1.0, 'height': 2.0, 'depth': 3.0, 'volume': 6.0}
+```
 
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
@@ -836,4 +866,4 @@ Read more about JSON schema customization / modification in the [Modifying JSON 
 [frozen dataclass documentation]: https://docs.python.org/3/library/dataclasses.html#frozen-instances
 [Validate Assignment]: models.md#validate-assignment
 [Serialization]: serialization.md#model-and-field-level-include-and-exclude
-[Customizing JSON Schema]: json_schema.md#modifying-the-schema
+[Customizing JSON Schema]: json_schema.md#customizing-json-schema

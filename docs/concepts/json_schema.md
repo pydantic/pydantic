@@ -757,7 +757,14 @@ print(Model(a='1').a)
 #> 2
 
 print(Model(a='1').model_json_schema())
-#> {'properties': {'a': {'title': 'A', 'type': 'int'}}, 'required': ['a'], 'title': 'Model', 'type': 'object'}
+"""
+{
+    'properties': {'a': {'title': 'A', 'type': 'int'}},
+    'required': ['a'],
+    'title': 'Model',
+    'type': 'object',
+}
+"""
 ```
 
 In the future, it's likely that Pydantic will add builtin support for JSON schema generation for types like `PlainValidator`,

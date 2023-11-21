@@ -1019,7 +1019,9 @@ def computed_field(
     repr: bool | None = None,
     return_type: Any = PydanticUndefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
-    """Decorator to include `property` and `cached_property` when serializing models or dataclasses.
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields#the-computed_field-decorator
+
+    Decorator to include `property` and `cached_property` when serializing models or dataclasses.
 
     This is useful for fields that are computed from other fields, or for fields that are expensive to compute and should be cached.
 
