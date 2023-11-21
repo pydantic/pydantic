@@ -312,8 +312,8 @@ from pydantic import (
 
 
 class UserModel(BaseModel):
-    id: int
     name: str
+    id: int
 
     @field_validator('name')
     @classmethod
