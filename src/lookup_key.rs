@@ -51,12 +51,6 @@ impl fmt::Display for LookupKey {
     }
 }
 
-macro_rules! py_string {
-    ($py:ident, $str:expr) => {
-        PyString::intern($py, $str).into()
-    };
-}
-
 impl LookupKey {
     pub fn from_py(py: Python, value: &PyAny, alt_alias: Option<&str>) -> PyResult<Self> {
         if let Ok(alias_py) = value.downcast::<PyString>() {
@@ -67,7 +61,7 @@ impl LookupKey {
                     py_key1: alias_py.into_py(py),
                     path1: LookupPath::from_str(py, alias, Some(alias_py)),
                     key2: alt_alias.to_string(),
-                    py_key2: py_string!(py, alt_alias),
+                    py_key2: PyString::new(py, alt_alias).into(),
                     path2: LookupPath::from_str(py, alt_alias, None),
                 }),
                 None => Ok(Self::simple(py, alias, Some(alias_py))),
@@ -98,12 +92,12 @@ impl LookupKey {
 
     fn simple(py: Python, key: &str, opt_py_key: Option<&PyString>) -> Self {
         let py_key = match opt_py_key {
-            Some(py_key) => py_key.into_py(py),
-            None => py_string!(py, key),
+            Some(py_key) => py_key,
+            None => PyString::new(py, key),
         };
         Self::Simple {
             key: key.to_string(),
-            py_key,
+            py_key: py_key.into(),
             path: LookupPath::from_str(py, key, opt_py_key),
         }
     }
@@ -348,10 +342,10 @@ impl fmt::Display for LookupPath {
 impl LookupPath {
     fn from_str(py: Python, key: &str, py_key: Option<&PyString>) -> Self {
         let py_key = match py_key {
-            Some(py_key) => py_key.into_py(py),
-            None => py_string!(py, key),
+            Some(py_key) => py_key,
+            None => PyString::new(py, key),
         };
-        Self(vec![PathItem::S(key.to_string(), py_key)])
+        Self(vec![PathItem::S(key.to_string(), py_key.into())])
     }
 
     fn from_list(obj: &PyAny) -> PyResult<LookupPath> {

@@ -120,7 +120,7 @@ impl BuildValidator for TypedDictValidator {
             fields.push(TypedDictField {
                 name: field_name.to_string(),
                 lookup_key,
-                name_py: PyString::intern(py, field_name).into(),
+                name_py: PyString::new(py, field_name).into(),
                 validator,
                 required,
             });
