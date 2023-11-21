@@ -767,7 +767,7 @@ See the [Serialization] section for more details.
 
 ## Customizing JSON Schema
 
-There are fields that exclusively to used to customise the generated JSON Schema:
+Some fields are exclusively used to customise the generated JSON Schema:
 
 * `title`: The title of the field.
 * `description`: The description of the field.
