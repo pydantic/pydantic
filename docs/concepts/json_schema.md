@@ -11,8 +11,8 @@ The generated JSON schemas are compliant with the following specifications:
 
 Use the following functions to generate JSON schema:
 
-* [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] - returns a jsonable dict of a model's schema
-* [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema] - returns a jsonable dict of an adapted type's schema
+* [`BaseModel.model_json_schema`][pydantic.main.BaseModel.model_json_schema] returns a jsonable dict of a model's schema
+* [`TypeAdapter.json_schema`][pydantic.type_adapter.TypeAdapter.json_schema] returns a jsonable dict of an adapted type's schema
 
 !!! note
     These methods are not to be confused with [`BaseModel.model_dump_json`][pydantic.main.BaseModel.model_dump_json]
