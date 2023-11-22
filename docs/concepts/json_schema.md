@@ -734,7 +734,7 @@ The [`WithJsonSchema`][pydantic.json_schema.WithJsonSchema] annotation can be us
 JSON schema for a given type without the need to implement `__get_pydantic_core_schema__` on the type itself.
 
 This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
-such as `Callable`, or types that have an `is-instance` core schema.
+such as `Callable`, or types that have an [`is-instance`][pydantic_core.core_schema.is_instance_schema] core schema.
 
 For example, the use of a [`PlainValidator`][pydantic.functional_validators.PlainValidator] in the following example
 would otherwise raise an error when producing a JSON schema because the [`PlainValidator`][pydantic.functional_validators.PlainValidator]
