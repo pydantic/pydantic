@@ -771,3 +771,35 @@ def test_int_not_coerced_to_enum():
     assert validator.validate_python(1) is not BinaryEnum.ONE
     assert validator.validate_python(BinaryEnum.ZERO) is BinaryEnum.ZERO
     assert validator.validate_python(BinaryEnum.ONE) is BinaryEnum.ONE
+
+
+def test_model_and_literal_union() -> None:
+    # see https://github.com/pydantic/pydantic/issues/8183
+    class ModelA:
+        pass
+
+    validator = SchemaValidator(
+        {
+            'type': 'union',
+            'choices': [
+                {
+                    'type': 'model',
+                    'cls': ModelA,
+                    'schema': {
+                        'type': 'model-fields',
+                        'fields': {
+                            'a': {'type': 'model-field', 'schema': {'type': 'int'}},
+                        },
+                    },
+                },
+                {'type': 'literal', 'expected': [True]},
+            ],
+        }
+    )
+
+    # validation against Literal[True] fails bc of the unhashable dict
+    # A ValidationError is raised, not a ValueError, which allows the validation against the union to continue
+    m = validator.validate_python({'a': 42})
+    assert isinstance(m, ModelA)
+    assert m.a == 42
+    assert validator.validate_python(True) is True
