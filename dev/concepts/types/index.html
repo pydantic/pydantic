@@ -3494,14 +3494,12 @@ Pydantic exports:</p>
 This means that they will not be able to have a <code>title</code> in JSON schemas and their schema will be copied between fields.
 You can use <a href="https://peps.python.org/pep-0695/">PEP 695</a>'s <code>TypeAliasType</code> via its <a href="https://github.com/python/typing_extensions">typing-extensions</a> backport to make named aliases, allowing you to define a new type without creating subclasses.
 This new type can be as simple as a name or have complex validation logic attached to it:</p>
-<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">TypeVar</span>
+<div class="language-py highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">annotated_types</span> <span class="kn">import</span> <span class="n">Gt</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span><span class="p">,</span> <span class="n">TypeAliasType</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>  <span class="c1"># or a `bound=SupportGt`</span>
 
 <span class="n">ImplicitAliasPositiveIntList</span> <span class="o">=</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]]</span>
 
@@ -3567,7 +3565,7 @@ This new type can be as simple as a name or have complex validation logic attach
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
-<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>  <span class="c1"># or a bound=SupportGt</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>  <span class="c1"># or a `bound=SupportGt`</span>
 
 <span class="n">PositiveList</span> <span class="o">=</span> <span class="n">TypeAliasType</span><span class="p">(</span>
     <span class="s1">&#39;PositiveList&#39;</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">T</span><span class="p">,</span> <span class="n">Gt</span><span class="p">(</span><span class="mi">0</span><span class="p">)]],</span> <span class="n">type_params</span><span class="o">=</span><span class="p">(</span><span class="n">T</span><span class="p">,)</span>
