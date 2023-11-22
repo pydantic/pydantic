@@ -614,17 +614,6 @@ def test_nested_schema():
     }
 
 
-@pytest.mark.skipif(sys.version_info >= (3, 8), reason='InitVar not supported in python 3.7')
-def test_intvar_3_7():
-    with pytest.raises(RuntimeError, match=r'^InitVar is not supported in Python 3\.7 as type information is lost$'):
-
-        @pydantic.dataclasses.dataclass
-        class TestInitVar:
-            x: int
-            y: dataclasses.InitVar
-
-
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='InitVar not supported in python 3.7')
 def test_initvar():
     @pydantic.dataclasses.dataclass
     class TestInitVar:
@@ -637,7 +626,6 @@ def test_initvar():
         tiv.y
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='InitVar not supported in python 3.7')
 def test_derived_field_from_initvar():
     @pydantic.dataclasses.dataclass
     class DerivedWithInitVar:
@@ -653,7 +641,6 @@ def test_derived_field_from_initvar():
         DerivedWithInitVar('Not A Number')
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='InitVar not supported in python 3.7')
 def test_initvars_post_init():
     @pydantic.dataclasses.dataclass
     class PathDataPostInit:
@@ -2182,7 +2169,6 @@ def test_dataclass_alias_generator():
     ]
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='InitVar not supported in python 3.7')
 def test_init_vars_inheritance():
     init_vars = []
 

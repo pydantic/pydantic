@@ -86,7 +86,6 @@ def test_is_literal_with_typing_extension_literal():
     assert is_literal_type(Literal['foo']) is True
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='`typing.Literal` is available for python 3.8 and above.')
 def test_is_literal_with_typing_literal():
     from typing import Literal
 

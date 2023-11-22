@@ -758,6 +758,11 @@ docs.
 
 For `ConstrainedStr` you can use [`StringConstraints`][pydantic.types.StringConstraints] instead.
 
+## Other changes
+
+* Dropped support for [`email-validator<2.0.0`](https://github.com/JoshData/python-email-validator). Make sure to update
+  using `pip install -U email-validator`.
+
 ## Moved in Pydantic V2
 
 | Pydantic V1 | Pydantic V2 |

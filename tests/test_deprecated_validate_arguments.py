@@ -1,6 +1,5 @@
 import asyncio
 import inspect
-import sys
 from pathlib import Path
 from typing import List
 
@@ -12,8 +11,6 @@ from pydantic import BaseModel, Field, PydanticDeprecatedSince20, ValidationErro
 from pydantic.deprecated.decorator import ValidatedFunction
 from pydantic.deprecated.decorator import validate_arguments as validate_arguments_deprecated
 from pydantic.errors import PydanticUserError
-
-skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
 
 def validate_arguments(*args, **kwargs):
@@ -146,7 +143,6 @@ def test_field_can_provide_factory() -> None:
     assert foo(1, 2, 3) == 6
 
 
-@skip_pre_38
 def test_positional_only(create_module):
     with pytest.warns(PydanticDeprecatedSince20):
         module = create_module(

@@ -10,9 +10,9 @@ import uuid
 from collections.abc import Callable
 from functools import partial
 from types import GetSetDescriptorType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
-from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypeGuard, get_args, get_origin
+from typing_extensions import Annotated, Literal, TypeAliasType, TypeGuard, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass

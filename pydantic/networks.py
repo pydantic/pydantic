@@ -40,6 +40,7 @@ __all__ = [
     'RedisDsn',
     'MongoDsn',
     'KafkaDsn',
+    'NatsDsn',
     'validate_email',
     'MySQLDsn',
     'MariaDBDsn',
@@ -308,6 +309,16 @@ KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host
 * User info required
 * TLD not required
 * Host required
+"""
+NatsDsn = Annotated[
+    MultiHostUrl, UrlConstraints(allowed_schemes=['nats', 'tls', 'ws'], default_host='localhost', default_port=4222)
+]
+"""A type that will accept any NATS DSN.
+
+NATS is a connective technology built for the ever increasingly hyper-connected world.
+It is a single technology that enables applications to securely communicate across
+any combination of cloud vendors, on-premise, edge, web and mobile, and devices.
+More: https://nats.io
 """
 MySQLDsn = Annotated[
     Url,

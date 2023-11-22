@@ -3,16 +3,10 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import inspect
-import sys
 import typing
 from copy import copy
 from dataclasses import Field as DataclassField
-
-try:
-    from functools import cached_property  # type: ignore
-except ImportError:
-    # python 3.7
-    cached_property = None
+from functools import cached_property
 from typing import Any, ClassVar
 from warnings import warn
 
@@ -244,7 +238,7 @@ class FieldInfo(_repr.Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_annotation(cls, annotation: type[Any]) -> typing_extensions.Self:
+    def from_annotation(cls, annotation: type[Any]) -> FieldInfo:
         """Creates a `FieldInfo` instance from a bare annotation.
 
         Args:
@@ -306,7 +300,7 @@ class FieldInfo(_repr.Representation):
         return cls(annotation=annotation, frozen=final or None)
 
     @classmethod
-    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> typing_extensions.Self:
+    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> FieldInfo:
         """Create `FieldInfo` from an annotation with a default value.
 
         Args:
@@ -346,9 +340,6 @@ class FieldInfo(_repr.Representation):
         elif isinstance(default, dataclasses.Field):
             init_var = False
             if annotation is dataclasses.InitVar:
-                if sys.version_info < (3, 8):
-                    raise RuntimeError('InitVar is not supported in Python 3.7 as type information is lost')
-
                 init_var = True
                 annotation = Any
             elif isinstance(annotation, dataclasses.InitVar):
@@ -402,7 +393,7 @@ class FieldInfo(_repr.Representation):
             field_info._attributes_set.update(overrides)
             for k, v in overrides.items():
                 setattr(field_info, k, v)
-            return field_info
+            return field_info  # type: ignore
 
         new_kwargs: dict[str, Any] = {}
         metadata = {}
@@ -581,7 +572,7 @@ class FieldInfo(_repr.Representation):
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasPath:
-    """Usage docs: https://docs.pydantic.dev/2.5/concepts/fields#aliaspath-and-aliaschoices
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -605,7 +596,7 @@ class AliasPath:
 
 @dataclasses.dataclass(**_internal_dataclass.slots_true)
 class AliasChoices:
-    """Usage docs: https://docs.pydantic.dev/2.5/concepts/fields#aliaspath-and-aliaschoices
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields#aliaspath-and-aliaschoices
 
     A data class used by `validation_alias` as a convenience to create aliases.
 
@@ -704,7 +695,7 @@ def Field(  # noqa: C901
     union_mode: Literal['smart', 'left_to_right'] = _Unset,
     **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    """Usage docs: https://docs.pydantic.dev/2.5/concepts/fields
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields
 
     Create a field for objects that can be configured.
 

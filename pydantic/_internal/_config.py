@@ -1,13 +1,11 @@
 from __future__ import annotations as _annotations
 
 import warnings
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ContextManager,
-    Iterator,
     cast,
 )
 
@@ -69,6 +67,7 @@ class ConfigWrapper:
     revalidate_instances: Literal['always', 'never', 'subclass-instances']
     ser_json_timedelta: Literal['iso8601', 'float']
     ser_json_bytes: Literal['utf8', 'base64']
+    ser_json_inf_nan: Literal['null', 'constants']
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
@@ -169,6 +168,7 @@ class ConfigWrapper:
                 strict=self.config_dict.get('strict'),
                 ser_json_timedelta=self.config_dict.get('ser_json_timedelta'),
                 ser_json_bytes=self.config_dict.get('ser_json_bytes'),
+                ser_json_inf_nan=self.config_dict.get('ser_json_inf_nan'),
                 from_attributes=self.config_dict.get('from_attributes'),
                 loc_by_alias=self.config_dict.get('loc_by_alias'),
                 revalidate_instances=self.config_dict.get('revalidate_instances'),
@@ -198,22 +198,20 @@ class ConfigWrapperStack:
     def tail(self) -> ConfigWrapper:
         return self._config_wrapper_stack[-1]
 
-    def push(self, config_wrapper: ConfigWrapper | ConfigDict | None) -> ContextManager[None]:
+    @contextmanager
+    def push(self, config_wrapper: ConfigWrapper | ConfigDict | None):
         if config_wrapper is None:
-            return nullcontext()
+            yield
+            return
 
         if not isinstance(config_wrapper, ConfigWrapper):
             config_wrapper = ConfigWrapper(config_wrapper, check=False)
 
-        @contextmanager
-        def _context_manager() -> Iterator[None]:
-            self._config_wrapper_stack.append(config_wrapper)
-            try:
-                yield
-            finally:
-                self._config_wrapper_stack.pop()
-
-        return _context_manager()
+        self._config_wrapper_stack.append(config_wrapper)
+        try:
+            yield
+        finally:
+            self._config_wrapper_stack.pop()
 
 
 config_defaults = ConfigDict(
@@ -240,6 +238,7 @@ config_defaults = ConfigDict(
     revalidate_instances='never',
     ser_json_timedelta='iso8601',
     ser_json_bytes='utf8',
+    ser_json_inf_nan='null',
     validate_default=False,
     validate_return=False,
     protected_namespaces=('model_',),

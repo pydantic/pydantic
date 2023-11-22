@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
 
@@ -99,13 +99,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           # macos tests with pypy take ages (>10mins) since pypy is very slow
           # so we only test pypy on ubuntu
-          - os: ubuntu
-            python-version: 'pypy3.7'
           - os: ubuntu
             python-version: 'pypy3.8'
           - os: ubuntu
@@ -218,8 +216,6 @@ jobs:
         python-version: ['3.10']
         include:
           - mypy-version: 'lockfile'
-            python-version: '3.7'
-          - mypy-version: 'lockfile'
             python-version: '3.8'
           - mypy-version: 'lockfile'
             python-version: '3.9'
@@ -246,10 +242,6 @@ jobs:
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        if [ ${{ matrix.mypy-version }} == '1.5.1' ]; then
-          # mypy 1.5.0 only supports 3.8 and newer, so adjust pyproject.toml
-          sed -i "s/requires-python = '>=3.7'/requires-python = '>=3.8'/g" pyproject.toml
-        fi
         if [ ${{ matrix.mypy-version }} != 'lockfile' ]; then
           pdm remove -G linting mypy && pdm remove -G mypy mypy && pdm add mypy==${{ matrix.mypy-version }}
         fi
@@ -269,7 +261,7 @@ jobs:
         node-version: '18'
 
     - name: install pyright
-      run: npm install -g pyright@1.1.322  # try to keep this in sync with .pre-commit-config.yaml
+      run: npm install -g pyright@1.1.335  # try to keep this in sync with .pre-commit-config.yaml
 
     - name: run pyright tests
       run: make test-pyright
@@ -322,9 +314,6 @@ jobs:
         # test the oldest supported version and main
         typing-extensions-version: ['4.6.1', 'main']
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-        include:
-          - typing-extensions-version: '4.6.1'
-            python-version: '3.7'
 
     steps:
     - uses: actions/checkout@v4
@@ -343,8 +332,6 @@ jobs:
     - name: install typing-extensions
       run: |
         if [ ${{ matrix.typing-extensions-version }} == 'main' ]; then
-          # typing-extensions main only supports 3.8 and newer, so adjust pyproject.toml
-          sed -i "s/requires-python = '>=3.7'/requires-python = '>=3.8'/g" pyproject.toml
           pdm remove typing-extensions && pdm add 'typing-extensions @ git+https://github.com/python/typing_extensions.git'
         else
           pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}'

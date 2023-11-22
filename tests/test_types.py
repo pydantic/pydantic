@@ -38,7 +38,7 @@ from uuid import UUID
 import annotated_types
 import dirty_equals
 import pytest
-from dirty_equals import HasRepr, IsOneOf, IsStr
+from dirty_equals import HasRepr, IsFloatNan, IsOneOf, IsStr
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
 from typing_extensions import Annotated, Literal, TypedDict, get_args
 
@@ -2529,13 +2529,34 @@ def test_float_validation():
     ]
 
 
-def test_finite_float_validation():
+def test_infinite_float_validation():
     class Model(BaseModel):
         a: float = None
 
     assert Model(a=float('inf')).a == float('inf')
     assert Model(a=float('-inf')).a == float('-inf')
     assert math.isnan(Model(a=float('nan')).a)
+
+
+@pytest.mark.parametrize(
+    ('ser_json_inf_nan', 'input', 'output', 'python_roundtrip'),
+    (
+        ('null', float('inf'), 'null', None),
+        ('null', float('-inf'), 'null', None),
+        ('null', float('nan'), 'null', None),
+        ('constants', float('inf'), 'Infinity', float('inf')),
+        ('constants', float('-inf'), '-Infinity', float('-inf')),
+        ('constants', float('nan'), 'NaN', IsFloatNan),
+    ),
+)
+def test_infinite_float_json_serialization(ser_json_inf_nan, input, output, python_roundtrip):
+    class Model(BaseModel):
+        model_config = ConfigDict(ser_json_inf_nan=ser_json_inf_nan)
+        a: float
+
+    json_string = Model(a=input).model_dump_json()
+    assert json_string == f'{{"a":{output}}}'
+    assert json.loads(json_string) == {'a': python_roundtrip}
 
 
 @pytest.mark.parametrize('value', [float('inf'), float('-inf'), float('nan')])
@@ -5620,7 +5641,6 @@ def test_typing_extension_literal_field():
     assert Model(foo='foo').foo == 'foo'
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason='`typing.Literal` is available for python 3.8 and above.')
 def test_typing_literal_field():
     from typing import Literal
 
@@ -6100,3 +6120,12 @@ def test_json_value():
             'type': 'invalid-json-value',
         }
     ]
+
+
+def test_json_value_roundtrip() -> None:
+    # see https://github.com/pydantic/pydantic/issues/8175
+    class MyModel(BaseModel):
+        val: Union[str, JsonValue]
+
+    round_trip_value = json.loads(MyModel(val=True).model_dump_json())['val']
+    assert round_trip_value is True, round_trip_value

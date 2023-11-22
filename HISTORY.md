@@ -1,12 +1,30 @@
-## v2.5.0b1 (2023-11-09)
+## v2.5.1 (2023-11-15)
 
-[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0b1)
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.1)
+
+### What's Changed
+
+#### Packaging
+
+* uprev pydantic-core to 2.14.3 by @samuelcolvin in [#8120](https://github.com/pydantic/pydantic/pull/8120)
+
+#### Fixes
+
+* Fix package description limit by @dmontagu in [#8097](https://github.com/pydantic/pydantic/pull/8097)
+* Fix `ValidateCallWrapper` error when creating a model which has a @validate_call wrapped field annotation by @sydney-runkle in [#8110](https://github.com/pydantic/pydantic/pull/8110)
+
+## v2.5.0 (2023-11-13)
+
+[GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0)
+
+The code released in v2.5.0 is functionally identical to that of v2.5.0b1.
 
 ### What's Changed
 
 #### Packaging
 
 * Update pydantic-core from 2.10.1 to 2.14.1, significant changes from these updates are described below, full changelog [here](https://github.com/pydantic/pydantic-core/compare/v2.10.1...v2.14.1)
+* Update to `pyright==1.1.335` by @Viicos in [#8075](https://github.com/pydantic/pydantic/pull/8075)
 
 #### New Features
 
@@ -18,6 +36,7 @@
 * Added `validation_error_cause` to config by @zakstucke in [#7626](https://github.com/pydantic/pydantic/pull/7626)
 * Make path of the item to validate available in plugin by @hramezani in [#7861](https://github.com/pydantic/pydantic/pull/7861)
 * Add `CallableDiscriminator` and `Tag` by @dmontagu in [#7983](https://github.com/pydantic/pydantic/pull/7983)
+  * `CallableDiscriminator` renamed to `Discriminator` by @dmontagu in [#8047](https://github.com/pydantic/pydantic/pull/8047)
 * Make union case tags affect union error messages by @dmontagu in [#8001](https://github.com/pydantic/pydantic/pull/8001)
 * Add `examples` and `json_schema_extra` to `@computed_field` by @alexmojaki in [#8013](https://github.com/pydantic/pydantic/pull/8013)
 * Add `JsonValue` type by @dmontagu in [#7998](https://github.com/pydantic/pydantic/pull/7998)
@@ -115,6 +134,10 @@
 #### `pydantic-core`
 * @sisp made their first contribution in [pydantic/pydantic-core#995](https://github.com/pydantic/pydantic-core/pull/995)
 * @michaelhly made their first contribution in [pydantic/pydantic-core#1015](https://github.com/pydantic/pydantic-core/pull/1015)
+
+## v2.5.0b1 (2023-11-09)
+
+Pre-release, see [the GitHub release](https://github.com/pydantic/pydantic/releases/tag/v2.5.0b1) for details.
 
 ## v2.4.2 (2023-09-27)
 
@@ -513,6 +536,8 @@ See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/
 First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
+
+<!-- package description limit -->
 
 ## v1.10.13 (2023-09-27)
 
@@ -1335,8 +1360,6 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
 * Only check `TypeVar` param on base `GenericModel` class, [#842](https://github.com/pydantic/pydantic/pull/842) by @zpencerq
 * rename `Model._schema_cache` -> `Model.__schema_cache__`, `Model._json_encoder` -> `Model.__json_encoder__`,
   `Model._custom_root_type` -> `Model.__custom_root_type__`, [#851](https://github.com/pydantic/pydantic/pull/851) by @samuelcolvin
-
-<!-- package description limit -->
 
 ## v0.32.2 (2019-08-17)
 

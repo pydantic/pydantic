@@ -109,7 +109,9 @@ __all__ = (
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata, BaseMetadata):
-    """A field metadata class to indicate that a field should be validated in strict mode.
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/strict_mode/#strict-mode-with-annotated-strict
+
+    A field metadata class to indicate that a field should be validated in strict mode.
 
     Attributes:
         strict: Whether to validate the field in strict mode.
@@ -667,7 +669,9 @@ StrictBytes = Annotated[bytes, Strict()]
 
 @_dataclasses.dataclass(frozen=True)
 class StringConstraints(annotated_types.GroupedMetadata):
-    """Apply constraints to `str` types.
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/fields/#string-constraints
+
+    Apply constraints to `str` types.
 
     Attributes:
         strip_whitespace: Whether to strip whitespace from the string.
@@ -843,6 +847,9 @@ def conlist(
         min_length: The minimum length of the list. Defaults to None.
         max_length: The maximum length of the list. Defaults to None.
         unique_items: Whether the items in the list must be unique. Defaults to None.
+            !!! warning Deprecated
+                The `unique_items` parameter is deprecated, use `Set` instead.
+                See [this issue](https://github.com/pydantic/pydantic-core/issues/296) for more details.
 
     Returns:
         The wrapped list type.
@@ -2397,7 +2404,9 @@ __getattr__ = getattr_migration(__name__)
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true)
 class GetPydanticSchema:
-    """A convenience class for creating an annotation that provides pydantic custom type hooks.
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/types/#using-getpydanticschema-to-reduce-boilerplate
+
+    A convenience class for creating an annotation that provides pydantic custom type hooks.
 
     This class is intended to eliminate the need to create a custom "marker" which defines the
      `__get_pydantic_core_schema__` and `__get_pydantic_json_schema__` custom hook methods.
@@ -2510,12 +2519,13 @@ class Tag:
     ```
 
     !!! note
-        You must specify a `Tag` for every case in a `Union` that is associated with a
+        You must specify a `Tag` for every case in a `Tag` that is associated with a
         callable `Discriminator`. Failing to do so will result in a `PydanticUserError` with code
         [`callable-discriminator-no-tag`](../errors/usage_errors.md#callable-discriminator-no-tag).
 
-    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
-    docs for more details on how to use `Tag`s.
+    See the [Discriminated Unions] concepts docs for more details on how to use `Tag`s.
+
+    [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
     """
 
     tag: str
@@ -2530,7 +2540,7 @@ class Tag:
 
 @_dataclasses.dataclass(**_internal_dataclass.slots_true, frozen=True)
 class Discriminator:
-    """[Usage docs](../concepts/unions.md#discriminated-unions)
+    """Usage docs: https://docs.pydantic.dev/2.6/concepts/unions/#discriminated-unions-with-callable-discriminator
 
     Provides a way to use a custom callable as the way to extract the value of a union discriminator.
 
@@ -2597,8 +2607,9 @@ class Discriminator:
     '''
     ```
 
-    See the [Discriminated Unions](../concepts/unions.md#discriminated-unions)
-    docs for more details on how to use `Discriminator`s.
+    See the [Discriminated Unions] concepts docs for more details on how to use `Discriminator`s.
+
+    [Discriminated Unions]: ../concepts/unions.md#discriminated-unions
     """
 
     discriminator: str | Callable[[Any], Hashable]
@@ -2720,9 +2731,9 @@ if TYPE_CHECKING:
         List['JsonValue'],
         Dict[str, 'JsonValue'],
         str,
+        bool,
         int,
         float,
-        bool,
         None,
     ]
     """A `JsonValue` is used to represent a value that can be serialized to JSON.
@@ -2732,9 +2743,9 @@ if TYPE_CHECKING:
     * `List['JsonValue']`
     * `Dict[str, 'JsonValue']`
     * `str`
+    * `bool`
     * `int`
     * `float`
-    * `bool`
     * `None`
 
     The following example demonstrates how to use `JsonValue` to validate JSON data,
@@ -2776,9 +2787,9 @@ else:
                 Annotated[List['JsonValue'], Tag('list')],
                 Annotated[Dict[str, 'JsonValue'], Tag('dict')],
                 Annotated[str, Tag('str')],
+                Annotated[bool, Tag('bool')],
                 Annotated[int, Tag('int')],
                 Annotated[float, Tag('float')],
-                Annotated[bool, Tag('bool')],
                 Annotated[None, Tag('NoneType')],
             ],
             Discriminator(

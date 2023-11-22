@@ -180,9 +180,10 @@ print(user.model_dump(by_alias=True))  # (2)!
     user = User(name='johndoe')  # (1)!
     ```
 
-    2. VSCode will show a warning here.
+    1. VSCode will show a warning here.
 
-    To "trick" VSCode into preferring the field name, you can use the `str` function to wrap the alias value:
+    To "trick" VSCode into preferring the field name, you can use the `str` function to wrap the alias value.
+    With this approach, though, a warning is shown when instantiating a model using the alias for the field:
 
     ```py
     from pydantic import BaseModel, ConfigDict, Field
@@ -195,8 +196,11 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 
     user = User(name='johndoe')  # (1)!
+    user = User(username='johndoe')  # (2)!
     ```
-    1. Now VSCode will not show a warning
+
+    1. Now VSCode will NOT show a warning
+    2. VSCode will show a warning here, though
 
     This is discussed in more detail in [this issue](https://github.com/pydantic/pydantic/issues/5893).
 
@@ -427,6 +431,9 @@ positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=in
     ```
 
 ## String Constraints
+
+??? api "API Documentation"
+    [`pydantic.types.StringConstraints`][pydantic.types.StringConstraints]<br>
 
 There are fields that can be used to constrain strings:
 

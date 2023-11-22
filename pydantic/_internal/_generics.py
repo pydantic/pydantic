@@ -60,10 +60,6 @@ else:
                 for key in to_remove:
                     del self[key]
 
-        def __class_getitem__(cls, *args: Any) -> Any:
-            # to avoid errors with 3.7
-            return cls
-
 
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
 # once they are no longer referenced by the caller.

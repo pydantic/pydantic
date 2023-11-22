@@ -540,6 +540,15 @@ class ConfigDict(TypedDict, total=False):
     - `'base64'` will serialize bytes to URL safe base64 strings.
     """
 
+    ser_json_inf_nan: Literal['null', 'constants']
+    """
+    The encoding of JSON serialized infinity and NaN float values. Accepts the string values of `'null'` and `'constants'`.
+    Defaults to `'null'`.
+
+    - `'null'` will serialize infinity and NaN values as `null`.
+    - `'constants'` will serialize infinity and NaN values as `Infinity` and `NaN`.
+    """
+
     # whether to validate default values during validation, default False
     validate_default: bool
     """Whether to validate default values during validation. Defaults to `False`."""

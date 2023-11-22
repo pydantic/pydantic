@@ -12,6 +12,7 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
+    Final,
     Generic,
     List,
     Mapping,
@@ -26,7 +27,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated, Final, Literal
+from typing_extensions import Annotated, Literal
 
 from pydantic import (
     AfterValidator,
@@ -606,6 +607,16 @@ def test_frozen_with_unhashable_fields_are_not_hashable():
     assert "unhashable type: 'list'" in exc_info.value.args[0]
 
 
+def test_hash_function_empty_model():
+    class TestModel(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+    m = TestModel()
+    m2 = TestModel()
+    assert m == m2
+    assert hash(m) == hash(m2)
+
+
 def test_hash_function_give_different_result_for_different_object():
     class TestModel(BaseModel):
         model_config = ConfigDict(frozen=True)
@@ -618,13 +629,47 @@ def test_hash_function_give_different_result_for_different_object():
     assert hash(m) == hash(m2)
     assert hash(m) != hash(m3)
 
-    # Redefined `TestModel`
+
+def test_hash_function_works_when_instance_dict_modified():
     class TestModel(BaseModel):
         model_config = ConfigDict(frozen=True)
-        a: int = 10
 
-    m4 = TestModel()
-    assert hash(m) != hash(m4)
+        a: int
+        b: int
+
+    m = TestModel(a=1, b=2)
+    h = hash(m)
+
+    # Test edge cases where __dict__ is modified
+    # @functools.cached_property can add keys to __dict__, these should be ignored.
+    m.__dict__['c'] = 1
+    assert hash(m) == h
+
+    # Order of keys can be changed, e.g. with the deprecated copy method, which shouldn't matter.
+    m.__dict__ = {'b': 2, 'a': 1}
+    assert hash(m) == h
+
+    # Keys can be missing, e.g. when using the deprecated copy method.
+    # This could change the hash, and more importantly hashing shouldn't raise a KeyError
+    # We don't assert here, because a hash collision is possible: the hash is not guaranteed to change
+    # However, hashing must not raise an exception, which simply calling hash() checks for
+    del m.__dict__['a']
+    hash(m)
+
+
+def test_default_hash_function_overrides_default_hash_function():
+    class A(BaseModel):
+        model_config = ConfigDict(frozen=True)
+
+        x: int
+
+    class B(A):
+        model_config = ConfigDict(frozen=True)
+
+        y: int
+
+    assert A.__hash__ != B.__hash__
+    assert hash(A(x=1)) != hash(B(x=1, y=2)) != hash(B(x=1, y=3))
 
 
 def test_hash_method_is_inherited_for_frozen_models():
@@ -2267,7 +2312,7 @@ def test_model_parametrized_name_not_generic():
 def test_model_equality_generics():
     T = TypeVar('T')
 
-    class GenericModel(BaseModel, Generic[T]):
+    class GenericModel(BaseModel, Generic[T], frozen=True):
         x: T
 
     class ConcreteModel(BaseModel):
@@ -2280,20 +2325,22 @@ def test_model_equality_generics():
     assert GenericModel(x=1) != GenericModel(x=2)
 
     S = TypeVar('S')
-    assert GenericModel(x=1) == GenericModel(x=1)
-    assert GenericModel(x=1) == GenericModel[S](x=1)
-    assert GenericModel(x=1) == GenericModel[Any](x=1)
-    assert GenericModel(x=1) == GenericModel[float](x=1)
-
-    assert GenericModel[int](x=1) == GenericModel[int](x=1)
-    assert GenericModel[int](x=1) == GenericModel[S](x=1)
-    assert GenericModel[int](x=1) == GenericModel[Any](x=1)
-    assert GenericModel[int](x=1) == GenericModel[float](x=1)
-
-    # Test that it works with nesting as well
-    nested_any = GenericModel[GenericModel[Any]](x=GenericModel[Any](x=1))
-    nested_int = GenericModel[GenericModel[int]](x=GenericModel[int](x=1))
-    assert nested_any == nested_int
+    models = [
+        GenericModel(x=1),
+        GenericModel[S](x=1),
+        GenericModel[Any](x=1),
+        GenericModel[int](x=1),
+        GenericModel[float](x=1),
+    ]
+    for m1 in models:
+        for m2 in models:
+            # Test that it works with nesting as well
+            m3 = GenericModel[type(m1)](x=m1)
+            m4 = GenericModel[type(m2)](x=m2)
+            assert m1 == m2
+            assert m3 == m4
+            assert hash(m1) == hash(m2)
+            assert hash(m3) == hash(m4)
 
 
 def test_model_validate_strict() -> None:

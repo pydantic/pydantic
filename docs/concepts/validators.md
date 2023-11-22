@@ -312,8 +312,8 @@ from pydantic import (
 
 
 class UserModel(BaseModel):
-    id: int
     name: str
+    id: int
 
     @field_validator('name')
     @classmethod
@@ -333,11 +333,11 @@ class UserModel(BaseModel):
         return v
 
 
-print(UserModel(id=1, name='John Doe'))
-#> id=1 name='John Doe'
+print(UserModel(name='John Doe', id=1))
+#> name='John Doe' id=1
 
 try:
-    UserModel(id=1, name='samuel')
+    UserModel(name='samuel', id=1)
 except ValidationError as e:
     print(e)
     """
@@ -347,7 +347,7 @@ except ValidationError as e:
     """
 
 try:
-    UserModel(id='abc', name='John Doe')
+    UserModel(name='John Doe', id=1)
 except ValidationError as e:
     print(e)
     """
@@ -357,7 +357,7 @@ except ValidationError as e:
     """
 
 try:
-    UserModel(id=1, name='John Doe!')
+    UserModel(name='John Doe!', id=1)
 except ValidationError as e:
     print(e)
     """
@@ -726,10 +726,10 @@ def init_context(value: Dict[str, Any]) -> Iterator[None]:
 class Model(BaseModel):
     my_number: int
 
-    def __init__(__pydantic_self__, **data: Any) -> None:
-        __pydantic_self__.__pydantic_validator__.validate_python(
+    def __init__(self, /, **data: Any) -> None:
+        self.__pydantic_validator__.validate_python(
             data,
-            self_instance=__pydantic_self__,
+            self_instance=self,
             context=_init_context_var.get(),
         )
 

@@ -1,3 +1,4 @@
+from dataclasses import InitVar
 from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
 
 from typing_extensions import Self
@@ -261,20 +262,9 @@ class OrmMixin(Generic[_TModel, _TType]):
         return cls.from_orm(model)
 
 
-import sys  # noqa E402
-
-if sys.version_info >= (3, 8):
-    from dataclasses import InitVar  # E402
-
-    InitVarStr = InitVar[str]
-else:
-    # InitVar is not supported in 3.7 due to loss of type information
-    InitVarStr = str
-
-
 @dataclass
 class MyDataClass:
-    foo: InitVarStr
+    foo: InitVar[str]
     bar: str
 
 
@@ -305,3 +295,17 @@ def foo() -> None:
             return self
 
     MyModel(number=2)
+
+
+class InnerModel(BaseModel):
+    my_var: Union[str, None] = Field(default=None)
+
+
+class OuterModel(InnerModel):
+    pass
+
+
+m = OuterModel()
+if m.my_var is None:
+    # In https://github.com/pydantic/pydantic/issues/7399, this was unreachable
+    print('not unreachable')
